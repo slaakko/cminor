@@ -24,6 +24,16 @@ void Node::Accept(Visitor& visitor)
     throw std::runtime_error("accept missing");
 }
 
+void Node::AddArgument(Node* argument)
+{
+    throw std::runtime_error("add argument missing");
+}
+
+void Node::AddParameter(ParameterNode* parameter)
+{
+    throw std::runtime_error("add parameter missing");
+}
+
 UnaryNode::UnaryNode(const Span& span_) : Node(span_)
 {
 }

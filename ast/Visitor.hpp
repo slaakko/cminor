@@ -20,6 +20,7 @@ class ULongNode;
 class FloatNode;
 class DoubleNode;
 class CharNode;
+class StringNode;
 class VoidNode;
 
 class BooleanLiteralNode;
@@ -38,9 +39,35 @@ class StringLiteralNode;
 class NullLiteralNode;
 
 class IdentifierNode;
+class ParameterNode;
+class FunctionNode;
 
 class DisjunctionNode;
 class ConjunctionNode;
+class BitOrNode;
+class BitXorNode;
+class BitAndNode;
+class EqualNode;
+class NotEqualNode;
+class LessNode;
+class GreaterNode;
+class LessOrEqualNode;
+class GreaterOrEqualNode;
+class ShiftLeftNode;
+class ShiftRightNode;
+class AddNode;
+class SubNode;
+class MulNode;
+class DivNode;
+class RemNode;
+class NotNode;
+class UnaryPlusNode;
+class UnaryMinusNode;
+class ComplementNode;
+
+class CompoundStatementNode;
+class ConstructionStatementNode;
+class AssignmentStatementNode;
 
 class Visitor
 {
@@ -58,6 +85,7 @@ public:
     virtual void Visit(FloatNode& floatNode) {}
     virtual void Visit(DoubleNode& doubleNode) {}
     virtual void Visit(CharNode& charNode) {}
+    virtual void Visit(StringNode& stringNode) {}
     virtual void Visit(VoidNode& voidNode) {}
 
     virtual void Visit(BooleanLiteralNode& booleanLiteralNode) {}
@@ -76,9 +104,35 @@ public:
     virtual void Visit(NullLiteralNode& nullLiteralNode) {}
 
     virtual void Visit(IdentifierNode& identifierNode) {}
+    virtual void Visit(ParameterNode& parameterNode) {}
+    virtual void Visit(FunctionNode& functionNode) {}
 
     virtual void Visit(DisjunctionNode& disjunctionNode) {}
     virtual void Visit(ConjunctionNode& conjunctionNode) {}
+    virtual void Visit(BitOrNode& bitOrNode) {}
+    virtual void Visit(BitXorNode& bitXorNode) {}
+    virtual void Visit(BitAndNode& bitAndNode) {}
+    virtual void Visit(EqualNode& equalNode) {}
+    virtual void Visit(NotEqualNode& notEqualNode) {}
+    virtual void Visit(LessNode& lessNode) {}
+    virtual void Visit(GreaterNode& greaterNode) {}
+    virtual void Visit(LessOrEqualNode& lessOrEqualNode) {}
+    virtual void Visit(GreaterOrEqualNode& greaterOrEqualNode) {}
+    virtual void Visit(ShiftLeftNode& shiftLeftNode) {}
+    virtual void Visit(ShiftRightNode& shiftRightNode) {}
+    virtual void Visit(AddNode& addNode) {}
+    virtual void Visit(SubNode& subNode) {}
+    virtual void Visit(MulNode& mulNode) {}
+    virtual void Visit(DivNode& divNode) {}
+    virtual void Visit(RemNode& remNode) {}
+    virtual void Visit(NotNode& notNode) {}
+    virtual void Visit(UnaryPlusNode& unaryPlusNode) {}
+    virtual void Visit(UnaryMinusNode& unaryMinusNode) {}
+    virtual void Visit(ComplementNode& complementNode) {}
+
+    virtual void Visit(CompoundStatementNode& compoundStatementNode) {}
+    virtual void Visit(ConstructionStatementNode& constructionStatementNode) {}
+    virtual void Visit(AssignmentStatementNode& assignmentStatementNode) {}
 };
 
 } } // namespace cminor::ast

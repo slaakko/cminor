@@ -176,6 +176,20 @@ void CharNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+StringNode::StringNode(const Span& span_) : Node(span_)
+{
+}
+
+Node* StringNode::Clone(CloneContext& cloneContext) const
+{
+    return new StringNode(GetSpan());
+}
+
+void StringNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 VoidNode::VoidNode(const Span& span_) : Node(span_)
 {
 }

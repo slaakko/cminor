@@ -1,0 +1,19 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+namespace cminor.parser
+{
+    grammar KeywordGrammar
+    {
+        using stdlib.identifier;
+
+        Keyword 
+            ::= keyword_list(identifier,
+                [
+                    "bool", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "char", "string", "void"
+                ])
+            ;
+    }
+}

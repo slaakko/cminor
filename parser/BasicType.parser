@@ -1,0 +1,31 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/BasicType.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar BasicTypeGrammar
+    {
+        BasicType: Node*
+            ::= keyword("bool"){ value = new BoolNode(span); }
+            |   keyword("sbyte"){ value = new SByteNode(span); }
+            |   keyword("byte"){ value = new ByteNode(span); }
+            |   keyword("short"){ value = new ShortNode(span); }
+            |   keyword("ushort"){ value = new UShortNode(span); }
+            |   keyword("int"){ value = new IntNode(span); }
+            |   keyword("uint"){ value = new UIntNode(span); }
+            |   keyword("long"){ value = new LongNode(span); }
+            |   keyword("ulong"){ value = new ULongNode(span); }
+            |   keyword("float"){ value = new FloatNode(span); }
+            |   keyword("double"){ value = new DoubleNode(span); }
+            |   keyword("char"){ value = new CharNode(span); }
+            |   keyword("string"){ value = new StringNode(span); }
+            |   keyword("void"){ value = new VoidNode(span); }
+            ;
+    }
+}

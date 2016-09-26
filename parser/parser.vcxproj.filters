@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="BasicType.parser" />
+    <None Include="Keyword.parser" />
+    <None Include="CminorParser.pp" />
+    <None Include="CminorParser.pl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Keyword.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Keyword.hpp" />
+  </ItemGroup>
+</Project>

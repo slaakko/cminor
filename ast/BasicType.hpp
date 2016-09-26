@@ -117,6 +117,15 @@ public:
     void Accept(Visitor& visitor) override;
 };
 
+class StringNode : public Node
+{
+public:
+    StringNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::stringNode;  }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+};
+
 class VoidNode : public Node
 {
 public:
