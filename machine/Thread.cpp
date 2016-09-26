@@ -3,11 +3,11 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/machine/Frame.hpp>
+#include <cminor/machine/Thread.hpp>
 
 namespace cminor { namespace machine {
 
-Frame::Frame(int32_t numLocals) : locals(numLocals), pc(0)
+Thread::Thread(Function& fun_) : fun(fun_)
 {
 }
 

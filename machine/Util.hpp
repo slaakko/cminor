@@ -3,12 +3,15 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/machine/Frame.hpp>
+#ifndef CMINOR_MACHINE_UTIL_INCLUDED
+#define CMINOR_MACHINE_UTIL_INCLUDED
+#include <stdint.h>
+#include <string>
 
 namespace cminor { namespace machine {
 
-Frame::Frame(int32_t numLocals) : locals(numLocals), pc(0)
-{
-}
+std::string ToHexString(uint8_t x);
 
 } } // namespace cminor::machine
+
+#endif // CMINOR_MACHINE_UTIL_INCLUDED

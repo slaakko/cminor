@@ -3,15 +3,15 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_OPERATION_STACK_INCLUDED
-#define CMINOR_MACHINE_OPERATION_STACK_INCLUDED
+#ifndef CMINOR_MACHINE_OPERAND_STACK_INCLUDED
+#define CMINOR_MACHINE_OPERAND_STACK_INCLUDED
 #include <cminor/machine/Error.hpp>
 #include <stdint.h>
 #include <vector>
 
 namespace cminor { namespace machine {
 
-class OperationStack
+class OperandStack
 {
 public:
     void Push(uint64_t value)
@@ -20,7 +20,7 @@ public:
     }
     uint64_t Pop()
     {
-        assert(!s.empty(), "operation stack is empty");
+        assert(!s.empty(), "operand stack is empty");
         uint64_t top = s.back();
         s.pop_back();
         return top;
@@ -31,4 +31,4 @@ private:
 
 } } // namespace cminor::machine
 
-#endif // CMINOR_MACHINE_OPERATION_STACK_INCLUDED
+#endif // CMINOR_MACHINE_OPERAND_STACK_INCLUDED

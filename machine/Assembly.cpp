@@ -3,11 +3,16 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/machine/Frame.hpp>
+#include <cminor/machine/Assembly.hpp>
+#include <cminor/machine/MappedInputFile.hpp>
 
 namespace cminor { namespace machine {
 
-Frame::Frame(int32_t numLocals) : locals(numLocals), pc(0)
+Assembly::Assembly(const std::string& fileName_) : fileName(fileName_)
+{
+}
+
+void Assembly::Read(Reader& reader)
 {
 }
 

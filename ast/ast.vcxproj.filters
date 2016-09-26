@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="Node.hpp" />
+    <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Clone.hpp" />
+    <ClInclude Include="Visitor.hpp" />
+    <ClInclude Include="Literal.hpp" />
+    <ClInclude Include="Expression.hpp" />
+    <ClInclude Include="Identifier.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Node.cpp" />
+    <ClCompile Include="Clone.cpp" />
+    <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Visitor.cpp" />
+    <ClCompile Include="Literal.cpp" />
+    <ClCompile Include="Identifier.cpp" />
+    <ClCompile Include="Expression.cpp" />
+  </ItemGroup>
+</Project>

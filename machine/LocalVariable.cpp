@@ -3,12 +3,17 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/machine/Frame.hpp>
+#include <cminor/machine/LocalVariable.hpp>
 
 namespace cminor { namespace machine {
 
-Frame::Frame(int32_t numLocals) : locals(numLocals), pc(0)
+LocalVariable::LocalVariable() : value(0)
 {
+}
+
+LocalVariableVector::LocalVariableVector(int32_t numVars)
+{
+    variables.resize(numVars);
 }
 
 } } // namespace cminor::machine
