@@ -28,8 +28,10 @@
     <ClInclude Include="LocalVariable.hpp" />
     <ClInclude Include="Machine.hpp" />
     <ClInclude Include="MappedInputFile.hpp" />
-    <ClInclude Include="OperationStack.hpp" />
+    <ClInclude Include="Object.hpp" />
+    <ClInclude Include="OperandStack.hpp" />
     <ClInclude Include="Reader.hpp" />
+    <ClInclude Include="String.hpp" />
     <ClInclude Include="Thread.hpp" />
     <ClInclude Include="Util.hpp" />
     <ClInclude Include="Writer.hpp" />
@@ -43,6 +45,7 @@
     <ClCompile Include="LocalVariable.cpp" />
     <ClCompile Include="Machine.cpp" />
     <ClCompile Include="MappedInputFile.cpp" />
+    <ClCompile Include="Object.cpp" />
     <ClCompile Include="Reader.cpp" />
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="Util.cpp" />

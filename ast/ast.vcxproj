@@ -22,18 +22,25 @@
     <ClInclude Include="BasicType.hpp" />
     <ClInclude Include="Clone.hpp" />
     <ClInclude Include="Expression.hpp" />
+    <ClInclude Include="Function.hpp" />
     <ClInclude Include="Identifier.hpp" />
     <ClInclude Include="Literal.hpp" />
     <ClInclude Include="Node.hpp" />
+    <ClInclude Include="Parameter.hpp" />
+    <ClInclude Include="Specifier.hpp" />
+    <ClInclude Include="Statement.hpp" />
     <ClInclude Include="Visitor.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
     <ClCompile Include="Clone.cpp" />
     <ClCompile Include="Expression.cpp" />
+    <ClCompile Include="Function.cpp" />
     <ClCompile Include="Identifier.cpp" />
     <ClCompile Include="Literal.cpp" />
     <ClCompile Include="Node.cpp" />
+    <ClCompile Include="Parameter.cpp" />
+    <ClCompile Include="Statement.cpp" />
     <ClCompile Include="Visitor.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -1,0 +1,27 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Identifier.hpp>
+[cpp]#include <cminor/parser/Keyword.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using cminor::ast::IdentifierNode;
+
+    grammar IdentifierGrammar
+    {
+        using stdlib.identifier;
+        using KeywordGrammar.Keyword;
+
+        Identifier : IdentifierNode*
+            ::= token(identifier - Keyword){ value = new IdentifierNode(span, identifier); }
+            ;
+
+        QualifiedId : IdentifierNode*
+            ::= token((identifier - Keyword) % '.'){ value = new IdentifierNode(span, std::string(matchBegin, matchEnd)); }
+            ;
+    }
+}
+

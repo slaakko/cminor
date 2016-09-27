@@ -35,12 +35,15 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("byte");
     keywords0.push_back("char");
     keywords0.push_back("double");
+    keywords0.push_back("false");
     keywords0.push_back("float");
     keywords0.push_back("int");
     keywords0.push_back("long");
+    keywords0.push_back("null");
     keywords0.push_back("sbyte");
     keywords0.push_back("short");
     keywords0.push_back("string");
+    keywords0.push_back("true");
     keywords0.push_back("uint");
     keywords0.push_back("ulong");
     keywords0.push_back("ushort");

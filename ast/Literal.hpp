@@ -6,8 +6,11 @@
 #ifndef CMINOR_AST_LITERAL_INCLUDED
 #define CMINOR_AST_LITERAL_INCLUDED
 #include <cminor/ast/Node.hpp>
+#include <cminor/machine/Util.hpp>
 
 namespace cminor { namespace ast {
+
+using cminor::machine::utf32_string;
 
 class BooleanLiteralNode : public Node
 {
@@ -168,8 +171,6 @@ public:
 private:
     char32_t value;
 };
-
-typedef std::basic_string<char32_t> utf32_string;
 
 class StringLiteralNode : public Node
 {

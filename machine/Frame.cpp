@@ -7,7 +7,7 @@
 
 namespace cminor { namespace machine {
 
-Frame::Frame(int32_t numLocals) : locals(numLocals), pc(0)
+Frame::Frame(ObjectPool& objectPool_, int32_t numLocals) : locals(numLocals), objectPool(objectPool_), pc(0)
 {
 }
 

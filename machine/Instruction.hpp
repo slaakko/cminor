@@ -10,6 +10,7 @@
 #include <cminor/machine/Writer.hpp>
 #include <cminor/machine/Error.hpp>
 #include <cminor/machine/Frame.hpp>
+#include <unordered_map>
 #include <string>
 #include <memory>
 
@@ -21,6 +22,7 @@ class Instruction
 {
 public:
     Instruction(const std::string& name_);
+    Instruction(const std::string& name_, const std::string& groupName_, const std::string& typeName_);
     Instruction(const Instruction&) = default;
     virtual ~Instruction();
     virtual Instruction* Clone() const = 0;
@@ -30,11 +32,15 @@ public:
     void SetOpCode(uint8_t opCode_) { opCode = opCode_; }
     uint8_t OpCode() const { return opCode; }
     const std::string& Name() const { return name; }
+    const std::string& GroupName() const { return groupName; }
+    const std::string& TypeName() const { return typeName; }
     virtual void Execute(Frame& frame);
     virtual void Dump(CodeFormatter& formatter);
 private:
     uint8_t opCode;
     std::string name;
+    std::string groupName;
+    std::string typeName;
     Instruction* parent;
 };
 
@@ -55,10 +61,10 @@ public:
     Instruction* Clone() const override { return new NopInst(*this); }
 };
 
-class GroupInst : public Instruction
+class ContainerInst : public Instruction
 {
 public:
-    GroupInst(Machine& machine_, const std::string& name_, bool root_);
+    ContainerInst(Machine& machine_, const std::string& name_, bool root_);
     void SetInst(uint8_t opCode, Instruction* inst);
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
@@ -70,11 +76,24 @@ private:
     std::vector<std::unique_ptr<Instruction>> childInsts;
 };
 
+class InstructionTypeGroup
+{
+public:
+    InstructionTypeGroup();
+    InstructionTypeGroup(const std::string& instGroupName_);
+    void AddInst(Instruction* inst);
+    std::unique_ptr<Instruction> CreateInst(const std::string& typeName) const;
+    const std::string& InstGroupName() const { return instGroupName; }
+private:
+    std::string instGroupName;
+    std::unordered_map<std::string, Instruction*> instructionMap;
+};
+
 template<typename OperandT, typename UnaryOpT>
 class UnaryOpInst : public Instruction
 {
 public:
-    UnaryOpInst(const std::string& name_) : Instruction(name_)
+    UnaryOpInst(const std::string& name_, const std::string& groupName_, const std::string& typeName_) : Instruction(name_, groupName_, typeName_)
     {
     }
     Instruction* Clone() const override { return new UnaryOpInst<OperandT, UnaryOpT>(*this); }
@@ -89,7 +108,7 @@ template<typename OperandT, typename BinaryOpT>
 class BinaryOpInst : public Instruction
 {
 public:
-    BinaryOpInst(const std::string& name_) : Instruction(name_)
+    BinaryOpInst(const std::string& name_, const std::string& groupName_, const std::string& typeName_) : Instruction(name_, groupName_, typeName_)
     {
     }
     Instruction* Clone() const override { return new BinaryOpInst<OperandT, BinaryOpT>(*this); }
@@ -123,7 +142,7 @@ template<typename OperandT, typename RelationT>
 class BinaryPredInst : public Instruction
 {
 public:
-    BinaryPredInst(const std::string& name_) : Instruction(name_)
+    BinaryPredInst(const std::string& name_, const std::string& groupName_, const std::string& typeName_) : Instruction(name_, groupName_, typeName_)
     {
     }
     Instruction* Clone() const override { return new BinaryPredInst<OperandT, RelationT>(*this); }
@@ -187,6 +206,22 @@ public:
         TargetT target = static_cast<TargetT>(source);
         frame.OpStack().Push(static_cast<uint64_t>(target));
     }
+};
+
+class StringEqualInst : public Instruction
+{
+public:
+    StringEqualInst();
+    Instruction* Clone() const override { return new StringEqualInst(*this);  }
+    void Execute(Frame& frame) override;
+};
+
+class StringLessInst : public Instruction
+{
+public:
+    StringLessInst();
+    Instruction* Clone() const override { return new StringLessInst(*this); }
+    void Execute(Frame& frame) override;
 };
 
 } } // namespace cminor::machine

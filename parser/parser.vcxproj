@@ -21,16 +21,27 @@
   <ItemGroup>
     <None Include="BasicType.parser" />
     <None Include="CminorParser.pl" />
+    <None Include="Identifier.parser" />
     <None Include="Keyword.parser" />
     <None Include="CminorParser.pp" />
+    <None Include="Literal.parser" />
+    <None Include="Specifier.parser" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Identifier.cpp" />
     <ClCompile Include="Keyword.cpp" />
+    <ClCompile Include="Literal.cpp" />
+    <ClCompile Include="ParsingContext.cpp" />
+    <ClCompile Include="Specifier.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Identifier.hpp" />
     <ClInclude Include="Keyword.hpp" />
+    <ClInclude Include="Literal.hpp" />
+    <ClInclude Include="ParsingContext.hpp" />
+    <ClInclude Include="Specifier.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0B34F7CF-6295-4243-89E9-F5BB5933FDCA}</ProjectGuid>

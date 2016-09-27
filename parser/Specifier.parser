@@ -1,0 +1,30 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Specifier.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar SpecifierGrammar
+    {
+        Specifiers : Specifiers
+            ::= (Specifier{ value = value | Specifier; })*
+            ;
+
+        Specifier : Specifiers
+            ::= keyword("public"){ value = Specifiers::public_; }
+            |   keyword("protected"){ value = Specifiers::protected_; }
+            |   keyword("private"){ value = Specifiers::private_; }
+            |   keyword("internal"){ value = Specifiers::internal_; }
+            |   keyword("static"){ value = Specifiers::static_; }
+            |   keyword("virtual"){ value = Specifiers::virtual_; }
+            |   keyword("override"){ value = Specifiers::override_; }
+            |   keyword("abstract"){ value = Specifiers::abstract_; }
+            |   keyword("inline"){ value = Specifiers::inline_; }
+            ;
+    }
+}

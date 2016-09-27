@@ -1,0 +1,170 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Literal.hpp>
+[cpp]#include <sstream>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+    [cpp]using namespace cminor::machine;
+
+    grammar LiteralGrammar
+    {
+        Literal : Node*
+            ::= BooleanLiteral{ value = BooleanLiteral; }
+            |   FloatingLiteral{ value = FloatingLiteral; }
+            |   IntegerLiteral{ value = IntegerLiteral; }
+            |   CharLiteral{ value = CharLiteral; }
+            |   StringLiteral{ value = StringLiteral; }
+            |   NullLiteral{ value = NullLiteral; }
+            ;
+
+        BooleanLiteral : Node*
+            ::= keyword("true"){ value = new BooleanLiteralNode(span, true); }
+            |   keyword("false"){ value = new BooleanLiteralNode(span, false); }
+            ;
+
+        FloatingLiteral(var Span s) : Node*
+            ::= token(
+                    FloatingLiteralValue{ s = span; }
+                    (   [fF]{ s.SetEnd(span.End()); value = CreateFloatingLiteralNode(s, FloatingLiteralValue, true); }
+                    |   empty{ value = CreateFloatingLiteralNode(s, FloatingLiteralValue, false); }
+                    )
+                )
+            ;
+
+        FloatingLiteralValue : double
+            ::= token(FractionalFloatingLiteral | ExponentFloatingLiteral)
+                { 
+                    std::stringstream s;
+                    s.str(std::string(matchBegin, matchEnd));
+                    s >> value;
+                }
+            ;
+
+        FractionalFloatingLiteral
+            ::= token(DecDigitSequence:s0? '.' DecDigitSequence:m ExponentPart?)
+            |   token(DecDigitSequence:s1 '.')
+            ;
+
+        ExponentFloatingLiteral
+            ::= token(DecDigitSequence ExponentPart)
+            ;
+
+        ExponentPart
+            ::= token([eE] Sign? DecDigitSequence)
+            ;
+
+        IntegerLiteral(var Span s) : Node*
+            ::= token(
+                    IntegerLiteralValue{ s = span; }
+                    (   [uU]{ s.SetEnd(span.End()); value = CreateIntegerLiteralNode(s, IntegerLiteralValue, true); }
+                    |   empty{ value = CreateIntegerLiteralNode(s, IntegerLiteralValue, false); }
+                    )
+                )
+            ;
+
+        IntegerLiteralValue : uint64_t
+            ::= token(HexIntegerLiteral{ value = HexIntegerLiteral; } | DecIntegerLiteral{ value = DecIntegerLiteral; })
+            ;
+
+        HexIntegerLiteral : uint64_t
+            ::= token(
+                    ("0x" | "0X")
+                    HexDigitSequence{ value = HexDigitSequence; }
+                )
+            ;
+
+        DecIntegerLiteral : uint64_t
+            ::= DecDigitSequence{ value = DecDigitSequence; }
+            ;
+
+        CharLiteral(var utf32_char litValue) : Node*
+            ::= token(  '\'' 
+                        (   ([^\\r\n]+){ utf32_string s = ToUtf32(std::string(matchBegin, matchEnd)); if (s.empty()) pass = false; else litValue = s[0]; } 
+                        |   CharEscape{ litValue = CharEscape; }
+                        ) 
+                        '\''!
+                    ){ value = new CharLiteralNode(span, litValue); }
+            ;
+
+        StringLiteral(var utf32_string s) : Node*
+            ::= '@' token('"' ([^"]*){ s = ToUtf32(std::string(matchBegin, matchEnd)); } '"'){ value = new StringLiteralNode(span, s); }
+            |   token('"' 
+                    (   ([^"\\\r\n]+){ s.append(ToUtf32(std::string(matchBegin, matchEnd))); }
+                    |   CharEscape{ s.append(1, CharEscape); }
+                    )*
+                    '"'!
+                )
+            ;
+
+        NullLiteral : Node*
+            ::= keyword("null"){ value = new NullLiteralNode(span); }
+            ;
+
+        CharEscape : utf32_char
+            ::= token('\\' 
+                (   [xX] HexDigitSequence{ value = utf32_char(HexDigitSequence); } 
+                |   [dD] DecDigitSequence{ value = utf32_char(DecDigitSequence); } 
+                |   OctalDigitSequence{ value = utf32_char(OctalDigitSequence); }
+                |   'u' HexDigit4{ value = utf32_char(HexDigit4); }
+                |   'U' HexDigit8{ value = utf32_char(HexDigit8); }
+                |   'a'{ value = utf32_char('\a'); }
+                |   'b'{ value = utf32_char('\b'); }
+                |   'f'{ value = utf32_char('\f'); }
+                |   'n'{ value = utf32_char('\n'); }
+                |   'r'{ value = utf32_char('\r'); }
+                |   't'{ value = utf32_char('\t'); }
+                |   'v'{ value = utf32_char('\v'); }
+                |   anychar{ value = *matchBegin; }
+                ))
+                ;
+
+        DecDigitSequence : uint64_t
+            ::= token(digit+)
+                {
+                    std::stringstream s;
+                    s.str(std::string(matchBegin, matchEnd));
+                    s >> value;
+                }
+            ;
+
+        HexDigitSequence : uint64_t
+            ::= token(hexdigit+)
+                {
+                    std::stringstream s;
+                    s.str(std::string(matchBegin, matchEnd));
+                    s >> std::hex >> value;
+                }
+            ;
+
+        HexDigit4 : uint16_t
+            ::= token(hexdigit hexdigit hexdigit hexdigit)
+                {
+                    std::stringstream s;
+                    s.str(std::string(matchBegin, matchEnd));
+                    s >> std::hex >> value;
+                }
+            ;
+
+        HexDigit8 : uint32_t
+            ::= token(hexdigit hexdigit hexdigit hexdigit hexdigit hexdigit hexdigit hexdigit)
+                {
+                    std::stringstream s;
+                    s.str(std::string(matchBegin, matchEnd));
+                    s >> std::hex >> value;
+                }
+            ;
+
+        OctalDigitSequence : uint64_t
+            ::= token([0-7]{ value = 8 * value + (*matchBegin - '0'); })+
+            ;
+
+        Sign
+            ::= '+' | '-'
+            ;
+    }
+}

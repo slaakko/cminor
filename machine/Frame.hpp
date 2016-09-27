@@ -10,16 +10,20 @@
 
 namespace cminor { namespace machine {
 
+class ObjectPool;
+
 class Frame
 {
 public:
-    Frame(int32_t numLocals);
+    Frame(ObjectPool& objectPool_, int32_t numLocals);
     OperandStack& OpStack() { return opStack; }
     LocalVariable& Local(int32_t index) { return locals[index];  }
+    ObjectPool& GetObjectPool() { return objectPool; }
     int32_t PC() const { return pc; }
 private:
     OperandStack opStack;
     LocalVariableVector locals;
+    ObjectPool& objectPool;
     int32_t pc;
 };
 
