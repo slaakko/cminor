@@ -4,6 +4,7 @@
 // =================================
 
 #include <cminor/machine/Writer.hpp>
+#include <cminor/machine/Unicode.hpp>
 
 namespace cminor { namespace machine {
 
@@ -18,6 +19,11 @@ Writer::Writer(const std::string& fileName_) : fileName(fileName_), file(std::fo
 Writer::~Writer()
 {
     FlushBuffer();
+}
+
+void Writer::Put(bool x)
+{
+    Put(uint8_t(x));
 }
 
 void Writer::Put(uint8_t x)
@@ -112,6 +118,11 @@ void Writer::Put(double x)
     Put(layout.l);
 }
 
+void Writer::Put(char32_t x)
+{
+    Put(static_cast<uint32_t>(x));
+}
+
 void Writer::Put(const std::string& s)
 {
     for (char c : s)
@@ -120,6 +131,12 @@ void Writer::Put(const std::string& s)
         Put(x);
     }
     Put(static_cast<uint8_t>(0));
+}
+
+void Writer::Put(const utf32_string& s)
+{
+    std::string utf8_str = ToUtf8(s);
+    Put(utf8_str);
 }
 
 void Writer::FlushBuffer()

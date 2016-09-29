@@ -7,7 +7,7 @@
 
 namespace cminor { namespace parser {
 
-ParsingContext::ParsingContext() : parsingSimpleStatement(false), parsingLvalue(false), parsingArguments(false)
+ParsingContext::ParsingContext() : parsingSimpleStatement(false), parsingLvalue(false), parsingArguments(false), parsingIsOrAs(false)
 {
 }
 
@@ -45,6 +45,18 @@ void ParsingContext::EndParsingArguments()
 {
     parsingArguments = parsingArgumentsStack.top(); 
     parsingArgumentsStack.pop();
+}
+
+void ParsingContext::PushParsingIsOrAs(bool enable)
+{
+    parsingIsOrAsStack.push(parsingIsOrAs);
+    parsingIsOrAs = enable;
+}
+
+void ParsingContext::PopParsingIsOrAs()
+{
+    parsingIsOrAs = parsingIsOrAsStack.top();
+    parsingIsOrAsStack.pop();
 }
 
 } } // namespace cminor::parser

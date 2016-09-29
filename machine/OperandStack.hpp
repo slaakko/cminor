@@ -5,7 +5,7 @@
 
 #ifndef CMINOR_MACHINE_OPERAND_STACK_INCLUDED
 #define CMINOR_MACHINE_OPERAND_STACK_INCLUDED
-#include <cminor/machine/Error.hpp>
+#include <cminor/machine/Object.hpp>
 #include <stdint.h>
 #include <vector>
 
@@ -14,19 +14,20 @@ namespace cminor { namespace machine {
 class OperandStack
 {
 public:
-    void Push(uint64_t value)
+    void Push(IntegralValue value)
     {
         s.push_back(value);
     }
-    uint64_t Pop()
+    IntegralValue Pop()
     {
         assert(!s.empty(), "operand stack is empty");
-        uint64_t top = s.back();
+        IntegralValue top = s.back();
         s.pop_back();
         return top;
     }
+    const std::vector<IntegralValue>& Values() const { return s; }
 private:
-    std::vector<uint64_t> s;
+    std::vector<IntegralValue> s;
 };
 
 } } // namespace cminor::machine

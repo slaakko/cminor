@@ -6,7 +6,7 @@
 #ifndef CMINOR_AST_LITERAL_INCLUDED
 #define CMINOR_AST_LITERAL_INCLUDED
 #include <cminor/ast/Node.hpp>
-#include <cminor/machine/Util.hpp>
+#include <cminor/machine/Unicode.hpp>
 
 namespace cminor { namespace ast {
 

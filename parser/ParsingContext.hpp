@@ -22,6 +22,9 @@ public:
     bool ParsingArguments() const { return parsingArguments; }
     void BeginParsingArguments();
     void EndParsingArguments();
+    bool ParsingIsOrAs() const { return parsingIsOrAs; }
+    void PushParsingIsOrAs(bool enable);
+    void PopParsingIsOrAs();
 private:
     bool parsingSimpleStatement;
     std::stack<bool> parsingSimpleStatementStack;
@@ -29,6 +32,8 @@ private:
     std::stack<bool> parsingLvalueStack;
     bool parsingArguments;
     std::stack<bool> parsingArgumentsStack;
+    bool parsingIsOrAs;
+    std::stack<bool> parsingIsOrAsStack;
 };
 
 } } // namespace cminor::parser

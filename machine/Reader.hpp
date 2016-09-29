@@ -10,12 +10,14 @@
 namespace cminor { namespace machine {
 
 class Machine;
+typedef std::basic_string<char32_t> utf32_string;
 
 class Reader
 {
 public:
     Reader(Machine& machine_, const std::string& fileName_);
     Machine& GetMachine() { return machine; }
+    bool GetBool();
     uint8_t GetByte();
     int8_t GetSByte();
     uint16_t GetUShort();
@@ -26,7 +28,9 @@ public:
     int64_t GetLong();
     float GetFloat();
     double GetDouble();
-    std::string GetString();
+    char32_t GetChar();
+    std::string GetUtf8String();
+    utf32_string GetUtf32String();
 private:
     Machine& machine;
     std::string fileName;

@@ -1,5 +1,22 @@
 namespace cminor.parser
 {
+    grammar ExpressionGrammar
+    {
+        Expression(ParsingContext* ctx): Node*;
+        Disjunction(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Node*;
+        Conjunction(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Node*;
+        BitOr(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Node*;
+        BitXor(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Node*;
+        BitAnd(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Node*;
+        Equality(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op): Node*;
+        Relational(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op): Node*;
+        Shift(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op): Node*;
+        Additive(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op): Node*;
+        Multiplicative(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s, var Operator op): Node*;
+        Prefix(ParsingContext* ctx, var Span s, var Operator op): Node*;
+        Postfix(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Node*;
+        Primary(ParsingContext* ctx): Node*;
+    }
     grammar BasicTypeGrammar
     {
         BasicType: Node*;

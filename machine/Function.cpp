@@ -8,7 +8,7 @@
 
 namespace cminor { namespace machine {
 
-Function::Function(const std::string& fullName_) : id(-1), fullName(fullName_)
+Function::Function(const std::string& fullName_) : fullName(fullName_), numLocals(0), assembly(nullptr)
 {
 }
 
@@ -26,12 +26,17 @@ void Function::Write(Writer& writer)
 
 void Function::Read(Reader& reader)
 {
-    fullName = reader.GetString();
+    fullName = reader.GetUtf8String();
     int32_t n = reader.GetInt();
     for (int32_t i = 0; i < n; ++i)
     {
         AddInst(reader.GetMachine().DecodeInst(reader));
     }
+}
+
+void Function::SetNumLocals(int32_t numLocals_)
+{
+    numLocals = numLocals_;
 }
 
 void Function::AddInst(std::unique_ptr<Instruction>&& inst)

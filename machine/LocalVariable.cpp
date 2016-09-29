@@ -7,7 +7,7 @@
 
 namespace cminor { namespace machine {
 
-LocalVariable::LocalVariable() : value(0)
+LocalVariable::LocalVariable() : value()
 {
 }
 

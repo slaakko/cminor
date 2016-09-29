@@ -229,6 +229,56 @@ public:
     void Accept(Visitor& visitor) override;
 };
 
+class IsNode : public Node
+{
+public:
+    IsNode(const Span& span_);
+    IsNode(const Span& span_, Node* expr_, IdentifierNode* targetTypeName_);
+    NodeType GetNodeType() const override { return NodeType::isNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+private:
+    std::unique_ptr<Node> expr;
+    std::unique_ptr<IdentifierNode> targetTypeName;
+};
+
+class AsNode : public Node
+{
+public:
+    AsNode(const Span& span_);
+    AsNode(const Span& span_, Node* expr_, IdentifierNode* targetTypeName_);
+    NodeType GetNodeType() const override { return NodeType::isNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+private:
+    std::unique_ptr<Node> expr;
+    std::unique_ptr<IdentifierNode> targetTypeName;
+};
+
+class DotNode : public UnaryNode
+{
+public:
+    DotNode(const Span& span_);
+    DotNode(const Span& span_, Node* subject_, Node* memberId_);
+    NodeType GetNodeType() const override { return NodeType::dotNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    const std::string& MemberStr() const;
+    void Accept(Visitor& visitor) override;
+private:
+    std::unique_ptr<Node> memberId;
+};
+
+class CCNode : public Node
+{
+public:
+    CCNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::ccNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    const std::string& Grave() const { return grave; }
+private:
+    std::string grave;
+};
+
 } } // namespace cminor::ast
 
 #endif // CMINOR_AST_EXPRESSION_INCLUDED

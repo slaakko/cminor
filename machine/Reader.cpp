@@ -4,12 +4,19 @@
 // =================================
 
 #include <cminor/machine/Reader.hpp>
+#include <cminor/machine/Unicode.hpp>
 
 namespace cminor { namespace machine {
 
-Reader::Reader(Machine& machine_, const std::string& fileName_) : 
+Reader::Reader(Machine& machine_, const std::string& fileName_) :
     machine(machine_), fileName(fileName_), file(fileName), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End()))
 {
+}
+
+bool Reader::GetBool()
+{
+    uint8_t x = GetByte();
+    return static_cast<bool>(x);
 }
 
 uint8_t Reader::GetByte()
@@ -98,7 +105,13 @@ double Reader::GetDouble()
     return layout.d;
 }
 
-std::string Reader::GetString()
+char32_t Reader::GetChar()
+{
+    uint32_t x = GetUInt();
+    return static_cast<char32_t>(x);
+}
+
+std::string Reader::GetUtf8String()
 {
     std::string s;
     uint8_t x = GetByte();
@@ -108,6 +121,12 @@ std::string Reader::GetString()
         x = GetByte();
     }
     return s;
+}
+
+utf32_string Reader::GetUtf32String()
+{
+    std::string s = GetUtf8String();
+    return ToUtf32(s);
 }
 
 void Reader::CheckEof()

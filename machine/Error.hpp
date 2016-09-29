@@ -6,6 +6,7 @@
 #ifndef CMINOR_MACHINE_ERROR_INCLUDED
 #define CMINOR_MACHINE_ERROR_INCLUDED
 #include <stdexcept>
+#include <string>
 
 namespace cminor { namespace machine {
 

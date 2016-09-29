@@ -21,6 +21,7 @@
   <ItemGroup>
     <None Include="BasicType.parser" />
     <None Include="CminorParser.pl" />
+    <None Include="Expression.parser" />
     <None Include="Identifier.parser" />
     <None Include="Keyword.parser" />
     <None Include="CminorParser.pp" />
@@ -29,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Identifier.cpp" />
     <ClCompile Include="Keyword.cpp" />
     <ClCompile Include="Literal.cpp" />
@@ -37,9 +39,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Expression.hpp" />
     <ClInclude Include="Identifier.hpp" />
     <ClInclude Include="Keyword.hpp" />
     <ClInclude Include="Literal.hpp" />
+    <ClInclude Include="Operator.hpp" />
     <ClInclude Include="ParsingContext.hpp" />
     <ClInclude Include="Specifier.hpp" />
   </ItemGroup>

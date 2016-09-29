@@ -12,18 +12,18 @@ namespace cminor { namespace machine {
 class StringPtr
 {
 public:
-    StringPtr(char32_t* value_) : value(value_) {}
-    char32_t* Value() const { return value; }
+    StringPtr(const char32_t* value_) : value(value_) {}
+    const char32_t* Value() const { return value; }
 private:
-    char32_t* value;
+    const char32_t* value;
 };
 
 inline bool operator==(StringPtr left, StringPtr right)
 {
-    char32_t* p = left.Value();
-    char32_t* q = right.Value();
-    if (!p && !q) return true;
-    if (!p || !q) return false;
+    const char32_t* p = left.Value();
+    const char32_t* q = right.Value();
+    assert(p, "null string ptr");
+    assert(q, "null string ptr");
     while (*p && *q && *p == *q)
     {
         ++p;
@@ -34,10 +34,10 @@ inline bool operator==(StringPtr left, StringPtr right)
 
 inline bool operator<(StringPtr left, StringPtr right)
 {
-    char32_t* p = left.Value();
-    char32_t* q = right.Value();
-    if (!p && q) return true;
-    if (!q) return false;
+    const char32_t* p = left.Value();
+    const char32_t* q = right.Value();
+    assert(p, "null string ptr");
+    assert(q, "null string ptr");
     while (*p && *q && *p == *q)
     {
         ++p;

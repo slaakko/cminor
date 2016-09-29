@@ -89,34 +89,40 @@ private:
     std::unordered_map<std::string, Instruction*> instructionMap;
 };
 
-template<typename OperandT, typename UnaryOpT>
+template<typename OperandT, typename UnaryOpT, ValueType type>
 class UnaryOpInst : public Instruction
 {
 public:
     UnaryOpInst(const std::string& name_, const std::string& groupName_, const std::string& typeName_) : Instruction(name_, groupName_, typeName_)
     {
     }
-    Instruction* Clone() const override { return new UnaryOpInst<OperandT, UnaryOpT>(*this); }
+    Instruction* Clone() const override { return new UnaryOpInst<OperandT, UnaryOpT, type>(*this); }
     void Execute(Frame& frame) override
     {
-        OperandT operand = static_cast<OperandT>(frame.OpStack().Pop());
-        frame.OpStack().Push(static_cast<uint64_t>(UnaryOpT()(operand)));
+        IntegralValue operand = frame.OpStack().Pop();
+        assert(operand.GetType() == type, ValueTypeStr(type) + " operand expected");
+        OperandT value = static_cast<OperandT>(operand.Value());
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(UnaryOpT()(value)), type));
     }
 };
 
-template<typename OperandT, typename BinaryOpT>
+template<typename OperandT, typename BinaryOpT, ValueType type>
 class BinaryOpInst : public Instruction
 {
 public:
     BinaryOpInst(const std::string& name_, const std::string& groupName_, const std::string& typeName_) : Instruction(name_, groupName_, typeName_)
     {
     }
-    Instruction* Clone() const override { return new BinaryOpInst<OperandT, BinaryOpT>(*this); }
+    Instruction* Clone() const override { return new BinaryOpInst<OperandT, BinaryOpT, type>(*this); }
     void Execute(Frame& frame) override
     {
-        OperandT right = static_cast<OperandT>(frame.OpStack().Pop());
-        OperandT left = static_cast<OperandT>(frame.OpStack().Pop());
-        frame.OpStack().Push(static_cast<uint64_t>(BinaryOpT()(left, right)));
+        IntegralValue rightOperand = frame.OpStack().Pop();
+        assert(rightOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
+        IntegralValue leftOperand = frame.OpStack().Pop();
+        assert(leftOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
+        OperandT left = static_cast<OperandT>(leftOperand.Value());
+        OperandT right = static_cast<OperandT>(rightOperand.Value());
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(BinaryOpT()(left, right)), type));
     }
 };
 
@@ -138,20 +144,24 @@ struct ShiftRight
     }
 };
 
-template<typename OperandT, typename RelationT>
+template<typename OperandT, typename RelationT, ValueType type>
 class BinaryPredInst : public Instruction
 {
 public:
     BinaryPredInst(const std::string& name_, const std::string& groupName_, const std::string& typeName_) : Instruction(name_, groupName_, typeName_)
     {
     }
-    Instruction* Clone() const override { return new BinaryPredInst<OperandT, RelationT>(*this); }
+    Instruction* Clone() const override { return new BinaryPredInst<OperandT, RelationT, type>(*this); }
     void Execute(Frame& frame) override
     {
-        OperandT right = static_cast<OperandT>(frame.OpStack().Pop());
-        OperandT left = static_cast<OperandT>(frame.OpStack().Pop());
+        IntegralValue rightOperand = frame.OpStack().Pop();
+        assert(rightOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
+        IntegralValue leftOperand = frame.OpStack().Pop();
+        assert(leftOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
+        OperandT left = static_cast<OperandT>(leftOperand.Value());
+        OperandT right = static_cast<OperandT>(rightOperand.Value());
         bool result = RelationT()(left, right);
-        frame.OpStack().Push(static_cast<uint64_t>(result));
+        frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
     }
 };
 
@@ -168,6 +178,7 @@ class IndexParamInst : public Instruction
 public:
     IndexParamInst(const std::string& name_);
     IndexParamInst(const IndexParamInst&) = default;
+    void SetIndex(int32_t index_) { index = index_; }
     int32_t Index() const { return index; }
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
@@ -192,19 +203,51 @@ public:
     void Execute(Frame& frame) override;
 };
 
-template<typename SourceT, typename TargetT>
+class LoadFieldInst : public IndexParamInst
+{
+public:
+    LoadFieldInst();
+    Instruction* Clone() const override { return new LoadFieldInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreFieldInst : public IndexParamInst
+{
+public:
+    StoreFieldInst();
+    Instruction* Clone() const override { return new StoreFieldInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadNullReferenceInst : public Instruction
+{
+public:
+    LoadNullReferenceInst();
+    Instruction* Clone() const override { return new LoadNullReferenceInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadConstantInst : public IndexParamInst
+{
+public:
+    LoadConstantInst();
+    Instruction* Clone() const override { return new LoadConstantInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+template<typename SourceT, typename TargetT, ValueType type>
 class ConversionInst : public Instruction
 {
 public:
     ConversionInst(const std::string& name_) : Instruction(name_)
     {
     }
-    Instruction* Clone() const override { return new ConversionInst<SourceT, TargetT>(*this); }
+    Instruction* Clone() const override { return new ConversionInst<SourceT, TargetT, type>(*this); }
     void Execute(Frame& frame) override
     {
-        SourceT source = static_cast<SourceT>(frame.OpStack().Pop());
+        SourceT source = static_cast<SourceT>(frame.OpStack().Pop().Value());
         TargetT target = static_cast<TargetT>(source);
-        frame.OpStack().Push(static_cast<uint64_t>(target));
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(target), type));
     }
 };
 
@@ -221,6 +264,38 @@ class StringLessInst : public Instruction
 public:
     StringLessInst();
     Instruction* Clone() const override { return new StringLessInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StringEqStrLitInst : public Instruction
+{
+public:
+    StringEqStrLitInst();
+    Instruction* Clone() const override { return new StringEqStrLitInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StrLitEqStringInst : public Instruction
+{
+public:
+    StrLitEqStringInst();
+    Instruction* Clone() const override { return new StrLitEqStringInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StringLessStrLitInst : public Instruction
+{
+public:
+    StringLessStrLitInst();
+    Instruction* Clone() const override { return new StringLessStrLitInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StrLitLessStringInst : public Instruction
+{
+public:
+    StrLitLessStringInst();
+    Instruction* Clone() const override { return new StrLitLessStringInst(*this); }
     void Execute(Frame& frame) override;
 };
 

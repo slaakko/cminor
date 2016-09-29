@@ -64,6 +64,9 @@ class NotNode;
 class UnaryPlusNode;
 class UnaryMinusNode;
 class ComplementNode;
+class IsNode;
+class AsNode;
+class DotNode;
 
 class CompoundStatementNode;
 class ConstructionStatementNode;
@@ -129,6 +132,9 @@ public:
     virtual void Visit(UnaryPlusNode& unaryPlusNode) {}
     virtual void Visit(UnaryMinusNode& unaryMinusNode) {}
     virtual void Visit(ComplementNode& complementNode) {}
+    virtual void Visit(IsNode& isNode) {}
+    virtual void Visit(AsNode& asNode) {}
+    virtual void Visit(DotNode& dotNode) {}
 
     virtual void Visit(CompoundStatementNode& compoundStatementNode) {}
     virtual void Visit(ConstructionStatementNode& constructionStatementNode) {}
