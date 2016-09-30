@@ -111,8 +111,8 @@ void GarbageCollector::DoCollectGarbage()
 
 void GarbageCollector::DoGarbageCollectArena(ArenaId arenaId)
 {
-    machine.GetObjectPool().ResetObjectsLiveFlag(arenaId);
-    MarkLiveObjects(arenaId);
+    machine.GetObjectPool().ResetObjectsLiveFlag();
+    MarkLiveObjects();
     if (arenaId == ArenaId::gen0Arena)
     {
         machine.GetObjectPool().MoveLiveObjectsToArena(arenaId, machine.Gen1Arena());
@@ -124,8 +124,24 @@ void GarbageCollector::DoGarbageCollectArena(ArenaId arenaId)
     }
 }
 
-void GarbageCollector::MarkLiveObjects(ArenaId arenaId)
+inline void GarbageCollector::MarkLiveObjects(IntegralValue value, std::unordered_set<ObjectReference, ObjectReferenceHash>& checked)
 {
+    if (value.GetType() == ValueType::objectReference)
+    {
+        ObjectReference objectRef(value.Value());
+        if (!objectRef.IsNull() && checked.find(objectRef) == checked.cend())
+        {
+            checked.insert(objectRef);
+            Object& object = machine.GetObjectPool().GetObject(objectRef);
+            object.SetLive();
+            object.MarkLiveObjects(checked, machine.GetObjectPool());
+        }
+    }
+}
+
+void GarbageCollector::MarkLiveObjects()
+{
+    std::unordered_set<ObjectReference, ObjectReferenceHash> checked;
     for (const std::unique_ptr<Thread>& thread : machine.Threads())
     {
         for (const Frame& frame : thread->Frames())
@@ -133,35 +149,13 @@ void GarbageCollector::MarkLiveObjects(ArenaId arenaId)
             const OperandStack& operandStack = frame.OpStack();
             for (IntegralValue value : operandStack.Values())
             {
-                if (value.GetType() == ValueType::objectReference)
-                {
-                    ObjectReference objectRef(value.Value());
-                    if (!objectRef.IsNull())
-                    {
-                        Object& object = machine.GetObjectPool().GetObject(objectRef);
-                        if (object.GetArenaId() == arenaId)
-                        {
-                            object.SetLive();
-                        }
-                    }
-                }
+                MarkLiveObjects(value, checked);
             }
             const LocalVariableVector& locals = frame.Locals();
             for (const LocalVariable& local : locals.Variables())
             {
                 IntegralValue value = local.GetValue();
-                if (value.GetType() == ValueType::objectReference)
-                {
-                    ObjectReference objectRef(value.Value());
-                    if (!objectRef.IsNull())
-                    {
-                        Object& object = machine.GetObjectPool().GetObject(objectRef);
-                        if (object.GetArenaId() == arenaId)
-                        {
-                            object.SetLive();
-                        }
-                    }
-                }
+                MarkLiveObjects(value, checked);
             }
         }
     }

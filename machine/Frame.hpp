@@ -19,8 +19,9 @@ class Instruction;
 class Frame
 {
 public:
-    Frame(Machine& machine_, Function& fun_, ConstantPool& constantPool_);
+    Frame(Machine& machine_, Thread& thread_, Function& fun_, ConstantPool& constantPool_);
     Machine& GetMachine() { return machine; }
+    Thread& GetThread() { return thread; }
     Function& Fun() { return fun; }
     ObjectPool& GetObjectPool() { return objectPool; }
     ConstantPool& GetConstantPool() { return constantPool; }
@@ -32,6 +33,7 @@ public:
     int32_t PC() const { return pc; }
 private:
     Machine& machine;
+    Thread& thread;
     Function& fun;
     ObjectPool& objectPool;
     ConstantPool& constantPool;

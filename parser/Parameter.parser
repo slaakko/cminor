@@ -1,0 +1,28 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Parameter.hpp>
+[hpp]#include <cminor/parser/ParsingContext.hpp>
+[cpp]#include <cminor/parser/TypeExpr.hpp>
+[cpp]#include <cminor/parser/Identifier.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar ParameterGrammar
+    {
+        using TypeExprGrammar.TypeExpr;
+        using IdentifierGrammar.Identifier;
+        
+        ParameterList(ParsingContext* ctx, Node* owner)
+            ::= '(' (Parameter(ctx){ owner->AddParameter(Parameter); } % ',')? ')'!
+            ;
+
+        Parameter(ParsingContext* ctx) : ParameterNode*
+            ::= (TypeExpr(ctx) Identifier){ value = new ParameterNode(span, TypeExpr, Identifier); }
+            ;
+    }
+}

@@ -12,7 +12,18 @@ namespace cminor { namespace machine {
 
 Thread::Thread(Machine& machine_, Function& fun_) : machine(machine_), fun(fun_), instructionCount(0), checkWantToCollectGarbageCount(100), paused(), sleeping(), pausedCond()
 {
-    frames.push_back(Frame(machine, fun, fun.GetAssembly()->GetConstantPool()));
+    frames.push_back(Frame(machine, *this, fun, fun.GetAssembly()->GetConstantPool()));
+}
+
+inline void Thread::CheckPause()
+{
+    if (CheckWantToCollectGarbage())
+    {
+        if (GetMachine().GetGarbageCollector().WantToCollectGarbage())
+        {
+            PauseUntilGarbageCollected();
+        }
+    }
 }
 
 void Thread::Run()
@@ -27,17 +38,6 @@ void Thread::Run()
         IncInstructionCount();
     }
     machine.GetGarbageCollector().DoCollectGarbage();
-}
-
-void Thread::CheckPause()
-{
-    if (CheckWantToCollectGarbage())
-    {
-        if (GetMachine().GetGarbageCollector().WantToCollectGarbage())
-        {
-            PauseUntilGarbageCollected();
-        }
-    }
 }
 
 void Thread::PauseUntilGarbageCollected()

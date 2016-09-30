@@ -38,13 +38,6 @@ int main()
         storeLocal->SetIndex(0);
         mainFun.AddInst(std::unique_ptr<Instruction>(storeLocal));
         machine.MainThread().Run();
-/*
-        ObjectLayout layout;
-        layout.AddField(ValueType::boolType);
-        ObjectReference a = machine.GetObjectPool().CreateObject(mainThread, &layout);
-        machine.GetObjectPool().SetField(a, 0, IntegralValue(true, ValueType::boolType));
-        IntegralValue v = machine.GetObjectPool().GetField(a, 0);
-*/
         int x = 0;
     }
     catch (const std::exception& ex)

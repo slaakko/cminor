@@ -8,6 +8,7 @@
 [cpp]#include <cminor/parser/Literal.hpp>
 [cpp]#include <cminor/parser/BasicType.hpp>
 [cpp]#include <cminor/parser/Identifier.hpp>
+[hpp]#include <cminor/parser/TypeExpr.hpp>
 [cpp]#include <cminor/parser/Operator.hpp>
 
 namespace cminor.parser
@@ -19,7 +20,7 @@ namespace cminor.parser
         using LiteralGrammar.Literal;
         using BasicTypeGrammar.BasicType;
         using IdentifierGrammar.Identifier;
-        using IdentifierGrammar.QualifiedId;
+        using TypeExprGrammar.TypeExpr;
 
         Expression(ParsingContext* ctx) : Node*
             ::= Disjunction(ctx){ value = Disjunction; }
@@ -117,9 +118,9 @@ namespace cminor.parser
                     |   ('<' - ("<<" | "<=>")){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator::less; ctx->PushParsingIsOrAs(false); } }
                     |   ('>' - ">>"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator::greater; ctx->PushParsingIsOrAs(false); } }
                     |   (keyword("is"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator::is; ctx->PushParsingIsOrAs(true); } }  
-                        QualifiedId:isType)
+                        TypeExpr(ctx):isType)
                     |   (keyword("as"){ if (ctx->ParsingLvalue() || ctx->ParsingSimpleStatement() && !ctx->ParsingArguments()) pass = false; else { op = Operator::as; ctx->PushParsingIsOrAs(true); } } 
-                        QualifiedId:asType)
+                        TypeExpr(ctx):asType)
                     )
                     (Shift(ctx):right | empty{ if (!ctx->ParsingIsOrAs()) pass = false; })
                     { 
@@ -257,6 +258,14 @@ namespace cminor.parser
             |   Literal{ value = Literal; }
             |   BasicType{ value = BasicType; }
             |   Identifier{ value = Identifier; }
+            ;
+
+        ArgumentList(ParsingContext* ctx, Node* node)
+            ::= ExpressionList(ctx, node)?
+            ;
+
+        ExpressionList(ParsingContext* ctx, Node* node)
+            ::= empty{ ctx->BeginParsingArguments(); } (Expression(ctx):arg{ node->AddArgument(arg); } % ','){ ctx->EndParsingArguments(); } / { ctx->EndParsingArguments(); }
             ;
     }
 }

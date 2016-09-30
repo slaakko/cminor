@@ -188,7 +188,9 @@ LoadFieldInst::LoadFieldInst() : IndexParamInst("loadfield")
 
 void LoadFieldInst::Execute(Frame& frame)
 {
-    ObjectReference reference = ObjectReference(frame.OpStack().Pop().Value());
+    IntegralValue operand = frame.OpStack().Pop();
+    assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
     IntegralValue fieldValue = frame.GetObjectPool().GetField(reference, Index());
     frame.OpStack().Push(fieldValue);
 }
@@ -200,8 +202,26 @@ StoreFieldInst::StoreFieldInst() : IndexParamInst("storefield")
 void StoreFieldInst::Execute(Frame& frame)
 {
     IntegralValue fieldValue = frame.OpStack().Pop();
-    ObjectReference reference = ObjectReference(frame.OpStack().Pop().Value());
+    IntegralValue operand = frame.OpStack().Pop();
+    assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
     frame.GetObjectPool().SetField(reference, Index(), fieldValue);
+}
+
+CreateStringInst::CreateStringInst() : Instruction("creates")
+{
+}
+
+void CreateStringInst::Execute(Frame& frame)
+{
+    IntegralValue stringValue = frame.OpStack().Pop();
+    assert(stringValue.GetType() == ValueType::stringLiteral, "string literal expected");
+    if (stringValue.Value() == 0)
+    {
+        stringValue = frame.GetConstantPool().GetEmptyStringConstant().Value();
+    }
+    ObjectReference reference = frame.GetObjectPool().CreateString(frame.GetThread(), stringValue);
+    frame.OpStack().Push(reference);
 }
 
 LoadNullReferenceInst::LoadNullReferenceInst() : Instruction("loadnull")

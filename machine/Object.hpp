@@ -8,7 +8,7 @@
 #include <cminor/machine/Error.hpp>
 #include <stdint.h>
 #include <unordered_map>
-#include <mutex>
+#include <unordered_set>
 
 namespace cminor { namespace machine {
 
@@ -19,6 +19,7 @@ class Reader;
 class Arena;
 class Type;
 class ObjectLayout;
+class ObjectPool;
 
 enum class ArenaId : uint8_t
 {
@@ -53,11 +54,11 @@ public:
     float AsFloat() const { return static_cast<float>(value); }
     double AsDouble() const { return static_cast<double>(value); }
     char32_t AsChar() const { return static_cast<char32_t>(value); }
-    const char32_t* AsStringLiteral() const { return reinterpret_cast<const char32_t*>(value); }
+    const char32_t* AsStringLiteral() const { return strValue; }
     void Write(Writer& writer);
     void Read(Reader& reader);
 private:
-    uint64_t value;
+    union { uint64_t value; const char32_t* strValue; };
     ValueType type;
 };
 
@@ -135,10 +136,12 @@ public:
     void SetMemPtr(ObjectMemPtr newMemPtr) { memPtr = newMemPtr; }
     IntegralValue GetField(int index) const;
     void SetField(IntegralValue fieldValue, int index);
+    int32_t FieldCount() const;
     bool IsLive() const { return GetFlag(ObjectFlags::live); }
     void SetLive() { SetFlag(ObjectFlags::live); }
     void ResetLive() { ResetFlag(ObjectFlags::live); }
     uint64_t Size() const;
+    void MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ObjectPool& objectBool);
 private:
     ObjectReference reference;
     ArenaId arenaId;
@@ -155,12 +158,13 @@ class ObjectPool
 public:
     ObjectPool(Machine& machine_);
     ObjectReference CreateObject(Thread& thread, Type* type);
+    ObjectReference CreateString(Thread& thread, IntegralValue stringValue);
     void DestroyObject(ObjectReference reference);
     Object& GetObject(ObjectReference reference);
     IntegralValue GetField(ObjectReference reference, int32_t fieldIndex);
     void SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue);
     ObjectMemPtr GetObjectMemPtr(ObjectReference reference);
-    void ResetObjectsLiveFlag(ArenaId arenaId);
+    void ResetObjectsLiveFlag();
     void MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena);
 private:
     Machine& machine;

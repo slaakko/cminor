@@ -6,6 +6,7 @@
 #ifndef CMINOR_MACHINE_TYPE_INCLUDED
 #define CMINOR_MACHINE_TYPE_INCLUDED
 #include <cminor/machine/Object.hpp>
+#include <memory>
 
 namespace cminor { namespace machine {
 
@@ -40,6 +41,7 @@ public:
     ObjectLayout();
     void AddField(ValueType fieldType);
     Field GetField(int32_t index) const { assert(index >= 0 && index < fields.size(), "invalid field index"); return fields[index]; }
+    int32_t FieldCount() const { return int32_t(fields.size()); }
     uint64_t ObjectSize() const { return objectSize; }
 private:
     std::vector<Field> fields;
@@ -53,6 +55,7 @@ public:
     const std::string& FullName() const { return fullName; }
     void AddField(ValueType fieldType) { layout.AddField(fieldType); }
     Field GetField(int32_t index) const { return layout.GetField(index); }
+    int32_t FieldCount() const { return layout.FieldCount(); }
     uint64_t ObjectSize() const { return layout.ObjectSize(); }
 private:
     std::string fullName;

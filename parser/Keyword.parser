@@ -13,7 +13,7 @@ namespace cminor.parser
             ::= keyword_list(identifier,
                 [
                     "bool", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "char", "string", "void",
-                    "true", "false", "null"
+                    "true", "false", "null", "operator"
                 ])
             ;
     }

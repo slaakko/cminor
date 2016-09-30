@@ -182,39 +182,43 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
     rootInst.SetInst(0x81, new StringEqualInst());
     rootInst.SetInst(0x82, new StringEqStrLitInst());
     rootInst.SetInst(0x83, new StrLitEqStringInst());
+    rootInst.SetInst(0x84, new BinaryPredInst<uint64_t, std::equal_to<uint64_t>, ValueType::objectReference>("equalo", "equal", "object"));
 
     //  less:
-    rootInst.SetInst(0x84, new BinaryPredInst<int8_t, std::less<int8_t>, ValueType::sbyteType>("lesssb", "less", "sbyte"));
-    rootInst.SetInst(0x85, new BinaryPredInst<uint8_t, std::less<uint8_t>, ValueType::byteType>("lessby", "less", "byte"));
-    rootInst.SetInst(0x86, new BinaryPredInst<int16_t, std::less<int16_t>, ValueType::shortType>("lesssh", "less", "short"));
-    rootInst.SetInst(0x87, new BinaryPredInst<uint16_t, std::less<uint16_t>, ValueType::ushortType>("lessus", "less", "ushort"));
-    rootInst.SetInst(0x88, new BinaryPredInst<int32_t, std::less<int32_t>, ValueType::intType>("lessin", "less", "int"));
-    rootInst.SetInst(0x89, new BinaryPredInst<uint32_t, std::less<uint32_t>, ValueType::uintType>("lessui", "less", "uint"));
-    rootInst.SetInst(0x8A, new BinaryPredInst<int64_t, std::less<int64_t>, ValueType::longType>("lesslo", "less", "long"));
-    rootInst.SetInst(0x8B, new BinaryPredInst<uint64_t, std::less<uint64_t>, ValueType::ulongType>("lessul", "less", "ulong"));
-    rootInst.SetInst(0x8C, new BinaryPredInst<float, std::less<float>, ValueType::floatType>("lessfl", "less", "float"));
-    rootInst.SetInst(0x8D, new BinaryPredInst<double, std::less<double>, ValueType::doubleType>("lessdo", "less", "double"));
-    rootInst.SetInst(0x8E, new BinaryPredInst<char32_t, std::less<char32_t>, ValueType::charType>("lessch", "less", "char"));
-    rootInst.SetInst(0x8F, new BinaryPredInst<bool, std::less<bool>, ValueType::boolType>("lessbo", "less", "bool"));
-    rootInst.SetInst(0x90, new StringLessInst());
-    rootInst.SetInst(0x91, new StringLessStrLitInst());
-    rootInst.SetInst(0x92, new StrLitLessStringInst());
+    rootInst.SetInst(0x85, new BinaryPredInst<int8_t, std::less<int8_t>, ValueType::sbyteType>("lesssb", "less", "sbyte"));
+    rootInst.SetInst(0x86, new BinaryPredInst<uint8_t, std::less<uint8_t>, ValueType::byteType>("lessby", "less", "byte"));
+    rootInst.SetInst(0x87, new BinaryPredInst<int16_t, std::less<int16_t>, ValueType::shortType>("lesssh", "less", "short"));
+    rootInst.SetInst(0x88, new BinaryPredInst<uint16_t, std::less<uint16_t>, ValueType::ushortType>("lessus", "less", "ushort"));
+    rootInst.SetInst(0x89, new BinaryPredInst<int32_t, std::less<int32_t>, ValueType::intType>("lessin", "less", "int"));
+    rootInst.SetInst(0x8A, new BinaryPredInst<uint32_t, std::less<uint32_t>, ValueType::uintType>("lessui", "less", "uint"));
+    rootInst.SetInst(0x8B, new BinaryPredInst<int64_t, std::less<int64_t>, ValueType::longType>("lesslo", "less", "long"));
+    rootInst.SetInst(0x8C, new BinaryPredInst<uint64_t, std::less<uint64_t>, ValueType::ulongType>("lessul", "less", "ulong"));
+    rootInst.SetInst(0x8D, new BinaryPredInst<float, std::less<float>, ValueType::floatType>("lessfl", "less", "float"));
+    rootInst.SetInst(0x8E, new BinaryPredInst<double, std::less<double>, ValueType::doubleType>("lessdo", "less", "double"));
+    rootInst.SetInst(0x8F, new BinaryPredInst<char32_t, std::less<char32_t>, ValueType::charType>("lessch", "less", "char"));
+    rootInst.SetInst(0x90, new BinaryPredInst<bool, std::less<bool>, ValueType::boolType>("lessbo", "less", "bool"));
+    rootInst.SetInst(0x91, new StringLessInst());
+    rootInst.SetInst(0x92, new StringLessStrLitInst());
+    rootInst.SetInst(0x93, new StrLitLessStringInst());
+    rootInst.SetInst(0x94, new BinaryPredInst<uint64_t, std::less<uint64_t>, ValueType::objectReference>("lesso", "less", "object"));
 
     //  logical operations:
     //  -------------------
-    rootInst.SetInst(0x93, new LogicalNotInst());
+    rootInst.SetInst(0x95, new LogicalNotInst());
 
-    // todo 91 - FE:
+    // todo 96 - FE:
 
     //  load & store:
     //  -------------
 
-    rootInst.SetInst(0x94, new LoadLocalInst());
-    rootInst.SetInst(0x95, new StoreLocalInst());
-    rootInst.SetInst(0x96, new LoadFieldInst());
-    rootInst.SetInst(0x97, new StoreFieldInst());
-    rootInst.SetInst(0x98, new LoadNullReferenceInst());
-    rootInst.SetInst(0x99, new LoadConstantInst());
+    rootInst.SetInst(0x95, new LoadLocalInst());
+    rootInst.SetInst(0x96, new StoreLocalInst());
+    rootInst.SetInst(0x97, new LoadFieldInst());
+    rootInst.SetInst(0x98, new StoreFieldInst());
+    rootInst.SetInst(0x99, new LoadNullReferenceInst());
+    rootInst.SetInst(0x9A, new LoadConstantInst());
+
+    rootInst.SetInst(0x9B, new CreateStringInst());
 
     //  conversion group instruction:
     //  -----------------------------

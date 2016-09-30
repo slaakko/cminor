@@ -16,10 +16,28 @@ namespace cminor.parser
         Prefix(ParsingContext* ctx, var Span s, var Operator op): Node*;
         Postfix(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Node*;
         Primary(ParsingContext* ctx): Node*;
+        ArgumentList(ParsingContext* ctx, Node* node);
+        ExpressionList(ParsingContext* ctx, Node* node);
     }
     grammar BasicTypeGrammar
     {
         BasicType: Node*;
+    }
+    grammar SpecifierGrammar
+    {
+        Specifiers: Specifiers;
+        Specifier: Specifiers;
+    }
+    grammar FunctionGrammar
+    {
+        Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s): FunctionNode*;
+        FunctionGroupId(ParsingContext* ctx): FunctionGroupIdNode*;
+        OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): FunctionGroupIdNode*;
+    }
+    grammar IdentifierGrammar
+    {
+        Identifier: IdentifierNode*;
+        QualifiedId: IdentifierNode*;
     }
     grammar LiteralGrammar
     {
@@ -49,14 +67,26 @@ namespace cminor.parser
     {
         Keyword;
     }
-    grammar IdentifierGrammar
+    grammar TypeExprGrammar
     {
-        Identifier: IdentifierNode*;
-        QualifiedId: IdentifierNode*;
+        TypeExpr(ParsingContext* ctx): Node*;
+        PostfixTypeExpr(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr, var Span s): Node*;
+        PrimaryTypeExpr(ParsingContext* ctx): Node*;
     }
-    grammar SpecifierGrammar
+    grammar ParameterGrammar
     {
-        Specifiers: Specifiers;
-        Specifier: Specifiers;
+        ParameterList(ParsingContext* ctx, Node* owner);
+        Parameter(ParsingContext* ctx): ParameterNode*;
+    }
+    grammar StatementGrammar
+    {
+        Statement(ParsingContext* ctx): StatementNode*;
+        LabelId: std::string;
+        Label(var std::string label): LabelNode*;
+        LabeledStatement(ParsingContext* ctx): StatementNode*;
+        ControlStatement(ParsingContext* ctx): StatementNode*;
+        CompoundStatement(ParsingContext* ctx): CompoundStatementNode*;
+        AssignmentStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr): StatementNode*;
+        ConstructionStatement(ParsingContext* ctx): StatementNode*;
     }
 }

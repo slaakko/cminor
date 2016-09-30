@@ -1,0 +1,58 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Function.hpp>
+[hpp]#include <cminor/parser/ParsingContext.hpp>
+[cpp]#include <cminor/parser/Keyword.hpp>
+[cpp]#include <cminor/parser/Specifier.hpp>
+[cpp]#include <cminor/parser/TypeExpr.hpp>
+[cpp]#include <cminor/parser/Parameter.hpp>
+[cpp]#include <cminor/parser/Statement.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar FunctionGrammar
+    {
+        using SpecifierGrammar.Specifiers;
+        using TypeExprGrammar.TypeExpr;
+        using ParameterGrammar.ParameterList;
+        using KeywordGrammar.Keyword;
+        using StatementGrammar.CompoundStatement;
+        using stdlib.identifier;
+
+        Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s) : FunctionNode*
+            ::= (Specifiers TypeExpr(ctx) FunctionGroupId(ctx){ fun.reset(new FunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); }
+                ParameterList(ctx, fun.get()){ s = span; } CompoundStatement(ctx))
+                {
+                    fun->SetBody(CompoundStatement); 
+                    fun->GetSpan().SetEnd(s.End());
+                    value = fun.release();
+                }
+            ;
+
+        FunctionGroupId(ParsingContext* ctx) : FunctionGroupIdNode*
+            ::= (identifier - Keyword){ value = new FunctionGroupIdNode(span, identifier); }
+            |   OperatorFunctionGroupId(ctx){ value = OperatorFunctionGroupId; }
+            ;
+
+        OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr) : FunctionGroupIdNode*
+            ::= keyword("operator")
+            (   ("<<" - ('<' '<' (TypeExpr(ctx){ typeExpr.reset(TypeExpr); } % ',') '>')){ value = new FunctionGroupIdNode(span, "operator<<"); }
+            |   ">>"{ value = new FunctionGroupIdNode(span, "operator>>"); }
+            |   "=="{ value = new FunctionGroupIdNode(span, "operator=="); }
+            |   '<'{ value = new FunctionGroupIdNode(span, "operator<"); }
+            |   '+'{ value = new FunctionGroupIdNode(span, "operator+"); }
+            |   '-'{ value = new FunctionGroupIdNode(span, "operator-"); }
+            |   '*'{ value = new FunctionGroupIdNode(span, "operator*"); }
+            |   '/'{ value = new FunctionGroupIdNode(span, "operator/"); }
+            |   '^'{ value = new FunctionGroupIdNode(span, "operator^"); }
+            |   '!'{ value = new FunctionGroupIdNode(span, "operator!"); }
+            |   "()"{ value = new FunctionGroupIdNode(span, "operator()"); }
+            )
+            ;
+    }
+}

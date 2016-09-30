@@ -1,0 +1,40 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Expression.hpp>
+[hpp]#include <cminor/parser/ParsingContext.hpp>
+[cpp]#include <cminor/parser/BasicType.hpp>
+[cpp]#include <cminor/parser/Identifier.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar TypeExprGrammar
+    {
+        using IdentifierGrammar.Identifier;
+        using BasicTypeGrammar.BasicType;
+
+        TypeExpr(ParsingContext* ctx) : Node*
+            ::= PostfixTypeExpr(ctx){ value = PostfixTypeExpr; }
+            ;
+
+        PostfixTypeExpr(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr, var Span s) : Node*
+            ::= 
+            (   PrimaryTypeExpr(ctx){ typeExpr.reset(PrimaryTypeExpr); s = span; }
+                (   '.' Identifier!{ s.SetEnd(span.End()); typeExpr.reset(new DotNode(s, typeExpr.release(), Identifier)); }
+                )*
+            )
+            {
+                value = typeExpr.release();
+            }
+            ;
+
+        PrimaryTypeExpr(ParsingContext* ctx) : Node*
+            ::= BasicType{ value = BasicType; }
+            |   Identifier{ value = Identifier; }
+            ;
+    }
+}

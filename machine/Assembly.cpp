@@ -14,6 +14,7 @@ Assembly::Assembly(const std::string& fileName_) : fileName(fileName_)
 
 void Assembly::Read(Reader& reader)
 {
+    constantPool.Read(reader);
 }
 
 } } // namespace cminor::machine

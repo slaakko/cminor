@@ -9,8 +9,8 @@
 
 namespace cminor { namespace machine {
 
-Frame::Frame(Machine& machine_, Function& fun_, ConstantPool& constantPool_) : 
-    machine(machine_), fun(fun_), objectPool(machine.GetObjectPool()), constantPool(constantPool_), locals(fun.NumLocals()), pc(0)
+Frame::Frame(Machine& machine_, Thread& thread_, Function& fun_, ConstantPool& constantPool_) :
+    machine(machine_), thread(thread_), fun(fun_), objectPool(machine.GetObjectPool()), constantPool(constantPool_), locals(fun.NumLocals()), pc(0)
 {
 }
 

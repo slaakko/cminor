@@ -1,10 +1,11 @@
-#ifndef Expression_hpp_30692
-#define Expression_hpp_30692
+#ifndef Expression_hpp_8589
+#define Expression_hpp_8589
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
 #include <cminor/ast/Expression.hpp>
 #include <cminor/parser/ParsingContext.hpp>
+#include <cminor/parser/TypeExpr.hpp>
 
 namespace cminor { namespace parser {
 
@@ -33,8 +34,10 @@ private:
     class PrefixRule;
     class PostfixRule;
     class PrimaryRule;
+    class ArgumentListRule;
+    class ExpressionListRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // Expression_hpp_30692
+#endif // Expression_hpp_8589

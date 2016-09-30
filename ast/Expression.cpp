@@ -408,13 +408,13 @@ IsNode::IsNode(const Span& span_) : Node(span_)
 {
 }
 
-IsNode::IsNode(const Span& span_, Node* expr_, IdentifierNode* targetTypeName_) : Node(span_), expr(expr_), targetTypeName(targetTypeName_)
+IsNode::IsNode(const Span& span_, Node* expr_, Node* targetTypeExpr_) : Node(span_), expr(expr_), targetTypeExpr(targetTypeExpr_)
 {
 }
 
 Node* IsNode::Clone(CloneContext& cloneContext) const
 {
-    return new IsNode(GetSpan(), expr->Clone(cloneContext), static_cast<IdentifierNode*>(targetTypeName->Clone(cloneContext)));
+    return new IsNode(GetSpan(), expr->Clone(cloneContext), targetTypeExpr->Clone(cloneContext));
 }
 
 void IsNode::Accept(Visitor& visitor)
@@ -426,13 +426,13 @@ AsNode::AsNode(const Span& span_) : Node(span_)
 {
 }
 
-AsNode::AsNode(const Span& span_, Node* expr_, IdentifierNode* targetTypeName_) : Node(span_), expr(expr_), targetTypeName(targetTypeName_)
+AsNode::AsNode(const Span& span_, Node* expr_, Node* targetTypeExpr_) : Node(span_), expr(expr_), targetTypeExpr(targetTypeExpr_)
 {
 }
 
 Node* AsNode::Clone(CloneContext& cloneContext) const
 {
-    return new AsNode(GetSpan(), expr->Clone(cloneContext), static_cast<IdentifierNode*>(targetTypeName->Clone(cloneContext)));
+    return new AsNode(GetSpan(), expr->Clone(cloneContext), targetTypeExpr->Clone(cloneContext));
 }
 
 void AsNode::Accept(Visitor& visitor)

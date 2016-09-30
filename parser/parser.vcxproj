@@ -22,30 +22,42 @@
     <None Include="BasicType.parser" />
     <None Include="CminorParser.pl" />
     <None Include="Expression.parser" />
+    <None Include="Function.parser" />
     <None Include="Identifier.parser" />
     <None Include="Keyword.parser" />
     <None Include="CminorParser.pp" />
     <None Include="Literal.parser" />
+    <None Include="Parameter.parser" />
     <None Include="Specifier.parser" />
+    <None Include="Statement.parser" />
+    <None Include="TypeExpr.parser" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
     <ClCompile Include="Expression.cpp" />
+    <ClCompile Include="Function.cpp" />
     <ClCompile Include="Identifier.cpp" />
     <ClCompile Include="Keyword.cpp" />
     <ClCompile Include="Literal.cpp" />
+    <ClCompile Include="Parameter.cpp" />
     <ClCompile Include="ParsingContext.cpp" />
     <ClCompile Include="Specifier.cpp" />
+    <ClCompile Include="Statement.cpp" />
+    <ClCompile Include="TypeExpr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
     <ClInclude Include="Expression.hpp" />
+    <ClInclude Include="Function.hpp" />
     <ClInclude Include="Identifier.hpp" />
     <ClInclude Include="Keyword.hpp" />
     <ClInclude Include="Literal.hpp" />
     <ClInclude Include="Operator.hpp" />
+    <ClInclude Include="Parameter.hpp" />
     <ClInclude Include="ParsingContext.hpp" />
     <ClInclude Include="Specifier.hpp" />
+    <ClInclude Include="Statement.hpp" />
+    <ClInclude Include="TypeExpr.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0B34F7CF-6295-4243-89E9-F5BB5933FDCA}</ProjectGuid>

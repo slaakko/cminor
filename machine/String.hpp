@@ -9,6 +9,14 @@
 
 namespace cminor { namespace machine {
 
+inline uint64_t StringLen(const char32_t* s)
+{
+    uint64_t n = 0;
+    assert(s, "null string ptr");
+    while (*s++) ++n;
+    return n;
+}
+
 class StringPtr
 {
 public:

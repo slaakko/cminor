@@ -219,6 +219,14 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class CreateStringInst : public Instruction
+{
+public:
+    CreateStringInst();
+    Instruction* Clone() const override { return new CreateStringInst(); }
+    void Execute(Frame& frame) override;
+};
+
 class LoadNullReferenceInst : public Instruction
 {
 public:

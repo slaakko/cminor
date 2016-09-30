@@ -233,26 +233,26 @@ class IsNode : public Node
 {
 public:
     IsNode(const Span& span_);
-    IsNode(const Span& span_, Node* expr_, IdentifierNode* targetTypeName_);
+    IsNode(const Span& span_, Node* expr_, Node* targetTypeExpr_);
     NodeType GetNodeType() const override { return NodeType::isNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> expr;
-    std::unique_ptr<IdentifierNode> targetTypeName;
+    std::unique_ptr<Node> targetTypeExpr;
 };
 
 class AsNode : public Node
 {
 public:
     AsNode(const Span& span_);
-    AsNode(const Span& span_, Node* expr_, IdentifierNode* targetTypeName_);
+    AsNode(const Span& span_, Node* expr_, Node* targetTypeExpr_);
     NodeType GetNodeType() const override { return NodeType::isNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> expr;
-    std::unique_ptr<IdentifierNode> targetTypeName;
+    std::unique_ptr<Node> targetTypeExpr;
 };
 
 class DotNode : public UnaryNode

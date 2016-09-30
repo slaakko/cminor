@@ -1,0 +1,68 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Statement.hpp>
+[hpp]#include <cminor/parser/ParsingContext.hpp>
+[cpp]#include <cminor/parser/Keyword.hpp>
+[cpp]#include <cminor/parser/Expression.hpp>
+[cpp]#include <cminor/parser/TypeExpr.hpp>
+[cpp]#include <cminor/parser/Identifier.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar StatementGrammar
+    {
+        using stdlib.identifier;
+        using KeywordGrammar.Keyword;
+        using ExpressionGrammar.Expression;
+        using TypeExprGrammar.TypeExpr;
+        using IdentifierGrammar.Identifier;
+        using ExpressionGrammar.ArgumentList;
+
+        Statement(ParsingContext* ctx) : StatementNode*
+            ::= LabeledStatement(ctx){ value = LabeledStatement; }
+            |   ControlStatement(ctx){ value = ControlStatement; }
+            |   AssignmentStatement(ctx){ value = AssignmentStatement; }
+            |   ConstructionStatement(ctx){ value = ConstructionStatement; }
+            ;
+
+        LabelId : std::string
+            ::= (identifier - Keyword){ value = identifier; }
+            ;
+
+        Label(var std::string label) : LabelNode*
+            ::= (LabelId{ label = LabelId; } ':'){ value = new LabelNode(span, label); }
+            ;
+
+        LabeledStatement(ParsingContext* ctx) : StatementNode*
+            ::= Label:lbl Statement(ctx):stmt{ stmt->SetLabelNode(lbl); value = stmt; }
+            ;
+
+        ControlStatement(ParsingContext* ctx) : StatementNode*
+            ::= CompoundStatement(ctx){ value = CompoundStatement; }
+            ;
+
+        CompoundStatement(ParsingContext* ctx) : CompoundStatementNode*
+            ::= (   '{'{ value = new CompoundStatementNode(span); }
+                    (Statement(ctx):stmt{ value->AddStatement(stmt); })*
+                    '}'!
+                ){ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        AssignmentStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr) : StatementNode*
+            ::= empty{ ctx->PushParsingLvalue(true); } (Expression(ctx):target{ ctx->PopParsingLvalue(); targetExpr.reset(target); } / { ctx->PopParsingLvalue(); } '=' Expression(ctx):source! ';'!)
+                {
+                    value = new AssignmentStatementNode(span, targetExpr.release(), source);
+                }
+            ;
+
+        ConstructionStatement(ParsingContext* ctx) : StatementNode*
+            ::= TypeExpr(ctx) Identifier!{ value = new ConstructionStatementNode(span, TypeExpr, Identifier); }
+                ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value->AddArgument(Expression); })? ';'!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+    }
+}

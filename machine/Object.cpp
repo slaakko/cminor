@@ -6,6 +6,7 @@
 #include <cminor/machine/Object.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Type.hpp>
+#include <cminor/machine/String.hpp>
 
 namespace cminor { namespace machine {
 
@@ -164,9 +165,34 @@ void Object::SetField(IntegralValue fieldValue, int index)
     }
 }
 
+int32_t Object::FieldCount() const
+{
+    return type->FieldCount();
+}
+
 uint64_t Object::Size() const 
 { 
     return type->ObjectSize(); 
+}
+
+void Object::MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ObjectPool& objectBool)
+{
+    int32_t n = type->FieldCount();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        IntegralValue value = GetField(i);
+        if (value.GetType() == ValueType::objectReference)
+        {
+            ObjectReference objectRef(value.Value());
+            if (!objectRef.IsNull() && checked.find(objectRef) == checked.cend())
+            {
+                checked.insert(objectRef);
+                Object& object = objectBool.GetObject(objectRef);
+                object.SetLive();
+                object.MarkLiveObjects(checked, objectBool);
+            }
+        }
+    }
 }
 
 ObjectPool::ObjectPool(Machine& machine_) : machine(machine_), nextReferenceValue(1)
@@ -181,6 +207,22 @@ ObjectReference ObjectPool::CreateObject(Thread& thread, Type* type)
     if (!pairItBool.second)
     {
         throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
+    }
+    return reference;
+}
+
+ObjectReference ObjectPool::CreateString(Thread& thread, IntegralValue stringValue)
+{
+    if (stringValue.Value() == 0)
+    {
+        throw std::runtime_error("could not insert string to pool because of null string value");
+    }
+    ObjectReference reference(nextReferenceValue++);
+    const char32_t* s = stringValue.AsStringLiteral();
+    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, ArenaId(-1), ObjectMemPtr(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(s))), nullptr)));
+    if (!pairItBool.second)
+    {
+        throw std::runtime_error("could not insert string to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
     }
     return reference;
 }
@@ -260,15 +302,12 @@ ObjectMemPtr ObjectPool::GetObjectMemPtr(ObjectReference reference)
     throw std::runtime_error("object with reference " + std::to_string(reference.Value()) + " not found");
 }
 
-void ObjectPool::ResetObjectsLiveFlag(ArenaId arenaId)
+void ObjectPool::ResetObjectsLiveFlag()
 {
     for (auto& objectRefObjectPair : objects)
     {
         Object& object = objectRefObjectPair.second;
-        if (object.GetArenaId() == arenaId)
-        {
-            object.ResetLive();
-        }
+        object.ResetLive();
     }
 }
 
