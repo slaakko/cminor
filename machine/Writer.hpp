@@ -5,8 +5,8 @@
 
 #ifndef CMINOR_MACHINE_WRITER_INCLUDED
 #define CMINOR_MACHINE_WRITER_INCLUDED
+#include <cminor/machine/Error.hpp>
 #include <stdint.h>
-#include <string>
 
 namespace cminor { namespace machine {
 
@@ -34,7 +34,7 @@ class Writer
 {
 public:
     Writer(const std::string& fileName_);
-    ~Writer();
+    virtual ~Writer();
     void Put(bool x);
     void Put(uint8_t x);
     void Put(int8_t x);
@@ -49,6 +49,7 @@ public:
     void Put(char32_t x);
     void Put(const std::string& s);
     void Put(const utf32_string& s);
+    void Put(const Span& span);
 private:
     static const int N = 8192;
     std::string fileName;

@@ -18,7 +18,7 @@ enum class NodeType : uint8_t
     boolNode, sbyteNode, byteNode, shortNode, ushortNode, intNode, uintNode, longNode, ulongNode, floatNode, doubleNode, charNode, stringNode, voidNode,
     booleanLiteralNode, sbyteLiteralNode, byteLiteralNode, shortLiteralNode, ushortLiteralNode, intLiteralNode, uintLiteralNode, longLiteralNode, ulongLiteralNode,
     floatLiteralNode, doubleLiteralNode, charLiteralNode, stringLiteralNode, nullLiteralNode,
-    identifierNode, parameterNode, functionGroupIdNode, functionNode, ccNode,
+    identifierNode, parameterNode, functionGroupIdNode, functionNode, ccNode, namespaceNode, compileUnitNode,
     disjunctionNode, conjunctionNode, bitOrNode, bitXorNode, bitAndNode, equalNode, notEqualNode, lessNode, greaterNode, lessOrEqualNode, greaterOrEqualNode,
     shiftLeftNode, shiftRightNode, addNode, subNode, mulNode, divNode, remNode, notNode, unaryPlusNode, unaryMinusNode, complementNode, isNode, asNode, dotNode,
     labelNode,

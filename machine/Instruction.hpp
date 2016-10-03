@@ -68,7 +68,7 @@ public:
     void SetInst(uint8_t opCode, Instruction* inst);
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
-    Instruction* Clone() const override { assert(false, "not cloneable"); return nullptr; }
+    Instruction* Clone() const override { Assert(false, "not cloneable"); return nullptr; }
     bool IsRoot() const { return root; }
 private:
     bool root;
@@ -100,7 +100,7 @@ public:
     void Execute(Frame& frame) override
     {
         IntegralValue operand = frame.OpStack().Pop();
-        assert(operand.GetType() == type, ValueTypeStr(type) + " operand expected");
+        Assert(operand.GetType() == type, ValueTypeStr(type) + " operand expected");
         OperandT value = static_cast<OperandT>(operand.Value());
         frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(UnaryOpT()(value)), type));
     }
@@ -117,9 +117,9 @@ public:
     void Execute(Frame& frame) override
     {
         IntegralValue rightOperand = frame.OpStack().Pop();
-        assert(rightOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
+        Assert(rightOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
         IntegralValue leftOperand = frame.OpStack().Pop();
-        assert(leftOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
+        Assert(leftOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
         OperandT left = static_cast<OperandT>(leftOperand.Value());
         OperandT right = static_cast<OperandT>(rightOperand.Value());
         frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(BinaryOpT()(left, right)), type));
@@ -155,9 +155,9 @@ public:
     void Execute(Frame& frame) override
     {
         IntegralValue rightOperand = frame.OpStack().Pop();
-        assert(rightOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
+        Assert(rightOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
         IntegralValue leftOperand = frame.OpStack().Pop();
-        assert(leftOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
+        Assert(leftOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
         OperandT left = static_cast<OperandT>(leftOperand.Value());
         OperandT right = static_cast<OperandT>(rightOperand.Value());
         bool result = RelationT()(left, right);
@@ -219,14 +219,6 @@ public:
     void Execute(Frame& frame) override;
 };
 
-class CreateStringInst : public Instruction
-{
-public:
-    CreateStringInst();
-    Instruction* Clone() const override { return new CreateStringInst(); }
-    void Execute(Frame& frame) override;
-};
-
 class LoadNullReferenceInst : public Instruction
 {
 public:
@@ -240,6 +232,14 @@ class LoadConstantInst : public IndexParamInst
 public:
     LoadConstantInst();
     Instruction* Clone() const override { return new LoadConstantInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class InitStringFromConstInst : public IndexParamInst
+{
+public:
+    InitStringFromConstInst();
+    Instruction* Clone() const override { return new InitStringFromConstInst(); }
     void Execute(Frame& frame) override;
 };
 

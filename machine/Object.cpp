@@ -4,8 +4,8 @@
 // =================================
 
 #include <cminor/machine/Object.hpp>
-#include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Type.hpp>
+#include <cminor/machine/Machine.hpp>
 #include <cminor/machine/String.hpp>
 
 namespace cminor { namespace machine {
@@ -49,7 +49,7 @@ void IntegralValue::Write(Writer& writer)
         case ValueType::floatType: writer.Put(AsFloat()); break;
         case ValueType::doubleType: writer.Put(AsDouble()); break;
         case ValueType::charType: writer.Put(AsChar()); break;
-        case ValueType::stringLiteral: writer.Put(AsStringLiteral()); break;
+        case ValueType::stringLiteral: writer.Put(utf32_string(AsStringLiteral())); break;
         case ValueType::objectReference: throw std::runtime_error("cannot write object reference");
         default: throw std::runtime_error("invalid integral value type to write");
     }
@@ -80,8 +80,7 @@ void IntegralValue::Read(Reader& reader)
     }
 }
 
-
-uint64_t Size(ValueType type)
+uint64_t ValueSize(ValueType type)
 {
     switch (type)
     {
@@ -100,17 +99,6 @@ uint64_t Size(ValueType type)
         case ValueType::objectReference: return sizeof(uint64_t);
     }
     return sizeof(uint64_t);
-}
-
-ObjectLayout::ObjectLayout() : objectSize(0)
-{
-}
-
-void ObjectLayout::AddField(ValueType fieldType)
-{
-    FieldOffset fieldOffset(objectSize);
-    fields.push_back(Field(fieldType, fieldOffset));
-    objectSize += Size(fieldType);
 }
 
 Object::Object(ObjectReference reference_, ArenaId arenaId_, ObjectMemPtr memPtr_, Type* type_) :
@@ -144,7 +132,7 @@ IntegralValue Object::GetField(int index) const
 void Object::SetField(IntegralValue fieldValue, int index)
 {
     Field field = type->GetField(index);
-    assert(field.GetType() == fieldValue.GetType(), "value types do not match in set field");
+    Assert(field.GetType() == fieldValue.GetType(), "value types do not match in set field");
     ObjectMemPtr fieldPtr = memPtr + field.Offset();
     switch (field.GetType())
     {
@@ -172,7 +160,7 @@ int32_t Object::FieldCount() const
 
 uint64_t Object::Size() const 
 { 
-    return type->ObjectSize(); 
+    return type->ObjectSize();
 }
 
 void Object::MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ObjectPool& objectBool)
@@ -211,15 +199,16 @@ ObjectReference ObjectPool::CreateObject(Thread& thread, Type* type)
     return reference;
 }
 
-ObjectReference ObjectPool::CreateString(Thread& thread, IntegralValue stringValue)
+ObjectReference ObjectPool::CreateString(Thread& thread, ArenaId arenaId, IntegralValue stringValue)
 {
     if (stringValue.Value() == 0)
     {
         throw std::runtime_error("could not insert string to pool because of null string value");
     }
+    Assert(stringValue.GetType() == ValueType::stringLiteral, "string literal expected");
     ObjectReference reference(nextReferenceValue++);
     const char32_t* s = stringValue.AsStringLiteral();
-    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, ArenaId(-1), ObjectMemPtr(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(s))), nullptr)));
+    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, arenaId, ObjectMemPtr(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(s))), nullptr)));
     if (!pairItBool.second)
     {
         throw std::runtime_error("could not insert string to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");

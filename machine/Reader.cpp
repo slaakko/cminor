@@ -4,12 +4,15 @@
 // =================================
 
 #include <cminor/machine/Reader.hpp>
-#include <cminor/machine/Unicode.hpp>
 
 namespace cminor { namespace machine {
 
 Reader::Reader(Machine& machine_, const std::string& fileName_) :
     machine(machine_), fileName(fileName_), file(fileName), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End()))
+{
+}
+
+Reader::~Reader()
 {
 }
 
@@ -132,6 +135,17 @@ utf32_string Reader::GetUtf32String()
 void Reader::CheckEof()
 {
     if (begin == end) throw std::runtime_error("unexpected end of file '" + fileName + "'");
+}
+
+Span Reader::GetSpan()
+{
+    bool empty = GetBool();
+    if (!empty) return Span();
+    int32_t fileIndex = GetInt();
+    int32_t lineNumber = GetInt();
+    int32_t start = GetInt();
+    int32_t end = GetInt();
+    return Span(fileIndex, lineNumber, start, end);
 }
 
 } } // namespace cminor::machine

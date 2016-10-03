@@ -22,12 +22,12 @@ Node* FunctionGroupIdNode::Clone(CloneContext& cloneContext) const
     return new FunctionGroupIdNode(GetSpan(), functionGroupId);
 }
 
-FunctionNode::FunctionNode(const Span& span_) : Node(span_)
+FunctionNode::FunctionNode(const Span& span_) : Node(span_), compileUnit(nullptr)
 {
 }
 
 FunctionNode::FunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_) :
-    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_)
+    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_), compileUnit(nullptr)
 {
     if (returnTypeExpr)
     {

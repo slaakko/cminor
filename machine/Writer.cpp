@@ -4,7 +4,6 @@
 // =================================
 
 #include <cminor/machine/Writer.hpp>
-#include <cminor/machine/Unicode.hpp>
 
 namespace cminor { namespace machine {
 
@@ -137,6 +136,22 @@ void Writer::Put(const utf32_string& s)
 {
     std::string utf8_str = ToUtf8(s);
     Put(utf8_str);
+}
+
+void Writer::Put(const Span& span)
+{
+    if (!span.Valid())
+    {
+        Put(false);
+    }
+    else
+    {
+        Put(true);
+        Put(span.FileIndex());
+        Put(span.LineNumber());
+        Put(span.Start());
+        Put(span.End());
+    }
 }
 
 void Writer::FlushBuffer()

@@ -6,16 +6,19 @@
 #ifndef CMINOR_MACHINE_READER_INCLUDED
 #define CMINOR_MACHINE_READER_INCLUDED
 #include <cminor/machine/MappedInputFile.hpp>
+#include <cminor/machine/Error.hpp>
 
 namespace cminor { namespace machine {
 
 class Machine;
+class Symbol;
 typedef std::basic_string<char32_t> utf32_string;
 
 class Reader
 {
 public:
     Reader(Machine& machine_, const std::string& fileName_);
+    virtual ~Reader();
     Machine& GetMachine() { return machine; }
     bool GetBool();
     uint8_t GetByte();
@@ -31,6 +34,7 @@ public:
     char32_t GetChar();
     std::string GetUtf8String();
     utf32_string GetUtf32String();
+    Span GetSpan();
 private:
     Machine& machine;
     std::string fileName;

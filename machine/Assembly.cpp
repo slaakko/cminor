@@ -4,17 +4,10 @@
 // =================================
 
 #include <cminor/machine/Assembly.hpp>
-#include <cminor/machine/MappedInputFile.hpp>
+#include <cminor/machine/Reader.hpp>
+#include <cminor/machine/Writer.hpp>
 
 namespace cminor { namespace machine {
 
-Assembly::Assembly(const std::string& fileName_) : fileName(fileName_)
-{
-}
-
-void Assembly::Read(Reader& reader)
-{
-    constantPool.Read(reader);
-}
 
 } } // namespace cminor::machine

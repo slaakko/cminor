@@ -6,13 +6,13 @@
 #include <cminor/machine/Thread.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Function.hpp>
-#include <cminor/machine/Type.hpp>
 
 namespace cminor { namespace machine {
 
-Thread::Thread(Machine& machine_, Function& fun_) : machine(machine_), fun(fun_), instructionCount(0), checkWantToCollectGarbageCount(100), paused(), sleeping(), pausedCond()
+Thread::Thread(Machine& machine_, ConstantPool& constantPool_, Function& fun_) : 
+    machine(machine_), constantPool(constantPool_), fun(fun_), instructionCount(0), checkWantToCollectGarbageCount(100), paused(), sleeping(), pausedCond()
 {
-    frames.push_back(Frame(machine, *this, fun, fun.GetAssembly()->GetConstantPool()));
+    frames.push_back(Frame(machine, *this, fun, constantPool));
 }
 
 inline void Thread::CheckPause()

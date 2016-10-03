@@ -12,6 +12,7 @@
 namespace cminor { namespace ast {
 
 class CompoundStatementNode;
+class CompileUnitNode;
 
 class FunctionGroupIdNode : public Node
 {
@@ -41,13 +42,15 @@ public:
     const NodeList<ParameterNode>& Parameters() const { return parameters; }
     CompoundStatementNode* Body() const { return body.get(); }
     bool HasBody() const { return body != nullptr; }
+    CompileUnitNode* GetCompileUnit() const { return compileUnit; }
+    void SetCompileUnit(CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> returnTypeExpr;
     std::unique_ptr<FunctionGroupIdNode> groupId;
     NodeList<ParameterNode> parameters;
     std::unique_ptr<CompoundStatementNode> body;
-
+    CompileUnitNode* compileUnit;
 };
 
 } } // namespace cminor::ast

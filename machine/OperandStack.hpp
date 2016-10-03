@@ -20,7 +20,7 @@ public:
     }
     IntegralValue Pop()
     {
-        assert(!s.empty(), "operand stack is empty");
+        Assert(!s.empty(), "operand stack is empty");
         IntegralValue top = s.back();
         s.pop_back();
         return top;

@@ -6,7 +6,6 @@
 #ifndef CMINOR_MACHINE_TYPE_INCLUDED
 #define CMINOR_MACHINE_TYPE_INCLUDED
 #include <cminor/machine/Object.hpp>
-#include <memory>
 
 namespace cminor { namespace machine {
 
@@ -35,40 +34,32 @@ private:
     FieldOffset offset;
 };
 
-class ObjectLayout
+class Layout
 {
 public:
-    ObjectLayout();
+    Layout();
     void AddField(ValueType fieldType);
-    Field GetField(int32_t index) const { assert(index >= 0 && index < fields.size(), "invalid field index"); return fields[index]; }
+    Field GetField(int32_t index) const { Assert(index >= 0 && index < fields.size(), "invalid field index"); return fields[index]; }
     int32_t FieldCount() const { return int32_t(fields.size()); }
-    uint64_t ObjectSize() const { return objectSize; }
+    uint64_t Size() const { return size; }
 private:
     std::vector<Field> fields;
-    uint64_t objectSize;
+    uint64_t size;
 };
 
 class Type
 {
 public:
-    Type(const std::string& fullName_);
-    const std::string& FullName() const { return fullName; }
-    void AddField(ValueType fieldType) { layout.AddField(fieldType); }
-    Field GetField(int32_t index) const { return layout.GetField(index); }
-    int32_t FieldCount() const { return layout.FieldCount(); }
-    uint64_t ObjectSize() const { return layout.ObjectSize(); }
+    void AddField(ValueType fieldType) { objectLayout.AddField(fieldType); }
+    Field GetField(int32_t index) const { return objectLayout.GetField(index); }
+    void AddStaticField(ValueType fieldType) { staticLayout.AddField(fieldType); }
+    Field GetStaticField(int32_t index) const { return staticLayout.GetField(index); }
+    int32_t FieldCount() const { return objectLayout.FieldCount(); }
+    int32_t StaticFieldCount() const { return staticLayout.FieldCount(); }
+    uint64_t ObjectSize() const { return objectLayout.Size(); }
 private:
-    std::string fullName;
-    ObjectLayout layout;
-};
-
-class TypeRepository
-{
-public:
-    Type* CreateType(const std::string& fullName);
-    Type* GetType(const std::string& fullName) const;
-private:
-    std::unordered_map<std::string, std::unique_ptr<Type>> typeMap;
+    Layout objectLayout;
+    Layout staticLayout;
 };
 
 } } // namespace cminor::machine

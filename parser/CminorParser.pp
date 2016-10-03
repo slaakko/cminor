@@ -1,6 +1,7 @@
 project CminorParser;
 reference <StdLib.pl>;
 source <BasicType.parser>;
+source <CompileUnit.parser>;
 source <Expression.parser>;
 source <Function.parser>;
 source <Identifier.parser>;

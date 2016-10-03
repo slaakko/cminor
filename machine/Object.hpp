@@ -18,12 +18,11 @@ class Writer;
 class Reader;
 class Arena;
 class Type;
-class ObjectLayout;
 class ObjectPool;
 
 enum class ArenaId : uint8_t
 {
-    gen0Arena = 0, gen1Arena = 1
+    notGCMem = 0, gen1Arena = 1, gen2Arena = 2
 };
 
 enum class ValueType : uint8_t
@@ -102,7 +101,7 @@ private:
     uint8_t* value;
 };
 
-uint64_t Size(ValueType type);
+uint64_t ValueSize(ValueType type);
 
 enum class ObjectFlags : uint8_t
 {
@@ -158,7 +157,7 @@ class ObjectPool
 public:
     ObjectPool(Machine& machine_);
     ObjectReference CreateObject(Thread& thread, Type* type);
-    ObjectReference CreateString(Thread& thread, IntegralValue stringValue);
+    ObjectReference CreateString(Thread& thread, ArenaId arenaId, IntegralValue stringValue);
     void DestroyObject(ObjectReference reference);
     Object& GetObject(ObjectReference reference);
     IntegralValue GetField(ObjectReference reference, int32_t fieldIndex);

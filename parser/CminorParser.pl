@@ -23,17 +23,6 @@ namespace cminor.parser
     {
         BasicType: Node*;
     }
-    grammar SpecifierGrammar
-    {
-        Specifiers: Specifiers;
-        Specifier: Specifiers;
-    }
-    grammar FunctionGrammar
-    {
-        Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s): FunctionNode*;
-        FunctionGroupId(ParsingContext* ctx): FunctionGroupIdNode*;
-        OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): FunctionGroupIdNode*;
-    }
     grammar IdentifierGrammar
     {
         Identifier: IdentifierNode*;
@@ -66,6 +55,26 @@ namespace cminor.parser
     grammar KeywordGrammar
     {
         Keyword;
+    }
+    grammar CompileUnitGrammar
+    {
+        CompileUnit(ParsingContext* ctx): CompileUnitNode*;
+        NamespaceContent(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns);
+        Definitions(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns);
+        Definition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns): Node*;
+        NamespaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns): NamespaceNode*;
+        FunctionDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): FunctionNode*;
+    }
+    grammar SpecifierGrammar
+    {
+        Specifiers: Specifiers;
+        Specifier: Specifiers;
+    }
+    grammar FunctionGrammar
+    {
+        Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s): FunctionNode*;
+        FunctionGroupId(ParsingContext* ctx): FunctionGroupIdNode*;
+        OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): FunctionGroupIdNode*;
     }
     grammar TypeExprGrammar
     {

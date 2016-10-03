@@ -5,16 +5,16 @@
 
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/machine/Unicode.hpp>
 
 namespace cminor { namespace machine {
 
-Function::Function(const std::string& fullName_) : fullName(fullName_), numLocals(0), assembly(nullptr)
+Function::Function(Constant fullName_) : numLocals(0)
 {
 }
 
 void Function::Write(Writer& writer)
 {
-    writer.Put(fullName);
     int32_t n = static_cast<int32_t>(instructions.size());
     writer.Put(n);
     for (int32_t i = 0; i < n; ++i)
@@ -26,7 +26,6 @@ void Function::Write(Writer& writer)
 
 void Function::Read(Reader& reader)
 {
-    fullName = reader.GetUtf8String();
     int32_t n = reader.GetInt();
     for (int32_t i = 0; i < n; ++i)
     {
@@ -46,7 +45,7 @@ void Function::AddInst(std::unique_ptr<Instruction>&& inst)
 
 void Function::Dump(CodeFormatter& formatter)
 {
-    formatter.WriteLine(fullName);
+    formatter.WriteLine(ToUtf8(fullName.Value().AsStringLiteral()));
     formatter.WriteLine("{");
     formatter.IncIndent();
     int32_t n = static_cast<int32_t>(instructions.size());

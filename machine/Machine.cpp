@@ -10,7 +10,7 @@
 namespace cminor { namespace machine {
 
 Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*this),
-    garbageCollector(*this, defaultGarbageCollectionIntervalMs), gen0Arena(ArenaId::gen0Arena, defaultArenaSize), gen1Arena(ArenaId::gen1Arena, defaultArenaSize), exiting(), exited()
+    garbageCollector(*this, defaultGarbageCollectionIntervalMs), gen1Arena(ArenaId::gen1Arena, defaultArenaSize), gen2Arena(ArenaId::gen2Arena, defaultArenaSize), exiting(), exited()
 {
     // no operation:
     rootInst.SetInst(0x00, new NopInst());
@@ -218,7 +218,7 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
     rootInst.SetInst(0x99, new LoadNullReferenceInst());
     rootInst.SetInst(0x9A, new LoadConstantInst());
 
-    rootInst.SetInst(0x9B, new CreateStringInst());
+    rootInst.SetInst(0x9B, new InitStringFromConstInst());
 
     //  conversion group instruction:
     //  -----------------------------
@@ -422,23 +422,15 @@ std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
     return std::unique_ptr<Instruction>(inst->Clone());
 }
 
-std::unique_ptr<Assembly> Machine::ReadAssemblyFile(const std::string& fileName_)
-{
-    std::unique_ptr<Assembly> assembly(new Assembly(fileName_));
-    Reader reader(*this, fileName_);
-    assembly->Read(reader);
-    return assembly;
-}
-
 std::pair<ArenaId, ObjectMemPtr> Machine::AllocateMemory(Thread& thread, uint64_t blockSize)
 {
     if (blockSize < defaultLargeObjectThresholdSize)
     {
-        return std::make_pair(gen0Arena.Id(), gen0Arena.Allocate(thread, blockSize));
+        return std::make_pair(gen1Arena.Id(), gen1Arena.Allocate(thread, blockSize));
     }
     else
     {
-        return std::make_pair(gen1Arena.Id(), gen1Arena.Allocate(thread, blockSize));
+        return std::make_pair(gen2Arena.Id(), gen2Arena.Allocate(thread, blockSize));
     }
 }
 

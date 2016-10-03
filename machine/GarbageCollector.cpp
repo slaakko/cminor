@@ -106,21 +106,21 @@ void GarbageCollector::Run()
 
 void GarbageCollector::DoCollectGarbage()
 {
-    DoGarbageCollectArena(ArenaId::gen0Arena);
+    DoGarbageCollectArena(ArenaId::gen1Arena);
 }
 
 void GarbageCollector::DoGarbageCollectArena(ArenaId arenaId)
 {
     machine.GetObjectPool().ResetObjectsLiveFlag();
     MarkLiveObjects();
-    if (arenaId == ArenaId::gen0Arena)
+    if (arenaId == ArenaId::gen1Arena)
     {
-        machine.GetObjectPool().MoveLiveObjectsToArena(arenaId, machine.Gen1Arena());
-        machine.Gen0Arena().Clear();
+        machine.GetObjectPool().MoveLiveObjectsToArena(arenaId, machine.Gen2Arena());
+        machine.Gen1Arena().Clear();
     }
     else
     {
-        // compact gen1Arena 
+        // compact gen2Arena 
     }
 }
 

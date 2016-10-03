@@ -6,18 +6,33 @@
 #ifndef CMINOR_MACHINE_CONSTANT_INCLUDED
 #define CMINOR_MACHINE_CONSTANT_INCLUDED
 #include <cminor/machine/Object.hpp>
+#include <cminor/machine/String.hpp>
 
 namespace cminor { namespace machine {
 
 class ConstantId
 {
 public:
-    ConstantId() : value(-1) {}
+    constexpr ConstantId() : value(-1) {}
     constexpr ConstantId(int32_t value_) : value(value_) {}
     constexpr int32_t Value() const { return value; }
+    void Write(Writer& writer);
+    void Read(Reader& reader);
 private:
     int32_t value;
 };
+
+constexpr ConstantId noConstantId = ConstantId();
+
+inline bool operator==(ConstantId left, ConstantId right)
+{
+    return left.Value() == right.Value();
+}
+
+inline bool operator!=(ConstantId left, ConstantId right)
+{
+    return !(left == right);
+}
 
 class Constant
 {
@@ -52,7 +67,10 @@ class ConstantPool
 public:
     ConstantPool();
     ConstantId Install(Constant constant);
-    Constant GetConstant(ConstantId id) const { assert(id.Value() < constants.size(), "invalid constant id " + std::to_string(id.Value())); return constants[ConstantIndex(id)]; }
+    ConstantId Install(StringPtr s);
+    ConstantId GetIdFor(Constant constant);
+    ConstantId GetIdFor(const utf32_string& s);
+    Constant GetConstant(ConstantId id) const { Assert(id.Value() < constants.size(), "invalid constant id " + std::to_string(id.Value())); return constants[ConstantIndex(id)]; }
     Constant GetEmptyStringConstant() const { return GetConstant(emptyStringConstantId); }
     ConstantId GetEmptyStringConstantId() const { return emptyStringConstantId; }
     void Write(Writer& writer);
@@ -62,7 +80,7 @@ private:
     std::vector<Constant> constants;
     std::unordered_map<Constant, ConstantId, ConstantHash> constantIdMap;
     std::list<utf32_string> strings;
-    std::unordered_map<utf32_string, ConstantId> stringIdMap;
+    std::unordered_map<StringPtr, ConstantId, StringPtrHash> stringIdMap;
     ConstantId NextFreeConstantId() { return int32_t(constants.size()); }
     int32_t ConstantIndex(ConstantId id) const { return id.Value(); }
 };

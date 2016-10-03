@@ -39,6 +39,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("float");
     keywords0.push_back("int");
     keywords0.push_back("long");
+    keywords0.push_back("namespace");
     keywords0.push_back("null");
     keywords0.push_back("operator");
     keywords0.push_back("sbyte");

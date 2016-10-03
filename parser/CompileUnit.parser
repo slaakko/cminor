@@ -1,0 +1,46 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/CompileUnit.hpp>
+[hpp]#include <cminor/parser/ParsingContext.hpp>
+[cpp]#include <cminor/parser/Identifier.hpp>
+[cpp]#include <cminor/parser/Function.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar CompileUnitGrammar
+    {
+        using IdentifierGrammar.QualifiedId;
+        using FunctionGrammar.Function;
+
+        CompileUnit(ParsingContext* ctx) : CompileUnitNode*
+            ::= empty{ value = new CompileUnitNode(span, fileName); }
+                NamespaceContent(ctx, value, value->GlobalNs())
+            ;
+
+        NamespaceContent(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns)
+            ::= Definitions(ctx, compileUnit, ns)
+            ;
+
+        Definitions(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns)
+            ::= (Definition(ctx, compileUnit, ns){ ns->AddMember(Definition); })*
+            ;
+
+        Definition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns) : Node*
+            ::= NamespaceDefinition(ctx, compileUnit, ns){ value = NamespaceDefinition; }
+            |   FunctionDefinition(ctx, compileUnit){ value = FunctionDefinition; }
+            ;
+
+        NamespaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns) : NamespaceNode*
+            ::= (keyword("namespace") QualifiedId!){ value = new NamespaceNode(span, QualifiedId); } '{'! NamespaceContent(ctx, compileUnit, value)! '}'!
+            ;
+
+        FunctionDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit) : FunctionNode*
+            ::= Function(ctx){ value = Function; value->SetCompileUnit(compileUnit); }
+            ;
+    }
+}
