@@ -65,11 +65,6 @@ namespace cminor.parser
         NamespaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns): NamespaceNode*;
         FunctionDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): FunctionNode*;
     }
-    grammar SpecifierGrammar
-    {
-        Specifiers: Specifiers;
-        Specifier: Specifiers;
-    }
     grammar FunctionGrammar
     {
         Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s): FunctionNode*;
@@ -86,6 +81,19 @@ namespace cminor.parser
     {
         ParameterList(ParsingContext* ctx, Node* owner);
         Parameter(ParsingContext* ctx): ParameterNode*;
+    }
+    grammar ProjectGrammar
+    {
+        Project: Project*;
+        Declaration: ProjectDeclaration*;
+        AssemblyReferenceDeclaration: ProjectDeclaration*;
+        SourceFileDeclaration: ProjectDeclaration*;
+        FilePath: std::string;
+    }
+    grammar SpecifierGrammar
+    {
+        Specifiers: Specifiers;
+        Specifier: Specifiers;
     }
     grammar StatementGrammar
     {

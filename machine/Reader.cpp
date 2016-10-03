@@ -139,8 +139,8 @@ void Reader::CheckEof()
 
 Span Reader::GetSpan()
 {
-    bool empty = GetBool();
-    if (!empty) return Span();
+    bool valid = GetBool();
+    if (!valid) return Span();
     int32_t fileIndex = GetInt();
     int32_t lineNumber = GetInt();
     int32_t start = GetInt();

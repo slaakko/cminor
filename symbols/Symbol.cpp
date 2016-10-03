@@ -55,6 +55,12 @@ StringPtr Symbol::Name() const
     return s;
 }
 
+void Symbol::SetName(StringPtr newName)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    name = constantPool.GetConstant(constantPool.Install(newName));
+}
+
 utf32_string Symbol::FullName() const
 {
     utf32_string fullName;

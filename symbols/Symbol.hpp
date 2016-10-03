@@ -76,6 +76,7 @@ public:
     const Span& GetSpan() const { return span; }
     void SetSpan(const Span& span_) { span = span_; }
     StringPtr Name() const;
+    void SetName(StringPtr newName);
     utf32_string FullName() const;
     Constant NameConstant() const { return name; }
     SymbolAccess Access() const { return SymbolAccess(flags & SymbolFlags::access); }

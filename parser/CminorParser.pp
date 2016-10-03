@@ -8,6 +8,7 @@ source <Identifier.parser>;
 source <Keyword.parser>;
 source <Literal.parser>;
 source <Parameter.parser>;
+source <ProjectFile.parser>;
 source <Specifier.parser>;
 source <Statement.parser>;
 source <TypeExpr.parser>;

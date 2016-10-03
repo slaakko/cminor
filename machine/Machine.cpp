@@ -464,8 +464,11 @@ void Machine::Exit()
         return;
     }
     exiting.store(true);
-    garbageCollector.RequestGarbageCollection();
-    garbageCollectorThread.join();
+    if (garbageCollector.Started())
+    {
+        garbageCollector.RequestGarbageCollection();
+        garbageCollectorThread.join();
+    }
     exited.store(true);
 }
 

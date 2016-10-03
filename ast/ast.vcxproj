@@ -29,6 +29,8 @@
     <ClInclude Include="Namespace.hpp" />
     <ClInclude Include="Node.hpp" />
     <ClInclude Include="Parameter.hpp" />
+    <ClInclude Include="Project.hpp" />
+    <ClInclude Include="Solution.hpp" />
     <ClInclude Include="Specifier.hpp" />
     <ClInclude Include="Statement.hpp" />
     <ClInclude Include="Visitor.hpp" />
@@ -44,6 +46,8 @@
     <ClCompile Include="Namespace.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Parameter.cpp" />
+    <ClCompile Include="Project.cpp" />
+    <ClCompile Include="Solution.cpp" />
     <ClCompile Include="Statement.cpp" />
     <ClCompile Include="Visitor.cpp" />
   </ItemGroup>

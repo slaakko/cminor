@@ -73,6 +73,7 @@ void Assembly::Write(SymbolWriter& writer)
     static_cast<Writer&>(writer).Put(fileName);
     constantPool.Write(writer);
     ConstantId nameId = constantPool.GetIdFor(name);
+    Assert(nameId != noConstantId, "constant id for name constant not found");
     nameId.Write(writer);
     symbolTable.Write(writer);
 }

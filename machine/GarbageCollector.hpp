@@ -38,8 +38,10 @@ public:
     void RequestGarbageCollection();
     void WaitForGarbageCollection();
     void Run();
+    bool Started() const { return started; }
 private:
     Machine& machine;
+    bool started;
     std::atomic_bool wantToCollectGarbage;
     std::atomic_bool collectingGarbage;
     std::atomic_bool garbageCollected;

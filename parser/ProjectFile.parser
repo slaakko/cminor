@@ -1,0 +1,40 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Project.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar ProjectGrammar
+    {
+        using stdlib.qualified_id;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+
+        Project : Project*
+            ::= keyword("project") qualified_id ';'{ value = new Project(qualified_id, fileName); }
+                (Declaration{ value->AddDeclaration(Declaration); })*
+            ;
+
+        Declaration : ProjectDeclaration*
+            ::= AssemblyReferenceDeclaration{ value = AssemblyReferenceDeclaration; }
+            |   SourceFileDeclaration{ value = SourceFileDeclaration; }
+            ;
+
+        AssemblyReferenceDeclaration : ProjectDeclaration*
+            ::= (keyword("reference") FilePath! ';'!){ value = new AssemblyReferenceDeclaration(FilePath); }
+            ;
+
+        SourceFileDeclaration : ProjectDeclaration*
+            ::= (keyword("source") FilePath! ';'!){ value = new SourceFileDeclaration(FilePath); }
+            ;
+
+        FilePath: std::string
+            ::= token('<' ([^>]+){ value = std::string(matchBegin, matchEnd); } '>'!)
+            ;
+    }
+}

@@ -34,7 +34,8 @@ int main()
         SymbolReader reader(machine, CminorSystemAssemblyFilePath());
         Assembly systemAssembly;
         systemAssembly.Read(reader);
-
+        Assembly testAssembly(U"test", "file.cmna");
+        testAssembly.GetSymbolTable().Import(systemAssembly.GetSymbolTable());
     }
     catch (const std::exception& ex)
     {

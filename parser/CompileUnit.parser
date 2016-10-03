@@ -14,8 +14,10 @@ namespace cminor.parser
 
     grammar CompileUnitGrammar
     {
+        using stdlib.spaces_and_comments;
         using IdentifierGrammar.QualifiedId;
         using FunctionGrammar.Function;
+        skip spaces_and_comments;
 
         CompileUnit(ParsingContext* ctx) : CompileUnitNode*
             ::= empty{ value = new CompileUnitNode(span, fileName); }

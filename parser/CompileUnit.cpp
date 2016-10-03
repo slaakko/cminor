@@ -492,22 +492,29 @@ private:
 void CompileUnitGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar0 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.FunctionGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::FunctionGrammar::Create(pd);
+        grammar1 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.FunctionGrammar");
+    if (!grammar2)
+    {
+        grammar2 = cminor::parser::FunctionGrammar::Create(pd);
+    }
+    AddGrammarReference(grammar2);
 }
 
 void CompileUnitGrammar::CreateRules()
 {
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Function", this, "FunctionGrammar.Function"));
     AddRule(new CompileUnitRule("CompileUnit", GetScope(),
@@ -545,6 +552,7 @@ void CompileUnitGrammar::CreateRules()
     AddRule(new FunctionDefinitionRule("FunctionDefinition", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::NonterminalParser("Function", "Function", 1))));
+    SetSkipRuleName("spaces_and_comments");
 }
 
 } } // namespace cminor.parser

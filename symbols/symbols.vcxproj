@@ -19,56 +19,29 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="BasicType.parser" />
-    <None Include="CminorParser.pl" />
-    <None Include="CompileUnit.parser" />
-    <None Include="Expression.parser" />
-    <None Include="Function.parser" />
-    <None Include="Identifier.parser" />
-    <None Include="Keyword.parser" />
-    <None Include="CminorParser.pp" />
-    <None Include="Literal.parser" />
-    <None Include="Parameter.parser" />
-    <None Include="ProjectFile.parser" />
-    <None Include="Specifier.parser" />
-    <None Include="Statement.parser" />
-    <None Include="TypeExpr.parser" />
+    <ClInclude Include="Assembly.hpp" />
+    <ClInclude Include="FunctionSymbol.hpp" />
+    <ClInclude Include="GlobalFlags.hpp" />
+    <ClInclude Include="SymbolCreatorVisitor.hpp" />
+    <ClInclude Include="SymbolReader.hpp" />
+    <ClInclude Include="Symbol.hpp" />
+    <ClInclude Include="SymbolWriter.hpp" />
+    <ClInclude Include="VariableSymbol.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BasicType.cpp" />
-    <ClCompile Include="CompileUnit.cpp" />
-    <ClCompile Include="Expression.cpp" />
-    <ClCompile Include="Function.cpp" />
-    <ClCompile Include="Identifier.cpp" />
-    <ClCompile Include="Keyword.cpp" />
-    <ClCompile Include="Literal.cpp" />
-    <ClCompile Include="Parameter.cpp" />
-    <ClCompile Include="ParsingContext.cpp" />
-    <ClCompile Include="ProjectFile.cpp" />
-    <ClCompile Include="Specifier.cpp" />
-    <ClCompile Include="Statement.cpp" />
-    <ClCompile Include="TypeExpr.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="BasicType.hpp" />
-    <ClInclude Include="CompileUnit.hpp" />
-    <ClInclude Include="Expression.hpp" />
-    <ClInclude Include="Function.hpp" />
-    <ClInclude Include="Identifier.hpp" />
-    <ClInclude Include="Keyword.hpp" />
-    <ClInclude Include="Literal.hpp" />
-    <ClInclude Include="Operator.hpp" />
-    <ClInclude Include="Parameter.hpp" />
-    <ClInclude Include="ParsingContext.hpp" />
-    <ClInclude Include="ProjectFile.hpp" />
-    <ClInclude Include="Specifier.hpp" />
-    <ClInclude Include="Statement.hpp" />
-    <ClInclude Include="TypeExpr.hpp" />
+    <ClCompile Include="Assembly.cpp" />
+    <ClCompile Include="FunctionSymbol.cpp" />
+    <ClCompile Include="GlobalFlags.cpp" />
+    <ClCompile Include="SymbolCreatorVisitor.cpp" />
+    <ClCompile Include="SymbolReader.cpp" />
+    <ClCompile Include="Symbol.cpp" />
+    <ClCompile Include="SymbolWriter.cpp" />
+    <ClCompile Include="VariableSymbol.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{0B34F7CF-6295-4243-89E9-F5BB5933FDCA}</ProjectGuid>
+    <ProjectGuid>{2F515190-089A-433E-AE60-A837BCE6BD53}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>parser</RootNamespace>
+    <RootNamespace>symbols</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -126,6 +99,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -140,6 +114,7 @@
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -155,6 +130,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -172,6 +148,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

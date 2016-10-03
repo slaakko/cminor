@@ -9,7 +9,7 @@
 namespace cminor { namespace machine {
 
 GarbageCollector::GarbageCollector(Machine& machine_, uint64_t garbageCollectionIntervalMs_) :
-    machine(machine_), wantToCollectGarbage(), collectingGarbage(), garbageCollected(), doGarbageCollection(),
+    machine(machine_), started(false), wantToCollectGarbage(), collectingGarbage(), garbageCollected(), doGarbageCollection(),
     garbageCollectedCond(), doGarbageCollectionCond(), garbageCollectionIntervalMs(garbageCollectionIntervalMs_)
 {
 }
@@ -89,6 +89,7 @@ void GarbageCollector::WaitForGarbageCollection()
 
 void GarbageCollector::Run()
 {
+    started = true;
     while (!machine.Exiting())
     {
         WaitForGarbageCollection();
