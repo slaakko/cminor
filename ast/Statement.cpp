@@ -119,8 +119,8 @@ Node* CompoundStatementNode::Clone(CloneContext& cloneContext) const
         clone->AddStatement(static_cast<StatementNode*>(statement->Clone(cloneContext)));
     }
     CloneLabelTo(clone, cloneContext);
-    //clone->beginBraceSpan = beginBraceSpan;
-    //clone->endBraceSpan = endBraceSpan;
+    clone->beginBraceSpan = beginBraceSpan;
+    clone->endBraceSpan = endBraceSpan;
     return clone;
 }
 

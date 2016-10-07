@@ -13,6 +13,7 @@ class VariableSymbol : public Symbol
 {
 public:
     VariableSymbol(const Span& span_, Constant name_);
+    void SetType(TypeSymbol* type_) { type = type_; }
 private:
     TypeSymbol* type;
 };

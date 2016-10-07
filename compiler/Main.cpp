@@ -9,6 +9,7 @@
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Util.hpp>
 #include <Cm.Parsing/InitDone.hpp>
+#include <Cm.Util/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <stdexcept>
@@ -17,6 +18,7 @@
 using namespace cminor::build;
 using namespace cminor::symbols;
 using namespace cminor::machine;
+using namespace Cm::Util;
 
 struct InitDone
 {
@@ -149,7 +151,7 @@ int main(int argc, const char** argv)
                 }
                 else
                 {
-                    BuildSolution(fp.generic_string());
+                    BuildSolution(GetFullPath(fp.generic_string()));
                 }
             }
             else if (fp.extension() == ".cminorp")
@@ -160,7 +162,7 @@ int main(int argc, const char** argv)
                 }
                 else
                 {
-                    BuildProject(fp.generic_string());
+                    BuildProject(GetFullPath(fp.generic_string()));
                 }
             }
             else

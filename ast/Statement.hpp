@@ -61,6 +61,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::constructionStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
+    Node* TypeExpr() const { return typeExpr.get(); }
     IdentifierNode* Id() const { return id.get(); }
     void AddArgument(Node* argument) override;
     NodeList<Node>& Arguments() { return arguments; }

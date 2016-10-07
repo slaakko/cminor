@@ -8,6 +8,7 @@
 #include <cminor/machine/Constant.hpp>
 #include <cminor/ast/Function.hpp>
 #include <cminor/ast/Statement.hpp>
+#include <cminor/ast/Namespace.hpp>
 #include <unordered_map>
 
 namespace cminor { namespace symbols {
@@ -167,6 +168,18 @@ private:
     std::unordered_map<StringPtr, Symbol*, StringPtrHash> symbolMap;
 };
 
+class FileScope : public Scope
+{
+public:
+    void InstallAlias(ContainerScope* containerScope, AliasNode* aliasNode);
+    void InstallNamespaceImport(ContainerScope* containerScope, NamespaceImportNode* namespaceImportNode);
+    Symbol* Lookup(StringPtr name) const override;
+    Symbol* Lookup(StringPtr name, ScopeLookup lookup) const override;
+private:
+    std::vector<ContainerScope*> containerScopes;
+    std::unordered_map<StringPtr, Symbol*, StringPtrHash> aliasSymbolMap;
+};
+
 class ContainerSymbol : public Symbol
 {
 public:
@@ -324,6 +337,7 @@ public:
     ContainerSymbol* Container() const { return container; }
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();
+    void BeginNamespace(NamespaceNode& namespaceNode);
     void BeginNamespace(StringPtr namespaceName, const Span& span);
     void EndNamespace();
     void BeginFunction(FunctionNode& functionNode);
@@ -339,6 +353,8 @@ public:
     TypeSymbol* GetTypeNoThrow(const utf32_string& typeFullName) const;
     TypeSymbol* GetType(const utf32_string& typeFullName) const;
     void AddType(TypeSymbol* type);
+    Symbol* GetSymbol(Node& node) const;
+    void MapNode(Node& node, Symbol* symbol);
 private:
     Assembly* assembly;
     NamespaceSymbol globalNs;
@@ -347,6 +363,7 @@ private:
     FunctionSymbol* mainFunction;
     std::stack<ContainerSymbol*> containerStack;
     std::unordered_map<Constant, TypeSymbol*, ConstantHash> typeSymbolMap;
+    std::unordered_map<Node*, Symbol*> nodeSymbolMap;
 };
 
 class SymbolCreator

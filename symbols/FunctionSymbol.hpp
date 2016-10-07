@@ -24,9 +24,12 @@ public:
     void SetGroupNameConstant(Constant groupName_) { groupName = groupName_; }
     int Arity() const { return int(parameters.size()); }
     void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
+    TypeSymbol* ReturnType() const { return returnType; }
+    void SetReturnType(TypeSymbol* returnType_) { returnType = returnType_;  }
 private:
     Constant groupName;
     std::vector<ParameterSymbol*> parameters;
+    TypeSymbol* returnType;
 };
 
 class FunctionGroupSymbol : public Symbol

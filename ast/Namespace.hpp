@@ -30,6 +30,34 @@ private:
 
 };
 
+class AliasNode : public Node
+{
+public:
+    AliasNode(const Span& span_);
+    AliasNode(const Span& span_, IdentifierNode* id_, IdentifierNode* qid_);
+    NodeType GetNodeType() const override { return NodeType::aliasNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    IdentifierNode* Id() const { return id.get(); }
+    IdentifierNode* Qid() const { return qid.get(); }
+private:
+    std::unique_ptr<IdentifierNode> id;
+    std::unique_ptr<IdentifierNode> qid;
+};
+
+class NamespaceImportNode : public Node
+{
+public:
+    NamespaceImportNode(const Span& span_);
+    NamespaceImportNode(const Span& span_, IdentifierNode* ns_);
+    NodeType GetNodeType() const override { return NodeType::namespaceImportNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    IdentifierNode* Ns() const { return ns.get(); }
+private:
+    std::unique_ptr<IdentifierNode> ns;
+};
+
 } } // namespace cminor::ast
 
 #endif // CMINOR_AST_NAMESPACE_INCLUDED

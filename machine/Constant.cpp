@@ -155,10 +155,10 @@ void ConstantPool::Read(Reader& reader)
         if (constant.Value().GetType() == ValueType::stringLiteral) // note: string literal value not read yet, so read it now...
         {
             utf32_string s = reader.GetUtf32String();
-            stringIdMap[StringPtr(s.c_str())] = id;
-            constant.SetValue(IntegralValue(s.c_str()));
             strings.push_back(std::move(s));
             const utf32_string& u = strings.back();
+            stringIdMap[StringPtr(u.c_str())] = id;
+            constant.SetValue(IntegralValue(u.c_str()));
             constantIdMap[constant] = id;
             stringLengths.push_back(u.length());
         }

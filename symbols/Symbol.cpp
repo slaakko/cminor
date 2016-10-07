@@ -371,8 +371,112 @@ void ContainerScope::Clear()
     symbolMap.clear();
 }
 
+void FileScope::InstallAlias(ContainerScope* containerScope, AliasNode* aliasNode)
+{
+    Assert(containerScope, "container scope is null");
+    utf32_string qualifiedName = ToUtf32(aliasNode->Qid()->Str());
+    Symbol* symbol = containerScope->Lookup(StringPtr(qualifiedName.c_str()), ScopeLookup::this_and_parent);
+    if (symbol)
+    {
+        utf32_string aliasName = ToUtf32(aliasNode->Id()->Str());
+        ConstantPool& constantPool = containerScope->Container()->GetAssembly()->GetConstantPool();
+        Constant constant = constantPool.GetConstant(constantPool.Install(StringPtr(aliasName.c_str())));
+        aliasSymbolMap[StringPtr(constant.Value().AsStringLiteral())] = symbol;
+    }
+    else
+    {
+        throw Exception("referred symbol '" + aliasNode->Qid()->Str() + "' not found", aliasNode->Qid()->GetSpan());
+    }
+}
+
+void FileScope::InstallNamespaceImport(ContainerScope* containerScope, NamespaceImportNode* namespaceImportNode)
+{
+    Assert(containerScope, "container scope is null");
+    utf32_string importedNamespaceName = ToUtf32(namespaceImportNode->Ns()->Str());
+    Symbol* symbol = containerScope->Lookup(StringPtr(importedNamespaceName.c_str()), ScopeLookup::this_and_parent);
+    if (symbol)
+    {
+        if (dynamic_cast<NamespaceSymbol*>(symbol))
+        {
+            ContainerScope* symbolContainerScope = symbol->GetContainerScope();
+            if (std::find(containerScopes.cbegin(), containerScopes.cend(), symbolContainerScope) == containerScopes.cend())
+            {
+                containerScopes.push_back(symbolContainerScope);
+            }
+        }
+        else
+        {
+            throw Exception("'" + namespaceImportNode->Ns()->Str() + "' does not denote a namespace", namespaceImportNode->Ns()->GetSpan());
+        }
+    }
+    else
+    {
+        throw Exception("referred namespace symbol '" + namespaceImportNode->Ns()->Str() + "' not found", namespaceImportNode->Ns()->GetSpan());
+    }
+}
+
+Symbol* FileScope::Lookup(StringPtr name) const
+{
+    return Lookup(name, ScopeLookup::this_);
+}
+
+Symbol* FileScope::Lookup(StringPtr name, ScopeLookup lookup) const
+{
+    if (lookup != ScopeLookup::this_)
+    {
+        throw std::runtime_error("file scope supports only this scope lookup");
+    }
+    std::unordered_set<Symbol*> foundSymbols;
+    auto it = aliasSymbolMap.find(name);
+    if (it != aliasSymbolMap.cend())
+    {
+        Symbol* symbol = it->second;
+        foundSymbols.insert(symbol);
+    }
+    else
+    {
+        for (ContainerScope* containerScope : containerScopes)
+        {
+            Symbol* symbol = containerScope->Lookup(name, ScopeLookup::this_);
+            if (symbol)
+            {
+                foundSymbols.insert(symbol);
+            }
+        }
+    }
+    if (foundSymbols.empty())
+    {
+        return nullptr;
+    }
+    else if (foundSymbols.size() > 1)
+    {
+        std::string message("reference to object '" + ToUtf8(name.Value()) + "' is ambiguous: ");
+        bool first = true;
+        Span span;
+        for (Symbol* symbol : foundSymbols)
+        {
+            if (first)
+            {
+                first = false;
+                span = symbol->GetSpan();
+            }
+            else
+            {
+                message.append(" or ");
+            }
+            message.append(ToUtf8(symbol->FullName()));
+        }
+        throw Exception(message, span);
+    }
+    else
+    {
+        return *foundSymbols.begin();
+    }
+}
+
 ContainerSymbol::ContainerSymbol(const Span& span_, Constant name_) : Symbol(span_, name_)
 {
+    containerScope.SetContainer(this);
 }
 
 void ContainerSymbol::Write(SymbolWriter& writer)
@@ -572,6 +676,14 @@ void SymbolTable::EndContainer()
     containerStack.pop();
 }
 
+void SymbolTable::BeginNamespace(NamespaceNode& namespaceNode)
+{
+    utf32_string nsName = ToUtf32(namespaceNode.Id()->Str());
+    StringPtr namespaceName(nsName.c_str());
+    BeginNamespace(namespaceName, namespaceNode.GetSpan());
+    MapNode(namespaceNode, container);
+}
+
 void SymbolTable::BeginNamespace(StringPtr namespaceName, const Span& span)
 {
     if (namespaceName.IsEmpty())
@@ -630,6 +742,10 @@ void SymbolTable::BeginFunction(FunctionNode& functionNode)
             mainFunction = function;
         }
     }
+    MapNode(functionNode, function);
+    ContainerScope* functionScope = function->GetContainerScope();
+    ContainerScope* containerScope = container->GetContainerScope();
+    functionScope->SetParent(containerScope);
     BeginContainer(function);
 }
 
@@ -648,6 +764,7 @@ void SymbolTable::AddParameter(ParameterNode& parameterNode)
     ParameterSymbol* parameter = new ParameterSymbol(parameterNode.GetSpan(), nameConstant);
     parameter->SetAssembly(assembly);
     container->AddSymbol(std::unique_ptr<Symbol>(parameter));
+    MapNode(parameterNode, parameter);
 }
 
 void SymbolTable::BeginDeclarationBlock(StatementNode& statementNode)
@@ -661,6 +778,7 @@ void SymbolTable::BeginDeclarationBlock(StatementNode& statementNode)
     ContainerScope* containerScope = container->GetContainerScope();
     declarationBlockScope->SetParent(containerScope);
     container->AddSymbol(std::unique_ptr<Symbol>(declarationBlock));
+    MapNode(statementNode, declarationBlock);
     BeginContainer(declarationBlock);
 }
 
@@ -677,6 +795,7 @@ void SymbolTable::AddLocalVariable(ConstructionStatementNode& constructionStatem
     LocalVariableSymbol* localVariableSymbol = new LocalVariableSymbol(constructionStatementNode.GetSpan(), nameConstant);
     localVariableSymbol->SetAssembly(assembly);
     container->AddSymbol(std::unique_ptr<Symbol>(localVariableSymbol));
+    MapNode(constructionStatementNode, localVariableSymbol);
 }
 
 void SymbolTable::Write(SymbolWriter& writer)
@@ -748,6 +867,24 @@ void SymbolTable::AddType(TypeSymbol* type)
     {
         typeSymbolMap[c] = type;
     }
+}
+
+Symbol* SymbolTable::GetSymbol(Node& node) const
+{
+    auto it = nodeSymbolMap.find(&node);
+    if (it != nodeSymbolMap.cend())
+    {
+        return it->second;
+    }
+    else
+    {
+        throw std::runtime_error("symbol for node not found");
+    }
+}
+
+void SymbolTable::MapNode(Node& node, Symbol* symbol)
+{
+    nodeSymbolMap[&node] = symbol;
 }
 
 SymbolCreator::~SymbolCreator()

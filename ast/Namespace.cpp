@@ -39,4 +39,42 @@ void NamespaceNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+AliasNode::AliasNode(const Span& span_) : Node(span_)
+{
+}
+
+AliasNode::AliasNode(const Span& span_, IdentifierNode* id_, IdentifierNode* qid_) : Node(span_), id(id_), qid(qid_)
+{
+    id->SetParent(this);
+    qid->SetParent(this);
+}
+
+Node* AliasNode::Clone(CloneContext& cloneContext) const
+{
+    return new AliasNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone(cloneContext)), static_cast<IdentifierNode*>(qid->Clone(cloneContext)));
+}
+
+void AliasNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+NamespaceImportNode::NamespaceImportNode(const Span& span_) : Node(span_)
+{
+}
+
+NamespaceImportNode::NamespaceImportNode(const Span& span_, IdentifierNode* ns_) : Node(span_), ns(ns_)
+{
+}
+
+Node* NamespaceImportNode::Clone(CloneContext& cloneContext) const
+{
+    return new NamespaceImportNode(GetSpan(), static_cast<IdentifierNode*>(ns->Clone(cloneContext)));
+}
+
+void NamespaceImportNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 } } // namespace cminor::ast

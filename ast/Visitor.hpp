@@ -43,6 +43,8 @@ class ParameterNode;
 class FunctionNode;
 class NamespaceNode;
 class CompileUnitNode;
+class AliasNode;
+class NamespaceImportNode;
 
 class DisjunctionNode;
 class ConjunctionNode;
@@ -112,6 +114,8 @@ public:
     virtual void Visit(ParameterNode& parameterNode) {}
     virtual void Visit(FunctionNode& functionNode) {}
     virtual void Visit(NamespaceNode& namespaceNode) {}
+    virtual void Visit(AliasNode& aliasNode) {}
+    virtual void Visit(NamespaceImportNode& namespaceImportNode) {}
     virtual void Visit(CompileUnitNode& compileUnitNode) {}
 
     virtual void Visit(DisjunctionNode& disjunctionNode) {}

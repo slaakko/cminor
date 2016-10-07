@@ -21,9 +21,7 @@ void SymbolCreatorVisitor::Visit(CompileUnitNode& compileUnitNode)
 
 void SymbolCreatorVisitor::Visit(NamespaceNode& namespaceNode)
 {
-    utf32_string nsName = ToUtf32(namespaceNode.Id()->Str());
-    StringPtr namespaceName(nsName.c_str());
-    symbolTable.BeginNamespace(namespaceName, namespaceNode.GetSpan());
+    symbolTable.BeginNamespace(namespaceNode);
     NodeList<Node>& members = namespaceNode.Members();
     int n = members.Count();
     for (int i = 0; i < n; ++i)

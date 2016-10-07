@@ -11,7 +11,7 @@
 
 namespace cminor { namespace symbols {
 
-FunctionSymbol::FunctionSymbol(const Span& span_, Constant name_) : ContainerSymbol(span_, name_)
+FunctionSymbol::FunctionSymbol(const Span& span_, Constant name_) : ContainerSymbol(span_, name_), returnType(nullptr)
 {
 }
 
