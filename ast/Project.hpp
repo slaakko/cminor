@@ -36,23 +36,50 @@ private:
     std::string filePath;
 };
 
+enum class Target
+{
+    program, library
+};
+
+class TargetDeclaration : public ProjectDeclaration
+{ 
+public:
+    TargetDeclaration(Target target_);
+    Target GetTarget() const { return target; }
+private:
+    Target target;
+};
+
 class Project
 {
 public:
-    Project(const std::string& name_, const std::string& filePath_);
+    Project(const std::string& name_, const std::string& filePath_, const std::string& config_);
     void AddDeclaration(ProjectDeclaration* declaration);
     void ResolveDeclarations();
     const std::string& Name() const { return name; }
     const std::string& FilePath() const { return filePath; }
     const boost::filesystem::path& BasePath() const { return basePath; }
+    const std::string& AssemblyFilePath() const { return assemblyFilePath; }
+    const std::vector<std::string>& AssemblyReferences() const { return assemblyReferences; }
     const std::vector<std::string>& SourceFilePaths() const { return sourceFilePaths; }
+    Target GetTarget() const { return target; }
 private:
     std::string name;
     std::string filePath;
+    std::string config;
+    Target target;
     boost::filesystem::path basePath;
+    boost::filesystem::path systemPath;
     std::vector<std::unique_ptr<ProjectDeclaration>> declarations;
+    std::string assemblyFilePath;
+    std::vector<std::string> assemblyReferences;
     std::vector<std::string> sourceFilePaths;
 };
+
+std::string CminorRootDir();
+std::string CminorSystemDir();
+std::string CminorSystemAssemblyFilePath(const std::string& config);
+
 
 } } // namespace cminor::ast
 

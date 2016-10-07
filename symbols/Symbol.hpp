@@ -6,11 +6,14 @@
 #ifndef CMINOR_SYMBOLS_SYMBOL_INCLUDED
 #define CMINOR_SYMBOLS_SYMBOL_INCLUDED
 #include <cminor/machine/Constant.hpp>
+#include <cminor/ast/Function.hpp>
+#include <cminor/ast/Statement.hpp>
 #include <unordered_map>
 
 namespace cminor { namespace symbols {
 
 using namespace cminor::machine;
+using namespace cminor::ast;
 
 class Assembly;
 class SymbolWriter;
@@ -18,6 +21,7 @@ class SymbolReader;
 class ContainerScope;
 class ContainerSymbol;
 class NamespaceSymbol;
+class FunctionSymbol;
 class FunctionGroupSymbol;
 class SymbolTable;
 
@@ -25,7 +29,7 @@ enum class SymbolType : uint8_t
 {
     boolTypeSymbol, charTypeSymbol, voidTypeSymbol, sbyteTypeSymbol, byteTypeSymbol, shortTypeSymbol, ushortTypeSymbol, intTypeSymbol, uintTypeSymbol, longTypeSymbol, ulongTypeSymbol,
     floatTypeSymbol, doubleTypeSymbol,
-    classTypeSymbol, functionSymbol, functionGroupSymbol, parameterSymbol, localVariableSymbol, memberVariableSymbol, namespaceSymbol,
+    classTypeSymbol, functionSymbol, functionGroupSymbol, parameterSymbol, localVariableSymbol, memberVariableSymbol, namespaceSymbol, declarationBlock,
     maxSymbol
 };
 
@@ -70,6 +74,7 @@ public:
     Symbol(const Span& span_, Constant name_);
     virtual ~Symbol();
     virtual SymbolType GetSymbolType() const = 0;
+    virtual Symbol* ToSymbol() const { return const_cast<Symbol*>(this); }
     virtual bool IsExportSymbol() const;
     virtual void Write(SymbolWriter& writer);
     virtual void Read(SymbolReader& reader);
@@ -188,6 +193,14 @@ public:
     void Import(NamespaceSymbol* that, SymbolTable& symbolTable);
 };
 
+class DeclarationBlock : public ContainerSymbol
+{
+public:
+    DeclarationBlock(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::declarationBlock; }
+    bool IsExportSymbol() const override { return false; }
+};
+
 class TypeSymbol : public Symbol
 {
 public:
@@ -297,6 +310,9 @@ class ClassTypeSymbol : public TypeSymbol, public ContainerSymbol
 public:
     ClassTypeSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::classTypeSymbol; }
+    Symbol* ToSymbol() const { return TypeSymbol::ToSymbol(); }
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
 };
 
 class SymbolTable
@@ -308,8 +324,14 @@ public:
     ContainerSymbol* Container() const { return container; }
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();
-    void BeginNamespaceScope(StringPtr namespaceName, const Span& span);
-    void EndNamespaceScope();
+    void BeginNamespace(StringPtr namespaceName, const Span& span);
+    void EndNamespace();
+    void BeginFunction(FunctionNode& functionNode);
+    void EndFunction();
+    void AddParameter(ParameterNode& parameterNode);
+    void BeginDeclarationBlock(StatementNode& statementNode);
+    void EndDeclarationBlock();
+    void AddLocalVariable(ConstructionStatementNode& constructionStatementNode);
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader);
     void Import(SymbolTable& symbolTable);
@@ -321,6 +343,8 @@ private:
     Assembly* assembly;
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
+    FunctionSymbol* function;
+    FunctionSymbol* mainFunction;
     std::stack<ContainerSymbol*> containerStack;
     std::unordered_map<Constant, TypeSymbol*, ConstantHash> typeSymbolMap;
 };
@@ -346,14 +370,10 @@ private:
     std::vector<std::unique_ptr<SymbolCreator>> creators;
 };
 
-std::string CminorRootDir();
-std::string CminorSystemDir();
-std::string CminorSystemAssemblyFilePath();
-
 void InitSymbol();
 void DoneSymbol();
 
-std::unique_ptr<Assembly> CreateSystemAssembly();
+std::unique_ptr<Assembly> CreateSystemAssembly(const std::string& config);
 
 } } // namespace cminor::symbols
 

@@ -37,4 +37,11 @@ void ParameterNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+std::string ParameterNode::ToString() const
+{
+    std::string s = typeExpr->ToString();
+    s.append(1, ' ').append(id->ToString());
+    return s;
+}
+
 } } // namespace cminor::ast

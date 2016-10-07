@@ -17,8 +17,11 @@ class FunctionSymbol : public ContainerSymbol
 public:
     FunctionSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::functionSymbol; }
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
+    bool IsExportSymbol() const override;
     StringPtr GroupName() const { return StringPtr(groupName.Value().AsStringLiteral()); }
-    void SetGroupName(StringPtr groupNameStr);
+    void SetGroupNameConstant(Constant groupName_) { groupName = groupName_; }
     int Arity() const { return int(parameters.size()); }
     void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
 private:

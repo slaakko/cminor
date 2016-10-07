@@ -23,7 +23,25 @@ public:
     ParameterSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::parameterSymbol; }
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
-    bool IsExportSymbol() const override { return true; }
+    bool IsExportSymbol() const override;
+};
+
+class LocalVariableSymbol : public VariableSymbol
+{
+public:
+    LocalVariableSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::localVariableSymbol; }
+    SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
+    bool IsExportSymbol() const override;
+};
+
+class MemberVariableSymbol : public VariableSymbol
+{
+public:
+    MemberVariableSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::memberVariableSymbol; }
+    SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
+    bool IsExportSymbol() const override;
 };
 
 } } // namespace cminor::symbols

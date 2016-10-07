@@ -19,6 +19,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::namespaceNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
+    std::string ToString() const override { return id->Str(); }
     void AddMember(Node* member);
     IdentifierNode* Id() const { return id.get(); }
     NodeList<Node>& Members() { return members; }

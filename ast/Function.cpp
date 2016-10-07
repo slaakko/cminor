@@ -72,4 +72,21 @@ void FunctionNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+std::string FunctionNode::Name() const
+{
+    std::string name = groupId->Str();
+    name.append(1, '(');
+    int n = parameters.Count();
+    for (int i = 0; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            name.append(", ");
+        }
+        name.append(parameters[i]->ToString());
+    }
+    name.append(1, ')');
+    return name;
+}
+
 } } // namespace cminor::ast

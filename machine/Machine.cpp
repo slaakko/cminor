@@ -10,7 +10,7 @@
 namespace cminor { namespace machine {
 
 Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*this),
-    garbageCollector(*this, defaultGarbageCollectionIntervalMs), gen1Arena(ArenaId::gen1Arena, defaultArenaSize), gen2Arena(ArenaId::gen2Arena, defaultArenaSize), exiting(), exited()
+    garbageCollector(*this, defaultGarbageCollectionIntervalMs), gen1Arena(ArenaId::gen1Arena, defaultArenaSize), gen2Arena(ArenaId::gen2Arena, defaultArenaSize), exiting(), exited(), nextFrameId(0)
 {
     // no operation:
     rootInst.SetInst(0x00, new NopInst());
@@ -450,6 +450,11 @@ void DoRunGarbageCollector(GarbageCollector* garbageCollector)
 void Machine::RunGarbageCollector()
 {
     garbageCollectorThread = std::thread(DoRunGarbageCollector, &garbageCollector);
+}
+
+int32_t Machine::GetNextFrameId()
+{
+    return nextFrameId++;
 }
 
 bool Machine::Exiting()

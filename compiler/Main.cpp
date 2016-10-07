@@ -7,6 +7,7 @@
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/machine/FileRegistry.hpp>
+#include <cminor/machine/Util.hpp>
 #include <Cm.Parsing/InitDone.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -32,7 +33,23 @@ struct InitDone
     }
 };
 
-const char* version = "1.0.0";
+const char* version = "0.0.1";
+
+void PrintHelp()
+{
+    std::cout << 
+        "Cminor compiler version " << version << "\n\n" <<
+        "Usage: cminorc [options] { solution[.cminors] | project[.cminorp] }\n" <<
+        "Compile given solutions and projects.\n" <<
+        "When no extension is given, solution.cminors is given preference.\n" <<
+        "Options:\n" <<
+        "-v | --verbose : verbose output\n" << 
+        "-h | --help    : print this help message\n" <<
+        "-c=CONFIG\n" <<
+        "   Use CONFIG configuration. CONFIG can be debug or release.\n" <<
+        "   The default is debug.\n" <<
+        std::endl;
+}
 
 int main(int argc, const char** argv)
 {
@@ -45,9 +62,44 @@ int main(int argc, const char** argv)
             std::string arg = argv[i];
             if (!arg.empty() && arg[0] == '-')
             {
-                if (arg == "-v")
+                if (arg == "-v" || arg == "--verbose")
                 {
                     SetGlobalFlag(GlobalFlags::verbose);
+                }
+                else if (arg == "-h" || arg == "--help")
+                {
+                    PrintHelp();
+                    return 0;
+                }
+                else if (arg.find('=', 0) != std::string::npos)
+                {
+                    std::vector<std::string> components = Split(arg, '=');
+                    if (components.size() != 2)
+                    {
+                        throw std::runtime_error("invalid argument '" + arg + "'");
+                    }
+                    else
+                    {
+                        if (components[0] == "-c")
+                        {
+                            if (components[1] == "release")
+                            {
+                                SetGlobalFlag(GlobalFlags::release);
+                            }
+                            else if (components[1] != "debug")
+                            {
+                                throw std::runtime_error("invalid configuration argument '" + arg + "'");
+                            }
+                        }
+                        else
+                        {
+                            throw std::runtime_error("unknown argument '" + arg + "'");
+                        }
+                    }
+                }
+                else
+                {
+                    throw std::runtime_error("unknown argument '" + arg + "'");
                 }
             }
             else
@@ -55,28 +107,65 @@ int main(int argc, const char** argv)
                 projectsAndSolutions.push_back(arg);
             }
         }
+        if (projectsAndSolutions.empty())
+        {
+            PrintHelp();
+            return 0;
+        }
         if (GetGlobalFlag(GlobalFlags::verbose))
         {
-            std::cout << "cminor compiler version " << version << std::endl;
+            std::cout << "Cminor compiler version " << version << std::endl;
         }
         for (const std::string& projectOrSolution : projectsAndSolutions)
         {
-            boost::filesystem::path p(projectOrSolution);
-            if (!p.has_extension())
+            boost::filesystem::path fp(projectOrSolution);
+            if (!fp.has_extension())
             {
-                p.replace_extension(".cmnp");
+                boost::filesystem::path s = fp;
+                s.replace_extension(".cminors");
+                if (boost::filesystem::exists(s))
+                {
+                    fp = s;
+                }
+                else
+                {
+                    boost::filesystem::path p = fp;
+                    p.replace_extension(".cminorp");
+                    if (boost::filesystem::exists(p))
+                    {
+                        fp = p;
+                    }
+                    else
+                    {
+                        throw std::runtime_error("solution file '" + s.generic_string() + "' or project file '" + p.generic_string() + "' not found");
+                    }
+                }
             }
-            if (!boost::filesystem::exists(p))
+            if (fp.extension() == ".cminors")
             {
-                throw std::runtime_error("project file '" + p.string() + "' not found");
+                if (!boost::filesystem::exists(fp))
+                {
+                    throw std::runtime_error("solution file '" + fp.generic_string() + " not found");
+                }
+                else
+                {
+                    BuildSolution(fp.generic_string());
+                }
             }
-            if (p.extension() == ".cmnp")
+            else if (fp.extension() == ".cminorp")
             {
-                BuildProject(p.generic_string());
+                if (!boost::filesystem::exists(fp))
+                {
+                    throw std::runtime_error("project file '" + fp.generic_string() + " not found");
+                }
+                else
+                {
+                    BuildProject(fp.generic_string());
+                }
             }
-            else if (p.extension() == ".cmns")
+            else
             {
-                // todo
+                throw std::runtime_error("File '" + fp.generic_string() + "' has invalid extension. Not Cminor solution (.cminors) or project (.cminorp) file.");
             }
         }
     }

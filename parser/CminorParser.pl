@@ -84,10 +84,12 @@ namespace cminor.parser
     }
     grammar ProjectGrammar
     {
-        Project: Project*;
+        Project(std::string config): Project*;
         Declaration: ProjectDeclaration*;
         AssemblyReferenceDeclaration: ProjectDeclaration*;
         SourceFileDeclaration: ProjectDeclaration*;
+        TargetDeclaration: ProjectDeclaration*;
+        Target: Target;
         FilePath: std::string;
     }
     grammar SpecifierGrammar

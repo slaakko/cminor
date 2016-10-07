@@ -26,6 +26,7 @@ std::string ValueTypeStr(ValueType type)
         case ValueType::floatType: return "float";
         case ValueType::doubleType: return "double";
         case ValueType::charType: return "char";
+        case ValueType::memPtr: return "memory pointer";
         case ValueType::stringLiteral: return "string literal";
         case ValueType::objectReference: return "object reference";
     }
@@ -96,12 +97,14 @@ uint64_t ValueSize(ValueType type)
         case ValueType::floatType: return sizeof(float);
         case ValueType::doubleType: return sizeof(double);
         case ValueType::charType: return sizeof(char32_t);
+        case ValueType::memPtr: return sizeof(uint8_t*);
+        case ValueType::stringLiteral: return sizeof(const char32_t*);
         case ValueType::objectReference: return sizeof(uint64_t);
     }
     return sizeof(uint64_t);
 }
 
-Object::Object(ObjectReference reference_, ArenaId arenaId_, ObjectMemPtr memPtr_, Type* type_) :
+Object::Object(ObjectReference reference_, ArenaId arenaId_, ObjectMemPtr memPtr_, ObjectType* type_) :
     reference(reference_), arenaId(arenaId_), memPtr(memPtr_), type(type_), flags(ObjectFlags::none)
 {
 }
@@ -124,6 +127,8 @@ IntegralValue Object::GetField(int index) const
         case ValueType::floatType: return IntegralValue(static_cast<uint64_t>(*reinterpret_cast<float*>(fieldPtr.Value())), field.GetType());
         case ValueType::doubleType: return IntegralValue(static_cast<uint64_t>(*reinterpret_cast<double*>(fieldPtr.Value())), field.GetType());
         case ValueType::charType: return IntegralValue(*reinterpret_cast<char32_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::memPtr: return IntegralValue(fieldPtr.Value());
+        case ValueType::stringLiteral: return IntegralValue(reinterpret_cast<const char32_t*>(fieldPtr.Value()));
         case ValueType::objectReference: return IntegralValue(*reinterpret_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
         default: return IntegralValue(*reinterpret_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
     }
@@ -148,6 +153,8 @@ void Object::SetField(IntegralValue fieldValue, int index)
         case ValueType::floatType: *reinterpret_cast<float*>(fieldPtr.Value()) = fieldValue.AsFloat(); break;
         case ValueType::doubleType: *reinterpret_cast<double*>(fieldPtr.Value()) = fieldValue.AsDouble(); break;
         case ValueType::charType: *reinterpret_cast<char32_t*>(fieldPtr.Value()) = fieldValue.AsChar(); break;
+        case ValueType::memPtr: *reinterpret_cast<uint8_t**>(fieldPtr.Value()) = fieldValue.AsMemPtr(); break;
+        case ValueType::stringLiteral: *reinterpret_cast<const char32_t**>(fieldPtr.Value()) = fieldValue.AsStringLiteral(); break;
         case ValueType::objectReference: *reinterpret_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
         default: throw std::runtime_error("invalid field type " + std::to_string(int(field.GetType())));
     }
@@ -187,7 +194,7 @@ ObjectPool::ObjectPool(Machine& machine_) : machine(machine_), nextReferenceValu
 {
 }
 
-ObjectReference ObjectPool::CreateObject(Thread& thread, Type* type)
+ObjectReference ObjectPool::CreateObject(Thread& thread, ObjectType* type)
 {
     ObjectReference reference(nextReferenceValue++);
     std::pair<ArenaId, ObjectMemPtr> arenaMemPtr = machine.AllocateMemory(thread, type->ObjectSize());

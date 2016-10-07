@@ -30,6 +30,7 @@ public:
     void RunGarbageCollector();
     Arena& Gen1Arena() { return gen1Arena; }
     Arena& Gen2Arena() { return gen2Arena; }
+    int32_t GetNextFrameId();
     bool Exiting();
     void Exit();
 private:
@@ -44,6 +45,7 @@ private:
     std::atomic_bool exiting;
     std::atomic_bool exited;
     std::thread garbageCollectorThread;
+    std::atomic_int32_t nextFrameId;
 };
 
 } } // namespace cminor::machine

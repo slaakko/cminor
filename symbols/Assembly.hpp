@@ -18,18 +18,24 @@ class Assembly
 {
 public:
     Assembly();
-    Assembly(const utf32_string& name_, const std::string& fileName_);
+    Assembly(const utf32_string& name_, const std::string& filePath_);
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader);
-    const std::string& FileName() const { return fileName; }
+    const std::string& FilePath() const { return filePath; }
     StringPtr Name() const { return StringPtr(name.Value().AsStringLiteral()); }
     ConstantPool& GetConstantPool() { return constantPool; }
     SymbolTable& GetSymbolTable() { return symbolTable; }
+    bool IsSystemAssembly() const;
+    void ImportAssemblies(Machine& machine);
+    void ImportAssemblies(Machine& machine, const std::vector<std::string>& assemblyReferences);
 private:
-    std::string fileName;
+    std::string filePath;
+    std::vector<std::string> referenceFilePaths;
+    std::vector<std::unique_ptr<Assembly>> importedAssemblies;
     ConstantPool constantPool;
     Constant name;
     SymbolTable symbolTable;
+    void Import(Machine& machine, const std::vector<std::string>& assemblyReferences, std::unordered_set<std::string>& importSet);
 };
 
 } } // namespace cminor::symbols

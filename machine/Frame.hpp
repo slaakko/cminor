@@ -21,6 +21,7 @@ class Frame
 public:
     Frame(Machine& machine_, Thread& thread_, Function& fun_, ConstantPool& constantPool_);
     Machine& GetMachine() { return machine; }
+    int32_t Id() const { return id; }
     Thread& GetThread() { return thread; }
     Function& Fun() { return fun; }
     ObjectPool& GetObjectPool() { return objectPool; }
@@ -33,6 +34,7 @@ public:
     int32_t PC() const { return pc; }
 private:
     Machine& machine;
+    int32_t id;
     Thread& thread;
     Function& fun;
     ObjectPool& objectPool;

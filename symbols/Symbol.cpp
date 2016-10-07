@@ -8,6 +8,8 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
+#include <cminor/symbols/VariableSymbol.hpp>
+#include <cminor/ast/Project.hpp>
 #include <cminor/machine/Util.hpp>
 #include <boost/filesystem.hpp>
 
@@ -410,7 +412,7 @@ void ContainerSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
         FunctionGroupSymbol* functionGroupSymbol = MakeFunctionGroupSymbol(functionSymbol->GroupName(), functionSymbol->GetSpan());
         functionGroupSymbol->AddFunction(functionSymbol);
     }
-    else
+    else if (!dynamic_cast<DeclarationBlock*>(symbol.get()))
     {
         containerScope.Install(symbol.get());
         if (TypeSymbol* type = dynamic_cast<TypeSymbol*>(symbol.get()))
@@ -436,8 +438,10 @@ FunctionGroupSymbol* ContainerSymbol::MakeFunctionGroupSymbol(StringPtr groupNam
         ConstantPool& constantPool = GetAssembly()->GetConstantPool();
         Constant groupNameConstant = constantPool.GetConstant(constantPool.Install(groupName));
         std::unique_ptr<FunctionGroupSymbol> functionGroupSymbol(new FunctionGroupSymbol(span, groupNameConstant, &containerScope));
+        functionGroupSymbol->SetAssembly(GetAssembly());
+        FunctionGroupSymbol* fnGroupSymbol = functionGroupSymbol.get();
         AddSymbol(std::move(functionGroupSymbol));
-        return functionGroupSymbol.get();
+        return fnGroupSymbol;
     }
     if (FunctionGroupSymbol* functionGroupSymbol = dynamic_cast<FunctionGroupSymbol*>(symbol))
     {
@@ -455,7 +459,7 @@ NamespaceSymbol::NamespaceSymbol(const Span& span_, Constant name_) : ContainerS
 
 void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
 {
-    symbolTable.BeginNamespaceScope(that->Name(), that->GetSpan());
+    symbolTable.BeginNamespace(that->Name(), that->GetSpan());
     for (std::unique_ptr<Symbol>& symbol : that->Symbols())
     {
         if (NamespaceSymbol* thatNs = dynamic_cast<NamespaceSymbol*>(symbol.get()))
@@ -468,7 +472,11 @@ void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
             symbolTable.Container()->AddSymbol(std::move(s));
         }
     }
-    symbolTable.EndNamespaceScope();
+    symbolTable.EndNamespace();
+}
+
+DeclarationBlock::DeclarationBlock(const Span& span_, Constant name_) : ContainerSymbol(span_, name_)
+{
 }
 
 TypeSymbol::TypeSymbol(const Span& span_, Constant name_) : Symbol(span_, name_)
@@ -535,7 +543,19 @@ ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol
 {
 }
 
-SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs)
+void ClassTypeSymbol::Write(SymbolWriter& writer)
+{
+    TypeSymbol::Write(writer);
+    ContainerSymbol::Write(writer);
+}
+
+void ClassTypeSymbol::Read(SymbolReader& reader)
+{
+    TypeSymbol::Read(reader);
+    ContainerSymbol::Read(reader);
+}
+
+SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs), function(nullptr), mainFunction(nullptr)
 {
     globalNs.SetAssembly(assembly);
 }
@@ -552,7 +572,7 @@ void SymbolTable::EndContainer()
     containerStack.pop();
 }
 
-void SymbolTable::BeginNamespaceScope(StringPtr namespaceName, const Span& span)
+void SymbolTable::BeginNamespace(StringPtr namespaceName, const Span& span)
 {
     if (namespaceName.IsEmpty())
     {
@@ -584,9 +604,79 @@ void SymbolTable::BeginNamespaceScope(StringPtr namespaceName, const Span& span)
     }
 }
 
-void SymbolTable::EndNamespaceScope()
+void SymbolTable::EndNamespace()
 {
     EndContainer();
+}
+
+void SymbolTable::BeginFunction(FunctionNode& functionNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(functionNode.Name());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    utf32_string groupName = ToUtf32(functionNode.GroupId()->Str());
+    Constant groupNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(groupName.c_str())));
+    function = new FunctionSymbol(functionNode.GetSpan(), nameConstant);
+    function->SetAssembly(assembly);
+    function->SetGroupNameConstant(groupNameConstant);
+    if (StringPtr(groupNameConstant.Value().AsStringLiteral()) == StringPtr(U"main"))
+    {
+        if (mainFunction)
+        {
+            throw Exception("already has main function", functionNode.GetSpan(), mainFunction->GetSpan());
+        }
+        else
+        {
+            mainFunction = function;
+        }
+    }
+    BeginContainer(function);
+}
+
+void SymbolTable::EndFunction()
+{
+    EndContainer();
+    container->AddSymbol(std::unique_ptr<Symbol>(function));
+    function = nullptr;
+}
+
+void SymbolTable::AddParameter(ParameterNode& parameterNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(parameterNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    ParameterSymbol* parameter = new ParameterSymbol(parameterNode.GetSpan(), nameConstant);
+    parameter->SetAssembly(assembly);
+    container->AddSymbol(std::unique_ptr<Symbol>(parameter));
+}
+
+void SymbolTable::BeginDeclarationBlock(StatementNode& statementNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    StringPtr name(U"@local");
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(name));
+    DeclarationBlock* declarationBlock = new DeclarationBlock(statementNode.GetSpan(), nameConstant);
+    declarationBlock->SetAssembly(assembly);
+    ContainerScope* declarationBlockScope = declarationBlock->GetContainerScope();
+    ContainerScope* containerScope = container->GetContainerScope();
+    declarationBlockScope->SetParent(containerScope);
+    container->AddSymbol(std::unique_ptr<Symbol>(declarationBlock));
+    BeginContainer(declarationBlock);
+}
+
+void SymbolTable::EndDeclarationBlock()
+{
+    EndContainer();
+}
+
+void SymbolTable::AddLocalVariable(ConstructionStatementNode& constructionStatementNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(constructionStatementNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    LocalVariableSymbol* localVariableSymbol = new LocalVariableSymbol(constructionStatementNode.GetSpan(), nameConstant);
+    localVariableSymbol->SetAssembly(assembly);
+    container->AddSymbol(std::unique_ptr<Symbol>(localVariableSymbol));
 }
 
 void SymbolTable::Write(SymbolWriter& writer)
@@ -670,7 +760,8 @@ class ConcreteSymbolCreator : public SymbolCreator
 public:
     virtual Symbol* CreateSymbol(const Span& span, Constant name)
     {
-        return new T(span, name);
+        T* p = new T(span, name);
+        return p->ToSymbol();
     }
 };
 
@@ -723,30 +814,6 @@ Symbol* SymbolFactory::CreateSymbol(SymbolType symbolType, const Span& span, Con
     }
 }
 
-std::string CminorRootDir()
-{
-    char* e = getenv("CMINOR_ROOT");
-    if (e == nullptr || !*e)
-    {
-        throw std::runtime_error("CMINOR_ROOT environment variable not set");
-    }
-    return std::string(e);
-}
-
-std::string CminorSystemDir()
-{
-    boost::filesystem::path s(CminorRootDir());
-    s /= "system";
-    return s.string();
-}
-
-std::string CminorSystemAssemblyFilePath()
-{
-    boost::filesystem::path systemCmnaPath = CminorSystemDir();
-    systemCmnaPath /= "system.cmna";
-    return systemCmnaPath.string();
-}
-
 void InitSymbol()
 {
     SymbolFactory::Init();
@@ -763,6 +830,11 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::ulongTypeSymbol, new ConcreteSymbolCreator<ULongTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::floatTypeSymbol, new ConcreteSymbolCreator<FloatTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::doubleTypeSymbol, new ConcreteSymbolCreator<DoubleTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::classTypeSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::functionSymbol, new ConcreteSymbolCreator<FunctionSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::parameterSymbol, new ConcreteSymbolCreator<ParameterSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::localVariableSymbol, new ConcreteSymbolCreator<LocalVariableSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::memberVariableSymbol, new ConcreteSymbolCreator<MemberVariableSymbol>());
 }
 
 void DoneSymbol()
@@ -770,9 +842,9 @@ void DoneSymbol()
     SymbolFactory::Done();
 }
 
-std::unique_ptr<Assembly> CreateSystemAssembly()
+std::unique_ptr<Assembly> CreateSystemAssembly(const std::string& config)
 {
-    std::unique_ptr<Assembly> systemAssembly(new Assembly(U"system", CminorSystemAssemblyFilePath()));
+    std::unique_ptr<Assembly> systemAssembly(new Assembly(U"system", CminorSystemAssemblyFilePath(config)));
     TypeSymbol* boolTypeSymbol = new BoolTypeSymbol(Span(), systemAssembly->GetConstantPool().GetConstant(systemAssembly->GetConstantPool().Install(U"bool")));
     boolTypeSymbol->SetAssembly(systemAssembly.get());
     systemAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(boolTypeSymbol));

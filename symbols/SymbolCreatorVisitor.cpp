@@ -6,6 +6,7 @@
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/ast/CompileUnit.hpp>
+#include <cminor/ast/Statement.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -22,7 +23,7 @@ void SymbolCreatorVisitor::Visit(NamespaceNode& namespaceNode)
 {
     utf32_string nsName = ToUtf32(namespaceNode.Id()->Str());
     StringPtr namespaceName(nsName.c_str());
-    symbolTable.BeginNamespaceScope(namespaceName, namespaceNode.GetSpan());
+    symbolTable.BeginNamespace(namespaceName, namespaceNode.GetSpan());
     NodeList<Node>& members = namespaceNode.Members();
     int n = members.Count();
     for (int i = 0; i < n; ++i)
@@ -30,12 +31,42 @@ void SymbolCreatorVisitor::Visit(NamespaceNode& namespaceNode)
         Node* member = members[i];
         member->Accept(*this);
     }
-    symbolTable.EndNamespaceScope();
+    symbolTable.EndNamespace();
 }
 
 void SymbolCreatorVisitor::Visit(FunctionNode& functionNode)
 {
+    symbolTable.BeginFunction(functionNode);
+    int n = functionNode.Parameters().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        ParameterNode* parameterNode = functionNode.Parameters()[i];
+        parameterNode->Accept(*this);
+    }
+    functionNode.Body()->Accept(*this);
+    symbolTable.EndFunction();
+}
 
+void SymbolCreatorVisitor::Visit(ParameterNode& parameterNode)
+{
+    symbolTable.AddParameter(parameterNode);
+}
+
+void SymbolCreatorVisitor::Visit(CompoundStatementNode& compoundStatementNode)
+{
+    symbolTable.BeginDeclarationBlock(compoundStatementNode);
+    int n = compoundStatementNode.Statements().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        StatementNode* statementNode = compoundStatementNode.Statements()[i];
+        statementNode->Accept(*this);
+    }
+    symbolTable.EndDeclarationBlock();
+}
+
+void SymbolCreatorVisitor::Visit(ConstructionStatementNode& constructionStatementNode)
+{
+    symbolTable.AddLocalVariable(constructionStatementNode);
 }
 
 } } // namespace cminor::symbols

@@ -17,6 +17,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::identifierNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
+    std::string ToString() const override { return identifier; }
     const std::string& Str() const { return identifier; }
 private:
     std::string identifier;

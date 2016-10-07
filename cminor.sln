@@ -93,6 +93,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "compiler", "compiler\compil
 		{DC73A9E2-DE6D-476D-A36B-1F9BE152E5A6} = {DC73A9E2-DE6D-476D-A36B-1F9BE152E5A6}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cminor", "cminor\cminor.vcxproj", "{1B19706C-A17E-45AC-B14B-300C0DE6A3EE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -189,6 +191,14 @@ Global
 		{6AA9B650-648F-426A-82BF-AE180FEBFF4C}.Release|x64.Build.0 = Release|x64
 		{6AA9B650-648F-426A-82BF-AE180FEBFF4C}.Release|x86.ActiveCfg = Release|Win32
 		{6AA9B650-648F-426A-82BF-AE180FEBFF4C}.Release|x86.Build.0 = Release|Win32
+		{1B19706C-A17E-45AC-B14B-300C0DE6A3EE}.Debug|x64.ActiveCfg = Debug|x64
+		{1B19706C-A17E-45AC-B14B-300C0DE6A3EE}.Debug|x64.Build.0 = Debug|x64
+		{1B19706C-A17E-45AC-B14B-300C0DE6A3EE}.Debug|x86.ActiveCfg = Debug|Win32
+		{1B19706C-A17E-45AC-B14B-300C0DE6A3EE}.Debug|x86.Build.0 = Debug|Win32
+		{1B19706C-A17E-45AC-B14B-300C0DE6A3EE}.Release|x64.ActiveCfg = Release|x64
+		{1B19706C-A17E-45AC-B14B-300C0DE6A3EE}.Release|x64.Build.0 = Release|x64
+		{1B19706C-A17E-45AC-B14B-300C0DE6A3EE}.Release|x86.ActiveCfg = Release|Win32
+		{1B19706C-A17E-45AC-B14B-300C0DE6A3EE}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

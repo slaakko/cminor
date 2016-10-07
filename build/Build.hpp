@@ -10,6 +10,7 @@
 namespace cminor { namespace build {
 
 void BuildProject(const std::string& projectFilePath);
+void BuildSolution(const std::string& solutionFilePath);
 
 } } // namespace cminor::build
 

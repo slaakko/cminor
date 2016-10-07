@@ -37,6 +37,7 @@ public:
     virtual NodeType GetNodeType() const = 0;
     virtual Node* Clone(CloneContext& cloneContext) const = 0;
     virtual void Accept(Visitor& visitor);
+    virtual std::string ToString() const { return ""; }
     Span& GetSpan() { return span; }
     const Span& GetSpan() const { return span; }
     Node* Parent() const { return parent; }

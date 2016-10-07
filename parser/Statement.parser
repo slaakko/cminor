@@ -47,9 +47,9 @@ namespace cminor.parser
             ;
 
         CompoundStatement(ParsingContext* ctx) : CompoundStatementNode*
-            ::= (   '{'{ value = new CompoundStatementNode(span); }
+            ::= (   '{'{ value = new CompoundStatementNode(span); value->SetBeginBraceSpan(span); }
                     (Statement(ctx):stmt{ value->AddStatement(stmt); })*
-                    '}'!
+                    '}'!{ value->SetEndBraceSpan(span); }
                 ){ value->GetSpan().SetEnd(span.End()); }
             ;
 

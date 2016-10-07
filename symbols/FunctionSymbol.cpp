@@ -6,6 +6,8 @@
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/symbols/Assembly.hpp>
+#include <cminor/symbols/SymbolWriter.hpp>
+#include <cminor/symbols/SymbolReader.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -13,10 +15,25 @@ FunctionSymbol::FunctionSymbol(const Span& span_, Constant name_) : ContainerSym
 {
 }
 
-void FunctionSymbol::SetGroupName(StringPtr groupNameStr)
+void FunctionSymbol::Write(SymbolWriter& writer)
 {
-    ConstantPool& constantPool = GetAssembly()->GetConstantPool();
-    groupName = constantPool.GetConstant(constantPool.Install(groupNameStr));
+    ContainerSymbol::Write(writer);
+    ConstantId groupNameId = GetAssembly()->GetConstantPool().GetIdFor(groupName);
+    Assert(groupNameId != noConstantId, "no id for group name found from constant pool");
+    groupNameId.Write(static_cast<Writer&>(writer));
+}
+
+void FunctionSymbol::Read(SymbolReader& reader)
+{
+    ContainerSymbol::Read(reader);
+    ConstantId groupNameId;
+    groupNameId.Read(reader);
+    groupName = reader.GetAssembly()->GetConstantPool().GetConstant(groupNameId);
+}
+
+bool FunctionSymbol::IsExportSymbol() const
+{
+    return Source() == SymbolSource::project;
 }
 
 void FunctionSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)

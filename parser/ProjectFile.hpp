@@ -1,5 +1,5 @@
-#ifndef ProjectFile_hpp_25544
-#define ProjectFile_hpp_25544
+#ifndef ProjectFile_hpp_27058
+#define ProjectFile_hpp_27058
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -13,7 +13,7 @@ class ProjectGrammar : public Cm::Parsing::Grammar
 public:
     static ProjectGrammar* Create();
     static ProjectGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
-    Project* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName);
+    Project* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, std::string config);
 private:
     ProjectGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -22,9 +22,11 @@ private:
     class DeclarationRule;
     class AssemblyReferenceDeclarationRule;
     class SourceFileDeclarationRule;
+    class TargetDeclarationRule;
+    class TargetRule;
     class FilePathRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // ProjectFile_hpp_25544
+#endif // ProjectFile_hpp_27058

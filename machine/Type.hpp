@@ -50,16 +50,31 @@ private:
 class Type
 {
 public:
+    virtual ~Type();
+    virtual uint64_t ObjectSize() const = 0;
+};
+
+class ObjectType : public Type
+{
+public:
     void AddField(ValueType fieldType) { objectLayout.AddField(fieldType); }
     Field GetField(int32_t index) const { return objectLayout.GetField(index); }
     void AddStaticField(ValueType fieldType) { staticLayout.AddField(fieldType); }
     Field GetStaticField(int32_t index) const { return staticLayout.GetField(index); }
     int32_t FieldCount() const { return objectLayout.FieldCount(); }
     int32_t StaticFieldCount() const { return staticLayout.FieldCount(); }
-    uint64_t ObjectSize() const { return objectLayout.Size(); }
+    uint64_t ObjectSize() const override { return objectLayout.Size(); }
 private:
     Layout objectLayout;
     Layout staticLayout;
+};
+
+class ArrayType : public ObjectType
+{
+public:
+    ArrayType(std::unique_ptr<Type>&& elementType_);
+private:
+    std::unique_ptr<Type> elementType;
 };
 
 } } // namespace cminor::machine

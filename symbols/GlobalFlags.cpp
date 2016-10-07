@@ -29,4 +29,14 @@ bool GetGlobalFlag(GlobalFlags flag)
     return (globalFlags & flag) != GlobalFlags::none;
 }
 
+std::string GetConfig()
+{
+    std::string config = "debug";
+    if (GetGlobalFlag(GlobalFlags::release))
+    {
+        config = "release";
+    }
+    return config;
+}
+
 } } // namespace cminor::symbols

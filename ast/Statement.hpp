@@ -43,8 +43,14 @@ public:
     NodeList<StatementNode>& Statements() { return statements; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
+    void SetBeginBraceSpan(const Span& beginBraceSpan_) { beginBraceSpan = beginBraceSpan_; }
+    const Span& BeginBraceSpan() const { return beginBraceSpan; }
+    void SetEndBraceSpan(const Span& endBraceSpan_) { endBraceSpan = endBraceSpan_; }
+    const Span& EndBraceSpan() const { return endBraceSpan; }
 private:
     NodeList<StatementNode> statements;
+    Span beginBraceSpan;
+    Span endBraceSpan;
 };
 
 class ConstructionStatementNode : public StatementNode

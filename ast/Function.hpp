@@ -38,6 +38,8 @@ public:
     void Accept(Visitor& visitor) override;
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
+    std::string Name() const;
+    std::string ToString() const override { return Name(); }
     FunctionGroupIdNode* GroupId() const { return groupId.get(); }
     const NodeList<ParameterNode>& Parameters() const { return parameters; }
     CompoundStatementNode* Body() const { return body.get(); }

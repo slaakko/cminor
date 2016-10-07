@@ -15,14 +15,15 @@ namespace cminor.parser
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
 
-        Project : Project*
-            ::= keyword("project") qualified_id ';'{ value = new Project(qualified_id, fileName); }
+        Project(std::string config) : Project*
+            ::= keyword("project") qualified_id ';'{ value = new Project(qualified_id, fileName, config); }
                 (Declaration{ value->AddDeclaration(Declaration); })*
             ;
 
         Declaration : ProjectDeclaration*
             ::= AssemblyReferenceDeclaration{ value = AssemblyReferenceDeclaration; }
             |   SourceFileDeclaration{ value = SourceFileDeclaration; }
+            |   TargetDeclaration{ value = TargetDeclaration; }
             ;
 
         AssemblyReferenceDeclaration : ProjectDeclaration*
@@ -31,6 +32,15 @@ namespace cminor.parser
 
         SourceFileDeclaration : ProjectDeclaration*
             ::= (keyword("source") FilePath! ';'!){ value = new SourceFileDeclaration(FilePath); }
+            ;
+
+        TargetDeclaration : ProjectDeclaration*
+            ::= (keyword("target") '='! Target! ';'!){ value = new TargetDeclaration(Target); }
+            ;
+
+        Target : Target
+            ::= keyword("program"){ value = Target::program; }
+            |   keyword("library"){ value = Target::library; }
             ;
 
         FilePath: std::string

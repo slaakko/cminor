@@ -22,6 +22,9 @@ public:
     void Visit(CompileUnitNode& compileUnitNode) override;
     void Visit(NamespaceNode& namespaceNode) override;
     void Visit(FunctionNode& functionNode) override;
+    void Visit(ParameterNode& parameterNode) override;
+    void Visit(CompoundStatementNode& compoundStatementNode) override;
+    void Visit(ConstructionStatementNode& constructionStatementNode) override;
 private:
     Assembly& assembly;
     SymbolTable& symbolTable;

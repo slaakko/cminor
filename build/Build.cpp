@@ -7,8 +7,12 @@
 #include <cminor/parser/ProjectFile.hpp>
 #include <cminor/parser/CompileUnit.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
+#include <cminor/symbols/Assembly.hpp>
+#include <cminor/symbols/SymbolWriter.hpp>
+#include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/MappedInputFile.hpp>
+#include <cminor/machine/Machine.hpp>
 #include <iostream>
 
 namespace cminor { namespace build {
@@ -37,9 +41,23 @@ std::vector<std::unique_ptr<CompileUnitNode>> ParseSources(const std::vector<std
     }
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "parsed " << sourceFilePaths.size() << " source files" << std::endl;
+        std::string s;
+        if (sourceFilePaths.size() > 1)
+        {
+            s = "s";
+        }
+        std::cout << sourceFilePaths.size() << " source file" << s << " parsed" << std::endl;
     }
     return compileUnits;
+}
+
+void BuildSymbolTable(Assembly& assembly, const std::vector<std::unique_ptr<CompileUnitNode>>& compileUnits)
+{
+    SymbolCreatorVisitor symbolCreatorVisitor(assembly);
+    for (const std::unique_ptr<CompileUnitNode>& compileUnit : compileUnits)
+    {
+        compileUnit->Accept(symbolCreatorVisitor);
+    }
 }
 
 ProjectGrammar* projectGrammar = nullptr;
@@ -50,10 +68,30 @@ void BuildProject(const std::string& projectFilePath)
     {
         projectGrammar = ProjectGrammar::Create();
     }
+    std::string config = GetConfig();
     MappedInputFile projectFile(projectFilePath);
-    std::unique_ptr<Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath));
+    std::unique_ptr<Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, config));
     project->ResolveDeclarations();
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "Building project '" << project->Name() << "(" << projectFilePath << " using " << config << " configuration." << std::endl;
+    }
     std::vector<std::unique_ptr<CompileUnitNode>> compileUnits = ParseSources(project->SourceFilePaths());
+    utf32_string assemblyName = ToUtf32(project->Name());
+    Machine machine;
+    Assembly assembly(assemblyName, project->AssemblyFilePath());
+    assembly.ImportAssemblies(machine, project->AssemblyReferences());
+    BuildSymbolTable(assembly, compileUnits);
+    boost::filesystem::path obp(assembly.FilePath());
+    obp.remove_filename();
+    boost::filesystem::create_directories(obp);
+    SymbolWriter writer(assembly.FilePath());
+    assembly.Write(writer);
+}
+
+void BuildSolution(const std::string& solutionFilePath)
+{
+    throw std::runtime_error("not implemented yet");
 }
 
 } } // namespace cminor::build
