@@ -4,6 +4,7 @@
 // =================================
 
 #include <cminor/binder/TypeBinderVisitor.hpp>
+#include <cminor/binder/BoundCompileUnit.hpp>
 #include <cminor/binder/TypeResolver.hpp>
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/symbols/FunctionSymbol.hpp>

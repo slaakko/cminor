@@ -20,11 +20,25 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BoundCompileUnit.hpp" />
+    <ClInclude Include="BoundExpression.hpp" />
+    <ClInclude Include="BoundFunction.hpp" />
+    <ClInclude Include="BoundNode.hpp" />
+    <ClInclude Include="BoundStatement.hpp" />
+    <ClInclude Include="ExpressionBinder.hpp" />
+    <ClInclude Include="OverloadResolution.hpp" />
+    <ClInclude Include="StatementBinderVisitor.hpp" />
     <ClInclude Include="TypeBinderVisitor.hpp" />
     <ClInclude Include="TypeResolver.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BoundCompileUnit.cpp" />
+    <ClCompile Include="BoundExpression.cpp" />
+    <ClCompile Include="BoundFunction.cpp" />
+    <ClCompile Include="BoundNode.cpp" />
+    <ClCompile Include="BoundStatement.cpp" />
+    <ClCompile Include="ExpressionBinder.cpp" />
+    <ClCompile Include="OverloadResolution.cpp" />
+    <ClCompile Include="StatementBinderVisitor.cpp" />
     <ClCompile Include="TypeBinderVisitor.cpp" />
     <ClCompile Include="TypeResolver.cpp" />
   </ItemGroup>

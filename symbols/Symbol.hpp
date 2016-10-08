@@ -29,8 +29,8 @@ class SymbolTable;
 enum class SymbolType : uint8_t
 {
     boolTypeSymbol, charTypeSymbol, voidTypeSymbol, sbyteTypeSymbol, byteTypeSymbol, shortTypeSymbol, ushortTypeSymbol, intTypeSymbol, uintTypeSymbol, longTypeSymbol, ulongTypeSymbol,
-    floatTypeSymbol, doubleTypeSymbol,
-    classTypeSymbol, functionSymbol, functionGroupSymbol, parameterSymbol, localVariableSymbol, memberVariableSymbol, namespaceSymbol, declarationBlock,
+    floatTypeSymbol, doubleTypeSymbol, nullReferenceTypeSymbol,
+    classTypeSymbol, stringTypeSymbol, functionSymbol, functionGroupSymbol, parameterSymbol, localVariableSymbol, memberVariableSymbol, constantSymbol, namespaceSymbol, declarationBlock,
     maxSymbol
 };
 
@@ -158,6 +158,7 @@ public:
     Symbol* Lookup(StringPtr name) const override;
     Symbol* Lookup(StringPtr name, ScopeLookup lookup) const override;
     Symbol* LookupQualified(const std::vector<utf32_string>& components, ScopeLookup lookup) const;
+    void CollectViableFunctions(int arity, StringPtr groupName, std::unordered_set<ContainerScope*>& scopesLookedUp, ScopeLookup scopeLookup, std::unordered_set<FunctionSymbol*>& viableFunctions);
     NamespaceSymbol* Ns() const;
     NamespaceSymbol* CreateNamespace(StringPtr qualifiedNsName, const Span& span);
     void Clear();
@@ -175,6 +176,7 @@ public:
     void InstallNamespaceImport(ContainerScope* containerScope, NamespaceImportNode* namespaceImportNode);
     Symbol* Lookup(StringPtr name) const override;
     Symbol* Lookup(StringPtr name, ScopeLookup lookup) const override;
+    void CollectViableFunctions(int arity, StringPtr groupName, std::unordered_set<ContainerScope*>& scopesLookedUp, std::unordered_set<FunctionSymbol*>& viableFunctions);
 private:
     std::vector<ContainerScope*> containerScopes;
     std::unordered_map<StringPtr, Symbol*, StringPtrHash> aliasSymbolMap;
@@ -318,12 +320,28 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::doubleTypeSymbol; }
 };
 
+class NullReferenceTypeSymbol : public BasicTypeSymbol
+{
+public:
+    NullReferenceTypeSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::nullReferenceTypeSymbol; }
+};
+
 class ClassTypeSymbol : public TypeSymbol, public ContainerSymbol
 {
 public:
     ClassTypeSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::classTypeSymbol; }
     Symbol* ToSymbol() const { return TypeSymbol::ToSymbol(); }
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
+};
+
+class StringTypeSymbol : public ClassTypeSymbol
+{
+public:
+    StringTypeSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::stringTypeSymbol; }
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
 };

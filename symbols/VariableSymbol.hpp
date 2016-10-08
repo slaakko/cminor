@@ -13,6 +13,7 @@ class VariableSymbol : public Symbol
 {
 public:
     VariableSymbol(const Span& span_, Constant name_);
+    TypeSymbol* GetType()  const { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }
 private:
     TypeSymbol* type;
@@ -24,7 +25,6 @@ public:
     ParameterSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::parameterSymbol; }
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
-    bool IsExportSymbol() const override;
 };
 
 class LocalVariableSymbol : public VariableSymbol
@@ -33,7 +33,6 @@ public:
     LocalVariableSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::localVariableSymbol; }
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
-    bool IsExportSymbol() const override;
 };
 
 class MemberVariableSymbol : public VariableSymbol
@@ -41,8 +40,6 @@ class MemberVariableSymbol : public VariableSymbol
 public:
     MemberVariableSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::memberVariableSymbol; }
-    SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
-    bool IsExportSymbol() const override;
 };
 
 } } // namespace cminor::symbols

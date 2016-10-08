@@ -9,6 +9,8 @@
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
+#include <cminor/symbols/ConstantSymbol.hpp>
+#include <cminor/symbols/BasicTypeFun.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/machine/Util.hpp>
 #include <boost/filesystem.hpp>
@@ -38,7 +40,7 @@ Symbol::~Symbol()
 
 bool Symbol::IsExportSymbol() const
 {
-    return Source() == SymbolSource::project && (DeclaredAccess() == SymbolAccess::public_);
+    return Source() == SymbolSource::project;
 }
 
 void Symbol::Write(SymbolWriter& writer)
@@ -161,6 +163,39 @@ Symbol* ContainerScope::LookupQualified(const std::vector<utf32_string>& compone
         }
     }
     return s;
+}
+
+void ContainerScope::CollectViableFunctions(int arity, StringPtr groupName, std::unordered_set<ContainerScope*>& scopesLookedUp, ScopeLookup scopeLookup, std::unordered_set<FunctionSymbol*>& viableFunctions)
+{
+    if ((scopeLookup & ScopeLookup::this_) != ScopeLookup::none)
+    {
+        if (scopesLookedUp.find(this) == scopesLookedUp.cend())
+        {
+            scopesLookedUp.insert(this);
+            Symbol* symbol = Lookup(groupName);
+            if (symbol)
+            {
+                if (FunctionGroupSymbol* functionGroupSymbol = dynamic_cast<FunctionGroupSymbol*>(symbol))
+                {
+                    functionGroupSymbol->CollectViableFunctions(arity, viableFunctions);
+                }
+            }
+        }
+    }
+    if ((scopeLookup & ScopeLookup::base) != ScopeLookup::none)
+    {
+        if (base)
+        {
+            base->CollectViableFunctions(arity, groupName, scopesLookedUp, scopeLookup, viableFunctions);
+        }
+    }
+    if ((scopeLookup & ScopeLookup::parent) != ScopeLookup::none)
+    {
+        if (parent)
+        {
+            parent->CollectViableFunctions(arity, groupName, scopesLookedUp, scopeLookup, viableFunctions);
+        }
+    }
 }
 
 NamespaceSymbol* ContainerScope::Ns() const
@@ -474,6 +509,18 @@ Symbol* FileScope::Lookup(StringPtr name, ScopeLookup lookup) const
     }
 }
 
+void FileScope::CollectViableFunctions(int arity, StringPtr groupName, std::unordered_set<ContainerScope*>& scopesLookedUp, std::unordered_set<FunctionSymbol*>& viableFunctions)
+{
+    for (ContainerScope* containerScope : containerScopes)
+    {
+        if (scopesLookedUp.find(containerScope) == scopesLookedUp.cend())
+        {
+            scopesLookedUp.insert(containerScope);
+            containerScope->CollectViableFunctions(arity, groupName, scopesLookedUp, ScopeLookup::this_, viableFunctions);
+        }
+    }
+}
+
 ContainerSymbol::ContainerSymbol(const Span& span_, Constant name_) : Symbol(span_, name_)
 {
     containerScope.SetContainer(this);
@@ -643,6 +690,10 @@ DoubleTypeSymbol::DoubleTypeSymbol(const Span& span_, Constant name_) : BasicTyp
 {
 }
 
+NullReferenceTypeSymbol::NullReferenceTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
+{
+}
+
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), ContainerSymbol(span_, name_)
 {
 }
@@ -657,6 +708,20 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
 {
     TypeSymbol::Read(reader);
     ContainerSymbol::Read(reader);
+}
+
+StringTypeSymbol::StringTypeSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_)
+{
+}
+
+void StringTypeSymbol::Write(SymbolWriter& writer)
+{
+    ClassTypeSymbol::Write(writer);
+}
+
+void StringTypeSymbol::Read(SymbolReader& reader)
+{
+    ClassTypeSymbol::Read(reader);
 }
 
 SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs), function(nullptr), mainFunction(nullptr)
@@ -967,11 +1032,14 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::ulongTypeSymbol, new ConcreteSymbolCreator<ULongTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::floatTypeSymbol, new ConcreteSymbolCreator<FloatTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::doubleTypeSymbol, new ConcreteSymbolCreator<DoubleTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::nullReferenceTypeSymbol, new ConcreteSymbolCreator<NullReferenceTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::classTypeSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::stringTypeSymbol, new ConcreteSymbolCreator<StringTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::functionSymbol, new ConcreteSymbolCreator<FunctionSymbol>());
     SymbolFactory::Instance().Register(SymbolType::parameterSymbol, new ConcreteSymbolCreator<ParameterSymbol>());
     SymbolFactory::Instance().Register(SymbolType::localVariableSymbol, new ConcreteSymbolCreator<LocalVariableSymbol>());
     SymbolFactory::Instance().Register(SymbolType::memberVariableSymbol, new ConcreteSymbolCreator<MemberVariableSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::constantSymbol, new ConcreteSymbolCreator<ConstantSymbol>());
 }
 
 void DoneSymbol()
@@ -1021,6 +1089,13 @@ std::unique_ptr<Assembly> CreateSystemAssembly(const std::string& config)
     TypeSymbol* doubleTypeSymbol = new DoubleTypeSymbol(Span(), systemAssembly->GetConstantPool().GetConstant(systemAssembly->GetConstantPool().Install(U"double")));
     doubleTypeSymbol->SetAssembly(systemAssembly.get());
     systemAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(doubleTypeSymbol));
+    TypeSymbol* nullReferenceTypeSymbol = new NullReferenceTypeSymbol(Span(), systemAssembly->GetConstantPool().GetConstant(systemAssembly->GetConstantPool().Install(U"@nullref")));
+    nullReferenceTypeSymbol->SetAssembly(systemAssembly.get());
+    systemAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(nullReferenceTypeSymbol));
+    TypeSymbol* stringTypeSymbol = new StringTypeSymbol(Span(), systemAssembly->GetConstantPool().GetConstant(systemAssembly->GetConstantPool().Install(U"string")));
+    stringTypeSymbol->SetAssembly(systemAssembly.get());
+    systemAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(stringTypeSymbol));
+    InitBasicTypeFun(*systemAssembly);
     return systemAssembly;
 }
 

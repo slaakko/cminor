@@ -7,6 +7,8 @@
 #include <cminor/parser/ProjectFile.hpp>
 #include <cminor/parser/CompileUnit.hpp>
 #include <cminor/binder/TypeBinderVisitor.hpp>
+#include <cminor/binder/StatementBinderVisitor.hpp>
+#include <cminor/binder/BoundCompileUnit.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
@@ -67,12 +69,21 @@ std::vector<std::unique_ptr<BoundCompileUnit>> BindTypes(Assembly& assembly, con
     std::vector<std::unique_ptr<BoundCompileUnit>> boundCompileUnits;
     for (const std::unique_ptr<CompileUnitNode>& compileUnit : compileUnits)
     {
-        std::unique_ptr<BoundCompileUnit> boundCompileUnit(new BoundCompileUnit(assembly));
+        std::unique_ptr<BoundCompileUnit> boundCompileUnit(new BoundCompileUnit(assembly, compileUnit.get()));
         TypeBinderVisitor typeBinderVisitor(*boundCompileUnit);
         compileUnit->Accept(typeBinderVisitor);
         boundCompileUnits.push_back(std::move(boundCompileUnit));
     }
     return boundCompileUnits;
+}
+
+void BindStatements(std::vector<std::unique_ptr<BoundCompileUnit>>& boundCompileUnits)
+{
+    for (const std::unique_ptr<BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+    {
+        StatementBinderVisitor statementBinderVisitor(*boundCompileUnit);
+        boundCompileUnit->GetCompileUnitNode()->Accept(statementBinderVisitor);
+    }
 }
 
 ProjectGrammar* projectGrammar = nullptr;
@@ -97,7 +108,8 @@ void BuildProject(const std::string& projectFilePath)
     Assembly assembly(assemblyName, project->AssemblyFilePath());
     assembly.ImportAssemblies(machine, project->AssemblyReferences());
     BuildSymbolTable(assembly, compileUnits);
-    BindTypes(assembly, compileUnits);
+    std::vector<std::unique_ptr<BoundCompileUnit>> boundCompileUnits = BindTypes(assembly, compileUnits);
+    BindStatements(boundCompileUnits);
     boost::filesystem::path obp(assembly.FilePath());
     obp.remove_filename();
     boost::filesystem::create_directories(obp);

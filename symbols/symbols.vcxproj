@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assembly.hpp" />
+    <ClInclude Include="BasicTypeFun.hpp" />
+    <ClInclude Include="ConstantSymbol.hpp" />
     <ClInclude Include="FunctionSymbol.hpp" />
     <ClInclude Include="GlobalFlags.hpp" />
     <ClInclude Include="SymbolCreatorVisitor.hpp" />
@@ -30,6 +32,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Assembly.cpp" />
+    <ClCompile Include="BasicTypeFun.cpp" />
+    <ClCompile Include="ConstantSymbol.cpp" />
     <ClCompile Include="FunctionSymbol.cpp" />
     <ClCompile Include="GlobalFlags.cpp" />
     <ClCompile Include="SymbolCreatorVisitor.cpp" />
