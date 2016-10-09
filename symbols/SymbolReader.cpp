@@ -15,6 +15,10 @@ SymbolReader::SymbolReader(Machine& machine_, const std::string& fileName_) : Re
 Symbol* SymbolReader::GetSymbol()
 {
     SymbolType symbolType = static_cast<SymbolType>(GetByte());
+    if (symbolType == SymbolType::basicTypeConversion)
+    {
+        int x = 0;
+    }
     Span span = GetSpan();
     ConstantId id;
     id.Read(*this);

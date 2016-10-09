@@ -17,6 +17,7 @@ public:
     TypeSymbol* GetType() const { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }
     void SetValue(Constant value_);
+    Constant Value() const { return value; }
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
     ConstantId GetId() const;

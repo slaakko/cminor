@@ -370,6 +370,19 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
     convContainerInst->SetInst(0xAA, new ConversionInst<char32_t, float, ValueType::floatType>("ch2fl"));
     convContainerInst->SetInst(0xAB, new ConversionInst<char32_t, double, ValueType::doubleType>("ch2do"));
     convContainerInst->SetInst(0xAE, new ConversionInst<char32_t, bool, ValueType::boolType>("ch2bo"));
+
+    // from bool:
+    convContainerInst->SetInst(0xAF, new ConversionInst<bool, int8_t, ValueType::sbyteType>("bo2sb"));
+    convContainerInst->SetInst(0xB0, new ConversionInst<bool, uint8_t, ValueType::byteType>("bo2by"));
+    convContainerInst->SetInst(0xB1, new ConversionInst<bool, int16_t, ValueType::shortType>("bo2sh"));
+    convContainerInst->SetInst(0xB2, new ConversionInst<bool, uint16_t, ValueType::ushortType>("bo2us"));
+    convContainerInst->SetInst(0xB3, new ConversionInst<bool, int32_t, ValueType::intType>("bo2in"));
+    convContainerInst->SetInst(0xB4, new ConversionInst<bool, uint32_t, ValueType::uintType>("bo2ui"));
+    convContainerInst->SetInst(0xB5, new ConversionInst<bool, int64_t, ValueType::longType>("bo2lo"));
+    convContainerInst->SetInst(0xB6, new ConversionInst<bool, uint64_t, ValueType::ulongType>("bo2ul"));
+    convContainerInst->SetInst(0xB7, new ConversionInst<bool, float, ValueType::floatType>("bo2fl"));
+    convContainerInst->SetInst(0xB8, new ConversionInst<bool, double, ValueType::doubleType>("bo2do"));
+    convContainerInst->SetInst(0xB9, new ConversionInst<bool, char32_t, ValueType::charType>("bo2ch"));
 }
 
 Machine::~Machine()

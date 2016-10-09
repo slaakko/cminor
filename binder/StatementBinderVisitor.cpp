@@ -74,8 +74,9 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
     LocalVariableSymbol* localVariableSymbol = dynamic_cast<LocalVariableSymbol*>(symbol);
     Assert(localVariableSymbol, "local variable symbol expected");
     std::vector<std::unique_ptr<BoundExpression>> arguments;
+    arguments.push_back(std::unique_ptr<BoundExpression>(new BoundLocalVariable(localVariableSymbol->GetType(), localVariableSymbol)));
     std::vector<FunctionScopeLookup> functionScopeLookups;
-    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, localVariableSymbol->GetType()->GetContainerScope()));
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, localVariableSymbol->GetType()->ClassOrNsScope()));
     int n = constructionStatementNode.Arguments().Count();
     for (int i = 0; i < n; ++i)
     {

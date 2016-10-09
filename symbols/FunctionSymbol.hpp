@@ -15,6 +15,27 @@ using namespace cminor::machine;
 class Assembly;
 class ParameterSymbol;
 
+enum class ConversionType : uint8_t
+{
+    implicit_, explicit_
+};
+
+enum class FunctionSymbolFlags : uint8_t
+{
+    none = 0,
+    conversionFun = 1 << 0
+};
+
+inline FunctionSymbolFlags operator&(FunctionSymbolFlags left, FunctionSymbolFlags right)
+{
+    return FunctionSymbolFlags(uint8_t(left) & uint8_t(right));
+}
+
+inline FunctionSymbolFlags operator|(FunctionSymbolFlags left, FunctionSymbolFlags right)
+{
+    return FunctionSymbolFlags(uint8_t(left) | uint8_t(right));
+}
+
 class FunctionSymbol : public ContainerSymbol
 {
 public:
@@ -29,11 +50,20 @@ public:
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     TypeSymbol* ReturnType() const { return returnType; }
     void SetReturnType(TypeSymbol* returnType_) { returnType = returnType_;  }
+    bool IsConversionFun() const { return GetFlag(FunctionSymbolFlags::conversionFun);  }
+    void SetConversionFun() { SetFlag(FunctionSymbolFlags::conversionFun); }
+    virtual ConversionType GetConversionType() const { return ConversionType::implicit_; }
+    virtual int ConversionDistance() const { return 0; }
+    virtual TypeSymbol* ConversionSourceType() const { return nullptr; }
+    virtual TypeSymbol* ConversionTargetType() const { return nullptr; }
     virtual void GenerateCode(Machine& machine, Function& function, std::vector<GenObject*>& objects);
+    bool GetFlag(FunctionSymbolFlags flag) const { return (flags & flag) != FunctionSymbolFlags::none; }
+    void SetFlag(FunctionSymbolFlags flag) { flags = flags | flag; }
 private:
     Constant groupName;
     std::vector<ParameterSymbol*> parameters;
     TypeSymbol* returnType;
+    FunctionSymbolFlags flags;
 };
 
 class FunctionGroupSymbol : public Symbol
@@ -41,6 +71,7 @@ class FunctionGroupSymbol : public Symbol
 public:
     FunctionGroupSymbol(const Span& span_, Constant name_, ContainerScope* containerScope_);
     SymbolType GetSymbolType() const override { return SymbolType::functionGroupSymbol; }
+    bool IsExportSymbol() const override { return false; }
     void AddFunction(FunctionSymbol* function);
     void CollectViableFunctions(int arity, std::unordered_set<FunctionSymbol*>& viableFunctions);
 private:

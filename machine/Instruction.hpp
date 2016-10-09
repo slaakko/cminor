@@ -28,6 +28,7 @@ public:
     virtual Instruction* Clone() const = 0;
     virtual void Encode(Writer& writer);
     virtual Instruction* Decode(Reader& reader);
+    virtual void SetIndex(int32_t index_);
     void SetParent(Instruction* parent_) { parent = parent_; }
     void SetOpCode(uint8_t opCode_) { opCode = opCode_; }
     uint8_t OpCode() const { return opCode; }
@@ -178,7 +179,7 @@ class IndexParamInst : public Instruction
 public:
     IndexParamInst(const std::string& name_);
     IndexParamInst(const IndexParamInst&) = default;
-    void SetIndex(int32_t index_) { index = index_; }
+    void SetIndex(int32_t index_) override { index = index_; }
     int32_t Index() const { return index; }
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;

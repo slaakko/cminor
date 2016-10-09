@@ -11,7 +11,7 @@
 
 namespace cminor { namespace symbols {
 
-FunctionSymbol::FunctionSymbol(const Span& span_, Constant name_) : ContainerSymbol(span_, name_), returnType(nullptr)
+FunctionSymbol::FunctionSymbol(const Span& span_, Constant name_) : ContainerSymbol(span_, name_), returnType(nullptr), flags(FunctionSymbolFlags::none)
 {
 }
 
@@ -21,6 +21,7 @@ void FunctionSymbol::Write(SymbolWriter& writer)
     ConstantId groupNameId = GetAssembly()->GetConstantPool().GetIdFor(groupName);
     Assert(groupNameId != noConstantId, "no id for group name found from constant pool");
     groupNameId.Write(static_cast<Writer&>(writer));
+    static_cast<Writer&>(writer).Put(uint8_t(flags));
 }
 
 void FunctionSymbol::Read(SymbolReader& reader)
@@ -29,6 +30,7 @@ void FunctionSymbol::Read(SymbolReader& reader)
     ConstantId groupNameId;
     groupNameId.Read(reader);
     groupName = reader.GetAssembly()->GetConstantPool().GetConstant(groupNameId);
+    flags = FunctionSymbolFlags(reader.GetByte());
 }
 
 void FunctionSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)

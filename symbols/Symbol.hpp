@@ -24,6 +24,7 @@ class ContainerSymbol;
 class NamespaceSymbol;
 class FunctionSymbol;
 class FunctionGroupSymbol;
+class ClassTypeSymbol;
 class SymbolTable;
 
 enum class SymbolType : uint8_t
@@ -31,6 +32,7 @@ enum class SymbolType : uint8_t
     boolTypeSymbol, charTypeSymbol, voidTypeSymbol, sbyteTypeSymbol, byteTypeSymbol, shortTypeSymbol, ushortTypeSymbol, intTypeSymbol, uintTypeSymbol, longTypeSymbol, ulongTypeSymbol,
     floatTypeSymbol, doubleTypeSymbol, nullReferenceTypeSymbol,
     classTypeSymbol, stringTypeSymbol, functionSymbol, functionGroupSymbol, parameterSymbol, localVariableSymbol, memberVariableSymbol, constantSymbol, namespaceSymbol, declarationBlock,
+    basicTypeDefaultConstructor, basicTypeInitConstructor, basicTypeAssignment, basicTypeConversion,
     maxSymbol
 };
 
@@ -102,6 +104,9 @@ public:
     void SetAssembly(Assembly* assembly_) { assembly = assembly_; }
     virtual ContainerScope* GetContainerScope() { return nullptr; }
     NamespaceSymbol* Ns() const;
+    ClassTypeSymbol* Class() const;
+    ContainerSymbol* ClassOrNs() const;
+    ContainerScope* ClassOrNsScope() const;
     SymbolFlags Flags() const { return flags; }
     bool GetFlag(SymbolFlags flag) const { return (flags & flag) != SymbolFlags::none; }
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }
@@ -346,6 +351,25 @@ public:
     void Read(SymbolReader& reader) override;
 };
 
+struct ConversionTypeHash
+{
+    size_t operator()(const std::pair<TypeSymbol*, TypeSymbol*>& typeSymbolPair) const
+    {
+        size_t source = std::hash<TypeSymbol*>()(typeSymbolPair.first);
+        size_t target = std::hash<TypeSymbol*>()(typeSymbolPair.second);
+        return source ^ target;
+    }
+};
+
+class ConversionTable
+{
+public:
+    void AddConversion(FunctionSymbol* conversionFun);
+    FunctionSymbol* GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType) const;
+private:
+    std::unordered_map<std::pair<TypeSymbol*, TypeSymbol*>, FunctionSymbol*, ConversionTypeHash> conversionMap;
+};
+
 class SymbolTable
 {
 public:
@@ -373,6 +397,8 @@ public:
     void AddType(TypeSymbol* type);
     Symbol* GetSymbol(Node& node) const;
     void MapNode(Node& node, Symbol* symbol);
+    void AddConversion(FunctionSymbol* conversionFun);
+    FunctionSymbol* GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType) const;
 private:
     Assembly* assembly;
     NamespaceSymbol globalNs;
@@ -382,6 +408,7 @@ private:
     std::stack<ContainerSymbol*> containerStack;
     std::unordered_map<Constant, TypeSymbol*, ConstantHash> typeSymbolMap;
     std::unordered_map<Node*, Symbol*> nodeSymbolMap;
+    ConversionTable conversionTable;
 };
 
 class SymbolCreator

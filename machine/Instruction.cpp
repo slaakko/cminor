@@ -38,6 +38,11 @@ Instruction* Instruction::Decode(Reader& reader)
     return this;
 }
 
+void Instruction::SetIndex(int32_t index_)
+{
+    throw std::runtime_error("instruction '" + name + "' does not support set index");
+}
+
 void Instruction::Execute(Frame& frame)
 {
 }

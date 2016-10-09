@@ -56,7 +56,13 @@ Exception::Exception(const std::string& message_, const Span& defined_) : std::r
 {
 }
 
-Exception::Exception(const std::string& message_, const Span& defined_, const Span& referenced_) : std::runtime_error(Expand(message_, defined_, referenced_)), message(message_), defined(defined_), referenced(referenced_)
+Exception::Exception(const std::string& message_, const Span& defined_, const Span& referenced_) : std::runtime_error(Expand(message_, defined_, referenced_)), message(message_), defined(defined_)
+{
+    references.push_back(referenced_);
+}
+
+Exception::Exception(const std::string& message_, const Span& defined_, const std::vector<Span>& references_) : std::runtime_error(Expand(message_, defined_, references_)), message(message_),
+    defined(defined_), references(references_)
 {
 }
 

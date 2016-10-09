@@ -33,12 +33,14 @@ class BasicTypeDefaultConstructor : public BasicTypeConstructor
 {
 public:
     BasicTypeDefaultConstructor(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::basicTypeDefaultConstructor; }
 };
 
 class BasicTypeInitConstructor : public BasicTypeConstructor
 {
 public:
     BasicTypeInitConstructor(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::basicTypeInitConstructor; }
     void GenerateCode(Machine& machine, Function& function, std::vector<GenObject*>& objects) override;
 };
 
@@ -46,8 +48,34 @@ class BasicTypeAssignment : public BasicTypeFun
 {
 public:
     BasicTypeAssignment(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::basicTypeAssignment; }
     void ComputeName() override;
     void GenerateCode(Machine& machine, Function& function, std::vector<GenObject*>& objects) override;
+};
+
+class BasicTypeConversion : public BasicTypeFun
+{
+public:
+    BasicTypeConversion(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::basicTypeConversion; };
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
+    void SetConversionType(ConversionType conversionType_) { conversionType = conversionType_; }
+    ConversionType GetConversionType() const override { return conversionType; }
+    void SetConversionDistance(int32_t conversionDistance_) { conversionDistance = conversionDistance_; }
+    int32_t ConversionDistance() const override { return conversionDistance; }
+    void SetSourceType(TypeSymbol* sourceType_) { sourceType = sourceType_; }
+    TypeSymbol* ConversionSourceType() const override { return sourceType; }
+    void SetTargetType(TypeSymbol* targetType_) { targetType = targetType_; SetType(targetType); }
+    TypeSymbol* ConversionTargetType() const override { return targetType; }
+    void SetConversionInstructionName(const std::string& conversionInstructionName_) { conversionInstructionName = conversionInstructionName_; }
+    void GenerateCode(Machine& machine, Function& function, std::vector<GenObject*>& objects) override;
+private:
+    ConversionType conversionType;
+    int32_t conversionDistance;
+    TypeSymbol* sourceType;
+    TypeSymbol* targetType;
+    std::string conversionInstructionName;
 };
 
 void InitBasicTypeFun(Assembly& assembly);

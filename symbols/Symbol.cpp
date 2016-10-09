@@ -99,6 +99,61 @@ NamespaceSymbol* Symbol::Ns() const
     }
 }
 
+ClassTypeSymbol* Symbol::Class() const
+{
+    if (const ClassTypeSymbol* cls = dynamic_cast<const ClassTypeSymbol*>(this))
+    {
+        return const_cast<ClassTypeSymbol*>(cls);
+    }
+    else
+    {
+        if (parent)
+        {
+            return parent->Class();
+        }
+        else
+        {
+            throw std::runtime_error("class not found");
+        }
+    }
+}
+
+ContainerSymbol* Symbol::ClassOrNs() const
+{
+    if (const NamespaceSymbol* ns = dynamic_cast<const NamespaceSymbol*>(this))
+    {
+        return const_cast<NamespaceSymbol*>(ns);
+    }
+    else if (const ClassTypeSymbol* cls = dynamic_cast<const ClassTypeSymbol*>(this))
+    {
+        return const_cast<ClassTypeSymbol*>(cls);
+    }
+    else
+    {
+        if (parent)
+        {
+            return parent->ClassOrNs();
+        }
+        else
+        {
+            throw std::runtime_error("class or namespace not found");
+        }
+    }
+}
+
+ContainerScope* Symbol::ClassOrNsScope() const
+{
+    ContainerSymbol* classOrNs = ClassOrNs();
+    if (classOrNs)
+    {
+        return classOrNs->GetContainerScope();
+    }
+    else
+    {
+        throw std::runtime_error("class or namespace scope not found");
+    }
+}
+
 Scope::~Scope()
 {
 }
@@ -562,6 +617,10 @@ void ContainerSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
     {
         FunctionGroupSymbol* functionGroupSymbol = MakeFunctionGroupSymbol(functionSymbol->GroupName(), functionSymbol->GetSpan());
         functionGroupSymbol->AddFunction(functionSymbol);
+        if (functionSymbol->IsConversionFun())
+        {
+            GetAssembly()->GetSymbolTable().AddConversion(functionSymbol);
+        }
     }
     else if (!dynamic_cast<DeclarationBlock*>(symbol.get()))
     {
@@ -583,6 +642,10 @@ void ContainerSymbol::Clear()
 
 FunctionGroupSymbol* ContainerSymbol::MakeFunctionGroupSymbol(StringPtr groupName, const Span& span)
 {
+    if (!groupName.Value())
+    {
+        throw std::runtime_error("no group name set");
+    }
     Symbol* symbol = containerScope.Lookup(groupName);
     if (!symbol)
     {
@@ -722,6 +785,23 @@ void StringTypeSymbol::Write(SymbolWriter& writer)
 void StringTypeSymbol::Read(SymbolReader& reader)
 {
     ClassTypeSymbol::Read(reader);
+}
+
+void ConversionTable::AddConversion(FunctionSymbol* conversionFun)
+{
+    TypeSymbol* sourceType = conversionFun->ConversionSourceType();
+    TypeSymbol* targetType = conversionFun->ConversionTargetType();
+    conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
+}
+
+FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType) const
+{
+    auto it = conversionMap.find(std::make_pair(sourceType, targetType));
+    if (it != conversionMap.cend())
+    {
+        return it->second;
+    }
+    return nullptr;
 }
 
 SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs), function(nullptr), mainFunction(nullptr)
@@ -952,6 +1032,16 @@ void SymbolTable::MapNode(Node& node, Symbol* symbol)
     nodeSymbolMap[&node] = symbol;
 }
 
+void SymbolTable::AddConversion(FunctionSymbol* conversionFun)
+{
+    conversionTable.AddConversion(conversionFun);
+}
+
+FunctionSymbol* SymbolTable::GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType) const
+{
+    return conversionTable.GetConversion(sourceType, targetType);
+}
+
 SymbolCreator::~SymbolCreator()
 {
 }
@@ -1040,6 +1130,10 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::localVariableSymbol, new ConcreteSymbolCreator<LocalVariableSymbol>());
     SymbolFactory::Instance().Register(SymbolType::memberVariableSymbol, new ConcreteSymbolCreator<MemberVariableSymbol>());
     SymbolFactory::Instance().Register(SymbolType::constantSymbol, new ConcreteSymbolCreator<ConstantSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::basicTypeDefaultConstructor, new ConcreteSymbolCreator<BasicTypeDefaultConstructor>());
+    SymbolFactory::Instance().Register(SymbolType::basicTypeInitConstructor, new ConcreteSymbolCreator<BasicTypeInitConstructor>());
+    SymbolFactory::Instance().Register(SymbolType::basicTypeAssignment, new ConcreteSymbolCreator<BasicTypeAssignment>());
+    SymbolFactory::Instance().Register(SymbolType::basicTypeConversion, new ConcreteSymbolCreator<BasicTypeConversion>());
 }
 
 void DoneSymbol()

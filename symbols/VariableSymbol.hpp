@@ -13,6 +13,8 @@ class VariableSymbol : public Symbol
 {
 public:
     VariableSymbol(const Span& span_, Constant name_);
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
     TypeSymbol* GetType()  const { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }
 private:
@@ -25,6 +27,10 @@ public:
     ParameterSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::parameterSymbol; }
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
+    int32_t Index() const { return index; }
+    void SetIndex(int32_t index_) { index = index_; }
+private:
+    int32_t index;
 };
 
 class LocalVariableSymbol : public VariableSymbol
@@ -33,6 +39,10 @@ public:
     LocalVariableSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::localVariableSymbol; }
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
+    int32_t Index() const { return index; }
+    void SetIndex(int32_t index_) { index = index_; }
+private:
+    int32_t index;
 };
 
 class MemberVariableSymbol : public VariableSymbol
@@ -40,6 +50,10 @@ class MemberVariableSymbol : public VariableSymbol
 public:
     MemberVariableSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::memberVariableSymbol; }
+    int32_t Index() const { return index; }
+    void SetIndex(int32_t index_) { index = index_; }
+private:
+    int32_t index;
 };
 
 } } // namespace cminor::symbols
