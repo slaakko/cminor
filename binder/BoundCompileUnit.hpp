@@ -12,7 +12,7 @@ namespace cminor { namespace binder {
 
 using namespace cminor::symbols;
 
-class BoundCompileUnit
+class BoundCompileUnit : public BoundNode
 {
 public:
     BoundCompileUnit(Assembly& assembly_, CompileUnitNode* compileUnitNode_);
@@ -21,7 +21,9 @@ public:
     void AddFileScope(std::unique_ptr<FileScope>&& fileScope);
     FileScope* FirstFileScope() const { Assert(!fileScopes.empty(), "file scopes empty");  return fileScopes.front().get(); }
     const std::vector<std::unique_ptr<FileScope>>& FileScopes() const { return fileScopes; }
+    const std::vector<std::unique_ptr<BoundNode>>& BoundNodes() const { return boundNodes; }
     void AddBoundNode(std::unique_ptr<BoundNode>&& boundNode);
+    void Accept(BoundNodeVisitor& visitor) override;
 private:
     Assembly& assembly;
     CompileUnitNode* compileUnitNode;

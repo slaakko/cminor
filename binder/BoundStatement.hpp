@@ -14,12 +14,17 @@ using namespace cminor::symbols;
 
 class BoundStatement : public BoundNode
 {
+public:
+    BoundStatement(Assembly& assembly_);
 };
 
 class BoundCompoundStatement : public BoundStatement
 {
 public:
+    BoundCompoundStatement(Assembly& assembly_);
+    const std::vector<std::unique_ptr<BoundStatement>>& Statements() const { return statements; }
     void AddStatement(std::unique_ptr<BoundStatement>&& statement);
+    void Accept(BoundNodeVisitor& visitor) override;
 private:
     std::vector<std::unique_ptr<BoundStatement>> statements;
 };
@@ -27,7 +32,9 @@ private:
 class BoundConstructionStatement : public BoundStatement
 {
 public:
-    BoundConstructionStatement(std::unique_ptr<BoundFunctionCall>&& constructorCall_);
+    BoundConstructionStatement(Assembly& assembly_, std::unique_ptr<BoundFunctionCall>&& constructorCall_);
+    BoundFunctionCall* ConstructorCall() const { return constructorCall.get(); }
+    void Accept(BoundNodeVisitor& visitor) override;
 private:
     std::unique_ptr<BoundFunctionCall> constructorCall;
 };
@@ -35,12 +42,11 @@ private:
 class BoundAssignmentStatement : public BoundStatement
 {
 public:
-    BoundAssignmentStatement(std::unique_ptr<BoundExpression>&& targetExpr_, std::unique_ptr<BoundExpression>&& sourceExpr_);
-    BoundExpression* Target() const { return targetExpr.get(); }
-    BoundExpression* Source() const { return sourceExpr.get(); }
+    BoundAssignmentStatement(Assembly& assembhly_, std::unique_ptr<BoundFunctionCall>&& assignmentCall_);
+    BoundFunctionCall* AssignmentCall() const { return assignmentCall.get(); }
+    void Accept(BoundNodeVisitor& visitor) override;
 private:
-    std::unique_ptr<BoundExpression> targetExpr;
-    std::unique_ptr<BoundExpression> sourceExpr;
+    std::unique_ptr<BoundFunctionCall> assignmentCall;
 };
 
 } } // namespace cminor::binder

@@ -14,7 +14,12 @@ namespace cminor { namespace machine {
 class Function
 {
 public:
-    Function(Constant fullName_);
+    Function();
+    Function(Constant fullName_, int32_t id_, ConstantPool* constantPool_);
+    Constant FullName() const { return fullName; }
+    int32_t Id() const { return id; }
+    ConstantPool& GetConstantPool() { Assert(constantPool, "constant pool not set"); return *constantPool; }
+    void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
     void Write(Writer& writer);
     void Read(Reader& reader);
     int32_t NumLocals() const { return numLocals; }
@@ -23,10 +28,30 @@ public:
     Instruction* GetInst(int index) const { return instructions[index].get(); }
     void AddInst(std::unique_ptr<Instruction>&& inst);
     void Dump(CodeFormatter& formatter);
+    bool IsMain() const { return isMain; }
+    void SetMain() { isMain = true; }
 private:
     Constant fullName;
+    int32_t id;
+    ConstantPool* constantPool;
     std::vector<std::unique_ptr<Instruction>> instructions;
     int32_t numLocals;
+    bool isMain;
+};
+
+class FunctionTable
+{
+public:
+    static void Init();
+    FunctionTable();
+    static FunctionTable& Instance() { Assert(instance, "function table not initialized");  return *instance; }
+    void AddFunction(Function* fun);
+    Function* GetFunction(StringPtr functionFullName) const;
+    Function* GetMain() const { return main; }
+private:
+    static std::unique_ptr<FunctionTable> instance;
+    std::unordered_map<StringPtr, Function*, StringPtrHash> functionMap;
+    Function* main;
 };
 
 } } // namespace cminor::machine

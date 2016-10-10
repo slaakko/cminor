@@ -141,6 +141,25 @@ ContainerSymbol* Symbol::ClassOrNs() const
     }
 }
 
+FunctionSymbol* Symbol::GetFunction() const
+{
+    if (const FunctionSymbol* fun = dynamic_cast<const FunctionSymbol*>(this))
+    {
+        return const_cast<FunctionSymbol*>(fun);
+    }
+    else
+    {
+        if (parent)
+        {
+            return parent->GetFunction();
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+}
+
 ContainerScope* Symbol::ClassOrNsScope() const
 {
     ContainerSymbol* classOrNs = ClassOrNs();
@@ -622,7 +641,7 @@ void ContainerSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
             GetAssembly()->GetSymbolTable().AddConversion(functionSymbol);
         }
     }
-    else if (!dynamic_cast<DeclarationBlock*>(symbol.get()))
+    else 
     {
         containerScope.Install(symbol.get());
         if (TypeSymbol* type = dynamic_cast<TypeSymbol*>(symbol.get()))
@@ -691,6 +710,20 @@ void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
 
 DeclarationBlock::DeclarationBlock(const Span& span_, Constant name_) : ContainerSymbol(span_, name_)
 {
+}
+
+void DeclarationBlock::AddSymbol(std::unique_ptr<Symbol>&& symbol)
+{
+    Symbol* ptr = symbol.get();
+    ContainerSymbol::AddSymbol(std::move(symbol));
+    if (LocalVariableSymbol* localVariableSymbol = dynamic_cast<LocalVariableSymbol*>(ptr))
+    {
+        FunctionSymbol* functionSymbol = GetFunction();
+        if (functionSymbol)
+        {
+            functionSymbol->AddLocalVariable(localVariableSymbol);
+        }
+    }
 }
 
 TypeSymbol::TypeSymbol(const Span& span_, Constant name_) : Symbol(span_, name_)
@@ -804,7 +837,8 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
     return nullptr;
 }
 
-SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs), function(nullptr), mainFunction(nullptr)
+SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs), function(nullptr), 
+    mainFunction(nullptr), declarationBlockId(0)
 {
     globalNs.SetAssembly(assembly);
 }
@@ -892,6 +926,7 @@ void SymbolTable::BeginFunction(FunctionNode& functionNode)
     ContainerScope* containerScope = container->GetContainerScope();
     functionScope->SetParent(containerScope);
     BeginContainer(function);
+    declarationBlockId = 0;
 }
 
 void SymbolTable::EndFunction()
@@ -915,8 +950,8 @@ void SymbolTable::AddParameter(ParameterNode& parameterNode)
 void SymbolTable::BeginDeclarationBlock(StatementNode& statementNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    StringPtr name(U"@local");
-    Constant nameConstant = constantPool.GetConstant(constantPool.Install(name));
+    utf32_string name = U"@local" + ToUtf32(std::to_string(declarationBlockId++));
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     DeclarationBlock* declarationBlock = new DeclarationBlock(statementNode.GetSpan(), nameConstant);
     declarationBlock->SetAssembly(assembly);
     ContainerScope* declarationBlockScope = declarationBlock->GetContainerScope();
@@ -946,11 +981,37 @@ void SymbolTable::AddLocalVariable(ConstructionStatementNode& constructionStatem
 void SymbolTable::Write(SymbolWriter& writer)
 {
     globalNs.Write(writer);
+    bool hasMainFunction = mainFunction != nullptr;
+    static_cast<Writer&>(writer).Put(hasMainFunction);
+    if (hasMainFunction)
+    {
+        utf32_string mainFunctionFullName = mainFunction->FullName();
+        ConstantId mainFunctionNameId = assembly->GetConstantPool().GetIdFor(mainFunctionFullName);
+        Assert(mainFunctionNameId != noConstantId, "got no constant id");
+        mainFunctionNameId.Write(writer);
+    }
 }
 
 void SymbolTable::Read(SymbolReader& reader)
 {
     globalNs.Read(reader);
+    bool hasMainFunction = reader.GetBool();
+    if (hasMainFunction)
+    {
+        Symbol* symbol = globalNs.GetContainerScope()->Lookup(StringPtr(U"main"));
+        if (FunctionGroupSymbol* mainFunctionGroup = dynamic_cast<FunctionGroupSymbol*>(symbol))
+        {
+            mainFunction = mainFunctionGroup->GetOverload();
+            if (!mainFunction)
+            {
+                throw std::runtime_error("main function not found from main function group");
+            }
+        }
+        else
+        {
+            Assert(false, "invalid main function symbol");
+        }
+    }
 }
 
 void SymbolTable::Import(SymbolTable& symbolTable)
@@ -1126,6 +1187,7 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::classTypeSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::stringTypeSymbol, new ConcreteSymbolCreator<StringTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::functionSymbol, new ConcreteSymbolCreator<FunctionSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::declarationBlock, new ConcreteSymbolCreator<DeclarationBlock>());
     SymbolFactory::Instance().Register(SymbolType::parameterSymbol, new ConcreteSymbolCreator<ParameterSymbol>());
     SymbolFactory::Instance().Register(SymbolType::localVariableSymbol, new ConcreteSymbolCreator<LocalVariableSymbol>());
     SymbolFactory::Instance().Register(SymbolType::memberVariableSymbol, new ConcreteSymbolCreator<MemberVariableSymbol>());

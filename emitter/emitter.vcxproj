@@ -19,35 +19,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Assembly.hpp" />
-    <ClInclude Include="BasicTypeFun.hpp" />
-    <ClInclude Include="ConstantSymbol.hpp" />
-    <ClInclude Include="FunctionSymbol.hpp" />
-    <ClInclude Include="GlobalFlags.hpp" />
-    <ClInclude Include="MachineFunctionTable.hpp" />
-    <ClInclude Include="SymbolCreatorVisitor.hpp" />
-    <ClInclude Include="SymbolReader.hpp" />
-    <ClInclude Include="Symbol.hpp" />
-    <ClInclude Include="SymbolWriter.hpp" />
-    <ClInclude Include="VariableSymbol.hpp" />
+    <ClInclude Include="Emitter.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Assembly.cpp" />
-    <ClCompile Include="BasicTypeFun.cpp" />
-    <ClCompile Include="ConstantSymbol.cpp" />
-    <ClCompile Include="FunctionSymbol.cpp" />
-    <ClCompile Include="GlobalFlags.cpp" />
-    <ClCompile Include="MachineFunctionTable.cpp" />
-    <ClCompile Include="SymbolCreatorVisitor.cpp" />
-    <ClCompile Include="SymbolReader.cpp" />
-    <ClCompile Include="Symbol.cpp" />
-    <ClCompile Include="SymbolWriter.cpp" />
-    <ClCompile Include="VariableSymbol.cpp" />
+    <ClCompile Include="Emitter.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2F515190-089A-433E-AE60-A837BCE6BD53}</ProjectGuid>
+    <ProjectGuid>{2D0171A1-5DD6-42A5-8FCE-908257EAFBE9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>symbols</RootNamespace>
+    <RootNamespace>emitter</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

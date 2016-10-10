@@ -13,8 +13,13 @@ namespace cminor { namespace binder {
 class BoundFunction : public BoundNode
 {
 public:
+    BoundFunction(FunctionSymbol* functionSymbol_);
+    FunctionSymbol* GetFunctionSymbol() const { return functionSymbol; }
     void SetBody(std::unique_ptr<BoundCompoundStatement>&& body_);
+    BoundCompoundStatement* Body() const { return body.get(); }
+    void Accept(BoundNodeVisitor& visitor) override;
 private:
+    FunctionSymbol* functionSymbol;
     std::unique_ptr<BoundCompoundStatement> body;
 };
 

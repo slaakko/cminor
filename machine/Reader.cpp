@@ -8,12 +8,17 @@
 namespace cminor { namespace machine {
 
 Reader::Reader(Machine& machine_, const std::string& fileName_) :
-    machine(machine_), fileName(fileName_), file(fileName), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End()))
+    machine(machine_), fileName(fileName_), file(fileName), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End())), constantPool(nullptr)
 {
 }
 
 Reader::~Reader()
 {
+}
+
+void Reader::AddCallInst(CallInst* callInst)
+{
+    callInstructions.push_back(callInst);
 }
 
 bool Reader::GetBool()

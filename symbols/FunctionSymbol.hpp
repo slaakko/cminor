@@ -14,6 +14,7 @@ using namespace cminor::machine;
 
 class Assembly;
 class ParameterSymbol;
+class LocalVariableSymbol;
 
 enum class ConversionType : uint8_t
 {
@@ -50,20 +51,26 @@ public:
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
     TypeSymbol* ReturnType() const { return returnType; }
     void SetReturnType(TypeSymbol* returnType_) { returnType = returnType_;  }
+    const std::vector<LocalVariableSymbol*>& LocalVariables() const { return localVariables; }
+    void AddLocalVariable(LocalVariableSymbol* localVariable);
     bool IsConversionFun() const { return GetFlag(FunctionSymbolFlags::conversionFun);  }
     void SetConversionFun() { SetFlag(FunctionSymbolFlags::conversionFun); }
     virtual ConversionType GetConversionType() const { return ConversionType::implicit_; }
     virtual int ConversionDistance() const { return 0; }
     virtual TypeSymbol* ConversionSourceType() const { return nullptr; }
     virtual TypeSymbol* ConversionTargetType() const { return nullptr; }
-    virtual void GenerateCode(Machine& machine, Function& function, std::vector<GenObject*>& objects);
+    virtual void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects);
     bool GetFlag(FunctionSymbolFlags flag) const { return (flags & flag) != FunctionSymbolFlags::none; }
     void SetFlag(FunctionSymbolFlags flag) { flags = flags | flag; }
+    Function* MachineFunction() const { return machineFunction; }
+    void CreateMachineFunction();
 private:
     Constant groupName;
     std::vector<ParameterSymbol*> parameters;
+    std::vector<LocalVariableSymbol*> localVariables;
     TypeSymbol* returnType;
     FunctionSymbolFlags flags;
+    Function* machineFunction;
 };
 
 class FunctionGroupSymbol : public Symbol
@@ -74,6 +81,7 @@ public:
     bool IsExportSymbol() const override { return false; }
     void AddFunction(FunctionSymbol* function);
     void CollectViableFunctions(int arity, std::unordered_set<FunctionSymbol*>& viableFunctions);
+    FunctionSymbol* GetOverload() const;
 private:
     std::unordered_map<int, std::vector<FunctionSymbol*>> arityFunctionListMap;
     ContainerScope* containerScope;

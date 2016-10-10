@@ -75,11 +75,15 @@ BasicTypeDefaultConstructor::BasicTypeDefaultConstructor(const Span& span_, Cons
 {
 }
 
+void BasicTypeDefaultConstructor::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+{
+}
+
 BasicTypeInitConstructor::BasicTypeInitConstructor(const Span& span_, Constant name_) : BasicTypeConstructor(span_, name_)
 {
 }
 
-void BasicTypeInitConstructor::GenerateCode(Machine& machine, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeInitConstructor::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
 {
     Assert(objects.size() == 2, "init needs two objects");
     GenObject* source = objects[1];
@@ -100,7 +104,7 @@ void BasicTypeAssignment::ComputeName()
     BasicTypeFun::ComputeName();
 }
 
-void BasicTypeAssignment::GenerateCode(Machine& machine, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeAssignment::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
 {
     Assert(objects.size() == 2, "assing needs two objects");
     GenObject* source = objects[1];
@@ -149,7 +153,7 @@ void BasicTypeConversion::Read(SymbolReader& reader)
     conversionInstructionName = reader.GetUtf8String();
 }
 
-void BasicTypeConversion::GenerateCode(Machine& machine, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
 {
     std::unique_ptr<Instruction> inst =  machine.CreateInst(conversionInstructionName);
     function.AddInst(std::move(inst));

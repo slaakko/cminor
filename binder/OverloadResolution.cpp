@@ -192,14 +192,14 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
             {
                 const FunctionMatch& bestMatch = functionMatches[0];
                 FunctionSymbol* bestFun = bestMatch.fun;
-                std::unique_ptr<BoundFunctionCall> boundFunctionCall(new BoundFunctionCall(bestFun));
+                std::unique_ptr<BoundFunctionCall> boundFunctionCall(new BoundFunctionCall(boundCompileUnit.GetAssembly(), bestFun));
                 for (int i = 0; i < arity; ++i)
                 {
                     std::unique_ptr<BoundExpression>& argument = arguments[i];
                     const ArgumentMatch& argumentMatch = bestMatch.argumentMatches[i];
                     if (argumentMatch.conversionFun)
                     {
-                        BoundConversion* conversion = new BoundConversion(std::move(argument), argumentMatch.conversionFun);
+                        BoundConversion* conversion = new BoundConversion(boundCompileUnit.GetAssembly(), std::move(argument), argumentMatch.conversionFun);
                         argument.reset(conversion);
                     }
                     boundFunctionCall->AddArgument(std::unique_ptr<BoundExpression>(argument.release()));
@@ -244,14 +244,14 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
         {
             const FunctionMatch& bestMatch = functionMatches[0];
             FunctionSymbol* singleBest = bestMatch.fun;
-            std::unique_ptr<BoundFunctionCall> boundFunctionCall(new BoundFunctionCall(singleBest));
+            std::unique_ptr<BoundFunctionCall> boundFunctionCall(new BoundFunctionCall(boundCompileUnit.GetAssembly(), singleBest));
             for (int i = 0; i < arity; ++i)
             {
                 std::unique_ptr<BoundExpression>& argument = arguments[i];
                 const ArgumentMatch& argumentMatch = bestMatch.argumentMatches[i];
                 if (argumentMatch.conversionFun)
                 {
-                    BoundConversion* conversion = new BoundConversion(std::move(argument), argumentMatch.conversionFun);
+                    BoundConversion* conversion = new BoundConversion(boundCompileUnit.GetAssembly(), std::move(argument), argumentMatch.conversionFun);
                     argument.reset(conversion);
                 }
                 boundFunctionCall->AddArgument(std::unique_ptr<BoundExpression>(argument.release()));

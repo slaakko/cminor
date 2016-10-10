@@ -29,12 +29,14 @@
     <ClInclude Include="StatementBinderVisitor.hpp" />
     <ClInclude Include="TypeBinderVisitor.hpp" />
     <ClInclude Include="TypeResolver.hpp" />
+    <ClInclude Include="BoundNodeVisitor.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BoundCompileUnit.cpp" />
     <ClCompile Include="BoundExpression.cpp" />
     <ClCompile Include="BoundFunction.cpp" />
     <ClCompile Include="BoundNode.cpp" />
+    <ClCompile Include="BoundNodeVisitor.cpp" />
     <ClCompile Include="BoundStatement.cpp" />
     <ClCompile Include="ExpressionBinder.cpp" />
     <ClCompile Include="OverloadResolution.cpp" />

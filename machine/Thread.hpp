@@ -19,7 +19,7 @@ class Function;
 class Thread
 {
 public:
-    Thread(Machine& machine_, ConstantPool& constantPool_, Function& fun_);
+    Thread(Machine& machine_, Function& fun_);
     Machine& GetMachine() { return machine; }
     std::vector<Frame>& Frames() { return frames; }
     const std::vector<Frame>& Frames() const { return frames; }
@@ -33,7 +33,6 @@ public:
     bool Sleeping();
 private:
     Machine& machine;
-    ConstantPool& constantPool;
     Function& fun;
     uint64_t instructionCount;
     uint64_t checkWantToCollectGarbageCount;

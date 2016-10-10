@@ -37,6 +37,7 @@ class LocalVariableSymbol : public VariableSymbol
 {
 public:
     LocalVariableSymbol(const Span& span_, Constant name_);
+    void Read(SymbolReader& reader) override;
     SymbolType GetSymbolType() const override { return SymbolType::localVariableSymbol; }
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
     int32_t Index() const { return index; }

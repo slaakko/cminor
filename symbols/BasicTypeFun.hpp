@@ -34,6 +34,7 @@ class BasicTypeDefaultConstructor : public BasicTypeConstructor
 public:
     BasicTypeDefaultConstructor(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::basicTypeDefaultConstructor; }
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
 };
 
 class BasicTypeInitConstructor : public BasicTypeConstructor
@@ -41,7 +42,7 @@ class BasicTypeInitConstructor : public BasicTypeConstructor
 public:
     BasicTypeInitConstructor(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::basicTypeInitConstructor; }
-    void GenerateCode(Machine& machine, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
 };
 
 class BasicTypeAssignment : public BasicTypeFun
@@ -50,7 +51,7 @@ public:
     BasicTypeAssignment(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::basicTypeAssignment; }
     void ComputeName() override;
-    void GenerateCode(Machine& machine, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
 };
 
 class BasicTypeConversion : public BasicTypeFun
@@ -69,7 +70,7 @@ public:
     void SetTargetType(TypeSymbol* targetType_) { targetType = targetType_; SetType(targetType); }
     TypeSymbol* ConversionTargetType() const override { return targetType; }
     void SetConversionInstructionName(const std::string& conversionInstructionName_) { conversionInstructionName = conversionInstructionName_; }
-    void GenerateCode(Machine& machine, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
 private:
     ConversionType conversionType;
     int32_t conversionDistance;

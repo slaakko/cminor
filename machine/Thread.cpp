@@ -9,10 +9,10 @@
 
 namespace cminor { namespace machine {
 
-Thread::Thread(Machine& machine_, ConstantPool& constantPool_, Function& fun_) : 
-    machine(machine_), constantPool(constantPool_), fun(fun_), instructionCount(0), checkWantToCollectGarbageCount(100), paused(), sleeping(), pausedCond()
+Thread::Thread(Machine& machine_, Function& fun_) : 
+    machine(machine_), fun(fun_), instructionCount(0), checkWantToCollectGarbageCount(100), paused(), sleeping(), pausedCond()
 {
-    frames.push_back(Frame(machine, *this, fun, constantPool));
+    frames.push_back(Frame(machine, *this, fun));
 }
 
 inline void Thread::CheckPause()
@@ -33,18 +33,29 @@ void Thread::Run()
         CheckPause();
         Frame& frame = frames.back();
         Instruction* inst = frame.GetNextInst();
-        if (!inst) break;
+        if (!inst)
+        {
+            frames.pop_back();
+            if (frames.empty())
+            {
+                break;
+            }
+        }
         inst->Execute(frame);
         IncInstructionCount();
     }
-    machine.GetGarbageCollector().DoCollectGarbage();
+    std::lock_guard<std::mutex> lock(mtx);
+    paused.store(true);
+    pausedCond.notify_one();
 }
 
 void Thread::PauseUntilGarbageCollected()
 {
-    std::lock_guard<std::mutex> lock(mtx);
-    paused.store(true);
-    pausedCond.notify_one();
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        paused.store(true);
+        pausedCond.notify_one();
+    }
     machine.GetGarbageCollector().WaitUntilGarbageCollected();
 }
 

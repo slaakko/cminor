@@ -48,7 +48,7 @@ void ExpressionBinder::Visit(BooleanLiteralNode& booleanLiteralNode)
     Constant value(IntegralValue(booleanLiteralNode.Value(), ValueType::boolType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -58,7 +58,7 @@ void ExpressionBinder::Visit(SByteLiteralNode& sbyteLiteralNode)
     Constant value(IntegralValue(sbyteLiteralNode.Value(), ValueType::sbyteType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -68,7 +68,7 @@ void ExpressionBinder::Visit(ByteLiteralNode& byteLiteralNode)
     Constant value(IntegralValue(byteLiteralNode.Value(), ValueType::byteType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -78,7 +78,7 @@ void ExpressionBinder::Visit(ShortLiteralNode& shortLiteralNode)
     Constant value(IntegralValue(shortLiteralNode.Value(), ValueType::shortType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -88,7 +88,7 @@ void ExpressionBinder::Visit(UShortLiteralNode& ushortLiteralNode)
     Constant value(IntegralValue(ushortLiteralNode.Value(), ValueType::ushortType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -98,7 +98,7 @@ void ExpressionBinder::Visit(IntLiteralNode& intLiteralNode)
     Constant value(IntegralValue(intLiteralNode.Value(), ValueType::intType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -108,7 +108,7 @@ void ExpressionBinder::Visit(UIntLiteralNode& uintLiteralNode)
     Constant value(IntegralValue(uintLiteralNode.Value(), ValueType::uintType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -118,7 +118,7 @@ void ExpressionBinder::Visit(LongLiteralNode& longLiteralNode)
     Constant value(IntegralValue(longLiteralNode.Value(), ValueType::longType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -128,7 +128,7 @@ void ExpressionBinder::Visit(ULongLiteralNode& ulongLiteralNode)
     Constant value(IntegralValue(ulongLiteralNode.Value(), ValueType::ulongType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -140,7 +140,7 @@ void ExpressionBinder::Visit(FloatLiteralNode& floatLiteralNode)
 #pragma warning(default : 4244)
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -152,7 +152,7 @@ void ExpressionBinder::Visit(DoubleLiteralNode& doubleLiteralNode)
 #pragma warning(default : 4244)
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -162,7 +162,7 @@ void ExpressionBinder::Visit(CharLiteralNode& charLiteralNode)
     Constant value(IntegralValue(charLiteralNode.Value(), ValueType::charType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -171,7 +171,7 @@ void ExpressionBinder::Visit(StringLiteralNode& stringLiteralNode)
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"string");
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(StringPtr(stringLiteralNode.Value().c_str()));
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -182,7 +182,7 @@ void ExpressionBinder::Visit(NullLiteralNode& nullLiteralNode)
     Constant value(IntegralValue(nullReference.Value(), ValueType::objectReference));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
-    BoundLiteral* boundLiteral = new BoundLiteral(type, constantPool.GetConstant(id));
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
     expression.reset(boundLiteral);
 }
 
@@ -211,31 +211,31 @@ void ExpressionBinder::Visit(IdentifierNode& identifierNode)
             case SymbolType::parameterSymbol: 
             {
                 ParameterSymbol* parameterSymbol = static_cast<ParameterSymbol*>(symbol);
-                expression.reset(new BoundParameter(parameterSymbol->GetType(), parameterSymbol));
+                expression.reset(new BoundParameter(boundCompileUnit.GetAssembly(), parameterSymbol->GetType(), parameterSymbol));
                 break;
             }
             case SymbolType::localVariableSymbol:
             {
                 LocalVariableSymbol* localVariableSymbol = static_cast<LocalVariableSymbol*>(symbol);
-                expression.reset(new BoundLocalVariable(localVariableSymbol->GetType(), localVariableSymbol));
+                expression.reset(new BoundLocalVariable(boundCompileUnit.GetAssembly(), localVariableSymbol->GetType(), localVariableSymbol));
                 break;
             }
             case SymbolType::memberVariableSymbol:
             {
                 MemberVariableSymbol* memberVariableSymbol = static_cast<MemberVariableSymbol*>(symbol);
-                expression.reset(new BoundMemberVariable(memberVariableSymbol->GetType(), memberVariableSymbol));
+                expression.reset(new BoundMemberVariable(boundCompileUnit.GetAssembly(), memberVariableSymbol->GetType(), memberVariableSymbol));
                 break;
             }
             case SymbolType::constantSymbol:
             {
                 ConstantSymbol* constantSymbol = static_cast<ConstantSymbol*>(symbol);
-                expression.reset(new BoundConstant(constantSymbol->GetType(), constantSymbol));
+                expression.reset(new BoundConstant(boundCompileUnit.GetAssembly(), constantSymbol->GetType(), constantSymbol));
                 break;
             }
             case SymbolType::namespaceSymbol:
             {
                 NamespaceSymbol* ns = static_cast<NamespaceSymbol*>(symbol);
-                expression.reset(new BoundNamespace(ns));
+                expression.reset(new BoundNamespace(boundCompileUnit.GetAssembly(), ns));
                 break;
             }
             default: 

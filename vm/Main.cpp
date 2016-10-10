@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Function.hpp>
+#include <cminor/machine/FileRegistry.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
@@ -23,6 +24,8 @@ struct InitDone
 {
     InitDone()
     {
+        FileRegistry::Init();
+        FunctionTable::Init();
         InitSymbol();
     }
     ~InitDone()
@@ -117,8 +120,10 @@ int main(int argc, const char** argv)
         Machine machine;
         Assembly assembly;
         SymbolReader symbolReader(machine, assemblyFilePath);
-        assembly.Read(symbolReader);
-        assembly.ImportAssemblies(machine);
+        std::vector<CallInst*> callInstructions;
+        assembly.Read(symbolReader, callInstructions);
+        Link(callInstructions);
+        machine.Run();
     }
     catch (const std::exception& ex)
     {

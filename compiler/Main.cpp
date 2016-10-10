@@ -7,6 +7,7 @@
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/machine/FileRegistry.hpp>
+#include <cminor/machine/Function.hpp>
 #include <cminor/machine/Util.hpp>
 #include <Cm.Parsing/InitDone.hpp>
 #include <Cm.Util/Path.hpp>
@@ -25,6 +26,7 @@ struct InitDone
     InitDone()
     {
         FileRegistry::Init();
+        FunctionTable::Init();
         InitSymbol();
         Cm::Parsing::Init();
     }

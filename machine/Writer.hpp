@@ -10,6 +10,8 @@
 
 namespace cminor { namespace machine {
 
+class ConstantPool;
+
 class FilePtr
 {
 public:
@@ -35,6 +37,8 @@ class Writer
 public:
     Writer(const std::string& fileName_);
     virtual ~Writer();
+    void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
+    ConstantPool* GetConstantPool() const { return constantPool; }
     void Put(bool x);
     void Put(uint8_t x);
     void Put(int8_t x);
@@ -57,6 +61,7 @@ private:
     uint8_t buffer[N];
     uint8_t* bufp;
     uint8_t* bufend;
+    ConstantPool* constantPool;
     void BufferReset() { bufp = buffer; bufend = buffer + N;  }
     bool BufferFull() const { return bufp == bufend; }
     void FlushBuffer();

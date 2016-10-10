@@ -10,6 +10,7 @@
 #include <cminor/machine/Writer.hpp>
 #include <cminor/machine/Error.hpp>
 #include <cminor/machine/Frame.hpp>
+#include <cminor/machine/Constant.hpp>
 #include <unordered_map>
 #include <string>
 #include <memory>
@@ -17,6 +18,7 @@
 namespace cminor { namespace machine {
 
 class Machine;
+class Function;
 
 class Instruction
 {
@@ -306,6 +308,21 @@ public:
     StrLitLessStringInst();
     Instruction* Clone() const override { return new StrLitLessStringInst(*this); }
     void Execute(Frame& frame) override;
+};
+
+class CallInst : public Instruction
+{
+public:
+    CallInst();
+    Instruction* Clone() const override { return new CallInst(*this); }
+    void SetFunctionFullName(Constant functionFullName);
+    StringPtr GetFunctionFullName() const;
+    void SetFunction(Function* fun);
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Execute(Frame& frame) override;
+private:
+    Constant function;
 };
 
 } } // namespace cminor::machine

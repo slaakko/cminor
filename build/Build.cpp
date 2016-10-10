@@ -9,6 +9,7 @@
 #include <cminor/binder/TypeBinderVisitor.hpp>
 #include <cminor/binder/StatementBinderVisitor.hpp>
 #include <cminor/binder/BoundCompileUnit.hpp>
+#include <cminor/emitter/Emitter.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
@@ -24,6 +25,7 @@ using namespace cminor::parser;
 using namespace cminor::ast;
 using namespace cminor::symbols;
 using namespace cminor::binder;
+using namespace cminor::emitter;
 using namespace cminor::machine;
 
 CompileUnitGrammar* compileUnitGrammar = nullptr;
@@ -77,13 +79,10 @@ std::vector<std::unique_ptr<BoundCompileUnit>> BindTypes(Assembly& assembly, con
     return boundCompileUnits;
 }
 
-void BindStatements(std::vector<std::unique_ptr<BoundCompileUnit>>& boundCompileUnits)
+void BindStatements(BoundCompileUnit& boundCompileUnit)
 {
-    for (const std::unique_ptr<BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
-    {
-        StatementBinderVisitor statementBinderVisitor(*boundCompileUnit);
-        boundCompileUnit->GetCompileUnitNode()->Accept(statementBinderVisitor);
-    }
+    StatementBinderVisitor statementBinderVisitor(boundCompileUnit);
+    boundCompileUnit.GetCompileUnitNode()->Accept(statementBinderVisitor);
 }
 
 ProjectGrammar* projectGrammar = nullptr;
@@ -106,10 +105,18 @@ void BuildProject(const std::string& projectFilePath)
     utf32_string assemblyName = ToUtf32(project->Name());
     Machine machine;
     Assembly assembly(assemblyName, project->AssemblyFilePath());
-    assembly.ImportAssemblies(machine, project->AssemblyReferences());
+    std::vector<CallInst*> callInstructions;
+    assembly.ImportAssemblies(machine, project->AssemblyReferences(), callInstructions);
+    assembly.ImportSymbolTables();
+    callInstructions.clear();
     BuildSymbolTable(assembly, compileUnits);
     std::vector<std::unique_ptr<BoundCompileUnit>> boundCompileUnits = BindTypes(assembly, compileUnits);
-    BindStatements(boundCompileUnits);
+    for (std::unique_ptr<BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+    {
+        BindStatements(*boundCompileUnit);
+        GenerateCode(*boundCompileUnit, machine);
+        boundCompileUnit.reset();
+    }
     boost::filesystem::path obp(assembly.FilePath());
     obp.remove_filename();
     boost::filesystem::create_directories(obp);

@@ -19,7 +19,7 @@ class Instruction;
 class Frame
 {
 public:
-    Frame(Machine& machine_, Thread& thread_, Function& fun_, ConstantPool& constantPool_);
+    Frame(Machine& machine_, Thread& thread_, Function& fun_);
     Machine& GetMachine() { return machine; }
     int32_t Id() const { return id; }
     Thread& GetThread() { return thread; }

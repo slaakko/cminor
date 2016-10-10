@@ -106,6 +106,7 @@ public:
     NamespaceSymbol* Ns() const;
     ClassTypeSymbol* Class() const;
     ContainerSymbol* ClassOrNs() const;
+    FunctionSymbol* GetFunction() const;
     ContainerScope* ClassOrNsScope() const;
     SymbolFlags Flags() const { return flags; }
     bool GetFlag(SymbolFlags flag) const { return (flags & flag) != SymbolFlags::none; }
@@ -218,7 +219,7 @@ class DeclarationBlock : public ContainerSymbol
 public:
     DeclarationBlock(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::declarationBlock; }
-    bool IsExportSymbol() const override { return false; }
+    void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
 };
 
 class TypeSymbol : public Symbol
@@ -409,6 +410,7 @@ private:
     std::unordered_map<Constant, TypeSymbol*, ConstantHash> typeSymbolMap;
     std::unordered_map<Node*, Symbol*> nodeSymbolMap;
     ConversionTable conversionTable;
+    int declarationBlockId;
 };
 
 class SymbolCreator

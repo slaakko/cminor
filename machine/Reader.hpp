@@ -11,7 +11,8 @@
 namespace cminor { namespace machine {
 
 class Machine;
-class Symbol;
+class CallInst;
+class ConstantPool;
 typedef std::basic_string<char32_t> utf32_string;
 
 class Reader
@@ -20,6 +21,9 @@ public:
     Reader(Machine& machine_, const std::string& fileName_);
     virtual ~Reader();
     Machine& GetMachine() { return machine; }
+    ConstantPool* GetConstantPool() const { return constantPool; }
+    void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
+    void AddCallInst(CallInst* callInst);
     bool GetBool();
     uint8_t GetByte();
     int8_t GetSByte();
@@ -35,12 +39,16 @@ public:
     std::string GetUtf8String();
     utf32_string GetUtf32String();
     Span GetSpan();
+    std::vector<CallInst*> GetCallInstructions() { return std::move(callInstructions); }
+    const std::vector<CallInst*>& CallInstructions() const { return callInstructions; }
 private:
     Machine& machine;
     std::string fileName;
     MappedInputFile file;
     const uint8_t* begin;
     const uint8_t* end;
+    ConstantPool* constantPool;
+    std::vector<CallInst*> callInstructions;
     void CheckEof();
 };
 

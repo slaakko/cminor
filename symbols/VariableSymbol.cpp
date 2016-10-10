@@ -39,6 +39,12 @@ LocalVariableSymbol::LocalVariableSymbol(const Span& span_, Constant name_) : Va
 {
 }
 
+void LocalVariableSymbol::Read(SymbolReader& reader)
+{
+    VariableSymbol::Read(reader);
+    reader.AddLocalVariable(this);
+}
+
 MemberVariableSymbol::MemberVariableSymbol(const Span& span_, Constant name_) : VariableSymbol(span_, name_), index(-1)
 {
 }

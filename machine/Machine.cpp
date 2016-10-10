@@ -5,6 +5,7 @@
 
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/String.hpp>
+#include <cminor/machine/Function.hpp>
 #include <functional>
 
 namespace cminor { namespace machine {
@@ -220,6 +221,8 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
 
     rootInst.SetInst(0x9B, new InitStringFromConstInst());
 
+    rootInst.SetInst(0x9C, new CallInst());
+
     //  conversion group instruction:
     //  -----------------------------
     ContainerInst* convContainerInst = new ContainerInst(*this, "<conversion_container_instruction>", false);
@@ -394,6 +397,18 @@ Machine::~Machine()
     catch (...)
     {
     }
+}
+
+void Machine::Run()
+{
+    Function* mainFun = FunctionTable::Instance().GetMain();
+    if (!mainFun)
+    {
+        throw std::runtime_error("no main function set");
+    }
+    RunGarbageCollector();
+    threads.push_back(std::unique_ptr<Thread>(new Thread(*this, *mainFun)));
+    MainThread().Run();
 }
 
 void Machine::AddInst(Instruction* inst)

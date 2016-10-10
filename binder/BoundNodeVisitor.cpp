@@ -3,15 +3,11 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/binder/BoundNode.hpp>
+#include <cminor/binder/BoundNodeVisitor.hpp>
 
 namespace cminor { namespace binder {
 
-BoundNode::BoundNode(Assembly& assembly_) : assembly(assembly_)
-{
-}
-
-BoundNode::~BoundNode()
+BoundNodeVisitor::~BoundNodeVisitor()
 {
 }
 

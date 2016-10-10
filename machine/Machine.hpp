@@ -17,6 +17,7 @@ class Machine
 public:
     Machine();
     ~Machine();
+    void Run();
     void AddInst(Instruction* inst);
     std::unique_ptr<Instruction> CreateInst(const std::string& instName) const;
     std::unique_ptr<Instruction> CreateInst(const std::string& instGroupName, const std::string& typeName) const;

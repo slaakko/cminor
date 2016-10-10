@@ -18,6 +18,7 @@ class Writer;
 class Reader;
 class Arena;
 class Type;
+class Function;
 class ObjectType;
 class ObjectPool;
 
@@ -29,7 +30,7 @@ enum class ArenaId : uint8_t
 enum class ValueType : uint8_t
 {
     none = 0, boolType = 1, sbyteType = 2, byteType = 3, shortType = 4, ushortType = 5, intType = 6, uintType = 7, longType = 8, ulongType = 9, floatType = 10, doubleType = 11, charType = 12,
-    memPtr = 'M', stringLiteral = 'S', objectReference = 'O'
+    memPtr = 'M', stringLiteral = 'S', objectReference = 'O', functionPtr = 'F'
 };
 
 std::string ValueTypeStr(ValueType type);
@@ -41,6 +42,7 @@ public:
     IntegralValue(uint64_t value_, ValueType type_) : value(value_), type(type_) {}
     IntegralValue(uint8_t* value_) : memPtr(value_), type(ValueType::memPtr) {}
     IntegralValue(const char32_t* value_) : strValue(value_), type(ValueType::stringLiteral) {}
+    IntegralValue(Function* value_) : funPtr(value_), type(ValueType::functionPtr) {}
     uint64_t Value() const { return value; }
     ValueType GetType() const { return type; }
     bool AsBool() const { return static_cast<bool>(value); }
@@ -57,10 +59,11 @@ public:
     char32_t AsChar() const { return static_cast<char32_t>(value); }
     uint8_t* AsMemPtr() const { return memPtr; }
     const char32_t* AsStringLiteral() const { return strValue; }
+    Function* AsFunctionPtr() const { return funPtr; }
     void Write(Writer& writer);
     void Read(Reader& reader);
 private:
-    union { uint64_t value; uint8_t* memPtr; const char32_t* strValue; };
+    union { uint64_t value; uint8_t* memPtr; const char32_t* strValue; Function* funPtr; };
     ValueType type;
 };
 
