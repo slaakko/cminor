@@ -104,9 +104,9 @@ void BuildProject(const std::string& projectFilePath)
     std::vector<std::unique_ptr<CompileUnitNode>> compileUnits = ParseSources(project->SourceFilePaths());
     utf32_string assemblyName = ToUtf32(project->Name());
     Machine machine;
-    Assembly assembly(assemblyName, project->AssemblyFilePath());
+    Assembly assembly(machine, assemblyName, project->AssemblyFilePath());
     std::vector<CallInst*> callInstructions;
-    assembly.ImportAssemblies(machine, project->AssemblyReferences(), callInstructions);
+    assembly.ImportAssemblies(project->AssemblyReferences(), callInstructions);
     assembly.ImportSymbolTables();
     callInstructions.clear();
     BuildSymbolTable(assembly, compileUnits);

@@ -261,6 +261,7 @@ public:
     DotNode(const Span& span_);
     DotNode(const Span& span_, Node* subject_, Node* memberId_);
     NodeType GetNodeType() const override { return NodeType::dotNode; }
+    Node* MemberId() const { return memberId.get(); }
     Node* Clone(CloneContext& cloneContext) const override;
     const std::string& MemberStr() const;
     void Accept(Visitor& visitor) override;

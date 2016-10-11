@@ -24,6 +24,7 @@ class ContainerSymbol;
 class NamespaceSymbol;
 class FunctionSymbol;
 class FunctionGroupSymbol;
+class TypeSymbol;
 class ClassTypeSymbol;
 class SymbolTable;
 
@@ -32,7 +33,7 @@ enum class SymbolType : uint8_t
     boolTypeSymbol, charTypeSymbol, voidTypeSymbol, sbyteTypeSymbol, byteTypeSymbol, shortTypeSymbol, ushortTypeSymbol, intTypeSymbol, uintTypeSymbol, longTypeSymbol, ulongTypeSymbol,
     floatTypeSymbol, doubleTypeSymbol, nullReferenceTypeSymbol,
     classTypeSymbol, stringTypeSymbol, functionSymbol, functionGroupSymbol, parameterSymbol, localVariableSymbol, memberVariableSymbol, constantSymbol, namespaceSymbol, declarationBlock,
-    basicTypeDefaultConstructor, basicTypeInitConstructor, basicTypeAssignment, basicTypeConversion,
+    basicTypeDefaultConstructor, basicTypeInitConstructor, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp,
     maxSymbol
 };
 
@@ -107,11 +108,13 @@ public:
     ClassTypeSymbol* Class() const;
     ContainerSymbol* ClassOrNs() const;
     FunctionSymbol* GetFunction() const;
+    ContainerScope* NsScope() const;
     ContainerScope* ClassOrNsScope() const;
     SymbolFlags Flags() const { return flags; }
     bool GetFlag(SymbolFlags flag) const { return (flags & flag) != SymbolFlags::none; }
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }
     void ResetFlag(SymbolFlags flag) { flags = flags & ~flag; }
+    virtual void EmplaceType(TypeSymbol* type, int index);
 private:
     Span span;
     Constant name;
@@ -437,7 +440,7 @@ private:
 void InitSymbol();
 void DoneSymbol();
 
-std::unique_ptr<Assembly> CreateSystemAssembly(const std::string& config);
+std::unique_ptr<Assembly> CreateSystemAssembly(Machine& machine_, const std::string& config);
 
 } } // namespace cminor::symbols
 

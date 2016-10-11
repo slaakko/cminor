@@ -32,6 +32,7 @@ public:
     LocalVariable& Local(int32_t index) { return locals[index];  }
     Instruction* GetNextInst();
     int32_t PC() const { return pc; }
+    void SetPC(int32_t pc_);
 private:
     Machine& machine;
     int32_t id;
@@ -39,7 +40,7 @@ private:
     Function& fun;
     ObjectPool& objectPool;
     ConstantPool& constantPool;
-    OperandStack opStack;
+    OperandStack& opStack;
     LocalVariableVector locals;
     int32_t pc;
 };

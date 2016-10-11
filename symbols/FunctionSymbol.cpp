@@ -22,6 +22,13 @@ void FunctionSymbol::Write(SymbolWriter& writer)
     ConstantId groupNameId = GetAssembly()->GetConstantPool().GetIdFor(groupName);
     Assert(groupNameId != noConstantId, "no id for group name found from constant pool");
     groupNameId.Write(static_cast<Writer&>(writer));
+    utf32_string returnTypeFullName;
+    if (returnType)
+    {
+        returnTypeFullName = returnType->FullName();
+    }
+    ConstantId returnTypeNameId = GetAssembly()->GetConstantPool().GetIdFor(returnTypeFullName);
+    returnTypeNameId.Write(writer);
     static_cast<Writer&>(writer).Put(uint8_t(flags));
     bool hasMachineFunction = machineFunction != nullptr;
     static_cast<Writer&>(writer).Put(hasMachineFunction);
@@ -38,6 +45,12 @@ void FunctionSymbol::Read(SymbolReader& reader)
     ConstantId groupNameId;
     groupNameId.Read(reader);
     groupName = reader.GetAssembly()->GetConstantPool().GetConstant(groupNameId);
+    ConstantId returnTypeNameId;
+    returnTypeNameId.Read(reader);
+    if (returnTypeNameId != reader.GetAssembly()->GetConstantPool().GetEmptyStringConstantId())
+    {
+        reader.EmplaceTypeRequest(this, returnTypeNameId, 0);
+    }
     flags = FunctionSymbolFlags(reader.GetByte());
     bool hasMachineFunction = reader.GetBool();
     if (hasMachineFunction)
@@ -56,6 +69,18 @@ void FunctionSymbol::Read(SymbolReader& reader)
     {
         LocalVariableSymbol* localVariable = readLocalVariables[i];
         AddLocalVariable(localVariable);
+    }
+}
+
+void FunctionSymbol::EmplaceType(TypeSymbol* type, int index)
+{
+    if (index == 0)
+    {
+        returnType = type;
+    }
+    else
+    {
+        throw std::runtime_error("function symbol emplace type got invalid type index " + std::to_string(index));
     }
 }
 
@@ -98,6 +123,9 @@ void FunctionSymbol::CreateMachineFunction()
     machineFunction = GetAssembly()->GetMachineFunctionTable().CreateFunction(this);
     int32_t numLocals = int32_t(parameters.size() + localVariables.size());
     machineFunction->SetNumLocals(numLocals);
+    int32_t numParameters = int32_t(parameters.size());
+    machineFunction->SetNumParameters(numParameters);
+    machineFunction->AddInst(GetAssembly()->GetMachine().CreateInst("receive"));
 }
 
 FunctionGroupSymbol::FunctionGroupSymbol(const Span& span_, Constant name_, ContainerScope* containerScope_) : Symbol(span_, name_), containerScope(containerScope_)

@@ -18,9 +18,10 @@ typedef std::basic_string<char32_t> utf32_string;
 class Reader
 {
 public:
-    Reader(Machine& machine_, const std::string& fileName_);
+    Reader(const std::string& fileName_);
     virtual ~Reader();
-    Machine& GetMachine() { return machine; }
+    Machine& GetMachine() { return *machine; }
+    void SetMachine(Machine& machine_) { machine = &machine_; }
     ConstantPool* GetConstantPool() const { return constantPool; }
     void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
     void AddCallInst(CallInst* callInst);
@@ -42,7 +43,7 @@ public:
     std::vector<CallInst*> GetCallInstructions() { return std::move(callInstructions); }
     const std::vector<CallInst*>& CallInstructions() const { return callInstructions; }
 private:
-    Machine& machine;
+    Machine* machine;
     std::string fileName;
     MappedInputFile file;
     const uint8_t* begin;

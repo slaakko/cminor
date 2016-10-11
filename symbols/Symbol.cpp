@@ -19,8 +19,10 @@ namespace cminor { namespace symbols {
 
 const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
 {
-    "boolSymbol", "charSymbol", "voidSymbol", "sbyteSymbol", "byteSymbol", "shortSymbol", "ushortSymbol", "intSymbol", "uintSymbol", "longSymbol", "ulongSymbol", "floatSymbol", "doubleSymbol",
-    "classSymbol", "functionSymbol", "functionGroupSymbol", "parameterSymbol", "localVariableSymbol", "memberVariableSymbol", "namespaceSymbol"
+    "boolTypeSymbol", "charTypeSymbol", "voidTypeSymbol", "sbyteTypeSymbol", "byteTypeSymbol", "shortTypeSymbol", "ushortTypeSymbol", "intTypeSymbol", "uintTypeSymbol", "longTypeSymbol", 
+    "ulongTypeSymbol", "floatTypeSymbol", "doubleTypeSymbol", "nullReferenceTypeSymbol", 
+    "classTypeSymbol", "stringTypeSymbol", "functionSymbol", "functionGroupSymbol", "parameterSymbol", "localVariableSymbol", "memberVariableSymbol", "constantSymbol", "namespaceSymbol",
+    "declarationBlock", "basicTypeDefaultConstructor", "basicTypeInitConstructor", "basicTypeAssignment", "basicTypeReturn", "basicTypeConversion", "basicTypeUnaryOp", "basicTypBinaryOp"
 };
 
 std::string SymbolTypeStr(SymbolType symbolType)
@@ -160,6 +162,12 @@ FunctionSymbol* Symbol::GetFunction() const
     }
 }
 
+ContainerScope* Symbol::NsScope() const
+{
+    ContainerSymbol* ns = Ns();
+    return ns->GetContainerScope();
+}
+
 ContainerScope* Symbol::ClassOrNsScope() const
 {
     ContainerSymbol* classOrNs = ClassOrNs();
@@ -171,6 +179,11 @@ ContainerScope* Symbol::ClassOrNsScope() const
     {
         throw std::runtime_error("class or namespace scope not found");
     }
+}
+
+void Symbol::EmplaceType(TypeSymbol* type, int index)
+{
+    throw std::runtime_error("symbol '" + ToUtf8(FullName()) + "' does not support emplace type");
 }
 
 Scope::~Scope()
@@ -950,7 +963,7 @@ void SymbolTable::AddParameter(ParameterNode& parameterNode)
 void SymbolTable::BeginDeclarationBlock(StatementNode& statementNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = U"@local" + ToUtf32(std::to_string(declarationBlockId++));
+    utf32_string name = U"@locals" + ToUtf32(std::to_string(declarationBlockId++));
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     DeclarationBlock* declarationBlock = new DeclarationBlock(statementNode.GetSpan(), nameConstant);
     declarationBlock->SetAssembly(assembly);
@@ -1012,6 +1025,7 @@ void SymbolTable::Read(SymbolReader& reader)
             Assert(false, "invalid main function symbol");
         }
     }
+    reader.ProcessTypeRequests();
 }
 
 void SymbolTable::Import(SymbolTable& symbolTable)
@@ -1195,7 +1209,10 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::basicTypeDefaultConstructor, new ConcreteSymbolCreator<BasicTypeDefaultConstructor>());
     SymbolFactory::Instance().Register(SymbolType::basicTypeInitConstructor, new ConcreteSymbolCreator<BasicTypeInitConstructor>());
     SymbolFactory::Instance().Register(SymbolType::basicTypeAssignment, new ConcreteSymbolCreator<BasicTypeAssignment>());
+    SymbolFactory::Instance().Register(SymbolType::basicTypeReturn, new ConcreteSymbolCreator<BasicTypeReturn>());
     SymbolFactory::Instance().Register(SymbolType::basicTypeConversion, new ConcreteSymbolCreator<BasicTypeConversion>());
+    SymbolFactory::Instance().Register(SymbolType::basicTypeUnaryOp, new ConcreteSymbolCreator<BasicTypeUnaryOpFun>());
+    SymbolFactory::Instance().Register(SymbolType::basicTypBinaryOp, new ConcreteSymbolCreator<BasicTypeBinaryOpFun>());
 }
 
 void DoneSymbol()
@@ -1203,9 +1220,9 @@ void DoneSymbol()
     SymbolFactory::Done();
 }
 
-std::unique_ptr<Assembly> CreateSystemAssembly(const std::string& config)
+std::unique_ptr<Assembly> CreateSystemAssembly(Machine& machine, const std::string& config)
 {
-    std::unique_ptr<Assembly> systemAssembly(new Assembly(U"system", CminorSystemAssemblyFilePath(config)));
+    std::unique_ptr<Assembly> systemAssembly(new Assembly(machine, U"system", CminorSystemAssemblyFilePath(config)));
     TypeSymbol* boolTypeSymbol = new BoolTypeSymbol(Span(), systemAssembly->GetConstantPool().GetConstant(systemAssembly->GetConstantPool().Install(U"bool")));
     boolTypeSymbol->SetAssembly(systemAssembly.get());
     systemAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(boolTypeSymbol));

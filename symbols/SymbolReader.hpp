@@ -14,19 +14,30 @@ using namespace cminor::machine;
 
 class LocalVariableSymbol;
 
+struct TypeRequest
+{
+    TypeRequest(Symbol* symbol_, ConstantId typeNameId_, int index_) : symbol(symbol_), typeNameId(typeNameId_), index(index_) {}
+    Symbol* symbol;
+    ConstantId typeNameId;
+    int index;
+};
+
 class SymbolReader : public Reader
 {
 public:
-    SymbolReader(Machine& machine_, const std::string& fileName_);
+    SymbolReader(const std::string& fileName_);
     Assembly* GetAssembly() const { Assert(assembly, "assembly not set"); return assembly; }
     void SetAssembly(Assembly* assembly_) { assembly = assembly_; }
     Symbol* GetSymbol();
     void AddLocalVariable(LocalVariableSymbol* localVariable) { localVariables.push_back(localVariable); }
     std::vector<LocalVariableSymbol*> GetLocalVariables() { return std::move(localVariables); }
     void ResetLocalVariables() { localVariables = std::vector<LocalVariableSymbol*>(); }
+    void EmplaceTypeRequest(Symbol* forSymbol, ConstantId typeNameId, int index);
+    void ProcessTypeRequests();
 private:
     Assembly* assembly;
     std::vector<LocalVariableSymbol*> localVariables;
+    std::vector<TypeRequest> typeRequests;
 };
 
 } } // namespace cminor::symbols

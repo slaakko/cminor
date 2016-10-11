@@ -64,6 +64,7 @@ public:
     void SetFlag(FunctionSymbolFlags flag) { flags = flags | flag; }
     Function* MachineFunction() const { return machineFunction; }
     void CreateMachineFunction();
+    void EmplaceType(TypeSymbol* type, int index) override;
 private:
     Constant groupName;
     std::vector<ParameterSymbol*> parameters;

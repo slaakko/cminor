@@ -22,6 +22,7 @@ public:
     Function* GetFunction(int32_t functionId) const;
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader);
+    void Dump(CodeFormatter& formatter);
 private:
     std::vector<std::unique_ptr<Function>> machineFunctions;
 };

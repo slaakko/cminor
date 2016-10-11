@@ -7,6 +7,7 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
+#include <cminor/machine/Machine.hpp>
 #include <boost/filesystem.hpp>
 
 using namespace cminor::machine;
@@ -29,7 +30,8 @@ int main()
     try
     {
         InitDone initDone;
-        std::unique_ptr<Assembly> systemAssembly = CreateSystemAssembly("debug");
+        Machine machine;
+        std::unique_ptr<Assembly> systemAssembly = CreateSystemAssembly(machine, "debug");
         boost::filesystem::path obp(systemAssembly->FilePath());
         obp.remove_filename();
         boost::filesystem::create_directories(obp);

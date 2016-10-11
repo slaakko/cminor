@@ -14,6 +14,7 @@
 #include <cminor/ast/Project.hpp>
 #include <Cm.Util/Path.hpp>
 #include <boost/filesystem.hpp>
+#include <stdexcept>
 
 using namespace cminor::machine;
 using namespace cminor::symbols;
@@ -118,8 +119,8 @@ int main(int argc, const char** argv)
         boost::filesystem::path pn = programName;
         pn.replace_extension();
         Machine machine;
-        Assembly assembly;
-        SymbolReader symbolReader(machine, assemblyFilePath);
+        Assembly assembly(machine);
+        SymbolReader symbolReader(assemblyFilePath);
         std::vector<CallInst*> callInstructions;
         assembly.Read(symbolReader, callInstructions);
         Link(callInstructions);

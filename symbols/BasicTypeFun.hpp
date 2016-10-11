@@ -17,6 +17,7 @@ public:
     void Read(SymbolReader& reader) override;
     TypeSymbol* GetType() const { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }
+    void EmplaceType(TypeSymbol* type, int index) override;
     virtual void ComputeName();
 private:
     TypeSymbol* type;
@@ -54,6 +55,15 @@ public:
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
 };
 
+class BasicTypeReturn : public BasicTypeFun
+{
+public:
+    BasicTypeReturn(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::basicTypeReturn; };
+    void ComputeName() override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+};
+
 class BasicTypeConversion : public BasicTypeFun
 {
 public:
@@ -71,12 +81,43 @@ public:
     TypeSymbol* ConversionTargetType() const override { return targetType; }
     void SetConversionInstructionName(const std::string& conversionInstructionName_) { conversionInstructionName = conversionInstructionName_; }
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void EmplaceType(TypeSymbol* type, int index) override;
 private:
     ConversionType conversionType;
     int32_t conversionDistance;
     TypeSymbol* sourceType;
     TypeSymbol* targetType;
     std::string conversionInstructionName;
+};
+
+class BasicTypeUnaryOpFun : public BasicTypeFun
+{
+public:
+    BasicTypeUnaryOpFun(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::basicTypeUnaryOp; };
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void SetInstGroupName(const std::string& instGroupName_) { instGroupName = instGroupName_; }
+    void SetTypeName(const std::string& typeName_) { typeName = typeName_; }
+private:
+    std::string instGroupName;
+    std::string typeName;
+};
+
+class BasicTypeBinaryOpFun : public BasicTypeFun
+{
+public:
+    BasicTypeBinaryOpFun(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::basicTypBinaryOp; };
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void SetInstGroupName(const std::string& instGroupName_) { instGroupName = instGroupName_; }
+    void SetTypeName(const std::string& typeName_) { typeName = typeName_; }
+private:
+    std::string instGroupName;
+    std::string typeName;
 };
 
 void InitBasicTypeFun(Assembly& assembly);

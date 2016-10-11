@@ -9,11 +9,11 @@
 
 namespace cminor { namespace machine {
 
-Function::Function() : fullName(), id(-1), constantPool(nullptr), isMain(false)
+Function::Function() : fullName(), id(-1), numLocals(0), numParameters(0), constantPool(nullptr), isMain(false)
 {
 }
 
-Function::Function(Constant fullName_, int32_t id_, ConstantPool* constantPool_) : fullName(fullName_), id(id_), numLocals(0), constantPool(constantPool_), isMain(false)
+Function::Function(Constant fullName_, int32_t id_, ConstantPool* constantPool_) : fullName(fullName_), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false)
 {
 }
 
@@ -31,6 +31,7 @@ void Function::Write(Writer& writer)
         inst->Encode(writer);
     }
     writer.Put(numLocals);
+    writer.Put(numParameters);
 }
 
 void Function::Read(Reader& reader)
@@ -46,11 +47,17 @@ void Function::Read(Reader& reader)
         AddInst(reader.GetMachine().DecodeInst(reader));
     }
     numLocals = reader.GetInt();
+    numParameters = reader.GetInt();
 }
 
 void Function::SetNumLocals(int32_t numLocals_)
 {
     numLocals = numLocals_;
+}
+
+void Function::SetNumParameters(int32_t numParameters_)
+{
+    numParameters = numParameters_;
 }
 
 void Function::AddInst(std::unique_ptr<Instruction>&& inst)
@@ -67,7 +74,12 @@ void Function::Dump(CodeFormatter& formatter)
     for (int32_t i = 0; i < n; ++i)
     {
         Instruction* inst = instructions[i].get();
-        formatter.Write(std::to_string(i) + " ");
+        std::string instructionNumber = std::to_string(i);
+        while (instructionNumber.length() < 4)
+        {
+            instructionNumber.append(1, ' ');
+        }
+        formatter.Write(instructionNumber + " ");
         inst->Dump(formatter);
         formatter.WriteLine();
     }

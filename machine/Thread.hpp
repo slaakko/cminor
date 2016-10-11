@@ -21,6 +21,7 @@ class Thread
 public:
     Thread(Machine& machine_, Function& fun_);
     Machine& GetMachine() { return machine; }
+    OperandStack& OpStack() { return opStack; }
     std::vector<Frame>& Frames() { return frames; }
     const std::vector<Frame>& Frames() const { return frames; }
     void IncInstructionCount() { ++instructionCount;  }
@@ -34,6 +35,7 @@ public:
 private:
     Machine& machine;
     Function& fun;
+    OperandStack opStack;
     uint64_t instructionCount;
     uint64_t checkWantToCollectGarbageCount;
     std::vector<Frame> frames;

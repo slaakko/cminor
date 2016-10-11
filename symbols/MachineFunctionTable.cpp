@@ -49,4 +49,13 @@ void MachineFunctionTable::Read(SymbolReader& reader)
     }
 }
 
+void MachineFunctionTable::Dump(CodeFormatter& formatter)
+{
+    int32_t n = int32_t(machineFunctions.size());
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Function* function = machineFunctions[i].get();
+        function->Dump(formatter);
+    }
+}
 } } // namespace cminor::symbols

@@ -20,6 +20,7 @@ class BoundMemberVariable;
 class BoundParameter;
 class BoundConversion;
 class BoundFunctionCall;
+class BoundBinaryExpression;
 
 class BoundNodeVisitor
 {
@@ -37,6 +38,7 @@ public:
     virtual void Visit(BoundParameter& boundParameter) {}
     virtual void Visit(BoundConversion& boundConversion) {}
     virtual void Visit(BoundFunctionCall& boundFunctionCall) {}
+    virtual void Visit(BoundBinaryExpression& boundBinaryExpression) {}
 };
 
 } } // namespace cminor::binder

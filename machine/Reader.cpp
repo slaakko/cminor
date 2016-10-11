@@ -7,8 +7,8 @@
 
 namespace cminor { namespace machine {
 
-Reader::Reader(Machine& machine_, const std::string& fileName_) :
-    machine(machine_), fileName(fileName_), file(fileName), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End())), constantPool(nullptr)
+Reader::Reader(const std::string& fileName_) :
+    machine(nullptr), fileName(fileName_), file(fileName), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End())), constantPool(nullptr)
 {
 }
 

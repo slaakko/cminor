@@ -39,6 +39,8 @@ public:
     const std::string& TypeName() const { return typeName; }
     virtual void Execute(Frame& frame);
     virtual void Dump(CodeFormatter& formatter);
+    virtual bool IsRoot() const { return false; }
+    virtual void GetOpCodes(std::string& opCodes);
 private:
     uint8_t opCode;
     std::string name;
@@ -72,7 +74,7 @@ public:
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
     Instruction* Clone() const override { Assert(false, "not cloneable"); return nullptr; }
-    bool IsRoot() const { return root; }
+    bool IsRoot() const override { return root; }
 private:
     bool root;
     Machine& machine;
@@ -90,6 +92,21 @@ public:
 private:
     std::string instGroupName;
     std::unordered_map<std::string, Instruction*> instructionMap;
+};
+
+
+template<ValueType type>
+class LoadDefaultValueInst : public Instruction
+{
+public:
+    LoadDefaultValueInst(const std::string& name_, const std::string& typeName_) : Instruction(name_, "def", typeName_)
+    {
+    }
+    Instruction* Clone() const override { return new LoadDefaultValueInst<type>(*this); }
+    void Execute(Frame& frame) override
+    {
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(0), type));
+    }
 };
 
 template<typename OperandT, typename UnaryOpT, ValueType type>
@@ -222,14 +239,6 @@ public:
     void Execute(Frame& frame) override;
 };
 
-class LoadNullReferenceInst : public Instruction
-{
-public:
-    LoadNullReferenceInst();
-    Instruction* Clone() const override { return new LoadNullReferenceInst(*this); }
-    void Execute(Frame& frame) override;
-};
-
 class LoadConstantInst : public IndexParamInst
 {
 public:
@@ -238,11 +247,11 @@ public:
     void Execute(Frame& frame) override;
 };
 
-class InitStringFromConstInst : public IndexParamInst
+class ReceiveInst : public Instruction
 {
 public:
-    InitStringFromConstInst();
-    Instruction* Clone() const override { return new InitStringFromConstInst(); }
+    ReceiveInst();
+    Instruction* Clone() const override { return new ReceiveInst(*this); }
     void Execute(Frame& frame) override;
 };
 
@@ -262,51 +271,27 @@ public:
     }
 };
 
-class StringEqualInst : public Instruction
+class JumpInst : public IndexParamInst
 {
 public:
-    StringEqualInst();
-    Instruction* Clone() const override { return new StringEqualInst(*this);  }
+    JumpInst();
+    Instruction* Clone() const override { return new JumpInst(); };
     void Execute(Frame& frame) override;
 };
 
-class StringLessInst : public Instruction
+class JumpTrueInst : public IndexParamInst
 {
 public:
-    StringLessInst();
-    Instruction* Clone() const override { return new StringLessInst(*this); }
+    JumpTrueInst();
+    Instruction* Clone() const override { return new JumpTrueInst(); };
     void Execute(Frame& frame) override;
 };
 
-class StringEqStrLitInst : public Instruction
+class JumpFalseInst : public IndexParamInst
 {
 public:
-    StringEqStrLitInst();
-    Instruction* Clone() const override { return new StringEqStrLitInst(*this); }
-    void Execute(Frame& frame) override;
-};
-
-class StrLitEqStringInst : public Instruction
-{
-public:
-    StrLitEqStringInst();
-    Instruction* Clone() const override { return new StrLitEqStringInst(*this); }
-    void Execute(Frame& frame) override;
-};
-
-class StringLessStrLitInst : public Instruction
-{
-public:
-    StringLessStrLitInst();
-    Instruction* Clone() const override { return new StringLessStrLitInst(*this); }
-    void Execute(Frame& frame) override;
-};
-
-class StrLitLessStringInst : public Instruction
-{
-public:
-    StrLitLessStringInst();
-    Instruction* Clone() const override { return new StrLitLessStringInst(*this); }
+    JumpFalseInst();
+    Instruction* Clone() const override { return new JumpFalseInst(); };
     void Execute(Frame& frame) override;
 };
 

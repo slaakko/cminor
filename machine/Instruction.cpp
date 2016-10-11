@@ -9,6 +9,7 @@
 #include <cminor/machine/Util.hpp>
 #include <cminor/machine/String.hpp>
 #include <cminor/machine/Constant.hpp>
+#include <cminor/machine/Function.hpp>
 
 namespace cminor { namespace machine {
 
@@ -47,9 +48,28 @@ void Instruction::Execute(Frame& frame)
 {
 }
 
+void Instruction::GetOpCodes(std::string& opCodes)
+{
+    if (parent && !parent->IsRoot())
+    {
+        parent->GetOpCodes(opCodes);
+    }
+    if (!opCodes.empty())
+    {
+        opCodes.append(1, ' ');
+    }
+    opCodes.append(ToHexString(opCode));
+}
+
 void Instruction::Dump(CodeFormatter& formatter)
 {
-    formatter.Write(ToHexString(opCode) + " " + name);
+    std::string opCodes;
+    GetOpCodes(opCodes);
+    while (opCodes.size() < 5)
+    {
+        opCodes.append(1, ' ');
+    }
+    formatter.Write(opCodes + " " + name);
 }
 
 InvalidInst::InvalidInst() : Instruction("<invalid_instruction>", "", "")
@@ -134,7 +154,7 @@ std::unique_ptr<Instruction> InstructionTypeGroup::CreateInst(const std::string&
     throw std::runtime_error("instruction for type '" + typeName + "' not found in instruction group '" + instGroupName + "'");
 }
 
-LogicalNotInst::LogicalNotInst() : Instruction("not", "", "")
+LogicalNotInst::LogicalNotInst() : Instruction("not", "not", "bool")
 {
 }
 
@@ -213,15 +233,6 @@ void StoreFieldInst::Execute(Frame& frame)
     frame.GetObjectPool().SetField(reference, Index(), fieldValue);
 }
 
-LoadNullReferenceInst::LoadNullReferenceInst() : Instruction("loadnull")
-{
-}
-
-void LoadNullReferenceInst::Execute(Frame& frame)
-{
-    frame.OpStack().Push(ObjectReference());
-}
-
 LoadConstantInst::LoadConstantInst() : IndexParamInst("loadconstant")
 {
 }
@@ -232,162 +243,55 @@ void LoadConstantInst::Execute(Frame& frame)
     frame.OpStack().Push(frame.GetConstantPool().GetConstant(constantId).Value());
 }
 
-InitStringFromConstInst::InitStringFromConstInst() : IndexParamInst("initstc")
+ReceiveInst::ReceiveInst() : Instruction("receive")
 {
 }
 
-void InitStringFromConstInst::Execute(Frame& frame)
+void ReceiveInst::Execute(Frame& frame)
 {
-    ConstantId constantId(Index());
-    Constant constant = frame.GetConstantPool().GetConstant(constantId);
-    IntegralValue constantValue = constant.Value();
-    Assert(constantValue.GetType() == ValueType::stringLiteral, "string constant expected");
-    ObjectReference reference = frame.GetObjectPool().CreateString(frame.GetThread(), ArenaId::notGCMem, constantValue);
-    frame.OpStack().Push(reference);
-}
-
-StringEqualInst::StringEqualInst() : Instruction("equalst", "equal", "string")
-{
-}
-
-void StringEqualInst::Execute(Frame& frame) 
-{
-    IntegralValue rightOperand = frame.OpStack().Pop();
-    Assert(rightOperand.GetType() == ValueType::objectReference, "object reference operand expected");
-    IntegralValue leftOperand = frame.OpStack().Pop();
-    Assert(leftOperand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference left = ObjectReference(leftOperand.Value());
-    ObjectReference right = ObjectReference(rightOperand.Value());
-    const char32_t* leftChars = frame.GetConstantPool().GetEmptyStringConstant().Value().AsStringLiteral();
-    const char32_t* rightChars = leftChars;
-    if (!left.IsNull())
+    int32_t n = frame.Fun().NumParameters();
+    for (int32_t i = n - 1; i >= 0; --i)
     {
-        ObjectMemPtr leftMemPtr = frame.GetObjectPool().GetObjectMemPtr(left);
-        leftChars = reinterpret_cast<const char32_t*>(leftMemPtr.Value());
+        IntegralValue argument = frame.OpStack().Pop();
+        frame.Local(i).SetValue(argument);
     }
-    if (!right.IsNull())
+}
+
+JumpInst::JumpInst() : IndexParamInst("jump")
+{
+}
+
+void JumpInst::Execute(Frame& frame)
+{
+    frame.SetPC(Index());
+}
+
+JumpTrueInst::JumpTrueInst() : IndexParamInst("jumptrue")
+{
+}
+
+void JumpTrueInst::Execute(Frame& frame)
+{
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::boolType, "bool operand expected");
+    if (value.AsBool())
     {
-        ObjectMemPtr rightMemPtr = frame.GetObjectPool().GetObjectMemPtr(right);
-        rightChars = reinterpret_cast<const char32_t*>(rightMemPtr.Value());
+        frame.SetPC(Index());
     }
-    bool result = StringPtr(leftChars) == StringPtr(rightChars);
-    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
 }
 
-StringLessInst::StringLessInst() : Instruction("lessst", "less", "string")
+JumpFalseInst::JumpFalseInst() : IndexParamInst("jumpfalse")
 {
 }
 
-void StringLessInst::Execute(Frame& frame)
+void JumpFalseInst::Execute(Frame& frame)
 {
-    IntegralValue rightOperand = frame.OpStack().Pop();
-    Assert(rightOperand.GetType() == ValueType::objectReference, "object reference operand expected");
-    IntegralValue leftOperand = frame.OpStack().Pop();
-    Assert(leftOperand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference left = ObjectReference(leftOperand.Value());
-    ObjectReference right = ObjectReference(rightOperand.Value());
-    const char32_t* leftChars = frame.GetConstantPool().GetEmptyStringConstant().Value().AsStringLiteral();
-    const char32_t* rightChars = leftChars;
-    if (!left.IsNull())
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::boolType, "bool operand expected");
+    if (!value.AsBool())
     {
-        ObjectMemPtr leftMemPtr = frame.GetObjectPool().GetObjectMemPtr(left);
-        leftChars = reinterpret_cast<const char32_t*>(leftMemPtr.Value());
+        frame.SetPC(Index());
     }
-    if (!right.IsNull())
-    {
-        ObjectMemPtr rightMemPtr = frame.GetObjectPool().GetObjectMemPtr(right);
-        rightChars = reinterpret_cast<const char32_t*>(rightMemPtr.Value());
-    }
-    bool result = StringPtr(leftChars) < StringPtr(rightChars);
-    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
-}
-
-StringEqStrLitInst::StringEqStrLitInst() : Instruction("equalstringstrlit")
-{
-}
-
-void StringEqStrLitInst::Execute(Frame& frame)
-{
-    IntegralValue rightOperand = frame.OpStack().Pop();
-    Assert(rightOperand.GetType() == ValueType::stringLiteral, "string literal operand expected");
-    IntegralValue leftOperand = frame.OpStack().Pop();
-    Assert(leftOperand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference left = ObjectReference(leftOperand.Value());
-    const char32_t* leftChars = frame.GetConstantPool().GetEmptyStringConstant().Value().AsStringLiteral();
-    if (!left.IsNull())
-    {
-        ObjectMemPtr leftMemPtr = frame.GetObjectPool().GetObjectMemPtr(left);
-        leftChars = reinterpret_cast<const char32_t*>(leftMemPtr.Value());
-    }
-    const char32_t* rightChars = rightOperand.AsStringLiteral();
-    bool result = StringPtr(leftChars) == StringPtr(rightChars);
-    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
-}
-
-StrLitEqStringInst::StrLitEqStringInst() : Instruction("equalstrlitstring")
-{
-}
-
-void StrLitEqStringInst::Execute(Frame& frame)
-{
-    IntegralValue rightOperand = frame.OpStack().Pop();
-    Assert(rightOperand.GetType() == ValueType::objectReference, "object reference operand expected");
-    IntegralValue leftOperand = frame.OpStack().Pop();
-    Assert(leftOperand.GetType() == ValueType::stringLiteral, "string literal operand expected");
-    const char32_t* leftChars = leftOperand.AsStringLiteral();
-    ObjectReference right = ObjectReference(rightOperand.Value());
-    const char32_t* rightChars = frame.GetConstantPool().GetEmptyStringConstant().Value().AsStringLiteral();
-    if (!right.IsNull())
-    {
-        ObjectMemPtr rightMemPtr = frame.GetObjectPool().GetObjectMemPtr(right);
-        rightChars = reinterpret_cast<const char32_t*>(rightMemPtr.Value());
-    }
-    bool result = StringPtr(leftChars) == StringPtr(rightChars);
-    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
-}
-
-StringLessStrLitInst::StringLessStrLitInst() : Instruction("lessstringstrlit")
-{
-}
-
-void StringLessStrLitInst::Execute(Frame& frame)
-{
-    IntegralValue rightOperand = frame.OpStack().Pop();
-    Assert(rightOperand.GetType() == ValueType::stringLiteral, "string literal operand expected");
-    IntegralValue leftOperand = frame.OpStack().Pop();
-    Assert(leftOperand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference left = ObjectReference(leftOperand.Value());
-    const char32_t* leftChars = frame.GetConstantPool().GetEmptyStringConstant().Value().AsStringLiteral();
-    if (!left.IsNull())
-    {
-        ObjectMemPtr leftMemPtr = frame.GetObjectPool().GetObjectMemPtr(left);
-        leftChars = reinterpret_cast<const char32_t*>(leftMemPtr.Value());
-    }
-    const char32_t* rightChars = rightOperand.AsStringLiteral();
-    bool result = StringPtr(leftChars) < StringPtr(rightChars);
-    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
-}
-
-StrLitLessStringInst::StrLitLessStringInst() : Instruction("lessstrlitstring")
-{
-}
-
-void StrLitLessStringInst::Execute(Frame& frame)
-{
-    IntegralValue rightOperand = frame.OpStack().Pop();
-    Assert(rightOperand.GetType() == ValueType::objectReference, "object reference operand expected");
-    IntegralValue leftOperand = frame.OpStack().Pop();
-    Assert(leftOperand.GetType() == ValueType::stringLiteral, "string literal operand expected");
-    const char32_t* leftChars = leftOperand.AsStringLiteral();
-    ObjectReference right = ObjectReference(rightOperand.Value());
-    const char32_t* rightChars = frame.GetConstantPool().GetEmptyStringConstant().Value().AsStringLiteral();
-    if (!right.IsNull())
-    {
-        ObjectMemPtr rightMemPtr = frame.GetObjectPool().GetObjectMemPtr(right);
-        rightChars = reinterpret_cast<const char32_t*>(rightMemPtr.Value());
-    }
-    bool result = StringPtr(leftChars) < StringPtr(rightChars);
-    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
 }
 
 CallInst::CallInst() : Instruction("call")

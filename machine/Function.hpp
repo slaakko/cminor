@@ -24,6 +24,8 @@ public:
     void Read(Reader& reader);
     int32_t NumLocals() const { return numLocals; }
     void SetNumLocals(int32_t numLocals_);
+    int32_t NumParameters() const { return numParameters; }
+    void SetNumParameters(int32_t numParameters_);
     int NumInsts() const { return int(instructions.size()); }
     Instruction* GetInst(int index) const { return instructions[index].get(); }
     void AddInst(std::unique_ptr<Instruction>&& inst);
@@ -36,6 +38,7 @@ private:
     ConstantPool* constantPool;
     std::vector<std::unique_ptr<Instruction>> instructions;
     int32_t numLocals;
+    int32_t numParameters;
     bool isMain;
 };
 

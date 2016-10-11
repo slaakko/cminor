@@ -95,6 +95,7 @@ class BoundNamespace : public BoundExpression
 {
 public:
     BoundNamespace(Assembly& assembly_, NamespaceSymbol* ns_);
+    NamespaceSymbol* Ns() const { return ns; }
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;

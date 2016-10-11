@@ -61,11 +61,11 @@ inline bool operator!=(const AssemblyTag& left, const AssemblyTag& right)
     return !(left == right);
 }
 
-Assembly::Assembly() : filePath(), constantPool(), symbolTable(this), name()
+Assembly::Assembly(Machine& machine_) : machine(machine_), filePath(), constantPool(), symbolTable(this), name()
 {
 }
 
-Assembly::Assembly(const utf32_string& name_, const std::string& filePath_) : filePath(filePath_), constantPool(), symbolTable(this),
+Assembly::Assembly(Machine& machine_, const utf32_string& name_, const std::string& filePath_) : machine(machine_), filePath(filePath_), constantPool(), symbolTable(this),
     name(constantPool.GetConstant(constantPool.Install(StringPtr(name_.c_str()))))
 {
 }
@@ -94,6 +94,7 @@ void Assembly::Write(SymbolWriter& writer)
 
 void Assembly::Read(SymbolReader& reader, std::vector<CallInst*>& callInstructions)
 {
+    reader.SetMachine(machine);
     AssemblyTag defaultTag;
     AssemblyTag tagRead;
     tagRead.Read(reader);
@@ -115,7 +116,7 @@ void Assembly::Read(SymbolReader& reader, std::vector<CallInst*>& callInstructio
     nameId.Read(reader);
     name = constantPool.GetConstant(nameId);
     machineFunctionTable.Read(reader);
-    ImportAssemblies(reader.GetMachine(), callInstructions);
+    ImportAssemblies(callInstructions);
     ImportSymbolTables();
     symbolTable.Read(reader);
 }
@@ -125,9 +126,9 @@ bool Assembly::IsSystemAssembly() const
     return StringPtr(name.Value().AsStringLiteral()) == StringPtr(U"system");
 }
 
-void Assembly::ImportAssemblies(Machine& machine, std::vector<CallInst*>& callInstructions)
+void Assembly::ImportAssemblies(std::vector<CallInst*>& callInstructions)
 {
-    ImportAssemblies(machine, referenceFilePaths, callInstructions);
+    ImportAssemblies(referenceFilePaths, callInstructions);
 }
 
 void Assembly::ImportSymbolTables()
@@ -138,7 +139,7 @@ void Assembly::ImportSymbolTables()
     }
 }
 
-void Assembly::ImportAssemblies(Machine& machine, const std::vector<std::string>& assemblyReferences, std::vector<CallInst*>& callInstructions)
+void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferences, std::vector<CallInst*>& callInstructions)
 {
     std::unordered_set<std::string> importSet;
     std::vector<std::string> allAssemblyReferences;
@@ -147,25 +148,31 @@ void Assembly::ImportAssemblies(Machine& machine, const std::vector<std::string>
         allAssemblyReferences.push_back(CminorSystemAssemblyFilePath(GetConfig()));
     }
     allAssemblyReferences.insert(allAssemblyReferences.end(), assemblyReferences.cbegin(), assemblyReferences.cend());
-    Import(machine, allAssemblyReferences, importSet, callInstructions);
+    Import(allAssemblyReferences, importSet, callInstructions);
 }
 
-void Assembly::Import(Machine& machine, const std::vector<std::string>& assemblyReferences, std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions)
+void Assembly::Import(const std::vector<std::string>& assemblyReferences, std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions)
 {
     for (const std::string& assemblyReference : assemblyReferences)
     {
         if (importSet.find(assemblyReference) == importSet.cend())
         {
             importSet.insert(assemblyReference);
-            std::unique_ptr<Assembly> referencedAssembly(new Assembly());
-            SymbolReader reader(machine, assemblyReference);
+            std::unique_ptr<Assembly> referencedAssembly(new Assembly(machine));
+            SymbolReader reader(assemblyReference);
+            reader.SetMachine(machine);
             referencedAssembly->Read(reader, callInstructions);
             callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
             Assembly* referencedAssemblyPtr = referencedAssembly.get();
             referencedAssemblies.push_back(std::move(referencedAssembly));
-            Import(machine, referencedAssemblyPtr->referenceFilePaths, importSet, callInstructions);
+            Import(referencedAssemblyPtr->referenceFilePaths, importSet, callInstructions);
         }
     }
+}
+
+void Assembly::Dump(CodeFormatter& formatter)
+{
+    machineFunctionTable.Dump(formatter);
 }
 
 void Link(const std::vector<CallInst*>& callInstructions)

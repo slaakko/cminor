@@ -21,19 +21,29 @@ void BasicTypeFun::Write(SymbolWriter& writer)
 {
     FunctionSymbol::Write(writer);
     utf32_string typeFullName = type->FullName();
-    ConstantId id = GetAssembly()->GetConstantPool().GetIdFor(typeFullName);
-    Assert(id != noConstantId, "got no id");
-    id.Write(writer);
+    ConstantId typeNameId = GetAssembly()->GetConstantPool().GetIdFor(typeFullName);
+    Assert(typeNameId != noConstantId, "got no id");
+    typeNameId.Write(writer);
 }
 
 void BasicTypeFun::Read(SymbolReader& reader)
 {
     FunctionSymbol::Read(reader);
-    ConstantId id;
-    id.Read(reader);
-    Constant constant = GetAssembly()->GetConstantPool().GetConstant(id);
-    utf32_string typeFullName = constant.Value().AsStringLiteral();
-    type = GetAssembly()->GetSymbolTable().GetType(typeFullName);
+    ConstantId typeNameId;
+    typeNameId.Read(reader);
+    reader.EmplaceTypeRequest(this, typeNameId, 1);
+}
+
+void BasicTypeFun::EmplaceType(TypeSymbol* type, int index)
+{
+    if (index == 1)
+    {
+        this->type = type;
+    }
+    else
+    {
+        FunctionSymbol::EmplaceType(type, index);
+    }
 }
 
 void BasicTypeFun::ComputeName()
@@ -54,6 +64,8 @@ void BasicTypeFun::ComputeName()
         }
         ParameterSymbol* parameter = Parameters()[i];
         name.append(parameter->GetType()->FullName());
+        name.append(1, U' ');
+        name.append(utf32_string(parameter->Name().Value()));
     }
     name.append(1, U')');
     SetName(StringPtr(name.c_str()));
@@ -77,6 +89,11 @@ BasicTypeDefaultConstructor::BasicTypeDefaultConstructor(const Span& span_, Cons
 
 void BasicTypeDefaultConstructor::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
 {
+    std::string typeName = ToUtf8(GetType()->FullName());
+    std::unique_ptr<Instruction> inst = machine.CreateInst("def", typeName);
+    function.AddInst(std::move(inst));
+    GenObject* target = objects[0];
+    target->GenStore(machine, function);
 }
 
 BasicTypeInitConstructor::BasicTypeInitConstructor(const Span& span_, Constant name_) : BasicTypeConstructor(span_, name_)
@@ -113,6 +130,25 @@ void BasicTypeAssignment::GenerateCall(Machine& machine, Assembly& assembly, Fun
     target->GenStore(machine, function);
 }
 
+BasicTypeReturn::BasicTypeReturn(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
+{
+}
+
+void BasicTypeReturn::ComputeName()
+{
+    ConstantPool& constantPool = GetAssembly()->GetConstantPool();
+    Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@return")));
+    SetGroupNameConstant(groupName);
+    BasicTypeFun::ComputeName();
+}
+
+void BasicTypeReturn::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+{
+    Assert(objects.size() == 1, "return needs one object");
+    GenObject* value = objects[0];
+    value->GenLoad(machine, function);
+}
+
 BasicTypeConversion::BasicTypeConversion(const Span& span_, Constant name_) : 
     BasicTypeFun(span_, name_), conversionType(ConversionType::implicit_), conversionDistance(0), sourceType(nullptr), targetType(nullptr), conversionInstructionName()
 {
@@ -142,15 +178,27 @@ void BasicTypeConversion::Read(SymbolReader& reader)
     conversionDistance = reader.GetInt();
     ConstantId sourceTypeId;
     sourceTypeId.Read(reader);
-    Constant sourceTypeConstant = GetAssembly()->GetConstantPool().GetConstant(sourceTypeId);
-    utf32_string sourceTypeFullName = sourceTypeConstant.Value().AsStringLiteral();
-    sourceType = GetAssembly()->GetSymbolTable().GetType(sourceTypeFullName);
+    reader.EmplaceTypeRequest(this, sourceTypeId, 2);
     ConstantId targetTypeId;
     targetTypeId.Read(reader);
-    Constant targetTypeConstant = GetAssembly()->GetConstantPool().GetConstant(targetTypeId);
-    utf32_string targetTypeFullName = targetTypeConstant.Value().AsStringLiteral();
-    targetType = GetAssembly()->GetSymbolTable().GetType(targetTypeFullName);
+    reader.EmplaceTypeRequest(this, targetTypeId, 3);
     conversionInstructionName = reader.GetUtf8String();
+}
+
+void BasicTypeConversion::EmplaceType(TypeSymbol* type, int index)
+{
+    if (index == 2)
+    {
+        sourceType = type;
+    }
+    else if (index == 3)
+    {
+        targetType = type;
+    }
+    else
+    {
+        BasicTypeFun::EmplaceType(type, index);
+    }
 }
 
 void BasicTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
@@ -159,7 +207,136 @@ void BasicTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Fun
     function.AddInst(std::move(inst));
 }
 
-void InitBasicTypeFun(Assembly& assembly, TypeSymbol* type)
+BasicTypeUnaryOpFun::BasicTypeUnaryOpFun(const Span& span_, Constant name_) : BasicTypeFun(span_, name_), instGroupName(), typeName()
+{
+}
+
+void BasicTypeUnaryOpFun::Write(SymbolWriter& writer)
+{
+    BasicTypeFun::Write(writer);
+    static_cast<Writer&>(writer).Put(instGroupName);
+    static_cast<Writer&>(writer).Put(typeName);
+}
+
+void BasicTypeUnaryOpFun::Read(SymbolReader& reader)
+{
+    BasicTypeFun::Read(reader);
+    instGroupName = reader.GetUtf8String();
+    typeName = reader.GetUtf8String();
+}
+
+void BasicTypeUnaryOpFun::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+{
+    Assert(objects.size() == 1, "unary operator function needs one object");
+    GenObject* operand = objects[0];
+    operand->GenLoad(machine, function);
+    std::unique_ptr<Instruction> inst = machine.CreateInst(instGroupName, typeName);
+    function.AddInst(std::move(inst));
+}
+
+BasicTypeBinaryOpFun::BasicTypeBinaryOpFun(const Span& span_, Constant name_) : BasicTypeFun(span_, name_), instGroupName(), typeName()
+{
+}
+
+void BasicTypeBinaryOpFun::Write(SymbolWriter& writer)
+{
+    BasicTypeFun::Write(writer);
+    static_cast<Writer&>(writer).Put(instGroupName);
+    static_cast<Writer&>(writer).Put(typeName);
+}
+
+void BasicTypeBinaryOpFun::Read(SymbolReader& reader)
+{
+    BasicTypeFun::Read(reader);
+    instGroupName = reader.GetUtf8String();
+    typeName = reader.GetUtf8String();
+}
+
+void BasicTypeBinaryOpFun::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+{
+    Assert(objects.size() == 2, "binary operator function needs two objects");
+    GenObject* left = objects[0];
+    left->GenLoad(machine, function);
+    GenObject* right = objects[1];
+    right->GenLoad(machine, function);
+    std::unique_ptr<Instruction> inst = machine.CreateInst(instGroupName, typeName);
+    function.AddInst(std::move(inst));
+}
+
+void CreateBasicTypeUnaryOpFun(Assembly& assembly, TypeSymbol* type, const utf32_string& groupName, const std::string& instGroupName)
+{
+    std::string typeName = ToUtf8(type->FullName());
+    ConstantPool& constantPool = assembly.GetConstantPool();
+    Constant operandName = constantPool.GetConstant(constantPool.Install(U"operand"));
+    Constant groupNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(groupName.c_str())));
+    ParameterSymbol* operandParam = new ParameterSymbol(Span(), operandName);
+    operandParam->SetAssembly(&assembly);
+    operandParam->SetType(type);
+    BasicTypeUnaryOpFun* fun = new BasicTypeUnaryOpFun(Span(), constantPool.GetEmptyStringConstant());
+    fun->SetInstGroupName(instGroupName);
+    fun->SetTypeName(typeName);
+    fun->SetGroupNameConstant(groupNameConstant);
+    fun->SetAssembly(&assembly);
+    fun->SetType(type);
+    fun->AddSymbol(std::unique_ptr<Symbol>(operandParam));
+    fun->SetReturnType(type);
+    fun->ComputeName();
+    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(fun));
+}
+
+void CreateBasicTypeBinaryOpFun(Assembly& assembly, TypeSymbol* type, const utf32_string& groupName, const std::string& instGroupName)
+{
+    std::string typeName = ToUtf8(type->FullName());
+    ConstantPool& constantPool = assembly.GetConstantPool();
+    Constant leftParamName = constantPool.GetConstant(constantPool.Install(U"left"));
+    ParameterSymbol* leftParam = new ParameterSymbol(Span(), leftParamName);
+    leftParam->SetAssembly(&assembly);
+    leftParam->SetType(type);
+    Constant rightParamName = constantPool.GetConstant(constantPool.Install(U"right"));
+    ParameterSymbol* rightParam = new ParameterSymbol(Span(), rightParamName);
+    rightParam->SetAssembly(&assembly);
+    rightParam->SetType(type);
+    Constant groupNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(groupName.c_str())));
+    BasicTypeBinaryOpFun* fun = new BasicTypeBinaryOpFun(Span(), constantPool.GetEmptyStringConstant());
+    fun->SetGroupNameConstant(groupNameConstant);
+    fun->SetInstGroupName(instGroupName);
+    fun->SetTypeName(typeName);
+    fun->SetAssembly(&assembly);
+    fun->SetType(type);
+    fun->AddSymbol(std::unique_ptr<Symbol>(leftParam));
+    fun->AddSymbol(std::unique_ptr<Symbol>(rightParam));
+    fun->SetReturnType(type);
+    fun->ComputeName();
+    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(fun));
+}
+
+void CreateBasicTypeComparisonFun(Assembly& assembly, TypeSymbol* type, TypeSymbol* boolType, const utf32_string& groupName, const std::string& instGroupName)
+{
+    std::string typeName = ToUtf8(type->FullName());
+    ConstantPool& constantPool = assembly.GetConstantPool();
+    Constant leftParamName = constantPool.GetConstant(constantPool.Install(U"left"));
+    ParameterSymbol* leftParam = new ParameterSymbol(Span(), leftParamName);
+    leftParam->SetAssembly(&assembly);
+    leftParam->SetType(type);
+    Constant rightParamName = constantPool.GetConstant(constantPool.Install(U"right"));
+    ParameterSymbol* rightParam = new ParameterSymbol(Span(), rightParamName);
+    rightParam->SetAssembly(&assembly);
+    rightParam->SetType(type);
+    Constant groupNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(groupName.c_str())));
+    BasicTypeBinaryOpFun* fun = new BasicTypeBinaryOpFun(Span(), constantPool.GetEmptyStringConstant());
+    fun->SetGroupNameConstant(groupNameConstant);
+    fun->SetInstGroupName(instGroupName);
+    fun->SetTypeName(typeName);
+    fun->SetAssembly(&assembly);
+    fun->SetType(type);
+    fun->AddSymbol(std::unique_ptr<Symbol>(leftParam));
+    fun->AddSymbol(std::unique_ptr<Symbol>(rightParam));
+    fun->SetReturnType(boolType);
+    fun->ComputeName();
+    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(fun));
+}
+
+void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type)
 {
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
@@ -201,9 +378,68 @@ void InitBasicTypeFun(Assembly& assembly, TypeSymbol* type)
     assignment->AddSymbol(std::unique_ptr<Symbol>(thatParam3));
     assignment->ComputeName();
     assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(assignment));
+
+    BasicTypeReturn* returnFun = new BasicTypeReturn(Span(), constantPool.GetEmptyStringConstant());
+    returnFun->SetAssembly(&assembly);
+    returnFun->SetType(type);
+    returnFun->SetReturnType(type);
+    Constant valueParamName = constantPool.GetConstant(constantPool.Install(U"value"));
+    ParameterSymbol* valueParam = new ParameterSymbol(Span(), valueParamName);
+    valueParam->SetAssembly(&assembly);
+    valueParam->SetType(type);
+    returnFun->AddSymbol(std::unique_ptr<Symbol>(valueParam));
+    returnFun->ComputeName();
+    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(returnFun));
 }
 
-void InitBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSymbol* charType, TypeSymbol* sbyteType, TypeSymbol* byteType, TypeSymbol* shortType, TypeSymbol* ushortType,
+void CreateBasicTypeBoolFun(Assembly& assembly, TypeSymbol* boolType)
+{
+    CreateBasicTypeBasicFun(assembly, boolType);
+    CreateBasicTypeUnaryOpFun(assembly, boolType, U"operator!", "not");
+    CreateBasicTypeComparisonFun(assembly, boolType, boolType, U"operator==", "equal");
+}
+
+void CreateBasicTypeCharFun(Assembly& assembly, TypeSymbol* charType, TypeSymbol* boolType)
+{
+    CreateBasicTypeBasicFun(assembly, charType);
+    CreateBasicTypeComparisonFun(assembly, charType, boolType, U"operator==", "equal");
+    CreateBasicTypeComparisonFun(assembly, charType, boolType, U"operator<", "less");
+}
+
+void CreateBasicTypeIntFun(Assembly& assembly, TypeSymbol* type, TypeSymbol* boolType)
+{
+    CreateBasicTypeBasicFun(assembly, type);
+    CreateBasicTypeUnaryOpFun(assembly, type, U"operator+", "uplus");
+    CreateBasicTypeUnaryOpFun(assembly, type, U"operator-", "neg");
+    CreateBasicTypeUnaryOpFun(assembly, type, U"operator~", "cpl");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator+", "add");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator-", "sub");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator*", "mul");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator/", "div");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator%", "rem");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator&", "and");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator|", "or");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator^", "xor");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator<<", "shl");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator>>", "shr");
+    CreateBasicTypeComparisonFun(assembly, type, boolType, U"operator==", "equal");
+    CreateBasicTypeComparisonFun(assembly, type, boolType, U"operator<", "less");
+}
+
+void CreateBasicTypeFloatFun(Assembly& assembly, TypeSymbol* type, TypeSymbol* boolType)
+{
+    CreateBasicTypeBasicFun(assembly, type);
+    CreateBasicTypeUnaryOpFun(assembly, type, U"operator+", "uplus");
+    CreateBasicTypeUnaryOpFun(assembly, type, U"operator-", "neg");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator+", "add");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator-", "sub");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator*", "mul");
+    CreateBasicTypeBinaryOpFun(assembly, type, U"operator/", "div");
+    CreateBasicTypeComparisonFun(assembly, type, boolType, U"operator==", "equal");
+    CreateBasicTypeComparisonFun(assembly, type, boolType, U"operator<", "less");
+}
+
+void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSymbol* charType, TypeSymbol* sbyteType, TypeSymbol* byteType, TypeSymbol* shortType, TypeSymbol* ushortType,
     TypeSymbol* intType, TypeSymbol* uintType, TypeSymbol* longType, TypeSymbol* ulongType, TypeSymbol* floatType, TypeSymbol* doubleType)
 {
     ConstantPool& constantPool = assembly.GetConstantPool();
@@ -1523,30 +1759,30 @@ void InitBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSymb
 void InitBasicTypeFun(Assembly& assembly)
 {
     TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"bool");
-    InitBasicTypeFun(assembly, boolType);
+    CreateBasicTypeBoolFun(assembly, boolType);
     TypeSymbol* charType = assembly.GetSymbolTable().GetType(U"char");
-    InitBasicTypeFun(assembly, charType);
+    CreateBasicTypeCharFun(assembly, charType, boolType);
     TypeSymbol* sbyteType = assembly.GetSymbolTable().GetType(U"sbyte");
-    InitBasicTypeFun(assembly, sbyteType);
+    CreateBasicTypeIntFun(assembly, sbyteType, boolType);
     TypeSymbol* byteType = assembly.GetSymbolTable().GetType(U"byte");
-    InitBasicTypeFun(assembly, byteType);
+    CreateBasicTypeIntFun(assembly, byteType, boolType);
     TypeSymbol* shortType = assembly.GetSymbolTable().GetType(U"short");
-    InitBasicTypeFun(assembly, shortType);
+    CreateBasicTypeIntFun(assembly, shortType, boolType);
     TypeSymbol* ushortType = assembly.GetSymbolTable().GetType(U"ushort");
-    InitBasicTypeFun(assembly, ushortType);
+    CreateBasicTypeIntFun(assembly, ushortType, boolType);
     TypeSymbol* intType = assembly.GetSymbolTable().GetType(U"int");
-    InitBasicTypeFun(assembly, intType);
+    CreateBasicTypeIntFun(assembly, intType, boolType);
     TypeSymbol* uintType = assembly.GetSymbolTable().GetType(U"uint");
-    InitBasicTypeFun(assembly, uintType);
+    CreateBasicTypeIntFun(assembly, uintType, boolType);
     TypeSymbol* longType = assembly.GetSymbolTable().GetType(U"long");
-    InitBasicTypeFun(assembly, longType);
+    CreateBasicTypeIntFun(assembly, longType, boolType);
     TypeSymbol* ulongType = assembly.GetSymbolTable().GetType(U"ulong");
-    InitBasicTypeFun(assembly, ulongType);
+    CreateBasicTypeIntFun(assembly, ulongType, boolType);
     TypeSymbol* floatType = assembly.GetSymbolTable().GetType(U"float");
-    InitBasicTypeFun(assembly, floatType);
+    CreateBasicTypeFloatFun(assembly, floatType, boolType);
     TypeSymbol* doubleType = assembly.GetSymbolTable().GetType(U"double");
-    InitBasicTypeFun(assembly, doubleType);
-    InitBasicTypeConversions(assembly, boolType, charType, sbyteType, byteType, shortType, ushortType, intType, uintType, longType, ulongType, floatType, doubleType);
+    CreateBasicTypeFloatFun(assembly, doubleType, boolType);
+    CreateBasicTypeConversions(assembly, boolType, charType, sbyteType, byteType, shortType, ushortType, intType, uintType, longType, ulongType, floatType, doubleType);
 }
 
 } } // namespace cminor::symbols

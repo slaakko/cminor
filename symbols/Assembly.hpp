@@ -20,8 +20,9 @@ void Link(const std::vector<CallInst*>& callInstructions);
 class Assembly
 {
 public:
-    Assembly();
-    Assembly(const utf32_string& name_, const std::string& filePath_);
+    Assembly(Machine& machine_);
+    Assembly(Machine& machine_, const utf32_string& name_, const std::string& filePath_);
+    Machine& GetMachine() { return machine; }
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader, std::vector<CallInst*>& callInstructions);
     const std::string& FilePath() const { return filePath; }
@@ -30,10 +31,12 @@ public:
     MachineFunctionTable& GetMachineFunctionTable() { return machineFunctionTable; }
     SymbolTable& GetSymbolTable() { return symbolTable; }
     bool IsSystemAssembly() const;
-    void ImportAssemblies(Machine& machine, std::vector<CallInst*>& callInstructions);
-    void ImportAssemblies(Machine& machine, const std::vector<std::string>& assemblyReferences, std::vector<CallInst*>& callInstructions);
+    void ImportAssemblies(std::vector<CallInst*>& callInstructions);
+    void ImportAssemblies(const std::vector<std::string>& assemblyReferences, std::vector<CallInst*>& callInstructions);
     void ImportSymbolTables();
+    void Dump(CodeFormatter& formatter);
 private:
+    Machine& machine;
     std::string filePath;
     std::vector<std::string> referenceFilePaths;
     std::vector<std::unique_ptr<Assembly>> referencedAssemblies;
@@ -41,7 +44,7 @@ private:
     Constant name;
     MachineFunctionTable machineFunctionTable;
     SymbolTable symbolTable;
-    void Import(Machine& machine, const std::vector<std::string>& assemblyReferences, std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions);
+    void Import(const std::vector<std::string>& assemblyReferences, std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions);
 };
 
 } } // namespace cminor::symbols
