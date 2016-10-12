@@ -29,6 +29,16 @@ private:
     std::vector<std::unique_ptr<BoundStatement>> statements;
 };
 
+class BoundReturnStatement : public BoundStatement
+{
+public:
+    BoundReturnStatement(Assembly& assembly_, std::unique_ptr<BoundFunctionCall>&& returnFunctionCall_);
+    BoundFunctionCall* ReturnFunctionCall() const { return returnFunctionCall.get(); }
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    std::unique_ptr<BoundFunctionCall> returnFunctionCall;
+};
+
 class BoundConstructionStatement : public BoundStatement
 {
 public:

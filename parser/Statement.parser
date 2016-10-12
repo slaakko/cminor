@@ -28,6 +28,10 @@ namespace cminor.parser
             |   ControlStatement(ctx){ value = ControlStatement; }
             |   AssignmentStatement(ctx){ value = AssignmentStatement; }
             |   ConstructionStatement(ctx){ value = ConstructionStatement; }
+            |   IncrementStatement(ctx){ value = IncrementStatement; }
+            |   DecrementStatement(ctx){ value = DecrementStatement; }
+            |   ExpressionStatement(ctx){ value = ExpressionStatement; }
+            |   EmptyStatement(ctx){ value = EmptyStatement; }
             ;
 
         LabelId : std::string
@@ -44,6 +48,11 @@ namespace cminor.parser
 
         ControlStatement(ParsingContext* ctx) : StatementNode*
             ::= CompoundStatement(ctx){ value = CompoundStatement; }
+            |   ReturnStatement(ctx){ value = ReturnStatement; }
+            |   IfStatement(ctx){ value = IfStatement; }
+            |   WhileStatement(ctx){ value = WhileStatement; }
+            |   DoStatement(ctx){ value = DoStatement; }
+            |   ForStatement(ctx){ value = ForStatement; }
             ;
 
         CompoundStatement(ParsingContext* ctx) : CompoundStatementNode*
@@ -53,16 +62,86 @@ namespace cminor.parser
                 ){ value->GetSpan().SetEnd(span.End()); }
             ;
 
-        AssignmentStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr) : StatementNode*
-            ::= empty{ ctx->PushParsingLvalue(true); } (Expression(ctx):target{ ctx->PopParsingLvalue(); targetExpr.reset(target); } / { ctx->PopParsingLvalue(); } '=' Expression(ctx):source! ';'!)
+        ReturnStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("return") Expression(ctx)? ';'!){ value = new ReturnStatementNode(span, Expression); }
+            ;
+
+        IfStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("if") '(' Expression(ctx) ')' Statement(ctx):thens (keyword("else") Statement(ctx):elses)?){ value = new IfStatementNode(span, Expression, thens, elses); }
+            ;
+
+        WhileStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("while") '('! Expression(ctx)! ')'! Statement(ctx)!){ value = new WhileStatementNode(span, Expression, Statement); }
+            ;
+
+        DoStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("do") Statement(ctx)! keyword("while")! '('! Expression(ctx)! ')'! ';'!){ value = new DoStatementNode(span, Statement, Expression); }
+            ;
+
+        ForStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("for") '(' ForInitStatement(ctx)! Expression(ctx)? ';'! ForLoopExpressionStatement(ctx)! ')'! Statement(ctx)!)
+            { 
+                value = new ForStatementNode(span, ForInitStatement, Expression, ForLoopExpressionStatement, Statement);
+            }
+            ;
+
+        ForInitStatement(ParsingContext* ctx) : StatementNode*
+            ::= AssignmentStatement(ctx){ value = AssignmentStatement; }
+            |   ConstructionStatement(ctx){ value = ConstructionStatement; }
+            |   EmptyStatement(ctx){ value = EmptyStatement; }
+            ;
+
+        ForLoopExpressionStatement(ParsingContext* ctx) : StatementNode*
+            ::= IncrementExpressionStatement(ctx){ value = IncrementExpressionStatement; }
+            |   DecrementExpressionStatement(ctx){ value = DecrementExpressionStatement; }
+            |   AssignmentExpressionStatement(ctx){ value = AssignmentExpressionStatement; }
+            |   empty{ value = new EmptyStatementNode(span); }
+            ;
+
+        AssignmentExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr) : StatementNode*
+            ::= empty{ ctx->PushParsingLvalue(true); } (Expression(ctx):target{ ctx->PopParsingLvalue(); targetExpr.reset(target); } / { ctx->PopParsingLvalue(); } '=' Expression(ctx):source!)
                 {
                     value = new AssignmentStatementNode(span, targetExpr.release(), source);
                 }
             ;
 
+        AssignmentStatement(ParsingContext* ctx) : StatementNode*
+            ::= (AssignmentExpressionStatement(ctx) ';'!){ value = AssignmentExpressionStatement; value->GetSpan().SetEnd(span.End()); }
+            ;
+
         ConstructionStatement(ParsingContext* ctx) : StatementNode*
             ::= TypeExpr(ctx) Identifier!{ value = new ConstructionStatementNode(span, TypeExpr, Identifier); }
                 ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value->AddArgument(Expression); })? ';'!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        IncrementExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr) : StatementNode*
+            ::= 
+            (   ("++" Expression(ctx):left!){ value = new IncrementStatementNode(span, left); } 
+            |   (Expression(ctx):right{ expr.reset(right); } "++"){ value = new IncrementStatementNode(span, expr.release()); }
+            ) 
+            ;
+
+        IncrementStatement(ParsingContext* ctx) : StatementNode*
+            ::= (IncrementExpressionStatement(ctx) ';'!){ value = IncrementExpressionStatement; value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        DecrementExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr) : StatementNode*
+            ::= 
+            (   ("--" Expression(ctx):left!){ value = new DecrementStatementNode(span, left); } 
+            |   (Expression(ctx):right{ expr.reset(right); } "--"){ value = new DecrementStatementNode(span, expr.release()); }
+            )
+            ;
+
+        DecrementStatement(ParsingContext* ctx) : StatementNode*
+            ::= (DecrementExpressionStatement(ctx) ';'!){ value = DecrementExpressionStatement; value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        ExpressionStatement(ParsingContext* ctx) : StatementNode*
+            ::= (Expression(ctx) ';'!){ value = new ExpressionStatementNode(span, Expression); }
+            ;
+
+        EmptyStatement(ParsingContext* ctx) : StatementNode*
+            ::= ';'{ value = new EmptyStatementNode(span); } 
             ;
     }
 }

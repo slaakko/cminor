@@ -61,6 +61,11 @@ void Instruction::GetOpCodes(std::string& opCodes)
     opCodes.append(ToHexString(opCode));
 }
 
+void Instruction::SetTarget(int32_t target)
+{
+    throw std::runtime_error("cannot set target of '" + name + "' instruction");
+}
+
 void Instruction::Dump(CodeFormatter& formatter)
 {
     std::string opCodes;
@@ -261,13 +266,36 @@ JumpInst::JumpInst() : IndexParamInst("jump")
 {
 }
 
+void JumpInst::SetTarget(int32_t target)
+{
+    SetIndex(target);
+}
+
 void JumpInst::Execute(Frame& frame)
 {
     frame.SetPC(Index());
 }
 
+void JumpInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    if (Index() == endOfFunction)
+    {
+        formatter.Write(" eof");
+    }
+    else
+    {
+        formatter.Write(" " + std::to_string(Index()));
+    }
+}
+
 JumpTrueInst::JumpTrueInst() : IndexParamInst("jumptrue")
 {
+}
+
+void JumpTrueInst::SetTarget(int32_t target)
+{
+    SetIndex(target);
 }
 
 void JumpTrueInst::Execute(Frame& frame)
@@ -280,8 +308,26 @@ void JumpTrueInst::Execute(Frame& frame)
     }
 }
 
+void JumpTrueInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    if (Index() == endOfFunction)
+    {
+        formatter.Write(" eof");
+    }
+    else
+    {
+        formatter.Write(" " + std::to_string(Index()));
+    }
+}
+
 JumpFalseInst::JumpFalseInst() : IndexParamInst("jumpfalse")
 {
+}
+
+void JumpFalseInst::SetTarget(int32_t target)
+{
+    SetIndex(target);
 }
 
 void JumpFalseInst::Execute(Frame& frame)
@@ -291,6 +337,19 @@ void JumpFalseInst::Execute(Frame& frame)
     if (!value.AsBool())
     {
         frame.SetPC(Index());
+    }
+}
+
+void JumpFalseInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    if (Index() == endOfFunction)
+    {
+        formatter.Write(" eof");
+    }
+    else
+    {
+        formatter.Write(" " + std::to_string(Index()));
     }
 }
 

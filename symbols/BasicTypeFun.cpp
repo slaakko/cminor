@@ -46,31 +46,6 @@ void BasicTypeFun::EmplaceType(TypeSymbol* type, int index)
     }
 }
 
-void BasicTypeFun::ComputeName()
-{
-    utf32_string name;
-    if (ReturnType())
-    {
-        name.append(ReturnType()->FullName()).append(1, U' ');
-    }
-    name.append(GroupName().Value());
-    name.append(1, U'(');
-    int n = int(Parameters().size());
-    for (int i = 0; i < n; ++i)
-    {
-        if (i > 0)
-        {
-            name.append(U", ");
-        }
-        ParameterSymbol* parameter = Parameters()[i];
-        name.append(parameter->GetType()->FullName());
-        name.append(1, U' ');
-        name.append(utf32_string(parameter->Name().Value()));
-    }
-    name.append(1, U')');
-    SetName(StringPtr(name.c_str()));
-}
-
 BasicTypeConstructor::BasicTypeConstructor(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
 {
 }

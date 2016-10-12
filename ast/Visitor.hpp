@@ -73,8 +73,17 @@ class AsNode;
 class DotNode;
 
 class CompoundStatementNode;
+class ReturnStatementNode;
+class IfStatementNode;
+class WhileStatementNode;
+class DoStatementNode;
+class ForStatementNode;
 class ConstructionStatementNode;
 class AssignmentStatementNode;
+class ExpressionStatementNode;
+class EmptyStatementNode;
+class IncrementStatementNode;
+class DecrementStatementNode;
 
 class Visitor
 {
@@ -145,8 +154,17 @@ public:
     virtual void Visit(DotNode& dotNode) {}
 
     virtual void Visit(CompoundStatementNode& compoundStatementNode) {}
+    virtual void Visit(ReturnStatementNode& returnStatementNode) {}
+    virtual void Visit(IfStatementNode& ifStatementNode) {}
+    virtual void Visit(WhileStatementNode& whileStatementNode) {}
+    virtual void Visit(DoStatementNode& doStatementNode) {}
+    virtual void Visit(ForStatementNode& forStatementNode) {}
     virtual void Visit(ConstructionStatementNode& constructionStatementNode) {}
     virtual void Visit(AssignmentStatementNode& assignmentStatementNode) {}
+    virtual void Visit(ExpressionStatementNode& expressionStatementNode) {}
+    virtual void Visit(EmptyStatementNode& emptyStatementNode) {}
+    virtual void Visit(IncrementStatementNode& incrementStatementNode) {}
+    virtual void Visit(DecrementStatementNode& decrementStatementNode) {}
 };
 
 } } // namespace cminor::ast

@@ -55,6 +55,7 @@ void TypeBinderVisitor::Visit(FunctionNode& functionNode)
     containerScope = functionSymbol->GetContainerScope();
     TypeSymbol* returnType = ResolveType(boundCompileUnit, containerScope, functionNode.ReturnTypeExpr());
     functionSymbol->SetReturnType(returnType);
+    functionSymbol->ComputeName();
     functionNode.Body()->Accept(*this);
     containerScope = prevContainerScope;
 }

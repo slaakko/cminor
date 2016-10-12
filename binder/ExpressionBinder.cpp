@@ -34,6 +34,8 @@ public:
     void Visit(StringLiteralNode& stringLiteralNode) override;
     void Visit(NullLiteralNode& nullLiteralNode) override;
 
+    void Visit(DisjunctionNode& disjunctionNode) override;
+    void Visit(ConjunctionNode& conjunctionNode) override;
     void Visit(BitOrNode& bitOrNode) override;
     void Visit(BitXorNode& bitXorNode) override;
     void Visit(BitAndNode& bitAndNode) override;
@@ -256,6 +258,40 @@ void ExpressionBinder::BindBinaryOp(BinaryNode& binaryNode, StringPtr groupName)
     BindBinaryOp(left, right, binaryNode, groupName);
 }
 
+void ExpressionBinder::Visit(DisjunctionNode& disjunctionNode)
+{
+    disjunctionNode.Left()->Accept(*this);
+    BoundExpression* left = expression.release();
+    disjunctionNode.Right()->Accept(*this);
+    BoundExpression* right = expression.release();
+    if (!dynamic_cast<BoolTypeSymbol*>(left->GetType()))
+    {
+        throw Exception("left subexpression of disjunction expression is not of Boolean type", disjunctionNode.Left()->GetSpan());
+    }
+    if (!dynamic_cast<BoolTypeSymbol*>(right->GetType()))
+    {
+        throw Exception("right subexpression of disjunction expression is not of Boolean type", disjunctionNode.Right()->GetSpan());
+    }
+    expression.reset(new BoundDisjunction(boundCompileUnit.GetAssembly(), left, right));
+}
+
+void ExpressionBinder::Visit(ConjunctionNode& conjunctionNode)
+{
+    conjunctionNode.Left()->Accept(*this);
+    BoundExpression* left = expression.release();
+    conjunctionNode.Right()->Accept(*this);
+    BoundExpression* right = expression.release();
+    if (!dynamic_cast<BoolTypeSymbol*>(left->GetType()))
+    {
+        throw Exception("left subexpression of conjunction expression is not of Boolean type", conjunctionNode.Left()->GetSpan());
+    }
+    if (!dynamic_cast<BoolTypeSymbol*>(right->GetType()))
+    {
+        throw Exception("right subexpression of conjunction expression is not of Boolean type", conjunctionNode.Right()->GetSpan());
+    }
+    expression.reset(new BoundConjunction(boundCompileUnit.GetAssembly(), left, right));
+}
+
 void ExpressionBinder::Visit(BitOrNode& bitOrNode)
 {
     BindBinaryOp(bitOrNode, U"operator|");
@@ -401,7 +437,7 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
         case SymbolType::namespaceSymbol:
         {
             NamespaceSymbol* ns = static_cast<NamespaceSymbol*>(symbol);
-            expression.reset(new BoundNamespace(boundCompileUnit.GetAssembly(), ns));
+            expression.reset(new BoundNamespaceExpression(boundCompileUnit.GetAssembly(), ns));
             break;
         }
         default:
@@ -440,7 +476,7 @@ void ExpressionBinder::Visit(DotNode& dotNode)
 {
     ContainerScope* prevContainerScope = containerScope;
     dotNode.Child()->Accept(*this);
-    if (BoundNamespace* bns = dynamic_cast<BoundNamespace*>(expression.get()))
+    if (BoundNamespaceExpression* bns = dynamic_cast<BoundNamespaceExpression*>(expression.get()))
     {
         containerScope = bns->Ns()->GetContainerScope();
         utf32_string str = ToUtf32(dotNode.MemberStr());

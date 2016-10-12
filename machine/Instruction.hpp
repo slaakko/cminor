@@ -41,6 +41,7 @@ public:
     virtual void Dump(CodeFormatter& formatter);
     virtual bool IsRoot() const { return false; }
     virtual void GetOpCodes(std::string& opCodes);
+    virtual void SetTarget(int32_t target);
 private:
     uint8_t opCode;
     std::string name;
@@ -271,28 +272,36 @@ public:
     }
 };
 
+const int32_t endOfFunction = -1;
+
 class JumpInst : public IndexParamInst
 {
 public:
     JumpInst();
-    Instruction* Clone() const override { return new JumpInst(); };
+    Instruction* Clone() const override { return new JumpInst(*this); };
+    void SetTarget(int32_t target) override;
     void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
 };
 
 class JumpTrueInst : public IndexParamInst
 {
 public:
     JumpTrueInst();
-    Instruction* Clone() const override { return new JumpTrueInst(); };
+    Instruction* Clone() const override { return new JumpTrueInst(*this); };
+    void SetTarget(int32_t target) override;
     void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
 };
 
 class JumpFalseInst : public IndexParamInst
 {
 public:
     JumpFalseInst();
-    Instruction* Clone() const override { return new JumpFalseInst(); };
+    Instruction* Clone() const override { return new JumpFalseInst(*this); };
+    void SetTarget(int32_t target) override;
     void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
 };
 
 class CallInst : public Instruction

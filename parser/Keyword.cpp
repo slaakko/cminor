@@ -31,25 +31,40 @@ KeywordGrammar* KeywordGrammar::Create(Cm::Parsing::ParsingDomain* parsingDomain
 KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::Parsing::Grammar("KeywordGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
 {
     SetOwner(0);
+    keywords0.push_back("abstract");
     keywords0.push_back("bool");
     keywords0.push_back("byte");
     keywords0.push_back("char");
+    keywords0.push_back("do");
     keywords0.push_back("double");
+    keywords0.push_back("else");
     keywords0.push_back("false");
     keywords0.push_back("float");
+    keywords0.push_back("for");
+    keywords0.push_back("if");
+    keywords0.push_back("inline");
     keywords0.push_back("int");
+    keywords0.push_back("internal");
     keywords0.push_back("long");
     keywords0.push_back("namespace");
     keywords0.push_back("null");
     keywords0.push_back("operator");
+    keywords0.push_back("override");
+    keywords0.push_back("private");
+    keywords0.push_back("protected");
+    keywords0.push_back("public");
+    keywords0.push_back("return");
     keywords0.push_back("sbyte");
     keywords0.push_back("short");
+    keywords0.push_back("static");
     keywords0.push_back("string");
     keywords0.push_back("true");
     keywords0.push_back("uint");
     keywords0.push_back("ulong");
     keywords0.push_back("ushort");
+    keywords0.push_back("virtual");
     keywords0.push_back("void");
+    keywords0.push_back("while");
 }
 
 void KeywordGrammar::GetReferencedGrammars()

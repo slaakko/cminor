@@ -18,7 +18,6 @@ public:
     TypeSymbol* GetType() const { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }
     void EmplaceType(TypeSymbol* type, int index) override;
-    virtual void ComputeName();
 private:
     TypeSymbol* type;
 };

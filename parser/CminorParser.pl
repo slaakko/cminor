@@ -105,7 +105,21 @@ namespace cminor.parser
         LabeledStatement(ParsingContext* ctx): StatementNode*;
         ControlStatement(ParsingContext* ctx): StatementNode*;
         CompoundStatement(ParsingContext* ctx): CompoundStatementNode*;
-        AssignmentStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr): StatementNode*;
+        ReturnStatement(ParsingContext* ctx): StatementNode*;
+        IfStatement(ParsingContext* ctx): StatementNode*;
+        WhileStatement(ParsingContext* ctx): StatementNode*;
+        DoStatement(ParsingContext* ctx): StatementNode*;
+        ForStatement(ParsingContext* ctx): StatementNode*;
+        ForInitStatement(ParsingContext* ctx): StatementNode*;
+        ForLoopExpressionStatement(ParsingContext* ctx): StatementNode*;
+        AssignmentExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr): StatementNode*;
+        AssignmentStatement(ParsingContext* ctx): StatementNode*;
         ConstructionStatement(ParsingContext* ctx): StatementNode*;
+        IncrementExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): StatementNode*;
+        IncrementStatement(ParsingContext* ctx): StatementNode*;
+        DecrementExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): StatementNode*;
+        DecrementStatement(ParsingContext* ctx): StatementNode*;
+        ExpressionStatement(ParsingContext* ctx): StatementNode*;
+        EmptyStatement(ParsingContext* ctx): StatementNode*;
     }
 }

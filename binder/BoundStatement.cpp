@@ -26,6 +26,15 @@ void BoundCompoundStatement::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundReturnStatement::BoundReturnStatement(Assembly& assembly_, std::unique_ptr<BoundFunctionCall>&& returnFunctionCall_) : BoundStatement(assembly_), returnFunctionCall(std::move(returnFunctionCall_))
+{
+}
+
+void BoundReturnStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundConstructionStatement::BoundConstructionStatement(Assembly& assembly_, std::unique_ptr<BoundFunctionCall>&& constructorCall_): BoundStatement(assembly_), constructorCall(std::move(constructorCall_))
 {
 }

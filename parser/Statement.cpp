@@ -108,6 +108,14 @@ public:
         a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A2Action));
         Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
         a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A3Action));
+        Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
+        a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A4Action));
+        Cm::Parsing::ActionParser* a5ActionParser = GetAction("A5");
+        a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A5Action));
+        Cm::Parsing::ActionParser* a6ActionParser = GetAction("A6");
+        a6ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A6Action));
+        Cm::Parsing::ActionParser* a7ActionParser = GetAction("A7");
+        a7ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A7Action));
         Cm::Parsing::NonterminalParser* labeledStatementNonterminalParser = GetNonterminal("LabeledStatement");
         labeledStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreLabeledStatement));
         labeledStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostLabeledStatement));
@@ -120,6 +128,18 @@ public:
         Cm::Parsing::NonterminalParser* constructionStatementNonterminalParser = GetNonterminal("ConstructionStatement");
         constructionStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreConstructionStatement));
         constructionStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostConstructionStatement));
+        Cm::Parsing::NonterminalParser* incrementStatementNonterminalParser = GetNonterminal("IncrementStatement");
+        incrementStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreIncrementStatement));
+        incrementStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostIncrementStatement));
+        Cm::Parsing::NonterminalParser* decrementStatementNonterminalParser = GetNonterminal("DecrementStatement");
+        decrementStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreDecrementStatement));
+        decrementStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostDecrementStatement));
+        Cm::Parsing::NonterminalParser* expressionStatementNonterminalParser = GetNonterminal("ExpressionStatement");
+        expressionStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreExpressionStatement));
+        expressionStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostExpressionStatement));
+        Cm::Parsing::NonterminalParser* emptyStatementNonterminalParser = GetNonterminal("EmptyStatement");
+        emptyStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreEmptyStatement));
+        emptyStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostEmptyStatement));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -136,6 +156,22 @@ public:
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = context.fromConstructionStatement;
+    }
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromIncrementStatement;
+    }
+    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromDecrementStatement;
+    }
+    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromExpressionStatement;
+    }
+    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromEmptyStatement;
     }
     void PreLabeledStatement(Cm::Parsing::ObjectStack& stack)
     {
@@ -189,16 +225,72 @@ public:
             stack.pop();
         }
     }
+    void PreIncrementStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostIncrementStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromIncrementStatement_value = std::move(stack.top());
+            context.fromIncrementStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromIncrementStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreDecrementStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostDecrementStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromDecrementStatement_value = std::move(stack.top());
+            context.fromDecrementStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromDecrementStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreExpressionStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostExpressionStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromExpressionStatement_value = std::move(stack.top());
+            context.fromExpressionStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromExpressionStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreEmptyStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostEmptyStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromEmptyStatement_value = std::move(stack.top());
+            context.fromEmptyStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromEmptyStatement_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): ctx(), value(), fromLabeledStatement(), fromControlStatement(), fromAssignmentStatement(), fromConstructionStatement() {}
+        Context(): ctx(), value(), fromLabeledStatement(), fromControlStatement(), fromAssignmentStatement(), fromConstructionStatement(), fromIncrementStatement(), fromDecrementStatement(), fromExpressionStatement(), fromEmptyStatement() {}
         ParsingContext* ctx;
         StatementNode* value;
         StatementNode* fromLabeledStatement;
         StatementNode* fromControlStatement;
         StatementNode* fromAssignmentStatement;
         StatementNode* fromConstructionStatement;
+        StatementNode* fromIncrementStatement;
+        StatementNode* fromDecrementStatement;
+        StatementNode* fromExpressionStatement;
+        StatementNode* fromEmptyStatement;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -424,13 +516,58 @@ public:
     {
         Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A2Action));
+        Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
+        a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A3Action));
+        Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
+        a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A4Action));
+        Cm::Parsing::ActionParser* a5ActionParser = GetAction("A5");
+        a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A5Action));
         Cm::Parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal("CompoundStatement");
         compoundStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreCompoundStatement));
         compoundStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostCompoundStatement));
+        Cm::Parsing::NonterminalParser* returnStatementNonterminalParser = GetNonterminal("ReturnStatement");
+        returnStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreReturnStatement));
+        returnStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostReturnStatement));
+        Cm::Parsing::NonterminalParser* ifStatementNonterminalParser = GetNonterminal("IfStatement");
+        ifStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreIfStatement));
+        ifStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostIfStatement));
+        Cm::Parsing::NonterminalParser* whileStatementNonterminalParser = GetNonterminal("WhileStatement");
+        whileStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreWhileStatement));
+        whileStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostWhileStatement));
+        Cm::Parsing::NonterminalParser* doStatementNonterminalParser = GetNonterminal("DoStatement");
+        doStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreDoStatement));
+        doStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostDoStatement));
+        Cm::Parsing::NonterminalParser* forStatementNonterminalParser = GetNonterminal("ForStatement");
+        forStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreForStatement));
+        forStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostForStatement));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = context.fromCompoundStatement;
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromReturnStatement;
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromIfStatement;
+    }
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromWhileStatement;
+    }
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromDoStatement;
+    }
+    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromForStatement;
     }
     void PreCompoundStatement(Cm::Parsing::ObjectStack& stack)
     {
@@ -445,13 +582,83 @@ public:
             stack.pop();
         }
     }
+    void PreReturnStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostReturnStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromReturnStatement_value = std::move(stack.top());
+            context.fromReturnStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromReturnStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreIfStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostIfStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromIfStatement_value = std::move(stack.top());
+            context.fromIfStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromIfStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreWhileStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostWhileStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromWhileStatement_value = std::move(stack.top());
+            context.fromWhileStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromWhileStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreDoStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostDoStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromDoStatement_value = std::move(stack.top());
+            context.fromDoStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromDoStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreForStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostForStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromForStatement_value = std::move(stack.top());
+            context.fromForStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromForStatement_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): ctx(), value(), fromCompoundStatement() {}
+        Context(): ctx(), value(), fromCompoundStatement(), fromReturnStatement(), fromIfStatement(), fromWhileStatement(), fromDoStatement(), fromForStatement() {}
         ParsingContext* ctx;
         StatementNode* value;
         CompoundStatementNode* fromCompoundStatement;
+        StatementNode* fromReturnStatement;
+        StatementNode* fromIfStatement;
+        StatementNode* fromWhileStatement;
+        StatementNode* fromDoStatement;
+        StatementNode* fromForStatement;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -539,10 +746,668 @@ private:
     Context context;
 };
 
-class StatementGrammar::AssignmentStatementRule : public Cm::Parsing::Rule
+class StatementGrammar::ReturnStatementRule : public Cm::Parsing::Rule
 {
 public:
-    AssignmentStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+    ReturnStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ReturnStatementRule>(this, &ReturnStatementRule::A0Action));
+        Cm::Parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        expressionNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ReturnStatementRule>(this, &ReturnStatementRule::PreExpression));
+        expressionNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ReturnStatementRule>(this, &ReturnStatementRule::PostExpression));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new ReturnStatementNode(span, context.fromExpression);
+    }
+    void PreExpression(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostExpression(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromExpression_value = std::move(stack.top());
+            context.fromExpression = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromExpression() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        Node* fromExpression;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::IfStatementRule : public Cm::Parsing::Rule
+{
+public:
+    IfStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<IfStatementRule>(this, &IfStatementRule::A0Action));
+        Cm::Parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        expressionNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<IfStatementRule>(this, &IfStatementRule::PreExpression));
+        expressionNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IfStatementRule>(this, &IfStatementRule::PostExpression));
+        Cm::Parsing::NonterminalParser* thensNonterminalParser = GetNonterminal("thens");
+        thensNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<IfStatementRule>(this, &IfStatementRule::Prethens));
+        thensNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IfStatementRule>(this, &IfStatementRule::Postthens));
+        Cm::Parsing::NonterminalParser* elsesNonterminalParser = GetNonterminal("elses");
+        elsesNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<IfStatementRule>(this, &IfStatementRule::Preelses));
+        elsesNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IfStatementRule>(this, &IfStatementRule::Postelses));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new IfStatementNode(span, context.fromExpression, context.fromthens, context.fromelses);
+    }
+    void PreExpression(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostExpression(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromExpression_value = std::move(stack.top());
+            context.fromExpression = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            stack.pop();
+        }
+    }
+    void Prethens(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void Postthens(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromthens_value = std::move(stack.top());
+            context.fromthens = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromthens_value.get());
+            stack.pop();
+        }
+    }
+    void Preelses(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void Postelses(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromelses_value = std::move(stack.top());
+            context.fromelses = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromelses_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromExpression(), fromthens(), fromelses() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        Node* fromExpression;
+        StatementNode* fromthens;
+        StatementNode* fromelses;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::WhileStatementRule : public Cm::Parsing::Rule
+{
+public:
+    WhileStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<WhileStatementRule>(this, &WhileStatementRule::A0Action));
+        Cm::Parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        expressionNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<WhileStatementRule>(this, &WhileStatementRule::PreExpression));
+        expressionNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<WhileStatementRule>(this, &WhileStatementRule::PostExpression));
+        Cm::Parsing::NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+        statementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<WhileStatementRule>(this, &WhileStatementRule::PreStatement));
+        statementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<WhileStatementRule>(this, &WhileStatementRule::PostStatement));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new WhileStatementNode(span, context.fromExpression, context.fromStatement);
+    }
+    void PreExpression(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostExpression(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromExpression_value = std::move(stack.top());
+            context.fromExpression = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            stack.pop();
+        }
+    }
+    void PreStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromStatement_value = std::move(stack.top());
+            context.fromStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromExpression(), fromStatement() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        Node* fromExpression;
+        StatementNode* fromStatement;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::DoStatementRule : public Cm::Parsing::Rule
+{
+public:
+    DoStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DoStatementRule>(this, &DoStatementRule::A0Action));
+        Cm::Parsing::NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+        statementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<DoStatementRule>(this, &DoStatementRule::PreStatement));
+        statementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DoStatementRule>(this, &DoStatementRule::PostStatement));
+        Cm::Parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        expressionNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<DoStatementRule>(this, &DoStatementRule::PreExpression));
+        expressionNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DoStatementRule>(this, &DoStatementRule::PostExpression));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new DoStatementNode(span, context.fromStatement, context.fromExpression);
+    }
+    void PreStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromStatement_value = std::move(stack.top());
+            context.fromStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreExpression(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostExpression(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromExpression_value = std::move(stack.top());
+            context.fromExpression = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromStatement(), fromExpression() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        StatementNode* fromStatement;
+        Node* fromExpression;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::ForStatementRule : public Cm::Parsing::Rule
+{
+public:
+    ForStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ForStatementRule>(this, &ForStatementRule::A0Action));
+        Cm::Parsing::NonterminalParser* forInitStatementNonterminalParser = GetNonterminal("ForInitStatement");
+        forInitStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ForStatementRule>(this, &ForStatementRule::PreForInitStatement));
+        forInitStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ForStatementRule>(this, &ForStatementRule::PostForInitStatement));
+        Cm::Parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        expressionNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ForStatementRule>(this, &ForStatementRule::PreExpression));
+        expressionNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ForStatementRule>(this, &ForStatementRule::PostExpression));
+        Cm::Parsing::NonterminalParser* forLoopExpressionStatementNonterminalParser = GetNonterminal("ForLoopExpressionStatement");
+        forLoopExpressionStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ForStatementRule>(this, &ForStatementRule::PreForLoopExpressionStatement));
+        forLoopExpressionStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ForStatementRule>(this, &ForStatementRule::PostForLoopExpressionStatement));
+        Cm::Parsing::NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+        statementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ForStatementRule>(this, &ForStatementRule::PreStatement));
+        statementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ForStatementRule>(this, &ForStatementRule::PostStatement));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new ForStatementNode(span, context.fromForInitStatement, context.fromExpression, context.fromForLoopExpressionStatement, context.fromStatement);
+    }
+    void PreForInitStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostForInitStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromForInitStatement_value = std::move(stack.top());
+            context.fromForInitStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromForInitStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreExpression(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostExpression(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromExpression_value = std::move(stack.top());
+            context.fromExpression = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            stack.pop();
+        }
+    }
+    void PreForLoopExpressionStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostForLoopExpressionStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromForLoopExpressionStatement_value = std::move(stack.top());
+            context.fromForLoopExpressionStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromForLoopExpressionStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromStatement_value = std::move(stack.top());
+            context.fromStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromForInitStatement(), fromExpression(), fromForLoopExpressionStatement(), fromStatement() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        StatementNode* fromForInitStatement;
+        Node* fromExpression;
+        StatementNode* fromForLoopExpressionStatement;
+        StatementNode* fromStatement;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::ForInitStatementRule : public Cm::Parsing::Rule
+{
+public:
+    ForInitStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ForInitStatementRule>(this, &ForInitStatementRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ForInitStatementRule>(this, &ForInitStatementRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ForInitStatementRule>(this, &ForInitStatementRule::A2Action));
+        Cm::Parsing::NonterminalParser* assignmentStatementNonterminalParser = GetNonterminal("AssignmentStatement");
+        assignmentStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ForInitStatementRule>(this, &ForInitStatementRule::PreAssignmentStatement));
+        assignmentStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ForInitStatementRule>(this, &ForInitStatementRule::PostAssignmentStatement));
+        Cm::Parsing::NonterminalParser* constructionStatementNonterminalParser = GetNonterminal("ConstructionStatement");
+        constructionStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ForInitStatementRule>(this, &ForInitStatementRule::PreConstructionStatement));
+        constructionStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ForInitStatementRule>(this, &ForInitStatementRule::PostConstructionStatement));
+        Cm::Parsing::NonterminalParser* emptyStatementNonterminalParser = GetNonterminal("EmptyStatement");
+        emptyStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ForInitStatementRule>(this, &ForInitStatementRule::PreEmptyStatement));
+        emptyStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ForInitStatementRule>(this, &ForInitStatementRule::PostEmptyStatement));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromAssignmentStatement;
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromConstructionStatement;
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromEmptyStatement;
+    }
+    void PreAssignmentStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostAssignmentStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromAssignmentStatement_value = std::move(stack.top());
+            context.fromAssignmentStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromAssignmentStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreConstructionStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostConstructionStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromConstructionStatement_value = std::move(stack.top());
+            context.fromConstructionStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromConstructionStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreEmptyStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostEmptyStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromEmptyStatement_value = std::move(stack.top());
+            context.fromEmptyStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromEmptyStatement_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromAssignmentStatement(), fromConstructionStatement(), fromEmptyStatement() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        StatementNode* fromAssignmentStatement;
+        StatementNode* fromConstructionStatement;
+        StatementNode* fromEmptyStatement;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::ForLoopExpressionStatementRule : public Cm::Parsing::Rule
+{
+public:
+    ForLoopExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::A2Action));
+        Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
+        a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::A3Action));
+        Cm::Parsing::NonterminalParser* incrementExpressionStatementNonterminalParser = GetNonterminal("IncrementExpressionStatement");
+        incrementExpressionStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PreIncrementExpressionStatement));
+        incrementExpressionStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PostIncrementExpressionStatement));
+        Cm::Parsing::NonterminalParser* decrementExpressionStatementNonterminalParser = GetNonterminal("DecrementExpressionStatement");
+        decrementExpressionStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PreDecrementExpressionStatement));
+        decrementExpressionStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PostDecrementExpressionStatement));
+        Cm::Parsing::NonterminalParser* assignmentExpressionStatementNonterminalParser = GetNonterminal("AssignmentExpressionStatement");
+        assignmentExpressionStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PreAssignmentExpressionStatement));
+        assignmentExpressionStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PostAssignmentExpressionStatement));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromIncrementExpressionStatement;
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromDecrementExpressionStatement;
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromAssignmentExpressionStatement;
+    }
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new EmptyStatementNode(span);
+    }
+    void PreIncrementExpressionStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostIncrementExpressionStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromIncrementExpressionStatement_value = std::move(stack.top());
+            context.fromIncrementExpressionStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromIncrementExpressionStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreDecrementExpressionStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostDecrementExpressionStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromDecrementExpressionStatement_value = std::move(stack.top());
+            context.fromDecrementExpressionStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromDecrementExpressionStatement_value.get());
+            stack.pop();
+        }
+    }
+    void PreAssignmentExpressionStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostAssignmentExpressionStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromAssignmentExpressionStatement_value = std::move(stack.top());
+            context.fromAssignmentExpressionStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromAssignmentExpressionStatement_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromIncrementExpressionStatement(), fromDecrementExpressionStatement(), fromAssignmentExpressionStatement() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        StatementNode* fromIncrementExpressionStatement;
+        StatementNode* fromDecrementExpressionStatement;
+        StatementNode* fromAssignmentExpressionStatement;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::AssignmentExpressionStatementRule : public Cm::Parsing::Rule
+{
+public:
+    AssignmentExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
@@ -569,18 +1434,18 @@ public:
     virtual void Link()
     {
         Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AssignmentStatementRule>(this, &AssignmentStatementRule::A0Action));
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::A0Action));
         Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AssignmentStatementRule>(this, &AssignmentStatementRule::A1Action));
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::A1Action));
         Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
-        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AssignmentStatementRule>(this, &AssignmentStatementRule::A2Action));
-        a2ActionParser->SetFailureAction(new Cm::Parsing::MemberFailureAction<AssignmentStatementRule>(this, &AssignmentStatementRule::A2ActionFail));
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::A2Action));
+        a2ActionParser->SetFailureAction(new Cm::Parsing::MemberFailureAction<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::A2ActionFail));
         Cm::Parsing::NonterminalParser* targetNonterminalParser = GetNonterminal("target");
-        targetNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<AssignmentStatementRule>(this, &AssignmentStatementRule::Pretarget));
-        targetNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<AssignmentStatementRule>(this, &AssignmentStatementRule::Posttarget));
+        targetNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::Pretarget));
+        targetNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::Posttarget));
         Cm::Parsing::NonterminalParser* sourceNonterminalParser = GetNonterminal("source");
-        sourceNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<AssignmentStatementRule>(this, &AssignmentStatementRule::Presource));
-        sourceNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<AssignmentStatementRule>(this, &AssignmentStatementRule::Postsource));
+        sourceNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::Presource));
+        sourceNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::Postsource));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -634,6 +1499,70 @@ private:
         std::unique_ptr<Node> targetExpr;
         Node* fromtarget;
         Node* fromsource;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::AssignmentStatementRule : public Cm::Parsing::Rule
+{
+public:
+    AssignmentStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AssignmentStatementRule>(this, &AssignmentStatementRule::A0Action));
+        Cm::Parsing::NonterminalParser* assignmentExpressionStatementNonterminalParser = GetNonterminal("AssignmentExpressionStatement");
+        assignmentExpressionStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<AssignmentStatementRule>(this, &AssignmentStatementRule::PreAssignmentExpressionStatement));
+        assignmentExpressionStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<AssignmentStatementRule>(this, &AssignmentStatementRule::PostAssignmentExpressionStatement));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromAssignmentExpressionStatement;
+        context.value->GetSpan().SetEnd(span.End());
+    }
+    void PreAssignmentExpressionStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostAssignmentExpressionStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromAssignmentExpressionStatement_value = std::move(stack.top());
+            context.fromAssignmentExpressionStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromAssignmentExpressionStatement_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromAssignmentExpressionStatement() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        StatementNode* fromAssignmentExpressionStatement;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -750,61 +1679,498 @@ private:
     Context context;
 };
 
+class StatementGrammar::IncrementExpressionStatementRule : public Cm::Parsing::Rule
+{
+public:
+    IncrementExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+        AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "expr"));
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::A2Action));
+        Cm::Parsing::NonterminalParser* leftNonterminalParser = GetNonterminal("left");
+        leftNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::Preleft));
+        leftNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::Postleft));
+        Cm::Parsing::NonterminalParser* rightNonterminalParser = GetNonterminal("right");
+        rightNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::Preright));
+        rightNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::Postright));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new IncrementStatementNode(span, context.fromleft);
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new IncrementStatementNode(span, context.expr.release());
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.expr.reset(context.fromright);
+    }
+    void Preleft(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void Postleft(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromleft_value = std::move(stack.top());
+            context.fromleft = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromleft_value.get());
+            stack.pop();
+        }
+    }
+    void Preright(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void Postright(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromright_value = std::move(stack.top());
+            context.fromright = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromright_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), expr(), fromleft(), fromright() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        std::unique_ptr<Node> expr;
+        Node* fromleft;
+        Node* fromright;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::IncrementStatementRule : public Cm::Parsing::Rule
+{
+public:
+    IncrementStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<IncrementStatementRule>(this, &IncrementStatementRule::A0Action));
+        Cm::Parsing::NonterminalParser* incrementExpressionStatementNonterminalParser = GetNonterminal("IncrementExpressionStatement");
+        incrementExpressionStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<IncrementStatementRule>(this, &IncrementStatementRule::PreIncrementExpressionStatement));
+        incrementExpressionStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IncrementStatementRule>(this, &IncrementStatementRule::PostIncrementExpressionStatement));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromIncrementExpressionStatement;
+        context.value->GetSpan().SetEnd(span.End());
+    }
+    void PreIncrementExpressionStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostIncrementExpressionStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromIncrementExpressionStatement_value = std::move(stack.top());
+            context.fromIncrementExpressionStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromIncrementExpressionStatement_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromIncrementExpressionStatement() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        StatementNode* fromIncrementExpressionStatement;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::DecrementExpressionStatementRule : public Cm::Parsing::Rule
+{
+public:
+    DecrementExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+        AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "expr"));
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::A2Action));
+        Cm::Parsing::NonterminalParser* leftNonterminalParser = GetNonterminal("left");
+        leftNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::Preleft));
+        leftNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::Postleft));
+        Cm::Parsing::NonterminalParser* rightNonterminalParser = GetNonterminal("right");
+        rightNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::Preright));
+        rightNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::Postright));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new DecrementStatementNode(span, context.fromleft);
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new DecrementStatementNode(span, context.expr.release());
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.expr.reset(context.fromright);
+    }
+    void Preleft(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void Postleft(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromleft_value = std::move(stack.top());
+            context.fromleft = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromleft_value.get());
+            stack.pop();
+        }
+    }
+    void Preright(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void Postright(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromright_value = std::move(stack.top());
+            context.fromright = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromright_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), expr(), fromleft(), fromright() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        std::unique_ptr<Node> expr;
+        Node* fromleft;
+        Node* fromright;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::DecrementStatementRule : public Cm::Parsing::Rule
+{
+public:
+    DecrementStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DecrementStatementRule>(this, &DecrementStatementRule::A0Action));
+        Cm::Parsing::NonterminalParser* decrementExpressionStatementNonterminalParser = GetNonterminal("DecrementExpressionStatement");
+        decrementExpressionStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<DecrementStatementRule>(this, &DecrementStatementRule::PreDecrementExpressionStatement));
+        decrementExpressionStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DecrementStatementRule>(this, &DecrementStatementRule::PostDecrementExpressionStatement));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromDecrementExpressionStatement;
+        context.value->GetSpan().SetEnd(span.End());
+    }
+    void PreDecrementExpressionStatement(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostDecrementExpressionStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromDecrementExpressionStatement_value = std::move(stack.top());
+            context.fromDecrementExpressionStatement = *static_cast<Cm::Parsing::ValueObject<StatementNode*>*>(fromDecrementExpressionStatement_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromDecrementExpressionStatement() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        StatementNode* fromDecrementExpressionStatement;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::ExpressionStatementRule : public Cm::Parsing::Rule
+{
+public:
+    ExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ExpressionStatementRule>(this, &ExpressionStatementRule::A0Action));
+        Cm::Parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        expressionNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ExpressionStatementRule>(this, &ExpressionStatementRule::PreExpression));
+        expressionNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ExpressionStatementRule>(this, &ExpressionStatementRule::PostExpression));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new ExpressionStatementNode(span, context.fromExpression);
+    }
+    void PreExpression(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostExpression(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromExpression_value = std::move(stack.top());
+            context.fromExpression = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), fromExpression() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+        Node* fromExpression;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class StatementGrammar::EmptyStatementRule : public Cm::Parsing::Rule
+{
+public:
+    EmptyStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("StatementNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StatementNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<EmptyStatementRule>(this, &EmptyStatementRule::A0Action));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new EmptyStatementNode(span);
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value() {}
+        ParsingContext* ctx;
+        StatementNode* value;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
 void StatementGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar0 = cminor::parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar1 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.KeywordGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parsing::stdlib::Create(pd);
+        grammar2 = cminor::parser::KeywordGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.KeywordGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar3)
     {
-        grammar3 = cminor::parser::KeywordGrammar::Create(pd);
+        grammar3 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar4)
     {
-        grammar4 = cminor::parser::ExpressionGrammar::Create(pd);
+        grammar4 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
 }
 
 void StatementGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
     AddRule(new StatementRule("Statement", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(
                 new Cm::Parsing::AlternativeParser(
-                    new Cm::Parsing::ActionParser("A0",
-                        new Cm::Parsing::NonterminalParser("LabeledStatement", "LabeledStatement", 1)),
-                    new Cm::Parsing::ActionParser("A1",
-                        new Cm::Parsing::NonterminalParser("ControlStatement", "ControlStatement", 1))),
-                new Cm::Parsing::ActionParser("A2",
-                    new Cm::Parsing::NonterminalParser("AssignmentStatement", "AssignmentStatement", 1))),
-            new Cm::Parsing::ActionParser("A3",
-                new Cm::Parsing::NonterminalParser("ConstructionStatement", "ConstructionStatement", 1)))));
+                    new Cm::Parsing::AlternativeParser(
+                        new Cm::Parsing::AlternativeParser(
+                            new Cm::Parsing::AlternativeParser(
+                                new Cm::Parsing::AlternativeParser(
+                                    new Cm::Parsing::ActionParser("A0",
+                                        new Cm::Parsing::NonterminalParser("LabeledStatement", "LabeledStatement", 1)),
+                                    new Cm::Parsing::ActionParser("A1",
+                                        new Cm::Parsing::NonterminalParser("ControlStatement", "ControlStatement", 1))),
+                                new Cm::Parsing::ActionParser("A2",
+                                    new Cm::Parsing::NonterminalParser("AssignmentStatement", "AssignmentStatement", 1))),
+                            new Cm::Parsing::ActionParser("A3",
+                                new Cm::Parsing::NonterminalParser("ConstructionStatement", "ConstructionStatement", 1))),
+                        new Cm::Parsing::ActionParser("A4",
+                            new Cm::Parsing::NonterminalParser("IncrementStatement", "IncrementStatement", 1))),
+                    new Cm::Parsing::ActionParser("A5",
+                        new Cm::Parsing::NonterminalParser("DecrementStatement", "DecrementStatement", 1))),
+                new Cm::Parsing::ActionParser("A6",
+                    new Cm::Parsing::NonterminalParser("ExpressionStatement", "ExpressionStatement", 1))),
+            new Cm::Parsing::ActionParser("A7",
+                new Cm::Parsing::NonterminalParser("EmptyStatement", "EmptyStatement", 1)))));
     AddRule(new LabelIdRule("LabelId", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::DifferenceParser(
@@ -822,8 +2188,23 @@ void StatementGrammar::CreateRules()
             new Cm::Parsing::ActionParser("A0",
                 new Cm::Parsing::NonterminalParser("stmt", "Statement", 1)))));
     AddRule(new ControlStatementRule("ControlStatement", GetScope(),
-        new Cm::Parsing::ActionParser("A0",
-            new Cm::Parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1))));
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::AlternativeParser(
+                new Cm::Parsing::AlternativeParser(
+                    new Cm::Parsing::AlternativeParser(
+                        new Cm::Parsing::AlternativeParser(
+                            new Cm::Parsing::ActionParser("A0",
+                                new Cm::Parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)),
+                            new Cm::Parsing::ActionParser("A1",
+                                new Cm::Parsing::NonterminalParser("ReturnStatement", "ReturnStatement", 1))),
+                        new Cm::Parsing::ActionParser("A2",
+                            new Cm::Parsing::NonterminalParser("IfStatement", "IfStatement", 1))),
+                    new Cm::Parsing::ActionParser("A3",
+                        new Cm::Parsing::NonterminalParser("WhileStatement", "WhileStatement", 1))),
+                new Cm::Parsing::ActionParser("A4",
+                    new Cm::Parsing::NonterminalParser("DoStatement", "DoStatement", 1))),
+            new Cm::Parsing::ActionParser("A5",
+                new Cm::Parsing::NonterminalParser("ForStatement", "ForStatement", 1)))));
     AddRule(new CompoundStatementRule("CompoundStatement", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
@@ -836,21 +2217,129 @@ void StatementGrammar::CreateRules()
                 new Cm::Parsing::ActionParser("A3",
                     new Cm::Parsing::ExpectationParser(
                         new Cm::Parsing::CharParser('}')))))));
-    AddRule(new AssignmentStatementRule("AssignmentStatement", GetScope(),
+    AddRule(new ReturnStatementRule("ReturnStatement", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::KeywordParser("return"),
+                    new Cm::Parsing::OptionalParser(
+                        new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser(';'))))));
+    AddRule(new IfStatementRule("IfStatement", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::SequenceParser(
+                                new Cm::Parsing::KeywordParser("if"),
+                                new Cm::Parsing::CharParser('(')),
+                            new Cm::Parsing::NonterminalParser("Expression", "Expression", 1)),
+                        new Cm::Parsing::CharParser(')')),
+                    new Cm::Parsing::NonterminalParser("thens", "Statement", 1)),
+                new Cm::Parsing::OptionalParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::KeywordParser("else"),
+                        new Cm::Parsing::NonterminalParser("elses", "Statement", 1)))))));
+    AddRule(new WhileStatementRule("WhileStatement", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::KeywordParser("while"),
+                            new Cm::Parsing::ExpectationParser(
+                                new Cm::Parsing::CharParser('('))),
+                        new Cm::Parsing::ExpectationParser(
+                            new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))),
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::CharParser(')'))),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::NonterminalParser("Statement", "Statement", 1))))));
+    AddRule(new DoStatementRule("DoStatement", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::SequenceParser(
+                                new Cm::Parsing::SequenceParser(
+                                    new Cm::Parsing::KeywordParser("do"),
+                                    new Cm::Parsing::ExpectationParser(
+                                        new Cm::Parsing::NonterminalParser("Statement", "Statement", 1))),
+                                new Cm::Parsing::ExpectationParser(
+                                    new Cm::Parsing::KeywordParser("while"))),
+                            new Cm::Parsing::ExpectationParser(
+                                new Cm::Parsing::CharParser('('))),
+                        new Cm::Parsing::ExpectationParser(
+                            new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))),
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::CharParser(')'))),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser(';'))))));
+    AddRule(new ForStatementRule("ForStatement", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::SequenceParser(
+                                new Cm::Parsing::SequenceParser(
+                                    new Cm::Parsing::SequenceParser(
+                                        new Cm::Parsing::KeywordParser("for"),
+                                        new Cm::Parsing::CharParser('(')),
+                                    new Cm::Parsing::ExpectationParser(
+                                        new Cm::Parsing::NonterminalParser("ForInitStatement", "ForInitStatement", 1))),
+                                new Cm::Parsing::OptionalParser(
+                                    new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))),
+                            new Cm::Parsing::ExpectationParser(
+                                new Cm::Parsing::CharParser(';'))),
+                        new Cm::Parsing::ExpectationParser(
+                            new Cm::Parsing::NonterminalParser("ForLoopExpressionStatement", "ForLoopExpressionStatement", 1))),
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::CharParser(')'))),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::NonterminalParser("Statement", "Statement", 1))))));
+    AddRule(new ForInitStatementRule("ForInitStatement", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::AlternativeParser(
+                new Cm::Parsing::ActionParser("A0",
+                    new Cm::Parsing::NonterminalParser("AssignmentStatement", "AssignmentStatement", 1)),
+                new Cm::Parsing::ActionParser("A1",
+                    new Cm::Parsing::NonterminalParser("ConstructionStatement", "ConstructionStatement", 1))),
+            new Cm::Parsing::ActionParser("A2",
+                new Cm::Parsing::NonterminalParser("EmptyStatement", "EmptyStatement", 1)))));
+    AddRule(new ForLoopExpressionStatementRule("ForLoopExpressionStatement", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::AlternativeParser(
+                new Cm::Parsing::AlternativeParser(
+                    new Cm::Parsing::ActionParser("A0",
+                        new Cm::Parsing::NonterminalParser("IncrementExpressionStatement", "IncrementExpressionStatement", 1)),
+                    new Cm::Parsing::ActionParser("A1",
+                        new Cm::Parsing::NonterminalParser("DecrementExpressionStatement", "DecrementExpressionStatement", 1))),
+                new Cm::Parsing::ActionParser("A2",
+                    new Cm::Parsing::NonterminalParser("AssignmentExpressionStatement", "AssignmentExpressionStatement", 1))),
+            new Cm::Parsing::ActionParser("A3",
+                new Cm::Parsing::EmptyParser()))));
+    AddRule(new AssignmentExpressionStatementRule("AssignmentExpressionStatement", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",
                 new Cm::Parsing::EmptyParser()),
             new Cm::Parsing::ActionParser("A1",
                 new Cm::Parsing::SequenceParser(
                     new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::SequenceParser(
-                            new Cm::Parsing::ActionParser("A2",
-                                new Cm::Parsing::NonterminalParser("target", "Expression", 1)),
-                            new Cm::Parsing::CharParser('=')),
-                        new Cm::Parsing::ExpectationParser(
-                            new Cm::Parsing::NonterminalParser("source", "Expression", 1))),
+                        new Cm::Parsing::ActionParser("A2",
+                            new Cm::Parsing::NonterminalParser("target", "Expression", 1)),
+                        new Cm::Parsing::CharParser('=')),
                     new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::CharParser(';')))))));
+                        new Cm::Parsing::NonterminalParser("source", "Expression", 1)))))));
+    AddRule(new AssignmentStatementRule("AssignmentStatement", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::NonterminalParser("AssignmentExpressionStatement", "AssignmentExpressionStatement", 1),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser(';'))))));
     AddRule(new ConstructionStatementRule("ConstructionStatement", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(
@@ -875,6 +2364,51 @@ void StatementGrammar::CreateRules()
             new Cm::Parsing::ActionParser("A2",
                 new Cm::Parsing::ExpectationParser(
                     new Cm::Parsing::CharParser(';'))))));
+    AddRule(new IncrementExpressionStatementRule("IncrementExpressionStatement", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::ActionParser("A0",
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::StringParser("++"),
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::NonterminalParser("left", "Expression", 1)))),
+            new Cm::Parsing::ActionParser("A1",
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::ActionParser("A2",
+                        new Cm::Parsing::NonterminalParser("right", "Expression", 1)),
+                    new Cm::Parsing::StringParser("++"))))));
+    AddRule(new IncrementStatementRule("IncrementStatement", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::NonterminalParser("IncrementExpressionStatement", "IncrementExpressionStatement", 1),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser(';'))))));
+    AddRule(new DecrementExpressionStatementRule("DecrementExpressionStatement", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::ActionParser("A0",
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::StringParser("--"),
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::NonterminalParser("left", "Expression", 1)))),
+            new Cm::Parsing::ActionParser("A1",
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::ActionParser("A2",
+                        new Cm::Parsing::NonterminalParser("right", "Expression", 1)),
+                    new Cm::Parsing::StringParser("--"))))));
+    AddRule(new DecrementStatementRule("DecrementStatement", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::NonterminalParser("DecrementExpressionStatement", "DecrementExpressionStatement", 1),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser(';'))))));
+    AddRule(new ExpressionStatementRule("ExpressionStatement", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::NonterminalParser("Expression", "Expression", 1),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser(';'))))));
+    AddRule(new EmptyStatementRule("EmptyStatement", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::CharParser(';'))));
 }
 
 } } // namespace cminor.parser

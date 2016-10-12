@@ -22,7 +22,8 @@ enum class NodeType : uint8_t
     disjunctionNode, conjunctionNode, bitOrNode, bitXorNode, bitAndNode, equalNode, notEqualNode, lessNode, greaterNode, lessOrEqualNode, greaterOrEqualNode,
     shiftLeftNode, shiftRightNode, addNode, subNode, mulNode, divNode, remNode, notNode, unaryPlusNode, unaryMinusNode, complementNode, isNode, asNode, dotNode,
     labelNode,
-    compoundStatementNode, constructionStatementNode, assignmentStatementNode,
+    compoundStatementNode, returnStatementNode, ifStatementNode, whileStatementNode, doStatementNode, forStatementNode, constructionStatementNode, assignmentStatementNode, 
+    expressionStatementNode, emptyStatementNode, incrementStatementNode, decrementStatementNode,
     maxNode
 };
 

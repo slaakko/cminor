@@ -213,23 +213,42 @@ void BoundConversion::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundNamespace::BoundNamespace(Assembly& assembly_, NamespaceSymbol* ns_) : BoundExpression(assembly_, nullptr), ns(ns_)
+BoundNamespaceExpression::BoundNamespaceExpression(Assembly& assembly_, NamespaceSymbol* ns_) : BoundExpression(assembly_, nullptr), ns(ns_)
 {
 }
 
-void BoundNamespace::GenLoad(Machine& machine, Function& function)
+void BoundNamespaceExpression::GenLoad(Machine& machine, Function& function)
 {
     throw std::runtime_error("cannot load from namespace");
 }
 
-void BoundNamespace::GenStore(Machine& machine, Function& function)
+void BoundNamespaceExpression::GenStore(Machine& machine, Function& function)
 {
     throw std::runtime_error("cannot store to namespace");
 }
 
-void BoundNamespace::Accept(BoundNodeVisitor& visitor)
+void BoundNamespaceExpression::Accept(BoundNodeVisitor& visitor)
 {
     throw std::runtime_error("cannot visit bound namespace");
+}
+
+BoundTypeExpression::BoundTypeExpression(Assembly& assembly_, TypeSymbol* type_) : BoundExpression(assembly_, type_)
+{
+}
+
+void BoundTypeExpression::GenLoad(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot load from type");
+}
+
+void BoundTypeExpression::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to type");
+}
+
+void BoundTypeExpression::Accept(BoundNodeVisitor& visitor)
+{
+    throw std::runtime_error("cannot visit bound type expression");
 }
 
 BoundFunctionCall::BoundFunctionCall(Assembly& assembly_, FunctionSymbol* functionSymbol_) : BoundExpression(assembly_, functionSymbol_->ReturnType()), functionSymbol(functionSymbol_)
@@ -239,6 +258,11 @@ BoundFunctionCall::BoundFunctionCall(Assembly& assembly_, FunctionSymbol* functi
 void BoundFunctionCall::AddArgument(std::unique_ptr<BoundExpression>&& argument)
 {
     arguments.push_back(std::move(argument));
+}
+
+void BoundFunctionCall::SetArguments(std::vector<std::unique_ptr<BoundExpression>>&& arguments_)
+{
+    arguments = std::move(arguments_);
 }
 
 void BoundFunctionCall::GenLoad(Machine& machine, Function& function)
@@ -257,6 +281,48 @@ void BoundFunctionCall::GenStore(Machine& machine, Function& function)
 }
 
 void BoundFunctionCall::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundBooleanBinaryExpression::BoundBooleanBinaryExpression(Assembly& assembly_, BoundExpression* left_, BoundExpression* right_) : BoundExpression(assembly_, left_->GetType()), left(left_), right(right_)
+{
+}
+
+BoundConjunction::BoundConjunction(Assembly& assembly_, BoundExpression* left_, BoundExpression* right_) : BoundBooleanBinaryExpression(assembly_, left_, right_)
+{
+}
+
+void BoundConjunction::GenLoad(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot load bound conjunction");
+}
+
+void BoundConjunction::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store bound conjunction");
+}
+
+void BoundConjunction::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundDisjunction::BoundDisjunction(Assembly& assembly_, BoundExpression* left_, BoundExpression* right_) : BoundBooleanBinaryExpression(assembly_, left_, right_)
+{
+}
+
+void BoundDisjunction::GenLoad(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot load bound disjunction");
+}
+
+void BoundDisjunction::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store bound disjunction");
+}
+
+void BoundDisjunction::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
 }

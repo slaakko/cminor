@@ -236,9 +236,9 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
     //  conversion group instruction:
     //  -----------------------------
     ContainerInst* convContainerInst = new ContainerInst(*this, "<conversion_container_instruction>", false);
-    rootInst.SetInst(0xFF, convContainerInst);
+    rootInst.SetInst(0xFE, convContainerInst);
 
-    //  conversions (prefixed by FF):
+    //  conversions (prefixed by FE):
     //  -----------------------------
 
     // from sbyte:

@@ -30,6 +30,7 @@ public:
     void SetLabelNode(LabelNode* labelNode_);
     void CloneLabelTo(StatementNode* clone, CloneContext& cloneContext) const;
     LabelNode* Label() const { return labelNode.get(); }
+    virtual bool IsFunctionTerminatingNode() const { return false; }
 private:
     std::unique_ptr<LabelNode> labelNode;
 };
@@ -51,6 +52,83 @@ private:
     NodeList<StatementNode> statements;
     Span beginBraceSpan;
     Span endBraceSpan;
+};
+
+class ReturnStatementNode : public StatementNode
+{
+public:
+    ReturnStatementNode(const Span& span_);
+    ReturnStatementNode(const Span& span_, Node* expression_);
+    NodeType GetNodeType() const override { return NodeType::returnStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    Node* Expression() const { return expression.get(); }
+    bool IsFunctionTerminatingNode() const override { return true; }
+private:
+    std::unique_ptr<Node> expression;
+};
+
+class IfStatementNode : public StatementNode
+{
+public:
+    IfStatementNode(const Span& span_);
+    IfStatementNode(const Span& span_, Node* condition_, StatementNode* thenS_, StatementNode* elseS_);
+    NodeType GetNodeType() const override { return NodeType::ifStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    Node* Condition() const { return condition.get(); }
+    StatementNode* ThenS() const { return thenS.get(); }
+    StatementNode* ElseS() const { return elseS.get(); }
+private:
+    std::unique_ptr<Node> condition;
+    std::unique_ptr<StatementNode> thenS;
+    std::unique_ptr<StatementNode> elseS;
+};
+
+class WhileStatementNode : public StatementNode
+{
+public:
+    WhileStatementNode(const Span& span_);
+    WhileStatementNode(const Span& span_, Node* condition_, StatementNode* statement_);
+    NodeType GetNodeType() const override { return NodeType::whileStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    Node* Condition() const { return condition.get(); }
+    StatementNode* Statement() const { return statement.get(); }
+private:
+    std::unique_ptr<Node> condition;
+    std::unique_ptr<StatementNode> statement;
+};
+
+class DoStatementNode : public StatementNode
+{
+public:
+    DoStatementNode(const Span& span_);
+    DoStatementNode(const Span& span_, StatementNode* statement_, Node* condition_);
+    NodeType GetNodeType() const override { return NodeType::doStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    StatementNode* Statement() const { return statement.get(); }
+    Node* Condition() const { return condition.get(); }
+private:
+    std::unique_ptr<StatementNode> statement;
+    std::unique_ptr<Node> condition;
+};
+
+class ForStatementNode : public StatementNode
+{
+public:
+    ForStatementNode(const Span& span_);
+    ForStatementNode(const Span& span_, StatementNode* initS_, Node* condition_, StatementNode* loopS_, StatementNode* actionS_);
+    NodeType GetNodeType() const override { return NodeType::forStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+
+private:
+    std::unique_ptr<StatementNode> initS;
+    std::unique_ptr<Node> condition;
+    std::unique_ptr<StatementNode> loopS;
+    std::unique_ptr<StatementNode> actionS;
 };
 
 class ConstructionStatementNode : public StatementNode
@@ -84,6 +162,54 @@ public:
 private:
     std::unique_ptr<Node> targetExpr;
     std::unique_ptr<Node> sourceExpr;
+};
+
+class ExpressionStatementNode : public StatementNode
+{
+public:
+    ExpressionStatementNode(const Span& span_);
+    ExpressionStatementNode(const Span& span_, Node* expression_);
+    NodeType GetNodeType() const override { return NodeType::expressionStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    Node* Expression() const { return expression.get(); }
+private:
+    std::unique_ptr<Node> expression;
+};
+
+class EmptyStatementNode : public StatementNode
+{
+public:
+    EmptyStatementNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::emptyStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+};
+
+class IncrementStatementNode : public StatementNode
+{
+public:
+    IncrementStatementNode(const Span& span_);
+    IncrementStatementNode(const Span& span_, Node* expression_);
+    NodeType GetNodeType() const override { return NodeType::incrementStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    Node* Expression() const { return expression.get(); }
+private:
+    std::unique_ptr<Node> expression;
+};
+
+class DecrementStatementNode : public StatementNode
+{
+public:
+    DecrementStatementNode(const Span& span_);
+    DecrementStatementNode(const Span& span_, Node* expression_);
+    NodeType GetNodeType() const override { return NodeType::decrementStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    Node* Expression() const { return expression.get(); }
+private:
+    std::unique_ptr<Node> expression;
 };
 
 } } // namespace cminor::ast

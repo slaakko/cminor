@@ -7,6 +7,7 @@
 #include <cminor/binder/BoundNodeVisitor.hpp>
 #include <cminor/binder/BoundFunction.hpp>
 #include <cminor/symbols/FunctionSymbol.hpp>
+#include <cminor/machine/Machine.hpp>
 
 namespace cminor { namespace emitter {
 
@@ -19,6 +20,7 @@ public:
     void Visit(BoundCompileUnit& boundCompileUnit) override;
     void Visit(BoundFunction& boundFunction) override;
     void Visit(BoundCompoundStatement& boundCompoundStatement) override;
+    void Visit(BoundReturnStatement& boundReturnStatement) override;
     void Visit(BoundConstructionStatement& boundConstructionStatement) override;
     void Visit(BoundAssignmentStatement& boundAssignmentStatement) override;
     void Visit(BoundLiteral& boundLiteral) override;
@@ -63,6 +65,18 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
         BoundStatement* boundStatement = boundCompoundStatement.Statements()[i].get();
         boundStatement->Accept(*this);
     }
+}
+
+void EmitterVisitor::Visit(BoundReturnStatement& boundReturnStatement)
+{
+    BoundFunctionCall* returnFunctionCall = boundReturnStatement.ReturnFunctionCall();
+    if (returnFunctionCall)
+    {
+        returnFunctionCall->Accept(*this);
+    }
+    std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
+    inst->SetTarget(endOfFunction);
+    function->AddInst(std::move(inst));
 }
 
 void EmitterVisitor::Visit(BoundConstructionStatement& boundConstructionStatement)

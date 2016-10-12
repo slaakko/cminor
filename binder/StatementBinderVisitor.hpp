@@ -25,6 +25,7 @@ public:
     void Visit(NamespaceNode& namespaceNode) override;
     void Visit(FunctionNode& functionNode) override;
     void Visit(CompoundStatementNode& compoundStatementNode) override;
+    void Visit(ReturnStatementNode& returnStatementNode) override;
     void Visit(ConstructionStatementNode& constructionStatementNode) override;
     void Visit(AssignmentStatementNode& assignmentStatementNode) override;
 private:

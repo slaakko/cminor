@@ -91,16 +91,25 @@ private:
     FunctionSymbol* conversionFun;
 };
 
-class BoundNamespace : public BoundExpression
+class BoundNamespaceExpression : public BoundExpression
 {
 public:
-    BoundNamespace(Assembly& assembly_, NamespaceSymbol* ns_);
+    BoundNamespaceExpression(Assembly& assembly_, NamespaceSymbol* ns_);
     NamespaceSymbol* Ns() const { return ns; }
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
 private:
     NamespaceSymbol* ns;
+};
+
+class BoundTypeExpression : public BoundExpression
+{
+public:
+    BoundTypeExpression(Assembly& assembly_, TypeSymbol* type_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
 };
 
 class BoundFunctionCall : public BoundExpression
@@ -110,12 +119,42 @@ public:
     FunctionSymbol* GetFunctionSymbol() const { return functionSymbol; }
     const std::vector<std::unique_ptr<BoundExpression>>& Arguments() const { return arguments; }
     void AddArgument(std::unique_ptr<BoundExpression>&& argument);
+    void SetArguments(std::vector<std::unique_ptr<BoundExpression>>&& arguments_);
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
 private:
     FunctionSymbol* functionSymbol;
     std::vector<std::unique_ptr<BoundExpression>> arguments;
+};
+
+class BoundBooleanBinaryExpression : public BoundExpression
+{
+public:
+    BoundBooleanBinaryExpression(Assembly& assembly_, BoundExpression* left_, BoundExpression* right_);
+    BoundExpression* Left() const { return left.get(); }
+    BoundExpression* Right() const { return right.get(); }
+private:
+    std::unique_ptr<BoundExpression> left;
+    std::unique_ptr<BoundExpression> right;
+};
+
+class BoundConjunction : public BoundBooleanBinaryExpression
+{
+public:
+    BoundConjunction(Assembly& assembly_, BoundExpression* left_, BoundExpression* right_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+};
+
+class BoundDisjunction : public BoundBooleanBinaryExpression
+{
+public:
+    BoundDisjunction(Assembly& assembly_, BoundExpression* left_, BoundExpression* right_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
 };
 
 } } // namespace cminor::binder

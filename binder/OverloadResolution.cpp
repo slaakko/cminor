@@ -11,74 +11,46 @@
 
 namespace cminor { namespace binder {
 
-struct ArgumentMatch
+bool BetterFunctionMatch::operator()(const FunctionMatch& left, const FunctionMatch& right) const
 {
-    ArgumentMatch() : conversionFun(nullptr), conversionDistance(0) {}
-    ArgumentMatch(FunctionSymbol* conversionFun_) : conversionFun(conversionFun_), conversionDistance(0) {}
-    ArgumentMatch(FunctionSymbol* conversionFun_, int conversionDistance_) : conversionFun(conversionFun_), conversionDistance(conversionDistance_) {}
-    FunctionSymbol* conversionFun;
-    int conversionDistance;
-};
-
-inline bool BetterArgumentMatch(const ArgumentMatch& left, const ArgumentMatch& right) 
-{
-    if (left.conversionFun == nullptr && right.conversionFun != nullptr) return true;
-    if (right.conversionFun == nullptr && left.conversionFun != nullptr) return false;
-    if (left.conversionDistance < right.conversionDistance) return true;
-    return false;
-}
-
-struct FunctionMatch
-{
-    FunctionMatch(FunctionSymbol* fun_) : fun(fun_), numConversions(0) {}
-    FunctionSymbol* fun;
-    std::vector<ArgumentMatch> argumentMatches;
-    int numConversions;
-};
-
-struct BetterFunctionMatch
-{
-    bool operator()(const FunctionMatch& left, const FunctionMatch& right) const
+    int leftBetterArgumentMatches = 0;
+    int rightBetterArgumentMatches = 0;
+    int n = std::max(int(left.argumentMatches.size()), int(right.argumentMatches.size()));
+    for (int i = 0; i < n; ++i)
     {
-        int leftBetterArgumentMatches = 0;
-        int rightBetterArgumentMatches = 0;
-        int n = std::max(int(left.argumentMatches.size()), int(right.argumentMatches.size()));
-        for (int i = 0; i < n; ++i)
+        ArgumentMatch leftMatch;
+        if (i < int(left.argumentMatches.size()))
         {
-            ArgumentMatch leftMatch;
-            if (i < int(left.argumentMatches.size()))
-            {
-                leftMatch = left.argumentMatches[i];
-            }
-            ArgumentMatch rightMatch;
-            if (i < int(right.argumentMatches.size()))
-            {
-                rightMatch = right.argumentMatches[i];
-            }
-            if (BetterArgumentMatch(leftMatch, rightMatch))
-            {
-                ++leftBetterArgumentMatches;
-            }
-            else if (BetterArgumentMatch(rightMatch, leftMatch))
-            {
-                ++rightBetterArgumentMatches;
-            }
+            leftMatch = left.argumentMatches[i];
         }
-        if (leftBetterArgumentMatches > rightBetterArgumentMatches)
+        ArgumentMatch rightMatch;
+        if (i < int(right.argumentMatches.size()))
         {
-            return true;
+            rightMatch = right.argumentMatches[i];
         }
-        if (rightBetterArgumentMatches > leftBetterArgumentMatches)
+        if (BetterArgumentMatch(leftMatch, rightMatch))
         {
-            return false;
+            ++leftBetterArgumentMatches;
         }
-        if (left.numConversions < right.numConversions)
+        else if (BetterArgumentMatch(rightMatch, leftMatch))
         {
-            return true;
+            ++rightBetterArgumentMatches;
         }
+    }
+    if (leftBetterArgumentMatches > rightBetterArgumentMatches)
+    {
+        return true;
+    }
+    if (rightBetterArgumentMatches > leftBetterArgumentMatches)
+    {
         return false;
     }
-};
+    if (left.numConversions < right.numConversions)
+    {
+        return true;
+    }
+    return false;
+}
 
 std::string MakeOverloadName(StringPtr groupName, const std::vector<std::unique_ptr<BoundExpression>>& arguments)
 {

@@ -28,8 +28,15 @@ Instruction* Frame::GetNextInst()
 
 void Frame::SetPC(int32_t pc_)
 { 
-    Assert(pc_ >= 0 && pc_ < fun.NumInsts(), "invalid instruction index");  
-    pc = pc_; 
+    if (pc_ == endOfFunction)
+    {
+        pc = fun.NumInsts();
+    }
+    else
+    {
+        Assert(pc_ >= 0 && pc_ <= fun.NumInsts(), "invalid instruction index");
+        pc = pc_;
+    }
 }
 
 } } // namespace cminor::machine
