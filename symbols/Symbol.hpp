@@ -229,6 +229,7 @@ class TypeSymbol : public Symbol
 {
 public:
     TypeSymbol(const Span& span_, Constant name_);
+    virtual bool IsUnsignedType() const { return false; }
 };
 
 class BasicTypeSymbol : public TypeSymbol
@@ -271,6 +272,7 @@ class ByteTypeSymbol : public BasicTypeSymbol
 public:
     ByteTypeSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::byteTypeSymbol; }
+    bool IsUnsignedType() const override { return true; }
 };
 
 class ShortTypeSymbol : public BasicTypeSymbol
@@ -285,6 +287,7 @@ class UShortTypeSymbol : public BasicTypeSymbol
 public:
     UShortTypeSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::ushortTypeSymbol; }
+    bool IsUnsignedType() const override { return true; }
 };
 
 class IntTypeSymbol : public BasicTypeSymbol
@@ -299,6 +302,7 @@ class UIntTypeSymbol : public BasicTypeSymbol
 public:
     UIntTypeSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::uintTypeSymbol; }
+    bool IsUnsignedType() const override { return true; }
 };
 
 class LongTypeSymbol : public BasicTypeSymbol
@@ -313,6 +317,7 @@ class ULongTypeSymbol : public BasicTypeSymbol
 public:
     ULongTypeSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::ulongTypeSymbol; }
+    bool IsUnsignedType() const override { return true; }
 };
 
 class FloatTypeSymbol : public BasicTypeSymbol

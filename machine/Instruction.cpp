@@ -264,6 +264,7 @@ void ReceiveInst::Execute(Frame& frame)
 
 JumpInst::JumpInst() : IndexParamInst("jump")
 {
+    SetIndex(endOfFunction);
 }
 
 void JumpInst::SetTarget(int32_t target)
@@ -291,6 +292,7 @@ void JumpInst::Dump(CodeFormatter& formatter)
 
 JumpTrueInst::JumpTrueInst() : IndexParamInst("jumptrue")
 {
+    SetIndex(endOfFunction);
 }
 
 void JumpTrueInst::SetTarget(int32_t target)
@@ -323,6 +325,7 @@ void JumpTrueInst::Dump(CodeFormatter& formatter)
 
 JumpFalseInst::JumpFalseInst() : IndexParamInst("jumpfalse")
 {
+    SetIndex(endOfFunction);
 }
 
 void JumpFalseInst::SetTarget(int32_t target)

@@ -1,7 +1,9 @@
 int main()
 {
-    int x;
-    int y = 0;
-    int z = x + 1;
+    int x = 0;
+    while (x < 10)
+    {
+        ++x;
+    }
     return 0;
 }

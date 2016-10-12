@@ -62,6 +62,33 @@ void SymbolCreatorVisitor::Visit(CompoundStatementNode& compoundStatementNode)
     symbolTable.EndDeclarationBlock();
 }
 
+void SymbolCreatorVisitor::Visit(IfStatementNode& ifStatementNode)
+{
+    ifStatementNode.ThenS()->Accept(*this);
+    if (ifStatementNode.ElseS())
+    {
+        ifStatementNode.ElseS()->Accept(*this);
+    }
+}
+
+void SymbolCreatorVisitor::Visit(WhileStatementNode& whileStatementNode)
+{
+    whileStatementNode.Statement()->Accept(*this);
+}
+
+void SymbolCreatorVisitor::Visit(DoStatementNode& doStatementNode)
+{
+    doStatementNode.Statement()->Accept(*this);
+}
+
+void SymbolCreatorVisitor::Visit(ForStatementNode& forStatementNode)
+{
+    symbolTable.BeginDeclarationBlock(forStatementNode);
+    forStatementNode.InitS()->Accept(*this);
+    forStatementNode.ActionS()->Accept(*this);
+    symbolTable.EndDeclarationBlock();
+}
+
 void SymbolCreatorVisitor::Visit(ConstructionStatementNode& constructionStatementNode)
 {
     symbolTable.AddLocalVariable(constructionStatementNode);

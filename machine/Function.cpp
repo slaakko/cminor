@@ -9,11 +9,16 @@
 
 namespace cminor { namespace machine {
 
-Function::Function() : fullName(), id(-1), numLocals(0), numParameters(0), constantPool(nullptr), isMain(false)
+Emitter::~Emitter()
 {
 }
 
-Function::Function(Constant fullName_, int32_t id_, ConstantPool* constantPool_) : fullName(fullName_), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false)
+Function::Function() : fullName(), id(-1), numLocals(0), numParameters(0), constantPool(nullptr), isMain(false), emitter(nullptr)
+{
+}
+
+Function::Function(Constant fullName_, int32_t id_, ConstantPool* constantPool_) : 
+    fullName(fullName_), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false), emitter(nullptr)
 {
 }
 
@@ -62,6 +67,14 @@ void Function::SetNumParameters(int32_t numParameters_)
 
 void Function::AddInst(std::unique_ptr<Instruction>&& inst)
 {
+    if (emitter)
+    {
+        int32_t firstInstIndex = emitter->FistInstIndex();
+        if (firstInstIndex == endOfFunction)
+        {
+            emitter->SetFirstInstIndex(int32_t(instructions.size()));
+        }
+    }
     instructions.push_back(std::move(inst));
 }
 

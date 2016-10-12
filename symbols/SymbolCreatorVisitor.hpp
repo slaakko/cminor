@@ -24,6 +24,10 @@ public:
     void Visit(FunctionNode& functionNode) override;
     void Visit(ParameterNode& parameterNode) override;
     void Visit(CompoundStatementNode& compoundStatementNode) override;
+    void Visit(IfStatementNode& ifStatementNode) override;
+    void Visit(WhileStatementNode& whileStatementNode) override;
+    void Visit(DoStatementNode& doStatementNode) override;
+    void Visit(ForStatementNode& forStatementNode) override;
     void Visit(ConstructionStatementNode& constructionStatementNode) override;
 private:
     Assembly& assembly;

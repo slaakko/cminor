@@ -12,8 +12,14 @@ class BoundCompileUnit;
 class BoundFunction;
 class BoundCompoundStatement;
 class BoundReturnStatement;
+class BoundIfStatement;
+class BoundWhileStatement;
+class BoundDoStatement;
+class BoundForStatement;
 class BoundConstructionStatement;
 class BoundAssignmentStatement;
+class BoundExpressionStatement;
+class BoundEmptyStatement;
 class BoundLiteral;
 class BoundConstant;
 class BoundLocalVariable;
@@ -32,8 +38,14 @@ public:
     virtual void Visit(BoundFunction& boundFunction) {}
     virtual void Visit(BoundCompoundStatement& boundCompoundStatement) {}
     virtual void Visit(BoundReturnStatement& boundReturnStatement) {}
+    virtual void Visit(BoundIfStatement& boundIfStatement) {}
+    virtual void Visit(BoundWhileStatement& boundWhileStatement) {}
+    virtual void Visit(BoundDoStatement& boundDoStatement) {}
+    virtual void Visit(BoundForStatement& boundForStatement) {}
     virtual void Visit(BoundConstructionStatement& boundConstructionStatement) {}
     virtual void Visit(BoundAssignmentStatement& boundAssignmentStatement) {}
+    virtual void Visit(BoundExpressionStatement& boundExpressionStatement) {}
+    virtual void Visit(BoundEmptyStatement& boundEmptyStatement) {}
     virtual void Visit(BoundLiteral& boundLiteral) {}
     virtual void Visit(BoundConstant& boundConstant) {}
     virtual void Visit(BoundLocalVariable& boundLocalVariable) {}

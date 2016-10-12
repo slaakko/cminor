@@ -11,6 +11,8 @@
 #include <cminor/binder/OverloadResolution.hpp>
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/ast/CompileUnit.hpp>
+#include <cminor/ast/Literal.hpp>
+#include <cminor/ast/Expression.hpp>
 
 namespace cminor { namespace binder {
 
@@ -86,7 +88,7 @@ void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, FunctionNode& func
     throw Exception("not all control paths terminate in return or throw statement", functionNode.GetSpan());
 }
 
-StatementBinderVisitor::StatementBinderVisitor(BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), containerScope(nullptr), function(nullptr), compoundStatement(nullptr)
+StatementBinderVisitor::StatementBinderVisitor(BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), containerScope(nullptr), function(nullptr)
 {
 }
 
@@ -120,7 +122,10 @@ void StatementBinderVisitor::Visit(FunctionNode& functionNode)
     BoundFunction* prevFunction = function;
     function = boundFunction.get();
     functionNode.Body()->Accept(*this);
-    CheckFunctionReturnPaths(functionSymbol,functionNode);
+    BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
+    Assert(compoundStatement, "compound statement expected");
+    function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
+    CheckFunctionReturnPaths(functionSymbol, functionNode);
     boundCompileUnit.AddBoundNode(std::move(boundFunction));
     containerScope = prevContainerScope;
     function = prevFunction;
@@ -130,18 +135,16 @@ void StatementBinderVisitor::Visit(CompoundStatementNode& compoundStatementNode)
 {
     ContainerScope* prevContainerScope = containerScope;
     containerScope = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(compoundStatementNode)->GetContainerScope();
-    BoundCompoundStatement* prevCompoundStatement = compoundStatement;
     std::unique_ptr<BoundCompoundStatement> boundCompoundStatement(new BoundCompoundStatement(boundCompileUnit.GetAssembly()));
-    compoundStatement = boundCompoundStatement.get();
     int n = compoundStatementNode.Statements().Count();
     for (int i = 0; i < n; ++i)
     {
         StatementNode* statementNode = compoundStatementNode.Statements()[i];
         statementNode->Accept(*this);
+        boundCompoundStatement->AddStatement(std::unique_ptr<BoundStatement>(statement.release()));
     }
-    function->SetBody(std::move(boundCompoundStatement));
-    compoundStatement = prevCompoundStatement;
     containerScope = prevContainerScope;
+    statement.reset(boundCompoundStatement.release());
 }
 
 void StatementBinderVisitor::Visit(ReturnStatementNode& returnStatementNode)
@@ -178,8 +181,7 @@ void StatementBinderVisitor::Visit(ReturnStatementNode& returnStatementNode)
                 throw Exception("no implicit conversion from '" + ToUtf8(returnValueArguments[0]->GetType()->FullName()) + "' to '" + ToUtf8(returnType->FullName()) + "' exists",
                     returnStatementNode.GetSpan(), function->GetFunctionSymbol()->GetSpan());
             }
-            std::unique_ptr<BoundReturnStatement> boundReturnStatement(new BoundReturnStatement(boundCompileUnit.GetAssembly(), std::move(returnFunctionCall)));
-            compoundStatement->AddStatement(std::move(boundReturnStatement));
+            statement.reset(new BoundReturnStatement(boundCompileUnit.GetAssembly(), std::move(returnFunctionCall)));
         }
         else
         {
@@ -199,14 +201,75 @@ void StatementBinderVisitor::Visit(ReturnStatementNode& returnStatementNode)
         if (!returnType || dynamic_cast<VoidTypeSymbol*>(returnType))
         {
             std::unique_ptr<BoundFunctionCall> returnFunctionCall;
-            std::unique_ptr<BoundReturnStatement> boundReturnStatement(new BoundReturnStatement(boundCompileUnit.GetAssembly(), std::move(returnFunctionCall)));
-            compoundStatement->AddStatement(std::move(boundReturnStatement));
+            statement.reset(new BoundReturnStatement(boundCompileUnit.GetAssembly(), std::move(returnFunctionCall)));
         }
         else
         {
             throw Exception("nonvoid function must return a value", returnStatementNode.GetSpan(), function->GetFunctionSymbol()->GetSpan());
         }
     }
+}
+
+void StatementBinderVisitor::Visit(IfStatementNode& ifStatementNode)
+{
+    std::unique_ptr<BoundExpression> condition = BindExpression(boundCompileUnit, containerScope, ifStatementNode.Condition());
+    if (!dynamic_cast<BoolTypeSymbol*>(condition->GetType()))
+    {
+        throw Exception("condition of if statement must be Boolean expression", ifStatementNode.Condition()->GetSpan());
+    }
+    ifStatementNode.ThenS()->Accept(*this);
+    BoundStatement* thenS = statement.release();
+    BoundStatement* elseS = nullptr;
+    if (ifStatementNode.ElseS())
+    {
+        ifStatementNode.ElseS()->Accept(*this);
+        elseS = statement.release();
+    }
+    statement.reset(new BoundIfStatement(boundCompileUnit.GetAssembly(), std::move(condition), std::unique_ptr<BoundStatement>(thenS), std::unique_ptr<BoundStatement>(elseS)));
+}
+
+void StatementBinderVisitor::Visit(WhileStatementNode& whileStatementNode)
+{
+    std::unique_ptr<BoundExpression> condition = BindExpression(boundCompileUnit, containerScope, whileStatementNode.Condition());
+    if (!dynamic_cast<BoolTypeSymbol*>(condition->GetType()))
+    {
+        throw Exception("condition of while statement must be Boolean expression", whileStatementNode.Condition()->GetSpan());
+    }
+    whileStatementNode.Statement()->Accept(*this);
+    statement.reset(new BoundWhileStatement(boundCompileUnit.GetAssembly(), std::move(condition), std::unique_ptr<BoundStatement>(statement.release())));
+}
+
+void StatementBinderVisitor::Visit(DoStatementNode& doStatementNode)
+{
+    std::unique_ptr<BoundExpression> condition = BindExpression(boundCompileUnit, containerScope, doStatementNode.Condition());
+    if (!dynamic_cast<BoolTypeSymbol*>(condition->GetType()))
+    {
+        throw Exception("condition of do statement must be Boolean expression", doStatementNode.Condition()->GetSpan());
+    }
+    doStatementNode.Statement()->Accept(*this);
+    statement.reset(new BoundDoStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundStatement>(statement.release()), std::move(condition)));
+}
+
+void StatementBinderVisitor::Visit(ForStatementNode& forStatementNode)
+{
+    std::unique_ptr<BoundExpression> condition;
+    if (!forStatementNode.Condition())
+    {
+        BooleanLiteralNode trueNode(forStatementNode.GetSpan(), true);
+        condition = BindExpression(boundCompileUnit, containerScope, &trueNode);
+    }
+    else
+    {
+        condition = BindExpression(boundCompileUnit, containerScope, forStatementNode.Condition());
+    }
+    forStatementNode.InitS()->Accept(*this);
+    BoundStatement* initS = statement.release();
+    forStatementNode.LoopS()->Accept(*this);
+    BoundStatement* loopS = statement.release();
+    forStatementNode.ActionS()->Accept(*this);
+    BoundStatement* actionS = statement.release();
+    statement.reset(new BoundForStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundStatement>(initS), std::move(condition), std::unique_ptr<BoundStatement>(loopS), 
+        std::unique_ptr<BoundStatement>(actionS)));
 }
 
 void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatementNode)
@@ -226,22 +289,70 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
         arguments.push_back(std::move(argument));
     }
     std::unique_ptr<BoundFunctionCall> constructorCall = ResolveOverload(boundCompileUnit, U"@constructor", functionScopeLookups, arguments, constructionStatementNode.GetSpan());
-    std::unique_ptr<BoundConstructionStatement> boundConstructionStatement(new BoundConstructionStatement(boundCompileUnit.GetAssembly(), std::move(constructorCall)));
-    compoundStatement->AddStatement(std::move(boundConstructionStatement));
+    statement.reset(new BoundConstructionStatement(boundCompileUnit.GetAssembly(), std::move(constructorCall)));
 }
 
 void StatementBinderVisitor::Visit(AssignmentStatementNode& assignmentStatementNode)
 {
     std::unique_ptr<BoundExpression> target = BindExpression(boundCompileUnit, containerScope, assignmentStatementNode.TargetExpr());
+    TypeSymbol* targetType = target->GetType();
     std::unique_ptr<BoundExpression> source = BindExpression(boundCompileUnit, containerScope, assignmentStatementNode.SourceExpr());
     std::vector<std::unique_ptr<BoundExpression>> arguments;
     arguments.push_back(std::move(target));
     arguments.push_back(std::move(source));
     std::vector<FunctionScopeLookup> functionScopeLookups;
-    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, target->GetType()->ClassOrNsScope()));
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, targetType->ClassOrNsScope()));
     std::unique_ptr<BoundFunctionCall> assignmentCall = ResolveOverload(boundCompileUnit, U"@assignment", functionScopeLookups, arguments, assignmentStatementNode.GetSpan());
-    std::unique_ptr<BoundAssignmentStatement> boundAssignmentStatement(new BoundAssignmentStatement(boundCompileUnit.GetAssembly(), std::move(assignmentCall)));
-    compoundStatement->AddStatement(std::move(boundAssignmentStatement));
+    statement.reset(new BoundAssignmentStatement(boundCompileUnit.GetAssembly(), std::move(assignmentCall)));
+}
+
+void StatementBinderVisitor::Visit(ExpressionStatementNode& expressionStatementNode)
+{
+    std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, containerScope, expressionStatementNode.Expression());
+    statement.reset(new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::move(expression)));
+}
+
+void StatementBinderVisitor::Visit(EmptyStatementNode& emptyStatementNode)
+{
+    statement.reset(new BoundEmptyStatement(boundCompileUnit.GetAssembly()));
+}
+
+void StatementBinderVisitor::Visit(IncrementStatementNode& incrementStatementNode)
+{
+    std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, containerScope, incrementStatementNode.Expression());
+    if (expression->GetType()->IsUnsignedType())
+    {
+        CloneContext cloneContext;
+        AssignmentStatementNode assignmentStatement(incrementStatementNode.GetSpan(), incrementStatementNode.Expression()->Clone(cloneContext),
+            new AddNode(incrementStatementNode.GetSpan(), incrementStatementNode.Expression()->Clone(cloneContext), new ByteLiteralNode(incrementStatementNode.GetSpan(), 1u)));
+        assignmentStatement.Accept(*this);
+    }
+    else
+    {
+        CloneContext cloneContext;
+        AssignmentStatementNode assignmentStatement(incrementStatementNode.GetSpan(), incrementStatementNode.Expression()->Clone(cloneContext),
+            new AddNode(incrementStatementNode.GetSpan(), incrementStatementNode.Expression()->Clone(cloneContext), new SByteLiteralNode(incrementStatementNode.GetSpan(), 1)));
+        assignmentStatement.Accept(*this);
+    }
+}
+
+void StatementBinderVisitor::Visit(DecrementStatementNode& decrementStatementNode)
+{
+    std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, containerScope, decrementStatementNode.Expression());
+    if (expression->GetType()->IsUnsignedType())
+    {
+        CloneContext cloneContext;
+        AssignmentStatementNode assignmentStatement(decrementStatementNode.GetSpan(), decrementStatementNode.Expression()->Clone(cloneContext),
+            new SubNode(decrementStatementNode.GetSpan(), decrementStatementNode.Expression()->Clone(cloneContext), new ByteLiteralNode(decrementStatementNode.GetSpan(), 1u)));
+        assignmentStatement.Accept(*this);
+    }
+    else
+    {
+        CloneContext cloneContext;
+        AssignmentStatementNode assignmentStatement(decrementStatementNode.GetSpan(), decrementStatementNode.Expression()->Clone(cloneContext),
+            new SubNode(decrementStatementNode.GetSpan(), decrementStatementNode.Expression()->Clone(cloneContext), new SByteLiteralNode(decrementStatementNode.GetSpan(), 1)));
+        assignmentStatement.Accept(*this);
+    }
 }
 
 } } // namespace cminor::binder

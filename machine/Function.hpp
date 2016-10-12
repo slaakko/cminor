@@ -11,6 +11,14 @@
 
 namespace cminor { namespace machine {
 
+class Emitter
+{
+public:
+    virtual ~Emitter();
+    virtual void SetFirstInstIndex(int32_t index) = 0;
+    virtual int32_t FistInstIndex() const = 0;
+};
+
 class Function
 {
 public:
@@ -32,6 +40,8 @@ public:
     void Dump(CodeFormatter& formatter);
     bool IsMain() const { return isMain; }
     void SetMain() { isMain = true; }
+    void SetEmitter(Emitter* emitter_) { emitter = emitter_; }
+    Emitter* GetEmitter() const { return emitter; }
 private:
     Constant fullName;
     int32_t id;
@@ -40,6 +50,7 @@ private:
     int32_t numLocals;
     int32_t numParameters;
     bool isMain;
+    Emitter* emitter;
 };
 
 class FunctionTable

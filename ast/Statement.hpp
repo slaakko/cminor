@@ -123,7 +123,10 @@ public:
     NodeType GetNodeType() const override { return NodeType::forStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-
+    StatementNode* InitS() const { return initS.get(); }
+    Node* Condition() const { return condition.get(); }
+    StatementNode* LoopS() const { return loopS.get(); }
+    StatementNode* ActionS() const { return actionS.get(); }
 private:
     std::unique_ptr<StatementNode> initS;
     std::unique_ptr<Node> condition;
