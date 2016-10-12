@@ -232,6 +232,8 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
     rootInst.SetInst(0xA1, new JumpTrueInst());
     rootInst.SetInst(0xA2, new JumpFalseInst());
     rootInst.SetInst(0xA3, new CallInst());
+    rootInst.SetInst(0xA4, new EnterBlockInst());
+    rootInst.SetInst(0xA5, new ExitBlockInst());
 
     //  conversion group instruction:
     //  -----------------------------

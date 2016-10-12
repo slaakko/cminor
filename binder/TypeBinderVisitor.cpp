@@ -73,6 +73,14 @@ void TypeBinderVisitor::Visit(CompoundStatementNode& compoundStatementNode)
     containerScope = prevContainerScope;
 }
 
+void TypeBinderVisitor::Visit(ForStatementNode& forStatementNode)
+{
+    ContainerScope* prevContainerScope = containerScope;
+    containerScope = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(forStatementNode)->GetContainerScope();
+    forStatementNode.InitS()->Accept(*this);
+    containerScope = prevContainerScope;
+}
+
 void TypeBinderVisitor::Visit(ConstructionStatementNode& constructionStatementNode)
 {
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(constructionStatementNode);

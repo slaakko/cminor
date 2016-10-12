@@ -23,6 +23,8 @@ public:
     void Visit(BoundReturnStatement& boundReturnStatement) override;
     void Visit(BoundIfStatement& boundIfStatement) override;
     void Visit(BoundWhileStatement& boundWhileStatement) override;
+    void Visit(BoundDoStatement& boundDoStatement) override;
+    void Visit(BoundForStatement& boundForStatement) override;
     void Visit(BoundConstructionStatement& boundConstructionStatement) override;
     void Visit(BoundAssignmentStatement& boundAssignmentStatement) override;
     void Visit(BoundExpressionStatement& boundExpressionStatement) override;
@@ -42,14 +44,15 @@ private:
     std::unordered_set<Instruction*>* nextSet;
     std::unordered_set<Instruction*>* trueSet;
     std::unordered_set<Instruction*>* falseSet;
+    std::unordered_set<Instruction*>* exitSet;
     bool genJumpingBoolCode;
     void GenJumpingBoolCode();
     void Backpatch(std::unordered_set<Instruction*>* set, int32_t target);
     void Merge(std::unordered_set<Instruction*>* fromSet, std::unordered_set<Instruction*>* toSet);
 };
 
-EmitterVisitor::EmitterVisitor(Machine& machine_) : machine(machine_), function(nullptr), firstInstIndex(endOfFunction), nextSet(nullptr), trueSet(nullptr), falseSet(nullptr), 
-    genJumpingBoolCode(false)
+EmitterVisitor::EmitterVisitor(Machine& machine_) : 
+    machine(machine_), function(nullptr), firstInstIndex(endOfFunction), nextSet(nullptr), trueSet(nullptr), falseSet(nullptr), exitSet(nullptr), genJumpingBoolCode(false)
 {
 }
 
@@ -115,6 +118,13 @@ void EmitterVisitor::Visit(BoundFunction& boundFunction)
 
 void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
 {
+    std::unordered_set<Instruction*> exit;
+    if (!nextSet)
+    {
+        exitSet = &exit;
+    }
+    std::unique_ptr<Instruction> enterBlockInst = machine.CreateInst("enterblock");
+    function->AddInst(std::move(enterBlockInst));
     int n = int(boundCompoundStatement.Statements().size());
     std::unordered_set<Instruction*> prevNext;
     for (int i = 0; i < n; ++i)
@@ -123,14 +133,14 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
         std::unordered_set<Instruction*>* prevNextSet = nextSet;
         nextSet = &next;
         BoundStatement* boundStatement = boundCompoundStatement.Statements()[i].get();
+        int32_t prevFirstInstIndex = firstInstIndex;
         firstInstIndex = endOfFunction;
         boundStatement->Accept(*this);
-        if (firstInstIndex != endOfFunction)
+        int32_t statementTarget = firstInstIndex;
+        firstInstIndex = prevFirstInstIndex;
+        if (statementTarget != endOfFunction)
         {
-            for (Instruction* inst : prevNext)
-            {
-                inst->SetTarget(firstInstIndex);
-            }
+            Backpatch(&prevNext, statementTarget);
             prevNext = std::move(next);
         }
         else
@@ -139,16 +149,16 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
         }
         nextSet = prevNextSet;
     }
-    if (nextSet)
+    int32_t prevFirstInstIndex = firstInstIndex;
+    firstInstIndex = endOfFunction;
+    std::unique_ptr<Instruction> exitBlockInst = machine.CreateInst("exitblock");
+    function->AddInst(std::move(exitBlockInst));
+    int32_t exitBlockTarget = firstInstIndex;
+    firstInstIndex = prevFirstInstIndex;
+    Backpatch(&prevNext, exitBlockTarget);
+    if (!nextSet)
     {
-        nextSet->insert(prevNext.cbegin(), prevNext.cend());
-    }
-    else
-    {
-        for (Instruction* inst : prevNext)
-        {
-            inst->SetTarget(endOfFunction);
-        }
+        Backpatch(&exit, exitBlockTarget);
     }
 }
 
@@ -160,7 +170,14 @@ void EmitterVisitor::Visit(BoundReturnStatement& boundReturnStatement)
         returnFunctionCall->Accept(*this);
     }
     std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
-    inst->SetTarget(endOfFunction);
+    if (exitSet)
+    {
+        exitSet->insert(inst.get());
+    }
+    else
+    {
+        inst->SetTarget(endOfFunction);
+    }
     function->AddInst(std::move(inst));
 }
 
@@ -176,16 +193,21 @@ void EmitterVisitor::Visit(BoundIfStatement& boundIfStatement)
     genJumpingBoolCode = true;
     boundIfStatement.Condition()->Accept(*this);
     genJumpingBoolCode = prevGenJumpingBoolCode;
+    int32_t prevFirstInstIndex = firstInstIndex;
     firstInstIndex = endOfFunction;
     boundIfStatement.ThenS()->Accept(*this);
-    Backpatch(&true_, firstInstIndex);
+    int32_t thenTarget = firstInstIndex;
+    firstInstIndex = prevFirstInstIndex;
+    Backpatch(&true_, thenTarget);
     if (boundIfStatement.ElseS())
     {
         std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
         nextSet->insert(inst.get());
         function->AddInst(std::move(inst));
+        prevFirstInstIndex = firstInstIndex;
         firstInstIndex = endOfFunction;
         boundIfStatement.ElseS()->Accept(*this);
+        firstInstIndex = prevFirstInstIndex;
     }
     else
     {
@@ -211,12 +233,72 @@ void EmitterVisitor::Visit(BoundWhileStatement& boundWhileStatement)
     int32_t conditionTarget = firstInstIndex;
     firstInstIndex = prevFirstInstIndex;
     genJumpingBoolCode = prevGenJumpingBoolCode;
+    prevFirstInstIndex = firstInstIndex;
     firstInstIndex = endOfFunction;
     boundWhileStatement.Statement()->Accept(*this);
     Backpatch(&true_, firstInstIndex);
+    firstInstIndex = prevFirstInstIndex;
     std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
     inst->SetTarget(conditionTarget);
     function->AddInst(std::move(inst));
+    Merge(&false_, nextSet);
+    trueSet = prevTrueSet;
+    falseSet = prevFalseSet;
+}
+
+void EmitterVisitor::Visit(BoundDoStatement& boundDoStatement)
+{
+    std::unordered_set<Instruction*>* prevTrueSet = trueSet;
+    std::unordered_set<Instruction*>* prevFalseSet = falseSet;
+    std::unordered_set<Instruction*> true_;
+    std::unordered_set<Instruction*> false_;
+    int32_t prevFirstInstIndex = firstInstIndex;
+    firstInstIndex = endOfFunction;
+    boundDoStatement.Statement()->Accept(*this);
+    int32_t statementTarget = firstInstIndex;
+    firstInstIndex = prevFirstInstIndex;
+    trueSet = &true_;
+    falseSet = &false_;
+    bool prevGenJumpingBoolCode = genJumpingBoolCode;
+    genJumpingBoolCode = true;
+    prevFirstInstIndex = firstInstIndex;
+    firstInstIndex = endOfFunction;
+    boundDoStatement.Condition()->Accept(*this);
+    firstInstIndex = prevFirstInstIndex;
+    genJumpingBoolCode = prevGenJumpingBoolCode;
+    Backpatch(&true_, statementTarget);
+    Merge(&false_, nextSet);
+    trueSet = prevTrueSet;
+    falseSet = prevFalseSet;
+}
+
+void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
+{
+    std::unordered_set<Instruction*>* prevTrueSet = trueSet;
+    std::unordered_set<Instruction*>* prevFalseSet = falseSet;
+    std::unordered_set<Instruction*> true_;
+    std::unordered_set<Instruction*> false_;
+    boundForStatement.InitS()->Accept(*this);
+    trueSet = &true_;
+    falseSet = &false_;
+    bool prevGenJumpingBoolCode = genJumpingBoolCode;
+    genJumpingBoolCode = true;
+    int32_t prevFirstInstIndex = firstInstIndex;
+    firstInstIndex = endOfFunction;
+    boundForStatement.Condition()->Accept(*this);
+    int32_t conditionTarget = firstInstIndex;
+    firstInstIndex = prevFirstInstIndex;
+    genJumpingBoolCode = prevGenJumpingBoolCode;
+    prevFirstInstIndex = firstInstIndex;
+    firstInstIndex = endOfFunction;
+    boundForStatement.ActionS()->Accept(*this);
+    int32_t actionTarget = firstInstIndex;
+    firstInstIndex = prevFirstInstIndex;
+    Backpatch(&true_, actionTarget);
+    boundForStatement.LoopS()->Accept(*this);
+    std::unique_ptr<Instruction> jumpToCond = machine.CreateInst("jump");
+    jumpToCond->SetTarget(conditionTarget);
+    function->AddInst(std::move(jumpToCond));
     Merge(&false_, nextSet);
     trueSet = prevTrueSet;
     falseSet = prevFalseSet;

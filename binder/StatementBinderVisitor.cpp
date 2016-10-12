@@ -252,6 +252,8 @@ void StatementBinderVisitor::Visit(DoStatementNode& doStatementNode)
 
 void StatementBinderVisitor::Visit(ForStatementNode& forStatementNode)
 {
+    ContainerScope* prevContainerScope = containerScope;
+    containerScope = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(forStatementNode)->GetContainerScope();
     std::unique_ptr<BoundExpression> condition;
     if (!forStatementNode.Condition())
     {
@@ -268,7 +270,8 @@ void StatementBinderVisitor::Visit(ForStatementNode& forStatementNode)
     BoundStatement* loopS = statement.release();
     forStatementNode.ActionS()->Accept(*this);
     BoundStatement* actionS = statement.release();
-    statement.reset(new BoundForStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundStatement>(initS), std::move(condition), std::unique_ptr<BoundStatement>(loopS), 
+    containerScope = prevContainerScope;
+    statement.reset(new BoundForStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundStatement>(initS), std::move(condition), std::unique_ptr<BoundStatement>(loopS),
         std::unique_ptr<BoundStatement>(actionS)));
 }
 

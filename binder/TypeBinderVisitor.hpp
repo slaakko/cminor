@@ -25,6 +25,7 @@ public:
     void Visit(AliasNode& aliasNode) override;
     void Visit(FunctionNode& functionNode) override;
     void Visit(CompoundStatementNode& compoundStatementNode) override;
+    void Visit(ForStatementNode& forStatementNode) override;
     void Visit(ConstructionStatementNode& constructionStatementNode) override;
 private:
     BoundCompileUnit& boundCompileUnit;

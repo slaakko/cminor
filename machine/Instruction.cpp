@@ -356,6 +356,22 @@ void JumpFalseInst::Dump(CodeFormatter& formatter)
     }
 }
 
+EnterBlockInst::EnterBlockInst() : Instruction("enterblock")
+{
+}
+
+void EnterBlockInst::Execute(Frame& frame)
+{
+}
+
+ExitBlockInst::ExitBlockInst() : Instruction("exitblock")
+{
+}
+
+void ExitBlockInst::Execute(Frame& frame)
+{
+}
+
 CallInst::CallInst() : Instruction("call")
 {
 }

@@ -304,6 +304,22 @@ public:
     void Dump(CodeFormatter& formatter) override;
 };
 
+class EnterBlockInst : public Instruction
+{
+public:
+    EnterBlockInst();
+    Instruction* Clone() const override { return new EnterBlockInst(*this); };
+    void Execute(Frame& frame) override;
+};
+
+class ExitBlockInst : public Instruction
+{
+public:
+    ExitBlockInst();
+    Instruction* Clone() const override { return new ExitBlockInst(*this); };
+    void Execute(Frame& frame) override;
+};
+
 class CallInst : public Instruction
 {
 public:
