@@ -8,8 +8,20 @@
 
 namespace cminor { namespace binder {
 
-BoundStatement::BoundStatement(Assembly& assembly_) : BoundNode(assembly_)
+BoundStatement::BoundStatement(Assembly& assembly_) : BoundNode(assembly_), parent(nullptr)
 {
+}
+
+BoundCompoundStatement* BoundStatement::Block() const
+{
+    if (const BoundCompoundStatement* compound = dynamic_cast<const BoundCompoundStatement*>(this))
+    {
+        return const_cast<BoundCompoundStatement*>(compound);
+    }
+    else
+    {
+        return parent->Block();
+    }
 }
 
 BoundCompoundStatement::BoundCompoundStatement(Assembly& assembly_) : BoundStatement(assembly_)
@@ -18,6 +30,7 @@ BoundCompoundStatement::BoundCompoundStatement(Assembly& assembly_) : BoundState
 
 void BoundCompoundStatement::AddStatement(std::unique_ptr<BoundStatement>&& statement)
 {
+    statement->SetParent(this);
     statements.push_back(std::move(statement));
 }
 
@@ -38,6 +51,11 @@ void BoundReturnStatement::Accept(BoundNodeVisitor& visitor)
 BoundIfStatement::BoundIfStatement(Assembly& assembly_, std::unique_ptr<BoundExpression>&& condition_, std::unique_ptr<BoundStatement>&& thenS_, std::unique_ptr<BoundStatement>&& elseS_) :
     BoundStatement(assembly_), condition(std::move(condition_)), thenS(std::move(thenS_)), elseS(std::move(elseS_))
 {
+    thenS->SetParent(this);
+    if (elseS)
+    {
+        elseS->SetParent(this);
+    }
 }
 
 void BoundIfStatement::Accept(BoundNodeVisitor& visitor)
@@ -48,6 +66,7 @@ void BoundIfStatement::Accept(BoundNodeVisitor& visitor)
 BoundWhileStatement::BoundWhileStatement(Assembly& assembly_, std::unique_ptr<BoundExpression>&& condition_, std::unique_ptr<BoundStatement>&& statement_ ): 
     BoundStatement(assembly_), condition(std::move(condition_)), statement(std::move(statement_))
 {
+    statement->SetParent(this);
 }
 
 void BoundWhileStatement::Accept(BoundNodeVisitor& visitor)
@@ -58,6 +77,7 @@ void BoundWhileStatement::Accept(BoundNodeVisitor& visitor)
 BoundDoStatement::BoundDoStatement(Assembly& assembly_, std::unique_ptr<BoundStatement>&& statement_, std::unique_ptr<BoundExpression>&& condition_) : 
     BoundStatement(assembly_), statement(std::move(statement_)), condition(std::move(condition_))
 {
+    statement->SetParent(this);
 }
 
 void BoundDoStatement::Accept(BoundNodeVisitor& visitor)
@@ -68,9 +88,30 @@ void BoundDoStatement::Accept(BoundNodeVisitor& visitor)
 BoundForStatement::BoundForStatement(Assembly& assembly_, std::unique_ptr<BoundStatement>&& initS_, std::unique_ptr<BoundExpression>&& condition_, std::unique_ptr<BoundStatement>&& loopS_,
     std::unique_ptr<BoundStatement>&& actionS_) : BoundStatement(assembly_), initS(std::move(initS_)), condition(std::move(condition_)), loopS(std::move(loopS_)), actionS(std::move(actionS_))
 {
+    initS->SetParent(this);
+    loopS->SetParent(this);
+    actionS->SetParent(this);
 }
 
 void BoundForStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundBreakStatement::BoundBreakStatement(Assembly& assembly_) : BoundStatement(assembly_)
+{
+}
+
+void BoundBreakStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundContinueStatement::BoundContinueStatement(Assembly& assembly_) : BoundStatement(assembly_)
+{
+}
+
+void BoundContinueStatement::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
 }

@@ -33,8 +33,10 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     SetOwner(0);
     keywords0.push_back("abstract");
     keywords0.push_back("bool");
+    keywords0.push_back("break");
     keywords0.push_back("byte");
     keywords0.push_back("char");
+    keywords0.push_back("continue");
     keywords0.push_back("do");
     keywords0.push_back("double");
     keywords0.push_back("else");

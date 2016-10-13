@@ -95,6 +95,8 @@ public:
     void Accept(Visitor& visitor) override;
     Node* Condition() const { return condition.get(); }
     StatementNode* Statement() const { return statement.get(); }
+    bool IsBreakEnclosingStatementNode() const override { return true; }
+    bool IsContinueEnclosingStatementNode() const override { return true; }
 private:
     std::unique_ptr<Node> condition;
     std::unique_ptr<StatementNode> statement;
@@ -110,6 +112,8 @@ public:
     void Accept(Visitor& visitor) override;
     StatementNode* Statement() const { return statement.get(); }
     Node* Condition() const { return condition.get(); }
+    bool IsBreakEnclosingStatementNode() const override { return true; }
+    bool IsContinueEnclosingStatementNode() const override { return true; }
 private:
     std::unique_ptr<StatementNode> statement;
     std::unique_ptr<Node> condition;
@@ -127,11 +131,31 @@ public:
     Node* Condition() const { return condition.get(); }
     StatementNode* LoopS() const { return loopS.get(); }
     StatementNode* ActionS() const { return actionS.get(); }
+    bool IsBreakEnclosingStatementNode() const override { return true; }
+    bool IsContinueEnclosingStatementNode() const override { return true; }
 private:
     std::unique_ptr<StatementNode> initS;
     std::unique_ptr<Node> condition;
     std::unique_ptr<StatementNode> loopS;
     std::unique_ptr<StatementNode> actionS;
+};
+
+class BreakStatementNode : public StatementNode
+{
+public:
+    BreakStatementNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::breakStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+};
+
+class ContinueStatementNode : public StatementNode
+{
+public:
+    ContinueStatementNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::continueStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
 };
 
 class ConstructionStatementNode : public StatementNode

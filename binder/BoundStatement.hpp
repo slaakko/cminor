@@ -12,10 +12,17 @@ namespace cminor { namespace binder {
 
 using namespace cminor::symbols;
 
+class BoundCompoundStatement;
+
 class BoundStatement : public BoundNode
 {
 public:
     BoundStatement(Assembly& assembly_);
+    void SetParent(BoundStatement* parent_) { parent = parent_; }
+    BoundStatement* Parent() const { return parent; }
+    BoundCompoundStatement* Block() const;
+private:
+    BoundStatement* parent;
 };
 
 class BoundCompoundStatement : public BoundStatement
@@ -92,6 +99,20 @@ private:
     std::unique_ptr<BoundExpression> condition;
     std::unique_ptr<BoundStatement> loopS;
     std::unique_ptr<BoundStatement> actionS;
+};
+
+class BoundBreakStatement : public BoundStatement
+{
+public:
+    BoundBreakStatement(Assembly& assembly_);
+    void Accept(BoundNodeVisitor& visitor) override;
+};
+
+class BoundContinueStatement : public BoundStatement
+{
+public:
+    BoundContinueStatement(Assembly& assembly_);
+    void Accept(BoundNodeVisitor& visitor) override;
 };
 
 class BoundConstructionStatement : public BoundStatement

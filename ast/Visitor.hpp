@@ -78,6 +78,8 @@ class IfStatementNode;
 class WhileStatementNode;
 class DoStatementNode;
 class ForStatementNode;
+class BreakStatementNode;
+class ContinueStatementNode;
 class ConstructionStatementNode;
 class AssignmentStatementNode;
 class ExpressionStatementNode;
@@ -159,6 +161,8 @@ public:
     virtual void Visit(WhileStatementNode& whileStatementNode) {}
     virtual void Visit(DoStatementNode& doStatementNode) {}
     virtual void Visit(ForStatementNode& forStatementNode) {}
+    virtual void Visit(BreakStatementNode& breakStatementNode) {}
+    virtual void Visit(ContinueStatementNode& continueStatementNode) {}
     virtual void Visit(ConstructionStatementNode& constructionStatementNode) {}
     virtual void Visit(AssignmentStatementNode& assignmentStatementNode) {}
     virtual void Visit(ExpressionStatementNode& expressionStatementNode) {}

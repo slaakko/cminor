@@ -1,5 +1,5 @@
-#ifndef Statement_hpp_28292
-#define Statement_hpp_28292
+#ifndef Statement_hpp_31133
+#define Statement_hpp_31133
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -32,6 +32,8 @@ private:
     class ForStatementRule;
     class ForInitStatementRule;
     class ForLoopExpressionStatementRule;
+    class BreakStatementRule;
+    class ContinueStatementRule;
     class AssignmentExpressionStatementRule;
     class AssignmentStatementRule;
     class ConstructionStatementRule;
@@ -45,4 +47,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Statement_hpp_28292
+#endif // Statement_hpp_31133

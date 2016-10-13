@@ -1,11 +1,8 @@
-int main()
+void main()
 {
-    for (int i = 0; i < 10; ++i)
+    do
     {
-        if (i == 5)
-        {
-            return 1;
-        }
+        break;
     }
-    return 0;
+    while (true);
 }

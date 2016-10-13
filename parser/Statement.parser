@@ -53,6 +53,8 @@ namespace cminor.parser
             |   WhileStatement(ctx){ value = WhileStatement; }
             |   DoStatement(ctx){ value = DoStatement; }
             |   ForStatement(ctx){ value = ForStatement; }
+            |   BreakStatement(ctx){ value = BreakStatement; }
+            |   ContinueStatement(ctx){ value = ContinueStatement; }
             ;
 
         CompoundStatement(ParsingContext* ctx) : CompoundStatementNode*
@@ -96,6 +98,14 @@ namespace cminor.parser
             |   DecrementExpressionStatement(ctx){ value = DecrementExpressionStatement; }
             |   AssignmentExpressionStatement(ctx){ value = AssignmentExpressionStatement; }
             |   empty{ value = new EmptyStatementNode(span); }
+            ;
+
+        BreakStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("break") ';'!){ value = new BreakStatementNode(span); }
+            ;
+
+        ContinueStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("continue") ';'!){ value = new ContinueStatementNode(span); }
             ;
 
         AssignmentExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr) : StatementNode*

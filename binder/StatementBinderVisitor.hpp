@@ -30,6 +30,8 @@ public:
     void Visit(WhileStatementNode& whileStatementNode) override;
     void Visit(DoStatementNode& doStatementNode) override;
     void Visit(ForStatementNode& forStatementNode) override;
+    void Visit(BreakStatementNode& breakStatementNode) override;
+    void Visit(ContinueStatementNode& continueStatementNode) override;
     void Visit(ConstructionStatementNode& constructionStatementNode) override;
     void Visit(AssignmentStatementNode& assignmentStatementNode) override;
     void Visit(ExpressionStatementNode& expressionStatementNode) override;

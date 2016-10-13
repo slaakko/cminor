@@ -275,6 +275,34 @@ void StatementBinderVisitor::Visit(ForStatementNode& forStatementNode)
         std::unique_ptr<BoundStatement>(actionS)));
 }
 
+void StatementBinderVisitor::Visit(BreakStatementNode& breakStatementNode)
+{
+    Node* parent = breakStatementNode.Parent();
+    while (parent && !parent->IsBreakEnclosingStatementNode())
+    {
+        parent = parent->Parent();
+    }
+    if (!parent)
+    {
+        throw Exception("break statement must be enclosed in while, do, for, foreach or switch statement", breakStatementNode.GetSpan());
+    }
+    statement.reset(new BoundBreakStatement(boundCompileUnit.GetAssembly()));
+}
+
+void StatementBinderVisitor::Visit(ContinueStatementNode& continueStatementNode)
+{
+    Node* parent = continueStatementNode.Parent();
+    while (parent && !parent->IsContinueEnclosingStatementNode())
+    {
+        parent = parent->Parent();
+    }
+    if (!parent)
+    {
+        throw Exception("continue statement must be enclosed in while, do, for or foreach statement", continueStatementNode.GetSpan());
+    }
+    statement.reset(new BoundContinueStatement(boundCompileUnit.GetAssembly()));
+}
+
 void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatementNode)
 {
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(constructionStatementNode);

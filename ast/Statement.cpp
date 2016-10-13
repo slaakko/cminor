@@ -267,6 +267,34 @@ void ForStatementNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+BreakStatementNode::BreakStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+Node* BreakStatementNode::Clone(CloneContext& cloneContext) const
+{
+    return new BreakStatementNode(GetSpan());
+}
+
+void BreakStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+ContinueStatementNode::ContinueStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+Node* ContinueStatementNode::Clone(CloneContext& cloneContext) const
+{
+    return new ContinueStatementNode(GetSpan());
+}
+
+void ContinueStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 ExpressionStatementNode::ExpressionStatementNode(const Span& span_) : StatementNode(span_)
 {
 }

@@ -22,8 +22,8 @@ enum class NodeType : uint8_t
     disjunctionNode, conjunctionNode, bitOrNode, bitXorNode, bitAndNode, equalNode, notEqualNode, lessNode, greaterNode, lessOrEqualNode, greaterOrEqualNode,
     shiftLeftNode, shiftRightNode, addNode, subNode, mulNode, divNode, remNode, notNode, unaryPlusNode, unaryMinusNode, complementNode, isNode, asNode, dotNode,
     labelNode,
-    compoundStatementNode, returnStatementNode, ifStatementNode, whileStatementNode, doStatementNode, forStatementNode, constructionStatementNode, assignmentStatementNode, 
-    expressionStatementNode, emptyStatementNode, incrementStatementNode, decrementStatementNode,
+    compoundStatementNode, returnStatementNode, ifStatementNode, whileStatementNode, doStatementNode, forStatementNode, breakStatementNode, continueStatementNode, 
+    constructionStatementNode, assignmentStatementNode, expressionStatementNode, emptyStatementNode, incrementStatementNode, decrementStatementNode,
     maxNode
 };
 
@@ -45,6 +45,8 @@ public:
     void SetParent(Node* parent_) { parent = parent_; }
     virtual void AddArgument(Node* argument);
     virtual void AddParameter(ParameterNode* parameter);
+    virtual bool IsBreakEnclosingStatementNode() const { return false; }
+    virtual bool IsContinueEnclosingStatementNode() const { return false; }
 private:
     Span span;
     Node* parent;
