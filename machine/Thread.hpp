@@ -43,6 +43,7 @@ private:
     std::atomic_bool paused;
     std::atomic_bool sleeping;
     std::condition_variable pausedCond;
+    void RunToEnd();
 };
 
 } } // namespace cminor::machine

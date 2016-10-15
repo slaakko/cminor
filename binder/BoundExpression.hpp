@@ -112,6 +112,18 @@ public:
     void Accept(BoundNodeVisitor& visitor) override;
 };
 
+class BoundFunctionGroupExpression : public BoundExpression
+{
+public:
+    BoundFunctionGroupExpression(Assembly& assembly_, FunctionGroupSymbol* functionGroupSymbol_);
+    FunctionGroupSymbol* FunctionGroup() const { return functionGroupSymbol; }
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    FunctionGroupSymbol* functionGroupSymbol;
+};
+
 class BoundFunctionCall : public BoundExpression
 {
 public:

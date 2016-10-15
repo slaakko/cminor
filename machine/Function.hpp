@@ -23,8 +23,9 @@ class Function
 {
 public:
     Function();
-    Function(Constant fullName_, int32_t id_, ConstantPool* constantPool_);
-    Constant FullName() const { return fullName; }
+    Function(Constant callName_, Constant friendlyName_, int32_t id_, ConstantPool* constantPool_);
+    Constant CallName() const { return callName; }
+    Constant FriendlyName() const { return friendlyName; }
     int32_t Id() const { return id; }
     ConstantPool& GetConstantPool() { Assert(constantPool, "constant pool not set"); return *constantPool; }
     void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
@@ -43,7 +44,8 @@ public:
     void SetEmitter(Emitter* emitter_) { emitter = emitter_; }
     Emitter* GetEmitter() const { return emitter; }
 private:
-    Constant fullName;
+    Constant callName;
+    Constant friendlyName;
     int32_t id;
     ConstantPool* constantPool;
     std::vector<std::unique_ptr<Instruction>> instructions;
@@ -60,7 +62,7 @@ public:
     FunctionTable();
     static FunctionTable& Instance() { Assert(instance, "function table not initialized");  return *instance; }
     void AddFunction(Function* fun);
-    Function* GetFunction(StringPtr functionFullName) const;
+    Function* GetFunction(StringPtr functionCallName) const;
     Function* GetMain() const { return main; }
 private:
     static std::unique_ptr<FunctionTable> instance;

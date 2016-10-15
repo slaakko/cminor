@@ -86,7 +86,7 @@ public:
     void SetSpan(const Span& span_) { span = span_; }
     StringPtr Name() const;
     void SetName(StringPtr newName);
-    utf32_string FullName() const;
+    virtual utf32_string FullName() const;
     Constant NameConstant() const { return name; }
     SymbolAccess Access() const { return SymbolAccess(flags & SymbolFlags::access); }
     virtual SymbolAccess DeclaredAccess() const { return Access(); }
@@ -419,6 +419,7 @@ private:
     std::unordered_map<Node*, Symbol*> nodeSymbolMap;
     ConversionTable conversionTable;
     int declarationBlockId;
+    bool doNotAddTypes;
 };
 
 class SymbolCreator
@@ -445,7 +446,7 @@ private:
 void InitSymbol();
 void DoneSymbol();
 
-std::unique_ptr<Assembly> CreateSystemAssembly(Machine& machine_, const std::string& config);
+std::unique_ptr<Assembly> CreateSystemCoreAssembly(Machine& machine_, const std::string& config);
 
 } } // namespace cminor::symbols
 

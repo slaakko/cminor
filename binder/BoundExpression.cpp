@@ -251,6 +251,25 @@ void BoundTypeExpression::Accept(BoundNodeVisitor& visitor)
     throw std::runtime_error("cannot visit bound type expression");
 }
 
+BoundFunctionGroupExpression::BoundFunctionGroupExpression(Assembly& assembly_, FunctionGroupSymbol* functionGroupSymbol_) : BoundExpression(assembly_, nullptr), functionGroupSymbol(functionGroupSymbol_)
+{
+}
+
+void BoundFunctionGroupExpression::GenLoad(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot load from function group");
+}
+
+void BoundFunctionGroupExpression::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to function group");
+}
+
+void BoundFunctionGroupExpression::Accept(BoundNodeVisitor& visitor)
+{
+    throw std::runtime_error("cannot visit bound function group");
+}
+
 BoundFunctionCall::BoundFunctionCall(Assembly& assembly_, FunctionSymbol* functionSymbol_) : BoundExpression(assembly_, functionSymbol_->ReturnType()), functionSymbol(functionSymbol_)
 {
 }

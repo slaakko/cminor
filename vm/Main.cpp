@@ -28,9 +28,11 @@ struct InitDone
         FileRegistry::Init();
         FunctionTable::Init();
         InitSymbol();
+        InitAssembly();
     }
     ~InitDone()
     {
+        DoneAssembly();
         DoneSymbol();
     }
 };
@@ -40,7 +42,7 @@ const char* version = "0.0.1";
 void PrintHelp()
 {
     std::cout << "Cminor virtual machine version " << version << "\n\n" <<
-        "Usage: cminorvm [options] program[.cminora] [arguments]\n" <<
+        "Usage: cminorvm [options] program.cminora [arguments]\n" <<
         "Run program.cminora with given arguments.\n" <<
         "Options:\n" <<
         "-h | --help     : print this help message" <<
@@ -107,22 +109,23 @@ int main(int argc, const char** argv)
             throw std::runtime_error("no program assembly file given");
         }
         boost::filesystem::path pfp = programName;
-        if (!pfp.has_extension())
+        if (pfp.extension() != ".cminora")
         {
-            pfp.replace_extension(".cminora");
+            throw std::runtime_error("argument '" + pfp.generic_string() + "' has invalid extension (not .cminora)");
         }
         std::string assemblyFilePath = GetFullPath(pfp.generic_string());
         if (!boost::filesystem::exists(pfp))
         {
             throw std::runtime_error("program assembly file '" + assemblyFilePath + "' not found");
         }
-        boost::filesystem::path pn = programName;
-        pn.replace_extension();
         Machine machine;
         Assembly assembly(machine);
+        const Assembly* rootAssembly = &assembly;
         SymbolReader symbolReader(assemblyFilePath);
         std::vector<CallInst*> callInstructions;
-        assembly.Read(symbolReader, callInstructions);
+        std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(assemblyFilePath).remove_filename().generic_string());
+        std::unordered_set<std::string> importSet;
+        assembly.Read(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions);
         Link(callInstructions);
         machine.Run();
     }

@@ -269,15 +269,18 @@ private:
     std::unique_ptr<Node> memberId;
 };
 
-class CCNode : public Node
+class InvokeNode : public UnaryNode
 {
 public:
-    CCNode(const Span& span_);
-    NodeType GetNodeType() const override { return NodeType::ccNode; }
+    InvokeNode(const Span& span_);
+    InvokeNode(const Span& span_, Node* subject_);
+    NodeType GetNodeType() const override { return NodeType::invokeNode; }
+    void AddArgument(Node* argument) override;
     Node* Clone(CloneContext& cloneContext) const override;
-    const std::string& Grave() const { return grave; }
+    void Accept(Visitor& visitor) override;
+    const NodeList<Node>& Arguments() const { return arguments; }
 private:
-    std::string grave;
+    NodeList<Node> arguments;
 };
 
 } } // namespace cminor::ast

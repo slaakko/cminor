@@ -18,10 +18,10 @@ public:
     virtual ~ProjectDeclaration();
 };
 
-class AssemblyReferenceDeclaration : public ProjectDeclaration
+class ReferenceDeclaration : public ProjectDeclaration
 {
 public:
-    AssemblyReferenceDeclaration(const std::string& filePath_);
+    ReferenceDeclaration(const std::string& filePath_);
     const std::string& FilePath() const { return filePath; }
 private:
     std::string filePath;
@@ -63,22 +63,29 @@ public:
     const std::vector<std::string>& AssemblyReferences() const { return assemblyReferences; }
     const std::vector<std::string>& SourceFilePaths() const { return sourceFilePaths; }
     Target GetTarget() const { return target; }
+    bool DependsOn(Project* that) const;
+    bool IsSystemProject() const { return isSystemProject; }
+    void SetSystemProject() { isSystemProject = true; }
 private:
     std::string name;
     std::string filePath;
     std::string config;
     Target target;
     boost::filesystem::path basePath;
-    boost::filesystem::path systemPath;
+    boost::filesystem::path systemAssemblyDir;
     std::vector<std::unique_ptr<ProjectDeclaration>> declarations;
     std::string assemblyFilePath;
+    std::vector<std::string> projectReferences;
     std::vector<std::string> assemblyReferences;
     std::vector<std::string> sourceFilePaths;
+    bool isSystemProject;
 };
 
 std::string CminorRootDir();
 std::string CminorSystemDir();
+std::string CminorSystemAssemblyDir(const std::string& config);
 std::string CminorSystemAssemblyFilePath(const std::string& config);
+std::string CminorSystemCoreAssemblyFilePath(const std::string& config);
 
 
 } } // namespace cminor::ast

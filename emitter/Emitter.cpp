@@ -53,8 +53,8 @@ private:
     BoundStatement* continueTarget;
     bool genJumpingBoolCode;
     void GenJumpingBoolCode();
-    void Backpatch(std::vector<Instruction*>* set, int32_t target);
-    void Merge(std::vector<Instruction*>* fromSet, std::vector<Instruction*>* toSet);
+    void Backpatch(std::vector<Instruction*>& set, int32_t target);
+    void Merge(std::vector<Instruction*>& fromSet, std::vector<Instruction*>& toSet);
     void ExitBlocks(BoundCompoundStatement* targetBlock);
 };
 
@@ -64,21 +64,18 @@ EmitterVisitor::EmitterVisitor(Machine& machine_) :
 {
 }
 
-void EmitterVisitor::Backpatch(std::vector<Instruction*>* set, int32_t target)
+void EmitterVisitor::Backpatch(std::vector<Instruction*>& set, int32_t target)
 {
-    Assert(set, "set not set");
-    for (Instruction* inst : *set)
+    for (Instruction* inst : set)
     {
         inst->SetTarget(target);
     }
 }
 
-void EmitterVisitor::Merge(std::vector<Instruction*>* fromSet, std::vector<Instruction*>* toSet)
+void EmitterVisitor::Merge(std::vector<Instruction*>& fromSet, std::vector<Instruction*>& toSet)
 {
-    Assert(fromSet, "set not set");
-    Assert(toSet, "set not set");
-    toSet->insert(toSet->end(), fromSet->cbegin(), fromSet->cend());
-    fromSet->clear();
+    toSet.insert(toSet.end(), fromSet.cbegin(), fromSet.cend());
+    fromSet.clear();
 }
 
 void EmitterVisitor::ExitBlocks(BoundCompoundStatement* targetBlock)
@@ -168,7 +165,7 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
         firstInstIndex = prevFirstInstIndex;
         if (statementTarget != endOfFunction)
         {
-            Backpatch(&prevNext, statementTarget);
+            Backpatch(prevNext, statementTarget);
             prevNext = std::move(next);
         }
         else
@@ -183,7 +180,7 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
     function->AddInst(std::move(exitBlockInst));
     int32_t exitBlockTarget = firstInstIndex;
     firstInstIndex = prevFirstInstIndex;
-    Backpatch(&prevNext, exitBlockTarget);
+    Backpatch(prevNext, exitBlockTarget);
     blockStack.pop_back();
 }
 
@@ -217,7 +214,7 @@ void EmitterVisitor::Visit(BoundIfStatement& boundIfStatement)
     boundIfStatement.ThenS()->Accept(*this);
     int32_t thenTarget = firstInstIndex;
     firstInstIndex = prevFirstInstIndex;
-    Backpatch(&true_, thenTarget);
+    Backpatch(true_, thenTarget);
     if (boundIfStatement.ElseS())
     {
         std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
@@ -230,7 +227,8 @@ void EmitterVisitor::Visit(BoundIfStatement& boundIfStatement)
     }
     else
     {
-        Merge(&false_, nextSet);
+        Assert(nextSet, "next set not set");
+        Merge(false_, *nextSet);
     }
     trueSet = prevTrueSet;
     falseSet = prevFalseSet;
@@ -265,14 +263,15 @@ void EmitterVisitor::Visit(BoundWhileStatement& boundWhileStatement)
     prevFirstInstIndex = firstInstIndex;
     firstInstIndex = endOfFunction;
     boundWhileStatement.Statement()->Accept(*this);
-    Backpatch(&true_, firstInstIndex);
+    Backpatch(true_, firstInstIndex);
     firstInstIndex = prevFirstInstIndex;
     std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
     inst->SetTarget(conditionTarget);
     function->AddInst(std::move(inst));
-    Backpatch(&continue_, conditionTarget);
-    Merge(&false_, nextSet);
-    Merge(&break_, nextSet);
+    Backpatch(continue_, conditionTarget);
+    Assert(nextSet, "next set not set");
+    Merge(false_, *nextSet);
+    Merge(break_, *nextSet);
     trueSet = prevTrueSet;
     falseSet = prevFalseSet;
     breakSet = prevBreakSet;
@@ -312,10 +311,11 @@ void EmitterVisitor::Visit(BoundDoStatement& boundDoStatement)
     int32_t conditionTarget = firstInstIndex;
     firstInstIndex = prevFirstInstIndex;
     genJumpingBoolCode = prevGenJumpingBoolCode;
-    Backpatch(&true_, statementTarget);
-    Backpatch(&continue_, conditionTarget);
-    Merge(&false_, nextSet);
-    Merge(&break_, nextSet);
+    Backpatch(true_, statementTarget);
+    Backpatch(continue_, conditionTarget);
+    Assert(nextSet, "next set not set");
+    Merge(false_, *nextSet);
+    Merge(break_, *nextSet);
     trueSet = prevTrueSet;
     falseSet = prevFalseSet;
     breakSet = prevBreakSet;
@@ -356,18 +356,19 @@ void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
     boundForStatement.ActionS()->Accept(*this);
     int32_t actionTarget = firstInstIndex;
     firstInstIndex = prevFirstInstIndex;
-    Backpatch(&true_, actionTarget);
+    Backpatch(true_, actionTarget);
     prevFirstInstIndex = firstInstIndex;
     firstInstIndex = endOfFunction;
     boundForStatement.LoopS()->Accept(*this);
     int32_t loopTarget = firstInstIndex;
     firstInstIndex = prevFirstInstIndex;
-    Backpatch(&continue_, loopTarget);
+    Backpatch(continue_, loopTarget);
     std::unique_ptr<Instruction> jumpToCond = machine.CreateInst("jump");
     jumpToCond->SetTarget(conditionTarget);
     function->AddInst(std::move(jumpToCond));
-    Merge(&false_, nextSet);
-    Merge(&break_, nextSet);
+    Assert(nextSet, "next set not set");
+    Merge(false_, *nextSet);
+    Merge(break_, *nextSet);
     trueSet = prevTrueSet;
     falseSet = prevFalseSet;
     breakSet = prevBreakSet;

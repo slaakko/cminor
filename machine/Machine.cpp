@@ -459,7 +459,12 @@ std::unique_ptr<Instruction> Machine::CreateInst(const std::string& instGroupNam
 std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
 {
     Instruction* inst = rootInst.Decode(reader);
-    return std::unique_ptr<Instruction>(inst->Clone());
+    Instruction* clonedInst = inst->Clone();
+    if (CallInst* callInst = dynamic_cast<CallInst*>(clonedInst))
+    {
+        reader.AddCallInst(callInst);
+    }
+    return std::unique_ptr<Instruction>(clonedInst);
 }
 
 std::pair<ArenaId, ObjectMemPtr> Machine::AllocateMemory(Thread& thread, uint64_t blockSize)

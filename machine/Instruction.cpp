@@ -376,13 +376,13 @@ CallInst::CallInst() : Instruction("call")
 {
 }
 
-void CallInst::SetFunctionFullName(Constant functionFullName)
+void CallInst::SetFunctionCallName(Constant functionCallName)
 {
-    Assert(functionFullName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
-    function = functionFullName;
+    Assert(functionCallName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    function = functionCallName;
 }
 
-StringPtr CallInst::GetFunctionFullName() const
+StringPtr CallInst::GetFunctionCallName() const
 {
     Assert(function.Value().GetType() == ValueType::stringLiteral, "string literal expected");
     return StringPtr(function.Value().AsStringLiteral());
@@ -390,7 +390,7 @@ StringPtr CallInst::GetFunctionFullName() const
 
 void CallInst::SetFunction(Function* fun)
 {
-    function = Constant(IntegralValue(fun));
+    function.SetValue(IntegralValue(fun));
 }
 
 void CallInst::Encode(Writer& writer)
@@ -406,7 +406,6 @@ Instruction* CallInst::Decode(Reader& reader)
     Instruction::Decode(reader);
     ConstantId id = reader.GetInt();
     function = reader.GetConstantPool()->GetConstant(id);
-    reader.AddCallInst(this);
     return this;
 }
 
@@ -415,6 +414,14 @@ void CallInst::Execute(Frame& frame)
     Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
     Function* fun = function.Value().AsFunctionPtr();
     frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *fun));
+}
+
+void CallInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
+    Function* fun = function.Value().AsFunctionPtr();
+    formatter.Write(" " + ToUtf8(fun->CallName().Value().AsStringLiteral()));
 }
 
 } } // namespace cminor::machine

@@ -155,8 +155,15 @@ public:
     }
     virtual void Link()
     {
+        Cm::Parsing::NonterminalParser* usingDirectivesNonterminalParser = GetNonterminal("UsingDirectives");
+        usingDirectivesNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<NamespaceContentRule>(this, &NamespaceContentRule::PreUsingDirectives));
         Cm::Parsing::NonterminalParser* definitionsNonterminalParser = GetNonterminal("Definitions");
         definitionsNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<NamespaceContentRule>(this, &NamespaceContentRule::PreDefinitions));
+    }
+    void PreUsingDirectives(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<NamespaceNode*>(context.ns)));
     }
     void PreDefinitions(Cm::Parsing::ObjectStack& stack)
     {
@@ -171,6 +178,253 @@ private:
         ParsingContext* ctx;
         CompileUnitNode* compileUnit;
         NamespaceNode* ns;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class CompileUnitGrammar::UsingDirectivesRule : public Cm::Parsing::Rule
+{
+public:
+    UsingDirectivesRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        AddInheritedAttribute(AttrOrVariable("NamespaceNode*", "ns"));
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ns_value = std::move(stack.top());
+        context.ns = *static_cast<Cm::Parsing::ValueObject<NamespaceNode*>*>(ns_value.get());
+        stack.pop();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::NonterminalParser* usingDirectiveNonterminalParser = GetNonterminal("UsingDirective");
+        usingDirectiveNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<UsingDirectivesRule>(this, &UsingDirectivesRule::PreUsingDirective));
+    }
+    void PreUsingDirective(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<NamespaceNode*>(context.ns)));
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), ns() {}
+        ParsingContext* ctx;
+        NamespaceNode* ns;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class CompileUnitGrammar::UsingDirectiveRule : public Cm::Parsing::Rule
+{
+public:
+    UsingDirectiveRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        AddInheritedAttribute(AttrOrVariable("NamespaceNode*", "ns"));
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ns_value = std::move(stack.top());
+        context.ns = *static_cast<Cm::Parsing::ValueObject<NamespaceNode*>*>(ns_value.get());
+        stack.pop();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<UsingDirectiveRule>(this, &UsingDirectiveRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<UsingDirectiveRule>(this, &UsingDirectiveRule::A1Action));
+        Cm::Parsing::NonterminalParser* usingAliasDirectiveNonterminalParser = GetNonterminal("UsingAliasDirective");
+        usingAliasDirectiveNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<UsingDirectiveRule>(this, &UsingDirectiveRule::PostUsingAliasDirective));
+        Cm::Parsing::NonterminalParser* usingNamespaceDirectiveNonterminalParser = GetNonterminal("UsingNamespaceDirective");
+        usingNamespaceDirectiveNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<UsingDirectiveRule>(this, &UsingDirectiveRule::PostUsingNamespaceDirective));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.ns->AddMember(context.fromUsingAliasDirective);
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.ns->AddMember(context.fromUsingNamespaceDirective);
+    }
+    void PostUsingAliasDirective(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromUsingAliasDirective_value = std::move(stack.top());
+            context.fromUsingAliasDirective = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromUsingAliasDirective_value.get());
+            stack.pop();
+        }
+    }
+    void PostUsingNamespaceDirective(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromUsingNamespaceDirective_value = std::move(stack.top());
+            context.fromUsingNamespaceDirective = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromUsingNamespaceDirective_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), ns(), fromUsingAliasDirective(), fromUsingNamespaceDirective() {}
+        ParsingContext* ctx;
+        NamespaceNode* ns;
+        Node* fromUsingAliasDirective;
+        Node* fromUsingNamespaceDirective;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class CompileUnitGrammar::UsingAliasDirectiveRule : public Cm::Parsing::Rule
+{
+public:
+    UsingAliasDirectiveRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        SetValueTypeName("Node*");
+        AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "id"));
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<UsingAliasDirectiveRule>(this, &UsingAliasDirectiveRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<UsingAliasDirectiveRule>(this, &UsingAliasDirectiveRule::A1Action));
+        Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<UsingAliasDirectiveRule>(this, &UsingAliasDirectiveRule::PostIdentifier));
+        Cm::Parsing::NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
+        qualifiedIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<UsingAliasDirectiveRule>(this, &UsingAliasDirectiveRule::PostQualifiedId));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new AliasNode(span, context.id.release(), context.fromQualifiedId);
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.id.reset(context.fromIdentifier);
+    }
+    void PostIdentifier(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromIdentifier_value = std::move(stack.top());
+            context.fromIdentifier = *static_cast<Cm::Parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
+            stack.pop();
+        }
+    }
+    void PostQualifiedId(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromQualifiedId_value = std::move(stack.top());
+            context.fromQualifiedId = *static_cast<Cm::Parsing::ValueObject<IdentifierNode*>*>(fromQualifiedId_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): value(), id(), fromIdentifier(), fromQualifiedId() {}
+        Node* value;
+        std::unique_ptr<IdentifierNode> id;
+        IdentifierNode* fromIdentifier;
+        IdentifierNode* fromQualifiedId;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class CompileUnitGrammar::UsingNamespaceDirectiveRule : public Cm::Parsing::Rule
+{
+public:
+    UsingNamespaceDirectiveRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        SetValueTypeName("Node*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<UsingNamespaceDirectiveRule>(this, &UsingNamespaceDirectiveRule::A0Action));
+        Cm::Parsing::NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
+        qualifiedIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<UsingNamespaceDirectiveRule>(this, &UsingNamespaceDirectiveRule::PostQualifiedId));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new NamespaceImportNode(span, context.fromQualifiedId);
+    }
+    void PostQualifiedId(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromQualifiedId_value = std::move(stack.top());
+            context.fromQualifiedId = *static_cast<Cm::Parsing::ValueObject<IdentifierNode*>*>(fromQualifiedId_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): value(), fromQualifiedId() {}
+        Node* value;
+        IdentifierNode* fromQualifiedId;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -514,6 +768,7 @@ void CompileUnitGrammar::GetReferencedGrammars()
 
 void CompileUnitGrammar::CreateRules()
 {
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Function", this, "FunctionGrammar.Function"));
@@ -523,7 +778,41 @@ void CompileUnitGrammar::CreateRules()
                 new Cm::Parsing::EmptyParser()),
             new Cm::Parsing::NonterminalParser("NamespaceContent", "NamespaceContent", 3))));
     AddRule(new NamespaceContentRule("NamespaceContent", GetScope(),
-        new Cm::Parsing::NonterminalParser("Definitions", "Definitions", 3)));
+        new Cm::Parsing::SequenceParser(
+            new Cm::Parsing::NonterminalParser("UsingDirectives", "UsingDirectives", 2),
+            new Cm::Parsing::NonterminalParser("Definitions", "Definitions", 3))));
+    AddRule(new UsingDirectivesRule("UsingDirectives", GetScope(),
+        new Cm::Parsing::KleeneStarParser(
+            new Cm::Parsing::NonterminalParser("UsingDirective", "UsingDirective", 2))));
+    AddRule(new UsingDirectiveRule("UsingDirective", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::ActionParser("A0",
+                new Cm::Parsing::NonterminalParser("UsingAliasDirective", "UsingAliasDirective", 0)),
+            new Cm::Parsing::ActionParser("A1",
+                new Cm::Parsing::NonterminalParser("UsingNamespaceDirective", "UsingNamespaceDirective", 0)))));
+    AddRule(new UsingAliasDirectiveRule("UsingAliasDirective", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::KeywordParser("using"),
+                            new Cm::Parsing::ActionParser("A1",
+                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                        new Cm::Parsing::CharParser('=')),
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::NonterminalParser("QualifiedId", "QualifiedId", 0))),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser(';'))))));
+    AddRule(new UsingNamespaceDirectiveRule("UsingNamespaceDirective", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::KeywordParser("using"),
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::NonterminalParser("QualifiedId", "QualifiedId", 0))),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser(';'))))));
     AddRule(new DefinitionsRule("Definitions", GetScope(),
         new Cm::Parsing::KleeneStarParser(
             new Cm::Parsing::ActionParser("A0",

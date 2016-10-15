@@ -1,5 +1,5 @@
-#ifndef ProjectFile_hpp_27058
-#define ProjectFile_hpp_27058
+#ifndef ProjectFile_hpp_31032
+#define ProjectFile_hpp_31032
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -20,7 +20,7 @@ private:
     virtual void GetReferencedGrammars();
     class ProjectRule;
     class DeclarationRule;
-    class AssemblyReferenceDeclarationRule;
+    class ReferenceDeclarationRule;
     class SourceFileDeclarationRule;
     class TargetDeclarationRule;
     class TargetRule;
@@ -29,4 +29,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // ProjectFile_hpp_27058
+#endif // ProjectFile_hpp_31032

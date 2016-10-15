@@ -13,20 +13,23 @@ Emitter::~Emitter()
 {
 }
 
-Function::Function() : fullName(), id(-1), numLocals(0), numParameters(0), constantPool(nullptr), isMain(false), emitter(nullptr)
+Function::Function() : callName(), friendlyName(), id(-1), numLocals(0), numParameters(0), constantPool(nullptr), isMain(false), emitter(nullptr)
 {
 }
 
-Function::Function(Constant fullName_, int32_t id_, ConstantPool* constantPool_) : 
-    fullName(fullName_), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false), emitter(nullptr)
+Function::Function(Constant callName_, Constant friendlyName_, int32_t id_, ConstantPool* constantPool_) : 
+    callName(callName_), friendlyName(friendlyName_), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false), emitter(nullptr)
 {
 }
 
 void Function::Write(Writer& writer)
 {
-    ConstantId fullNameId = writer.GetConstantPool()->GetIdFor(fullName);
-    Assert(fullNameId != noConstantId, "got no constant id");
-    fullNameId.Write(writer);
+    ConstantId callNameId = constantPool->GetIdFor(callName);
+    Assert(callNameId != noConstantId, "got no constant id");
+    callNameId.Write(writer);
+    ConstantId friendlyNameId = constantPool->GetIdFor(friendlyName);
+    Assert(friendlyNameId != noConstantId, "got no constant id");
+    friendlyNameId.Write(writer);
     writer.Put(id);
     int32_t n = static_cast<int32_t>(instructions.size());
     writer.Put(n);
@@ -42,9 +45,12 @@ void Function::Write(Writer& writer)
 void Function::Read(Reader& reader)
 {
     constantPool = reader.GetConstantPool();
-    ConstantId fullNameId;
-    fullNameId.Read(reader);
-    fullName = constantPool->GetConstant(fullNameId);
+    ConstantId callNameId;
+    callNameId.Read(reader);
+    callName = constantPool->GetConstant(callNameId);
+    ConstantId friendlyNameId;
+    friendlyNameId.Read(reader);
+    friendlyName = constantPool->GetConstant(friendlyNameId);
     id = reader.GetInt();
     int32_t n = reader.GetInt();
     for (int32_t i = 0; i < n; ++i)
@@ -80,7 +86,7 @@ void Function::AddInst(std::unique_ptr<Instruction>&& inst)
 
 void Function::Dump(CodeFormatter& formatter)
 {
-    formatter.WriteLine(ToUtf8(fullName.Value().AsStringLiteral()));
+    formatter.WriteLine(ToUtf8(callName.Value().AsStringLiteral()) + " [" + ToUtf8(friendlyName.Value().AsStringLiteral()) + "]");
     formatter.WriteLine("{");
     formatter.IncIndent();
     int32_t n = static_cast<int32_t>(instructions.size());
@@ -113,15 +119,15 @@ FunctionTable::FunctionTable() : main(nullptr)
 
 void FunctionTable::AddFunction(Function* fun)
 {
-    StringPtr functionFullName = fun->FullName().Value().AsStringLiteral();
-    auto it = functionMap.find(functionFullName);
+    StringPtr functionCallName = fun->CallName().Value().AsStringLiteral();
+    auto it = functionMap.find(functionCallName);
     if (it != functionMap.cend())
     {
-        throw std::runtime_error("function '" + ToUtf8(functionFullName.Value()) + "' already added to function table");
+        throw std::runtime_error("function '" + ToUtf8(functionCallName.Value()) + "' already added to function table");
     }
     else
     {
-        functionMap[functionFullName] = fun;
+        functionMap[functionCallName] = fun;
     }
     if (fun->IsMain())
     {
@@ -136,16 +142,16 @@ void FunctionTable::AddFunction(Function* fun)
     }
 }
 
-Function* FunctionTable::GetFunction(StringPtr functionFullName) const
+Function* FunctionTable::GetFunction(StringPtr functionCallName) const
 {
-    auto it = functionMap.find(functionFullName);
+    auto it = functionMap.find(functionCallName);
     if (it != functionMap.cend())
     {
         return it->second;
     }
     else
     {
-        throw std::runtime_error("function '" + ToUtf8(functionFullName.Value()) + "' not found from function table");
+        throw std::runtime_error("function '" + ToUtf8(functionCallName.Value()) + "' not found from function table");
     }
 }
 

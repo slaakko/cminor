@@ -53,6 +53,16 @@ void TypeBinderVisitor::Visit(FunctionNode& functionNode)
     FunctionSymbol* functionSymbol = dynamic_cast<FunctionSymbol*>(symbol);
     Assert(functionSymbol, "function symbol expected");
     containerScope = functionSymbol->GetContainerScope();
+    int n = functionNode.Parameters().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        ParameterNode* parameterNode = functionNode.Parameters()[i];
+        TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
+        Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
+        ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
+        Assert(parameterSymbol, "parameter symbol expected");
+        parameterSymbol->SetType(parameterType);
+    }
     TypeSymbol* returnType = ResolveType(boundCompileUnit, containerScope, functionNode.ReturnTypeExpr());
     functionSymbol->SetReturnType(returnType);
     functionSymbol->ComputeName();

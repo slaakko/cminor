@@ -87,10 +87,6 @@ void FunctionSymbol::EmplaceType(TypeSymbol* type, int index)
 void FunctionSymbol::ComputeName()
 {
     utf32_string name;
-    if (ReturnType())
-    {
-        name.append(ReturnType()->FullName()).append(1, U' ');
-    }
     name.append(GroupName().Value());
     name.append(1, U'(');
     int n = int(Parameters().size());
@@ -107,6 +103,62 @@ void FunctionSymbol::ComputeName()
     }
     name.append(1, U')');
     SetName(StringPtr(name.c_str()));
+}
+
+utf32_string FunctionSymbol::FullName() const
+{
+    utf32_string fullName;
+    utf32_string parentFullName = Parent()->FullName();
+    fullName.append(parentFullName);
+    if (!parentFullName.empty())
+    {
+        fullName.append(1, U'.');
+    }
+    fullName.append(GroupName().Value());
+    fullName.append(1, U'(');
+    int n = int(Parameters().size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            fullName.append(U", ");
+        }
+        ParameterSymbol* parameter = Parameters()[i];
+        fullName.append(parameter->GetType()->FullName());
+    }
+    fullName.append(1, U')');
+    return fullName;
+}
+
+utf32_string FunctionSymbol::FriendlyName() const
+{
+    utf32_string friendlyName;
+    if (returnType)
+    {
+        friendlyName.append(returnType->FullName()).append(1, U' ');
+    }
+    utf32_string parentFullName = Parent()->FullName();
+    friendlyName.append(parentFullName);
+    if (!parentFullName.empty())
+    {
+        friendlyName.append(1, U'.');
+    }
+    friendlyName.append(GroupName().Value());
+    friendlyName.append(1, U'(');
+    int n = int(Parameters().size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            friendlyName.append(U", ");
+        }
+        ParameterSymbol* parameter = Parameters()[i];
+        friendlyName.append(parameter->GetType()->FullName());
+        friendlyName.append(1, U' ');
+        friendlyName.append(utf32_string(parameter->Name().Value()));
+    }
+    friendlyName.append(1, U')');
+    return friendlyName;
 }
 
 void FunctionSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
@@ -136,10 +188,10 @@ void FunctionSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function
     }
     std::unique_ptr<Instruction> inst = machine.CreateInst("call");
     CallInst* callInst = dynamic_cast<CallInst*>(inst.get());
-    utf32_string fullName = FullName();
+    utf32_string callName = FullName();
     ConstantPool& constantPool = assembly.GetConstantPool();
-    Constant fullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
-    callInst->SetFunctionFullName(fullNameConstant);
+    Constant callNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(callName.c_str())));
+    callInst->SetFunctionCallName(callNameConstant);
     function.AddInst(std::move(inst));
 }
 

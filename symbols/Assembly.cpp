@@ -9,12 +9,57 @@
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/ast/Project.hpp>
 #include <boost/filesystem.hpp>
+#include <Cm.Util/Path.hpp>
 
 namespace cminor { namespace symbols {
 
 using namespace cminor::ast;
+using namespace Cm::Util;
 
 const char* cminorAssemblyTag = "CMNA";
+
+class CminorSystemAssemblyNameCollection
+{
+public:
+    static void Init();
+    static void Done();
+    static CminorSystemAssemblyNameCollection& Instance() { Assert(instance, "system assembly names not set"); return *instance; }
+    bool Find(StringPtr assemblyName) const;
+private:
+    static std::unique_ptr<CminorSystemAssemblyNameCollection> instance;
+    std::vector<utf32_string> systemAssemblyNames;
+    std::unordered_set<StringPtr, StringPtrHash> systemAssemblyNameMap;
+    CminorSystemAssemblyNameCollection();
+};
+
+std::unique_ptr<CminorSystemAssemblyNameCollection> CminorSystemAssemblyNameCollection::instance;
+
+void CminorSystemAssemblyNameCollection::Init()
+{
+    instance.reset(new CminorSystemAssemblyNameCollection());
+}
+
+void CminorSystemAssemblyNameCollection::Done()
+{
+    instance.reset();
+}
+
+CminorSystemAssemblyNameCollection::CminorSystemAssemblyNameCollection()
+{
+    systemAssemblyNames.push_back(U"System");
+    systemAssemblyNames.push_back(U"System.Core");
+    systemAssemblyNames.push_back(U"System.Basic");
+    systemAssemblyNames.push_back(U"System.Collections");
+    for (const utf32_string& systemAssemblyName : systemAssemblyNames)
+    {
+        systemAssemblyNameMap.insert(StringPtr(systemAssemblyName.c_str()));
+    }
+}
+
+bool CminorSystemAssemblyNameCollection::Find(StringPtr assemblyName) const
+{
+    return systemAssemblyNameMap.find(assemblyName) != systemAssemblyNameMap.cend();
+}
 
 class AssemblyTag
 {
@@ -92,7 +137,8 @@ void Assembly::Write(SymbolWriter& writer)
     symbolTable.Write(writer);
 }
 
-void Assembly::Read(SymbolReader& reader, std::vector<CallInst*>& callInstructions)
+void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
+    std::vector<CallInst*>& callInstructions)
 {
     reader.SetMachine(machine);
     AssemblyTag defaultTag;
@@ -116,19 +162,21 @@ void Assembly::Read(SymbolReader& reader, std::vector<CallInst*>& callInstructio
     nameId.Read(reader);
     name = constantPool.GetConstant(nameId);
     machineFunctionTable.Read(reader);
-    ImportAssemblies(callInstructions);
+    ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions);
     ImportSymbolTables();
     symbolTable.Read(reader);
+    callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
 }
 
 bool Assembly::IsSystemAssembly() const
 {
-    return StringPtr(name.Value().AsStringLiteral()) == StringPtr(U"system");
+    return CminorSystemAssemblyNameCollection::Instance().Find(StringPtr(name.Value().AsStringLiteral()));
 }
 
-void Assembly::ImportAssemblies(std::vector<CallInst*>& callInstructions)
+void Assembly::ImportAssemblies(LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
+    std::vector<CallInst*>& callInstructions)
 {
-    ImportAssemblies(referenceFilePaths, callInstructions);
+    ImportAssemblies(referenceFilePaths, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions);
 }
 
 void Assembly::ImportSymbolTables()
@@ -139,19 +187,20 @@ void Assembly::ImportSymbolTables()
     }
 }
 
-void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferences, std::vector<CallInst*>& callInstructions)
+void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, 
+    std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions)
 {
-    std::unordered_set<std::string> importSet;
     std::vector<std::string> allAssemblyReferences;
     if (!IsSystemAssembly())
     {
         allAssemblyReferences.push_back(CminorSystemAssemblyFilePath(GetConfig()));
     }
     allAssemblyReferences.insert(allAssemblyReferences.end(), assemblyReferences.cbegin(), assemblyReferences.cend());
-    Import(allAssemblyReferences, importSet, callInstructions);
+    Import(allAssemblyReferences, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions);
 }
 
-void Assembly::Import(const std::vector<std::string>& assemblyReferences, std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions)
+void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, 
+    const std::string& currentAssemblyDir, std::vector<CallInst*>& callInstructions)
 {
     for (const std::string& assemblyReference : assemblyReferences)
     {
@@ -159,13 +208,85 @@ void Assembly::Import(const std::vector<std::string>& assemblyReferences, std::u
         {
             importSet.insert(assemblyReference);
             std::unique_ptr<Assembly> referencedAssembly(new Assembly(machine));
-            SymbolReader reader(assemblyReference);
+            std::string config = GetConfig();
+            boost::filesystem::path afn = boost::filesystem::path(assemblyReference).filename();
+            boost::filesystem::path afp;
+            std::string searchedDirectories;
+            if (loadType == LoadType::build)
+            {
+                if (!rootAssembly->IsSystemAssembly())
+                {
+                    afp = CminorSystemAssemblyDir(config);
+                    searchedDirectories.append("\n").append(afp.generic_string());
+                    afp /= afn;
+                    if (!boost::filesystem::exists(afp))
+                    {
+                        afp = assemblyReference;
+                        if (!boost::filesystem::exists(afp))
+                        {
+                            boost::filesystem::path ard = afp;
+                            ard.remove_filename();
+                            searchedDirectories.append("\n").append(ard.generic_string());
+                            throw std::runtime_error("Could not find assembly reference '" + afn.generic_string() + "'.\nDirectories searched:\n" + searchedDirectories);
+                        }
+                    }
+                }
+                else
+                {
+                    afp = assemblyReference;
+                    if (!boost::filesystem::exists(afp))
+                    {
+                        boost::filesystem::path ard = afp;
+                        ard.remove_filename();
+                        searchedDirectories.append(ard.generic_string());
+                        throw std::runtime_error("Could not find assembly reference '" + afn.generic_string() + "'.\nDirectories searched:\n" + searchedDirectories);
+                    }
+                }
+            }
+            else if (loadType == LoadType::execute)
+            {
+                afp = currentAssemblyDir;
+                searchedDirectories = currentAssemblyDir;
+                afp /= afn;
+                if (!boost::filesystem::exists(afp))
+                {
+                    if (!rootAssembly->IsSystemAssembly())
+                    {
+                        afp = CminorSystemAssemblyDir(config);
+                        searchedDirectories.append("\n").append(afp.generic_string());
+                        afp /= afn;
+                        if (!boost::filesystem::exists(afp))
+                        {
+                            afp = assemblyReference;
+                            if (!boost::filesystem::exists(afp))
+                            {
+                                boost::filesystem::path ard = afp;
+                                ard.remove_filename();
+                                searchedDirectories.append("\n").append(ard.generic_string());
+                                throw std::runtime_error("Could not find assembly reference '" + afn.generic_string() + "'.\nDirectories searched:\n" + searchedDirectories);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        afp = assemblyReference;
+                        if (!boost::filesystem::exists(afp))
+                        {
+                            boost::filesystem::path ard = afp;
+                            ard.remove_filename();
+                            searchedDirectories.append("\n").append(ard.generic_string());
+                            throw std::runtime_error("Could not find assembly reference '" + afn.generic_string() + "'.\nDirectories searched:\n" + searchedDirectories);
+                        }
+                    }
+                }
+            }
+            std::string assemblyFilePath = GetFullPath(afp.generic_string());
+            SymbolReader reader(assemblyFilePath);
             reader.SetMachine(machine);
-            referencedAssembly->Read(reader, callInstructions);
-            callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
+            referencedAssembly->Read(reader, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions);
             Assembly* referencedAssemblyPtr = referencedAssembly.get();
             referencedAssemblies.push_back(std::move(referencedAssembly));
-            Import(referencedAssemblyPtr->referenceFilePaths, importSet, callInstructions);
+            Import(referencedAssemblyPtr->referenceFilePaths, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions);
         }
     }
 }
@@ -179,9 +300,19 @@ void Link(const std::vector<CallInst*>& callInstructions)
 {
     for (CallInst* call : callInstructions)
     {
-        Function* fun = FunctionTable::Instance().GetFunction(call->GetFunctionFullName());
+        Function* fun = FunctionTable::Instance().GetFunction(call->GetFunctionCallName());
         call->SetFunction(fun);
     }
+}
+
+void InitAssembly()
+{
+    CminorSystemAssemblyNameCollection::Init();
+}
+
+void DoneAssembly()
+{
+    CminorSystemAssemblyNameCollection::Done();
 }
 
 } } // namespace cminor::symbols

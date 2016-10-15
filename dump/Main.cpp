@@ -27,9 +27,11 @@ struct InitDone
         FileRegistry::Init();
         FunctionTable::Init();
         InitSymbol();
+        InitAssembly();
     }
     ~InitDone()
     {
+        DoneAssembly();
         DoneSymbol();
     }
 };
@@ -39,7 +41,7 @@ const char* version = "0.0.1";
 void PrintHelp()
 {
     std::cout << "Cminor assembly dump version " << version << "\n\n" <<
-        "Usage: cminordump [options] assembly[.cminora] [outputfile]\n" <<
+        "Usage: cminordump [options] assembly.cminora [outputfile]\n" <<
         "Dump information in assembly.cminora.\n" <<
         "Options:\n" <<
         "-h | --help     : print this help message" <<
@@ -90,9 +92,9 @@ int main(int argc, const char** argv)
             throw std::runtime_error("no assembly file given");
         }
         boost::filesystem::path afp = assemblyFileName;
-        if (!afp.has_extension())
+        if (afp.extension() != ".cminora")
         {
-            afp.replace_extension(".cminora");
+            throw std::runtime_error("argument '" + afp.generic_string() + "' has invalid extension (not .cminora)");
         }
         std::string assemblyFilePath = GetFullPath(afp.generic_string());
         if (!boost::filesystem::exists(afp))
@@ -101,9 +103,13 @@ int main(int argc, const char** argv)
         }
         Machine machine;
         Assembly assembly(machine);
+        const Assembly* rootAssembly = &assembly;
         SymbolReader symbolReader(assemblyFilePath);
         std::vector<CallInst*> callInstructions;
-        assembly.Read(symbolReader, callInstructions);
+        std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(assemblyFilePath).remove_filename().generic_string());
+        std::unordered_set<std::string> importSet;
+        assembly.Read(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions);
+        Link(callInstructions);
         std::ostream* outputStream = &std::cout;
         std::ofstream outputFileStream;
         if (!outputFileName.empty())

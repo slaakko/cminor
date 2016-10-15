@@ -52,7 +52,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "vm\vm.vcxproj", "{40D
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cm.Util", "..\..\..\Programming\cmajorbin\Cm.Util\Cm.Util.vcxproj", "{F9F0532D-8C4D-4A78-ACB1-DD1682F70BBD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "initsys", "initsys\initsys.vcxproj", "{8987BCE5-A0A7-4DD0-948A-36F8D53B24A1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "buildsys", "buildsys\buildsys.vcxproj", "{8987BCE5-A0A7-4DD0-948A-36F8D53B24A1}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7DFBEF02-596F-4B59-AC3A-59A38C0F27DE} = {7DFBEF02-596F-4B59-AC3A-59A38C0F27DE}
 		{8E77B61E-97DD-4D11-8C81-8009C534F38A} = {8E77B61E-97DD-4D11-8C81-8009C534F38A}

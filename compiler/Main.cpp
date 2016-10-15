@@ -6,6 +6,7 @@
 #include <cminor/build/Build.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/Symbol.hpp>
+#include <cminor/symbols/Assembly.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Util.hpp>
@@ -28,11 +29,13 @@ struct InitDone
         FileRegistry::Init();
         FunctionTable::Init();
         InitSymbol();
+        InitAssembly();
         Cm::Parsing::Init();
     }
     ~InitDone()
     {
         Cm::Parsing::Done();
+        DoneAssembly();
         DoneSymbol();
     }
 };
@@ -43,9 +46,8 @@ void PrintHelp()
 {
     std::cout << 
         "Cminor compiler version " << version << "\n\n" <<
-        "Usage: cminorc [options] { solution[.cminors] | project[.cminorp] }\n" <<
+        "Usage: cminorc [options] { solution.cminors | project.cminorp }\n" <<
         "Compile given solutions and projects.\n" <<
-        "When no extension is given, solution.cminors is given preference.\n" <<
         "Options:\n" <<
         "-v | --verbose : verbose output\n" << 
         "-h | --help    : print this help message\n" <<
@@ -123,28 +125,6 @@ int main(int argc, const char** argv)
         for (const std::string& projectOrSolution : projectsAndSolutions)
         {
             boost::filesystem::path fp(projectOrSolution);
-            if (!fp.has_extension())
-            {
-                boost::filesystem::path s = fp;
-                s.replace_extension(".cminors");
-                if (boost::filesystem::exists(s))
-                {
-                    fp = s;
-                }
-                else
-                {
-                    boost::filesystem::path p = fp;
-                    p.replace_extension(".cminorp");
-                    if (boost::filesystem::exists(p))
-                    {
-                        fp = p;
-                    }
-                    else
-                    {
-                        throw std::runtime_error("solution file '" + s.generic_string() + "' or project file '" + p.generic_string() + "' not found");
-                    }
-                }
-            }
             if (fp.extension() == ".cminors")
             {
                 if (!boost::filesystem::exists(fp))
@@ -164,12 +144,13 @@ int main(int argc, const char** argv)
                 }
                 else
                 {
-                    BuildProject(GetFullPath(fp.generic_string()));
+                    std::set<AssemblyReferenceInfo> assemblyReferenceInfos;
+                    BuildProject(GetFullPath(fp.generic_string()), assemblyReferenceInfos);
                 }
             }
             else
             {
-                throw std::runtime_error("File '" + fp.generic_string() + "' has invalid extension. Not Cminor solution (.cminors) or project (.cminorp) file.");
+                throw std::runtime_error("Argument '" + fp.generic_string() + "' has invalid extension. Not Cminor solution (.cminors) or project (.cminorp) file.");
             }
         }
     }

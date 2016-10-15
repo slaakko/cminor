@@ -1,5 +1,5 @@
-#ifndef CompileUnit_hpp_25544
-#define CompileUnit_hpp_25544
+#ifndef CompileUnit_hpp_30122
+#define CompileUnit_hpp_30122
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -21,6 +21,10 @@ private:
     virtual void GetReferencedGrammars();
     class CompileUnitRule;
     class NamespaceContentRule;
+    class UsingDirectivesRule;
+    class UsingDirectiveRule;
+    class UsingAliasDirectiveRule;
+    class UsingNamespaceDirectiveRule;
     class DefinitionsRule;
     class DefinitionRule;
     class NamespaceDefinitionRule;
@@ -29,4 +33,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // CompileUnit_hpp_25544
+#endif // CompileUnit_hpp_30122

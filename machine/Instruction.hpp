@@ -325,12 +325,13 @@ class CallInst : public Instruction
 public:
     CallInst();
     Instruction* Clone() const override { return new CallInst(*this); }
-    void SetFunctionFullName(Constant functionFullName);
-    StringPtr GetFunctionFullName() const;
+    void SetFunctionCallName(Constant functionCallName);
+    StringPtr GetFunctionCallName() const;
     void SetFunction(Function* fun);
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
 private:
     Constant function;
 };

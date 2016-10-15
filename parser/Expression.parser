@@ -244,8 +244,8 @@ namespace cminor.parser
         Postfix(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s) : Node*
             ::=
             (   Primary(ctx){ s = span; expr.reset(Primary); }
-                (   '.' 
-                    Identifier:dotMemberId{ s.SetEnd(span.End()); expr.reset(new DotNode(s, expr.release(), dotMemberId)); } 
+                (   '.' Identifier:dotMemberId{ s.SetEnd(span.End()); expr.reset(new DotNode(s, expr.release(), dotMemberId)); } 
+                |   ('('{ expr.reset(new InvokeNode(s, expr.release())); } ArgumentList(ctx, expr.get()) ')'!){ expr->GetSpan().SetEnd(span.End());  }
                 )*
             )
             {

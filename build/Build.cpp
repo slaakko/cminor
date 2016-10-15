@@ -5,6 +5,7 @@
 
 #include <cminor/build/Build.hpp>
 #include <cminor/parser/ProjectFile.hpp>
+#include <cminor/parser/SolutionFile.hpp>
 #include <cminor/parser/CompileUnit.hpp>
 #include <cminor/binder/TypeBinderVisitor.hpp>
 #include <cminor/binder/StatementBinderVisitor.hpp>
@@ -17,6 +18,7 @@
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/MappedInputFile.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <Cm.Util/Path.hpp>
 #include <iostream>
 
 namespace cminor { namespace build {
@@ -27,6 +29,7 @@ using namespace cminor::symbols;
 using namespace cminor::binder;
 using namespace cminor::emitter;
 using namespace cminor::machine;
+using namespace Cm::Util;
 
 CompileUnitGrammar* compileUnitGrammar = nullptr;
 
@@ -85,28 +88,38 @@ void BindStatements(BoundCompileUnit& boundCompileUnit)
     boundCompileUnit.GetCompileUnitNode()->Accept(statementBinderVisitor);
 }
 
-ProjectGrammar* projectGrammar = nullptr;
-
-void BuildProject(const std::string& projectFilePath)
+void CopyAssemblyFile(const std::string& from, const std::string& to, std::unordered_set<std::string>& copied)
 {
-    if (!projectGrammar)
+    if (copied.find(from) == copied.cend())
     {
-        projectGrammar = ProjectGrammar::Create();
+        copied.insert(from);
+        if (from != to)
+        {
+            if (boost::filesystem::exists(to))
+            {
+                boost::filesystem::remove(to);
+            }
+            boost::filesystem::copy(from, to);
+        }
     }
+}
+
+void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
+{
     std::string config = GetConfig();
-    MappedInputFile projectFile(projectFilePath);
-    std::unique_ptr<Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, config));
-    project->ResolveDeclarations();
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "Building project '" << project->Name() << "(" << projectFilePath << " using " << config << " configuration." << std::endl;
+        std::cout << "Building project '" << project->Name() << "(" << project->FilePath() << " using " << config << " configuration." << std::endl;
     }
     std::vector<std::unique_ptr<CompileUnitNode>> compileUnits = ParseSources(project->SourceFilePaths());
     utf32_string assemblyName = ToUtf32(project->Name());
     Machine machine;
     Assembly assembly(machine, assemblyName, project->AssemblyFilePath());
+    const Assembly* rootAssembly = &assembly;
     std::vector<CallInst*> callInstructions;
-    assembly.ImportAssemblies(project->AssemblyReferences(), callInstructions);
+    std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(project->AssemblyFilePath()).remove_filename().generic_string());
+    std::unordered_set<std::string> importSet;
+    assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions);
     assembly.ImportSymbolTables();
     callInstructions.clear();
     BuildSymbolTable(assembly, compileUnits);
@@ -122,11 +135,155 @@ void BuildProject(const std::string& projectFilePath)
     boost::filesystem::create_directories(obp);
     SymbolWriter writer(assembly.FilePath());
     assembly.Write(writer);
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "Project '" << project->Name() << "build successfully." << std::endl;
+        std::cout << "=> " << assembly.FilePath() << std::endl;
+    }
+    if (assembly.IsSystemAssembly())
+    {
+        project->SetSystemProject();
+    }
+    for (const std::unique_ptr<Assembly>& referencedAssembly : assembly.ReferencedAssemblies())
+    {
+        assemblyReferenceInfos.insert(AssemblyReferenceInfo(referencedAssembly->FilePath(), referencedAssembly->IsSystemAssembly()));
+    }
+    bool buildingSystemProject = project->IsSystemProject();
+    boost::filesystem::path projectAssemblyDir = project->BasePath();
+    projectAssemblyDir /= "assembly";
+    projectAssemblyDir /= config;
+    std::unordered_set<std::string> copied;
+    for (const AssemblyReferenceInfo& assemblyReferenceInfo : assemblyReferenceInfos)
+    {
+        if (buildingSystemProject)
+        {
+            for (const AssemblyReferenceInfo& assemblyReferenceInfo : assemblyReferenceInfos)
+            {
+                boost::filesystem::path afp = assemblyReferenceInfo.filePath;
+                boost::filesystem::path pafp = projectAssemblyDir;
+                pafp /= afp.filename();
+                std::string from = GetFullPath(afp.generic_string());
+                std::string to = GetFullPath(pafp.generic_string());
+                CopyAssemblyFile(from, to, copied);
+            }
+        }
+        else
+        {
+            for (const AssemblyReferenceInfo& assemblyReferenceInfo : assemblyReferenceInfos)
+            {
+                if (!assemblyReferenceInfo.isSystemAssembly)
+                {
+                    boost::filesystem::path afp = assemblyReferenceInfo.filePath;
+                    boost::filesystem::path pafp = projectAssemblyDir;
+                    pafp /= afp.filename();
+                    std::string from = GetFullPath(afp.generic_string());
+                    std::string to = GetFullPath(pafp.generic_string());
+                    CopyAssemblyFile(from, to, copied);
+                }
+            }
+        }
+    }
 }
+
+ProjectGrammar* projectGrammar = nullptr;
+
+void BuildProject(const std::string& projectFilePath, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
+{
+    if (!projectGrammar)
+    {
+        projectGrammar = ProjectGrammar::Create();
+    }
+    std::string config = GetConfig();
+    MappedInputFile projectFile(projectFilePath);
+    std::unique_ptr<Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, config));
+    project->ResolveDeclarations();
+    BuildProject(project.get(), assemblyReferenceInfos);
+}
+
+SolutionGrammar* solutionGrammar = nullptr;
 
 void BuildSolution(const std::string& solutionFilePath)
 {
-    throw std::runtime_error("not implemented yet");
+    if (!solutionGrammar)
+    {
+        solutionGrammar = SolutionGrammar::Create();
+    }
+    if (!projectGrammar)
+    {
+        projectGrammar = ProjectGrammar::Create();
+    }
+    MappedInputFile solutionFile(solutionFilePath);
+    std::unique_ptr<Solution> solution(solutionGrammar->Parse(solutionFile.Begin(), solutionFile.End(), 0, solutionFilePath));
+    solution->ResolveDeclarations();
+    std::string config = GetConfig();
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "Building solution '" << solution->Name() << "(" << solution->FilePath() << " using " << config << " configuration." << std::endl;
+    }
+    for (const std::string& projectFilePath : solution->ProjectFilePaths())
+    {
+        MappedInputFile projectFile(projectFilePath);
+        std::unique_ptr<Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, config));
+        project->ResolveDeclarations();
+        solution->AddProject(std::move(project));
+    }
+    std::vector<Project*> buildOrder = solution->CreateBuildOrder();
+    std::set<AssemblyReferenceInfo> assemblyReferenceInfos;
+    bool buildingSystemProjects = false;
+    for (Project* project : buildOrder)
+    {
+         BuildProject(project, assemblyReferenceInfos);
+         if (project->IsSystemProject())
+         {
+             buildingSystemProjects = true;
+         }
+    }
+    boost::filesystem::path solutionAssemblyDir = solution->BasePath();
+    solutionAssemblyDir /= "assembly";
+    solutionAssemblyDir /= config;
+    boost::filesystem::create_directories(solutionAssemblyDir);
+    std::unordered_set<std::string> copied;
+    if (buildingSystemProjects)
+    {
+        for (const AssemblyReferenceInfo& assemblyReferenceInfo : assemblyReferenceInfos)
+        {
+            boost::filesystem::path afp = assemblyReferenceInfo.filePath;
+            boost::filesystem::path safp = solutionAssemblyDir;
+            safp /= afp.filename();
+            std::string from = GetFullPath(afp.generic_string());
+            std::string to = GetFullPath(safp.generic_string());
+            CopyAssemblyFile(from, to, copied);
+        }
+    }
+    else
+    {
+        for (const AssemblyReferenceInfo& assemblyReferenceInfo : assemblyReferenceInfos)
+        {
+            if (!assemblyReferenceInfo.isSystemAssembly)
+            {
+                boost::filesystem::path afp = assemblyReferenceInfo.filePath;
+                boost::filesystem::path safp = solutionAssemblyDir;
+                safp /= afp.filename();
+                std::string from = GetFullPath(afp.generic_string());
+                std::string to = GetFullPath(safp.generic_string());
+                CopyAssemblyFile(from, to, copied);
+            }
+        }
+    }
+    for (Project* project : buildOrder)
+    {
+        boost::filesystem::path afp = project->AssemblyFilePath();
+        boost::filesystem::path safp = solutionAssemblyDir;
+        safp /= afp.filename();
+        std::string from = GetFullPath(afp.generic_string());
+        std::string to = GetFullPath(safp.generic_string());
+        CopyAssemblyFile(from, to, copied);
+    }
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "Solution '" << solution->Name() << "build successfully." << std::endl;
+        std::cout << "=> " << solutionAssemblyDir << std::endl;
+    }
 }
 
 } } // namespace cminor::build

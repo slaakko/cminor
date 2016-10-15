@@ -1,0 +1,35 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Solution.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+    
+    grammar SolutionGrammar
+    {
+        using stdlib.qualified_id;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+
+        Solution : Solution*
+            ::= keyword("solution") qualified_id ';'{ value = new Solution(qualified_id, fileName); }
+                (Declaration{ value->AddDeclaration(Declaration); })*
+            ;
+
+        Declaration : SolutionDeclaration*
+            ::= SolutionProjectDeclaration{ value = SolutionProjectDeclaration; }
+            ;
+
+        SolutionProjectDeclaration : SolutionDeclaration*
+            ::= (keyword("project") FilePath ';'){ value = new SolutionProjectDeclaration(FilePath); }
+            ;
+
+        FilePath: std::string
+            ::= token('<' ([^>]+){ value = std::string(matchBegin, matchEnd); } '>'!)
+            ;
+    }
+}

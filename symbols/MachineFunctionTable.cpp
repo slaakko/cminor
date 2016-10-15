@@ -13,10 +13,12 @@ namespace cminor { namespace symbols {
 
 Function* MachineFunctionTable::CreateFunction(FunctionSymbol* functionSymbol)
 {
-    utf32_string functionFullName = functionSymbol->FullName();
+    utf32_string functionCallName = functionSymbol->FullName();
     ConstantPool& constantPool = functionSymbol->GetAssembly()->GetConstantPool();
-    Constant functionFullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(functionFullName.c_str())));
-    Function* function = new Function(functionFullNameConstant, int32_t(machineFunctions.size()), &constantPool);
+    Constant functionCallNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(functionCallName.c_str())));
+    utf32_string functionFriendlyName = functionSymbol->FriendlyName();
+    Constant functionFriendlyNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(functionFriendlyName.c_str())));
+    Function* function = new Function(functionCallNameConstant, functionFriendlyNameConstant, int32_t(machineFunctions.size()), &constantPool);
     machineFunctions.push_back(std::unique_ptr<Function>(function));
     return function;
 }

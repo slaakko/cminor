@@ -1,8 +1,6 @@
+using System;
+
 void main()
 {
-    do
-    {
-        break;
-    }
-    while (true);
+    int min = Min(1, 2);
 }

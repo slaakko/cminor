@@ -60,6 +60,10 @@ namespace cminor.parser
     {
         CompileUnit(ParsingContext* ctx): CompileUnitNode*;
         NamespaceContent(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns);
+        UsingDirectives(ParsingContext* ctx, NamespaceNode* ns);
+        UsingDirective(ParsingContext* ctx, NamespaceNode* ns);
+        UsingAliasDirective(var std::unique_ptr<IdentifierNode> id): Node*;
+        UsingNamespaceDirective: Node*;
         Definitions(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns);
         Definition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns): Node*;
         NamespaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns): NamespaceNode*;
@@ -86,10 +90,17 @@ namespace cminor.parser
     {
         Project(std::string config): Project*;
         Declaration: ProjectDeclaration*;
-        AssemblyReferenceDeclaration: ProjectDeclaration*;
+        ReferenceDeclaration: ProjectDeclaration*;
         SourceFileDeclaration: ProjectDeclaration*;
         TargetDeclaration: ProjectDeclaration*;
         Target: Target;
+        FilePath: std::string;
+    }
+    grammar SolutionGrammar
+    {
+        Solution: Solution*;
+        Declaration: SolutionDeclaration*;
+        SolutionProjectDeclaration: SolutionDeclaration*;
         FilePath: std::string;
     }
     grammar SpecifierGrammar

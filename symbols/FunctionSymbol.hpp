@@ -47,6 +47,8 @@ public:
     StringPtr GroupName() const { return StringPtr(groupName.Value().AsStringLiteral()); }
     void SetGroupNameConstant(Constant groupName_) { groupName = groupName_; }
     virtual void ComputeName();
+    utf32_string FriendlyName() const;
+    utf32_string FullName() const override;
     int Arity() const { return int(parameters.size()); }
     void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }

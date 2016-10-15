@@ -61,11 +61,11 @@ std::string MakeOverloadName(StringPtr groupName, const std::vector<std::unique_
     {
         if (first)
         {
-            overloadName.append(", ");
+            first = false;
         }
         else
         {
-            first = false;
+            overloadName.append(", ");
         }
         overloadName.append(ToUtf8(argument->GetType()->FullName()));
     }

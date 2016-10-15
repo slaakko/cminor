@@ -15,6 +15,7 @@ namespace cminor.parser
     grammar CompileUnitGrammar
     {
         using stdlib.spaces_and_comments;
+        using IdentifierGrammar.Identifier;
         using IdentifierGrammar.QualifiedId;
         using FunctionGrammar.Function;
         skip spaces_and_comments;
@@ -25,7 +26,25 @@ namespace cminor.parser
             ;
 
         NamespaceContent(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns)
-            ::= Definitions(ctx, compileUnit, ns)
+            ::= UsingDirectives(ctx, ns)
+                Definitions(ctx, compileUnit, ns)
+            ;
+
+        UsingDirectives(ParsingContext* ctx, NamespaceNode* ns)
+            ::= UsingDirective(ctx, ns)*
+            ;
+
+        UsingDirective(ParsingContext* ctx, NamespaceNode* ns)
+            ::= UsingAliasDirective{ ns->AddMember(UsingAliasDirective); }
+            |   UsingNamespaceDirective{ ns->AddMember(UsingNamespaceDirective); }
+            ;
+
+        UsingAliasDirective(var std::unique_ptr<IdentifierNode> id) : Node*
+            ::= (keyword("using") Identifier{ id.reset(Identifier); } '=' QualifiedId! ';'!){ value = new AliasNode(span, id.release(), QualifiedId); }
+            ;
+
+        UsingNamespaceDirective : Node*
+            ::= (keyword("using") QualifiedId! ';'!){ value = new NamespaceImportNode(span, QualifiedId); }
             ;
 
         Definitions(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns)

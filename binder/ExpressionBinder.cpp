@@ -59,6 +59,7 @@ public:
 
     void Visit(IdentifierNode& identifierNode) override;
     void Visit(DotNode& dotNode) override;
+    void Visit(InvokeNode& invokeNode) override;
 private:
     BoundCompileUnit& boundCompileUnit;
     ContainerScope* containerScope;
@@ -409,7 +410,12 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
     {
         case SymbolType::classTypeSymbol: /* todo */
         case SymbolType::stringTypeSymbol: /* todo */
-        case SymbolType::functionGroupSymbol: /* todo */
+        case SymbolType::functionGroupSymbol: 
+        {
+            FunctionGroupSymbol* functionGroupSymbol = static_cast<FunctionGroupSymbol*>(symbol);
+            expression.reset(new BoundFunctionGroupExpression(boundCompileUnit.GetAssembly(), functionGroupSymbol));
+            break;
+        }
         case SymbolType::parameterSymbol:
         {
             ParameterSymbol* parameterSymbol = static_cast<ParameterSymbol*>(symbol);
@@ -495,6 +501,33 @@ void ExpressionBinder::Visit(DotNode& dotNode)
         throw Exception("expression '" + dotNode.Child()->ToString() + "' must denote a namespace etc.", dotNode.Child()->GetSpan());
     }
     containerScope = prevContainerScope;
+}
+
+void ExpressionBinder::Visit(InvokeNode& invokeNode)
+{
+    invokeNode.Child()->Accept(*this);
+    if (BoundFunctionGroupExpression* bfe = dynamic_cast<BoundFunctionGroupExpression*>(expression.get()))
+    {
+        FunctionGroupSymbol* functionGroupSymbol = bfe->FunctionGroup();
+        std::vector<std::unique_ptr<BoundExpression>> arguments;
+        std::vector<FunctionScopeLookup> functionScopeLookups;
+        functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
+        int n = invokeNode.Arguments().Count();
+        for (int i = 0; i < n; ++i)
+        {
+            Node* argument = invokeNode.Arguments()[i];
+            argument->Accept(*this);
+            functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, expression->GetType()->ClassOrNsScope()));
+            arguments.push_back(std::unique_ptr<BoundExpression>(expression.release()));
+        }
+        functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
+        std::unique_ptr<BoundFunctionCall> functionCall = ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan());
+        expression.reset(functionCall.release());
+    }
+    else
+    {
+        throw Exception("invoke cannot be applied to this type of expression", invokeNode.Child()->GetSpan());
+    }
 }
 
 std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, ContainerScope* containerScope, Node* node)

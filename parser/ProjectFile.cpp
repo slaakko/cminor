@@ -174,8 +174,8 @@ public:
         a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DeclarationRule>(this, &DeclarationRule::A1Action));
         Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
         a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DeclarationRule>(this, &DeclarationRule::A2Action));
-        Cm::Parsing::NonterminalParser* assemblyReferenceDeclarationNonterminalParser = GetNonterminal("AssemblyReferenceDeclaration");
-        assemblyReferenceDeclarationNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DeclarationRule>(this, &DeclarationRule::PostAssemblyReferenceDeclaration));
+        Cm::Parsing::NonterminalParser* referenceDeclarationNonterminalParser = GetNonterminal("ReferenceDeclaration");
+        referenceDeclarationNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DeclarationRule>(this, &DeclarationRule::PostReferenceDeclaration));
         Cm::Parsing::NonterminalParser* sourceFileDeclarationNonterminalParser = GetNonterminal("SourceFileDeclaration");
         sourceFileDeclarationNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DeclarationRule>(this, &DeclarationRule::PostSourceFileDeclaration));
         Cm::Parsing::NonterminalParser* targetDeclarationNonterminalParser = GetNonterminal("TargetDeclaration");
@@ -183,7 +183,7 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = context.fromAssemblyReferenceDeclaration;
+        context.value = context.fromReferenceDeclaration;
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -193,12 +193,12 @@ public:
     {
         context.value = context.fromTargetDeclaration;
     }
-    void PostAssemblyReferenceDeclaration(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostReferenceDeclaration(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromAssemblyReferenceDeclaration_value = std::move(stack.top());
-            context.fromAssemblyReferenceDeclaration = *static_cast<Cm::Parsing::ValueObject<ProjectDeclaration*>*>(fromAssemblyReferenceDeclaration_value.get());
+            std::unique_ptr<Cm::Parsing::Object> fromReferenceDeclaration_value = std::move(stack.top());
+            context.fromReferenceDeclaration = *static_cast<Cm::Parsing::ValueObject<ProjectDeclaration*>*>(fromReferenceDeclaration_value.get());
             stack.pop();
         }
     }
@@ -223,9 +223,9 @@ public:
 private:
     struct Context
     {
-        Context(): value(), fromAssemblyReferenceDeclaration(), fromSourceFileDeclaration(), fromTargetDeclaration() {}
+        Context(): value(), fromReferenceDeclaration(), fromSourceFileDeclaration(), fromTargetDeclaration() {}
         ProjectDeclaration* value;
-        ProjectDeclaration* fromAssemblyReferenceDeclaration;
+        ProjectDeclaration* fromReferenceDeclaration;
         ProjectDeclaration* fromSourceFileDeclaration;
         ProjectDeclaration* fromTargetDeclaration;
     };
@@ -233,10 +233,10 @@ private:
     Context context;
 };
 
-class ProjectGrammar::AssemblyReferenceDeclarationRule : public Cm::Parsing::Rule
+class ProjectGrammar::ReferenceDeclarationRule : public Cm::Parsing::Rule
 {
 public:
-    AssemblyReferenceDeclarationRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+    ReferenceDeclarationRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         SetValueTypeName("ProjectDeclaration*");
@@ -258,13 +258,13 @@ public:
     virtual void Link()
     {
         Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AssemblyReferenceDeclarationRule>(this, &AssemblyReferenceDeclarationRule::A0Action));
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ReferenceDeclarationRule>(this, &ReferenceDeclarationRule::A0Action));
         Cm::Parsing::NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
-        filePathNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<AssemblyReferenceDeclarationRule>(this, &AssemblyReferenceDeclarationRule::PostFilePath));
+        filePathNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ReferenceDeclarationRule>(this, &ReferenceDeclarationRule::PostFilePath));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new AssemblyReferenceDeclaration(context.fromFilePath);
+        context.value = new ReferenceDeclaration(context.fromFilePath);
     }
     void PostFilePath(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -510,12 +510,12 @@ void ProjectGrammar::CreateRules()
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(
                 new Cm::Parsing::ActionParser("A0",
-                    new Cm::Parsing::NonterminalParser("AssemblyReferenceDeclaration", "AssemblyReferenceDeclaration", 0)),
+                    new Cm::Parsing::NonterminalParser("ReferenceDeclaration", "ReferenceDeclaration", 0)),
                 new Cm::Parsing::ActionParser("A1",
                     new Cm::Parsing::NonterminalParser("SourceFileDeclaration", "SourceFileDeclaration", 0))),
             new Cm::Parsing::ActionParser("A2",
                 new Cm::Parsing::NonterminalParser("TargetDeclaration", "TargetDeclaration", 0)))));
-    AddRule(new AssemblyReferenceDeclarationRule("AssemblyReferenceDeclaration", GetScope(),
+    AddRule(new ReferenceDeclarationRule("ReferenceDeclaration", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
                 new Cm::Parsing::SequenceParser(

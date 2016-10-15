@@ -71,6 +71,7 @@ class ComplementNode;
 class IsNode;
 class AsNode;
 class DotNode;
+class InvokeNode;
 
 class CompoundStatementNode;
 class ReturnStatementNode;
@@ -154,6 +155,7 @@ public:
     virtual void Visit(IsNode& isNode) {}
     virtual void Visit(AsNode& asNode) {}
     virtual void Visit(DotNode& dotNode) {}
+    virtual void Visit(InvokeNode& invokeNode) {}
 
     virtual void Visit(CompoundStatementNode& compoundStatementNode) {}
     virtual void Visit(ReturnStatementNode& returnStatementNode) {}

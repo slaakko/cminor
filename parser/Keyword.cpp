@@ -64,6 +64,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("uint");
     keywords0.push_back("ulong");
     keywords0.push_back("ushort");
+    keywords0.push_back("using");
     keywords0.push_back("virtual");
     keywords0.push_back("void");
     keywords0.push_back("while");

@@ -459,13 +459,9 @@ const std::string& DotNode::MemberStr() const
     {
         return idNode->Str();
     }
-    else if (CCNode* ccNode = dynamic_cast<CCNode*>(memberId.get()))
-    {
-        return ccNode->Grave();
-    }
     else
     {
-        throw std::runtime_error("identifier node or cc node expected");
+        throw std::runtime_error("identifier node expected");
     }
 }
 
@@ -474,13 +470,35 @@ void DotNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-CCNode::CCNode(const Span& span_) : Node(span_)
+InvokeNode::InvokeNode(const Span& span_) : UnaryNode(span_)
 {
 }
 
-Node* CCNode::Clone(CloneContext& cloneContext) const
+InvokeNode::InvokeNode(const Span& span_, Node* subject_) : UnaryNode(span_, subject_)
 {
-    return new CCNode(GetSpan());
+}
+
+void InvokeNode::AddArgument(Node* argument)
+{
+    argument->SetParent(this);
+    arguments.Add(argument);
+}
+
+Node* InvokeNode::Clone(CloneContext& cloneContext) const
+{
+    InvokeNode* clone = new InvokeNode(GetSpan(), Child()->Clone(cloneContext));
+    int n = arguments.Count();
+    for (int i = 0; i < n; ++i)
+    {
+        Node* argument = arguments[i];
+        clone->AddArgument(argument->Clone(cloneContext));
+    }
+    return clone;
+}
+
+void InvokeNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 } } // namespace cminor::ast

@@ -26,24 +26,36 @@ inline void Thread::CheckPause()
     }
 }
 
-void Thread::Run()
+void Thread::RunToEnd()
 {
+    Assert(!frames.empty(), "thread got no frame");
     while (true)
     {
         CheckPause();
-        Frame& frame = frames.back();
-        Instruction* inst = frame.GetNextInst();
-        if (!inst)
+        Frame* frame = &frames.back();
+        Instruction* inst = frame->GetNextInst();
+        while (!inst)
         {
+            Assert(!frames.empty(), "thread got no frame");
             frames.pop_back();
-            if (frames.empty())
+            if (!frames.empty())
             {
-                break;
+                frame = &frames.back();
+                inst = frame->GetNextInst();
+            }
+            else
+            {
+                return;
             }
         }
-        inst->Execute(frame);
+        inst->Execute(*frame);
         IncInstructionCount();
     }
+}
+
+void Thread::Run()
+{
+    RunToEnd();
     std::lock_guard<std::mutex> lock(mtx);
     paused.store(true);
     pausedCond.notify_one();

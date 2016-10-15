@@ -30,6 +30,7 @@
     <None Include="Literal.parser" />
     <None Include="Parameter.parser" />
     <None Include="ProjectFile.parser" />
+    <None Include="SolutionFile.parser" />
     <None Include="Specifier.parser" />
     <None Include="Statement.parser" />
     <None Include="TypeExpr.parser" />
@@ -45,6 +46,7 @@
     <ClCompile Include="Parameter.cpp" />
     <ClCompile Include="ParsingContext.cpp" />
     <ClCompile Include="ProjectFile.cpp" />
+    <ClCompile Include="SolutionFile.cpp" />
     <ClCompile Include="Specifier.cpp" />
     <ClCompile Include="Statement.cpp" />
     <ClCompile Include="TypeExpr.cpp" />
@@ -61,6 +63,7 @@
     <ClInclude Include="Parameter.hpp" />
     <ClInclude Include="ParsingContext.hpp" />
     <ClInclude Include="ProjectFile.hpp" />
+    <ClInclude Include="SolutionFile.hpp" />
     <ClInclude Include="Specifier.hpp" />
     <ClInclude Include="Statement.hpp" />
     <ClInclude Include="TypeExpr.hpp" />

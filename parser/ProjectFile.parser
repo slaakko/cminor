@@ -21,13 +21,13 @@ namespace cminor.parser
             ;
 
         Declaration : ProjectDeclaration*
-            ::= AssemblyReferenceDeclaration{ value = AssemblyReferenceDeclaration; }
+            ::= ReferenceDeclaration{ value = ReferenceDeclaration; }
             |   SourceFileDeclaration{ value = SourceFileDeclaration; }
             |   TargetDeclaration{ value = TargetDeclaration; }
             ;
 
-        AssemblyReferenceDeclaration : ProjectDeclaration*
-            ::= (keyword("reference") FilePath! ';'!){ value = new AssemblyReferenceDeclaration(FilePath); }
+        ReferenceDeclaration : ProjectDeclaration*
+            ::= (keyword("reference") FilePath! ';'!){ value = new ReferenceDeclaration(FilePath); }
             ;
 
         SourceFileDeclaration : ProjectDeclaration*

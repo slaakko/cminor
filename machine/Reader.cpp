@@ -7,8 +7,8 @@
 
 namespace cminor { namespace machine {
 
-Reader::Reader(const std::string& fileName_) :
-    machine(nullptr), fileName(fileName_), file(fileName), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End())), constantPool(nullptr)
+Reader::Reader(const std::string& filePath_) :
+    machine(nullptr), filePath(filePath_), file(filePath), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End())), constantPool(nullptr)
 {
 }
 
@@ -139,7 +139,7 @@ utf32_string Reader::GetUtf32String()
 
 void Reader::CheckEof()
 {
-    if (begin == end) throw std::runtime_error("unexpected end of file '" + fileName + "'");
+    if (begin == end) throw std::runtime_error("unexpected end of file '" + filePath + "'");
 }
 
 Span Reader::GetSpan()
