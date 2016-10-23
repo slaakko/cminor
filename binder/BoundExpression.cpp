@@ -304,6 +304,43 @@ void BoundFunctionCall::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundNewExpression::BoundNewExpression(BoundFunctionCall* boundFunctionCall_, TypeSymbol* type_) : BoundExpression(boundFunctionCall_->GetAssembly(), type_),
+    functionSymbol(boundFunctionCall_->GetFunctionSymbol()), arguments(std::move(boundFunctionCall_->Arguments()))
+{
+}
+
+void BoundNewExpression::GenLoad(Machine& machine, Function& function) 
+{
+    std::unique_ptr<Instruction> createOInst = machine.CreateInst("createo");
+    CreateObjectInst* createObjectInst = dynamic_cast<CreateObjectInst*>(createOInst.get());
+    Assert(createObjectInst, "create object inst expected");
+    ConstantPool& constantPool = GetAssembly().GetConstantPool();
+    ClassTypeSymbol* containingClass = functionSymbol->ContainingClass();
+    Assert(containingClass, "containing class not found");
+    utf32_string fullClassName = containingClass->FullName();
+    Constant fullClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
+    createObjectInst->SetClassName(fullClassNameConstant);
+    function.AddInst(std::move(createOInst));
+    std::unique_ptr<Instruction> dupInst = machine.CreateInst("dup");
+    function.AddInst(std::move(dupInst));
+    std::vector<GenObject*> objects;
+    for (const std::unique_ptr<BoundExpression>& argument : arguments)
+    {
+        objects.push_back(argument.get());
+    }
+    functionSymbol->GenerateCall(machine, GetAssembly(), function, objects);
+}
+
+void BoundNewExpression::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to new expression");
+}
+
+void BoundNewExpression::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundBooleanBinaryExpression::BoundBooleanBinaryExpression(Assembly& assembly_, BoundExpression* left_, BoundExpression* right_) : BoundExpression(assembly_, left_->GetType()), left(left_), right(right_)
 {
 }

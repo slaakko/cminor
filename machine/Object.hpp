@@ -17,8 +17,8 @@ class Thread;
 class Writer;
 class Reader;
 class Arena;
-class Type;
 class Function;
+class ClassData;
 class ObjectType;
 class ObjectPool;
 
@@ -30,7 +30,7 @@ enum class ArenaId : uint8_t
 enum class ValueType : uint8_t
 {
     none = 0, boolType = 1, sbyteType = 2, byteType = 3, shortType = 4, ushortType = 5, intType = 6, uintType = 7, longType = 8, ulongType = 9, floatType = 10, doubleType = 11, charType = 12,
-    memPtr = 'M', stringLiteral = 'S', objectReference = 'O', functionPtr = 'F'
+    memPtr = 'M', stringLiteral = 'S', objectReference = 'O', functionPtr = 'F', classDataPtr = 'C', typePtr = 'T'
 };
 
 std::string ValueTypeStr(ValueType type);
@@ -43,6 +43,8 @@ public:
     IntegralValue(uint8_t* value_) : memPtr(value_), type(ValueType::memPtr) {}
     IntegralValue(const char32_t* value_) : strValue(value_), type(ValueType::stringLiteral) {}
     IntegralValue(Function* value_) : funPtr(value_), type(ValueType::functionPtr) {}
+    IntegralValue(ClassData* value_) : classDataPtr(value_), type(ValueType::classDataPtr) {}
+    IntegralValue(ObjectType* value_) : typePtr(value_), type(ValueType::typePtr) {}
     uint64_t Value() const { return value; }
     ValueType GetType() const { return type; }
     bool AsBool() const { return static_cast<bool>(value); }
@@ -60,10 +62,12 @@ public:
     uint8_t* AsMemPtr() const { return memPtr; }
     const char32_t* AsStringLiteral() const { return strValue; }
     Function* AsFunctionPtr() const { return funPtr; }
+    ClassData* AsClassDataPtr() const { return classDataPtr; }
+    ObjectType* AsTypePtr() const { return typePtr; }
     void Write(Writer& writer);
     void Read(Reader& reader);
 private:
-    union { uint64_t value; uint8_t* memPtr; const char32_t* strValue; Function* funPtr; };
+    union { uint64_t value; uint8_t* memPtr; const char32_t* strValue; Function* funPtr; ClassData* classDataPtr; ObjectType* typePtr;  };
     ValueType type;
 };
 
@@ -133,24 +137,26 @@ inline ObjectFlags operator~(ObjectFlags flag)
 class Object
 {
 public:
-    Object(ObjectReference reference_, ArenaId arenaId_, ObjectMemPtr memPtr_, ObjectType* type_);
+    Object(ObjectReference reference_, ArenaId arenaId_, ObjectMemPtr memPtr_, ObjectType* type_, uint64_t size_);
     ObjectReference Reference() const { return reference; }
     ArenaId GetArenaId() const { return arenaId; }
     void SetArenaId(ArenaId arenaId_) { arenaId = arenaId_; }
     ObjectMemPtr MemPtr() const { return memPtr; }
     void SetMemPtr(ObjectMemPtr newMemPtr) { memPtr = newMemPtr; }
+    uint64_t Size() const { return size; }
+    ObjectType* Type() const { return type; }
     IntegralValue GetField(int index) const;
     void SetField(IntegralValue fieldValue, int index);
     int32_t FieldCount() const;
     bool IsLive() const { return GetFlag(ObjectFlags::live); }
     void SetLive() { SetFlag(ObjectFlags::live); }
     void ResetLive() { ResetFlag(ObjectFlags::live); }
-    uint64_t Size() const;
     void MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ObjectPool& objectBool);
 private:
     ObjectReference reference;
     ArenaId arenaId;
     ObjectMemPtr memPtr;
+    uint64_t size;
     ObjectType* type;
     ObjectFlags flags;
     bool GetFlag(ObjectFlags flag) const { return (flags & flag) != ObjectFlags::none; }
@@ -163,7 +169,7 @@ class ObjectPool
 public:
     ObjectPool(Machine& machine_);
     ObjectReference CreateObject(Thread& thread, ObjectType* type);
-    ObjectReference CreateString(Thread& thread, ArenaId arenaId, IntegralValue stringValue);
+    ObjectReference CopyObject(ObjectReference from);
     void DestroyObject(ObjectReference reference);
     Object& GetObject(ObjectReference reference);
     IntegralValue GetField(ObjectReference reference, int32_t fieldIndex);

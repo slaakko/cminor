@@ -410,6 +410,8 @@ IsNode::IsNode(const Span& span_) : Node(span_)
 
 IsNode::IsNode(const Span& span_, Node* expr_, Node* targetTypeExpr_) : Node(span_), expr(expr_), targetTypeExpr(targetTypeExpr_)
 {
+    expr->SetParent(this);
+    targetTypeExpr->SetParent(this);
 }
 
 Node* IsNode::Clone(CloneContext& cloneContext) const
@@ -428,6 +430,8 @@ AsNode::AsNode(const Span& span_) : Node(span_)
 
 AsNode::AsNode(const Span& span_, Node* expr_, Node* targetTypeExpr_) : Node(span_), expr(expr_), targetTypeExpr(targetTypeExpr_)
 {
+    expr->SetParent(this);
+    targetTypeExpr->SetParent(this);
 }
 
 Node* AsNode::Clone(CloneContext& cloneContext) const
@@ -446,6 +450,7 @@ DotNode::DotNode(const Span& span_) : UnaryNode(span_)
 
 DotNode::DotNode(const Span& span_, Node* subject_, Node* memberId_) : UnaryNode(span_, subject_), memberId(memberId_)
 {
+    memberId->SetParent(this);
 }
 
 Node* DotNode::Clone(CloneContext& cloneContext) const
@@ -497,6 +502,57 @@ Node* InvokeNode::Clone(CloneContext& cloneContext) const
 }
 
 void InvokeNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+CastNode::CastNode(const Span& span_) : Node(span_)
+{
+}
+
+CastNode::CastNode(const Span& span_, Node* targetTypeExpr_, Node* sourceExpr_) : Node(span_), targetTypeExpr(targetTypeExpr_), sourceExpr(sourceExpr_)
+{
+    targetTypeExpr->SetParent(this);
+    sourceExpr->SetParent(this);
+}
+
+Node* CastNode::Clone(CloneContext& cloneContext) const
+{
+    return new CastNode(GetSpan(), targetTypeExpr->Clone(cloneContext), sourceExpr->Clone(cloneContext));
+}
+
+void CastNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+NewNode::NewNode(const Span& span_) : Node(span_)
+{
+}
+
+NewNode::NewNode(const Span& span_, Node* typeExpr_) : Node(span_), typeExpr(typeExpr_)
+{
+    typeExpr->SetParent(this);
+}
+
+void NewNode::AddArgument(Node* argument)
+{
+    argument->SetParent(this);
+    arguments.Add(argument);
+}
+
+Node* NewNode::Clone(CloneContext& cloneContext) const
+{
+    NewNode* clone = new NewNode(GetSpan(), typeExpr->Clone(cloneContext));
+    int n = arguments.Count();
+    for (int i = 0; i < n; ++i)
+    {
+        clone->AddArgument(arguments[i]->Clone(cloneContext));
+    }
+    return clone;
+}
+
+void NewNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
 }

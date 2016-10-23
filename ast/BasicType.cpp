@@ -204,4 +204,18 @@ void VoidNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+ObjectNode::ObjectNode(const Span& span_) : Node(span_)
+{
+}
+
+Node* ObjectNode::Clone(CloneContext& cloneContext) const
+{
+    return new ObjectNode(GetSpan());
+}
+
+void ObjectNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 } } // namespace cminor::ast

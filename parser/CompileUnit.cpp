@@ -10,6 +10,7 @@
 #include <Cm.Parsing/XmlLog.hpp>
 #include <cminor/parser/Identifier.hpp>
 #include <cminor/parser/Function.hpp>
+#include <cminor/parser/Class.hpp>
 
 namespace cminor { namespace parser {
 
@@ -539,12 +540,17 @@ public:
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DefinitionRule>(this, &DefinitionRule::A0Action));
         Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
         a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DefinitionRule>(this, &DefinitionRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DefinitionRule>(this, &DefinitionRule::A2Action));
         Cm::Parsing::NonterminalParser* namespaceDefinitionNonterminalParser = GetNonterminal("NamespaceDefinition");
         namespaceDefinitionNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<DefinitionRule>(this, &DefinitionRule::PreNamespaceDefinition));
         namespaceDefinitionNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DefinitionRule>(this, &DefinitionRule::PostNamespaceDefinition));
         Cm::Parsing::NonterminalParser* functionDefinitionNonterminalParser = GetNonterminal("FunctionDefinition");
         functionDefinitionNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<DefinitionRule>(this, &DefinitionRule::PreFunctionDefinition));
         functionDefinitionNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DefinitionRule>(this, &DefinitionRule::PostFunctionDefinition));
+        Cm::Parsing::NonterminalParser* classDefinitionNonterminalParser = GetNonterminal("ClassDefinition");
+        classDefinitionNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<DefinitionRule>(this, &DefinitionRule::PreClassDefinition));
+        classDefinitionNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DefinitionRule>(this, &DefinitionRule::PostClassDefinition));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -553,6 +559,10 @@ public:
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = context.fromFunctionDefinition;
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromClassDefinition;
     }
     void PreNamespaceDefinition(Cm::Parsing::ObjectStack& stack)
     {
@@ -583,16 +593,31 @@ public:
             stack.pop();
         }
     }
+    void PreClassDefinition(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<CompileUnitNode*>(context.compileUnit)));
+    }
+    void PostClassDefinition(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromClassDefinition_value = std::move(stack.top());
+            context.fromClassDefinition = *static_cast<Cm::Parsing::ValueObject<ClassNode*>*>(fromClassDefinition_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): ctx(), compileUnit(), ns(), value(), fromNamespaceDefinition(), fromFunctionDefinition() {}
+        Context(): ctx(), compileUnit(), ns(), value(), fromNamespaceDefinition(), fromFunctionDefinition(), fromClassDefinition() {}
         ParsingContext* ctx;
         CompileUnitNode* compileUnit;
         NamespaceNode* ns;
         Node* value;
         NamespaceNode* fromNamespaceDefinition;
         FunctionNode* fromFunctionDefinition;
+        ClassNode* fromClassDefinition;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -743,6 +768,74 @@ private:
     Context context;
 };
 
+class CompileUnitGrammar::ClassDefinitionRule : public Cm::Parsing::Rule
+{
+public:
+    ClassDefinitionRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        AddInheritedAttribute(AttrOrVariable("CompileUnitNode*", "compileUnit"));
+        SetValueTypeName("ClassNode*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
+        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<CompileUnitNode*>*>(compileUnit_value.get());
+        stack.pop();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ClassNode*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassDefinitionRule>(this, &ClassDefinitionRule::A0Action));
+        Cm::Parsing::NonterminalParser* classNonterminalParser = GetNonterminal("Class");
+        classNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassDefinitionRule>(this, &ClassDefinitionRule::PreClass));
+        classNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassDefinitionRule>(this, &ClassDefinitionRule::PostClass));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromClass;
+    }
+    void PreClass(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostClass(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromClass_value = std::move(stack.top());
+            context.fromClass = *static_cast<Cm::Parsing::ValueObject<ClassNode*>*>(fromClass_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), compileUnit(), value(), fromClass() {}
+        ParsingContext* ctx;
+        CompileUnitNode* compileUnit;
+        ClassNode* value;
+        ClassNode* fromClass;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
 void CompileUnitGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
@@ -764,14 +857,21 @@ void CompileUnitGrammar::GetReferencedGrammars()
         grammar2 = cminor::parser::FunctionGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.ClassGrammar");
+    if (!grammar3)
+    {
+        grammar3 = cminor::parser::ClassGrammar::Create(pd);
+    }
+    AddGrammarReference(grammar3);
 }
 
 void CompileUnitGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("Function", this, "FunctionGrammar.Function"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Class", this, "ClassGrammar.Class"));
     AddRule(new CompileUnitRule("CompileUnit", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",
@@ -819,10 +919,13 @@ void CompileUnitGrammar::CreateRules()
                 new Cm::Parsing::NonterminalParser("Definition", "Definition", 3)))));
     AddRule(new DefinitionRule("Definition", GetScope(),
         new Cm::Parsing::AlternativeParser(
-            new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::NonterminalParser("NamespaceDefinition", "NamespaceDefinition", 3)),
-            new Cm::Parsing::ActionParser("A1",
-                new Cm::Parsing::NonterminalParser("FunctionDefinition", "FunctionDefinition", 2)))));
+            new Cm::Parsing::AlternativeParser(
+                new Cm::Parsing::ActionParser("A0",
+                    new Cm::Parsing::NonterminalParser("NamespaceDefinition", "NamespaceDefinition", 3)),
+                new Cm::Parsing::ActionParser("A1",
+                    new Cm::Parsing::NonterminalParser("FunctionDefinition", "FunctionDefinition", 2))),
+            new Cm::Parsing::ActionParser("A2",
+                new Cm::Parsing::NonterminalParser("ClassDefinition", "ClassDefinition", 2)))));
     AddRule(new NamespaceDefinitionRule("NamespaceDefinition", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(
@@ -841,6 +944,9 @@ void CompileUnitGrammar::CreateRules()
     AddRule(new FunctionDefinitionRule("FunctionDefinition", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::NonterminalParser("Function", "Function", 1))));
+    AddRule(new ClassDefinitionRule("ClassDefinition", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::NonterminalParser("Class", "Class", 1))));
     SetSkipRuleName("spaces_and_comments");
 }
 

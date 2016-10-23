@@ -30,6 +30,7 @@ class BoundCompoundStatement : public BoundStatement
 public:
     BoundCompoundStatement(Assembly& assembly_);
     const std::vector<std::unique_ptr<BoundStatement>>& Statements() const { return statements; }
+    void InsertFront(std::unique_ptr<BoundStatement>&& statement);
     void AddStatement(std::unique_ptr<BoundStatement>&& statement);
     void Accept(BoundNodeVisitor& visitor) override;
 private:

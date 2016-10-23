@@ -32,7 +32,7 @@ Function* MachineFunctionTable::GetFunction(int32_t functionId) const
 void MachineFunctionTable::Write(SymbolWriter& writer)
 {
     int32_t n = int32_t(machineFunctions.size());
-    static_cast<Writer&>(writer).Put(n);
+    writer.AsMachineWriter().Put(n);
     for (int32_t i = 0; i < n; ++i)
     {
         Function* function = machineFunctions[i].get();

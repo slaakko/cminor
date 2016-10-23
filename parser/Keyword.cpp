@@ -35,7 +35,9 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("bool");
     keywords0.push_back("break");
     keywords0.push_back("byte");
+    keywords0.push_back("cast");
     keywords0.push_back("char");
+    keywords0.push_back("class");
     keywords0.push_back("continue");
     keywords0.push_back("do");
     keywords0.push_back("double");
@@ -49,7 +51,9 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("internal");
     keywords0.push_back("long");
     keywords0.push_back("namespace");
+    keywords0.push_back("new");
     keywords0.push_back("null");
+    keywords0.push_back("object");
     keywords0.push_back("operator");
     keywords0.push_back("override");
     keywords0.push_back("private");

@@ -13,8 +13,9 @@ namespace cminor { namespace binder {
 using namespace cminor::ast;
 
 class BoundCompileUnit;
+class BoundFunction;
 
-std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, ContainerScope* containerScope, Node* node);
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node);
 
 } } // namespace cminor::binder
 

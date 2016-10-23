@@ -336,6 +336,70 @@ private:
     Constant function;
 };
 
+class VirtualCallInst : public Instruction
+{
+public:
+    VirtualCallInst();
+    void SetNumArgs(int32_t numArgs_) { numArgs = numArgs_; }
+    void SetVmtIndex(int32_t vmtIndex_) { vmtIndex = vmtIndex_; }
+    Instruction* Clone() const override { return new VirtualCallInst(*this); }
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
+private:
+    int32_t numArgs;
+    int32_t vmtIndex;
+};
+
+class SetClassDataInst : public Instruction
+{
+public:
+    SetClassDataInst();
+    Instruction* Clone() const override { return new SetClassDataInst(*this); }
+    void SetClassName(Constant fullClassName);
+    StringPtr GetClassName() const;
+    void SetClassData(ClassData* classDataPtr);
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
+private:
+    Constant classData;
+};
+
+class CreateObjectInst : public Instruction
+{
+public:
+    CreateObjectInst();
+    Instruction* Clone() const override { return new CreateObjectInst(*this); }
+    void SetClassName(Constant fullClassName);
+    StringPtr GetClassName() const;
+    void SetType(ObjectType* typePtr);
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
+private:
+    Constant type;
+};
+
+class CopyObjectInst : public Instruction
+{
+public:
+    CopyObjectInst();
+    Instruction* Clone() const override { return new CopyObjectInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class DupInst : public Instruction
+{
+public:
+    DupInst();
+    Instruction* Clone() const override { return new DupInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 } } // namespace cminor::machine
 
 #endif // CMINOR_MACHINE_INSTRUCTION_INCLUDED

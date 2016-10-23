@@ -1,5 +1,5 @@
-#ifndef Expression_hpp_862
-#define Expression_hpp_862
+#ifndef Expression_hpp_25691
+#define Expression_hpp_25691
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -34,10 +34,12 @@ private:
     class PrefixRule;
     class PostfixRule;
     class PrimaryRule;
+    class CastExprRule;
+    class NewExprRule;
     class ArgumentListRule;
     class ExpressionListRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // Expression_hpp_862
+#endif // Expression_hpp_25691

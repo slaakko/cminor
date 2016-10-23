@@ -283,6 +283,37 @@ private:
     NodeList<Node> arguments;
 };
 
+class CastNode : public Node
+{
+public:
+    CastNode(const Span& span_);
+    CastNode(const Span& span_, Node* targetTypeExpr_, Node* sourceExpr_);
+    NodeType GetNodeType() const override { return NodeType::castNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    Node* TargetTypeExpr() const { return targetTypeExpr.get(); }
+    Node* SourceExpr() const { return sourceExpr.get(); }
+private:
+    std::unique_ptr<Node> targetTypeExpr;
+    std::unique_ptr<Node> sourceExpr;
+};
+
+class NewNode : public Node
+{
+public:
+    NewNode(const Span& span_);
+    NewNode(const Span& span_, Node* typeExpr_);
+    NodeType GetNodeType() const override { return NodeType::newNode; }
+    void AddArgument(Node* argument) override;
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    Node* TypeExpr() const { return typeExpr.get(); }
+    const NodeList<Node>& Arguments() const { return arguments; }
+private:
+    std::unique_ptr<Node> typeExpr;
+    NodeList<Node> arguments;
+};
+
 } } // namespace cminor::ast
 
 #endif // CMINOR_AST_EXPRESSION_INCLUDED

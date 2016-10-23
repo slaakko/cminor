@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicType.hpp" />
+    <ClInclude Include="Class.hpp" />
     <ClInclude Include="Clone.hpp" />
     <ClInclude Include="CompileUnit.hpp" />
     <ClInclude Include="Expression.hpp" />
@@ -37,6 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicType.cpp" />
+    <ClCompile Include="Class.cpp" />
     <ClCompile Include="Clone.cpp" />
     <ClCompile Include="CompileUnit.cpp" />
     <ClCompile Include="Expression.cpp" />
@@ -48,6 +50,7 @@
     <ClCompile Include="Parameter.cpp" />
     <ClCompile Include="Project.cpp" />
     <ClCompile Include="Solution.cpp" />
+    <ClCompile Include="Specifier.cpp" />
     <ClCompile Include="Statement.cpp" />
     <ClCompile Include="Visitor.cpp" />
   </ItemGroup>

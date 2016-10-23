@@ -7,17 +7,37 @@
 #include <cminor/binder/BoundCompileUnit.hpp>
 #include <cminor/binder/BoundExpression.hpp>
 #include <cminor/binder/OverloadResolution.hpp>
+#include <cminor/binder/Access.hpp>
+#include <cminor/binder/BoundFunction.hpp>
+#include <cminor/binder/TypeResolver.hpp>
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
+#include <cminor/machine/Type.hpp>
 
 namespace cminor { namespace binder {
 
 class ExpressionBinder : public Visitor
 {
 public:
-    ExpressionBinder(BoundCompileUnit& boundCompileUnit_, ContainerScope* containerScope_);
+    ExpressionBinder(BoundCompileUnit& boundCompileUnit_, BoundFunction* boundFunction_, ContainerScope* containerScope_);
     std::unique_ptr<BoundExpression> GetExpression() { return std::move(expression); }
+
+    void Visit(BoolNode& boolNode) override;
+    void Visit(SByteNode& sbyteNode) override;
+    void Visit(ByteNode& byteNode) override;
+    void Visit(ShortNode& shortNode) override;
+    void Visit(UShortNode& ushortNode) override;
+    void Visit(IntNode& intNode) override;
+    void Visit(UIntNode& uintNode) override;
+    void Visit(LongNode& longNode) override;
+    void Visit(ULongNode& ulongNode) override;
+    void Visit(FloatNode& floatNode) override;
+    void Visit(DoubleNode& doubleNode) override;
+    void Visit(CharNode& charNode) override;
+    void Visit(StringNode& stringNode) override;
+    void Visit(VoidNode& voidNode) override;
+    void Visit(ObjectNode& objectNode) override;
 
     void Visit(BooleanLiteralNode& booleanLiteralNode) override;
     void Visit(SByteLiteralNode& sbyteLiteralNode) override;
@@ -60,8 +80,11 @@ public:
     void Visit(IdentifierNode& identifierNode) override;
     void Visit(DotNode& dotNode) override;
     void Visit(InvokeNode& invokeNode) override;
+    void Visit(CastNode& castNode) override;
+    void Visit(NewNode& newNode) override;
 private:
     BoundCompileUnit& boundCompileUnit;
+    BoundFunction* boundFunction;
     ContainerScope* containerScope;
     std::unique_ptr<BoundExpression> expression;
     void BindSymbol(Symbol* symbol);
@@ -71,8 +94,99 @@ private:
     void BindBinaryOp(BoundExpression* left, BoundExpression* right, Node& node, StringPtr groupName);
 };
 
-ExpressionBinder::ExpressionBinder(BoundCompileUnit& boundCompileUnit_, ContainerScope* containerScope_) : boundCompileUnit(boundCompileUnit_), containerScope(containerScope_)
+ExpressionBinder::ExpressionBinder(BoundCompileUnit& boundCompileUnit_, BoundFunction* boundFunction_, ContainerScope* containerScope_) : 
+    boundCompileUnit(boundCompileUnit_), boundFunction(boundFunction_), containerScope(containerScope_)
 {
+}
+
+void ExpressionBinder::Visit(BoolNode& boolNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"bool");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(SByteNode& sbyteNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"sbyte");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(ByteNode& byteNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"byte");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(ShortNode& shortNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"short");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(UShortNode& ushortNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"ushort");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(IntNode& intNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"int");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(UIntNode& uintNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"uint");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(LongNode& longNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"long");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(ULongNode& ulongNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"ulong");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(FloatNode& floatNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"float");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(DoubleNode& doubleNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"double");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(CharNode& charNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"char");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(StringNode& stringNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"string");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(VoidNode& voidNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"void");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
+void ExpressionBinder::Visit(ObjectNode& objectNode)
+{
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"object");
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(BooleanLiteralNode& booleanLiteralNode)
@@ -227,6 +341,7 @@ void ExpressionBinder::BindUnaryOp(BoundExpression* operand, Node& node, StringP
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, operand->GetType()->ClassOrNsScope()));
     std::unique_ptr<BoundFunctionCall> operatorFunCall = ResolveOverload(boundCompileUnit, groupName, functionScopeLookups, arguments, node.GetSpan());
+    CheckAccess(boundFunction->GetFunctionSymbol(), operatorFunCall->GetFunctionSymbol());
     expression.reset(operatorFunCall.release());
 }
 
@@ -247,6 +362,7 @@ void ExpressionBinder::BindBinaryOp(BoundExpression* left, BoundExpression* righ
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, left->GetType()->ClassOrNsScope()));
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, right->GetType()->ClassOrNsScope()));
     std::unique_ptr<BoundFunctionCall> operatorFunCall = ResolveOverload(boundCompileUnit, groupName, functionScopeLookups, arguments, node.GetSpan());
+    CheckAccess(boundFunction->GetFunctionSymbol(), operatorFunCall->GetFunctionSymbol());
     expression.reset(operatorFunCall.release());
 }
 
@@ -419,24 +535,28 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
         case SymbolType::parameterSymbol:
         {
             ParameterSymbol* parameterSymbol = static_cast<ParameterSymbol*>(symbol);
+            CheckAccess(boundFunction->GetFunctionSymbol(), parameterSymbol);
             expression.reset(new BoundParameter(boundCompileUnit.GetAssembly(), parameterSymbol->GetType(), parameterSymbol));
             break;
         }
         case SymbolType::localVariableSymbol:
         {
             LocalVariableSymbol* localVariableSymbol = static_cast<LocalVariableSymbol*>(symbol);
+            CheckAccess(boundFunction->GetFunctionSymbol(), localVariableSymbol);
             expression.reset(new BoundLocalVariable(boundCompileUnit.GetAssembly(), localVariableSymbol->GetType(), localVariableSymbol));
             break;
         }
         case SymbolType::memberVariableSymbol:
         {
             MemberVariableSymbol* memberVariableSymbol = static_cast<MemberVariableSymbol*>(symbol);
+            CheckAccess(boundFunction->GetFunctionSymbol(), memberVariableSymbol);
             expression.reset(new BoundMemberVariable(boundCompileUnit.GetAssembly(), memberVariableSymbol->GetType(), memberVariableSymbol));
             break;
         }
         case SymbolType::constantSymbol:
         {
             ConstantSymbol* constantSymbol = static_cast<ConstantSymbol*>(symbol);
+            CheckAccess(boundFunction->GetFunctionSymbol(), constantSymbol);
             expression.reset(new BoundConstant(boundCompileUnit.GetAssembly(), constantSymbol->GetType(), constantSymbol));
             break;
         }
@@ -522,6 +642,7 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
         }
         functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
         std::unique_ptr<BoundFunctionCall> functionCall = ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan());
+        CheckAccess(boundFunction->GetFunctionSymbol(), functionCall->GetFunctionSymbol());
         expression.reset(functionCall.release());
     }
     else
@@ -530,9 +651,69 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
     }
 }
 
-std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, ContainerScope* containerScope, Node* node)
+void ExpressionBinder::Visit(CastNode& castNode)
 {
-    ExpressionBinder expressionBinder(boundCompileUnit, containerScope);
+    TypeSymbol* targetType = ResolveType(boundCompileUnit, containerScope, castNode.TargetTypeExpr());
+    castNode.SourceExpr()->Accept(*this);
+    if (targetType != expression->GetType())
+    {
+        std::vector<std::unique_ptr<BoundExpression>> targetExprArgs;
+        targetExprArgs.push_back(std::unique_ptr<BoundExpression>(new BoundTypeExpression(boundCompileUnit.GetAssembly(), targetType)));
+        std::vector<FunctionScopeLookup> functionScopeLookups;
+        functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
+        functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, targetType->ClassOrNsScope()));
+        functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
+        std::unique_ptr<BoundFunctionCall> castFunctionCall = ResolveOverload(boundCompileUnit, U"@return", functionScopeLookups, targetExprArgs, castNode.GetSpan());
+        std::vector<std::unique_ptr<BoundExpression>> castArguments;
+        castArguments.push_back(std::move(expression));
+        FunctionMatch functionMatch(castFunctionCall->GetFunctionSymbol());
+        bool conversionFound = FindConversions(boundCompileUnit, castFunctionCall->GetFunctionSymbol(), castArguments, functionMatch, ConversionType::explicit_);
+        if (conversionFound)
+        {
+            Assert(!functionMatch.argumentMatches.empty(), "argument match expected");
+            FunctionSymbol* conversionFun = functionMatch.argumentMatches[0].conversionFun;
+            if (conversionFun)
+            {
+                castArguments[0].reset(new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(castArguments[0].release()), conversionFun));
+            }
+            castFunctionCall->SetArguments(std::move(castArguments));
+        }
+        else
+        {
+            throw Exception("no explicit conversion from '" + ToUtf8(castArguments[0]->GetType()->FullName()) + "' to '" + ToUtf8(targetType->FullName()) + "' exists",
+                castNode.GetSpan(), boundFunction->GetFunctionSymbol()->GetSpan());
+        }
+        CheckAccess(boundFunction->GetFunctionSymbol(), castFunctionCall->GetFunctionSymbol());
+        expression.reset(castFunctionCall.release());
+    }
+}
+
+void ExpressionBinder::Visit(NewNode& newNode)
+{
+    TypeSymbol* type = ResolveType(boundCompileUnit, containerScope, newNode.TypeExpr());
+    if (type->IsAbstract())
+    {
+        throw Exception("cannot instantiate an abstract class", newNode.GetSpan(), type->GetSpan());
+    }
+    std::vector<std::unique_ptr<BoundExpression>> arguments;
+    arguments.push_back(std::unique_ptr<BoundExpression>(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type)));
+    int n = newNode.Arguments().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        Node* argument = newNode.Arguments()[i];
+        argument->Accept(*this);
+        arguments.push_back(std::unique_ptr<BoundExpression>(expression.release()));
+    }
+    std::vector<FunctionScopeLookup> functionScopeLookups;
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, type->ClassOrNsScope()));
+    std::unique_ptr<BoundFunctionCall> constructorCall = ResolveOverload(boundCompileUnit, U"@constructor", functionScopeLookups, arguments, newNode.GetSpan());
+    CheckAccess(boundFunction->GetFunctionSymbol(), constructorCall->GetFunctionSymbol());
+    expression.reset(new BoundNewExpression(constructorCall.get(), type));
+}
+
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node)
+{
+    ExpressionBinder expressionBinder(boundCompileUnit, boundFunction, containerScope);
     node->Accept(expressionBinder);
     return expressionBinder.GetExpression();
 }

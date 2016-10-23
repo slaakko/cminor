@@ -8,7 +8,8 @@
 
 namespace cminor { namespace binder {
 
-BoundCompileUnit::BoundCompileUnit(Assembly& assembly_, CompileUnitNode* compileUnitNode_) : BoundNode(assembly_), assembly(assembly_), compileUnitNode(compileUnitNode_)
+BoundCompileUnit::BoundCompileUnit(Assembly& assembly_, CompileUnitNode* compileUnitNode_) : BoundNode(assembly_), assembly(assembly_), compileUnitNode(compileUnitNode_), 
+    conversionTable(assembly.GetSymbolTable().GetConversionTable())
 {
 }
 
@@ -25,6 +26,11 @@ void BoundCompileUnit::AddBoundNode(std::unique_ptr<BoundNode>&& boundNode)
 void BoundCompileUnit::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+FunctionSymbol* BoundCompileUnit::GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType) const
+{
+    return conversionTable.GetConversion(sourceType, targetType);
 }
 
 } } // namespace cminor::binder

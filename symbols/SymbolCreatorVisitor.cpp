@@ -7,6 +7,7 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/ast/Statement.hpp>
+#include <cminor/ast/Class.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -43,6 +44,56 @@ void SymbolCreatorVisitor::Visit(FunctionNode& functionNode)
     }
     functionNode.Body()->Accept(*this);
     symbolTable.EndFunction();
+}
+
+void SymbolCreatorVisitor::Visit(ClassNode& classNode)
+{
+    symbolTable.BeginClass(classNode);
+    int n = classNode.Members().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        Node* member = classNode.Members()[i];
+        member->Accept(*this);
+    }
+    symbolTable.EndClass();
+}
+
+void SymbolCreatorVisitor::Visit(StaticConstructorNode& staticConstructorNode)
+{
+    symbolTable.BeginStaticConstructor(staticConstructorNode);
+    staticConstructorNode.Body()->Accept(*this);
+    symbolTable.EndStaticConstructor();
+}
+
+void SymbolCreatorVisitor::Visit(ConstructorNode& constructorNode)
+{
+    symbolTable.BeginConstructor(constructorNode);
+    int n = constructorNode.Parameters().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        ParameterNode* parameter = constructorNode.Parameters()[i];
+        parameter->Accept(*this);
+    }
+    constructorNode.Body()->Accept(*this);
+    symbolTable.EndConstructor();
+}
+
+void SymbolCreatorVisitor::Visit(MemberFunctionNode& memberFunctionNode)
+{
+    symbolTable.BeginMemberFunction(memberFunctionNode);
+    int n = memberFunctionNode.Parameters().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        ParameterNode* parameter = memberFunctionNode.Parameters()[i];
+        parameter->Accept(*this);
+    }
+    memberFunctionNode.Body()->Accept(*this);
+    symbolTable.EndMemberFunction();
+}
+
+void SymbolCreatorVisitor::Visit(MemberVariableNode& memberVariableNode)
+{
+    symbolTable.AddMemberVariable(memberVariableNode);
 }
 
 void SymbolCreatorVisitor::Visit(ParameterNode& parameterNode)

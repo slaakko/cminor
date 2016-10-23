@@ -14,6 +14,7 @@ class ConstantSymbol : public Symbol
 public:
     ConstantSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::constantSymbol; }
+    std::string TypeString() const override { return "constant"; }
     TypeSymbol* GetType() const { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }
     void SetValue(Constant value_);

@@ -25,6 +25,9 @@ public:
     bool ParsingIsOrAs() const { return parsingIsOrAs; }
     void PushParsingIsOrAs(bool enable);
     void PopParsingIsOrAs();
+    void BeginParsingTypeExpr();
+    void EndParsingTypeExpr();
+    bool ParsingTypeExpr() const { return parsingTypeExpr; }
 private:
     bool parsingSimpleStatement;
     std::stack<bool> parsingSimpleStatementStack;
@@ -34,6 +37,8 @@ private:
     std::stack<bool> parsingArgumentsStack;
     bool parsingIsOrAs;
     std::stack<bool> parsingIsOrAsStack;
+    bool parsingTypeExpr;
+    std::stack<bool> parsingTypeExprStack;
 };
 
 } } // namespace cminor::parser

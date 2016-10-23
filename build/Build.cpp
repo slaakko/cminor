@@ -18,6 +18,7 @@
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/MappedInputFile.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/machine/Class.hpp>
 #include <Cm.Util/Path.hpp>
 #include <iostream>
 
@@ -117,11 +118,18 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     Assembly assembly(machine, assemblyName, project->AssemblyFilePath());
     const Assembly* rootAssembly = &assembly;
     std::vector<CallInst*> callInstructions;
+    std::vector<CreateObjectInst*> createObjectInstructions;
+    std::vector<SetClassDataInst*> setClassDataInstructions;
+    std::vector<ClassTypeSymbol*> classTypes;
     std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(project->AssemblyFilePath()).remove_filename().generic_string());
     std::unordered_set<std::string> importSet;
-    assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions);
+    assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions, createObjectInstructions, setClassDataInstructions, 
+        classTypes);
     assembly.ImportSymbolTables();
     callInstructions.clear();
+    createObjectInstructions.clear();
+    setClassDataInstructions.clear();
+    classTypes.clear();
     BuildSymbolTable(assembly, compileUnits);
     std::vector<std::unique_ptr<BoundCompileUnit>> boundCompileUnits = BindTypes(assembly, compileUnits);
     for (std::unique_ptr<BoundCompileUnit>& boundCompileUnit : boundCompileUnits)

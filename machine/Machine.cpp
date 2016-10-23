@@ -226,17 +226,28 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
     rootInst.SetInst(0x9F, new ReceiveInst());
 
     // jump & call:
-    //  -------------
+    // ------------
 
     rootInst.SetInst(0xA0, new JumpInst());
     rootInst.SetInst(0xA1, new JumpTrueInst());
     rootInst.SetInst(0xA2, new JumpFalseInst());
     rootInst.SetInst(0xA3, new CallInst());
-    rootInst.SetInst(0xA4, new EnterBlockInst());
-    rootInst.SetInst(0xA5, new ExitBlockInst());
+    rootInst.SetInst(0xA4, new VirtualCallInst());
+    rootInst.SetInst(0xA5, new EnterBlockInst());
+    rootInst.SetInst(0xA6, new ExitBlockInst());
+
+    // objects:
+    // --------
+
+    rootInst.SetInst(0xB0, new LoadDefaultValueInst<ValueType::objectReference>("defo", "object"));
+    rootInst.SetInst(0xB1, new CreateObjectInst());
+    rootInst.SetInst(0xB2, new CopyObjectInst());
+    rootInst.SetInst(0xB3, new SetClassDataInst());
+    rootInst.SetInst(0xB4, new DupInst());
 
     //  conversion group instruction:
     //  -----------------------------
+
     ContainerInst* convContainerInst = new ContainerInst(*this, "<conversion_container_instruction>", false);
     rootInst.SetInst(0xFE, convContainerInst);
 
@@ -418,7 +429,7 @@ void Machine::Run()
     {
         throw std::runtime_error("no main function set");
     }
-    RunGarbageCollector();
+    //RunGarbageCollector();
     threads.push_back(std::unique_ptr<Thread>(new Thread(*this, *mainFun)));
     MainThread().Run();
 }
@@ -463,6 +474,14 @@ std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
     if (CallInst* callInst = dynamic_cast<CallInst*>(clonedInst))
     {
         reader.AddCallInst(callInst);
+    }
+    else if (CreateObjectInst* createObjectInst = dynamic_cast<CreateObjectInst*>(clonedInst))
+    {
+        reader.AddCreateObjectInst(createObjectInst);
+    }
+    else if (SetClassDataInst* setClassDataInst = dynamic_cast<SetClassDataInst*>(clonedInst))
+    {
+        reader.AddSetClassDataInst(setClassDataInst);
     }
     return std::unique_ptr<Instruction>(clonedInst);
 }

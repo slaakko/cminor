@@ -10,6 +10,8 @@
 #include <cminor/machine/String.hpp>
 #include <cminor/machine/Constant.hpp>
 #include <cminor/machine/Function.hpp>
+#include <cminor/machine/Class.hpp>
+#include <cminor/machine/Type.hpp>
 
 namespace cminor { namespace machine {
 
@@ -422,6 +424,194 @@ void CallInst::Dump(CodeFormatter& formatter)
     Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
     Function* fun = function.Value().AsFunctionPtr();
     formatter.Write(" " + ToUtf8(fun->CallName().Value().AsStringLiteral()));
+}
+
+VirtualCallInst::VirtualCallInst() : Instruction("callv"), numArgs(0), vmtIndex(-1)
+{
+}
+
+void VirtualCallInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    Assert(numArgs != 0, "invalid number of arguments");
+    writer.Put(numArgs);
+    Assert(vmtIndex != -1, "invalid vmt index");
+    writer.Put(vmtIndex);
+}
+
+Instruction* VirtualCallInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    numArgs = reader.GetInt();
+    vmtIndex = reader.GetInt();
+    return this;
+}
+
+void VirtualCallInst::Execute(Frame& frame)
+{
+    IntegralValue receiverValue = frame.OpStack().GetValue(numArgs);
+    Assert(receiverValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference receiver(receiverValue.Value());
+    IntegralValue classDataField = frame.GetObjectPool().GetField(receiver, 0);
+    Assert(classDataField.GetType() == ValueType::classDataPtr, "class data field expected");
+    ClassData* classData = classDataField.AsClassDataPtr();
+    if (classData)
+    {
+        Function* method = classData->Vmt().GetMethod(vmtIndex);
+        if (method)
+        {
+            frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *method));
+        }
+        else
+        {
+            throw std::runtime_error("tried to call an abstract method");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("class data field not set");
+    }
+}
+
+void VirtualCallInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    formatter.Write(" " + std::to_string(numArgs) + " " + std::to_string(vmtIndex));
+}
+
+SetClassDataInst::SetClassDataInst() : Instruction("setclassdata")
+{
+}
+
+void SetClassDataInst::SetClassName(Constant fullClassName)
+{
+    Assert(fullClassName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    classData = fullClassName;
+}
+
+StringPtr SetClassDataInst::GetClassName() const
+{
+    Assert(classData.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    return StringPtr(classData.Value().AsStringLiteral());
+}
+
+void SetClassDataInst::SetClassData(ClassData* classDataPtr)
+{
+    classData.SetValue(IntegralValue(classDataPtr));
+}
+
+void SetClassDataInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    ConstantId id = writer.GetConstantPool()->GetIdFor(classData);
+    Assert(id != noConstantId, "id for call inst not found");
+    id.Write(writer);
+}
+
+Instruction* SetClassDataInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    ConstantId id = reader.GetInt();
+    classData = reader.GetConstantPool()->GetConstant(id);
+    return this;
+}
+
+void SetClassDataInst::Execute(Frame& frame)
+{
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference objectReference(value.Value());
+    IntegralValue classDataFieldValue = frame.GetObjectPool().GetField(objectReference, 0);
+    Assert(classDataFieldValue.GetType() == ValueType::classDataPtr, "class data pointer expected");
+    if (!classDataFieldValue.AsClassDataPtr())
+    {
+        Assert(classData.Value().GetType() == ValueType::classDataPtr, "class data pointer expected");
+        ClassData* cd = classData.Value().AsClassDataPtr();
+        classDataFieldValue = IntegralValue(cd);
+        frame.GetObjectPool().SetField(objectReference, 0, classDataFieldValue);
+    }
+}
+
+void SetClassDataInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    Assert(classData.Value().GetType() == ValueType::classDataPtr, "class data pointer expected");
+    ClassData* cd = classData.Value().AsClassDataPtr();
+    formatter.Write(" " + ToUtf8(cd->Type()->Name().Value()) + " " + std::to_string(cd->Type()->Id()));
+}
+
+CreateObjectInst::CreateObjectInst() : Instruction("createo")
+{
+}
+
+void CreateObjectInst::SetClassName(Constant fullClassName)
+{
+    Assert(fullClassName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    type = fullClassName;
+}
+
+StringPtr CreateObjectInst::GetClassName() const
+{
+    Assert(type.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    return StringPtr(type.Value().AsStringLiteral());
+}
+
+void CreateObjectInst::SetType(ObjectType* typePtr)
+{
+    type.SetValue(IntegralValue(typePtr));
+}
+
+void CreateObjectInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    ConstantId id = writer.GetConstantPool()->GetIdFor(type);
+    Assert(id != noConstantId, "id for create object inst not found");
+    id.Write(writer);
+}
+
+Instruction* CreateObjectInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    ConstantId id = reader.GetInt();
+    type = reader.GetConstantPool()->GetConstant(id);
+    return this;
+}
+
+void CreateObjectInst::Execute(Frame& frame)
+{
+    Assert(type.Value().GetType() == ValueType::typePtr, "type pointer expected");
+    ObjectReference objectReference = frame.GetObjectPool().CreateObject(frame.GetThread(), type.Value().AsTypePtr());
+    frame.OpStack().Push(objectReference);
+}
+
+void CreateObjectInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    Assert(type.Value().GetType() == ValueType::typePtr, "type pointer expected");
+    ObjectType* objectType = type.Value().AsTypePtr();
+    formatter.Write(" " + ToUtf8(objectType->Name().Value()) + " " + std::to_string(objectType->Id()));
+}
+
+CopyObjectInst::CopyObjectInst() : Instruction("copyo", "copy", "object")
+{
+}
+
+void CopyObjectInst::Execute(Frame& frame)
+{
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference objectReference(value.Value());
+    ObjectReference copy = frame.GetObjectPool().CopyObject(objectReference);
+    frame.OpStack().Push(copy);
+}
+
+DupInst::DupInst() : Instruction("dup")
+{
+}
+
+void DupInst::Execute(Frame& frame)
+{
+    frame.OpStack().Dup();
 }
 
 } } // namespace cminor::machine

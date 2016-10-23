@@ -5,6 +5,7 @@
 
 #include <cminor/emitter/Emitter.hpp>
 #include <cminor/binder/BoundNodeVisitor.hpp>
+#include <cminor/binder/BoundClass.hpp>
 #include <cminor/binder/BoundFunction.hpp>
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/machine/Machine.hpp>
@@ -18,6 +19,7 @@ class EmitterVisitor : public BoundNodeVisitor, public Emitter
 public:
     EmitterVisitor(Machine& machine_);
     void Visit(BoundCompileUnit& boundCompileUnit) override;
+    void Visit(BoundClass& boundClass) override;
     void Visit(BoundFunction& boundFunction) override;
     void Visit(BoundCompoundStatement& boundCompoundStatement) override;
     void Visit(BoundReturnStatement& boundReturnStatement) override;
@@ -130,6 +132,16 @@ void EmitterVisitor::Visit(BoundCompileUnit& boundCompileUnit)
     {
         BoundNode* boundNode = boundCompileUnit.BoundNodes()[i].get();
         boundNode->Accept(*this);
+    }
+}
+
+void EmitterVisitor::Visit(BoundClass& boundClass)
+{
+    int n = int(boundClass.Members().size());
+    for (int i = 0; i < n; ++i)
+    {
+        BoundNode* member = boundClass.Members()[i].get();
+        member->Accept(*this);
     }
 }
 

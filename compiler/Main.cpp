@@ -10,6 +10,7 @@
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Util.hpp>
+#include <cminor/machine/Class.hpp>
 #include <Cm.Parsing/InitDone.hpp>
 #include <Cm.Util/Path.hpp>
 #include <boost/filesystem.hpp>
@@ -28,6 +29,8 @@ struct InitDone
     {
         FileRegistry::Init();
         FunctionTable::Init();
+        ClassDataTable::Init();
+        ObjectTypeTable::Init();
         InitSymbol();
         InitAssembly();
         Cm::Parsing::Init();
@@ -37,6 +40,9 @@ struct InitDone
         Cm::Parsing::Done();
         DoneAssembly();
         DoneSymbol();
+        ObjectTypeTable::Init();
+        ClassDataTable::Init();
+        FunctionTable::Init();
     }
 };
 

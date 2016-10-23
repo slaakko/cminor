@@ -26,9 +26,19 @@ void VariableSymbol::Read(SymbolReader& reader)
 {
     ConstantId id;
     id.Read(reader);
-    Constant constant = GetAssembly()->GetConstantPool().GetConstant(id);
-    utf32_string typeFullName = constant.Value().AsStringLiteral();
-    type = GetAssembly()->GetSymbolTable().GetType(typeFullName);
+    reader.EmplaceTypeRequest(this, id, 0);
+}
+
+void VariableSymbol::EmplaceType(TypeSymbol* type, int index)
+{
+    if (index == 0)
+    {
+        SetType(type);
+    }
+    else
+    {
+        throw std::runtime_error("variable symbol emplace type got invalid type index " + std::to_string(index));
+    }
 }
 
 ParameterSymbol::ParameterSymbol(const Span& span_, Constant name_) : VariableSymbol(span_, name_), index(-1)
@@ -47,6 +57,32 @@ void LocalVariableSymbol::Read(SymbolReader& reader)
 
 MemberVariableSymbol::MemberVariableSymbol(const Span& span_, Constant name_) : VariableSymbol(span_, name_), index(-1)
 {
+}
+
+void MemberVariableSymbol::SetSpecifiers(Specifiers specifiers)
+{
+    Specifiers accessSpecifiers = specifiers & Specifiers::access_;
+    SetAccess(accessSpecifiers);
+    if ((specifiers & Specifiers::static_) != Specifiers::none)
+    {
+        SetStatic();
+    }
+    if ((specifiers & Specifiers::virtual_) != Specifiers::none)
+    {
+        throw Exception("member variables cannot be virtual", GetSpan());
+    }
+    if ((specifiers & Specifiers::override_) != Specifiers::none)
+    {
+        throw Exception("member variables cannot be override", GetSpan());
+    }
+    if ((specifiers & Specifiers::abstract_) != Specifiers::none)
+    {
+        throw Exception("member variables cannot be abstract", GetSpan());
+    }
+    if ((specifiers & Specifiers::inline_) != Specifiers::none)
+    {
+        throw Exception("member variables cannot be inline", GetSpan());
+    }
 }
 
 } } // namespace cminor::symbols

@@ -132,6 +132,19 @@ public:
     const std::vector<std::unique_ptr<BoundExpression>>& Arguments() const { return arguments; }
     void AddArgument(std::unique_ptr<BoundExpression>&& argument);
     void SetArguments(std::vector<std::unique_ptr<BoundExpression>>&& arguments_);
+    std::vector<std::unique_ptr<BoundExpression>> Arguments() { return std::move(arguments); }
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    FunctionSymbol* functionSymbol;
+    std::vector<std::unique_ptr<BoundExpression>> arguments;
+};
+
+class BoundNewExpression : public BoundExpression
+{
+public:
+    BoundNewExpression(BoundFunctionCall* boundFunctionCall_, TypeSymbol* type_);
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;

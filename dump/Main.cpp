@@ -7,6 +7,7 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/FileRegistry.hpp>
+#include <cminor/machine/Class.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
@@ -26,6 +27,8 @@ struct InitDone
     {
         FileRegistry::Init();
         FunctionTable::Init();
+        ClassDataTable::Init();
+        ObjectTypeTable::Init();
         InitSymbol();
         InitAssembly();
     }
@@ -106,10 +109,20 @@ int main(int argc, const char** argv)
         const Assembly* rootAssembly = &assembly;
         SymbolReader symbolReader(assemblyFilePath);
         std::vector<CallInst*> callInstructions;
+        std::vector<CreateObjectInst*> createObjectInstructions;
+        std::vector<SetClassDataInst*> setClassDataInstructions;
+        std::vector<ClassTypeSymbol*> classTypes;
         std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(assemblyFilePath).remove_filename().generic_string());
         std::unordered_set<std::string> importSet;
-        assembly.Read(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions);
-        Link(callInstructions);
+        assembly.Read(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, createObjectInstructions, setClassDataInstructions, classTypes);
+        Link(callInstructions, createObjectInstructions, setClassDataInstructions, classTypes);
+        callInstructions.clear();
+        createObjectInstructions.clear();
+        setClassDataInstructions.clear();
+        classTypes.clear();
+        FunctionTable::Done();
+        ClassDataTable::Done();
+        ObjectTypeTable::Done();
         std::ostream* outputStream = &std::cout;
         std::ofstream outputFileStream;
         if (!outputFileName.empty())

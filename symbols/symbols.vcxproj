@@ -25,6 +25,7 @@
     <ClInclude Include="FunctionSymbol.hpp" />
     <ClInclude Include="GlobalFlags.hpp" />
     <ClInclude Include="MachineFunctionTable.hpp" />
+    <ClInclude Include="ObjectFun.hpp" />
     <ClInclude Include="SymbolCreatorVisitor.hpp" />
     <ClInclude Include="SymbolReader.hpp" />
     <ClInclude Include="Symbol.hpp" />
@@ -38,6 +39,7 @@
     <ClCompile Include="FunctionSymbol.cpp" />
     <ClCompile Include="GlobalFlags.cpp" />
     <ClCompile Include="MachineFunctionTable.cpp" />
+    <ClCompile Include="ObjectFun.cpp" />
     <ClCompile Include="SymbolCreatorVisitor.cpp" />
     <ClCompile Include="SymbolReader.cpp" />
     <ClCompile Include="Symbol.cpp" />

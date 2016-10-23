@@ -49,4 +49,9 @@ void SymbolReader::ProcessTypeRequests()
     typeRequests.clear();
 }
 
+void SymbolReader::AddClassTypeSymbol(ClassTypeSymbol* classType)
+{
+    classTypeSymbols.push_back(classType);
+}
+
 } } // namespace cminor::symbols

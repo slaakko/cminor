@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Arena.hpp" />
+    <ClInclude Include="Class.hpp" />
     <ClInclude Include="CodeFormatter.hpp" />
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Error.hpp" />
@@ -45,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Arena.cpp" />
+    <ClCompile Include="Class.cpp" />
     <ClCompile Include="CodeFormatter.cpp" />
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Error.cpp" />

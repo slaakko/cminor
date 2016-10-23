@@ -149,6 +149,16 @@ public:
     std::string ToString() const override { return "void"; }
 };
 
+class ObjectNode : public Node
+{
+public:
+    ObjectNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::objectNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    std::string ToString() const override { return "object"; }
+};
+
 } } // namespace cminor::ast
 
 #endif // CMINOR_AST_BASIC_TYPE_INCLUDED

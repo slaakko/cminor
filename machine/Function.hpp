@@ -59,6 +59,7 @@ class FunctionTable
 {
 public:
     static void Init();
+    static void Done();
     FunctionTable();
     static FunctionTable& Instance() { Assert(instance, "function table not initialized");  return *instance; }
     void AddFunction(Function* fun);

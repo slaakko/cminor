@@ -18,30 +18,31 @@ public:
     TypeSymbol* GetType() const { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }
     void EmplaceType(TypeSymbol* type, int index) override;
+    SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
 private:
     TypeSymbol* type;
 };
 
-class BasicTypeConstructor : public BasicTypeFun
+class BasicTypeInit : public BasicTypeFun
 {
 public:
-    BasicTypeConstructor(const Span& span_, Constant name_);
+    BasicTypeInit(const Span& span_, Constant name_);
     void ComputeName() override;
 };
 
-class BasicTypeDefaultConstructor : public BasicTypeConstructor
+class BasicTypeDefaultInit : public BasicTypeInit
 {
 public:
-    BasicTypeDefaultConstructor(const Span& span_, Constant name_);
-    SymbolType GetSymbolType() const override { return SymbolType::basicTypeDefaultConstructor; }
+    BasicTypeDefaultInit(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::basicTypeDefaultInit; }
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
 };
 
-class BasicTypeInitConstructor : public BasicTypeConstructor
+class BasicTypeCopyInit : public BasicTypeInit
 {
 public:
-    BasicTypeInitConstructor(const Span& span_, Constant name_);
-    SymbolType GetSymbolType() const override { return SymbolType::basicTypeInitConstructor; }
+    BasicTypeCopyInit(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::basicTypeCopyInit; }
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
 };
 

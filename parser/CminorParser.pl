@@ -16,12 +16,26 @@ namespace cminor.parser
         Prefix(ParsingContext* ctx, var Span s, var Operator op): Node*;
         Postfix(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Node*;
         Primary(ParsingContext* ctx): Node*;
+        CastExpr(ParsingContext* ctx): Node*;
+        NewExpr(ParsingContext* ctx): Node*;
         ArgumentList(ParsingContext* ctx, Node* node);
         ExpressionList(ParsingContext* ctx, Node* node);
     }
     grammar BasicTypeGrammar
     {
         BasicType: Node*;
+    }
+    grammar ClassGrammar
+    {
+        Class(ParsingContext* ctx): ClassNode*;
+        InheritanceAndInterfaces(ParsingContext* ctx, ClassNode* classNode);
+        BaseClassOrInterface(ParsingContext* ctx): Node*;
+        ClassContent(ParsingContext* ctx, ClassNode* classNode);
+        ClassMember(ParsingContext* ctx, ClassNode* classNode): Node*;
+        StaticConstructor(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<IdentifierNode> id): StaticConstructorNode*;
+        Constructor(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<ConstructorNode> ctor): Node*;
+        MemberFunction(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<MemberFunctionNode> memFun): Node*;
+        MemberVariable(ParsingContext* ctx): Node*;
     }
     grammar IdentifierGrammar
     {
@@ -68,6 +82,7 @@ namespace cminor.parser
         Definition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns): Node*;
         NamespaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns): NamespaceNode*;
         FunctionDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): FunctionNode*;
+        ClassDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): ClassNode*;
     }
     grammar FunctionGrammar
     {

@@ -90,10 +90,10 @@ bool FindConversions(BoundCompileUnit& boundCompileUnit, FunctionSymbol* functio
         }
         else
         {
-            FunctionSymbol* conversionFun = boundCompileUnit.GetAssembly().GetSymbolTable().GetConversion(sourceType, targetType);
+            FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(sourceType, targetType);
             if (conversionFun)
             {
-                if (conversionFun->GetConversionType() == conversionType)
+                if (conversionFun->GetConversionType() == conversionType || conversionFun->GetConversionType() == ConversionType::implicit_)
                 {
                     functionMatch.argumentMatches.push_back(ArgumentMatch(conversionFun, conversionFun->ConversionDistance()));
                     ++functionMatch.numConversions;

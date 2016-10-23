@@ -1,6 +1,8 @@
-using System;
+class Alpha
+{
+}
 
 void main()
 {
-    int min = Min(1, 2);
+    Alpha a = new Alpha();
 }

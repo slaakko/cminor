@@ -22,6 +22,7 @@ class DoubleNode;
 class CharNode;
 class StringNode;
 class VoidNode;
+class ObjectNode;
 
 class BooleanLiteralNode;
 class SByteLiteralNode;
@@ -45,6 +46,11 @@ class NamespaceNode;
 class CompileUnitNode;
 class AliasNode;
 class NamespaceImportNode;
+class ClassNode;
+class StaticConstructorNode;
+class ConstructorNode;
+class MemberFunctionNode;
+class MemberVariableNode;
 
 class DisjunctionNode;
 class ConjunctionNode;
@@ -72,6 +78,8 @@ class IsNode;
 class AsNode;
 class DotNode;
 class InvokeNode;
+class CastNode;
+class NewNode;
 
 class CompoundStatementNode;
 class ReturnStatementNode;
@@ -106,6 +114,7 @@ public:
     virtual void Visit(CharNode& charNode) {}
     virtual void Visit(StringNode& stringNode) {}
     virtual void Visit(VoidNode& voidNode) {}
+    virtual void Visit(ObjectNode& objectNode) {}
 
     virtual void Visit(BooleanLiteralNode& booleanLiteralNode) {}
     virtual void Visit(SByteLiteralNode& sbyteLiteralNode) {}
@@ -129,6 +138,11 @@ public:
     virtual void Visit(AliasNode& aliasNode) {}
     virtual void Visit(NamespaceImportNode& namespaceImportNode) {}
     virtual void Visit(CompileUnitNode& compileUnitNode) {}
+    virtual void Visit(ClassNode& classNode) {}
+    virtual void Visit(StaticConstructorNode& staticConstructorNode) {}
+    virtual void Visit(ConstructorNode& constructorNode) {}
+    virtual void Visit(MemberFunctionNode& memberFunctionNode) {}
+    virtual void Visit(MemberVariableNode& memberVariableNode) {}
 
     virtual void Visit(DisjunctionNode& disjunctionNode) {}
     virtual void Visit(ConjunctionNode& conjunctionNode) {}
@@ -156,6 +170,8 @@ public:
     virtual void Visit(AsNode& asNode) {}
     virtual void Visit(DotNode& dotNode) {}
     virtual void Visit(InvokeNode& invokeNode) {}
+    virtual void Visit(CastNode& castNode) {}
+    virtual void Visit(NewNode& newNode) {}
 
     virtual void Visit(CompoundStatementNode& compoundStatementNode) {}
     virtual void Visit(ReturnStatementNode& returnStatementNode) {}

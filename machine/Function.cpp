@@ -113,6 +113,11 @@ void FunctionTable::Init()
     instance.reset(new FunctionTable());
 }
 
+void FunctionTable::Done()
+{
+    instance.reset();
+}
+
 FunctionTable::FunctionTable() : main(nullptr)
 {
 }

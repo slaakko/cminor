@@ -22,6 +22,7 @@ public:
     Assembly* GetAssembly() const { Assert(assembly, "assembly not set"); return assembly; }
     void SetAssembly(Assembly* assembly_) { assembly = assembly_; }
     void Put(Symbol* symbol);
+    Writer& AsMachineWriter() { return *this; }
 private:
     Assembly* assembly;
 };

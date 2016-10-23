@@ -8,8 +8,10 @@
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/ast/Project.hpp>
+#include <cminor/machine/Class.hpp>
 #include <boost/filesystem.hpp>
 #include <Cm.Util/Path.hpp>
+#include <Cm.Util/Prime.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -120,13 +122,13 @@ void Assembly::Write(SymbolWriter& writer)
     AssemblyTag tag;
     tag.Write(writer);
     writer.SetAssembly(this);
-    static_cast<Writer&>(writer).Put(filePath);
+    writer.AsMachineWriter().Put(filePath);
     int32_t n = int32_t(referencedAssemblies.size());
-    static_cast<Writer&>(writer).Put(n);
+    writer.AsMachineWriter().Put(n);
     for (int32_t i = 0; i < n; ++i)
     {
         const std::unique_ptr<Assembly>& referencedAssembly = referencedAssemblies[i];
-        static_cast<Writer&>(writer).Put(referencedAssembly->FilePath());
+        writer.AsMachineWriter().Put(referencedAssembly->FilePath());
     }
     constantPool.Write(writer);
     writer.SetConstantPool(&constantPool);
@@ -138,7 +140,8 @@ void Assembly::Write(SymbolWriter& writer)
 }
 
 void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
-    std::vector<CallInst*>& callInstructions)
+    std::vector<CallInst*>& callInstructions, std::vector<CreateObjectInst*>& createObjectInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
+    std::vector<ClassTypeSymbol*>& classTypeSymbols)
 {
     reader.SetMachine(machine);
     AssemblyTag defaultTag;
@@ -162,11 +165,14 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
     nameId.Read(reader);
     name = constantPool.GetConstant(nameId);
     machineFunctionTable.Read(reader);
-    ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions);
+    ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, createObjectInstructions, setClassDataInstructions, classTypeSymbols);
     ImportSymbolTables();
     symbolTable.Read(reader);
     callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
-}
+    createObjectInstructions.insert(createObjectInstructions.end(), reader.CreateObjectInstructions().cbegin(), reader.CreateObjectInstructions().cend());
+    setClassDataInstructions.insert(setClassDataInstructions.end(), reader.SetClassDataInstructions().cbegin(), reader.SetClassDataInstructions().cend());
+    classTypeSymbols.insert(classTypeSymbols.end(), reader.ClassTypeSymbols().cbegin(), reader.ClassTypeSymbols().cend());
+};
 
 bool Assembly::IsSystemAssembly() const
 {
@@ -174,9 +180,10 @@ bool Assembly::IsSystemAssembly() const
 }
 
 void Assembly::ImportAssemblies(LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
-    std::vector<CallInst*>& callInstructions)
+    std::vector<CallInst*>& callInstructions, std::vector<CreateObjectInst*>& createObjectInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
+    std::vector<ClassTypeSymbol*>& classTypeSymbols)
 {
-    ImportAssemblies(referenceFilePaths, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions);
+    ImportAssemblies(referenceFilePaths, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, createObjectInstructions, setClassDataInstructions, classTypeSymbols);
 }
 
 void Assembly::ImportSymbolTables()
@@ -188,7 +195,8 @@ void Assembly::ImportSymbolTables()
 }
 
 void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, 
-    std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions)
+    std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions, std::vector<CreateObjectInst*>& createObjectInstructions, 
+    std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols)
 {
     std::vector<std::string> allAssemblyReferences;
     if (!IsSystemAssembly())
@@ -196,11 +204,12 @@ void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferenc
         allAssemblyReferences.push_back(CminorSystemAssemblyFilePath(GetConfig()));
     }
     allAssemblyReferences.insert(allAssemblyReferences.end(), assemblyReferences.cbegin(), assemblyReferences.cend());
-    Import(allAssemblyReferences, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions);
+    Import(allAssemblyReferences, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, createObjectInstructions, setClassDataInstructions, classTypeSymbols);
 }
 
 void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, 
-    const std::string& currentAssemblyDir, std::vector<CallInst*>& callInstructions)
+    const std::string& currentAssemblyDir, std::vector<CallInst*>& callInstructions, std::vector<CreateObjectInst*>& createObjectInstructions, 
+    std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols)
 {
     for (const std::string& assemblyReference : assemblyReferences)
     {
@@ -283,10 +292,11 @@ void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadTy
             std::string assemblyFilePath = GetFullPath(afp.generic_string());
             SymbolReader reader(assemblyFilePath);
             reader.SetMachine(machine);
-            referencedAssembly->Read(reader, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions);
+            referencedAssembly->Read(reader, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, createObjectInstructions, setClassDataInstructions, classTypeSymbols);
             Assembly* referencedAssemblyPtr = referencedAssembly.get();
             referencedAssemblies.push_back(std::move(referencedAssembly));
-            Import(referencedAssemblyPtr->referenceFilePaths, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions);
+            Import(referencedAssemblyPtr->referenceFilePaths, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, createObjectInstructions, setClassDataInstructions, 
+                classTypeSymbols);
         }
     }
 }
@@ -296,13 +306,182 @@ void Assembly::Dump(CodeFormatter& formatter)
     machineFunctionTable.Dump(formatter);
 }
 
-void Link(const std::vector<CallInst*>& callInstructions)
+int NumberOfAncestors(ClassTypeSymbol* classType)
+{
+    int numAncestors = 0;
+    ClassTypeSymbol* baseClass = classType->BaseClass();
+    while (baseClass != nullptr)
+    {
+        ++numAncestors;
+        baseClass = baseClass->BaseClass();
+    }
+    return numAncestors;
+}
+
+void AssignPriorities(std::vector<ClassTypeSymbol*>& leaves)
+{
+    for (ClassTypeSymbol* leaf : leaves)
+    {
+        int priority = leaf->Level();
+        leaf->SetPriority(priority);
+        ClassTypeSymbol* base = leaf->BaseClass();
+        while (base)
+        {
+            if (base->Priority() < priority)
+            {
+                base->SetPriority(priority);
+            }
+            else
+            {
+                priority = base->Priority();
+            }
+            base = base->BaseClass();
+        }
+    }
+}
+
+struct PriorityGreater
+{
+    bool operator()(ClassTypeSymbol* left, ClassTypeSymbol* right) const
+    {
+        if (left->Level() < right->Level())
+        {
+            return true;
+        }
+        else if (right->Level() < left->Level())
+        {
+            return false;
+        }
+        else if (left->Priority() > right->Priority())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+};
+
+void AssignKeys(std::vector<ClassTypeSymbol*>& classesByPriority)
+{
+    uint64_t key = 2;
+    uint64_t minLevelKey = key;
+    uint64_t maxLevelKey = key;
+    int predLevel = -1;
+    std::unordered_set<ClassTypeSymbol*> bases;
+    for (ClassTypeSymbol* cls : classesByPriority)
+    {
+        int level = cls->Level();
+        if (level == 0)
+        {
+            cls->SetKey(key);
+            key = Cm::Util::NextPrime(key + 1);
+            maxLevelKey = key;
+        }
+        else
+        {
+            if (predLevel != level)
+            {
+                bases.clear();
+                bases.insert(cls->BaseClass());
+                key = Cm::Util::NextPrime(maxLevelKey + 1);
+                minLevelKey = key;
+                cls->SetKey(key);
+                key = Cm::Util::NextPrime(key + 1);
+                maxLevelKey = key;
+            }
+            else
+            {
+                if (bases.find(cls->BaseClass()) == bases.end())
+                {
+                    key = minLevelKey;
+                }
+                bases.insert(cls->BaseClass());
+                cls->SetKey(key);
+                key = Cm::Util::NextPrime(key + 1);
+                if (key > maxLevelKey)
+                {
+                    maxLevelKey = key;
+                }
+            }
+            predLevel = level;
+        }
+    }
+}
+
+uint64_t ComputeCid(ClassTypeSymbol* classType)
+{
+    uint64_t cid = classType->Key();
+    ClassTypeSymbol* base = classType->BaseClass();
+    while (base)
+    {
+        cid *= base->Key();
+        base = base->BaseClass();
+    }
+    return cid;
+}
+
+void AssignCids(std::vector<ClassTypeSymbol*>& classesByPriority)
+{
+    for (ClassTypeSymbol* classType : classesByPriority)
+    {
+        classType->SetCid(ComputeCid(classType));
+    }
+}
+
+void AssignClassTypeIds(const std::vector<ClassTypeSymbol*>& classTypes)
+{
+    for (ClassTypeSymbol* classType : classTypes)
+    {
+        classType->SetLevel(NumberOfAncestors(classType));
+        if (classType->BaseClass())
+        {
+            classType->BaseClass()->SetNonLeaf();
+        }
+    }
+    std::vector<ClassTypeSymbol*> leaves;
+    for (ClassTypeSymbol* classType : classTypes)
+    {
+        if (!classType->IsNonLeaf())
+        {
+            leaves.push_back(classType);
+        }
+    }
+    AssignPriorities(leaves);
+    std::vector<ClassTypeSymbol*> classesByPriority;
+    for (ClassTypeSymbol* classType : classTypes)
+    {
+        classesByPriority.push_back(classType);
+    }
+    std::sort(classesByPriority.begin(), classesByPriority.end(), PriorityGreater());
+    AssignKeys(classesByPriority);
+    AssignCids(classesByPriority);
+}
+
+void Link(const std::vector<CallInst*>& callInstructions, const std::vector<CreateObjectInst*>& createObjectInstructions, const std::vector<SetClassDataInst*>& setClassDataInstructions, 
+    const std::vector<ClassTypeSymbol*>& classTypes)
 {
     for (CallInst* call : callInstructions)
     {
         Function* fun = FunctionTable::Instance().GetFunction(call->GetFunctionCallName());
         call->SetFunction(fun);
     }
+    for (CreateObjectInst* createObject : createObjectInstructions)
+    {
+        ObjectType* objectType = ObjectTypeTable::Instance().GetObjectType(createObject->GetClassName());
+        createObject->SetType(objectType);
+    }
+    for (SetClassDataInst* setClassDataInst : setClassDataInstructions)
+    {
+        ClassData* cd = ClassDataTable::Instance().GetClassData(setClassDataInst->GetClassName());
+        setClassDataInst->SetClassData(cd);
+    }
+    for (ClassTypeSymbol* classType : classTypes)
+    {
+        classType->LinkVmt();
+    }
+    AssignClassTypeIds(classTypes);
 }
 
 void InitAssembly()

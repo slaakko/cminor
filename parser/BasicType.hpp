@@ -1,5 +1,5 @@
-#ifndef BasicType_hpp_12094
-#define BasicType_hpp_12094
+#ifndef BasicType_hpp_1995
+#define BasicType_hpp_1995
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -23,4 +23,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // BasicType_hpp_12094
+#endif // BasicType_hpp_1995

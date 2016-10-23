@@ -34,10 +34,14 @@ public:
     void ResetLocalVariables() { localVariables = std::vector<LocalVariableSymbol*>(); }
     void EmplaceTypeRequest(Symbol* forSymbol, ConstantId typeNameId, int index);
     void ProcessTypeRequests();
+    void AddClassTypeSymbol(ClassTypeSymbol* classType);
+    std::vector<ClassTypeSymbol*> GetClassTypeSymbols() { return std::move(classTypeSymbols); }
+    const std::vector<ClassTypeSymbol*>& ClassTypeSymbols() const { return classTypeSymbols; }
 private:
     Assembly* assembly;
     std::vector<LocalVariableSymbol*> localVariables;
     std::vector<TypeRequest> typeRequests;
+    std::vector<ClassTypeSymbol*> classTypeSymbols;
 };
 
 } } // namespace cminor::symbols

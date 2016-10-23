@@ -11,8 +11,11 @@
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/symbols/ConstantSymbol.hpp>
 #include <cminor/symbols/BasicTypeFun.hpp>
+#include <cminor/symbols/ObjectFun.hpp>
+#include <cminor/machine/Class.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/machine/Util.hpp>
+#include <cminor/machine/Type.hpp>
 #include <boost/filesystem.hpp>
 
 namespace cminor { namespace symbols {
@@ -28,6 +31,28 @@ const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
 std::string SymbolTypeStr(SymbolType symbolType)
 {
     return symbolTypeStr[uint8_t(symbolType)];
+}
+
+std::string SymbolFlagStr(SymbolFlags flags)
+{
+    std::string s;
+    SymbolAccess access = SymbolAccess(flags & SymbolFlags::access);
+    switch (access)
+    {
+        case SymbolAccess::private_: s.append("private"); break;
+        case SymbolAccess::protected_: s.append("protected"); break;
+        case SymbolAccess::internal_: s.append("internal"); break;
+        case SymbolAccess::public_: s.append("public"); break;
+    }
+    if ((flags & SymbolFlags::static_) != SymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("static");
+    }
+    return s;
 }
 
 Symbol::Symbol(const Span& span_, Constant name_) : span(span_), name(name_), flags(SymbolFlags::none), parent(nullptr), assembly(nullptr)
@@ -47,12 +72,59 @@ bool Symbol::IsExportSymbol() const
 
 void Symbol::Write(SymbolWriter& writer)
 {
-    static_cast<Writer&>(writer).Put(uint8_t(flags & ~SymbolFlags::project));
+    writer.AsMachineWriter().Put(uint8_t(flags & ~(SymbolFlags::project | SymbolFlags::bound)));
 }
 
 void Symbol::Read(SymbolReader& reader)
 {
     flags = static_cast<SymbolFlags>(reader.GetByte());
+}
+
+void Symbol::SetAccess(Specifiers accessSpecifiers)
+{
+    ContainerSymbol* cls = ContainingClass();
+    SymbolAccess access = SymbolAccess::private_;
+    bool classMember = true;
+    if (!cls)
+    {
+        access = SymbolAccess::internal_;
+        classMember = false;
+    }
+    if (accessSpecifiers == Specifiers::public_)
+    {
+        access = SymbolAccess::public_;
+    }
+    else if (accessSpecifiers == Specifiers::protected_)
+    {
+        if (classMember)
+        {
+            access = SymbolAccess::protected_;
+        }
+        else
+        {
+            throw Exception("only class members can have protected access", GetSpan());
+        }
+    }
+    else if (accessSpecifiers == Specifiers::internal_)
+    {
+        access = SymbolAccess::internal_;
+    }
+    else if (accessSpecifiers == Specifiers::private_)
+    {
+        if (classMember)
+        {
+            access = SymbolAccess::private_;
+        }
+        else
+        {
+            throw Exception("only class members can have private access", GetSpan());
+        }
+    }
+    else if (accessSpecifiers != Specifiers::none)
+    {
+        throw Exception("invalid combination of access specifiers: " + SpecifierStr(accessSpecifiers), GetSpan());
+    }
+    SetAccess(access);
 }
 
 StringPtr Symbol::Name() const
@@ -80,6 +152,26 @@ utf32_string Symbol::FullName() const
     }
     fullName.append(Name().Value());
     return fullName;
+}
+
+bool Symbol::IsSameParentOrAncestorOf(const Symbol* that) const
+{
+    if (!that)
+    {
+        return false;
+    }
+    else if (this == that)
+    {
+        return true;
+    }
+    else if (that->parent)
+    {
+        return IsSameParentOrAncestorOf(that->parent);
+    }
+    else
+    {
+        return false;
+    }
 }
 
 NamespaceSymbol* Symbol::Ns() const
@@ -116,6 +208,25 @@ ClassTypeSymbol* Symbol::Class() const
         else
         {
             throw std::runtime_error("class not found");
+        }
+    }
+}
+
+ClassTypeSymbol* Symbol::ClassNoThrow() const
+{
+    if (const ClassTypeSymbol* cls = dynamic_cast<const ClassTypeSymbol*>(this))
+    {
+        return const_cast<ClassTypeSymbol*>(cls);
+    }
+    else
+    {
+        if (parent)
+        {
+            return parent->ClassNoThrow();
+        }
+        else
+        {
+            return nullptr;
         }
     }
 }
@@ -159,6 +270,30 @@ FunctionSymbol* Symbol::GetFunction() const
         {
             return nullptr;
         }
+    }
+}
+
+FunctionSymbol* Symbol::ContainingFunction() const
+{
+    if (parent)
+    {
+        return parent->GetFunction();
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+ClassTypeSymbol* Symbol::ContainingClass() const
+{
+    if (parent)
+    {
+        return parent->ClassNoThrow();
+    }
+    else
+    {
+        return nullptr;
     }
 }
 
@@ -210,6 +345,10 @@ void ContainerScope::Install(Symbol* symbol)
     else
     {
         symbolMap[symbol->Name()] = symbol;
+        if (ContainerSymbol* containerSymbol = dynamic_cast<ContainerSymbol*>(symbol))
+        {
+            containerSymbol->GetContainerScope()->SetParent(this);
+        }
     }
 }
 
@@ -625,7 +764,7 @@ void ContainerSymbol::Write(SymbolWriter& writer)
         }
     }
     int32_t n = int32_t(exportSymbols.size());
-    static_cast<Writer&>(writer).Put(n);
+    writer.AsMachineWriter().Put(n);
     for (int32_t i = 0; i < n; ++i)
     {
         writer.Put(exportSymbols[i]);
@@ -739,7 +878,7 @@ void DeclarationBlock::AddSymbol(std::unique_ptr<Symbol>&& symbol)
     }
 }
 
-TypeSymbol::TypeSymbol(const Span& span_, Constant name_) : Symbol(span_, name_)
+TypeSymbol::TypeSymbol(const Span& span_, Constant name_) : ContainerSymbol(span_, name_)
 {
 }
 
@@ -803,20 +942,249 @@ NullReferenceTypeSymbol::NullReferenceTypeSymbol(const Span& span_, Constant nam
 {
 }
 
-ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), ContainerSymbol(span_, name_)
+ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), baseClass(nullptr), objectType(new ObjectType()), classData(new ClassData(objectType.get())), 
+    flags(), defaultConstructorSymbol(nullptr), level(0), priority(0), key(0), cid(0)
 {
 }
 
 void ClassTypeSymbol::Write(SymbolWriter& writer)
 {
     TypeSymbol::Write(writer);
-    ContainerSymbol::Write(writer);
+    bool hasBaseClass = baseClass != nullptr;
+    writer.AsMachineWriter().Put(hasBaseClass);
+    if (hasBaseClass)
+    {
+        utf32_string baseClassFullName = baseClass->FullName();
+        ConstantId baseClassNameId = GetAssembly()->GetConstantPool().GetIdFor(baseClassFullName);
+        baseClassNameId.Write(writer);
+    }
+    Assert(objectType, "object type not set");
+    objectType->Write(writer);
+    classData->Write(writer);
+    writer.AsMachineWriter().Put(uint8_t(flags));
 }
 
 void ClassTypeSymbol::Read(SymbolReader& reader)
 {
     TypeSymbol::Read(reader);
-    ContainerSymbol::Read(reader);
+    bool hasBaseClass = reader.GetBool();
+    if (hasBaseClass)
+    {
+        ConstantId baseClassNameId;
+        baseClassNameId.Read(reader);
+        reader.EmplaceTypeRequest(this, baseClassNameId, 0);
+    }
+    Assert(objectType, "object type not set");
+    objectType->Read(reader);
+    ObjectTypeTable::Instance().SetObjectType(objectType.get());
+    classData->Read(reader);
+    ClassDataTable::Instance().SetClassData(classData.get());
+    flags = ClassTypeSymbolFlags(reader.GetByte());
+    reader.AddClassTypeSymbol(this);
+}
+
+void ClassTypeSymbol::SetSpecifiers(Specifiers specifiers)
+{
+    Specifiers accessSpecifiers = specifiers & Specifiers::access_;
+    SetAccess(accessSpecifiers);
+    if ((specifiers & Specifiers::static_) != Specifiers::none)
+    {
+        SetStatic();
+    }
+    if ((specifiers & Specifiers::virtual_) != Specifiers::none)
+    {
+        throw Exception("class type symbol cannot be virtual", GetSpan());
+    }
+    if ((specifiers & Specifiers::override_) != Specifiers::none)
+    {
+        throw Exception("class type symbol cannot be override", GetSpan());
+    }
+    if ((specifiers & Specifiers::abstract_) != Specifiers::none)
+    {
+        SetAbstract();
+    }
+    if ((specifiers & Specifiers::inline_) != Specifiers::none)
+    {
+        throw Exception("class type symbol cannot be inline", GetSpan());
+    }
+}
+
+void ClassTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
+{
+    Symbol* s = symbol.get();
+    TypeSymbol::AddSymbol(std::move(symbol));
+    if (MemberVariableSymbol* memberVariableSymbol = dynamic_cast<MemberVariableSymbol*>(s))
+    {
+        if (memberVariableSymbol->IsStatic())
+        {
+            staticMemberVariables.push_back(memberVariableSymbol);
+        }
+        else
+        {
+            memberVariables.push_back(memberVariableSymbol);
+        }
+    }
+    else if (MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(s))
+    {
+        memberFunctions.push_back(memberFunctionSymbol);
+    }
+    else if (ConstructorSymbol* constructorSymbol = dynamic_cast<ConstructorSymbol*>(s))
+    {
+        if (constructorSymbol->IsDefaultConstructorSymbol())
+        {
+            defaultConstructorSymbol = constructorSymbol;
+        }
+    }
+}
+
+void ClassTypeSymbol::EmplaceType(TypeSymbol* type, int index)
+{
+    if (index == 0)
+    {
+        if (ClassTypeSymbol* baseClassTypeSymbol = dynamic_cast<ClassTypeSymbol*>(type))
+        {
+            baseClass = baseClassTypeSymbol;
+            GetContainerScope()->SetBase(baseClass->GetContainerScope());
+        }
+        else
+        {
+            throw std::runtime_error("class type symbol expected");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("class type symbol emplace type got invalid type index " + std::to_string(index));
+    }
+}
+
+bool ClassTypeSymbol::HasBaseClass(ClassTypeSymbol* cls) const
+{
+    if (!baseClass) return false;
+    if (baseClass == cls || baseClass->HasBaseClass(cls)) return true;
+    return false;
+}
+
+void ClassTypeSymbol::AddVirtualFunction(MemberFunctionSymbol* virtualFunction)
+{
+    virtualFunctions.push_back(virtualFunction);
+}
+
+void ClassTypeSymbol::SetCid(uint64_t cid_) 
+{ 
+    cid = cid_; 
+    Assert(objectType, "object type not set"); 
+    objectType->SetId(cid); 
+}
+
+bool Overrides(MemberFunctionSymbol* f, MemberFunctionSymbol* g)
+{
+    if (f->GroupName() == g->GroupName())
+    {
+        int n = int(f->Parameters().size());
+        if (n == int(g->Parameters().size()))
+        {
+            for (int i = 1; i < n; ++i)
+            {
+                ParameterSymbol* p = f->Parameters()[i];
+                ParameterSymbol* q = g->Parameters()[i];
+                if (p->GetType() != q->GetType()) return false;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+void ClassTypeSymbol::InitVmt(std::vector<MemberFunctionSymbol*>& vmt)
+{
+    if (baseClass)
+    {
+        baseClass->InitVmt(vmt);
+    }
+    int32_t n = int32_t(virtualFunctions.size());
+    for (int32_t i = 0; i < n; ++i)
+    {
+        MemberFunctionSymbol* f = virtualFunctions[i];
+        bool found = false;
+        int32_t m = int32_t(vmt.size());
+        for (int32_t j = 0; j < m; ++j)
+        {
+            MemberFunctionSymbol* v = vmt[j];
+            if (Overrides(f, v))
+            {
+                if (!f->IsOverride())
+                {
+                    throw Exception("overriding functionn should be declared with override specifier", f->GetSpan());
+                }
+                f->SetVmtIndex(j);
+                vmt[j] = f;
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            if (f->IsOverride())
+            {
+                throw Exception("no suitable function to override ('" + ToUtf8(f->FullName()) + "')", f->GetSpan());
+            }
+            f->SetVmtIndex(m);
+            vmt.push_back(f);
+        }
+    }
+}
+
+void ClassTypeSymbol::InitVmt()
+{
+    std::vector<MemberFunctionSymbol*> vmt;
+    InitVmt(vmt);
+    Assert(classData, "class data not set");
+    int32_t n = int32_t(vmt.size());
+    classData->Vmt().Resize(n);
+    ConstantPool& constantPool = GetAssembly()->GetConstantPool();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        MemberFunctionSymbol* f = vmt[i];
+        if (f->IsAbstract())
+        {
+            if (!IsAbstract())
+            {
+                throw Exception("class containing abstract member functions must be declared abstract", GetSpan(), f->GetSpan());
+            }
+            classData->Vmt().SetMethodName(i, constantPool.GetEmptyStringConstant());
+        }
+        else
+        {
+            utf32_string fullName = f->FullName();
+            Constant fullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
+            classData->Vmt().SetMethodName(i, fullNameConstant);
+        }
+    }
+}
+
+void ClassTypeSymbol::LinkVmt()
+{
+    Assert(classData, "class data not set");
+    MethodTable& vmt = classData->Vmt();
+    int32_t n = vmt.Count();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        StringPtr methodName = vmt.GetMethodName(i);
+        if (methodName == StringPtr(U""))
+        {
+            Function* method = nullptr;
+            vmt.SetMethod(i, method);
+        }
+        else
+        {
+            Function* method = FunctionTable::Instance().GetFunction(methodName);
+            vmt.SetMethod(i, method);
+        }
+    }
+}
+
+ObjectTypeSymbol::ObjectTypeSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_)
+{
 }
 
 StringTypeSymbol::StringTypeSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_)
@@ -851,7 +1219,7 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
 }
 
 SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs), function(nullptr), 
-    mainFunction(nullptr), declarationBlockId(0), doNotAddTypes(false)
+    mainFunction(nullptr), currentClass(nullptr), declarationBlockId(0), doNotAddTypes(false)
 {
     globalNs.SetAssembly(assembly);
 }
@@ -949,6 +1317,111 @@ void SymbolTable::EndFunction()
     function = nullptr;
 }
 
+void SymbolTable::BeginStaticConstructor(StaticConstructorNode& staticConstructorNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(U"@static_constructor")));
+    function = new StaticConstructorSymbol(staticConstructorNode.GetSpan(), nameConstant);
+    function->SetAssembly(assembly);
+    function->SetGroupNameConstant(nameConstant);
+    MapNode(staticConstructorNode, function);
+    ContainerScope* functionScope = function->GetContainerScope();
+    ContainerScope* containerScope = container->GetContainerScope();
+    functionScope->SetParent(containerScope);
+    BeginContainer(function);
+    declarationBlockId = 0;
+}
+
+void SymbolTable::EndStaticConstructor()
+{
+    EndContainer();
+    container->AddSymbol(std::unique_ptr<Symbol>(function));
+    function = nullptr;
+}
+
+void SymbolTable::BeginConstructor(ConstructorNode& constructorNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(U"@constructor"));
+    function = new ConstructorSymbol(constructorNode.GetSpan(), nameConstant);
+    function->SetAssembly(assembly);
+    function->SetGroupNameConstant(nameConstant);
+    MapNode(constructorNode, function);
+    ContainerScope* functionScope = function->GetContainerScope();
+    ContainerScope* containerScope = container->GetContainerScope();
+    functionScope->SetParent(containerScope);
+    BeginContainer(function);
+    declarationBlockId = 0;
+    Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+    ParameterSymbol* thisParam = new ParameterSymbol(constructorNode.GetSpan(), thisParamName);
+    TypeSymbol* thisParamType = currentClass;
+    thisParam->SetType(thisParamType);
+    thisParam->SetBound();
+    function->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+}
+
+void SymbolTable::EndConstructor()
+{
+    EndContainer();
+    container->AddSymbol(std::unique_ptr<Symbol>(function));
+    function = nullptr;
+}
+
+void SymbolTable::BeginMemberFunction(MemberFunctionNode& memberFunctionNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(memberFunctionNode.Name());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    function = new MemberFunctionSymbol(memberFunctionNode.GetSpan(), nameConstant);
+    function->SetAssembly(assembly);
+    utf32_string groupName = ToUtf32(memberFunctionNode.GroupId()->Str());
+    Constant groupNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(groupName.c_str())));
+    function->SetGroupNameConstant(groupNameConstant);
+    MapNode(memberFunctionNode, function);
+    ContainerScope* functionScope = function->GetContainerScope();
+    ContainerScope* containerScope = container->GetContainerScope();
+    functionScope->SetParent(containerScope);
+    BeginContainer(function);
+    declarationBlockId = 0;
+    Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+    ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), thisParamName);
+    TypeSymbol* thisParamType = currentClass;
+    thisParam->SetType(thisParamType);
+    thisParam->SetBound();
+    function->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+}
+
+void SymbolTable::EndMemberFunction()
+{
+    EndContainer();
+    container->AddSymbol(std::unique_ptr<Symbol>(function));
+    function = nullptr;
+}
+
+void SymbolTable::BeginClass(ClassNode& classNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(classNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    ClassTypeSymbol* classTypeSymbol = new ClassTypeSymbol(classNode.GetSpan(), nameConstant);
+    classTypeSymbol->SetAssembly(assembly);
+    classStack.push(currentClass);
+    currentClass = classTypeSymbol;
+    MapNode(classNode, classTypeSymbol);
+    ContainerScope* containerScope = container->GetContainerScope();
+    ContainerScope* classScope = classTypeSymbol->GetContainerScope();
+    classScope->SetParent(containerScope);
+    container->AddSymbol(std::unique_ptr<Symbol>(classTypeSymbol));
+    BeginContainer(classTypeSymbol);
+}
+
+void SymbolTable::EndClass()
+{
+    EndContainer();
+    currentClass = classStack.top();
+    classStack.pop();
+}
+
 void SymbolTable::AddParameter(ParameterNode& parameterNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
@@ -991,11 +1464,26 @@ void SymbolTable::AddLocalVariable(ConstructionStatementNode& constructionStatem
     MapNode(constructionStatementNode, localVariableSymbol);
 }
 
+void SymbolTable::AddMemberVariable(MemberVariableNode& memberVariableNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(memberVariableNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    MemberVariableSymbol* memberVariableSymbol = new MemberVariableSymbol(memberVariableNode.GetSpan(), nameConstant);
+    memberVariableSymbol->SetAssembly(assembly);
+    if ((memberVariableNode.GetSpecifiers() & Specifiers::static_) != Specifiers::none)
+    {
+        memberVariableSymbol->SetStatic();
+    }
+    container->AddSymbol(std::unique_ptr<Symbol>(memberVariableSymbol));
+    MapNode(memberVariableNode, memberVariableSymbol);
+}
+
 void SymbolTable::Write(SymbolWriter& writer)
 {
     globalNs.Write(writer);
     bool hasMainFunction = mainFunction != nullptr;
-    static_cast<Writer&>(writer).Put(hasMainFunction);
+    writer.AsMachineWriter().Put(hasMainFunction);
     if (hasMainFunction)
     {
         utf32_string mainFunctionFullName = mainFunction->FullName();
@@ -1109,19 +1597,28 @@ Symbol* SymbolTable::GetSymbol(Node& node) const
     }
 }
 
+Node* SymbolTable::GetNode(Symbol* symbol) const
+{
+    auto it = symbolNodeMap.find(symbol);
+    if (it != symbolNodeMap.cend())
+    {
+        return it->second;
+    }
+    else
+    {
+        throw std::runtime_error("node for symbol not found");
+    }
+}
+
 void SymbolTable::MapNode(Node& node, Symbol* symbol)
 {
     nodeSymbolMap[&node] = symbol;
+    symbolNodeMap[symbol] = &node;
 }
 
 void SymbolTable::AddConversion(FunctionSymbol* conversionFun)
 {
     conversionTable.AddConversion(conversionFun);
-}
-
-FunctionSymbol* SymbolTable::GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType) const
-{
-    return conversionTable.GetConversion(sourceType, targetType);
 }
 
 SymbolCreator::~SymbolCreator()
@@ -1134,8 +1631,7 @@ class ConcreteSymbolCreator : public SymbolCreator
 public:
     virtual Symbol* CreateSymbol(const Span& span, Constant name)
     {
-        T* p = new T(span, name);
-        return p->ToSymbol();
+        return new T(span, name);
     }
 };
 
@@ -1206,21 +1702,26 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::doubleTypeSymbol, new ConcreteSymbolCreator<DoubleTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::nullReferenceTypeSymbol, new ConcreteSymbolCreator<NullReferenceTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::classTypeSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::objectTypeSymbol, new ConcreteSymbolCreator<ObjectTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::stringTypeSymbol, new ConcreteSymbolCreator<StringTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::functionSymbol, new ConcreteSymbolCreator<FunctionSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::memberFunctionSymbol, new ConcreteSymbolCreator<MemberFunctionSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::staticConstructorSymbol, new ConcreteSymbolCreator<StaticConstructorSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::constructorSymbol, new ConcreteSymbolCreator<ConstructorSymbol>());
     SymbolFactory::Instance().Register(SymbolType::declarationBlock, new ConcreteSymbolCreator<DeclarationBlock>());
     SymbolFactory::Instance().Register(SymbolType::parameterSymbol, new ConcreteSymbolCreator<ParameterSymbol>());
     SymbolFactory::Instance().Register(SymbolType::localVariableSymbol, new ConcreteSymbolCreator<LocalVariableSymbol>());
     SymbolFactory::Instance().Register(SymbolType::memberVariableSymbol, new ConcreteSymbolCreator<MemberVariableSymbol>());
     SymbolFactory::Instance().Register(SymbolType::constantSymbol, new ConcreteSymbolCreator<ConstantSymbol>());
     SymbolFactory::Instance().Register(SymbolType::namespaceSymbol, new ConcreteSymbolCreator<NamespaceSymbol>());
-    SymbolFactory::Instance().Register(SymbolType::basicTypeDefaultConstructor, new ConcreteSymbolCreator<BasicTypeDefaultConstructor>());
-    SymbolFactory::Instance().Register(SymbolType::basicTypeInitConstructor, new ConcreteSymbolCreator<BasicTypeInitConstructor>());
+    SymbolFactory::Instance().Register(SymbolType::basicTypeDefaultInit, new ConcreteSymbolCreator<BasicTypeDefaultInit>());
+    SymbolFactory::Instance().Register(SymbolType::basicTypeCopyInit, new ConcreteSymbolCreator<BasicTypeCopyInit>());
     SymbolFactory::Instance().Register(SymbolType::basicTypeAssignment, new ConcreteSymbolCreator<BasicTypeAssignment>());
     SymbolFactory::Instance().Register(SymbolType::basicTypeReturn, new ConcreteSymbolCreator<BasicTypeReturn>());
     SymbolFactory::Instance().Register(SymbolType::basicTypeConversion, new ConcreteSymbolCreator<BasicTypeConversion>());
     SymbolFactory::Instance().Register(SymbolType::basicTypeUnaryOp, new ConcreteSymbolCreator<BasicTypeUnaryOpFun>());
     SymbolFactory::Instance().Register(SymbolType::basicTypBinaryOp, new ConcreteSymbolCreator<BasicTypeBinaryOpFun>());
+    SymbolFactory::Instance().Register(SymbolType::objectCopyInit, new ConcreteSymbolCreator<ObjectCopyInit>());
 }
 
 void DoneSymbol()
@@ -1273,10 +1774,24 @@ std::unique_ptr<Assembly> CreateSystemCoreAssembly(Machine& machine, const std::
     TypeSymbol* nullReferenceTypeSymbol = new NullReferenceTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"@nullref")));
     nullReferenceTypeSymbol->SetAssembly(systemCoreAssembly.get());
     systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(nullReferenceTypeSymbol));
-    TypeSymbol* stringTypeSymbol = new StringTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"string")));
+    ObjectTypeSymbol* objectTypeSymbol = new ObjectTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"object")));
+    objectTypeSymbol->SetAssembly(systemCoreAssembly.get());
+    objectTypeSymbol->SetPublic();
+    objectTypeSymbol->GetObjectType()->SetNameConstant(objectTypeSymbol->NameConstant());
+    objectTypeSymbol->GetObjectType()->AddField(ValueType::classDataPtr);
+    objectTypeSymbol->InitVmt();
+    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(objectTypeSymbol));
+    StringTypeSymbol* stringTypeSymbol = new StringTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"string")));
     stringTypeSymbol->SetAssembly(systemCoreAssembly.get());
+    stringTypeSymbol->SetPublic();
+    stringTypeSymbol->SetBaseClass(objectTypeSymbol);
+    stringTypeSymbol->GetContainerScope()->SetBase(stringTypeSymbol->BaseClass()->GetContainerScope());
+    stringTypeSymbol->GetObjectType()->SetNameConstant(stringTypeSymbol->NameConstant());
+    stringTypeSymbol->GetObjectType()->AddFields(objectTypeSymbol->GetObjectType()->Fields());
+    stringTypeSymbol->InitVmt();
     systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(stringTypeSymbol));
     InitBasicTypeFun(*systemCoreAssembly);
+    InitObjectFun(*systemCoreAssembly);
     return systemCoreAssembly;
 }
 

@@ -258,6 +258,16 @@ namespace cminor.parser
             |   Literal{ value = Literal; }
             |   BasicType{ value = BasicType; }
             |   Identifier{ value = Identifier; }
+            |   CastExpr(ctx){ value = CastExpr; }
+            |   NewExpr(ctx){ value = NewExpr; }
+            ;
+
+        CastExpr(ParsingContext* ctx) : Node*
+            ::= (keyword("cast") '<'! TypeExpr(ctx)! '>'! '('! Expression(ctx)! ')'!){ value = new CastNode(span, TypeExpr, Expression); }
+            ;
+
+        NewExpr(ParsingContext* ctx) : Node*
+            ::= keyword("new") TypeExpr(ctx)! '('!{ value = new NewNode(span, TypeExpr); } ArgumentList(ctx, value) ')'!{ value->GetSpan().SetEnd(span.End()); }
             ;
 
         ArgumentList(ParsingContext* ctx, Node* node)

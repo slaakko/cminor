@@ -21,6 +21,16 @@ void Reader::AddCallInst(CallInst* callInst)
     callInstructions.push_back(callInst);
 }
 
+void Reader::AddCreateObjectInst(CreateObjectInst* createObjectInst)
+{
+    createObjectInstructions.push_back(createObjectInst);
+}
+
+void Reader::AddSetClassDataInst(SetClassDataInst* setClassDataInst)
+{
+    setClassDataInstructions.push_back(setClassDataInst);
+}
+
 bool Reader::GetBool()
 {
     uint8_t x = GetByte();

@@ -46,23 +46,23 @@ void BasicTypeFun::EmplaceType(TypeSymbol* type, int index)
     }
 }
 
-BasicTypeConstructor::BasicTypeConstructor(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
+BasicTypeInit::BasicTypeInit(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
 {
 }
 
-void BasicTypeConstructor::ComputeName()
+void BasicTypeInit::ComputeName()
 {
     ConstantPool& constantPool = GetAssembly()->GetConstantPool();
-    Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@constructor")));
+    Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@init")));
     SetGroupNameConstant(groupName);
     BasicTypeFun::ComputeName();
 }
 
-BasicTypeDefaultConstructor::BasicTypeDefaultConstructor(const Span& span_, Constant name_) : BasicTypeConstructor(span_, name_)
+BasicTypeDefaultInit::BasicTypeDefaultInit(const Span& span_, Constant name_) : BasicTypeInit(span_, name_)
 {
 }
 
-void BasicTypeDefaultConstructor::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeDefaultInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
 {
     std::string typeName = ToUtf8(GetType()->FullName());
     std::unique_ptr<Instruction> inst = machine.CreateInst("def", typeName);
@@ -71,13 +71,13 @@ void BasicTypeDefaultConstructor::GenerateCall(Machine& machine, Assembly& assem
     target->GenStore(machine, function);
 }
 
-BasicTypeInitConstructor::BasicTypeInitConstructor(const Span& span_, Constant name_) : BasicTypeConstructor(span_, name_)
+BasicTypeCopyInit::BasicTypeCopyInit(const Span& span_, Constant name_) : BasicTypeInit(span_, name_)
 {
 }
 
-void BasicTypeInitConstructor::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeCopyInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
 {
-    Assert(objects.size() == 2, "init needs two objects");
+    Assert(objects.size() == 2, "copy init needs two objects");
     GenObject* source = objects[1];
     source->GenLoad(machine, function);
     GenObject* target = objects[0];
@@ -98,7 +98,7 @@ void BasicTypeAssignment::ComputeName()
 
 void BasicTypeAssignment::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
 {
-    Assert(objects.size() == 2, "assing needs two objects");
+    Assert(objects.size() == 2, "assignment needs two objects");
     GenObject* source = objects[1];
     source->GenLoad(machine, function);
     GenObject* target = objects[0];
@@ -133,8 +133,8 @@ BasicTypeConversion::BasicTypeConversion(const Span& span_, Constant name_) :
 void BasicTypeConversion::Write(SymbolWriter& writer)
 {
     BasicTypeFun::Write(writer);
-    static_cast<Writer&>(writer).Put(uint8_t(conversionType));
-    static_cast<Writer&>(writer).Put(conversionDistance);
+    writer.AsMachineWriter().Put(uint8_t(conversionType));
+    writer.AsMachineWriter().Put(conversionDistance);
     utf32_string sourceTypeFullName = sourceType->FullName();
     ConstantId sourceTypeId = GetAssembly()->GetConstantPool().GetIdFor(sourceTypeFullName);
     Assert(sourceTypeId != noConstantId, "got no id");
@@ -143,7 +143,7 @@ void BasicTypeConversion::Write(SymbolWriter& writer)
     ConstantId targetTypeId = GetAssembly()->GetConstantPool().GetIdFor(targetTypeFullName);
     Assert(targetTypeId != noConstantId, "got no id");
     targetTypeId.Write(writer);
-    static_cast<Writer&>(writer).Put(conversionInstructionName);
+    writer.AsMachineWriter().Put(conversionInstructionName);
 }
 
 void BasicTypeConversion::Read(SymbolReader& reader)
@@ -189,8 +189,8 @@ BasicTypeUnaryOpFun::BasicTypeUnaryOpFun(const Span& span_, Constant name_) : Ba
 void BasicTypeUnaryOpFun::Write(SymbolWriter& writer)
 {
     BasicTypeFun::Write(writer);
-    static_cast<Writer&>(writer).Put(instGroupName);
-    static_cast<Writer&>(writer).Put(typeName);
+    writer.AsMachineWriter().Put(instGroupName);
+    writer.AsMachineWriter().Put(typeName);
 }
 
 void BasicTypeUnaryOpFun::Read(SymbolReader& reader)
@@ -216,8 +216,8 @@ BasicTypeBinaryOpFun::BasicTypeBinaryOpFun(const Span& span_, Constant name_) : 
 void BasicTypeBinaryOpFun::Write(SymbolWriter& writer)
 {
     BasicTypeFun::Write(writer);
-    static_cast<Writer&>(writer).Put(instGroupName);
-    static_cast<Writer&>(writer).Put(typeName);
+    writer.AsMachineWriter().Put(instGroupName);
+    writer.AsMachineWriter().Put(typeName);
 }
 
 void BasicTypeBinaryOpFun::Read(SymbolReader& reader)
@@ -319,12 +319,12 @@ void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type)
     ParameterSymbol* thisParam1 = new ParameterSymbol(Span(), thisParamName);
     thisParam1->SetAssembly(&assembly);
     thisParam1->SetType(type);
-    BasicTypeDefaultConstructor* defaultConstructor = new BasicTypeDefaultConstructor(Span(), constantPool.GetEmptyStringConstant());
-    defaultConstructor->SetAssembly(&assembly);
-    defaultConstructor->SetType(type);
-    defaultConstructor->AddSymbol(std::unique_ptr<Symbol>(thisParam1));
-    defaultConstructor->ComputeName();
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(defaultConstructor));
+    BasicTypeDefaultInit* defaultInit = new BasicTypeDefaultInit(Span(), constantPool.GetEmptyStringConstant());
+    defaultInit->SetAssembly(&assembly);
+    defaultInit->SetType(type);
+    defaultInit->AddSymbol(std::unique_ptr<Symbol>(thisParam1));
+    defaultInit->ComputeName();
+    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(defaultInit));
 
     ParameterSymbol* thisParam2 = new ParameterSymbol(Span(), thisParamName);
     thisParam2->SetAssembly(&assembly);
@@ -332,13 +332,13 @@ void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type)
     ParameterSymbol* thatParam2 = new ParameterSymbol(Span(), thatParamName);
     thatParam2->SetAssembly(&assembly);
     thatParam2->SetType(type);
-    BasicTypeInitConstructor* initConstructor = new BasicTypeInitConstructor(Span(), constantPool.GetEmptyStringConstant());
-    initConstructor->SetAssembly(&assembly);
-    initConstructor->SetType(type);
-    initConstructor->AddSymbol(std::unique_ptr<Symbol>(thisParam2));
-    initConstructor->AddSymbol(std::unique_ptr<Symbol>(thatParam2));
-    initConstructor->ComputeName();
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(initConstructor));
+    BasicTypeCopyInit* copyInit = new BasicTypeCopyInit(Span(), constantPool.GetEmptyStringConstant());
+    copyInit->SetAssembly(&assembly);
+    copyInit->SetType(type);
+    copyInit->AddSymbol(std::unique_ptr<Symbol>(thisParam2));
+    copyInit->AddSymbol(std::unique_ptr<Symbol>(thatParam2));
+    copyInit->ComputeName();
+    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(copyInit));
 
     ParameterSymbol* thisParam3 = new ParameterSymbol(Span(), thisParamName);
     thisParam3->SetAssembly(&assembly);

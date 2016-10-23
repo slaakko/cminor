@@ -9,6 +9,7 @@
 namespace cminor { namespace binder {
 
 class BoundCompileUnit;
+class BoundClass;
 class BoundFunction;
 class BoundCompoundStatement;
 class BoundReturnStatement;
@@ -29,6 +30,7 @@ class BoundMemberVariable;
 class BoundParameter;
 class BoundConversion;
 class BoundFunctionCall;
+class BoundNewExpression;
 class BoundConjunction;
 class BoundDisjunction;
 
@@ -37,6 +39,7 @@ class BoundNodeVisitor
 public:
     virtual ~BoundNodeVisitor();
     virtual void Visit(BoundCompileUnit& boundCompileUnit) {}
+    virtual void Visit(BoundClass& boundClass) {}
     virtual void Visit(BoundFunction& boundFunction) {}
     virtual void Visit(BoundCompoundStatement& boundCompoundStatement) {}
     virtual void Visit(BoundReturnStatement& boundReturnStatement) {}
@@ -57,6 +60,7 @@ public:
     virtual void Visit(BoundParameter& boundParameter) {}
     virtual void Visit(BoundConversion& boundConversion) {}
     virtual void Visit(BoundFunctionCall& boundFunctionCall) {}
+    virtual void Visit(BoundNewExpression& boundNewExpression) {}
     virtual void Visit(BoundConjunction& boundConjunction) {}
     virtual void Visit(BoundDisjunction& boundDisjunction) {}
 };

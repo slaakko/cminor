@@ -15,6 +15,7 @@ using namespace cminor::ast;
 using namespace cminor::symbols;
 
 class BoundCompileUnit;
+class BoundClass;
 class BoundFunction;
 
 class StatementBinderVisitor : public Visitor
@@ -23,6 +24,8 @@ public:
     StatementBinderVisitor(BoundCompileUnit& boundCompileUnit_);
     void Visit(CompileUnitNode& compileUnitNode) override;
     void Visit(NamespaceNode& namespaceNode) override;
+    void Visit(ClassNode& classNode) override;
+    void Visit(ConstructorNode& constructorNode) override;
     void Visit(FunctionNode& functionNode) override;
     void Visit(CompoundStatementNode& compoundStatementNode) override;
     void Visit(ReturnStatementNode& returnStatementNode) override;
@@ -41,6 +44,7 @@ public:
 private:
     BoundCompileUnit& boundCompileUnit;
     ContainerScope* containerScope;
+    BoundClass* boundClass;
     BoundFunction* function;
     std::unique_ptr<BoundStatement> statement;
 };

@@ -104,8 +104,8 @@ uint64_t ValueSize(ValueType type)
     return sizeof(uint64_t);
 }
 
-Object::Object(ObjectReference reference_, ArenaId arenaId_, ObjectMemPtr memPtr_, ObjectType* type_) :
-    reference(reference_), arenaId(arenaId_), memPtr(memPtr_), type(type_), flags(ObjectFlags::none)
+Object::Object(ObjectReference reference_, ArenaId arenaId_, ObjectMemPtr memPtr_, ObjectType* type_, uint64_t size_) :
+    reference(reference_), arenaId(arenaId_), memPtr(memPtr_), size(size_), type(type_), flags(ObjectFlags::none)
 {
 }
 
@@ -128,6 +128,8 @@ IntegralValue Object::GetField(int index) const
         case ValueType::doubleType: return IntegralValue(static_cast<uint64_t>(*reinterpret_cast<double*>(fieldPtr.Value())), field.GetType());
         case ValueType::charType: return IntegralValue(*reinterpret_cast<char32_t*>(fieldPtr.Value()), field.GetType());
         case ValueType::memPtr: return IntegralValue(fieldPtr.Value());
+        case ValueType::classDataPtr: return IntegralValue(*reinterpret_cast<ClassData**>(fieldPtr.Value()));
+        case ValueType::typePtr: return IntegralValue(*reinterpret_cast<ObjectType**>(fieldPtr.Value()));
         case ValueType::stringLiteral: return IntegralValue(reinterpret_cast<const char32_t*>(fieldPtr.Value()));
         case ValueType::objectReference: return IntegralValue(*reinterpret_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
         default: return IntegralValue(*reinterpret_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
@@ -154,6 +156,8 @@ void Object::SetField(IntegralValue fieldValue, int index)
         case ValueType::doubleType: *reinterpret_cast<double*>(fieldPtr.Value()) = fieldValue.AsDouble(); break;
         case ValueType::charType: *reinterpret_cast<char32_t*>(fieldPtr.Value()) = fieldValue.AsChar(); break;
         case ValueType::memPtr: *reinterpret_cast<uint8_t**>(fieldPtr.Value()) = fieldValue.AsMemPtr(); break;
+        case ValueType::classDataPtr: *reinterpret_cast<ClassData**>(fieldPtr.Value()) = fieldValue.AsClassDataPtr(); break;
+        case ValueType::typePtr: *reinterpret_cast<ObjectType**>(fieldPtr.Value()) = fieldValue.AsTypePtr(); break;
         case ValueType::stringLiteral: *reinterpret_cast<const char32_t**>(fieldPtr.Value()) = fieldValue.AsStringLiteral(); break;
         case ValueType::objectReference: *reinterpret_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
         default: throw std::runtime_error("invalid field type " + std::to_string(int(field.GetType())));
@@ -163,11 +167,6 @@ void Object::SetField(IntegralValue fieldValue, int index)
 int32_t Object::FieldCount() const
 {
     return type->FieldCount();
-}
-
-uint64_t Object::Size() const 
-{ 
-    return type->ObjectSize();
 }
 
 void Object::MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ObjectPool& objectBool)
@@ -198,7 +197,7 @@ ObjectReference ObjectPool::CreateObject(Thread& thread, ObjectType* type)
 {
     ObjectReference reference(nextReferenceValue++);
     std::pair<ArenaId, ObjectMemPtr> arenaMemPtr = machine.AllocateMemory(thread, type->ObjectSize());
-    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, arenaMemPtr.first, arenaMemPtr.second, type)));
+    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, arenaMemPtr.first, arenaMemPtr.second, type, type->ObjectSize())));
     if (!pairItBool.second)
     {
         throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
@@ -206,19 +205,18 @@ ObjectReference ObjectPool::CreateObject(Thread& thread, ObjectType* type)
     return reference;
 }
 
-ObjectReference ObjectPool::CreateString(Thread& thread, ArenaId arenaId, IntegralValue stringValue)
+ObjectReference ObjectPool::CopyObject(ObjectReference from)
 {
-    if (stringValue.Value() == 0)
+    if (from.IsNull())
     {
-        throw std::runtime_error("could not insert string to pool because of null string value");
+        return from;
     }
-    Assert(stringValue.GetType() == ValueType::stringLiteral, "string literal expected");
     ObjectReference reference(nextReferenceValue++);
-    const char32_t* s = stringValue.AsStringLiteral();
-    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, arenaId, ObjectMemPtr(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(s))), nullptr)));
+    Object& object = GetObject(from);
+    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, object.GetArenaId(), object.MemPtr(), object.Type(), object.Size())));
     if (!pairItBool.second)
     {
-        throw std::runtime_error("could not insert string to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
+        throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
     }
     return reference;
 }

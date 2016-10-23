@@ -28,6 +28,12 @@ BoundCompoundStatement::BoundCompoundStatement(Assembly& assembly_) : BoundState
 {
 }
 
+void BoundCompoundStatement::InsertFront(std::unique_ptr<BoundStatement>&& statement)
+{
+    statement->SetParent(this);
+    statements.insert(statements.begin(), std::move(statement));
+}
+
 void BoundCompoundStatement::AddStatement(std::unique_ptr<BoundStatement>&& statement)
 {
     statement->SetParent(this);
@@ -142,7 +148,6 @@ void BoundExpressionStatement::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
 }
-
 
 BoundEmptyStatement::BoundEmptyStatement(Assembly& assembly_) : BoundStatement(assembly_)
 {
