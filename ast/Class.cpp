@@ -73,6 +73,56 @@ void StaticConstructorNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+InitializerNode::InitializerNode(const Span& span_) : Node(span_)
+{
+}
+
+void InitializerNode::AddArgument(Node* argument)
+{
+    argument->SetParent(this);
+    arguments.Add(argument);
+}
+
+BaseInitializerNode::BaseInitializerNode(const Span& span_) : InitializerNode(span_)
+{
+}
+
+Node* BaseInitializerNode::Clone(CloneContext& cloneContext) const
+{
+    BaseInitializerNode* clone = new BaseInitializerNode(GetSpan());
+    int n = Arguments().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        clone->AddArgument(Arguments()[i]);
+    }
+    return clone;
+}
+
+void BaseInitializerNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+ThisInitializerNode::ThisInitializerNode(const Span& span_) : InitializerNode(span_)
+{
+}
+
+Node* ThisInitializerNode::Clone(CloneContext& cloneContext) const
+{
+    ThisInitializerNode* clone = new ThisInitializerNode(GetSpan());
+    int n = Arguments().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        clone->AddArgument(Arguments()[i]);
+    }
+    return clone;
+}
+
+void ThisInitializerNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 ConstructorNode::ConstructorNode(const Span& span_) : FunctionNode(span_)
 {
 }
@@ -90,6 +140,10 @@ Node* ConstructorNode::Clone(CloneContext& cloneContext) const
         ParameterNode* parameter = Parameters()[i];
         clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
     }
+    if (initializer)
+    {
+        clone->SetInitializer(static_cast<InitializerNode*>(initializer->Clone(cloneContext)));
+    }
     clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
     return clone;
 }
@@ -97,6 +151,12 @@ Node* ConstructorNode::Clone(CloneContext& cloneContext) const
 void ConstructorNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+void ConstructorNode::SetInitializer(InitializerNode* initializer_)
+{
+    initializer_->SetParent(this);
+    initializer.reset(initializer_);
 }
 
 MemberFunctionNode::MemberFunctionNode(const Span& span_) : FunctionNode(span_)
@@ -116,7 +176,10 @@ Node* MemberFunctionNode::Clone(CloneContext& cloneContext) const
         ParameterNode* parameter = Parameters()[i];
         clone->AddParameter(static_cast<ParameterNode*>(parameter->Clone(cloneContext)));
     }
-    clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+    if (Body())
+    {
+        clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+    }
     return clone;
 }
 

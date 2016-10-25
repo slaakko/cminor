@@ -118,16 +118,16 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     Assembly assembly(machine, assemblyName, project->AssemblyFilePath());
     const Assembly* rootAssembly = &assembly;
     std::vector<CallInst*> callInstructions;
-    std::vector<CreateObjectInst*> createObjectInstructions;
+    std::vector<TypeInstruction*> typeInstructions;
     std::vector<SetClassDataInst*> setClassDataInstructions;
     std::vector<ClassTypeSymbol*> classTypes;
     std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(project->AssemblyFilePath()).remove_filename().generic_string());
     std::unordered_set<std::string> importSet;
-    assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions, createObjectInstructions, setClassDataInstructions, 
+    assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions,
         classTypes);
     assembly.ImportSymbolTables();
     callInstructions.clear();
-    createObjectInstructions.clear();
+    typeInstructions.clear();
     setClassDataInstructions.clear();
     classTypes.clear();
     BuildSymbolTable(assembly, compileUnits);

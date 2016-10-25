@@ -540,28 +540,34 @@ void SetClassDataInst::Dump(CodeFormatter& formatter)
     formatter.Write(" " + ToUtf8(cd->Type()->Name().Value()) + " " + std::to_string(cd->Type()->Id()));
 }
 
-CreateObjectInst::CreateObjectInst() : Instruction("createo")
+TypeInstruction::TypeInstruction(const std::string& name_) : Instruction(name_)
 {
 }
 
-void CreateObjectInst::SetClassName(Constant fullClassName)
+void TypeInstruction::SetClassName(Constant fullClassName)
 {
     Assert(fullClassName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
     type = fullClassName;
 }
 
-StringPtr CreateObjectInst::GetClassName() const
+StringPtr TypeInstruction::GetClassName() const
 {
     Assert(type.Value().GetType() == ValueType::stringLiteral, "string literal expected");
     return StringPtr(type.Value().AsStringLiteral());
 }
 
-void CreateObjectInst::SetType(ObjectType* typePtr)
+void TypeInstruction::SetType(ObjectType* typePtr)
 {
     type.SetValue(IntegralValue(typePtr));
 }
 
-void CreateObjectInst::Encode(Writer& writer)
+ObjectType* TypeInstruction::GetType()
+{
+    Assert(type.Value().GetType() == ValueType::typePtr, "type pointer expected");
+    return type.Value().AsTypePtr();
+}
+
+void TypeInstruction::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
     ConstantId id = writer.GetConstantPool()->GetIdFor(type);
@@ -569,7 +575,7 @@ void CreateObjectInst::Encode(Writer& writer)
     id.Write(writer);
 }
 
-Instruction* CreateObjectInst::Decode(Reader& reader)
+Instruction* TypeInstruction::Decode(Reader& reader)
 {
     Instruction::Decode(reader);
     ConstantId id = reader.GetInt();
@@ -577,19 +583,22 @@ Instruction* CreateObjectInst::Decode(Reader& reader)
     return this;
 }
 
-void CreateObjectInst::Execute(Frame& frame)
-{
-    Assert(type.Value().GetType() == ValueType::typePtr, "type pointer expected");
-    ObjectReference objectReference = frame.GetObjectPool().CreateObject(frame.GetThread(), type.Value().AsTypePtr());
-    frame.OpStack().Push(objectReference);
-}
-
-void CreateObjectInst::Dump(CodeFormatter& formatter)
+void TypeInstruction::Dump(CodeFormatter& formatter)
 {
     Instruction::Dump(formatter);
     Assert(type.Value().GetType() == ValueType::typePtr, "type pointer expected");
     ObjectType* objectType = type.Value().AsTypePtr();
     formatter.Write(" " + ToUtf8(objectType->Name().Value()) + " " + std::to_string(objectType->Id()));
+}
+
+CreateObjectInst::CreateObjectInst() : TypeInstruction("createo")
+{
+}
+
+void CreateObjectInst::Execute(Frame& frame)
+{
+    ObjectReference objectReference = frame.GetObjectPool().CreateObject(frame.GetThread(), GetType());
+    frame.OpStack().Push(objectReference);
 }
 
 CopyObjectInst::CopyObjectInst() : Instruction("copyo", "copy", "object")
@@ -612,6 +621,61 @@ DupInst::DupInst() : Instruction("dup")
 void DupInst::Execute(Frame& frame)
 {
     frame.OpStack().Dup();
+}
+
+UpCastInst::UpCastInst() : TypeInstruction("upcast")
+{
+}
+
+void UpCastInst::Execute(Frame& frame)
+{
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference objectReference(value.Value());
+    if (objectReference.IsNull())
+    {
+        frame.OpStack().Push(ObjectReference(0));
+    }
+    else
+    {
+        ObjectType* objectType = GetType();
+        ObjectReference casted = frame.GetObjectPool().CopyObject(objectReference);
+        Object& castedObject = frame.GetObjectPool().GetObject(casted);
+        castedObject.SetType(objectType);
+        frame.OpStack().Push(casted);
+    }
+}
+
+DownCastInst::DownCastInst() : TypeInstruction("downcast")
+{
+}
+
+void DownCastInst::Execute(Frame& frame)
+{
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference objectReference(value.Value());
+    if (objectReference.IsNull())
+    {
+        frame.OpStack().Push(ObjectReference(0));
+    }
+    else
+    {
+        IntegralValue classDataField = frame.GetObjectPool().GetField(objectReference, 0);
+        Assert(classDataField.GetType() == ValueType::classDataPtr, "class data pointer expected");
+        ClassData* classData = classDataField.AsClassDataPtr();
+        uint64_t sourceTypeId = classData->Type()->Id();
+        ObjectType* objectType = GetType();
+        uint64_t targetTypeId = objectType->Id();
+        if (sourceTypeId % targetTypeId != 0)
+        {
+            throw std::runtime_error("invalid cast");
+        }
+        ObjectReference casted = frame.GetObjectPool().CopyObject(objectReference);
+        Object& castedObject = frame.GetObjectPool().GetObject(casted);
+        castedObject.SetType(objectType);
+        frame.OpStack().Push(casted);
+    }
 }
 
 } } // namespace cminor::machine

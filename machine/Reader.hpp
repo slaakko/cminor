@@ -12,7 +12,7 @@ namespace cminor { namespace machine {
 
 class Machine;
 class CallInst;
-class CreateObjectInst;
+class TypeInstruction;
 class SetClassDataInst;
 class ConstantPool;
 typedef std::basic_string<char32_t> utf32_string;
@@ -28,7 +28,7 @@ public:
     ConstantPool* GetConstantPool() const { return constantPool; }
     void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
     void AddCallInst(CallInst* callInst);
-    void AddCreateObjectInst(CreateObjectInst* createObjectInst);
+    void AddTypeInstruction(TypeInstruction* typeInst);
     void AddSetClassDataInst(SetClassDataInst* setClassDataInst);
     bool GetBool();
     uint8_t GetByte();
@@ -47,8 +47,8 @@ public:
     Span GetSpan();
     std::vector<CallInst*> GetCallInstructions() { return std::move(callInstructions); }
     const std::vector<CallInst*>& CallInstructions() const { return callInstructions; }
-    std::vector<CreateObjectInst*> GetCreateObjectInstructions() { return std::move(createObjectInstructions); }
-    const std::vector<CreateObjectInst*>& CreateObjectInstructions() const { return createObjectInstructions; }
+    std::vector<TypeInstruction*> GetTypeInstructions() { return std::move(typeInstructions); }
+    const std::vector<TypeInstruction*>& TypeInstructions() const { return typeInstructions; }
     std::vector<SetClassDataInst*> GetSetClassDataInstructions() { return std::move(setClassDataInstructions); }
     const std::vector<SetClassDataInst*>& SetClassDataInstructions() const { return setClassDataInstructions; }
 private:
@@ -59,7 +59,7 @@ private:
     const uint8_t* end;
     ConstantPool* constantPool;
     std::vector<CallInst*> callInstructions;
-    std::vector<CreateObjectInst*> createObjectInstructions;
+    std::vector<TypeInstruction*> typeInstructions;
     std::vector<SetClassDataInst*> setClassDataInstructions;
     void CheckEof();
 };

@@ -90,6 +90,10 @@ bool FindConversions(BoundCompileUnit& boundCompileUnit, FunctionSymbol* functio
         }
         else
         {
+            if (arity == 2 && function->GroupName() == U"@init" && i == 0)
+            {
+                return false;
+            }
             FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(sourceType, targetType);
             if (conversionFun)
             {
@@ -100,6 +104,12 @@ bool FindConversions(BoundCompileUnit& boundCompileUnit, FunctionSymbol* functio
                 }
                 else
                 {
+                    if (arity == 2 && i == 1 && conversionType == ConversionType::implicit_ && conversionFun->GetConversionType() == ConversionType::explicit_)
+                    {
+                        functionMatch.castRequired = true;
+                        functionMatch.castSourceType = sourceType;
+                        functionMatch.castTargetType = targetType;
+                    }
                     return false;
                 }
             }
@@ -143,6 +153,7 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
     else
     {
         std::vector<FunctionMatch> functionMatches;
+        std::vector<FunctionMatch> failedFunctionMatches;
         for (FunctionSymbol* viableFunction : viableFunctions)
         {
             FunctionMatch functionMatch(viableFunction);
@@ -150,12 +161,44 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
             {
                 functionMatches.push_back(functionMatch);
             }
+            else
+            {
+                failedFunctionMatches.push_back(functionMatch);
+            }
         }
         if (functionMatches.empty())
         {
             std::string overloadName = MakeOverloadName(groupName, arguments);
-            throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
-                std::to_string(viableFunctions.size()) + " viable functions examined.", span);
+            bool castRequired = false;
+            TypeSymbol* castSourceType = nullptr;
+            TypeSymbol* castTargetType = nullptr;
+            if (!failedFunctionMatches.empty())
+            {
+                int n = int(failedFunctionMatches.size());
+                for (int i = 0; i < n; ++i)
+                {
+                    if (failedFunctionMatches[i].castRequired)
+                    {
+                        castRequired = true;
+                        castSourceType = failedFunctionMatches[i].castSourceType;
+                        castTargetType = failedFunctionMatches[i].castTargetType;
+                        break;
+                    }
+                }
+            }
+            if (castRequired)
+            {
+                Assert(castSourceType, "cast source type not set");
+                Assert(castTargetType, "cast target type not set");
+                throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                    std::to_string(viableFunctions.size()) + " viable functions examined. Note: cannot convert implicitly from '" + 
+                    ToUtf8(castSourceType->FullName()) + "' to '" + ToUtf8(castTargetType->FullName()) + "' but explicit conversion (cast) exists.", span);
+            }
+            else
+            {
+                throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                    std::to_string(viableFunctions.size()) + " viable functions examined.", span);
+            }
         }
         else if (functionMatches.size() > 1)
         {

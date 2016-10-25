@@ -26,6 +26,8 @@ public:
     void Visit(NamespaceNode& namespaceNode) override;
     void Visit(ClassNode& classNode) override;
     void Visit(ConstructorNode& constructorNode) override;
+    void Visit(BaseInitializerNode& baseInitializerNode) override;
+    void Visit(ThisInitializerNode& thisInitializerNode) override;
     void Visit(FunctionNode& functionNode) override;
     void Visit(CompoundStatementNode& compoundStatementNode) override;
     void Visit(ReturnStatementNode& returnStatementNode) override;
@@ -46,6 +48,7 @@ private:
     ContainerScope* containerScope;
     BoundClass* boundClass;
     BoundFunction* function;
+    BoundCompoundStatement* compoundStatement;
     std::unique_ptr<BoundStatement> statement;
 };
 

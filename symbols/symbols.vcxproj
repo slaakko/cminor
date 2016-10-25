@@ -29,6 +29,7 @@
     <ClInclude Include="SymbolCreatorVisitor.hpp" />
     <ClInclude Include="SymbolReader.hpp" />
     <ClInclude Include="Symbol.hpp" />
+    <ClInclude Include="SymbolTable.hpp" />
     <ClInclude Include="SymbolWriter.hpp" />
     <ClInclude Include="VariableSymbol.hpp" />
   </ItemGroup>
@@ -43,6 +44,7 @@
     <ClCompile Include="SymbolCreatorVisitor.cpp" />
     <ClCompile Include="SymbolReader.cpp" />
     <ClCompile Include="Symbol.cpp" />
+    <ClCompile Include="SymbolTable.cpp" />
     <ClCompile Include="SymbolWriter.cpp" />
     <ClCompile Include="VariableSymbol.cpp" />
   </ItemGroup>

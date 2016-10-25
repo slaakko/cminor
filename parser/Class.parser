@@ -8,6 +8,7 @@
 [cpp]#include <cminor/parser/Specifier.hpp>
 [cpp]#include <cminor/parser/Identifier.hpp>
 [cpp]#include <cminor/parser/TypeExpr.hpp>
+[cpp]#include <cminor/parser/Expression.hpp>
 [cpp]#include <cminor/parser/Statement.hpp>
 [cpp]#include <cminor/parser/Parameter.hpp>
 [cpp]#include <cminor/parser/Function.hpp>
@@ -22,6 +23,7 @@ namespace cminor.parser
         using IdentifierGrammar.Identifier;
         using IdentifierGrammar.QualifiedId;
         using TypeExprGrammar.TypeExpr;
+        using ExpressionGrammar.ArgumentList;
         using StatementGrammar.CompoundStatement;
         using ParameterGrammar.ParameterList;
         using FunctionGrammar.FunctionGroupId;
@@ -63,12 +65,19 @@ namespace cminor.parser
 
         Constructor(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<ConstructorNode> ctor) : Node*
             ::= (Specifiers Identifier{ id.reset(Identifier); }){ if (id->Str() != classNode->Id()->Str()) pass = false; else ctor.reset(new ConstructorNode(span, Specifiers)); }
-                ParameterList(ctx, ctor.get()) CompoundStatement(ctx){ ctor->SetBody(CompoundStatement); value = ctor.release();  }
+                ParameterList(ctx, ctor.get()) 
+                (':' Initializer(ctx){ ctor->SetInitializer(Initializer); })? 
+                CompoundStatement(ctx){ ctor->SetBody(CompoundStatement); value = ctor.release();  }
+            ;
+
+        Initializer(ParsingContext* ctx) : InitializerNode*
+            ::= keyword("this"){ value = new ThisInitializerNode(span); }'('! ArgumentList(ctx, value):thisArgs! ')'!
+            |   keyword("base"){ value = new BaseInitializerNode(span); } '('! ArgumentList(ctx, value):baseArgs! ')'!
             ;
 
         MemberFunction(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<MemberFunctionNode> memFun) : Node*
             ::= (Specifiers TypeExpr(ctx) FunctionGroupId(ctx)){ memFun.reset(new MemberFunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); } 
-                ParameterList(ctx, memFun.get()) CompoundStatement(ctx){ memFun->SetBody(CompoundStatement); value = memFun.release(); }
+                ParameterList(ctx, memFun.get()) (CompoundStatement(ctx){ memFun->SetBody(CompoundStatement); value = memFun.release(); } | ';')
             ;
 
         MemberVariable(ParsingContext* ctx) : Node*

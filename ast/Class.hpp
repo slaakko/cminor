@@ -40,6 +40,34 @@ public:
     void Accept(Visitor& visitor) override;
 };
 
+class InitializerNode : public Node
+{
+public:
+    InitializerNode(const Span& span_);
+    void AddArgument(Node* argument) override;
+    const NodeList<Node>& Arguments() const { return arguments; }
+private:
+    NodeList<Node> arguments;
+};
+
+class BaseInitializerNode : public InitializerNode
+{
+public:
+    BaseInitializerNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::baseInitializerNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+};
+
+class ThisInitializerNode : public InitializerNode
+{
+public:
+    ThisInitializerNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::thisInitializerNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+};
+
 class ConstructorNode : public FunctionNode
 {
 public:
@@ -48,6 +76,10 @@ public:
     NodeType GetNodeType() const override { return NodeType::constructorNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
+    void SetInitializer(InitializerNode* initializer_);
+    InitializerNode* Initializer() const { return initializer.get(); }
+private:
+    std::unique_ptr<InitializerNode> initializer;
 };
 
 class MemberFunctionNode : public FunctionNode

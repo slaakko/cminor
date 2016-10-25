@@ -48,6 +48,8 @@ class AliasNode;
 class NamespaceImportNode;
 class ClassNode;
 class StaticConstructorNode;
+class BaseInitializerNode;
+class ThisInitializerNode;
 class ConstructorNode;
 class MemberFunctionNode;
 class MemberVariableNode;
@@ -140,6 +142,8 @@ public:
     virtual void Visit(CompileUnitNode& compileUnitNode) {}
     virtual void Visit(ClassNode& classNode) {}
     virtual void Visit(StaticConstructorNode& staticConstructorNode) {}
+    virtual void Visit(BaseInitializerNode& baseInitializerNode) {}
+    virtual void Visit(ThisInitializerNode& thisInitializerNode) {}
     virtual void Visit(ConstructorNode& constructorNode) {}
     virtual void Visit(MemberFunctionNode& memberFunctionNode) {}
     virtual void Visit(MemberVariableNode& memberVariableNode) {}

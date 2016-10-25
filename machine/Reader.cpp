@@ -21,9 +21,9 @@ void Reader::AddCallInst(CallInst* callInst)
     callInstructions.push_back(callInst);
 }
 
-void Reader::AddCreateObjectInst(CreateObjectInst* createObjectInst)
+void Reader::AddTypeInstruction(TypeInstruction* typeInst)
 {
-    createObjectInstructions.push_back(createObjectInst);
+    typeInstructions.push_back(typeInst);
 }
 
 void Reader::AddSetClassDataInst(SetClassDataInst* setClassDataInst)

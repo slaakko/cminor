@@ -244,6 +244,8 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
     rootInst.SetInst(0xB2, new CopyObjectInst());
     rootInst.SetInst(0xB3, new SetClassDataInst());
     rootInst.SetInst(0xB4, new DupInst());
+    rootInst.SetInst(0xB5, new UpCastInst());
+    rootInst.SetInst(0xB6, new DownCastInst());
 
     //  conversion group instruction:
     //  -----------------------------
@@ -475,9 +477,9 @@ std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
     {
         reader.AddCallInst(callInst);
     }
-    else if (CreateObjectInst* createObjectInst = dynamic_cast<CreateObjectInst*>(clonedInst))
+    else if (TypeInstruction* typeInst = dynamic_cast<TypeInstruction*>(clonedInst))
     {
-        reader.AddCreateObjectInst(createObjectInst);
+        reader.AddTypeInstruction(typeInst);
     }
     else if (SetClassDataInst* setClassDataInst = dynamic_cast<SetClassDataInst*>(clonedInst))
     {

@@ -5,7 +5,7 @@
 
 #ifndef CMINOR_SYMBOLS_ASSEMBLY_INCLUDED
 #define CMINOR_SYMBOLS_ASSEMBLY_INCLUDED
-#include <cminor/symbols/Symbol.hpp>
+#include <cminor/symbols/SymbolTable.hpp>
 #include <cminor/symbols/MachineFunctionTable.hpp>
 
 namespace cminor { namespace symbols {
@@ -20,7 +20,7 @@ enum class LoadType
     build, execute
 };
 
-void Link(const std::vector<CallInst*>& callInstructions, const std::vector<CreateObjectInst*>& createObjectInstructions, const std::vector<SetClassDataInst*>& setClassDataInstructions, 
+void Link(const std::vector<CallInst*>& callInstructions, const std::vector<TypeInstruction*>& typeInstructions, const std::vector<SetClassDataInst*>& setClassDataInstructions,
     const std::vector<ClassTypeSymbol*>& classTypes);
 
 class Assembly
@@ -31,7 +31,7 @@ public:
     Machine& GetMachine() { return machine; }
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
-        std::vector<CallInst*>& callInstructions, std::vector<CreateObjectInst*>& createObjectInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
+        std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
         std::vector<ClassTypeSymbol*>& classTypeSymbols);
     const std::string& FilePath() const { return filePath; }
     StringPtr Name() const { return StringPtr(name.Value().AsStringLiteral()); }
@@ -40,10 +40,10 @@ public:
     SymbolTable& GetSymbolTable() { return symbolTable; }
     bool IsSystemAssembly() const;
     void ImportAssemblies(LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions,
-        std::vector<CreateObjectInst*>& createObjectInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols);
+        std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols);
     void ImportAssemblies(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, 
         std::unordered_set<std::string>& importSet,
-        std::vector<CallInst*>& callInstructions, std::vector<CreateObjectInst*>& createObjectInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
+        std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
         std::vector<ClassTypeSymbol*>& classTypeSymbols);
     void ImportSymbolTables();
     void Dump(CodeFormatter& formatter);
@@ -58,7 +58,7 @@ private:
     MachineFunctionTable machineFunctionTable;
     SymbolTable symbolTable;
     void Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, const std::string& currentAssemblyDir,
-        std::vector<CallInst*>& callInstructions, std::vector<CreateObjectInst*>& createObjectInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
+        std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
         std::vector<ClassTypeSymbol*>& classTypeSymbols);
 };
 

@@ -8,9 +8,9 @@
 
 namespace cminor { namespace binder {
 
-BoundCompileUnit::BoundCompileUnit(Assembly& assembly_, CompileUnitNode* compileUnitNode_) : BoundNode(assembly_), assembly(assembly_), compileUnitNode(compileUnitNode_), 
-    conversionTable(assembly.GetSymbolTable().GetConversionTable())
+BoundCompileUnit::BoundCompileUnit(Assembly& assembly_, CompileUnitNode* compileUnitNode_) : BoundNode(assembly_), assembly(assembly_), compileUnitNode(compileUnitNode_), conversionTable(assembly_)
 {
+    conversionTable.SetConversionMap(assembly.GetSymbolTable().GetConversionTable().ConversionMap());
 }
 
 void BoundCompileUnit::AddFileScope(std::unique_ptr<FileScope>&& fileScope)
@@ -28,7 +28,7 @@ void BoundCompileUnit::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
-FunctionSymbol* BoundCompileUnit::GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType) const
+FunctionSymbol* BoundCompileUnit::GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType) 
 {
     return conversionTable.GetConversion(sourceType, targetType);
 }

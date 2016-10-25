@@ -1,8 +1,11 @@
 class Alpha
 {
+    public Alpha()
+    {
+    }
 }
 
-void main()
+int main()
 {
-    Alpha a = new Alpha();
+    return 0;
 }

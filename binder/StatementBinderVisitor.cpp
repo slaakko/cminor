@@ -90,7 +90,8 @@ void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, FunctionNode& func
     throw Exception("not all control paths terminate in return or throw statement", functionNode.GetSpan());
 }
 
-StatementBinderVisitor::StatementBinderVisitor(BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), containerScope(nullptr), boundClass(nullptr), function(nullptr)
+StatementBinderVisitor::StatementBinderVisitor(BoundCompileUnit& boundCompileUnit_) : 
+    boundCompileUnit(boundCompileUnit_), containerScope(nullptr), boundClass(nullptr), function(nullptr), compoundStatement(nullptr)
 {
 }
 
@@ -147,24 +148,80 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
     ContainerScope* prevContainerScope = containerScope;
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(constructorNode);
     ConstructorSymbol* constructorSymbol = dynamic_cast<ConstructorSymbol*>(symbol);
+    constructorSymbol->SetBaseConstructorCallGenerated();
     Assert(constructorSymbol, "constructor symbol expected");
     containerScope = symbol->GetContainerScope();
     std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(constructorSymbol));
     BoundFunction* prevFunction = function;
     function = boundFunction.get();
     constructorNode.Body()->Accept(*this);
-    BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
+    BoundCompoundStatement* prevCompoundStatement = compoundStatement;
+    compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
     Assert(compoundStatement, "compound statement expected");
-    if (constructorSymbol->IsDefaultConstructorSymbol())
+    if (constructorNode.Initializer())
+    {
+        constructorNode.Initializer()->Accept(*this);
+    }
+    else
     {
         BoundFunctionCall* baseConstructorCall = new BoundFunctionCall(boundCompileUnit.GetAssembly(), boundClass->GetClassTypeSymbol()->BaseClass()->DefaultConstructorSymbol());
         BoundExpressionStatement* baseConstructorCallStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(baseConstructorCall));
         compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(baseConstructorCallStatement));
     }
     function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
+    compoundStatement = prevCompoundStatement;
     boundClass->AddMember(std::move(boundFunction));
     containerScope = prevContainerScope;
     function = prevFunction;
+}
+
+void StatementBinderVisitor::Visit(BaseInitializerNode& baseInitializerNode)
+{
+    std::vector<std::unique_ptr<BoundExpression>> arguments;
+    ParameterSymbol* thisParam = function->GetFunctionSymbol()->Parameters()[0];
+    BoundParameter* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam);
+    FunctionSymbol* thisToBaseConversion = boundCompileUnit.GetConversion(thisParam->GetType(), boundClass->GetClassTypeSymbol()->BaseClass());
+    if (!thisToBaseConversion)
+    {
+        throw Exception("no implicit conversion from '" + ToUtf8(thisParam->GetType()->FullName()) + "' to '" + ToUtf8(boundClass->GetClassTypeSymbol()->BaseClass()->FullName()) + "' exists.",
+            baseInitializerNode.GetSpan());
+    }
+    BoundConversion* thisAsBase = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(boundThisParam), thisToBaseConversion);
+    arguments.push_back(std::unique_ptr<BoundExpression>(thisAsBase));
+    int n = baseInitializerNode.Arguments().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        arguments.push_back(BindExpression(boundCompileUnit, function, containerScope, baseInitializerNode.Arguments()[i]));
+    }
+    std::vector<FunctionScopeLookup> functionScopeLookups;
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, boundClass->GetClassTypeSymbol()->BaseClass()->ClassOrNsScope()));
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
+    std::unique_ptr<BoundFunctionCall> baseConstructorCall = ResolveOverload(boundCompileUnit, U"@constructor", functionScopeLookups, arguments, baseInitializerNode.GetSpan());
+    BoundExpressionStatement* baseConstructorCallStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::move(baseConstructorCall));
+    compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(baseConstructorCallStatement));
+}
+
+void StatementBinderVisitor::Visit(ThisInitializerNode& thisInitializerNode)
+{
+    std::vector<std::unique_ptr<BoundExpression>> arguments;
+    ParameterSymbol* thisParam = function->GetFunctionSymbol()->Parameters()[0];
+    BoundParameter* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam);
+    arguments.push_back(std::unique_ptr<BoundExpression>(boundThisParam));
+    int n = thisInitializerNode.Arguments().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        arguments.push_back(BindExpression(boundCompileUnit, function, containerScope, thisInitializerNode.Arguments()[i]));
+    }
+    std::vector<FunctionScopeLookup> functionScopeLookups;
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, boundClass->GetClassTypeSymbol()->BaseClass()->ClassOrNsScope()));
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
+    std::unique_ptr<BoundFunctionCall> thisConstructorCall = ResolveOverload(boundCompileUnit, U"@constructor", functionScopeLookups, arguments, thisInitializerNode.GetSpan());
+    if (thisConstructorCall->GetFunctionSymbol() == function->GetFunctionSymbol())
+    {
+        throw Exception("self-recursive initializer function call detected", thisInitializerNode.GetSpan());
+    }
+    BoundExpressionStatement* thisConstructorCallStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::move(thisConstructorCall));
+    compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(thisConstructorCallStatement));
 }
 
 void StatementBinderVisitor::Visit(FunctionNode& functionNode)

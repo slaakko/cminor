@@ -301,7 +301,7 @@ void StaticConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
-ConstructorSymbol::ConstructorSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
+ConstructorSymbol::ConstructorSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), flags(ConstructorSymbolFlags::none)
 {
 }
 
@@ -309,7 +309,6 @@ void ConstructorSymbol::SetSpecifiers(Specifiers specifiers)
 {
     Specifiers accessSpecifiers = specifiers & Specifiers::access_;
     SetAccess(accessSpecifiers);
-    SetStatic();
     if ((specifiers & Specifiers::virtual_) != Specifiers::none)
     {
         throw Exception("constructor cannot be virtual", GetSpan());
@@ -364,7 +363,7 @@ void ConstructorSymbol::CreateMachineFunction()
     Constant fullClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
     setClassDataInst->SetClassName(fullClassNameConstant);
     MachineFunction()->AddInst(std::move(inst));
-    if (IsDefaultConstructorSymbol() && containingClass->BaseClass())
+    if (!BaseConstructorCallGenerated() && IsDefaultConstructorSymbol() && containingClass->BaseClass())
     {
         Assert(containingClass->BaseClass()->DefaultConstructorSymbol(), "base class has no default constructor");
         std::unique_ptr<Instruction> loadLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
@@ -404,7 +403,6 @@ void MemberFunctionSymbol::SetSpecifiers(Specifiers specifiers)
 {
     Specifiers accessSpecifiers = specifiers & Specifiers::access_;
     SetAccess(accessSpecifiers);
-    SetStatic();
     if ((specifiers & Specifiers::virtual_) != Specifiers::none)
     {
         SetVirtual();
@@ -433,6 +431,30 @@ void MemberFunctionSymbol::SetSpecifiers(Specifiers specifiers)
     {
         SetInline();
     }
+}
+
+
+ClassTypeConversion::ClassTypeConversion(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
+{
+    SetConversionFun();
+}
+
+void ClassTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) 
+{
+    std::unique_ptr<Instruction> inst;
+    switch (conversionType)
+    {
+        case ConversionType::implicit_: inst = std::move(machine.CreateInst("upcast")); break;
+        case ConversionType::explicit_: inst = std::move(machine.CreateInst("downcast")); break;
+        default: throw std::runtime_error("invalid conversion type");
+    }
+    TypeInstruction* typeInstruction = dynamic_cast<TypeInstruction*>(inst.get());
+    Assert(typeInstruction, "type instruction expected");
+    utf32_string targetTypeClassName = targetType->FullName();
+    ConstantPool& constantPool = assembly.GetConstantPool();
+    Constant targetTypeClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(targetTypeClassName.c_str())));
+    typeInstruction->SetClassName(targetTypeClassNameConstant);
+    function.AddInst(std::move(inst));
 }
 
 FunctionGroupSymbol::FunctionGroupSymbol(const Span& span_, Constant name_, ContainerScope* containerScope_) : Symbol(span_, name_), containerScope(containerScope_)
@@ -468,6 +490,76 @@ FunctionSymbol* FunctionGroupSymbol::GetOverload() const
         if (overloads.size() == 1) return overloads.front();
     }
     return nullptr;
+}
+
+ConversionTable::ConversionTable(Assembly& assembly_) : assembly(assembly_)
+{
+}
+
+void ConversionTable::AddConversion(FunctionSymbol* conversionFun)
+{
+    TypeSymbol* sourceType = conversionFun->ConversionSourceType();
+    TypeSymbol* targetType = conversionFun->ConversionTargetType();
+    conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
+}
+
+FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType)
+{
+    auto it = conversionMap.find(std::make_pair(sourceType, targetType));
+    if (it != conversionMap.cend())
+    {
+        return it->second;
+    }
+    if (ClassTypeSymbol* sourceClassType = dynamic_cast<ClassTypeSymbol*>(sourceType))
+    {
+        if (ClassTypeSymbol* targetClassType = dynamic_cast<ClassTypeSymbol*>(targetType))
+        {
+            ConstantPool& constantPool = assembly.GetConstantPool();
+            int distance = 0;
+            if (sourceClassType->HasBaseClass(targetClassType, distance))
+            {
+                Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
+                utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
+                Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
+                std::unique_ptr<ClassTypeConversion> conversion(new ClassTypeConversion(sourceClassType->GetSpan(), conversionNameConstant));
+                FunctionSymbol* conversionFun = conversion.get();
+                conversion->SetAssembly(&assembly);
+                conversion->SetConversionType(ConversionType::implicit_);
+                conversion->SetConversionDistance(distance);
+                conversion->SetSourceType(sourceType);
+                conversion->SetTargetType(targetType);
+                conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
+                classTypeConversions.push_back(std::move(conversion));
+                return conversionFun;
+            }
+            else 
+            {
+                int distance = 0;
+                if (targetClassType->HasBaseClass(sourceClassType, distance))
+                {
+                    Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
+                    utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
+                    Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
+                    std::unique_ptr<ClassTypeConversion> conversion(new ClassTypeConversion(sourceClassType->GetSpan(), conversionNameConstant));
+                    FunctionSymbol* conversionFun = conversion.get();
+                    conversion->SetAssembly(&assembly);
+                    conversion->SetConversionType(ConversionType::explicit_);
+                    conversion->SetConversionDistance(distance);
+                    conversion->SetSourceType(sourceType);
+                    conversion->SetTargetType(targetType);
+                    conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
+                    classTypeConversions.push_back(std::move(conversion));
+                    return conversionFun;
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
+void ConversionTable::SetConversionMap(const std::unordered_map<std::pair<TypeSymbol*, TypeSymbol*>, FunctionSymbol*, ConversionTypeHash>& conversionMap_)
+{
+    conversionMap = conversionMap_;
 }
 
 } } // namespace cminor::symbols

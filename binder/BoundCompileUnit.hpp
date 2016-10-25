@@ -24,7 +24,7 @@ public:
     const std::vector<std::unique_ptr<BoundNode>>& BoundNodes() const { return boundNodes; }
     void AddBoundNode(std::unique_ptr<BoundNode>&& boundNode);
     void Accept(BoundNodeVisitor& visitor) override;
-    FunctionSymbol* GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType) const;
+    FunctionSymbol* GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType);
 private:
     Assembly& assembly;
     CompileUnitNode* compileUnitNode;

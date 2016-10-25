@@ -51,7 +51,7 @@ void IntegralValue::Write(Writer& writer)
         case ValueType::doubleType: writer.Put(AsDouble()); break;
         case ValueType::charType: writer.Put(AsChar()); break;
         case ValueType::stringLiteral: writer.Put(utf32_string(AsStringLiteral())); break;
-        case ValueType::objectReference: throw std::runtime_error("cannot write object reference");
+        case ValueType::objectReference: if (value != 0) throw std::runtime_error("cannot write nonnull object references"); writer.Put(AsULong()); break;
         default: throw std::runtime_error("invalid integral value type to write");
     }
 }
@@ -76,7 +76,7 @@ void IntegralValue::Read(Reader& reader)
 #pragma warning(default : 4244)
         case ValueType::charType: value = reader.GetChar(); break;
         case ValueType::stringLiteral: /* do not read yet */ break;
-        case ValueType::objectReference: throw std::runtime_error("cannot read object reference");
+        case ValueType::objectReference: value = reader.GetULong(); if (value != 0) throw std::runtime_error("read nonnull object reference");  break;
         default: throw std::runtime_error("invalid integral value type to read");
     }
 }

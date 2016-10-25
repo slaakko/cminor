@@ -34,6 +34,7 @@ namespace cminor.parser
         ClassMember(ParsingContext* ctx, ClassNode* classNode): Node*;
         StaticConstructor(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<IdentifierNode> id): StaticConstructorNode*;
         Constructor(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<ConstructorNode> ctor): Node*;
+        Initializer(ParsingContext* ctx): InitializerNode*;
         MemberFunction(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<MemberFunctionNode> memFun): Node*;
         MemberVariable(ParsingContext* ctx): Node*;
     }

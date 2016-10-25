@@ -368,20 +368,27 @@ private:
     Constant classData;
 };
 
-class CreateObjectInst : public Instruction
+class TypeInstruction : public Instruction
+{
+public:
+    TypeInstruction(const std::string& name_);
+    void SetClassName(Constant fullClassName);
+    StringPtr GetClassName() const;
+    void SetType(ObjectType* typePtr);
+    ObjectType* GetType();
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Dump(CodeFormatter& formatter) override;
+private:
+    Constant type;
+};
+
+class CreateObjectInst : public TypeInstruction
 {
 public:
     CreateObjectInst();
     Instruction* Clone() const override { return new CreateObjectInst(*this); }
-    void SetClassName(Constant fullClassName);
-    StringPtr GetClassName() const;
-    void SetType(ObjectType* typePtr);
-    void Encode(Writer& writer) override;
-    Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
-    void Dump(CodeFormatter& formatter) override;
-private:
-    Constant type;
 };
 
 class CopyObjectInst : public Instruction
@@ -397,6 +404,22 @@ class DupInst : public Instruction
 public:
     DupInst();
     Instruction* Clone() const override { return new DupInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class UpCastInst : public TypeInstruction
+{
+public:
+    UpCastInst();
+    Instruction* Clone() const override { return new UpCastInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class DownCastInst : public TypeInstruction
+{
+public:
+    DownCastInst();
+    Instruction* Clone() const override { return new DownCastInst(*this); }
     void Execute(Frame& frame) override;
 };
 

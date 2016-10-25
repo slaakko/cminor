@@ -145,6 +145,7 @@ public:
     void SetMemPtr(ObjectMemPtr newMemPtr) { memPtr = newMemPtr; }
     uint64_t Size() const { return size; }
     ObjectType* Type() const { return type; }
+    void SetType(ObjectType* type_) { type = type_; }
     IntegralValue GetField(int index) const;
     void SetField(IntegralValue fieldValue, int index);
     int32_t FieldCount() const;

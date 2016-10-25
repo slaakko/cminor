@@ -32,6 +32,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
 {
     SetOwner(0);
     keywords0.push_back("abstract");
+    keywords0.push_back("base");
     keywords0.push_back("bool");
     keywords0.push_back("break");
     keywords0.push_back("byte");
@@ -64,6 +65,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("short");
     keywords0.push_back("static");
     keywords0.push_back("string");
+    keywords0.push_back("this");
     keywords0.push_back("true");
     keywords0.push_back("uint");
     keywords0.push_back("ulong");

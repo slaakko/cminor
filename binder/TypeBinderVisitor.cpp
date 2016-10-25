@@ -9,6 +9,7 @@
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
+#include <cminor/symbols/ObjectFun.hpp>
 #include <cminor/machine/Type.hpp>
 
 namespace cminor { namespace binder {
@@ -135,19 +136,9 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
     classTypeSymbol->GetObjectType()->AddFields(baseClassObjectType->Fields());
     if (!classTypeSymbol->DefaultConstructorSymbol())
     {
-        ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
-        ConstructorSymbol* defaultConstructorSymbol = new ConstructorSymbol(Span(), constantPool.GetEmptyStringConstant());
-        defaultConstructorSymbol->SetAssembly(&boundCompileUnit.GetAssembly());
-        defaultConstructorSymbol->SetPublic();
-        defaultConstructorSymbol->SetGroupNameConstant(constantPool.GetConstant(constantPool.Install(U"@constructor")));
-        ParameterSymbol* thisParameterSymbol = new ParameterSymbol(Span(), constantPool.GetConstant(constantPool.Install(U"this")));
-        thisParameterSymbol->SetAssembly(&boundCompileUnit.GetAssembly());
-        thisParameterSymbol->SetType(classTypeSymbol);
-        thisParameterSymbol->SetBound();
-        defaultConstructorSymbol->AddSymbol(std::unique_ptr<Symbol>(thisParameterSymbol));
-        defaultConstructorSymbol->ComputeName();
-        classTypeSymbol->AddSymbol(std::unique_ptr<Symbol>(defaultConstructorSymbol));
+        CreateDefaultConstructor(boundCompileUnit.GetAssembly(), classTypeSymbol);
     }
+    CreateBasicTypeObjectFun(boundCompileUnit.GetAssembly(), classTypeSymbol);
     int nmf = int(classTypeSymbol->MemberFunctions().size());
     for (int i = 0; i < nmf; ++i)
     {
