@@ -315,11 +315,14 @@ void ExpressionBinder::Visit(CharLiteralNode& charLiteralNode)
 
 void ExpressionBinder::Visit(StringLiteralNode& stringLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"string");
+    TypeSymbol* stringType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"string");
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(StringPtr(stringLiteralNode.Value().c_str()));
-    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
-    expression.reset(boundLiteral);
+    BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), stringType, constantPool.GetConstant(id));
+    FunctionSymbol* strlit2s = boundCompileUnit.GetConversion(stringType, stringType);
+    Assert(strlit2s, "string literal to string conversion not found");
+    BoundConversion* boundConversion = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(boundLiteral), strlit2s);
+    expression.reset(boundConversion);
 }
 
 void ExpressionBinder::Visit(NullLiteralNode& nullLiteralNode)

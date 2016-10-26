@@ -9,6 +9,7 @@
 #include <cminor/symbols/ConstantSymbol.hpp>
 #include <cminor/symbols/BasicTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
+#include <cminor/symbols/StringFun.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/ast/Project.hpp>
@@ -320,11 +321,16 @@ void SymbolTable::Read(SymbolReader& reader)
         }
     }
     reader.ProcessTypeRequests();
+    for (FunctionSymbol* conversion : reader.Conversions())
+    {
+        AddConversion(conversion);
+    }
 }
 
 void SymbolTable::Import(SymbolTable& symbolTable)
 {
     globalNs.Import(&symbolTable.globalNs, *this);
+    conversionTable.ImportConversionMap(symbolTable.conversionTable.ConversionMap());
     symbolTable.Clear();
 }
 
@@ -524,6 +530,7 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::objectDefaultInit, new ConcreteSymbolCreator<ObjectDefaultInit>());
     SymbolFactory::Instance().Register(SymbolType::objectCopyInit, new ConcreteSymbolCreator<ObjectCopyInit>());
     SymbolFactory::Instance().Register(SymbolType::objectNullInit, new ConcreteSymbolCreator<ObjectNullInit>());
+    SymbolFactory::Instance().Register(SymbolType::objectAssignment, new ConcreteSymbolCreator<ObjectAssignment>());
 }
 
 void DoneSymbol()

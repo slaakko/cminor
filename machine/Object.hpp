@@ -106,9 +106,11 @@ class ObjectMemPtr
 {
 public:
     ObjectMemPtr(uint8_t* value_) : value(value_) {}
+    ObjectMemPtr(const char32_t* strValue_) : strValue(strValue_) {}
     uint8_t* Value() const { return value; }
+    const char32_t* StrValue() const { return strValue; }
 private:
-    uint8_t* value;
+    union { uint8_t* value; const char32_t* strValue; };
 };
 
 uint64_t ValueSize(ValueType type);
@@ -144,6 +146,7 @@ public:
     ObjectMemPtr MemPtr() const { return memPtr; }
     void SetMemPtr(ObjectMemPtr newMemPtr) { memPtr = newMemPtr; }
     uint64_t Size() const { return size; }
+    void SetSize(uint64_t size_) { size = size_; }
     ObjectType* Type() const { return type; }
     void SetType(ObjectType* type_) { type = type_; }
     IntegralValue GetField(int index) const;
@@ -173,6 +176,7 @@ public:
     ObjectReference CopyObject(ObjectReference from);
     void DestroyObject(ObjectReference reference);
     Object& GetObject(ObjectReference reference);
+    ObjectReference CreateStringFromLiteral(const char32_t* strLit, uint64_t len);
     IntegralValue GetField(ObjectReference reference, int32_t fieldIndex);
     void SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue);
     ObjectMemPtr GetObjectMemPtr(ObjectReference reference);

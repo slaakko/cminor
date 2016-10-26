@@ -1,11 +1,5 @@
-class Alpha
-{
-    public Alpha()
-    {
-    }
-}
+using System;
 
-int main()
+void main()
 {
-    return 0;
 }

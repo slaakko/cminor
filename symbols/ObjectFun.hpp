@@ -35,6 +35,14 @@ public:
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
 };
 
+class ObjectAssignment : public BasicTypeFun
+{
+public:
+    ObjectAssignment(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::objectAssignment; };
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+};
+
 void CreateDefaultConstructor(Assembly& assembly, ClassTypeSymbol* classTypeSymbol);
 void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType);
 void InitObjectFun(Assembly& assembly);

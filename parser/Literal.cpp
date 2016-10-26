@@ -717,6 +717,8 @@ public:
         a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A2Action));
         Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
         a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A3Action));
+        Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
+        a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A4Action));
         Cm::Parsing::NonterminalParser* charEscapeNonterminalParser = GetNonterminal("CharEscape");
         charEscapeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StringLiteralRule>(this, &StringLiteralRule::PostCharEscape));
     }
@@ -730,9 +732,13 @@ public:
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.s.append(ToUtf32(std::string(matchBegin, matchEnd)));
+        context.value = new StringLiteralNode(span, context.s);
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.s.append(ToUtf32(std::string(matchBegin, matchEnd)));
+    }
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.s.append(1, context.fromCharEscape);
     }
@@ -1314,19 +1320,20 @@ void LiteralGrammar::CreateRules()
                                     new Cm::Parsing::KleeneStarParser(
                                         new Cm::Parsing::CharSetParser("\"", true)))),
                             new Cm::Parsing::CharParser('\"'))))),
-            new Cm::Parsing::TokenParser(
-                new Cm::Parsing::SequenceParser(
+            new Cm::Parsing::ActionParser("A2",
+                new Cm::Parsing::TokenParser(
                     new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::CharParser('\"'),
-                        new Cm::Parsing::KleeneStarParser(
-                            new Cm::Parsing::AlternativeParser(
-                                new Cm::Parsing::ActionParser("A2",
-                                    new Cm::Parsing::PositiveParser(
-                                        new Cm::Parsing::CharSetParser("\"\\\r\n", true))),
-                                new Cm::Parsing::ActionParser("A3",
-                                    new Cm::Parsing::NonterminalParser("CharEscape", "CharEscape", 0))))),
-                    new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::CharParser('\"')))))));
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::CharParser('\"'),
+                            new Cm::Parsing::KleeneStarParser(
+                                new Cm::Parsing::AlternativeParser(
+                                    new Cm::Parsing::ActionParser("A3",
+                                        new Cm::Parsing::PositiveParser(
+                                            new Cm::Parsing::CharSetParser("\"\\\r\n", true))),
+                                    new Cm::Parsing::ActionParser("A4",
+                                        new Cm::Parsing::NonterminalParser("CharEscape", "CharEscape", 0))))),
+                        new Cm::Parsing::ExpectationParser(
+                            new Cm::Parsing::CharParser('\"'))))))));
     AddRule(new NullLiteralRule("NullLiteral", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::KeywordParser("null"))));

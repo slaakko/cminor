@@ -37,11 +37,14 @@ public:
     void AddClassTypeSymbol(ClassTypeSymbol* classType);
     std::vector<ClassTypeSymbol*> GetClassTypeSymbols() { return std::move(classTypeSymbols); }
     const std::vector<ClassTypeSymbol*>& ClassTypeSymbols() const { return classTypeSymbols; }
+    void AddConversionFun(FunctionSymbol* conversion);
+    const std::vector<FunctionSymbol*>& Conversions() const { return conversions; }
 private:
     Assembly* assembly;
     std::vector<LocalVariableSymbol*> localVariables;
     std::vector<TypeRequest> typeRequests;
     std::vector<ClassTypeSymbol*> classTypeSymbols;
+    std::vector<FunctionSymbol*> conversions;
 };
 
 } } // namespace cminor::symbols

@@ -363,7 +363,7 @@ void ConstructorSymbol::CreateMachineFunction()
     Constant fullClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
     setClassDataInst->SetClassName(fullClassNameConstant);
     MachineFunction()->AddInst(std::move(inst));
-    if (!BaseConstructorCallGenerated() && IsDefaultConstructorSymbol() && containingClass->BaseClass())
+    if (!BaseConstructorCallGenerated() && containingClass->BaseClass())
     {
         Assert(containingClass->BaseClass()->DefaultConstructorSymbol(), "base class has no default constructor");
         std::unique_ptr<Instruction> loadLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
@@ -560,6 +560,14 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
 void ConversionTable::SetConversionMap(const std::unordered_map<std::pair<TypeSymbol*, TypeSymbol*>, FunctionSymbol*, ConversionTypeHash>& conversionMap_)
 {
     conversionMap = conversionMap_;
+}
+
+void ConversionTable::ImportConversionMap(const std::unordered_map<std::pair<TypeSymbol*, TypeSymbol*>, FunctionSymbol*, ConversionTypeHash>& conversionMap_)
+{
+    for (const auto& x : conversionMap_)
+    {
+        conversionMap.insert(x);
+    }
 }
 
 } } // namespace cminor::symbols

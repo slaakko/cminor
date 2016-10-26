@@ -98,7 +98,7 @@ namespace cminor.parser
                     |   CharEscape{ s.append(1, CharEscape); }
                     )*
                     '"'!
-                )
+                ){ value = new StringLiteralNode(span, s); }
             ;
 
         NullLiteral : Node*

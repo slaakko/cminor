@@ -26,11 +26,11 @@ namespace cminor.parser
         Statement(ParsingContext* ctx) : StatementNode*
             ::= LabeledStatement(ctx){ value = LabeledStatement; }
             |   ControlStatement(ctx){ value = ControlStatement; }
+            |   ExpressionStatement(ctx){ value = ExpressionStatement; }
             |   AssignmentStatement(ctx){ value = AssignmentStatement; }
             |   ConstructionStatement(ctx){ value = ConstructionStatement; }
             |   IncrementStatement(ctx){ value = IncrementStatement; }
             |   DecrementStatement(ctx){ value = DecrementStatement; }
-            |   ExpressionStatement(ctx){ value = ExpressionStatement; }
             |   EmptyStatement(ctx){ value = EmptyStatement; }
             ;
 
@@ -146,8 +146,8 @@ namespace cminor.parser
             ::= (DecrementExpressionStatement(ctx) ';'!){ value = DecrementExpressionStatement; value->GetSpan().SetEnd(span.End()); }
             ;
 
-        ExpressionStatement(ParsingContext* ctx) : StatementNode*
-            ::= (Expression(ctx) ';'!){ value = new ExpressionStatementNode(span, Expression); }
+        ExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr) : StatementNode*
+            ::= (Expression(ctx){ expr.reset(Expression); } ';'){ value = new ExpressionStatementNode(span, expr.release()); }
             ;
 
         EmptyStatement(ParsingContext* ctx) : StatementNode*

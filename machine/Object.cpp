@@ -7,6 +7,7 @@
 #include <cminor/machine/Type.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/String.hpp>
+#include <cminor/machine/Class.hpp>
 
 namespace cminor { namespace machine {
 
@@ -246,6 +247,18 @@ Object& ObjectPool::GetObject(ObjectReference reference)
         return it->second;
     }
     throw std::runtime_error("object with reference " + std::to_string(reference.Value()) + " not found");
+}
+
+ObjectReference ObjectPool::CreateStringFromLiteral(const char32_t* strLit, uint64_t len)
+{
+    ObjectReference reference(nextReferenceValue++);
+    uint64_t stringSize = sizeof(char32_t) * (len + 1);
+    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, ArenaId::notGCMem, ObjectMemPtr(strLit), ObjectTypeTable::Instance().GetObjectType(U"string"), stringSize)));
+    if (!pairItBool.second)
+    {
+        throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
+    }
+    return reference;
 }
 
 IntegralValue ObjectPool::GetField(ObjectReference reference, int32_t fieldIndex)

@@ -1,5 +1,5 @@
-#ifndef Literal_hpp_28351
-#define Literal_hpp_28351
+#ifndef Literal_hpp_2134
+#define Literal_hpp_2134
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -39,4 +39,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Literal_hpp_28351
+#endif // Literal_hpp_2134

@@ -39,7 +39,7 @@ enum class SymbolType : uint8_t
     classTypeSymbol, objectTypeSymbol, stringTypeSymbol, functionSymbol, staticConstructorSymbol, constructorSymbol, memberFunctionSymbol, functionGroupSymbol, parameterSymbol, 
     localVariableSymbol, memberVariableSymbol, constantSymbol, namespaceSymbol,
     declarationBlock, basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, 
-    objectDefaultInit, objectCopyInit, objectNullInit, classTypeConversion,
+    objectDefaultInit, objectCopyInit, objectNullInit, objectAssignment, classTypeConversion,
     maxSymbol
 };
 

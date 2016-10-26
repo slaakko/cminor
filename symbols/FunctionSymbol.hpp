@@ -224,6 +224,7 @@ public:
     FunctionSymbol* GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType);
     const std::unordered_map<std::pair<TypeSymbol*, TypeSymbol*>, FunctionSymbol*, ConversionTypeHash>& ConversionMap() const { return conversionMap; }
     void SetConversionMap(const std::unordered_map<std::pair<TypeSymbol*, TypeSymbol*>, FunctionSymbol*, ConversionTypeHash>& conversionMap_);
+    void ImportConversionMap(const std::unordered_map<std::pair<TypeSymbol*, TypeSymbol*>, FunctionSymbol*, ConversionTypeHash>& conversionMap_);
 private:
     Assembly& assembly;
     std::unordered_map<std::pair<TypeSymbol*, TypeSymbol*>, FunctionSymbol*, ConversionTypeHash> conversionMap;

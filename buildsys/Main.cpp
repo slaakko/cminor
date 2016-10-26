@@ -52,17 +52,24 @@ struct InitDone
     }
 };
 
-void GenerateDefaultConstructors(Assembly& assembly, ClassTypeSymbol* classTypeSymbol)
+void GenerateConstructors(Assembly& assembly, ClassTypeSymbol* classTypeSymbol)
 {
     std::unique_ptr<BoundCompileUnit> boundCompileUnit(new BoundCompileUnit(assembly, nullptr));
     std::unique_ptr<BoundClass> boundClass(new BoundClass(classTypeSymbol));
-    ConstructorSymbol* defaultConstructorSymbol = classTypeSymbol->DefaultConstructorSymbol();
+    std::vector<ConstructorSymbol*> constructors;
+    if (classTypeSymbol->DefaultConstructorSymbol())
+    {
+        constructors.push_back(classTypeSymbol->DefaultConstructorSymbol());
+    }
     if (!classTypeSymbol->IsBound())
     {
         classTypeSymbol->SetBound();
-        std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(defaultConstructorSymbol));
-        boundFunction->SetBody(std::unique_ptr<BoundCompoundStatement>(new BoundCompoundStatement(assembly)));
-        boundClass->AddMember(std::move(boundFunction));
+        for (ConstructorSymbol* constructorSymbol : constructors)
+        {
+            std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(constructorSymbol));
+            boundFunction->SetBody(std::unique_ptr<BoundCompoundStatement>(new BoundCompoundStatement(assembly)));
+            boundClass->AddMember(std::move(boundFunction));
+        }
     }
     boundCompileUnit->AddBoundNode(std::move(boundClass));
     GenerateCode(*boundCompileUnit, assembly.GetMachine());
@@ -78,10 +85,10 @@ int main()
             std::unique_ptr<Assembly> systemCoreAssembly = CreateSystemCoreAssembly(machine, "debug");
             TypeSymbol* otype = systemCoreAssembly->GetSymbolTable().GetType(U"object");
             ClassTypeSymbol* objectType = dynamic_cast<ClassTypeSymbol*>(otype);
-            GenerateDefaultConstructors(*systemCoreAssembly, objectType);
+            GenerateConstructors(*systemCoreAssembly, objectType);
             TypeSymbol* stype = systemCoreAssembly->GetSymbolTable().GetType(U"string");
             ClassTypeSymbol* stringType = dynamic_cast<ClassTypeSymbol*>(stype);
-            GenerateDefaultConstructors(*systemCoreAssembly, stringType);
+            GenerateConstructors(*systemCoreAssembly, stringType);
             boost::filesystem::path obp(systemCoreAssembly->FilePath());
             obp.remove_filename();
             boost::filesystem::create_directories(obp);

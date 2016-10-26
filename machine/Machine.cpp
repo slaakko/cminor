@@ -247,6 +247,12 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
     rootInst.SetInst(0xB5, new UpCastInst());
     rootInst.SetInst(0xB6, new DownCastInst());
 
+
+    // strings:
+    // --------
+
+    rootInst.SetInst(0xC0, new StrLitToStringInst());
+
     //  conversion group instruction:
     //  -----------------------------
 

@@ -399,6 +399,14 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class StrLitToStringInst : public Instruction
+{
+public:
+    StrLitToStringInst();
+    Instruction* Clone() const override { return new StrLitToStringInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class DupInst : public Instruction
 {
 public:

@@ -148,7 +148,7 @@ namespace cminor.parser
         IncrementStatement(ParsingContext* ctx): StatementNode*;
         DecrementExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): StatementNode*;
         DecrementStatement(ParsingContext* ctx): StatementNode*;
-        ExpressionStatement(ParsingContext* ctx): StatementNode*;
+        ExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): StatementNode*;
         EmptyStatement(ParsingContext* ctx): StatementNode*;
     }
 }

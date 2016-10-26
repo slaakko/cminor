@@ -4,6 +4,7 @@
 // =================================
 
 #include <cminor/symbols/ObjectFun.hpp>
+#include <cminor/symbols/StringFun.hpp>
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/machine/Machine.hpp>
@@ -65,6 +66,21 @@ void ObjectNullInit::GenerateCall(Machine& machine, Assembly& assembly, Function
     target->GenStore(machine, function);
 }
 
+ObjectAssignment::ObjectAssignment(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
+{
+}
+
+void ObjectAssignment::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+{
+    Assert(objects.size() == 2, "assign needs two objects");
+    GenObject* source = objects[1];
+    source->GenLoad(machine, function);
+    std::unique_ptr<Instruction> inst = machine.CreateInst("copy", "object");
+    function.AddInst(std::move(inst));
+    GenObject* target = objects[0];
+    target->GenStore(machine, function);
+}
+
 void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType, TypeSymbol* boolType)
 {
     ConstantPool& constantPool = assembly.GetConstantPool();
@@ -110,6 +126,22 @@ void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType, Ty
     nullInit->ComputeName();
     classType->AddSymbol(std::unique_ptr<FunctionSymbol>(nullInit));
 
+    ParameterSymbol* thisParam4 = new ParameterSymbol(Span(), thisParamName);
+    thisParam4->SetAssembly(&assembly);
+    thisParam4->SetType(classType);
+    ParameterSymbol* thatParam4 = new ParameterSymbol(Span(), thatParamName);
+    thatParam4->SetAssembly(&assembly);
+    thatParam4->SetType(classType);
+    ObjectAssignment* assignment = new ObjectAssignment(Span(), constantPool.GetEmptyStringConstant());
+    Constant assignmentGroupName = assembly.GetConstantPool().GetConstant(assembly.GetConstantPool().Install(U"@assignment"));
+    assignment->SetGroupNameConstant(assignmentGroupName);
+    assignment->SetAssembly(&assembly);
+    assignment->SetType(classType);
+    assignment->AddSymbol(std::unique_ptr<Symbol>(thisParam4));
+    assignment->AddSymbol(std::unique_ptr<Symbol>(thatParam4));
+    assignment->ComputeName();
+    classType->AddSymbol(std::unique_ptr<FunctionSymbol>(assignment));
+
     BasicTypeReturn* returnFun = new BasicTypeReturn(Span(), constantPool.GetEmptyStringConstant());
     returnFun->SetAssembly(&assembly);
     returnFun->SetType(classType);
@@ -137,10 +169,7 @@ void InitObjectFun(Assembly& assembly)
     TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"bool");
     CreateBasicTypeObjectFun(assembly, objectType, boolType);
     CreateDefaultConstructor(assembly, objectType);
-    TypeSymbol* stype = assembly.GetSymbolTable().GetType(U"string");
-    ClassTypeSymbol* stringType = dynamic_cast<ClassTypeSymbol*>(stype);
-    CreateBasicTypeObjectFun(assembly, stringType, boolType);
-    CreateDefaultConstructor(assembly, stringType);
+    CreateStringFunctions(assembly);
 }
 
 } } // namespace cminor::symbols

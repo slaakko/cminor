@@ -54,4 +54,10 @@ void SymbolReader::AddClassTypeSymbol(ClassTypeSymbol* classType)
     classTypeSymbols.push_back(classType);
 }
 
+void SymbolReader::AddConversionFun(FunctionSymbol* conversion)
+{
+    conversions.push_back(conversion);
+}
+
+
 } } // namespace cminor::symbols

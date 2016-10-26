@@ -614,6 +614,22 @@ void CopyObjectInst::Execute(Frame& frame)
     frame.OpStack().Push(copy);
 }
 
+StrLitToStringInst::StrLitToStringInst() : Instruction("slit2s")
+{
+}
+
+void StrLitToStringInst::Execute(Frame& frame)
+{
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::stringLiteral, "string literal expected");
+    ConstantId stringConstantId = frame.GetConstantPool().GetIdFor(Constant(value));
+    Assert(stringConstantId != noConstantId, "id for string constant not found");
+    const char32_t* strLit = value.AsStringLiteral();
+    uint64_t len = frame.GetConstantPool().GetStringLength(stringConstantId);
+    ObjectReference reference = frame.GetObjectPool().CreateStringFromLiteral(strLit, len);
+    frame.OpStack().Push(reference);
+}
+
 DupInst::DupInst() : Instruction("dup")
 {
 }

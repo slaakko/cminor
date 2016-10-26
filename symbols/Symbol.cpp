@@ -779,6 +779,13 @@ void ContainerSymbol::Read(SymbolReader& reader)
     {
         Symbol* symbol = reader.GetSymbol();
         AddSymbol(std::unique_ptr<Symbol>(symbol));
+        if (FunctionSymbol* functionSymbol = dynamic_cast<FunctionSymbol*>(symbol))
+        {
+            if (functionSymbol->IsConversionFun())
+            {
+                reader.AddConversionFun(functionSymbol);
+            }
+        }
     }
 }
 
@@ -788,10 +795,6 @@ void ContainerSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
     {
         FunctionGroupSymbol* functionGroupSymbol = MakeFunctionGroupSymbol(functionSymbol->GroupName(), functionSymbol->GetSpan());
         functionGroupSymbol->AddFunction(functionSymbol);
-        if (functionSymbol->IsConversionFun())
-        {
-            GetAssembly()->GetSymbolTable().AddConversion(functionSymbol);
-        }
     }
     else 
     {
