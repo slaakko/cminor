@@ -1,5 +1,5 @@
-#ifndef Function_hpp_21955
-#define Function_hpp_21955
+#ifndef Function_hpp_28726
+#define Function_hpp_28726
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -22,8 +22,12 @@ private:
     class FunctionRule;
     class FunctionGroupIdRule;
     class OperatorFunctionGroupIdRule;
+    class AttributesRule;
+    class NameValuePairRule;
+    class NameRule;
+    class ValueRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // Function_hpp_21955
+#endif // Function_hpp_28726

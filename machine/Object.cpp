@@ -261,6 +261,36 @@ ObjectReference ObjectPool::CreateStringFromLiteral(const char32_t* strLit, uint
     return reference;
 }
 
+int32_t ObjectPool::GetStringLength(ObjectReference str) 
+{
+    Object& s = GetObject(str);
+    Assert(s.Type() == ObjectTypeTable::Instance().GetObjectType(U"System.String"), "string type expected");
+    uint64_t len = s.Size() / sizeof(char32_t) - 1;
+    return static_cast<int32_t>(len);
+}
+
+ObjectReference ObjectPool::CreateArray(Thread& thread, int32_t length, ArrayType* type)
+{
+    Assert(length != 0, "zero length arrays not supported");
+    ObjectReference reference(nextReferenceValue++);
+    uint64_t arraySize = sizeof(ValueType) * uint64_t(length);
+    std::pair<ArenaId, ObjectMemPtr> arenaMemPtr = machine.AllocateMemory(thread, arraySize);
+    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, arenaMemPtr.first, arenaMemPtr.second, type, arraySize)));
+    if (!pairItBool.second)
+    {
+        throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
+    }
+    return reference;
+}
+
+int32_t ObjectPool::GetArrayLength(ObjectReference arr)
+{
+    Object& a = GetObject(arr);
+    Assert(dynamic_cast<ArrayType*>(a.Type()) != nullptr, "array type expected");
+    uint64_t len = a.Size() / sizeof(ValueType);
+    return static_cast<int32_t>(len);
+}
+
 IntegralValue ObjectPool::GetField(ObjectReference reference, int32_t fieldIndex)
 {
     if (reference.IsNull())

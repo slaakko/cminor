@@ -80,6 +80,7 @@ void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, FunctionNode& func
 {
     TypeSymbol* returnType = functionSymbol->ReturnType();
     if (!returnType || dynamic_cast<VoidTypeSymbol*>(returnType)) return;
+    if (functionSymbol->IsExternal()) return;
     CompoundStatementNode* body = functionNode.Body();
     int n = body->Statements().Count();
     for (int i = 0; i < n; ++i)
@@ -154,21 +155,28 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
     std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(constructorSymbol));
     BoundFunction* prevFunction = function;
     function = boundFunction.get();
-    constructorNode.Body()->Accept(*this);
     BoundCompoundStatement* prevCompoundStatement = compoundStatement;
-    compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
-    Assert(compoundStatement, "compound statement expected");
+    if (constructorNode.HasBody())
+    {
+        constructorNode.Body()->Accept(*this);
+        compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
+        Assert(compoundStatement, "compound statement expected");
+        function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
+    }
+    else
+    {
+        function->SetBody(std::unique_ptr<BoundCompoundStatement>(new BoundCompoundStatement(boundCompileUnit.GetAssembly())));
+    }
     if (constructorNode.Initializer())
     {
         constructorNode.Initializer()->Accept(*this);
     }
-    else
+    else if (boundClass->GetClassTypeSymbol()->BaseClass())
     {
         BoundFunctionCall* baseConstructorCall = new BoundFunctionCall(boundCompileUnit.GetAssembly(), boundClass->GetClassTypeSymbol()->BaseClass()->DefaultConstructorSymbol());
         BoundExpressionStatement* baseConstructorCallStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(baseConstructorCall));
         compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(baseConstructorCallStatement));
     }
-    function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
     compoundStatement = prevCompoundStatement;
     boundClass->AddMember(std::move(boundFunction));
     containerScope = prevContainerScope;
@@ -224,6 +232,33 @@ void StatementBinderVisitor::Visit(ThisInitializerNode& thisInitializerNode)
     compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(thisConstructorCallStatement));
 }
 
+void StatementBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
+{
+    ContainerScope* prevContainerScope = containerScope;
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(memberFunctionNode);
+    MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(symbol);
+    Assert(memberFunctionSymbol, "member function symbol expected");
+    containerScope = symbol->GetContainerScope();
+    std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(memberFunctionSymbol));
+    BoundFunction* prevFunction = function;
+    function = boundFunction.get();
+    if (memberFunctionNode.HasBody())
+    {
+        memberFunctionNode.Body()->Accept(*this);
+        BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
+        Assert(compoundStatement, "compound statement expected");
+        function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
+    }
+    else
+    {
+        function->SetBody(std::unique_ptr<BoundCompoundStatement>(new BoundCompoundStatement(boundCompileUnit.GetAssembly())));
+    }
+    CheckFunctionReturnPaths(memberFunctionSymbol, memberFunctionNode);
+    boundCompileUnit.AddBoundNode(std::move(boundFunction));
+    containerScope = prevContainerScope;
+    function = prevFunction;
+}
+
 void StatementBinderVisitor::Visit(FunctionNode& functionNode)
 {
     ContainerScope* prevContainerScope = containerScope;
@@ -234,10 +269,17 @@ void StatementBinderVisitor::Visit(FunctionNode& functionNode)
     std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(functionSymbol));
     BoundFunction* prevFunction = function;
     function = boundFunction.get();
-    functionNode.Body()->Accept(*this);
-    BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
-    Assert(compoundStatement, "compound statement expected");
-    function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
+    if (functionNode.HasBody())
+    {
+        functionNode.Body()->Accept(*this);
+        BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
+        Assert(compoundStatement, "compound statement expected");
+        function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
+    }
+    else
+    {
+        function->SetBody(std::unique_ptr<BoundCompoundStatement>(new BoundCompoundStatement(boundCompileUnit.GetAssembly())));
+    }
     CheckFunctionReturnPaths(functionSymbol, functionNode);
     boundCompileUnit.AddBoundNode(std::move(boundFunction));
     containerScope = prevContainerScope;

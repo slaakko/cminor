@@ -61,7 +61,7 @@ public:
     static void Init();
     static void Done();
     FunctionTable();
-    static FunctionTable& Instance() { Assert(instance, "function table not initialized");  return *instance; }
+    static FunctionTable& Instance() { Assert(instance, "function table not initialized"); return *instance; }
     void AddFunction(Function* fun);
     Function* GetFunction(StringPtr functionCallName) const;
     Function* GetMain() const { return main; }
@@ -69,6 +69,29 @@ private:
     static std::unique_ptr<FunctionTable> instance;
     std::unordered_map<StringPtr, Function*, StringPtrHash> functionMap;
     Function* main;
+};
+
+class VmFunction
+{
+public:
+    Constant Name() const { return name; }
+    virtual ~VmFunction();
+    virtual void Execute(Frame& frame) = 0;
+private:
+    Constant name;
+};
+
+class VmFunctionTable
+{
+public:
+    static void Init();
+    static void Done();
+    static VmFunctionTable& Instance() { Assert(instance, "virtual machine function table not initialized"); return *instance; }
+    void RegisterVmFunction(VmFunction* vmFunction);
+    VmFunction* GetVmFunction(StringPtr vmFuntionName) const;
+private:
+    static std::unique_ptr<VmFunctionTable> instance;
+    std::unordered_map<StringPtr, VmFunction*, StringPtrHash> vmFunctionMap;
 };
 
 } } // namespace cminor::machine

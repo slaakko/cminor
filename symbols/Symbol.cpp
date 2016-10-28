@@ -791,6 +791,7 @@ void ContainerSymbol::Read(SymbolReader& reader)
 
 void ContainerSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
 {
+    symbol->SetParent(this);
     if (FunctionSymbol* functionSymbol = dynamic_cast<FunctionSymbol*>(symbol.get()))
     {
         FunctionGroupSymbol* functionGroupSymbol = MakeFunctionGroupSymbol(functionSymbol->GroupName(), functionSymbol->GetSpan());
@@ -804,7 +805,6 @@ void ContainerSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
             GetAssembly()->GetSymbolTable().AddType(type);
         }
     }
-    symbol->SetParent(this);
     symbols.push_back(std::move(symbol));
 }
 

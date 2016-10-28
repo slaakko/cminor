@@ -22,6 +22,7 @@ enum class Specifiers : uint16_t
     override_ = 1 << 6,
     abstract_ = 1 << 7,
     inline_ = 1 << 8,
+    external_ = 1 << 9,
     access_ = public_ | protected_ | private_ | internal_
 };
 

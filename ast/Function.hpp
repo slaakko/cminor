@@ -8,6 +8,7 @@
 #include <cminor/ast/Specifier.hpp>
 #include <cminor/ast/Parameter.hpp>
 #include <cminor/ast/Identifier.hpp>
+#include <unordered_map>
 
 namespace cminor { namespace ast {
 
@@ -24,6 +25,15 @@ public:
     const std::string& Str() const { return functionGroupId; }
 private:
     std::string functionGroupId;
+};
+
+class AttributeMap
+{
+public:
+    void AddAttribute(const std::string& name_, const std::string& value_);
+    std::string GetAttribute(const std::string& name) const;
+private:
+    std::unordered_map<std::string, std::string> nameValuePairs;
 };
 
 class FunctionNode : public Node
@@ -46,6 +56,8 @@ public:
     bool HasBody() const { return body != nullptr; }
     CompileUnitNode* GetCompileUnit() const { return compileUnit; }
     void SetCompileUnit(CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
+    void SetAttributes(const AttributeMap& attributes_);
+    const AttributeMap& Attributes() const { return attributes; }
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> returnTypeExpr;
@@ -53,6 +65,7 @@ private:
     NodeList<ParameterNode> parameters;
     std::unique_ptr<CompoundStatementNode> body;
     CompileUnitNode* compileUnit;
+    AttributeMap attributes;
 };
 
 } } // namespace cminor::ast

@@ -160,4 +160,48 @@ Function* FunctionTable::GetFunction(StringPtr functionCallName) const
     }
 }
 
+VmFunction::~VmFunction()
+{
+}
+
+std::unique_ptr<VmFunctionTable> VmFunctionTable::instance;
+
+void VmFunctionTable::Init()
+{
+    instance.reset(new VmFunctionTable());
+}
+
+void VmFunctionTable::Done()
+{
+    instance.reset();
+}
+
+void VmFunctionTable::RegisterVmFunction(VmFunction* vmFunction)
+{
+    Constant vmFuntionName = vmFunction->Name();
+    Assert(vmFuntionName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    auto it = vmFunctionMap.find(StringPtr(vmFuntionName.Value().AsStringLiteral()));
+    if (it != vmFunctionMap.cend())
+    {
+        throw std::runtime_error("virtual machine function " + ToUtf8(vmFuntionName.Value().AsStringLiteral()) + "' already registered to virtual machine functon table");
+    }
+    else
+    {
+        vmFunctionMap[StringPtr(vmFuntionName.Value().AsStringLiteral())] = vmFunction;
+    }
+}
+
+VmFunction* VmFunctionTable::GetVmFunction(StringPtr vmFuntionName) const
+{
+    auto it = vmFunctionMap.find(vmFuntionName);
+    if (it != vmFunctionMap.cend())
+    {
+        return it->second;
+    }
+    else
+    {
+        throw std::runtime_error("virtual machine function '" + ToUtf8(vmFuntionName.Value()) + "' not found from virtual machine function table");
+    }
+}
+
 } } // namespace cminor::machine

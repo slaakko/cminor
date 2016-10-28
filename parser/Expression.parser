@@ -258,6 +258,8 @@ namespace cminor.parser
             |   Literal{ value = Literal; }
             |   BasicType{ value = BasicType; }
             |   Identifier{ value = Identifier; }
+            |   keyword("this"){ value = new ThisNode(span); }
+            |   keyword("base"){ value = new BaseNode(span); }
             |   CastExpr(ctx){ value = CastExpr; }
             |   NewExpr(ctx){ value = NewExpr; }
             ;

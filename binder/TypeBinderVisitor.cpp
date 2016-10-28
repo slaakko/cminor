@@ -57,6 +57,19 @@ void TypeBinderVisitor::Visit(FunctionNode& functionNode)
     containerScope = functionSymbol->GetContainerScope();
     Specifiers specifiers = functionNode.GetSpecifiers();
     functionSymbol->SetSpecifiers(specifiers);
+    if (functionSymbol->IsExternal())
+    {
+        if (functionNode.HasBody())
+        {
+            throw Exception("external function cannot have a body", functionNode.GetSpan());
+        }
+        utf32_string vmFunctionName = ToUtf32(functionNode.Attributes().GetAttribute("vm_function_name"));
+        if (vmFunctionName.empty())
+        {
+            throw Exception("virtual machine function name attribute (vm_function_name) not set for external function", functionNode.GetSpan());
+        }
+        functionSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
+    }
     int n = functionNode.Parameters().Count();
     for (int i = 0; i < n; ++i)
     {
@@ -70,7 +83,10 @@ void TypeBinderVisitor::Visit(FunctionNode& functionNode)
     TypeSymbol* returnType = ResolveType(boundCompileUnit, containerScope, functionNode.ReturnTypeExpr());
     functionSymbol->SetReturnType(returnType);
     functionSymbol->ComputeName();
-    functionNode.Body()->Accept(*this);
+    if (functionNode.HasBody())
+    {
+        functionNode.Body()->Accept(*this);
+    }
     containerScope = prevContainerScope;
 }
 
@@ -123,7 +139,7 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
     }
     if (!classTypeSymbol->BaseClass())
     {
-        TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"object");
+        TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Object");
         ClassTypeSymbol* objectType = dynamic_cast<ClassTypeSymbol*>(type);
         if (objectType != classTypeSymbol)
         {
@@ -131,9 +147,12 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
             classTypeSymbol->SetBaseClass(objectType);
         }
     }
-    classTypeSymbol->GetContainerScope()->SetBase(classTypeSymbol->BaseClass()->GetContainerScope());
-    ObjectType* baseClassObjectType = classTypeSymbol->BaseClass()->GetObjectType();
-    classTypeSymbol->GetObjectType()->AddFields(baseClassObjectType->Fields());
+    if (classTypeSymbol->BaseClass())
+    {
+        classTypeSymbol->GetContainerScope()->SetBase(classTypeSymbol->BaseClass()->GetContainerScope());
+        ObjectType* baseClassObjectType = classTypeSymbol->BaseClass()->GetObjectType();
+        classTypeSymbol->GetObjectType()->AddFields(baseClassObjectType->Fields());
+    }
     if (!classTypeSymbol->DefaultConstructorSymbol())
     {
         CreateDefaultConstructor(boundCompileUnit.GetAssembly(), classTypeSymbol);
@@ -215,6 +234,19 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
     MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(symbol);
     Assert(memberFunctionSymbol, "member function symbol expected");
     memberFunctionSymbol->SetSpecifiers(memberFunctionNode.GetSpecifiers());
+    if (memberFunctionSymbol->IsExternal())
+    {
+        if (memberFunctionNode.HasBody())
+        {
+            throw Exception("external function cannot have a body", memberFunctionNode.GetSpan());
+        }
+        utf32_string vmFunctionName = ToUtf32(memberFunctionNode.Attributes().GetAttribute("vm_function_name"));
+        if (vmFunctionName.empty())
+        {
+            throw Exception("virtual machine function name attribute (vm_function_name) not set for external function", memberFunctionNode.GetSpan());
+        }
+        memberFunctionSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
+    }
     ContainerScope* prevContainerScope = containerScope;
     containerScope = memberFunctionSymbol->GetContainerScope();
     int n = memberFunctionNode.Parameters().Count();
@@ -230,7 +262,10 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
     TypeSymbol* returnType = ResolveType(boundCompileUnit, containerScope, memberFunctionNode.ReturnTypeExpr());
     memberFunctionSymbol->SetReturnType(returnType);
     memberFunctionSymbol->ComputeName();
-    memberFunctionNode.Body()->Accept(*this);
+    if (memberFunctionNode.HasBody())
+    {
+        memberFunctionNode.Body()->Accept(*this);
+    }
     containerScope = prevContainerScope;
 }
 

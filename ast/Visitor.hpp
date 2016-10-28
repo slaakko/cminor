@@ -82,6 +82,8 @@ class DotNode;
 class InvokeNode;
 class CastNode;
 class NewNode;
+class ThisNode;
+class BaseNode;
 
 class CompoundStatementNode;
 class ReturnStatementNode;
@@ -176,6 +178,8 @@ public:
     virtual void Visit(InvokeNode& invokeNode) {}
     virtual void Visit(CastNode& castNode) {}
     virtual void Visit(NewNode& newNode) {}
+    virtual void Visit(ThisNode& thisNode) {}
+    virtual void Visit(BaseNode& baseNode) {}
 
     virtual void Visit(CompoundStatementNode& compoundStatementNode) {}
     virtual void Visit(ReturnStatementNode& returnStatementNode) {}

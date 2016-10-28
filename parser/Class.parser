@@ -27,6 +27,7 @@ namespace cminor.parser
         using StatementGrammar.CompoundStatement;
         using ParameterGrammar.ParameterList;
         using FunctionGrammar.FunctionGroupId;
+        using FunctionGrammar.Attributes;
 
         Class(ParsingContext* ctx) : ClassNode*
             ::= Specifiers keyword("class") Identifier{ value = new ClassNode(span, Specifiers, Identifier); }
@@ -55,16 +56,18 @@ namespace cminor.parser
             |   MemberVariable(ctx){ value = MemberVariable; }
             ;
 
-        StaticConstructor(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<IdentifierNode> id) : StaticConstructorNode*
-            ::= (Specifiers Identifier{ id.reset(Identifier); } '(' ')')
+        StaticConstructor(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<IdentifierNode> id) : StaticConstructorNode*
+            ::= (Attributes(&attributeMap)? Specifiers Identifier{ id.reset(Identifier); } '(' ')')
                 { 
-                    if (id->Str() != classNode->Id()->Str()) pass = false; else if (!HasStaticSpecifier(Specifiers)) pass = false; else value = new StaticConstructorNode(span, Specifiers); 
+                    if (id->Str() != classNode->Id()->Str()) pass = false; else if (!HasStaticSpecifier(Specifiers)) pass = false; 
+                    else { value = new StaticConstructorNode(span, Specifiers); value->SetAttributes(attributeMap); }
                 }
                 CompoundStatement(ctx){ value->SetBody(CompoundStatement); }
             ;
 
-        Constructor(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<ConstructorNode> ctor) : Node*
-            ::= (Specifiers Identifier{ id.reset(Identifier); }){ if (id->Str() != classNode->Id()->Str()) pass = false; else ctor.reset(new ConstructorNode(span, Specifiers)); }
+        Constructor(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<ConstructorNode> ctor) : Node*
+            ::= (Attributes(&attributeMap)? Specifiers Identifier{ id.reset(Identifier); })
+                { if (id->Str() != classNode->Id()->Str()) pass = false; else { ctor.reset(new ConstructorNode(span, Specifiers)); ctor->SetAttributes(attributeMap); } }
                 ParameterList(ctx, ctor.get()) 
                 (':' Initializer(ctx){ ctor->SetInitializer(Initializer); })? 
                 CompoundStatement(ctx){ ctor->SetBody(CompoundStatement); value = ctor.release();  }
@@ -75,9 +78,14 @@ namespace cminor.parser
             |   keyword("base"){ value = new BaseInitializerNode(span); } '('! ArgumentList(ctx, value):baseArgs! ')'!
             ;
 
-        MemberFunction(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<MemberFunctionNode> memFun) : Node*
-            ::= (Specifiers TypeExpr(ctx) FunctionGroupId(ctx)){ memFun.reset(new MemberFunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); } 
-                ParameterList(ctx, memFun.get()) (CompoundStatement(ctx){ memFun->SetBody(CompoundStatement); value = memFun.release(); } | ';')
+        MemberFunction(ParsingContext* ctx, var AttributeMap attributeMap, ClassNode* classNode, var std::unique_ptr<MemberFunctionNode> memFun, var std::unique_ptr<IdentifierNode> qid) : Node*
+            ::= (Attributes(&attributeMap)? Specifiers TypeExpr(ctx) FunctionGroupId(ctx))
+                { 
+                    memFun.reset(new MemberFunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); 
+                    memFun->SetAttributes(attributeMap); 
+                } 
+                ParameterList(ctx, memFun.get()) 
+                (CompoundStatement(ctx){ memFun->SetBody(CompoundStatement); } | ';' ){ value = memFun.release(); }
             ;
 
         MemberVariable(ParsingContext* ctx) : Node*

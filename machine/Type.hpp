@@ -94,7 +94,7 @@ private:
     Layout staticLayout;
 };
 
-class ArrayType : public Type
+class ArrayType : public ObjectType
 {
 public:
     ArrayType(std::unique_ptr<Type>&& elementType_);

@@ -30,7 +30,7 @@ void CreateBasicTypeStringFun(Assembly& assembly, ClassTypeSymbol* stringType)
 
 void CreateStringFunctions(Assembly& assembly)
 {
-    TypeSymbol* stype = assembly.GetSymbolTable().GetType(U"string");
+    TypeSymbol* stype = assembly.GetSymbolTable().GetType(U"System.String");
     ClassTypeSymbol* stringType = dynamic_cast<ClassTypeSymbol*>(stype);
     TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"bool");
     CreateBasicTypeObjectFun(assembly, stringType);

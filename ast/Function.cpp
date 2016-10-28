@@ -22,6 +22,22 @@ Node* FunctionGroupIdNode::Clone(CloneContext& cloneContext) const
     return new FunctionGroupIdNode(GetSpan(), functionGroupId);
 }
 
+void AttributeMap::AddAttribute(const std::string& name_, const std::string& value_)
+{
+    nameValuePairs[name_] = value_;
+}
+
+std::string AttributeMap::GetAttribute(const std::string& name) const
+{
+    auto it = nameValuePairs.find(name);
+    if (it != nameValuePairs.cend())
+    {
+        return it->second;
+    }
+    return std::string();
+}
+
+
 FunctionNode::FunctionNode(const Span& span_) : Node(span_), compileUnit(nullptr)
 {
 }
@@ -64,6 +80,7 @@ Node* FunctionNode::Clone(CloneContext& cloneContext) const
     {
         clone->SetBody(static_cast<CompoundStatementNode*>(body->Clone(cloneContext)));
     }
+
     return clone;
 }
 
@@ -87,6 +104,11 @@ std::string FunctionNode::Name() const
     }
     name.append(1, ')');
     return name;
+}
+
+void FunctionNode::SetAttributes(const AttributeMap& attributes_)
+{
+    attributes = attributes_;
 }
 
 } } // namespace cminor::ast

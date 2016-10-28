@@ -583,6 +583,7 @@ std::unique_ptr<Assembly> CreateSystemCoreAssembly(Machine& machine, const std::
     TypeSymbol* nullReferenceTypeSymbol = new NullReferenceTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"@nullref")));
     nullReferenceTypeSymbol->SetAssembly(systemCoreAssembly.get());
     systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(nullReferenceTypeSymbol));
+/*
     ObjectTypeSymbol* objectTypeSymbol = new ObjectTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"object")));
     objectTypeSymbol->SetAssembly(systemCoreAssembly.get());
     objectTypeSymbol->SetPublic();
@@ -599,8 +600,9 @@ std::unique_ptr<Assembly> CreateSystemCoreAssembly(Machine& machine, const std::
     stringTypeSymbol->GetObjectType()->AddFields(objectTypeSymbol->GetObjectType()->Fields());
     stringTypeSymbol->InitVmt();
     systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(stringTypeSymbol));
+*/
     InitBasicTypeFun(*systemCoreAssembly);
-    InitObjectFun(*systemCoreAssembly);
+    //InitObjectFun(*systemCoreAssembly);
     return systemCoreAssembly;
 }
 

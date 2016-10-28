@@ -42,7 +42,10 @@ void SymbolCreatorVisitor::Visit(FunctionNode& functionNode)
         ParameterNode* parameterNode = functionNode.Parameters()[i];
         parameterNode->Accept(*this);
     }
-    functionNode.Body()->Accept(*this);
+    if (functionNode.HasBody())
+    {
+        functionNode.Body()->Accept(*this);
+    }
     symbolTable.EndFunction();
 }
 
@@ -61,7 +64,10 @@ void SymbolCreatorVisitor::Visit(ClassNode& classNode)
 void SymbolCreatorVisitor::Visit(StaticConstructorNode& staticConstructorNode)
 {
     symbolTable.BeginStaticConstructor(staticConstructorNode);
-    staticConstructorNode.Body()->Accept(*this);
+    if (staticConstructorNode.HasBody())
+    {
+        staticConstructorNode.Body()->Accept(*this);
+    }
     symbolTable.EndStaticConstructor();
 }
 
@@ -74,7 +80,10 @@ void SymbolCreatorVisitor::Visit(ConstructorNode& constructorNode)
         ParameterNode* parameter = constructorNode.Parameters()[i];
         parameter->Accept(*this);
     }
-    constructorNode.Body()->Accept(*this);
+    if (constructorNode.HasBody())
+    {
+        constructorNode.Body()->Accept(*this);
+    }
     symbolTable.EndConstructor();
 }
 
@@ -87,7 +96,10 @@ void SymbolCreatorVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         ParameterNode* parameter = memberFunctionNode.Parameters()[i];
         parameter->Accept(*this);
     }
-    memberFunctionNode.Body()->Accept(*this);
+    if (memberFunctionNode.HasBody())
+    {
+        memberFunctionNode.Body()->Accept(*this);
+    }
     symbolTable.EndMemberFunction();
 }
 

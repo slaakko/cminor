@@ -83,12 +83,14 @@ int main()
         Machine machine;
         {
             std::unique_ptr<Assembly> systemCoreAssembly = CreateSystemCoreAssembly(machine, "debug");
+/*
             TypeSymbol* otype = systemCoreAssembly->GetSymbolTable().GetType(U"object");
             ClassTypeSymbol* objectType = dynamic_cast<ClassTypeSymbol*>(otype);
             GenerateConstructors(*systemCoreAssembly, objectType);
             TypeSymbol* stype = systemCoreAssembly->GetSymbolTable().GetType(U"string");
             ClassTypeSymbol* stringType = dynamic_cast<ClassTypeSymbol*>(stype);
             GenerateConstructors(*systemCoreAssembly, stringType);
+*/
             boost::filesystem::path obp(systemCoreAssembly->FilePath());
             obp.remove_filename();
             boost::filesystem::create_directories(obp);

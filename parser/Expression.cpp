@@ -1662,6 +1662,10 @@ public:
         a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryRule>(this, &PrimaryRule::A4Action));
         Cm::Parsing::ActionParser* a5ActionParser = GetAction("A5");
         a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryRule>(this, &PrimaryRule::A5Action));
+        Cm::Parsing::ActionParser* a6ActionParser = GetAction("A6");
+        a6ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryRule>(this, &PrimaryRule::A6Action));
+        Cm::Parsing::ActionParser* a7ActionParser = GetAction("A7");
+        a7ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryRule>(this, &PrimaryRule::A7Action));
         Cm::Parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
         expressionNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PrimaryRule>(this, &PrimaryRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryRule>(this, &PrimaryRule::PostExpression));
@@ -1696,9 +1700,17 @@ public:
     }
     void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = context.fromCastExpr;
+        context.value = new ThisNode(span);
     }
     void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new BaseNode(span);
+    }
+    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromCastExpr;
+    }
+    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = context.fromNewExpr;
     }
@@ -2069,28 +2081,28 @@ private:
 void ExpressionGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.LiteralGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.BasicTypeGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::LiteralGrammar::Create(pd);
+        grammar0 = cminor::parser::BasicTypeGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.LiteralGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar1 = cminor::parser::LiteralGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.BasicTypeGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar2)
     {
-        grammar2 = cminor::parser::BasicTypeGrammar::Create(pd);
+        grammar2 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar3)
     {
-        grammar3 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar3 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
 }
@@ -2098,9 +2110,9 @@ void ExpressionGrammar::GetReferencedGrammars()
 void ExpressionGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("Literal", this, "LiteralGrammar.Literal"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRule(new ExpressionRule("Expression", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::NonterminalParser("Disjunction", "Disjunction", 1))));
@@ -2320,21 +2332,27 @@ void ExpressionGrammar::CreateRules()
                 new Cm::Parsing::AlternativeParser(
                     new Cm::Parsing::AlternativeParser(
                         new Cm::Parsing::AlternativeParser(
-                            new Cm::Parsing::ActionParser("A0",
-                                new Cm::Parsing::SequenceParser(
-                                    new Cm::Parsing::SequenceParser(
-                                        new Cm::Parsing::CharParser('('),
-                                        new Cm::Parsing::NonterminalParser("Expression", "Expression", 1)),
-                                    new Cm::Parsing::CharParser(')'))),
-                            new Cm::Parsing::ActionParser("A1",
-                                new Cm::Parsing::NonterminalParser("Literal", "Literal", 0))),
-                        new Cm::Parsing::ActionParser("A2",
-                            new Cm::Parsing::NonterminalParser("BasicType", "BasicType", 0))),
-                    new Cm::Parsing::ActionParser("A3",
-                        new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
-                new Cm::Parsing::ActionParser("A4",
+                            new Cm::Parsing::AlternativeParser(
+                                new Cm::Parsing::AlternativeParser(
+                                    new Cm::Parsing::ActionParser("A0",
+                                        new Cm::Parsing::SequenceParser(
+                                            new Cm::Parsing::SequenceParser(
+                                                new Cm::Parsing::CharParser('('),
+                                                new Cm::Parsing::NonterminalParser("Expression", "Expression", 1)),
+                                            new Cm::Parsing::CharParser(')'))),
+                                    new Cm::Parsing::ActionParser("A1",
+                                        new Cm::Parsing::NonterminalParser("Literal", "Literal", 0))),
+                                new Cm::Parsing::ActionParser("A2",
+                                    new Cm::Parsing::NonterminalParser("BasicType", "BasicType", 0))),
+                            new Cm::Parsing::ActionParser("A3",
+                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                        new Cm::Parsing::ActionParser("A4",
+                            new Cm::Parsing::KeywordParser("this"))),
+                    new Cm::Parsing::ActionParser("A5",
+                        new Cm::Parsing::KeywordParser("base"))),
+                new Cm::Parsing::ActionParser("A6",
                     new Cm::Parsing::NonterminalParser("CastExpr", "CastExpr", 1))),
-            new Cm::Parsing::ActionParser("A5",
+            new Cm::Parsing::ActionParser("A7",
                 new Cm::Parsing::NonterminalParser("NewExpr", "NewExpr", 1)))));
     AddRule(new CastExprRule("CastExpr", GetScope(),
         new Cm::Parsing::ActionParser("A0",

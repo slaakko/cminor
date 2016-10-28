@@ -162,6 +162,8 @@ public:
         a7ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<SpecifierRule>(this, &SpecifierRule::A7Action));
         Cm::Parsing::ActionParser* a8ActionParser = GetAction("A8");
         a8ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<SpecifierRule>(this, &SpecifierRule::A8Action));
+        Cm::Parsing::ActionParser* a9ActionParser = GetAction("A9");
+        a9ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<SpecifierRule>(this, &SpecifierRule::A9Action));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -199,6 +201,10 @@ public:
     {
         context.value = Specifiers::inline_;
     }
+    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = Specifiers::external_;
+    }
 private:
     struct Context
     {
@@ -228,24 +234,27 @@ void SpecifierGrammar::CreateRules()
                             new Cm::Parsing::AlternativeParser(
                                 new Cm::Parsing::AlternativeParser(
                                     new Cm::Parsing::AlternativeParser(
-                                        new Cm::Parsing::ActionParser("A0",
-                                            new Cm::Parsing::KeywordParser("public")),
-                                        new Cm::Parsing::ActionParser("A1",
-                                            new Cm::Parsing::KeywordParser("protected"))),
-                                    new Cm::Parsing::ActionParser("A2",
-                                        new Cm::Parsing::KeywordParser("private"))),
-                                new Cm::Parsing::ActionParser("A3",
-                                    new Cm::Parsing::KeywordParser("internal"))),
-                            new Cm::Parsing::ActionParser("A4",
-                                new Cm::Parsing::KeywordParser("static"))),
-                        new Cm::Parsing::ActionParser("A5",
-                            new Cm::Parsing::KeywordParser("virtual"))),
-                    new Cm::Parsing::ActionParser("A6",
-                        new Cm::Parsing::KeywordParser("override"))),
-                new Cm::Parsing::ActionParser("A7",
-                    new Cm::Parsing::KeywordParser("abstract"))),
-            new Cm::Parsing::ActionParser("A8",
-                new Cm::Parsing::KeywordParser("inline")))));
+                                        new Cm::Parsing::AlternativeParser(
+                                            new Cm::Parsing::ActionParser("A0",
+                                                new Cm::Parsing::KeywordParser("public")),
+                                            new Cm::Parsing::ActionParser("A1",
+                                                new Cm::Parsing::KeywordParser("protected"))),
+                                        new Cm::Parsing::ActionParser("A2",
+                                            new Cm::Parsing::KeywordParser("private"))),
+                                    new Cm::Parsing::ActionParser("A3",
+                                        new Cm::Parsing::KeywordParser("internal"))),
+                                new Cm::Parsing::ActionParser("A4",
+                                    new Cm::Parsing::KeywordParser("static"))),
+                            new Cm::Parsing::ActionParser("A5",
+                                new Cm::Parsing::KeywordParser("virtual"))),
+                        new Cm::Parsing::ActionParser("A6",
+                            new Cm::Parsing::KeywordParser("override"))),
+                    new Cm::Parsing::ActionParser("A7",
+                        new Cm::Parsing::KeywordParser("abstract"))),
+                new Cm::Parsing::ActionParser("A8",
+                    new Cm::Parsing::KeywordParser("inline"))),
+            new Cm::Parsing::ActionParser("A9",
+                new Cm::Parsing::KeywordParser("extern")))));
 }
 
 } } // namespace cminor.parser

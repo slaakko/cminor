@@ -314,6 +314,24 @@ private:
     NodeList<Node> arguments;
 };
 
+class ThisNode : public Node
+{
+public:
+    ThisNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::thisNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+};
+
+class BaseNode : public Node
+{
+public:
+    BaseNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::baseNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+};
+
 } } // namespace cminor::ast
 
 #endif // CMINOR_AST_EXPRESSION_INCLUDED

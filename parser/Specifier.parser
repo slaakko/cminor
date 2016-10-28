@@ -25,6 +25,7 @@ namespace cminor.parser
             |   keyword("override"){ value = Specifiers::override_; }
             |   keyword("abstract"){ value = Specifiers::abstract_; }
             |   keyword("inline"){ value = Specifiers::inline_; }
+            |   keyword("extern"){ value = Specifiers::external_; }
             ;
     }
 }

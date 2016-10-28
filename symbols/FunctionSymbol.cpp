@@ -19,6 +19,14 @@ std::string FunctionSymbolFlagStr(FunctionSymbolFlags flags)
     {
         s.append("inline");
     }
+    if ((flags & FunctionSymbolFlags::external_) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("extern");
+    }
     if ((flags & FunctionSymbolFlags::conversionFun) != FunctionSymbolFlags::none)
     {
         if (!s.empty())
@@ -40,6 +48,17 @@ void FunctionSymbol::Write(SymbolWriter& writer)
     ConstantId groupNameId = GetAssembly()->GetConstantPool().GetIdFor(groupName);
     Assert(groupNameId != noConstantId, "no id for group name found from constant pool");
     groupNameId.Write(writer.AsMachineWriter());
+    if (vmFunctionName.Value().AsStringLiteral() != nullptr)
+    {
+        writer.AsMachineWriter().Put(true);
+        ConstantId vmFunctionNameId = GetAssembly()->GetConstantPool().GetIdFor(vmFunctionName);
+        Assert(vmFunctionNameId != noConstantId, "no id for vm function id");
+        vmFunctionNameId.Write(writer.AsMachineWriter());
+    }
+    else
+    {
+        writer.AsMachineWriter().Put(false);
+    }
     utf32_string returnTypeFullName;
     if (returnType)
     {
@@ -63,6 +82,13 @@ void FunctionSymbol::Read(SymbolReader& reader)
     ConstantId groupNameId;
     groupNameId.Read(reader);
     groupName = reader.GetAssembly()->GetConstantPool().GetConstant(groupNameId);
+    bool hasVmFunctionId = reader.GetBool();
+    if (hasVmFunctionId)
+    {
+        ConstantId vmFunctionNameId;
+        vmFunctionNameId.Read(reader);
+        vmFunctionName = reader.GetAssembly()->GetConstantPool().GetConstant(vmFunctionNameId);
+    }
     ConstantId returnTypeNameId;
     returnTypeNameId.Read(reader);
     if (returnTypeNameId != reader.GetAssembly()->GetConstantPool().GetEmptyStringConstantId())
@@ -113,6 +139,10 @@ void FunctionSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::inline_) != Specifiers::none)
     {
         SetInline();
+    }
+    if ((specifiers & Specifiers::external_) != Specifiers::none)
+    {
+        SetExternal();
     }
 }
 
@@ -272,6 +302,22 @@ void FunctionSymbol::CreateMachineFunction()
     int32_t numParameters = int32_t(parameters.size());
     machineFunction->SetNumParameters(numParameters);
     machineFunction->AddInst(GetAssembly()->GetMachine().CreateInst("receive"));
+    if (IsExternal())
+    {
+        Assert(vmFunctionName.Value().AsStringLiteral() != nullptr, "vm function name not set");
+        std::unique_ptr<Instruction> vmCallInst = GetAssembly()->GetMachine().CreateInst("callvm");
+        ConstantPool& constantPool = GetAssembly()->GetConstantPool();
+        ConstantId vmFunctionNameId = constantPool.GetIdFor(vmFunctionName);
+        Assert(vmFunctionNameId != noConstantId, "got no constant id");
+        vmCallInst->SetIndex(vmFunctionNameId.Value());
+        machineFunction->AddInst(std::move(vmCallInst));
+    }
+}
+
+void FunctionSymbol::SetVmFunctionName(StringPtr vmFunctionName_)
+{
+    ConstantPool& constantPool = GetAssembly()->GetConstantPool();
+    vmFunctionName = constantPool.GetConstant(constantPool.Install(vmFunctionName_));
 }
 
 StaticConstructorSymbol::StaticConstructorSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
@@ -299,6 +345,10 @@ void StaticConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("static constructor cannot be inline", GetSpan());
     }
+    if ((specifiers & Specifiers::external_) != Specifiers::none)
+    {
+        throw Exception("static constructor cannot be external", GetSpan());
+    }
 }
 
 ConstructorSymbol::ConstructorSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), flags(ConstructorSymbolFlags::none)
@@ -324,6 +374,10 @@ void ConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::inline_) != Specifiers::none)
     {
         throw Exception("constructor cannot be inline", GetSpan());
+    }
+    if ((specifiers & Specifiers::external_) != Specifiers::none)
+    {
+        throw Exception("constructor constructor cannot be external", GetSpan());
     }
 }
 
@@ -381,7 +435,7 @@ bool ConstructorSymbol::IsDefaultConstructorSymbol() const
     return Parameters().size() == 1;
 }
 
-MemberFunctionSymbol::MemberFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), vmtIndex(-1)
+MemberFunctionSymbol::MemberFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), vmtIndex(-1), flags(MemberFunctionSymbolFlags::none)
 {
 }
 
@@ -430,6 +484,10 @@ void MemberFunctionSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::inline_) != Specifiers::none)
     {
         SetInline();
+    }
+    if ((specifiers & Specifiers::external_) != Specifiers::none)
+    {
+        SetExternal();
     }
 }
 

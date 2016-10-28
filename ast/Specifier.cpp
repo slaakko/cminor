@@ -78,6 +78,14 @@ std::string SpecifierStr(Specifiers specifiers)
         }
         s.append("inline");
     }
+    if ((specifiers & Specifiers::external_) != Specifiers::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("extern");
+    }
     return s;
 }
 

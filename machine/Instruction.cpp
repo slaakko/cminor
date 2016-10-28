@@ -479,6 +479,19 @@ void VirtualCallInst::Dump(CodeFormatter& formatter)
     formatter.Write(" " + std::to_string(numArgs) + " " + std::to_string(vmtIndex));
 }
 
+VmCallInst::VmCallInst() : IndexParamInst("callvm")
+{
+}
+
+void VmCallInst::Execute(Frame& frame)
+{
+    ConstantId vmFunctionId(Index());
+    Constant vmFunctionName = frame.GetConstantPool().GetConstant(vmFunctionId);
+    Assert(vmFunctionName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    VmFunction* vmFunction = VmFunctionTable::Instance().GetVmFunction(StringPtr(vmFunctionName.Value().AsStringLiteral()));
+    vmFunction->Execute(frame);
+}
+
 SetClassDataInst::SetClassDataInst() : Instruction("setclassdata")
 {
 }
@@ -630,6 +643,19 @@ void StrLitToStringInst::Execute(Frame& frame)
     frame.OpStack().Push(reference);
 }
 
+LengthStringInst::LengthStringInst() : Instruction("lens")
+{
+}
+
+void LengthStringInst::Execute(Frame& frame)
+{
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference str(value.Value());
+    int32_t len = frame.GetObjectPool().GetStringLength(str);
+    frame.OpStack().Push(IntegralValue(len, ValueType::intType));
+}
+
 DupInst::DupInst() : Instruction("dup")
 {
 }
@@ -692,6 +718,33 @@ void DownCastInst::Execute(Frame& frame)
         castedObject.SetType(objectType);
         frame.OpStack().Push(casted);
     }
+}
+
+CreateArrayInst::CreateArrayInst() : TypeInstruction("createa")
+{
+}
+
+void CreateArrayInst::Execute(Frame& frame)
+{
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::intType, "int expected");
+    ObjectType* type = GetType();
+    Assert(dynamic_cast<ArrayType*>(type) != nullptr, "array type expected");
+    ObjectReference objectReference = frame.GetObjectPool().CreateArray(frame.GetThread(), value.AsInt(), static_cast<ArrayType*>(type));
+    frame.OpStack().Push(objectReference);
+}
+
+LengthArraryInst::LengthArraryInst() : Instruction("lena")
+{
+}
+
+void LengthArraryInst::Execute(Frame& frame)
+{
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference arr(value.Value());
+    int32_t len = frame.GetObjectPool().GetArrayLength(arr);
+    frame.OpStack().Push(IntegralValue(len, ValueType::intType));
 }
 
 } } // namespace cminor::machine

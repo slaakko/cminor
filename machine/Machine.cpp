@@ -253,6 +253,11 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
 
     rootInst.SetInst(0xC0, new StrLitToStringInst());
 
+    // vmcall:
+    // -------
+
+    rootInst.SetInst(0xF0, new VmCallInst());
+
     //  conversion group instruction:
     //  -----------------------------
 

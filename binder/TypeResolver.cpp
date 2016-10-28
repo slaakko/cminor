@@ -114,7 +114,7 @@ void TypeResolverVisitor::Visit(CharNode& charNode)
 
 void TypeResolverVisitor::Visit(StringNode& stringNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"string");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.String");
 }
 
 void TypeResolverVisitor::Visit(VoidNode& voidNode)
@@ -124,7 +124,7 @@ void TypeResolverVisitor::Visit(VoidNode& voidNode)
 
 void TypeResolverVisitor::Visit(ObjectNode& objectNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"object");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Object");
 }
 
 void TypeResolverVisitor::ResolveSymbol(Node& node, Symbol* symbol)

@@ -25,7 +25,8 @@ enum class FunctionSymbolFlags : uint8_t
 {
     none = 0,
     inline_ = 1 << 0,
-    conversionFun = 1 << 1
+    external_ = 1 << 1,
+    conversionFun = 1 << 2
 };
 
 inline FunctionSymbolFlags operator&(FunctionSymbolFlags left, FunctionSymbolFlags right)
@@ -51,6 +52,8 @@ public:
     void SetSpecifiers(Specifiers specifiers);
     void SetInline() { SetFlag(FunctionSymbolFlags::inline_); }
     bool IsInline() const { return GetFlag(FunctionSymbolFlags::inline_); }
+    void SetExternal() { SetFlag(FunctionSymbolFlags::external_); }
+    bool IsExternal() const { return GetFlag(FunctionSymbolFlags::external_); }
     StringPtr GroupName() const { return StringPtr(groupName.Value().AsStringLiteral()); }
     void SetGroupNameConstant(Constant groupName_) { groupName = groupName_; }
     virtual void ComputeName();
@@ -75,8 +78,10 @@ public:
     Function* MachineFunction() const { return machineFunction; }
     virtual void CreateMachineFunction();
     void EmplaceType(TypeSymbol* type, int index) override;
+    void SetVmFunctionName(StringPtr vmFunctionName_);
 private:
     Constant groupName;
+    Constant vmFunctionName;
     std::vector<ParameterSymbol*> parameters;
     std::vector<LocalVariableSymbol*> localVariables;
     TypeSymbol* returnType;

@@ -1,5 +1,5 @@
-#ifndef Class_hpp_23586
-#define Class_hpp_23586
+#ifndef Class_hpp_28991
+#define Class_hpp_28991
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -33,4 +33,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Class_hpp_23586
+#endif // Class_hpp_28991

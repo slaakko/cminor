@@ -8,6 +8,7 @@
 [cpp]#include <cminor/parser/Keyword.hpp>
 [cpp]#include <cminor/parser/Specifier.hpp>
 [cpp]#include <cminor/parser/TypeExpr.hpp>
+[cpp]#include <cminor/parser/Identifier.hpp>
 [cpp]#include <cminor/parser/Parameter.hpp>
 [cpp]#include <cminor/parser/Statement.hpp>
 
@@ -22,16 +23,17 @@ namespace cminor.parser
         using ParameterGrammar.ParameterList;
         using KeywordGrammar.Keyword;
         using StatementGrammar.CompoundStatement;
+        using IdentifierGrammar.QualifiedId;
         using stdlib.identifier;
+        using stdlib.qualified_id;
+        using stdlib.string;
+        using stdlib.long;
+        using stdlib.bool;
 
-        Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s) : FunctionNode*
-            ::= (Specifiers TypeExpr(ctx) FunctionGroupId(ctx){ fun.reset(new FunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); }
-                ParameterList(ctx, fun.get()){ s = span; } CompoundStatement(ctx))
-                {
-                    fun->SetBody(CompoundStatement); 
-                    fun->GetSpan().SetEnd(s.End());
-                    value = fun.release();
-                }
+        Function(ParsingContext* ctx, var AttributeMap attributeMap, var std::unique_ptr<FunctionNode> fun, var Span s, var std::unique_ptr<IdentifierNode> qid) : FunctionNode*
+            ::= (Attributes(&attributeMap)? Specifiers TypeExpr(ctx) FunctionGroupId(ctx){ fun.reset(new FunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); fun->SetAttributes(attributeMap); }
+                ParameterList(ctx, fun.get()){ s = span; } 
+                (CompoundStatement(ctx){ fun->SetBody(CompoundStatement); fun->GetSpan().SetEnd(s.End()); } | ';' )){ value = fun.release(); }
             ;
 
         FunctionGroupId(ParsingContext* ctx) : FunctionGroupIdNode*
@@ -53,6 +55,25 @@ namespace cminor.parser
             |   '!'{ value = new FunctionGroupIdNode(span, "operator!"); }
             |   "()"{ value = new FunctionGroupIdNode(span, "operator()"); }
             )
+            ;
+
+        Attributes(AttributeMap* attributeMap)
+            ::= '[' (NameValuePair(attributeMap) % ',') ']'!
+            ;
+
+        NameValuePair(AttributeMap* attributeMap)
+            ::= (Name '=' Value){ attributeMap->AddAttribute(Name, Value); }
+            ;
+
+        Name : std::string
+            ::= qualified_id{ value = qualified_id; }
+            ;
+
+        Value : std::string
+            ::= qualified_id{ value = qualified_id; }
+            |   string{ value = string; }
+            |   long{ value = std::string(matchBegin, matchEnd); }
+            |   bool{ value = std::string(matchBegin, matchEnd); }
             ;
     }
 }

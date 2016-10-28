@@ -7,6 +7,7 @@
 #define CMINOR_MACHINE_OBJECT_INCLUDED
 #include <cminor/machine/Error.hpp>
 #include <stdint.h>
+#include <atomic>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -20,6 +21,7 @@ class Arena;
 class Function;
 class ClassData;
 class ObjectType;
+class ArrayType;
 class ObjectPool;
 
 enum class ArenaId : uint8_t
@@ -177,6 +179,9 @@ public:
     void DestroyObject(ObjectReference reference);
     Object& GetObject(ObjectReference reference);
     ObjectReference CreateStringFromLiteral(const char32_t* strLit, uint64_t len);
+    int32_t GetStringLength(ObjectReference str);
+    ObjectReference CreateArray(Thread& thread, int32_t length, ArrayType* type);
+    int32_t GetArrayLength(ObjectReference arr);
     IntegralValue GetField(ObjectReference reference, int32_t fieldIndex);
     void SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue);
     ObjectMemPtr GetObjectMemPtr(ObjectReference reference);
@@ -185,7 +190,7 @@ public:
 private:
     Machine& machine;
     std::unordered_map<ObjectReference, Object, ObjectReferenceHash> objects;
-    uint64_t nextReferenceValue;
+    std::atomic_uint64_t nextReferenceValue;
 };
 
 } } // namespace cminor::machine

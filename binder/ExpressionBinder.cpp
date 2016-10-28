@@ -82,6 +82,8 @@ public:
     void Visit(InvokeNode& invokeNode) override;
     void Visit(CastNode& castNode) override;
     void Visit(NewNode& newNode) override;
+    void Visit(ThisNode& thisNode) override;
+    void Visit(BaseNode& baseNode) override;
 private:
     BoundCompileUnit& boundCompileUnit;
     BoundFunction* boundFunction;
@@ -173,7 +175,7 @@ void ExpressionBinder::Visit(CharNode& charNode)
 
 void ExpressionBinder::Visit(StringNode& stringNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"string");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.String");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
@@ -185,7 +187,7 @@ void ExpressionBinder::Visit(VoidNode& voidNode)
 
 void ExpressionBinder::Visit(ObjectNode& objectNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"object");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Object");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
@@ -315,7 +317,7 @@ void ExpressionBinder::Visit(CharLiteralNode& charLiteralNode)
 
 void ExpressionBinder::Visit(StringLiteralNode& stringLiteralNode)
 {
-    TypeSymbol* stringType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"string");
+    TypeSymbol* stringType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.String");
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(StringPtr(stringLiteralNode.Value().c_str()));
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), stringType, constantPool.GetConstant(id));
@@ -712,6 +714,38 @@ void ExpressionBinder::Visit(NewNode& newNode)
     std::unique_ptr<BoundFunctionCall> constructorCall = ResolveOverload(boundCompileUnit, U"@constructor", functionScopeLookups, arguments, newNode.GetSpan());
     CheckAccess(boundFunction->GetFunctionSymbol(), constructorCall->GetFunctionSymbol());
     expression.reset(new BoundNewExpression(constructorCall.get(), type));
+}
+
+void ExpressionBinder::Visit(ThisNode& thisNode)
+{
+    if (MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(boundFunction->GetFunctionSymbol()))
+    {
+        if (!memberFunctionSymbol->IsStatic())
+        {
+            ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->Parameters()[0];
+            BoundParameter* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam);
+            expression.reset(boundThisParam);
+        }
+        else
+        {
+            throw Exception("'this' cannot be used in static member function context", thisNode.GetSpan());
+        }
+    }
+    else if (ConstructorSymbol* constructorSymbol = dynamic_cast<ConstructorSymbol*>(boundFunction->GetFunctionSymbol()))
+    {
+        ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->Parameters()[0];
+        BoundParameter* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam);
+        expression.reset(boundThisParam);
+    }
+    else
+    {
+        throw Exception("'this' can be used only in non-static member function context", thisNode.GetSpan());
+    }
+}
+
+void ExpressionBinder::Visit(BaseNode& baseNode)
+{
+    // todo
 }
 
 std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node)

@@ -32,10 +32,10 @@ namespace cminor.parser
         BaseClassOrInterface(ParsingContext* ctx): Node*;
         ClassContent(ParsingContext* ctx, ClassNode* classNode);
         ClassMember(ParsingContext* ctx, ClassNode* classNode): Node*;
-        StaticConstructor(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<IdentifierNode> id): StaticConstructorNode*;
-        Constructor(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<ConstructorNode> ctor): Node*;
+        StaticConstructor(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<IdentifierNode> id): StaticConstructorNode*;
+        Constructor(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<IdentifierNode> id, var std::unique_ptr<ConstructorNode> ctor): Node*;
         Initializer(ParsingContext* ctx): InitializerNode*;
-        MemberFunction(ParsingContext* ctx, ClassNode* classNode, var std::unique_ptr<MemberFunctionNode> memFun): Node*;
+        MemberFunction(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<MemberFunctionNode> memFun, var std::unique_ptr<IdentifierNode> qid): Node*;
         MemberVariable(ParsingContext* ctx): Node*;
     }
     grammar IdentifierGrammar
@@ -87,9 +87,13 @@ namespace cminor.parser
     }
     grammar FunctionGrammar
     {
-        Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s): FunctionNode*;
+        Function(ParsingContext* ctx, var AttributeMap attributeMap, var std::unique_ptr<FunctionNode> fun, var Span s, var std::unique_ptr<IdentifierNode> qid): FunctionNode*;
         FunctionGroupId(ParsingContext* ctx): FunctionGroupIdNode*;
         OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): FunctionGroupIdNode*;
+        Attributes(AttributeMap* attributeMap);
+        NameValuePair(AttributeMap* attributeMap);
+        Name: std::string;
+        Value: std::string;
     }
     grammar TypeExprGrammar
     {

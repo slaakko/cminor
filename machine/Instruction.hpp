@@ -352,6 +352,14 @@ private:
     int32_t vmtIndex;
 };
 
+class VmCallInst : public IndexParamInst
+{
+public:
+    VmCallInst();
+    Instruction* Clone() const override { return new VmCallInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class SetClassDataInst : public Instruction
 {
 public:
@@ -407,6 +415,14 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class LengthStringInst : public Instruction
+{
+public:
+    LengthStringInst();
+    Instruction* Clone() const override { return new LengthStringInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class DupInst : public Instruction
 {
 public:
@@ -428,6 +444,22 @@ class DownCastInst : public TypeInstruction
 public:
     DownCastInst();
     Instruction* Clone() const override { return new DownCastInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class CreateArrayInst : public TypeInstruction
+{
+public:
+    CreateArrayInst();
+    Instruction* Clone() const override { return new CreateArrayInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LengthArraryInst : public Instruction
+{
+public:
+    LengthArraryInst();
+    Instruction* Clone() const override { return new LengthArraryInst(*this); }
     void Execute(Frame& frame) override;
 };
 
