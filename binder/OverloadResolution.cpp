@@ -122,8 +122,15 @@ bool FindConversions(BoundCompileUnit& boundCompileUnit, FunctionSymbol* functio
     return true;
 }
 
-std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompileUnit, StringPtr groupName, const std::vector<FunctionScopeLookup>& functionScopeLookups, 
+std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompileUnit, StringPtr groupName, const std::vector<FunctionScopeLookup>& functionScopeLookups,
     std::vector<std::unique_ptr<BoundExpression>>& arguments, const Span& span)
+{
+    std::unique_ptr<Exception> exception;
+    return ResolveOverload(boundCompileUnit, groupName, functionScopeLookups, arguments, span, OverloadResolutionFlags::none, exception);
+}
+
+std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompileUnit, StringPtr groupName, const std::vector<FunctionScopeLookup>& functionScopeLookups, 
+    std::vector<std::unique_ptr<BoundExpression>>& arguments, const Span& span, OverloadResolutionFlags flags, std::unique_ptr<Exception>& exception)
 {
     int arity = int(arguments.size());
     std::unordered_set<FunctionSymbol*> viableFunctions;
@@ -147,8 +154,17 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
     if (viableFunctions.empty())
     {
         std::string overloadName = MakeOverloadName(groupName, arguments);
-        throw Exception("overload resolution failed: '" + overloadName + "' not found. " + 
-            "No viable functions taking " + std::to_string(arity) + " arguments found in function group '" + ToUtf8(groupName.Value()) + "'", span);
+        if ((flags & OverloadResolutionFlags::dontThrow) != OverloadResolutionFlags::none)
+        {
+            exception.reset(new Exception("overload resolution failed: '" + overloadName + "' not found. " +
+                "No viable functions taking " + std::to_string(arity) + " arguments found in function group '" + ToUtf8(groupName.Value()) + "'", span));
+            return std::unique_ptr<BoundFunctionCall>();
+        }
+        else
+        {
+            throw Exception("overload resolution failed: '" + overloadName + "' not found. " +
+                "No viable functions taking " + std::to_string(arity) + " arguments found in function group '" + ToUtf8(groupName.Value()) + "'", span);
+        }
     }
     else
     {
@@ -190,14 +206,33 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
             {
                 Assert(castSourceType, "cast source type not set");
                 Assert(castTargetType, "cast target type not set");
-                throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
-                    std::to_string(viableFunctions.size()) + " viable functions examined. Note: cannot convert implicitly from '" + 
-                    ToUtf8(castSourceType->FullName()) + "' to '" + ToUtf8(castTargetType->FullName()) + "' but explicit conversion (cast) exists.", span);
+                if ((flags & OverloadResolutionFlags::dontThrow) != OverloadResolutionFlags::none)
+                {
+                    exception.reset(new Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                        std::to_string(viableFunctions.size()) + " viable functions examined. Note: cannot convert implicitly from '" +
+                        ToUtf8(castSourceType->FullName()) + "' to '" + ToUtf8(castTargetType->FullName()) + "' but explicit conversion (cast) exists.", span));
+                    return std::unique_ptr<BoundFunctionCall>();
+                }
+                else
+                {
+                    throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                        std::to_string(viableFunctions.size()) + " viable functions examined. Note: cannot convert implicitly from '" +
+                        ToUtf8(castSourceType->FullName()) + "' to '" + ToUtf8(castTargetType->FullName()) + "' but explicit conversion (cast) exists.", span);
+                }
             }
             else
             {
-                throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
-                    std::to_string(viableFunctions.size()) + " viable functions examined.", span);
+                if ((flags & OverloadResolutionFlags::dontThrow) != OverloadResolutionFlags::none)
+                {
+                    exception.reset(new Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                        std::to_string(viableFunctions.size()) + " viable functions examined.", span));
+                    return std::unique_ptr<BoundFunctionCall>();
+                }
+                else
+                {
+                    throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                        std::to_string(viableFunctions.size()) + " viable functions examined.", span);
+                }
             }
         }
         else if (functionMatches.size() > 1)
@@ -252,7 +287,15 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
                     matchedFunctionNames.append(ToUtf8(match.fun->FullName()));
                     references.push_back(match.fun->GetSpan());
                 }
-                throw Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous: \n" + matchedFunctionNames, span, references);
+                if ((flags & OverloadResolutionFlags::dontThrow) != OverloadResolutionFlags::none)
+                {
+                    exception.reset(new Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous: \n" + matchedFunctionNames, span, references));
+                    return std::unique_ptr<BoundFunctionCall>();
+                }
+                else
+                {
+                    throw Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous: \n" + matchedFunctionNames, span, references);
+                }
             }
         }
         else

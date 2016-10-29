@@ -101,6 +101,8 @@ uint64_t ValueSize(ValueType type)
         case ValueType::memPtr: return sizeof(uint8_t*);
         case ValueType::stringLiteral: return sizeof(const char32_t*);
         case ValueType::objectReference: return sizeof(uint64_t);
+        case ValueType::classDataPtr: return sizeof(ClassData*);
+        case ValueType::typePtr: return sizeof(ObjectType*);
     }
     return sizeof(uint64_t);
 }
@@ -253,7 +255,7 @@ ObjectReference ObjectPool::CreateStringFromLiteral(const char32_t* strLit, uint
 {
     ObjectReference reference(nextReferenceValue++);
     uint64_t stringSize = sizeof(char32_t) * (len + 1);
-    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, ArenaId::notGCMem, ObjectMemPtr(strLit), ObjectTypeTable::Instance().GetObjectType(U"string"), stringSize)));
+    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, ArenaId::notGCMem, ObjectMemPtr(strLit), ObjectTypeTable::Instance().GetObjectType(U"System.String"), stringSize)));
     if (!pairItBool.second)
     {
         throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");

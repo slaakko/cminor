@@ -47,6 +47,7 @@ public:
     FunctionSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::functionSymbol; }
     std::string TypeString() const override { return "function"; }
+    virtual void AddToFlagStr(std::string& flagStr) const;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
     void SetSpecifiers(Specifiers specifiers);
@@ -150,12 +151,15 @@ inline MemberFunctionSymbolFlags operator|(MemberFunctionSymbolFlags left, Membe
     return MemberFunctionSymbolFlags(uint8_t(left) | uint8_t(right));
 }
 
+std::string MemberFunctionSymbolFlagStr(MemberFunctionSymbolFlags flags);
+
 class MemberFunctionSymbol : public FunctionSymbol
 {
 public:
     MemberFunctionSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::memberFunctionSymbol; }
     std::string TypeString() const override { return "member function"; }
+    void AddToFlagStr(std::string& flagStr) const;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
     void SetSpecifiers(Specifiers specifiers);
@@ -168,6 +172,7 @@ public:
     bool IsVirtualAbstractOrOverride() const { return GetFlag(MemberFunctionSymbolFlags::virtual_ | MemberFunctionSymbolFlags::abstract_ | MemberFunctionSymbolFlags::override_); }
     int32_t VmtIndex() const { return vmtIndex; }
     void SetVmtIndex(int32_t vmtIndex_) { vmtIndex = vmtIndex_; }
+    void GenerateVirtualCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects);
 private:
     int32_t vmtIndex;
     MemberFunctionSymbolFlags flags;

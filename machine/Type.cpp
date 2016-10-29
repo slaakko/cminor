@@ -39,6 +39,15 @@ Layout::Layout() : size(0)
 {
 }
 
+void Layout::AddFields(const std::vector<Field>& fields_)
+{ 
+    fields.insert(fields.end(), fields_.cbegin(), fields_.cend()); 
+    for (const Field& field : fields_)
+    {
+        size += ValueSize(field.GetType());
+    }
+}
+
 void Layout::AddField(ValueType fieldType)
 {
     FieldOffset fieldOffset(size);

@@ -254,7 +254,7 @@ void StatementBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(new BoundCompoundStatement(boundCompileUnit.GetAssembly())));
     }
     CheckFunctionReturnPaths(memberFunctionSymbol, memberFunctionNode);
-    boundCompileUnit.AddBoundNode(std::move(boundFunction));
+    boundClass->AddMember(std::move(boundFunction));
     containerScope = prevContainerScope;
     function = prevFunction;
 }

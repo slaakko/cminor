@@ -13,6 +13,7 @@
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/ast/Project.hpp>
+#include <cminor/vm/VmFunction.hpp>
 #include <Cm.Util/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
@@ -20,6 +21,7 @@
 using namespace cminor::machine;
 using namespace cminor::symbols;
 using namespace cminor::ast;
+using namespace cminor::vm;
 using namespace Cm::Util;
 
 struct InitDone
@@ -30,17 +32,22 @@ struct InitDone
         FunctionTable::Init();
         ClassDataTable::Init();
         ObjectTypeTable::Init();
+        VmFunctionTable::Init();
         InitSymbol();
         InitAssembly();
+        InitVmFunctions(vmFunctionNamePool);
     }
     ~InitDone()
     {
+        DoneVmFunctions();
         DoneAssembly();
         DoneSymbol();
+        VmFunctionTable::Done();
         ObjectTypeTable::Done();
         ClassDataTable::Done();
         FunctionTable::Done();
     }
+    ConstantPool vmFunctionNamePool;
 };
 
 const char* version = "0.0.1";

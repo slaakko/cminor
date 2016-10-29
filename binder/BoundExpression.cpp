@@ -12,7 +12,7 @@
 
 namespace cminor { namespace binder {
 
-BoundExpression::BoundExpression(Assembly& assembly_, TypeSymbol* type_) : BoundNode(assembly_), type(type_)
+BoundExpression::BoundExpression(Assembly& assembly_, TypeSymbol* type_) : BoundNode(assembly_), type(type_), flags(BoundExpressionFlags::none)
 {
 }
 
@@ -270,7 +270,28 @@ void BoundFunctionGroupExpression::Accept(BoundNodeVisitor& visitor)
     throw std::runtime_error("cannot visit bound function group");
 }
 
-BoundFunctionCall::BoundFunctionCall(Assembly& assembly_, FunctionSymbol* functionSymbol_) : BoundExpression(assembly_, functionSymbol_->ReturnType()), functionSymbol(functionSymbol_)
+BoundMemberExpression::BoundMemberExpression(Assembly& assembly_, std::unique_ptr<BoundExpression>&& classObject_, std::unique_ptr<BoundExpression>&& member_) :
+    BoundExpression(assembly_, member_->GetType()), classObject(std::move(classObject_)), member(std::move(member_))
+{
+}
+
+void BoundMemberExpression::GenLoad(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot load from bound member expression");
+}
+
+void BoundMemberExpression::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to from bound member expression");
+}
+
+void BoundMemberExpression::Accept(BoundNodeVisitor& visitor)
+{
+    throw std::runtime_error("cannot visit member expression");
+}
+
+BoundFunctionCall::BoundFunctionCall(Assembly& assembly_, FunctionSymbol* functionSymbol_) : 
+    BoundExpression(assembly_, functionSymbol_->ReturnType()), functionSymbol(functionSymbol_), genVirtualCall(false)
 {
 }
 
@@ -291,7 +312,16 @@ void BoundFunctionCall::GenLoad(Machine& machine, Function& function)
     {
         objects.push_back(argument.get());
     }
-    functionSymbol->GenerateCall(machine, GetAssembly(), function, objects);
+    if (genVirtualCall)
+    {
+        MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(functionSymbol);
+        Assert(memberFunctionSymbol, "member function symbol exptected");
+        memberFunctionSymbol->GenerateVirtualCall(machine, GetAssembly(), function, objects);
+    }
+    else
+    {
+        functionSymbol->GenerateCall(machine, GetAssembly(), function, objects);
+    }
 }
 
 void BoundFunctionCall::GenStore(Machine& machine, Function& function)
@@ -305,7 +335,7 @@ void BoundFunctionCall::Accept(BoundNodeVisitor& visitor)
 }
 
 BoundNewExpression::BoundNewExpression(BoundFunctionCall* boundFunctionCall_, TypeSymbol* type_) : BoundExpression(boundFunctionCall_->GetAssembly(), type_),
-    functionSymbol(boundFunctionCall_->GetFunctionSymbol()), arguments(std::move(boundFunctionCall_->Arguments()))
+    functionSymbol(boundFunctionCall_->GetFunctionSymbol()), arguments(std::move(boundFunctionCall_->ReleaseArguments()))
 {
 }
 

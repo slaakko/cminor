@@ -1075,11 +1075,6 @@ bool ClassTypeSymbol::HasBaseClass(ClassTypeSymbol* cls, int& distance) const
     return baseClass->HasBaseClass(cls, distance);
 }
 
-void ClassTypeSymbol::AddVirtualFunction(MemberFunctionSymbol* virtualFunction)
-{
-    virtualFunctions.push_back(virtualFunction);
-}
-
 void ClassTypeSymbol::SetCid(uint64_t cid_) 
 { 
     cid = cid_; 
@@ -1111,6 +1106,16 @@ void ClassTypeSymbol::InitVmt(std::vector<MemberFunctionSymbol*>& vmt)
     if (baseClass)
     {
         baseClass->InitVmt(vmt);
+    }
+    std::vector<MemberFunctionSymbol*> virtualFunctions;
+    int mfn = int(memberFunctions.size());
+    for (int i = 0; i < mfn; ++i)
+    {
+        MemberFunctionSymbol* mf = memberFunctions[i];
+        if (mf->IsVirtualAbstractOrOverride())
+        {
+            virtualFunctions.push_back(mf);
+        }
     }
     int32_t n = int32_t(virtualFunctions.size());
     for (int32_t i = 0; i < n; ++i)

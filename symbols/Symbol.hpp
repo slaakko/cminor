@@ -433,8 +433,6 @@ public:
     const std::vector<MemberVariableSymbol*>& MemberVariables() const { return memberVariables; }
     const std::vector<MemberVariableSymbol*>& StaticMemberVariables() const { return staticMemberVariables; }
     const std::vector<MemberFunctionSymbol*>& MemberFunctions() const { return memberFunctions; }
-    const std::vector<MemberFunctionSymbol*>& VirtualFunction() const { return virtualFunctions; }
-    void AddVirtualFunction(MemberFunctionSymbol* virtualFunction);
     ConstructorSymbol* DefaultConstructorSymbol() const { return defaultConstructorSymbol; }
     bool IsAbstract() const override { return GetFlag(ClassTypeSymbolFlags::abstract_); }
     void SetAbstract() { SetFlag(ClassTypeSymbolFlags::abstract_); }
@@ -459,7 +457,6 @@ private:
     std::vector<MemberVariableSymbol*> memberVariables;
     std::vector<MemberVariableSymbol*> staticMemberVariables;
     std::vector<MemberFunctionSymbol*> memberFunctions;
-    std::vector<MemberFunctionSymbol*> virtualFunctions;
     ConstructorSymbol* defaultConstructorSymbol;
     int level;
     int priority;

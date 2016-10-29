@@ -12,6 +12,22 @@ namespace cminor { namespace binder {
 
 class BoundCompileUnit;
 
+enum class OverloadResolutionFlags : uint8_t
+{
+    none = 0,
+    dontThrow = 1 << 0
+};
+
+inline OverloadResolutionFlags operator|(OverloadResolutionFlags left, OverloadResolutionFlags right)
+{
+    return OverloadResolutionFlags(uint8_t(left) | uint8_t(right));
+}
+
+inline OverloadResolutionFlags operator&(OverloadResolutionFlags left, OverloadResolutionFlags right)
+{
+    return OverloadResolutionFlags(uint8_t(left) & uint8_t(right));
+}
+
 struct FunctionScopeLookup
 {
     FunctionScopeLookup(ScopeLookup scopeLookup_) : scopeLookup(scopeLookup_), scope(nullptr) {}
@@ -58,6 +74,10 @@ bool FindConversions(BoundCompileUnit& boundCompileUnit, FunctionSymbol* functio
 
 std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompileUnit, StringPtr groupName, const std::vector<FunctionScopeLookup>& functionScopeLookups, 
     std::vector<std::unique_ptr<BoundExpression>>& arguments, const Span& span);
+
+std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompileUnit, StringPtr groupName, const std::vector<FunctionScopeLookup>& functionScopeLookups,
+    std::vector<std::unique_ptr<BoundExpression>>& arguments, const Span& span, OverloadResolutionFlags flags, std::unique_ptr<Exception>& exception);
+
 
 } } // namespace cminor::binder
 

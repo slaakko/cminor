@@ -14,13 +14,32 @@ namespace cminor { namespace binder {
 
 using namespace cminor::symbols;
 
+enum class BoundExpressionFlags : uint8_t
+{
+    none = 0,
+    argIsThisOrBase = 1 << 0
+};
+
+inline BoundExpressionFlags operator|(BoundExpressionFlags left, BoundExpressionFlags right)
+{
+    return BoundExpressionFlags(uint8_t(left) | uint8_t(right));
+}
+
+inline BoundExpressionFlags operator&(BoundExpressionFlags left, BoundExpressionFlags right)
+{
+    return BoundExpressionFlags(uint8_t(left) & uint8_t(right));
+}
+
 class BoundExpression : public BoundNode, public GenObject
 {
 public:
     BoundExpression(Assembly& assembly_, TypeSymbol* type_);
     TypeSymbol* GetType() const { return type; }
+    void SetFlag(BoundExpressionFlags flag) { flags = flags | flag;  }
+    bool GetFlag(BoundExpressionFlags flag) const { return (flags & flag) != BoundExpressionFlags::none;  }
 private:
     TypeSymbol* type;
+    BoundExpressionFlags flags;
 };
 
 class BoundLiteral : public BoundExpression
@@ -124,6 +143,21 @@ private:
     FunctionGroupSymbol* functionGroupSymbol;
 };
 
+class BoundMemberExpression : public BoundExpression
+{
+public:
+    BoundMemberExpression(Assembly& assembly_, std::unique_ptr<BoundExpression>&& classObject_, std::unique_ptr<BoundExpression>&& member_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+    BoundExpression* ClassObject() const { return classObject.get(); }
+    BoundExpression* ReleaseClassObject() { return classObject.release(); }
+    BoundExpression* Member() const { return member.get(); }
+private:
+    std::unique_ptr<BoundExpression> classObject;
+    std::unique_ptr<BoundExpression> member;
+};
+
 class BoundFunctionCall : public BoundExpression
 {
 public:
@@ -132,13 +166,15 @@ public:
     const std::vector<std::unique_ptr<BoundExpression>>& Arguments() const { return arguments; }
     void AddArgument(std::unique_ptr<BoundExpression>&& argument);
     void SetArguments(std::vector<std::unique_ptr<BoundExpression>>&& arguments_);
-    std::vector<std::unique_ptr<BoundExpression>> Arguments() { return std::move(arguments); }
+    std::vector<std::unique_ptr<BoundExpression>> ReleaseArguments() { return std::move(arguments); }
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
+    void SetGenVirtualCall() { genVirtualCall = true; }
 private:
     FunctionSymbol* functionSymbol;
     std::vector<std::unique_ptr<BoundExpression>> arguments;
+    bool genVirtualCall;
 };
 
 class BoundNewExpression : public BoundExpression

@@ -74,6 +74,7 @@ private:
 class VmFunction
 {
 public:
+    void SetName(Constant name_) { name = name_; }
     Constant Name() const { return name; }
     virtual ~VmFunction();
     virtual void Execute(Frame& frame) = 0;

@@ -63,10 +63,10 @@ void TypeBinderVisitor::Visit(FunctionNode& functionNode)
         {
             throw Exception("external function cannot have a body", functionNode.GetSpan());
         }
-        utf32_string vmFunctionName = ToUtf32(functionNode.Attributes().GetAttribute("vm_function_name"));
+        utf32_string vmFunctionName = ToUtf32(functionNode.Attributes().GetAttribute("VmFunctionName"));
         if (vmFunctionName.empty())
         {
-            throw Exception("virtual machine function name attribute (vm_function_name) not set for external function", functionNode.GetSpan());
+            throw Exception("virtual machine function name attribute (VmFunctionName) not set for external function", functionNode.GetSpan());
         }
         functionSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
     }
@@ -141,10 +141,15 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
     {
         TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Object");
         ClassTypeSymbol* objectType = dynamic_cast<ClassTypeSymbol*>(type);
+        Assert(objectType, "object expected");
         if (objectType != classTypeSymbol)
         {
             Assert(objectType, "class type symbol expected");
             classTypeSymbol->SetBaseClass(objectType);
+        }
+        else
+        {
+            objectType->GetObjectType()->AddField(ValueType::classDataPtr);
         }
     }
     if (classTypeSymbol->BaseClass())
@@ -158,15 +163,6 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
         CreateDefaultConstructor(boundCompileUnit.GetAssembly(), classTypeSymbol);
     }
     CreateBasicTypeObjectFun(boundCompileUnit.GetAssembly(), classTypeSymbol);
-    int nmf = int(classTypeSymbol->MemberFunctions().size());
-    for (int i = 0; i < nmf; ++i)
-    {
-        MemberFunctionSymbol* memberFunctionSymbol = classTypeSymbol->MemberFunctions()[i];
-        if (memberFunctionSymbol->IsVirtualAbstractOrOverride())
-        {
-            classTypeSymbol->AddVirtualFunction(memberFunctionSymbol);
-        }
-    }
     classTypeSymbol->InitVmt();
     int nmv = int(classTypeSymbol->MemberVariables().size());
     for (int i = 0; i < nmv; ++i)
@@ -240,10 +236,10 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         {
             throw Exception("external function cannot have a body", memberFunctionNode.GetSpan());
         }
-        utf32_string vmFunctionName = ToUtf32(memberFunctionNode.Attributes().GetAttribute("vm_function_name"));
+        utf32_string vmFunctionName = ToUtf32(memberFunctionNode.Attributes().GetAttribute("VmFunctionName"));
         if (vmFunctionName.empty())
         {
-            throw Exception("virtual machine function name attribute (vm_function_name) not set for external function", memberFunctionNode.GetSpan());
+            throw Exception("virtual machine function name attribute (VmFunctionName) not set for external function", memberFunctionNode.GetSpan());
         }
         memberFunctionSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
     }

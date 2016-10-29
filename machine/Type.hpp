@@ -46,7 +46,7 @@ class Layout
 public:
     Layout();
     const std::vector<Field>& Fields() const { return fields; }
-    void AddFields(const std::vector<Field>& fields_) { fields.insert(fields.end(), fields_.cbegin(), fields_.cend()); }
+    void AddFields(const std::vector<Field>& fields_);
     void AddField(ValueType fieldType);
     Field GetField(int32_t index) const { Assert(index >= 0 && index < fields.size(), "invalid field index"); return fields[index]; }
     int32_t FieldCount() const { return int32_t(fields.size()); }

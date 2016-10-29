@@ -204,11 +204,16 @@ utf32_string FunctionSymbol::FullName() const
     return fullName;
 }
 
+void FunctionSymbol::AddToFlagStr(std::string& flagStr) const
+{
+}
+
 utf32_string FunctionSymbol::FriendlyName() const
 {
     utf32_string friendlyName;
     friendlyName.append(ToUtf32(SymbolFlagStr(Symbol::Flags())));
     std::string functionSymbolFlagStr = FunctionSymbolFlagStr(flags);
+    AddToFlagStr(functionSymbolFlagStr);
     if (!functionSymbolFlagStr.empty())
     {
         if (!friendlyName.empty())
@@ -435,8 +440,47 @@ bool ConstructorSymbol::IsDefaultConstructorSymbol() const
     return Parameters().size() == 1;
 }
 
+std::string MemberFunctionSymbolFlagStr(MemberFunctionSymbolFlags flags)
+{
+    std::string s;
+    if ((flags & MemberFunctionSymbolFlags::abstract_) != MemberFunctionSymbolFlags::none)
+    {
+        s.append("abstract");
+    }
+    if ((flags & MemberFunctionSymbolFlags::override_) != MemberFunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("override");
+    }
+    if ((flags & MemberFunctionSymbolFlags::virtual_) != MemberFunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("virtual");
+    }
+    return s;
+}
+
 MemberFunctionSymbol::MemberFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), vmtIndex(-1), flags(MemberFunctionSymbolFlags::none)
 {
+}
+
+void MemberFunctionSymbol::AddToFlagStr(std::string& flagStr) const
+{
+    std::string myFlagStr = MemberFunctionSymbolFlagStr(flags);
+    if (!myFlagStr.empty())
+    {
+        if (!flagStr.empty())
+        {
+            flagStr.append(1, ' ');
+        }
+        flagStr.append(myFlagStr);
+    }
 }
 
 void MemberFunctionSymbol::Write(SymbolWriter& writer)
@@ -491,6 +535,21 @@ void MemberFunctionSymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
+void MemberFunctionSymbol::GenerateVirtualCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+{
+    int n = int(objects.size());
+    for (int i = 0; i < n; ++i)
+    {
+        GenObject* genObject = objects[i];
+        genObject->GenLoad(machine, function);
+    }
+    std::unique_ptr<Instruction> inst = machine.CreateInst("callv");
+    VirtualCallInst* vcall = dynamic_cast<VirtualCallInst*>(inst.get());
+    Assert(vcall, "virtual call instruction expected");
+    vcall->SetNumArgs(n);
+    vcall->SetVmtIndex(vmtIndex);
+    function.AddInst(std::move(inst));
+}
 
 ClassTypeConversion::ClassTypeConversion(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
 {
