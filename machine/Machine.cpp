@@ -259,7 +259,6 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     // -------
 
     rootInst.SetInst(0xD0, new AllocateArrayElementsInst());
-    rootInst.SetInst(0xD1, new LengthArrayInst());
 
     // vmcall:
     // -------

@@ -233,10 +233,10 @@ StoreFieldInst::StoreFieldInst() : IndexParamInst("storefield")
 
 void StoreFieldInst::Execute(Frame& frame)
 {
-    IntegralValue fieldValue = frame.OpStack().Pop();
     IntegralValue operand = frame.OpStack().Pop();
     Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
     ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.OpStack().Pop();
     frame.GetManagedMemoryPool().SetField(reference, Index(), fieldValue);
 }
 
@@ -769,19 +769,6 @@ void AllocateArrayElementsInst::Execute(Frame& frame)
     ObjectReference arr(arrayValue.Value());
     Type* elementType = GetType();
     frame.GetManagedMemoryPool().AllocateArrayElements(frame.GetThread(), arr, elementType, length.AsInt());
-}
-
-LengthArrayInst::LengthArrayInst() : Instruction("lena")
-{
-}
-
-void LengthArrayInst::Execute(Frame& frame)
-{
-    IntegralValue value = frame.OpStack().Pop();
-    Assert(value.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference arr(value.Value());
-    int32_t len = frame.GetManagedMemoryPool().GetArrayLength(arr);
-    frame.OpStack().Push(IntegralValue(len, ValueType::intType));
 }
 
 } } // namespace cminor::machine

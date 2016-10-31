@@ -100,6 +100,18 @@ private:
     ParameterSymbol* parameterSymbol;
 };
 
+class BoundArrayElement : public BoundExpression
+{
+public:
+    BoundArrayElement(Assembly& assembly_, ArrayTypeSymbol* arrayTypeSymbol_, std::unique_ptr<BoundExpression>&& arr_, std::unique_ptr<BoundExpression>&& index_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    std::unique_ptr<BoundExpression> arr;
+    std::unique_ptr<BoundExpression> index;
+};
+
 class BoundConversion : public BoundExpression
 {
 public:

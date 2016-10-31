@@ -1,5 +1,6 @@
 void main()
 {
     int[] x = new int[23];
-    int n = x.Length();
+    x[0] = 1;
+    int y = x[0];
 }

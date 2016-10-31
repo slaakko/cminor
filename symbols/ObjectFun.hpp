@@ -17,7 +17,7 @@ class ObjectDefaultInit : public BasicTypeInit
 public:
     ObjectDefaultInit(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::objectDefaultInit; }
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
 class ObjectCopyInit : public BasicTypeInit
@@ -25,7 +25,7 @@ class ObjectCopyInit : public BasicTypeInit
 public:
     ObjectCopyInit(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::objectCopyInit; }
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
 class ObjectNullInit : public BasicTypeInit
@@ -33,7 +33,7 @@ class ObjectNullInit : public BasicTypeInit
 public:
     ObjectNullInit(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::objectNullInit; }
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
 class ObjectAssignment : public BasicTypeFun
@@ -41,7 +41,7 @@ class ObjectAssignment : public BasicTypeFun
 public:
     ObjectAssignment(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::objectAssignment; };
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
 void CreateDefaultConstructor(Assembly& assembly, ClassTypeSymbol* classTypeSymbol);

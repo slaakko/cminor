@@ -73,7 +73,7 @@ public:
     virtual int ConversionDistance() const { return 0; }
     virtual TypeSymbol* ConversionSourceType() const { return nullptr; }
     virtual TypeSymbol* ConversionTargetType() const { return nullptr; }
-    virtual void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects);
+    virtual void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start);
     bool GetFlag(FunctionSymbolFlags flag) const { return (flags & flag) != FunctionSymbolFlags::none; }
     void SetFlag(FunctionSymbolFlags flag) { flags = flags | flag; }
     Function* MachineFunction() const { return machineFunction; }
@@ -122,7 +122,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::constructorSymbol; }
     std::string TypeString() const override { return "constructor"; }
     void SetSpecifiers(Specifiers specifiers);
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
     void CreateMachineFunction() override;
     bool IsDefaultConstructorSymbol() const;
     bool IsIntConstructorSymbol() const;
@@ -203,7 +203,7 @@ public:
     TypeSymbol* ConversionSourceType() const override { return sourceType; }
     void SetTargetType(TypeSymbol* targetType_) { targetType = targetType_; SetReturnType(targetType);  }
     TypeSymbol* ConversionTargetType() const override { return targetType; }
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 private:
     ConversionType conversionType;
     int32_t conversionDistance;

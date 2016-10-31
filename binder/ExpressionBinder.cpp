@@ -78,6 +78,7 @@ public:
 
     void Visit(IdentifierNode& identifierNode) override;
     void Visit(DotNode& dotNode) override;
+    void Visit(IndexingNode& indexingNode) override;
     void Visit(InvokeNode& invokeNode) override;
     void Visit(CastNode& castNode) override;
     void Visit(NewNode& newNode) override;
@@ -683,6 +684,36 @@ void ExpressionBinder::Visit(DotNode& dotNode)
         }
     }
     containerScope = prevContainerScope;
+}
+
+void ExpressionBinder::Visit(IndexingNode& indexingNode)
+{
+    indexingNode.Child()->Accept(*this);
+    BoundExpression* subject = expression.release();
+    TypeSymbol* subjectType = subject->GetType();
+    indexingNode.Index()->Accept(*this);
+    BoundExpression* index = expression.release();
+    TypeSymbol* intType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int32");
+    if (index->GetType() != intType)
+    {
+        FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(index->GetType(), intType);
+        if (conversionFun)
+        {
+            index = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(index), conversionFun);
+        }
+        else
+        {
+            throw Exception("no implicit conversion from '" + ToUtf8(index->GetType()->FullName()) + "' to '" + ToUtf8(intType->FullName()) + " exists for array index", indexingNode.Index()->GetSpan());
+        }
+    }
+    if (ArrayTypeSymbol* arrayTypeSymbol = dynamic_cast<ArrayTypeSymbol*>(subjectType))
+    {
+        expression.reset(new BoundArrayElement(boundCompileUnit.GetAssembly(), arrayTypeSymbol, std::unique_ptr<BoundExpression>(subject), std::unique_ptr<BoundExpression>(index)));
+    }
+    else
+    {
+        throw Exception("array type expected", indexingNode.GetSpan());
+    }
 }
 
 void ExpressionBinder::Visit(InvokeNode& invokeNode)

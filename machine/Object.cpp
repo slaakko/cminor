@@ -389,27 +389,7 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
     {
         throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
     }
-    a.SetField(handle, 1);
-}
-
-int32_t ManagedMemoryPool::GetArrayLength(ObjectReference arr)
-{
-    Object& a = GetObject(arr);
-    IntegralValue elementsHandleValue = a.GetField(1);
-    Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
-    AllocationHandle handle(elementsHandleValue.Value());
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
-    {
-        ManagedAllocation* allocation = it->second.get();
-        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
-        Assert(elements, "array elements expected");
-        return elements->NumElements();
-    }
-    else
-    {
-        throw std::runtime_error("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
-    }
+    a.SetField(handle, 2);
 }
 
 IntegralValue ManagedMemoryPool::GetArrayElement(ObjectReference reference, int32_t index)
@@ -419,7 +399,7 @@ IntegralValue ManagedMemoryPool::GetArrayElement(ObjectReference reference, int3
         throw std::runtime_error("cannot get element of null array");
     }
     Object& arr = GetObject(reference);
-    IntegralValue elementsHandleValue = arr.GetField(1);
+    IntegralValue elementsHandleValue = arr.GetField(2);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
     auto it = allocations.find(handle);
@@ -443,7 +423,7 @@ void ManagedMemoryPool::SetArrayElement(ObjectReference reference, int32_t index
         throw std::runtime_error("cannot set element of null array");
     }
     Object& arr = GetObject(reference);
-    IntegralValue elementsHandleValue = arr.GetField(1);
+    IntegralValue elementsHandleValue = arr.GetField(2);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
     auto it = allocations.find(handle);
@@ -458,22 +438,6 @@ void ManagedMemoryPool::SetArrayElement(ObjectReference reference, int32_t index
     {
         throw std::runtime_error("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
-}
-
-MemPtr ManagedMemoryPool::GetMemPtr(ObjectReference handle)
-{
-    if (handle.IsNull())
-    {
-        throw std::runtime_error("cannot retrieve pointer of null handle");
-    }
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
-    {
-        ManagedAllocation* allocation = it->second.get();
-        Object* object = dynamic_cast<Object*>(allocation);
-        return object->GetMemPtr();
-    }
-    throw std::runtime_error("object with handle " + std::to_string(handle.Value()) + " not found");
 }
 
 void ManagedMemoryPool::ResetObjectsLiveFlag()

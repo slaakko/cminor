@@ -471,14 +471,6 @@ public:
     void Execute(Frame& frame) override;
 };
 
-class LengthArrayInst : public Instruction
-{
-public:
-    LengthArrayInst();
-    Instruction* Clone() const override { return new LengthArrayInst(*this); }
-    void Execute(Frame& frame) override;
-};
-
 } } // namespace cminor::machine
 
 #endif // CMINOR_MACHINE_INSTRUCTION_INCLUDED

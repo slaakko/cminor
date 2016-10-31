@@ -225,10 +225,8 @@ public:
     ObjectReference CreateStringFromLiteral(const char32_t* strLit, uint64_t len);
     int32_t GetStringLength(ObjectReference str);
     void AllocateArrayElements(Thread& thread, ObjectReference arr, Type* elementType, int32_t length);
-    int32_t GetArrayLength(ObjectReference arr);
     IntegralValue GetArrayElement(ObjectReference reference, int32_t index);
     void SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue);
-    MemPtr GetMemPtr(ObjectReference reference);
     void ResetObjectsLiveFlag();
     void MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena);
 private:

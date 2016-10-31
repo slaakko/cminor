@@ -169,6 +169,10 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
     else if (boundClass->GetClassTypeSymbol()->BaseClass())
     {
         BoundFunctionCall* baseConstructorCall = new BoundFunctionCall(boundCompileUnit.GetAssembly(), boundClass->GetClassTypeSymbol()->BaseClass()->DefaultConstructorSymbol());
+        BoundExpression* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), constructorSymbol->Parameters()[0]->GetType(), constructorSymbol->Parameters()[0]);
+        BoundConversion* thisAsBase = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(boundThisParam),
+            boundCompileUnit.GetConversion(boundClass->GetClassTypeSymbol(), boundClass->GetClassTypeSymbol()->BaseClass()));
+        baseConstructorCall->AddArgument(std::unique_ptr<BoundExpression>(thisAsBase));
         BoundExpressionStatement* baseConstructorCallStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(baseConstructorCall));
         compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(baseConstructorCallStatement));
     }

@@ -35,7 +35,7 @@ class BasicTypeDefaultInit : public BasicTypeInit
 public:
     BasicTypeDefaultInit(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::basicTypeDefaultInit; }
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
 class BasicTypeCopyInit : public BasicTypeInit
@@ -43,7 +43,7 @@ class BasicTypeCopyInit : public BasicTypeInit
 public:
     BasicTypeCopyInit(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::basicTypeCopyInit; }
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
 class BasicTypeAssignment : public BasicTypeFun
@@ -52,7 +52,7 @@ public:
     BasicTypeAssignment(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::basicTypeAssignment; }
     void ComputeName() override;
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
 class BasicTypeReturn : public BasicTypeFun
@@ -61,7 +61,7 @@ public:
     BasicTypeReturn(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::basicTypeReturn; };
     void ComputeName() override;
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
 class BasicTypeConversion : public BasicTypeFun
@@ -80,7 +80,7 @@ public:
     void SetTargetType(TypeSymbol* targetType_) { targetType = targetType_; SetType(targetType); }
     TypeSymbol* ConversionTargetType() const override { return targetType; }
     void SetConversionInstructionName(const std::string& conversionInstructionName_) { conversionInstructionName = conversionInstructionName_; }
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
     void EmplaceType(TypeSymbol* type, int index) override;
 private:
     ConversionType conversionType;
@@ -97,7 +97,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::basicTypeUnaryOp; };
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
     void SetInstGroupName(const std::string& instGroupName_) { instGroupName = instGroupName_; }
     void SetTypeName(const std::string& typeName_) { typeName = typeName_; }
 private:
@@ -112,7 +112,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::basicTypBinaryOp; };
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
     void SetInstGroupName(const std::string& instGroupName_) { instGroupName = instGroupName_; }
     void SetTypeName(const std::string& typeName_) { typeName = typeName_; }
 private:

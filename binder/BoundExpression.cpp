@@ -199,6 +199,32 @@ void BoundParameter::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundArrayElement::BoundArrayElement(Assembly& assembly_, ArrayTypeSymbol* arrayTypeSymbol_, std::unique_ptr<BoundExpression>&& arr_, std::unique_ptr<BoundExpression>&& index_) :
+    BoundExpression(assembly_, arrayTypeSymbol_->ElementType()), arr(std::move(arr_)), index(std::move(index_))
+{
+}
+
+void BoundArrayElement::GenLoad(Machine& machine, Function& function)
+{
+    arr->GenLoad(machine, function);
+    index->GenLoad(machine, function);
+    std::unique_ptr<Instruction> loadElemInst = machine.CreateInst("loadarrayelem");
+    function.AddInst(std::move(loadElemInst));
+}
+
+void BoundArrayElement::GenStore(Machine& machine, Function& function)
+{
+    arr->GenLoad(machine, function);
+    index->GenLoad(machine, function);
+    std::unique_ptr<Instruction> storeElemInst = machine.CreateInst("storearrayelem");
+    function.AddInst(std::move(storeElemInst));
+}
+
+void BoundArrayElement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundConversion::BoundConversion(Assembly& assembly_, std::unique_ptr<BoundExpression>&& sourceExpr_, FunctionSymbol* conversionFun_) :
     BoundExpression(assembly_, conversionFun_->ConversionTargetType()), sourceExpr(std::move(sourceExpr_)), conversionFun(conversionFun_)
 {
@@ -208,7 +234,7 @@ void BoundConversion::GenLoad(Machine& machine, Function& function)
 {
     sourceExpr->GenLoad(machine, function);
     std::vector<GenObject*> emptyObjects;
-    conversionFun->GenerateCall(machine, GetAssembly(), function, emptyObjects);
+    conversionFun->GenerateCall(machine, GetAssembly(), function, emptyObjects, 0);
 }
 
 void BoundConversion::GenStore(Machine& machine, Function& function)
@@ -328,7 +354,7 @@ void BoundFunctionCall::GenLoad(Machine& machine, Function& function)
     }
     else
     {
-        functionSymbol->GenerateCall(machine, GetAssembly(), function, objects);
+        functionSymbol->GenerateCall(machine, GetAssembly(), function, objects, 0);
     }
 }
 
@@ -367,7 +393,7 @@ void BoundNewExpression::GenLoad(Machine& machine, Function& function)
     {
         objects.push_back(argument.get());
     }
-    functionSymbol->GenerateCall(machine, GetAssembly(), function, objects);
+    functionSymbol->GenerateCall(machine, GetAssembly(), function, objects, 1);
 }
 
 void BoundNewExpression::GenStore(Machine& machine, Function& function)

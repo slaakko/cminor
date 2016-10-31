@@ -62,7 +62,7 @@ BasicTypeDefaultInit::BasicTypeDefaultInit(const Span& span_, Constant name_) : 
 {
 }
 
-void BasicTypeDefaultInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeDefaultInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     std::string typeName = ToUtf8(GetType()->FullName());
     std::unique_ptr<Instruction> inst = machine.CreateInst("def", typeName);
@@ -75,7 +75,7 @@ BasicTypeCopyInit::BasicTypeCopyInit(const Span& span_, Constant name_) : BasicT
 {
 }
 
-void BasicTypeCopyInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeCopyInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     Assert(objects.size() == 2, "copy init needs two objects");
     GenObject* source = objects[1];
@@ -96,7 +96,7 @@ void BasicTypeAssignment::ComputeName()
     BasicTypeFun::ComputeName();
 }
 
-void BasicTypeAssignment::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeAssignment::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     Assert(objects.size() == 2, "assignment needs two objects");
     GenObject* source = objects[1];
@@ -117,7 +117,7 @@ void BasicTypeReturn::ComputeName()
     BasicTypeFun::ComputeName();
 }
 
-void BasicTypeReturn::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeReturn::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     Assert(objects.size() == 1, "return needs one object");
     GenObject* value = objects[0];
@@ -176,7 +176,7 @@ void BasicTypeConversion::EmplaceType(TypeSymbol* type, int index)
     }
 }
 
-void BasicTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     std::unique_ptr<Instruction> inst =  machine.CreateInst(conversionInstructionName);
     function.AddInst(std::move(inst));
@@ -200,7 +200,7 @@ void BasicTypeUnaryOpFun::Read(SymbolReader& reader)
     typeName = reader.GetUtf8String();
 }
 
-void BasicTypeUnaryOpFun::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeUnaryOpFun::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     Assert(objects.size() == 1, "unary operator function needs one object");
     GenObject* operand = objects[0];
@@ -227,7 +227,7 @@ void BasicTypeBinaryOpFun::Read(SymbolReader& reader)
     typeName = reader.GetUtf8String();
 }
 
-void BasicTypeBinaryOpFun::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void BasicTypeBinaryOpFun::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     Assert(objects.size() == 2, "binary operator function needs two objects");
     GenObject* left = objects[0];

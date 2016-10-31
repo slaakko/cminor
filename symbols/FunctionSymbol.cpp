@@ -282,10 +282,10 @@ void FunctionSymbol::AddLocalVariable(LocalVariableSymbol* localVariable)
     localVariables.push_back(localVariable);
 }
 
-void FunctionSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void FunctionSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     int n = int(objects.size());
-    for (int i = 0; i < n; ++i)
+    for (int i = start; i < n; ++i)
     {
         GenObject* genObject = objects[i];
         genObject->GenLoad(machine, function);
@@ -386,10 +386,10 @@ void ConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
-void ConstructorSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void ConstructorSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     int n = int(objects.size());
-    for (int i = 1; i < n; ++i)
+    for (int i = start; i < n; ++i)
     {
         GenObject* genObject = objects[i];
         genObject->GenLoad(machine, function);
@@ -431,7 +431,7 @@ void ConstructorSymbol::CreateMachineFunction()
         MachineFunction()->AddInst(std::move(loadLocal));
         loadLocalInst->SetIndex(0);
         std::vector<GenObject*> objects;
-        containingClass->BaseClass()->DefaultConstructorSymbol()->GenerateCall(GetAssembly()->GetMachine(), *GetAssembly(), *MachineFunction(), objects);
+        containingClass->BaseClass()->DefaultConstructorSymbol()->GenerateCall(GetAssembly()->GetMachine(), *GetAssembly(), *MachineFunction(), objects, 1);
     }
 }
 
@@ -476,7 +476,7 @@ void ArraySizeConstructorSymbol::CreateMachineFunction()
             MachineFunction()->AddInst(std::move(loadSizeLocal));
 
             std::vector<GenObject*> objects;
-            constructorSymbol->GenerateCall(GetAssembly()->GetMachine(), *GetAssembly(), *MachineFunction(), objects);
+            constructorSymbol->GenerateCall(GetAssembly()->GetMachine(), *GetAssembly(), *MachineFunction(), objects, 2);
             intConstructorFound = true;
             break;
         }
@@ -625,7 +625,7 @@ ClassTypeConversion::ClassTypeConversion(const Span& span_, Constant name_) : Fu
     SetConversionFun();
 }
 
-void ClassTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) 
+void ClassTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     std::unique_ptr<Instruction> inst;
     switch (conversionType)

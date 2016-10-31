@@ -52,7 +52,7 @@ ObjectDefaultInit::ObjectDefaultInit(const Span& span_, Constant name_) : BasicT
 {
 }
 
-void ObjectDefaultInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void ObjectDefaultInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     std::unique_ptr<Instruction> inst = machine.CreateInst("def", "object");
     function.AddInst(std::move(inst));
@@ -64,7 +64,7 @@ ObjectCopyInit::ObjectCopyInit(const Span& span_, Constant name_) : BasicTypeIni
 {
 }
 
-void ObjectCopyInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void ObjectCopyInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     Assert(objects.size() == 2, "init needs two objects");
     GenObject* source = objects[1];
@@ -79,7 +79,7 @@ ObjectNullInit::ObjectNullInit(const Span& span_, Constant name_) : BasicTypeIni
 {
 }
 
-void ObjectNullInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void ObjectNullInit::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     std::unique_ptr<Instruction> inst = machine.CreateInst("def", "object");
     function.AddInst(std::move(inst));
@@ -91,7 +91,7 @@ ObjectAssignment::ObjectAssignment(const Span& span_, Constant name_) : BasicTyp
 {
 }
 
-void ObjectAssignment::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+void ObjectAssignment::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
     Assert(objects.size() == 2, "assign needs two objects");
     GenObject* source = objects[1];
