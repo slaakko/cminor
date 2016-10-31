@@ -10,6 +10,11 @@
 
 namespace cminor { namespace machine {
 
+inline MemPtr ElementPtr(MemPtr memPtr, ValueType valueType, int32_t index)
+{
+    return MemPtr(static_cast<uint8_t*>(memPtr.Value()) + ValueSize(valueType) * index);
+}
+
 class FieldOffset
 {
 public:
@@ -22,9 +27,9 @@ private:
     uint64_t value;
 };
 
-inline ObjectMemPtr operator+(ObjectMemPtr memPtr, FieldOffset offset)
+inline MemPtr operator+(MemPtr memPtr, FieldOffset offset)
 {
-    return ObjectMemPtr(memPtr.Value() + offset.Value());
+    return MemPtr(static_cast<uint8_t*>(memPtr.Value()) + offset.Value());
 }
 
 class Field
@@ -64,11 +69,101 @@ public:
     Type();
     virtual ~Type();
     StringPtr Name() const { return StringPtr(name.Value().AsStringLiteral()); }
+    Constant NameConstant() const { return name; }
     void SetNameConstant(Constant name_) { name = name_; }
     void Write(Writer& writer);
     void Read(Reader& reader);
+    virtual ValueType GetValueType() const = 0;
 private:
     Constant name;
+};
+
+class BasicType : public Type
+{
+};
+
+class SByte : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::sbyteType; }
+};
+
+class Byte : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::byteType; }
+};
+
+class Short : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::shortType; }
+};
+
+class UShort : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::ushortType; }
+};
+
+class Int : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::intType; }
+};
+
+class UInt : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::uintType; }
+};
+
+class Long : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::longType; }
+};
+
+class ULong : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::ulongType; }
+};
+
+class Float : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::floatType; }
+};
+
+class Double : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::doubleType; }
+};
+
+class Char : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::charType; }
+};
+
+class Bool : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::boolType; }
+};
+
+class Void : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::none; }
+};
+
+class Null : public BasicType
+{
+public:
+    ValueType GetValueType() const override { return ValueType::ulongType; }
 };
 
 class ObjectType : public Type
@@ -79,28 +174,32 @@ public:
     void AddFields(const std::vector<Field>& fields_) { objectLayout.AddFields(fields_); }
     void AddField(ValueType fieldType) { objectLayout.AddField(fieldType); }
     Field GetField(int32_t index) const { return objectLayout.GetField(index); }
-    void AddStaticField(ValueType fieldType) { staticLayout.AddField(fieldType); }
-    Field GetStaticField(int32_t index) const { return staticLayout.GetField(index); }
     int32_t FieldCount() const { return objectLayout.FieldCount(); }
-    int32_t StaticFieldCount() const { return staticLayout.FieldCount(); }
     uint64_t ObjectSize() const { return std::max(uint64_t(1), objectLayout.Size()); }
     uint64_t Id() const { return id; }
     void SetId(uint64_t id_) { id = id_; }
     void Write(Writer& writer);
     void Read(Reader& reader);
+    ValueType GetValueType() const override { return ValueType::objectReference; }
 private:
     uint64_t id;
     Layout objectLayout;
-    Layout staticLayout;
 };
 
-class ArrayType : public ObjectType
+class TypeTable
 {
 public:
-    ArrayType(std::unique_ptr<Type>&& elementType_);
+    static void Init();
+    static void Done();
+    static TypeTable& Instance();
+    Type* GetType(StringPtr fullTypeName);
+    void SetType(Type* type);
 private:
-    std::unique_ptr<Type> elementType;
+    static std::unique_ptr<TypeTable> instance;
+    TypeTable();
+    std::unordered_map<StringPtr, Type*, StringPtrHash> typeMap;
 };
+
 
 } } // namespace cminor::machine
 

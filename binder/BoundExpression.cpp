@@ -113,8 +113,14 @@ void BoundLocalVariable::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundMemberVariable::BoundMemberVariable(Assembly& assembly_, TypeSymbol* type_, MemberVariableSymbol* memberVariableSymbol_) : BoundExpression(assembly_, type_), memberVariableSymbol(memberVariableSymbol_)
+BoundMemberVariable::BoundMemberVariable(Assembly& assembly_, TypeSymbol* type_, MemberVariableSymbol* memberVariableSymbol_) : 
+    BoundExpression(assembly_, type_), memberVariableSymbol(memberVariableSymbol_)
 {
+}
+
+void BoundMemberVariable::SetClassObject(std::unique_ptr<BoundExpression>&& classObject_)
+{
+    classObject = std::move(classObject_);
 }
 
 void BoundMemberVariable::GenLoad(Machine& machine, Function& function)
@@ -122,6 +128,7 @@ void BoundMemberVariable::GenLoad(Machine& machine, Function& function)
     int32_t index = memberVariableSymbol->Index();
     if (index != -1)
     {
+        classObject->GenLoad(machine, function);
         std::unique_ptr<Instruction> loadFieldInst = machine.CreateInst("loadfield");
         loadFieldInst->SetIndex(index);
         function.AddInst(std::move(loadFieldInst));
@@ -137,6 +144,7 @@ void BoundMemberVariable::GenStore(Machine& machine, Function& function)
     int32_t index = memberVariableSymbol->Index();
     if (index != -1)
     {
+        classObject->GenLoad(machine, function);
         std::unique_ptr<Instruction> storeFieldlInst = machine.CreateInst("storefield");
         storeFieldlInst->SetIndex(index);
         function.AddInst(std::move(storeFieldlInst));
@@ -341,16 +349,17 @@ BoundNewExpression::BoundNewExpression(BoundFunctionCall* boundFunctionCall_, Ty
 
 void BoundNewExpression::GenLoad(Machine& machine, Function& function) 
 {
-    std::unique_ptr<Instruction> createOInst = machine.CreateInst("createo");
-    CreateObjectInst* createObjectInst = dynamic_cast<CreateObjectInst*>(createOInst.get());
-    Assert(createObjectInst, "create object inst expected");
+    std::unique_ptr<Instruction> createInst;
+    createInst = machine.CreateInst("createo");
     ConstantPool& constantPool = GetAssembly().GetConstantPool();
     ClassTypeSymbol* containingClass = functionSymbol->ContainingClass();
     Assert(containingClass, "containing class not found");
     utf32_string fullClassName = containingClass->FullName();
     Constant fullClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
-    createObjectInst->SetClassName(fullClassNameConstant);
-    function.AddInst(std::move(createOInst));
+    CreateObjectInst* createObjectInst = dynamic_cast<CreateObjectInst*>(createInst.get());
+    Assert(createObjectInst, "CreateObject instruction expected");
+    createObjectInst->SetTypeName(fullClassNameConstant);
+    function.AddInst(std::move(createInst));
     std::unique_ptr<Instruction> dupInst = machine.CreateInst("dup");
     function.AddInst(std::move(dupInst));
     std::vector<GenObject*> objects;

@@ -22,12 +22,12 @@ public:
     std::unique_ptr<Instruction> CreateInst(const std::string& instName) const;
     std::unique_ptr<Instruction> CreateInst(const std::string& instGroupName, const std::string& typeName) const;
     std::unique_ptr<Instruction> DecodeInst(Reader& reader);
-    ObjectPool& GetObjectPool() { return objectPool; }
+    ManagedMemoryPool& GetManagedMemoryPool() { return managedMemoryPool; }
     std::vector<std::unique_ptr<Thread>>& Threads() { return threads; }
     const std::vector<std::unique_ptr<Thread>>& Threads() const { return threads; }
     Thread& MainThread() { Assert(!threads.empty(), "no main thread"); return *threads.front().get(); }
     GarbageCollector& GetGarbageCollector() { return garbageCollector; }
-    std::pair<ArenaId, ObjectMemPtr> AllocateMemory(Thread& thread, uint64_t blockSize);
+    std::pair<ArenaId, MemPtr> AllocateMemory(Thread& thread, uint64_t blockSize);
     void RunGarbageCollector();
     Arena& Gen1Arena() { return gen1Arena; }
     Arena& Gen2Arena() { return gen2Arena; }
@@ -38,7 +38,7 @@ private:
     ContainerInst rootInst;
     std::unordered_map<std::string, Instruction*> instructionMap;
     std::unordered_map<std::string, InstructionTypeGroup> instructionTypeGroupMap;
-    ObjectPool objectPool;
+    ManagedMemoryPool managedMemoryPool;
     std::vector<std::unique_ptr<Thread>> threads;
     GarbageCollector garbageCollector;
     Arena gen1Arena;

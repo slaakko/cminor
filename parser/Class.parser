@@ -28,6 +28,7 @@ namespace cminor.parser
         using ParameterGrammar.ParameterList;
         using FunctionGrammar.FunctionGroupId;
         using FunctionGrammar.Attributes;
+        using stdlib.identifier;
 
         Class(ParsingContext* ctx) : ClassNode*
             ::= Specifiers keyword("class") Identifier{ value = new ClassNode(span, Specifiers, Identifier); }
@@ -74,8 +75,8 @@ namespace cminor.parser
             ;
 
         Initializer(ParsingContext* ctx) : InitializerNode*
-            ::= keyword("this"){ value = new ThisInitializerNode(span); }'('! ArgumentList(ctx, value):thisArgs! ')'!
-            |   keyword("base"){ value = new BaseInitializerNode(span); } '('! ArgumentList(ctx, value):baseArgs! ')'!
+            ::= keyword("this", identifier){ value = new ThisInitializerNode(span); }'('! ArgumentList(ctx, value):thisArgs! ')'!
+            |   keyword("base", identifier){ value = new BaseInitializerNode(span); } '('! ArgumentList(ctx, value):baseArgs! ')'!
             ;
 
         MemberFunction(ParsingContext* ctx, var AttributeMap attributeMap, ClassNode* classNode, var std::unique_ptr<MemberFunctionNode> memFun, var std::unique_ptr<IdentifierNode> qid) : Node*

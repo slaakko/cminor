@@ -31,7 +31,7 @@ struct InitDone
         FileRegistry::Init();
         FunctionTable::Init();
         ClassDataTable::Init();
-        ObjectTypeTable::Init();
+        TypeTable::Init();
         VmFunctionTable::Init();
         InitSymbol();
         InitAssembly();
@@ -43,7 +43,7 @@ struct InitDone
         DoneAssembly();
         DoneSymbol();
         VmFunctionTable::Done();
-        ObjectTypeTable::Done();
+        TypeTable::Done();
         ClassDataTable::Done();
         FunctionTable::Done();
     }

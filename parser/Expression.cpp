@@ -1550,11 +1550,16 @@ public:
         a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PostfixRule>(this, &PostfixRule::A3Action));
         Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
         a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PostfixRule>(this, &PostfixRule::A4Action));
+        Cm::Parsing::ActionParser* a5ActionParser = GetAction("A5");
+        a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PostfixRule>(this, &PostfixRule::A5Action));
         Cm::Parsing::NonterminalParser* primaryNonterminalParser = GetNonterminal("Primary");
         primaryNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PostfixRule>(this, &PostfixRule::PrePrimary));
         primaryNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PostfixRule>(this, &PostfixRule::PostPrimary));
         Cm::Parsing::NonterminalParser* dotMemberIdNonterminalParser = GetNonterminal("dotMemberId");
         dotMemberIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PostfixRule>(this, &PostfixRule::PostdotMemberId));
+        Cm::Parsing::NonterminalParser* indexNonterminalParser = GetNonterminal("index");
+        indexNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PostfixRule>(this, &PostfixRule::Preindex));
+        indexNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PostfixRule>(this, &PostfixRule::Postindex));
         Cm::Parsing::NonterminalParser* argumentListNonterminalParser = GetNonterminal("ArgumentList");
         argumentListNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PostfixRule>(this, &PostfixRule::PreArgumentList));
     }
@@ -1574,9 +1579,14 @@ public:
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.expr->GetSpan().SetEnd(span.End());
+        context.s.SetEnd(span.End());
+        context.expr.reset(new IndexingNode(context.s, context.expr.release(), context.fromindex));
     }
     void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.expr->GetSpan().SetEnd(span.End());
+    }
+    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.expr.reset(new InvokeNode(context.s, context.expr.release()));
     }
@@ -1602,6 +1612,19 @@ public:
             stack.pop();
         }
     }
+    void Preindex(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void Postindex(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromindex_value = std::move(stack.top());
+            context.fromindex = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromindex_value.get());
+            stack.pop();
+        }
+    }
     void PreArgumentList(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
@@ -1610,13 +1633,14 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), value(), expr(), s(), fromPrimary(), fromdotMemberId() {}
+        Context(): ctx(), value(), expr(), s(), fromPrimary(), fromdotMemberId(), fromindex() {}
         ParsingContext* ctx;
         Node* value;
         std::unique_ptr<Node> expr;
         Span s;
         Node* fromPrimary;
         IdentifierNode* fromdotMemberId;
+        Node* fromindex;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -2081,16 +2105,16 @@ private:
 void ExpressionGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.BasicTypeGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.LiteralGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::BasicTypeGrammar::Create(pd);
+        grammar0 = cminor::parser::LiteralGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.LiteralGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.BasicTypeGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::LiteralGrammar::Create(pd);
+        grammar1 = cminor::parser::BasicTypeGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
     Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
@@ -2099,20 +2123,27 @@ void ExpressionGrammar::GetReferencedGrammars()
         grammar2 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar3)
     {
-        grammar3 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar3 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar3);
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    if (!grammar4)
+    {
+        grammar4 = cminor::parser::TypeExprGrammar::Create(pd);
+    }
+    AddGrammarReference(grammar4);
 }
 
 void ExpressionGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("Literal", this, "LiteralGrammar.Literal"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRule(new ExpressionRule("Expression", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::NonterminalParser("Disjunction", "Disjunction", 1))));
@@ -2314,14 +2345,22 @@ void ExpressionGrammar::CreateRules()
                     new Cm::Parsing::NonterminalParser("Primary", "Primary", 1)),
                 new Cm::Parsing::KleeneStarParser(
                     new Cm::Parsing::AlternativeParser(
-                        new Cm::Parsing::SequenceParser(
-                            new Cm::Parsing::CharParser('.'),
-                            new Cm::Parsing::ActionParser("A2",
-                                new Cm::Parsing::NonterminalParser("dotMemberId", "Identifier", 0))),
-                        new Cm::Parsing::ActionParser("A3",
+                        new Cm::Parsing::AlternativeParser(
+                            new Cm::Parsing::SequenceParser(
+                                new Cm::Parsing::CharParser('.'),
+                                new Cm::Parsing::ActionParser("A2",
+                                    new Cm::Parsing::NonterminalParser("dotMemberId", "Identifier", 0))),
+                            new Cm::Parsing::ActionParser("A3",
+                                new Cm::Parsing::SequenceParser(
+                                    new Cm::Parsing::SequenceParser(
+                                        new Cm::Parsing::CharParser('['),
+                                        new Cm::Parsing::NonterminalParser("index", "Expression", 1)),
+                                    new Cm::Parsing::ExpectationParser(
+                                        new Cm::Parsing::CharParser(']'))))),
+                        new Cm::Parsing::ActionParser("A4",
                             new Cm::Parsing::SequenceParser(
                                 new Cm::Parsing::SequenceParser(
-                                    new Cm::Parsing::ActionParser("A4",
+                                    new Cm::Parsing::ActionParser("A5",
                                         new Cm::Parsing::CharParser('(')),
                                     new Cm::Parsing::NonterminalParser("ArgumentList", "ArgumentList", 2)),
                                 new Cm::Parsing::ExpectationParser(
@@ -2347,9 +2386,9 @@ void ExpressionGrammar::CreateRules()
                             new Cm::Parsing::ActionParser("A3",
                                 new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
                         new Cm::Parsing::ActionParser("A4",
-                            new Cm::Parsing::KeywordParser("this"))),
+                            new Cm::Parsing::KeywordParser("this", "identifier"))),
                     new Cm::Parsing::ActionParser("A5",
-                        new Cm::Parsing::KeywordParser("base"))),
+                        new Cm::Parsing::KeywordParser("base", "identifier"))),
                 new Cm::Parsing::ActionParser("A6",
                     new Cm::Parsing::NonterminalParser("CastExpr", "CastExpr", 1))),
             new Cm::Parsing::ActionParser("A7",
@@ -2378,18 +2417,17 @@ void ExpressionGrammar::CreateRules()
     AddRule(new NewExprRule("NewExpr", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::KeywordParser("new"),
+                new Cm::Parsing::ActionParser("A0",
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)))),
+            new Cm::Parsing::OptionalParser(
+                new Cm::Parsing::ActionParser("A1",
                     new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::KeywordParser("new"),
-                        new Cm::Parsing::ExpectationParser(
-                            new Cm::Parsing::NonterminalParser("TypeExpr", "TypeExpr", 1))),
-                    new Cm::Parsing::ActionParser("A0",
-                        new Cm::Parsing::ExpectationParser(
-                            new Cm::Parsing::CharParser('(')))),
-                new Cm::Parsing::NonterminalParser("ArgumentList", "ArgumentList", 2)),
-            new Cm::Parsing::ActionParser("A1",
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::CharParser(')'))))));
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::CharParser('('),
+                            new Cm::Parsing::NonterminalParser("ArgumentList", "ArgumentList", 2)),
+                        new Cm::Parsing::CharParser(')')))))));
     AddRule(new ArgumentListRule("ArgumentList", GetScope(),
         new Cm::Parsing::OptionalParser(
             new Cm::Parsing::NonterminalParser("ExpressionList", "ExpressionList", 2))));

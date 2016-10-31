@@ -6,6 +6,7 @@
 #ifndef CMINOR_SYMBOLS_SYMBOL_INCLUDED
 #define CMINOR_SYMBOLS_SYMBOL_INCLUDED
 #include <cminor/machine/Constant.hpp>
+#include <cminor/machine/Type.hpp>
 #include <cminor/ast/Function.hpp>
 #include <cminor/ast/Class.hpp>
 #include <cminor/ast/Statement.hpp>
@@ -36,7 +37,7 @@ enum class SymbolType : uint8_t
 {
     boolTypeSymbol, charTypeSymbol, voidTypeSymbol, sbyteTypeSymbol, byteTypeSymbol, shortTypeSymbol, ushortTypeSymbol, intTypeSymbol, uintTypeSymbol, longTypeSymbol, ulongTypeSymbol,
     floatTypeSymbol, doubleTypeSymbol, nullReferenceTypeSymbol,
-    classTypeSymbol, objectTypeSymbol, stringTypeSymbol, functionSymbol, staticConstructorSymbol, constructorSymbol, memberFunctionSymbol, functionGroupSymbol, parameterSymbol, 
+    classTypeSymbol, arrayTypeSymbol, functionSymbol, staticConstructorSymbol, constructorSymbol, arraySizeConstructorSymbol, memberFunctionSymbol, functionGroupSymbol, parameterSymbol,
     localVariableSymbol, memberVariableSymbol, constantSymbol, namespaceSymbol,
     declarationBlock, basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, 
     objectDefaultInit, objectCopyInit, objectNullInit, objectAssignment, classTypeConversion,
@@ -252,6 +253,7 @@ public:
     virtual bool IsUnsignedType() const { return false; }
     virtual ValueType GetValueType() const { return ValueType::none; }
     virtual bool IsAbstract() const { return false; }
+    virtual Type* GetMachineType() const = 0;
 };
 
 class BasicTypeSymbol : public TypeSymbol
@@ -260,6 +262,12 @@ public:
     BasicTypeSymbol(const Span& span_, Constant name_);
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
     std::string TypeString() const override { return "basic type"; }
+    Type* GetMachineType() const override { return machineType.get(); }
+    void SetMachineType(BasicType* machineType_);
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
+private:
+    std::unique_ptr<BasicType> machineType;
 };
 
 class BoolTypeSymbol : public BasicTypeSymbol
@@ -429,10 +437,14 @@ public:
     bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const;
     ClassTypeSymbol* BaseClass() const { return baseClass; }
     void SetBaseClass(ClassTypeSymbol* baseClass_) { baseClass = baseClass_; }
+    void SetObjectType(ObjectType* objectType_) { objectType.reset(objectType_); }
     ObjectType* GetObjectType() const { return objectType.get(); }
+    ClassData* GetClassData() const { return classData.get(); }
+    Type* GetMachineType() const override { return objectType.get(); }
     const std::vector<MemberVariableSymbol*>& MemberVariables() const { return memberVariables; }
     const std::vector<MemberVariableSymbol*>& StaticMemberVariables() const { return staticMemberVariables; }
     const std::vector<MemberFunctionSymbol*>& MemberFunctions() const { return memberFunctions; }
+    const std::vector<ConstructorSymbol*>& Constructors() const { return constructors; }
     ConstructorSymbol* DefaultConstructorSymbol() const { return defaultConstructorSymbol; }
     bool IsAbstract() const override { return GetFlag(ClassTypeSymbolFlags::abstract_); }
     void SetAbstract() { SetFlag(ClassTypeSymbolFlags::abstract_); }
@@ -457,6 +469,7 @@ private:
     std::vector<MemberVariableSymbol*> memberVariables;
     std::vector<MemberVariableSymbol*> staticMemberVariables;
     std::vector<MemberFunctionSymbol*> memberFunctions;
+    std::vector<ConstructorSymbol*> constructors;
     ConstructorSymbol* defaultConstructorSymbol;
     int level;
     int priority;
@@ -473,22 +486,19 @@ private:
     void InitVmt(std::vector<MemberFunctionSymbol*>& vmt);
 };
 
-class ObjectTypeSymbol : public ClassTypeSymbol
+class ArrayTypeSymbol : public ClassTypeSymbol
 {
 public:
-    ObjectTypeSymbol(const Span& span_, Constant name_);
-    SymbolType GetSymbolType() const override { return SymbolType::objectTypeSymbol; };
-    std::string TypeString() const override { return "object"; }
-};
-
-class StringTypeSymbol : public ClassTypeSymbol
-{
-public:
-    StringTypeSymbol(const Span& span_, Constant name_);
-    SymbolType GetSymbolType() const override { return SymbolType::stringTypeSymbol; }
-    std::string TypeString() const override { return "string"; }
+    ArrayTypeSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::arrayTypeSymbol; }
+    std::string TypeString() const override { return "array"; }
+    void SetElementType(TypeSymbol* elementType_) { elementType = elementType_; }
+    TypeSymbol* ElementType() const { return elementType; }
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
+    void EmplaceType(TypeSymbol* type, int index);
+private:
+    TypeSymbol* elementType;
 };
 
 } } // namespace cminor::symbols

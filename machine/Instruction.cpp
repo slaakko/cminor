@@ -161,7 +161,7 @@ std::unique_ptr<Instruction> InstructionTypeGroup::CreateInst(const std::string&
     throw std::runtime_error("instruction for type '" + typeName + "' not found in instruction group '" + instGroupName + "'");
 }
 
-LogicalNotInst::LogicalNotInst() : Instruction("not", "not", "bool")
+LogicalNotInst::LogicalNotInst() : Instruction("not", "not", "System.Boolean")
 {
 }
 
@@ -223,7 +223,7 @@ void LoadFieldInst::Execute(Frame& frame)
     IntegralValue operand = frame.OpStack().Pop();
     Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
     ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.GetObjectPool().GetField(reference, Index());
+    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, Index());
     frame.OpStack().Push(fieldValue);
 }
 
@@ -237,7 +237,36 @@ void StoreFieldInst::Execute(Frame& frame)
     IntegralValue operand = frame.OpStack().Pop();
     Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
     ObjectReference reference = ObjectReference(operand.Value());
-    frame.GetObjectPool().SetField(reference, Index(), fieldValue);
+    frame.GetManagedMemoryPool().SetField(reference, Index(), fieldValue);
+}
+
+LoadElemInst::LoadElemInst() : Instruction("loadarrayelem")
+{
+}
+
+void LoadElemInst::Execute(Frame& frame)
+{
+    IntegralValue index = frame.OpStack().Pop();
+    Assert(index.GetType() == ValueType::intType, "int expected");
+    IntegralValue arr = frame.OpStack().Pop();
+    Assert(arr.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference arrayReference(arr.Value());
+    frame.OpStack().Push(frame.GetManagedMemoryPool().GetArrayElement(arrayReference, index.AsInt()));
+}
+
+StoreElemInst::StoreElemInst() : Instruction("storearrayelem")
+{
+}
+
+void StoreElemInst::Execute(Frame& frame)
+{
+    IntegralValue index = frame.OpStack().Pop();
+    Assert(index.GetType() == ValueType::intType, "int expected");
+    IntegralValue arr = frame.OpStack().Pop();
+    Assert(arr.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference arrayReference(arr.Value());
+    IntegralValue elementValue = frame.OpStack().Pop();
+    frame.GetManagedMemoryPool().SetArrayElement(arrayReference, index.AsInt(), elementValue);
 }
 
 LoadConstantInst::LoadConstantInst() : IndexParamInst("loadconstant")
@@ -452,7 +481,7 @@ void VirtualCallInst::Execute(Frame& frame)
     IntegralValue receiverValue = frame.OpStack().GetValue(numArgs);
     Assert(receiverValue.GetType() == ValueType::objectReference, "object reference expected");
     ObjectReference receiver(receiverValue.Value());
-    IntegralValue classDataField = frame.GetObjectPool().GetField(receiver, 0);
+    IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(receiver, 0);
     Assert(classDataField.GetType() == ValueType::classDataPtr, "class data field expected");
     ClassData* classData = classDataField.AsClassDataPtr();
     if (classData)
@@ -534,14 +563,14 @@ void SetClassDataInst::Execute(Frame& frame)
     IntegralValue value = frame.OpStack().Pop();
     Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
     ObjectReference objectReference(value.Value());
-    IntegralValue classDataFieldValue = frame.GetObjectPool().GetField(objectReference, 0);
+    IntegralValue classDataFieldValue = frame.GetManagedMemoryPool().GetField(objectReference, 0);
     Assert(classDataFieldValue.GetType() == ValueType::classDataPtr, "class data pointer expected");
     if (!classDataFieldValue.AsClassDataPtr())
     {
         Assert(classData.Value().GetType() == ValueType::classDataPtr, "class data pointer expected");
         ClassData* cd = classData.Value().AsClassDataPtr();
         classDataFieldValue = IntegralValue(cd);
-        frame.GetObjectPool().SetField(objectReference, 0, classDataFieldValue);
+        frame.GetManagedMemoryPool().SetField(objectReference, 0, classDataFieldValue);
     }
 }
 
@@ -557,24 +586,24 @@ TypeInstruction::TypeInstruction(const std::string& name_) : Instruction(name_)
 {
 }
 
-void TypeInstruction::SetClassName(Constant fullClassName)
+void TypeInstruction::SetTypeName(Constant fullTypeName)
 {
-    Assert(fullClassName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
-    type = fullClassName;
+    Assert(fullTypeName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    type = fullTypeName;
 }
 
-StringPtr TypeInstruction::GetClassName() const
+StringPtr TypeInstruction::GetTypeName() const
 {
     Assert(type.Value().GetType() == ValueType::stringLiteral, "string literal expected");
     return StringPtr(type.Value().AsStringLiteral());
 }
 
-void TypeInstruction::SetType(ObjectType* typePtr)
+void TypeInstruction::SetType(Type* typePtr)
 {
     type.SetValue(IntegralValue(typePtr));
 }
 
-ObjectType* TypeInstruction::GetType()
+Type* TypeInstruction::GetType()
 {
     Assert(type.Value().GetType() == ValueType::typePtr, "type pointer expected");
     return type.Value().AsTypePtr();
@@ -584,7 +613,7 @@ void TypeInstruction::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
     ConstantId id = writer.GetConstantPool()->GetIdFor(type);
-    Assert(id != noConstantId, "id for create object inst not found");
+    Assert(id != noConstantId, "id for type inst not found");
     id.Write(writer);
 }
 
@@ -600,8 +629,8 @@ void TypeInstruction::Dump(CodeFormatter& formatter)
 {
     Instruction::Dump(formatter);
     Assert(type.Value().GetType() == ValueType::typePtr, "type pointer expected");
-    ObjectType* objectType = type.Value().AsTypePtr();
-    formatter.Write(" " + ToUtf8(objectType->Name().Value()) + " " + std::to_string(objectType->Id()));
+    Type* objectType = type.Value().AsTypePtr();
+    formatter.Write(" " + ToUtf8(objectType->Name().Value()));
 }
 
 CreateObjectInst::CreateObjectInst() : TypeInstruction("createo")
@@ -610,7 +639,10 @@ CreateObjectInst::CreateObjectInst() : TypeInstruction("createo")
 
 void CreateObjectInst::Execute(Frame& frame)
 {
-    ObjectReference objectReference = frame.GetObjectPool().CreateObject(frame.GetThread(), GetType());
+    Type* type = GetType();
+    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+    Assert(objectType, "object type expected");
+    ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
     frame.OpStack().Push(objectReference);
 }
 
@@ -623,7 +655,7 @@ void CopyObjectInst::Execute(Frame& frame)
     IntegralValue value = frame.OpStack().Pop();
     Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
     ObjectReference objectReference(value.Value());
-    ObjectReference copy = frame.GetObjectPool().CopyObject(objectReference);
+    ObjectReference copy = frame.GetManagedMemoryPool().CopyObject(objectReference);
     frame.OpStack().Push(copy);
 }
 
@@ -639,8 +671,8 @@ void StrLitToStringInst::Execute(Frame& frame)
     Assert(stringConstantId != noConstantId, "id for string constant not found");
     const char32_t* strLit = value.AsStringLiteral();
     uint64_t len = frame.GetConstantPool().GetStringLength(stringConstantId);
-    ObjectReference reference = frame.GetObjectPool().CreateStringFromLiteral(strLit, len);
-    frame.OpStack().Push(reference);
+    AllocationHandle handle = frame.GetManagedMemoryPool().CreateStringFromLiteral(strLit, len);
+    frame.OpStack().Push(handle);
 }
 
 LengthStringInst::LengthStringInst() : Instruction("lens")
@@ -652,7 +684,7 @@ void LengthStringInst::Execute(Frame& frame)
     IntegralValue value = frame.OpStack().Pop();
     Assert(value.GetType() == ValueType::objectReference, "object reference expected");
     ObjectReference str(value.Value());
-    int32_t len = frame.GetObjectPool().GetStringLength(str);
+    int32_t len = frame.GetManagedMemoryPool().GetStringLength(str);
     frame.OpStack().Push(IntegralValue(len, ValueType::intType));
 }
 
@@ -676,13 +708,15 @@ void UpCastInst::Execute(Frame& frame)
     ObjectReference objectReference(value.Value());
     if (objectReference.IsNull())
     {
-        frame.OpStack().Push(ObjectReference(0));
+        frame.OpStack().Push(AllocationHandle(0));
     }
     else
     {
-        ObjectType* objectType = GetType();
-        ObjectReference casted = frame.GetObjectPool().CopyObject(objectReference);
-        Object& castedObject = frame.GetObjectPool().GetObject(casted);
+        Type* type = GetType();
+        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+        Assert(objectType, "object type expected");
+        ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(objectReference);
+        Object& castedObject = frame.GetManagedMemoryPool().GetObject(casted);
         castedObject.SetType(objectType);
         frame.OpStack().Push(casted);
     }
@@ -699,51 +733,54 @@ void DownCastInst::Execute(Frame& frame)
     ObjectReference objectReference(value.Value());
     if (objectReference.IsNull())
     {
-        frame.OpStack().Push(ObjectReference(0));
+        frame.OpStack().Push(AllocationHandle(0));
     }
     else
     {
-        IntegralValue classDataField = frame.GetObjectPool().GetField(objectReference, 0);
+        IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(objectReference, 0);
         Assert(classDataField.GetType() == ValueType::classDataPtr, "class data pointer expected");
         ClassData* classData = classDataField.AsClassDataPtr();
         uint64_t sourceTypeId = classData->Type()->Id();
-        ObjectType* objectType = GetType();
+        Type* type = GetType();
+        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+        Assert(objectType, "object type expected");
         uint64_t targetTypeId = objectType->Id();
         if (sourceTypeId % targetTypeId != 0)
         {
             throw std::runtime_error("invalid cast");
         }
-        ObjectReference casted = frame.GetObjectPool().CopyObject(objectReference);
-        Object& castedObject = frame.GetObjectPool().GetObject(casted);
+        ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(objectReference);
+        Object& castedObject = frame.GetManagedMemoryPool().GetObject(casted);
         castedObject.SetType(objectType);
         frame.OpStack().Push(casted);
     }
 }
 
-CreateArrayInst::CreateArrayInst() : TypeInstruction("createa")
+AllocateArrayElementsInst::AllocateArrayElementsInst() : TypeInstruction("allocelems")
 {
 }
 
-void CreateArrayInst::Execute(Frame& frame)
+void AllocateArrayElementsInst::Execute(Frame& frame)
 {
-    IntegralValue value = frame.OpStack().Pop();
-    Assert(value.GetType() == ValueType::intType, "int expected");
-    ObjectType* type = GetType();
-    Assert(dynamic_cast<ArrayType*>(type) != nullptr, "array type expected");
-    ObjectReference objectReference = frame.GetObjectPool().CreateArray(frame.GetThread(), value.AsInt(), static_cast<ArrayType*>(type));
-    frame.OpStack().Push(objectReference);
+    IntegralValue length = frame.OpStack().Pop();
+    Assert(length.GetType() == ValueType::intType, "int expected");
+    IntegralValue arrayValue = frame.OpStack().Pop();
+    Assert(arrayValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference arr(arrayValue.Value());
+    Type* elementType = GetType();
+    frame.GetManagedMemoryPool().AllocateArrayElements(frame.GetThread(), arr, elementType, length.AsInt());
 }
 
-LengthArraryInst::LengthArraryInst() : Instruction("lena")
+LengthArrayInst::LengthArrayInst() : Instruction("lena")
 {
 }
 
-void LengthArraryInst::Execute(Frame& frame)
+void LengthArrayInst::Execute(Frame& frame)
 {
     IntegralValue value = frame.OpStack().Pop();
     Assert(value.GetType() == ValueType::objectReference, "object reference expected");
     ObjectReference arr(value.Value());
-    int32_t len = frame.GetObjectPool().GetArrayLength(arr);
+    int32_t len = frame.GetManagedMemoryPool().GetArrayLength(arr);
     frame.OpStack().Push(IntegralValue(len, ValueType::intType));
 }
 

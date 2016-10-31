@@ -20,9 +20,9 @@ class Reader;
 class Arena;
 class Function;
 class ClassData;
+class Type;
 class ObjectType;
-class ArrayType;
-class ObjectPool;
+class ManagedMemoryPool;
 
 enum class ArenaId : uint8_t
 {
@@ -32,7 +32,7 @@ enum class ArenaId : uint8_t
 enum class ValueType : uint8_t
 {
     none = 0, boolType = 1, sbyteType = 2, byteType = 3, shortType = 4, ushortType = 5, intType = 6, uintType = 7, longType = 8, ulongType = 9, floatType = 10, doubleType = 11, charType = 12,
-    memPtr = 'M', stringLiteral = 'S', objectReference = 'O', functionPtr = 'F', classDataPtr = 'C', typePtr = 'T'
+    memPtr = 'M', stringLiteral = 'S', allocationHandle = 'H', objectReference = 'O', functionPtr = 'F', classDataPtr = 'C', typePtr = 'T'
 };
 
 std::string ValueTypeStr(ValueType type);
@@ -46,7 +46,7 @@ public:
     IntegralValue(const char32_t* value_) : strValue(value_), type(ValueType::stringLiteral) {}
     IntegralValue(Function* value_) : funPtr(value_), type(ValueType::functionPtr) {}
     IntegralValue(ClassData* value_) : classDataPtr(value_), type(ValueType::classDataPtr) {}
-    IntegralValue(ObjectType* value_) : typePtr(value_), type(ValueType::typePtr) {}
+    IntegralValue(Type* value_) : typePtr(value_), type(ValueType::typePtr) {}
     uint64_t Value() const { return value; }
     ValueType GetType() const { return type; }
     bool AsBool() const { return static_cast<bool>(value); }
@@ -65,11 +65,11 @@ public:
     const char32_t* AsStringLiteral() const { return strValue; }
     Function* AsFunctionPtr() const { return funPtr; }
     ClassData* AsClassDataPtr() const { return classDataPtr; }
-    ObjectType* AsTypePtr() const { return typePtr; }
+    Type* AsTypePtr() const { return typePtr; }
     void Write(Writer& writer);
     void Read(Reader& reader);
 private:
-    union { uint64_t value; uint8_t* memPtr; const char32_t* strValue; Function* funPtr; ClassData* classDataPtr; ObjectType* typePtr;  };
+    union { uint64_t value; uint8_t* memPtr; const char32_t* strValue; Function* funPtr; ClassData* classDataPtr; Type* typePtr;  };
     ValueType type;
 };
 
@@ -86,12 +86,35 @@ struct IntegralValueHash
     }
 };
 
-class ObjectReference : public IntegralValue
+class AllocationHandle : public IntegralValue
 {
 public:
-    ObjectReference() : IntegralValue(0, ValueType::objectReference) {}
-    ObjectReference(uint64_t value_) : IntegralValue(value_, ValueType::objectReference) {}
+    AllocationHandle() : IntegralValue(0, ValueType::allocationHandle) {}
+    AllocationHandle(uint64_t value_, ValueType type_) : IntegralValue(value_, type_) {}
+    AllocationHandle(uint64_t value_) : IntegralValue(value_, ValueType::allocationHandle) {}
+};
+
+struct AllocationHandleHash
+{
+    size_t operator()(AllocationHandle handle) const { return static_cast<size_t>(handle.Value()); }
+};
+
+inline bool operator==(AllocationHandle left, AllocationHandle right)
+{
+    return left.Value() == right.Value();
+}
+
+class ObjectReference : public AllocationHandle
+{
+public:
+    ObjectReference() : AllocationHandle(0, ValueType::objectReference) {}
+    ObjectReference(uint64_t value_) : AllocationHandle(value_, ValueType::objectReference) {}
     bool IsNull() const { return Value() == 0; }
+};
+
+struct ObjectReferenceHash
+{
+    size_t operator()(AllocationHandle handle) const { return static_cast<size_t>(handle.Value()); }
 };
 
 inline bool operator==(ObjectReference left, ObjectReference right)
@@ -99,20 +122,16 @@ inline bool operator==(ObjectReference left, ObjectReference right)
     return left.Value() == right.Value();
 }
 
-struct ObjectReferenceHash
-{
-    size_t operator()(ObjectReference reference) const { return static_cast<size_t>(reference.Value()); }
-};
-
-class ObjectMemPtr
+class MemPtr
 {
 public:
-    ObjectMemPtr(uint8_t* value_) : value(value_) {}
-    ObjectMemPtr(const char32_t* strValue_) : strValue(strValue_) {}
-    uint8_t* Value() const { return value; }
+    MemPtr() : value(nullptr) {}
+    MemPtr(void* value_) : value(value_) {}
+    MemPtr(const char32_t* strValue_) : strValue(strValue_) {}
+    void* Value() const { return value; }
     const char32_t* StrValue() const { return strValue; }
 private:
-    union { uint8_t* value; const char32_t* strValue; };
+    union { void* value; const char32_t* strValue; };
 };
 
 uint64_t ValueSize(ValueType type);
@@ -138,18 +157,29 @@ inline ObjectFlags operator~(ObjectFlags flag)
     return ObjectFlags(~uint8_t(flag));
 }
 
-class Object
+class ManagedAllocation
 {
 public:
-    Object(ObjectReference reference_, ArenaId arenaId_, ObjectMemPtr memPtr_, ObjectType* type_, uint64_t size_);
-    ObjectReference Reference() const { return reference; }
+    ManagedAllocation(ArenaId arenaId_, MemPtr memPtr_, uint64_t size_);
+    virtual ~ManagedAllocation();
     ArenaId GetArenaId() const { return arenaId; }
     void SetArenaId(ArenaId arenaId_) { arenaId = arenaId_; }
-    ObjectMemPtr MemPtr() const { return memPtr; }
-    void SetMemPtr(ObjectMemPtr newMemPtr) { memPtr = newMemPtr; }
+    MemPtr GetMemPtr() const { return memPtr; }
+    void SetMemPtr(MemPtr newMemPtr) { memPtr = newMemPtr; }
     uint64_t Size() const { return size; }
     void SetSize(uint64_t size_) { size = size_; }
-    ObjectType* Type() const { return type; }
+private:
+    ArenaId arenaId;
+    MemPtr memPtr;
+    uint64_t size;
+};
+
+class Object : public ManagedAllocation
+{
+public:
+    Object(ObjectReference reference_, ArenaId arenaId_, MemPtr memPtr_, ObjectType* type_, uint64_t size_);
+    ObjectReference Reference() const { return reference; }
+    ObjectType* GetType() const { return type; }
     void SetType(ObjectType* type_) { type = type_; }
     IntegralValue GetField(int index) const;
     void SetField(IntegralValue fieldValue, int index);
@@ -157,12 +187,9 @@ public:
     bool IsLive() const { return GetFlag(ObjectFlags::live); }
     void SetLive() { SetFlag(ObjectFlags::live); }
     void ResetLive() { ResetFlag(ObjectFlags::live); }
-    void MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ObjectPool& objectBool);
+    void MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ManagedMemoryPool& managedMemoryPool);
 private:
     ObjectReference reference;
-    ArenaId arenaId;
-    ObjectMemPtr memPtr;
-    uint64_t size;
     ObjectType* type;
     ObjectFlags flags;
     bool GetFlag(ObjectFlags flag) const { return (flags & flag) != ObjectFlags::none; }
@@ -170,26 +197,43 @@ private:
     void ResetFlag(ObjectFlags flag) { flags = flags & (~flag); }
 };
 
-class ObjectPool
+class ArrayElements : public ManagedAllocation
 {
 public:
-    ObjectPool(Machine& machine_);
+    ArrayElements(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, Type* elementType_, int32_t numElements_, uint64_t size_);
+    AllocationHandle Handle() const { return handle; }
+    Type* GetElementType() const { return elementType; }
+    IntegralValue GetElement(int32_t index) const;
+    void SetElement(IntegralValue elementValue, int32_t index);
+    int32_t NumElements() const { return numElements; }
+private:
+    AllocationHandle handle;
+    Type* elementType;
+    int32_t numElements;
+};
+
+class ManagedMemoryPool
+{
+public:
+    ManagedMemoryPool(Machine& machine_);
     ObjectReference CreateObject(Thread& thread, ObjectType* type);
     ObjectReference CopyObject(ObjectReference from);
     void DestroyObject(ObjectReference reference);
     Object& GetObject(ObjectReference reference);
-    ObjectReference CreateStringFromLiteral(const char32_t* strLit, uint64_t len);
-    int32_t GetStringLength(ObjectReference str);
-    ObjectReference CreateArray(Thread& thread, int32_t length, ArrayType* type);
-    int32_t GetArrayLength(ObjectReference arr);
     IntegralValue GetField(ObjectReference reference, int32_t fieldIndex);
     void SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue);
-    ObjectMemPtr GetObjectMemPtr(ObjectReference reference);
+    ObjectReference CreateStringFromLiteral(const char32_t* strLit, uint64_t len);
+    int32_t GetStringLength(ObjectReference str);
+    void AllocateArrayElements(Thread& thread, ObjectReference arr, Type* elementType, int32_t length);
+    int32_t GetArrayLength(ObjectReference arr);
+    IntegralValue GetArrayElement(ObjectReference reference, int32_t index);
+    void SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue);
+    MemPtr GetMemPtr(ObjectReference reference);
     void ResetObjectsLiveFlag();
     void MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena);
 private:
     Machine& machine;
-    std::unordered_map<ObjectReference, Object, ObjectReferenceHash> objects;
+    std::unordered_map<AllocationHandle, std::unique_ptr<ManagedAllocation>, AllocationHandleHash> allocations;
     std::atomic_uint64_t nextReferenceValue;
 };
 

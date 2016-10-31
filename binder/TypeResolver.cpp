@@ -5,6 +5,8 @@
 
 #include <cminor/binder/TypeResolver.hpp>
 #include <cminor/binder/BoundCompileUnit.hpp>
+#include <cminor/binder/ExpressionBinder.hpp>
+#include <cminor/ast/Expression.hpp>
 #include <cminor/ast/Visitor.hpp>
 
 namespace cminor { namespace binder {
@@ -15,6 +17,7 @@ public:
     NamespaceTypeSymbol(NamespaceSymbol* ns_) : TypeSymbol(ns_->GetSpan(), ns_->NameConstant()), ns(ns_) {}
     SymbolType GetSymbolType() const override { return SymbolType::namespaceSymbol; }
     NamespaceSymbol* Ns() const { return ns; }
+    Type* GetMachineType() const override { Assert(false, "cannot get machine type from namespace type");  return nullptr; }
 private:
     NamespaceSymbol* ns;
 };
@@ -40,6 +43,8 @@ public:
     void Visit(VoidNode& voidNode) override;
     void Visit(ObjectNode& objectNode) override;
     void Visit(IdentifierNode& identifierNode) override;
+    void Visit(DotNode& dotNode) override;
+    void Visit(ArrayNode& arrayNode) override;
 private:
     BoundCompileUnit& boundCompileUnit;
     ContainerScope* containerScope;
@@ -54,62 +59,62 @@ TypeResolverVisitor::TypeResolverVisitor(BoundCompileUnit& boundCompileUnit_, Co
 
 void TypeResolverVisitor::Visit(BoolNode& boolNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"bool");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Boolean");
 }
 
 void TypeResolverVisitor::Visit(SByteNode& sbyteNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"sbyte");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int8");
 }
 
 void TypeResolverVisitor::Visit(ByteNode& byteNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"byte");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt8");
 }
 
 void TypeResolverVisitor::Visit(ShortNode& shortNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"short");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int16");
 }
 
 void TypeResolverVisitor::Visit(UShortNode& ushortNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"ushort");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt16");
 }
 
 void TypeResolverVisitor::Visit(IntNode& intNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"int");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int32");
 }
 
 void TypeResolverVisitor::Visit(UIntNode& uintNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"uint");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt32");
 }
 
 void TypeResolverVisitor::Visit(LongNode& longNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"long");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int64");
 }
 
 void TypeResolverVisitor::Visit(ULongNode& ulongNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"ulong");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt64");
 }
 
 void TypeResolverVisitor::Visit(FloatNode& floatNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"float");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Float");
 }
 
 void TypeResolverVisitor::Visit(DoubleNode& doubleNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"double");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Double");
 }
 
 void TypeResolverVisitor::Visit(CharNode& charNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"char");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Char");
 }
 
 void TypeResolverVisitor::Visit(StringNode& stringNode)
@@ -119,7 +124,7 @@ void TypeResolverVisitor::Visit(StringNode& stringNode)
 
 void TypeResolverVisitor::Visit(VoidNode& voidNode)
 {
-    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"void");
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Void");
 }
 
 void TypeResolverVisitor::Visit(ObjectNode& objectNode)
@@ -167,6 +172,40 @@ void TypeResolverVisitor::Visit(IdentifierNode& identifierNode)
     {
         throw Exception("type symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());;
     }
+}
+
+void TypeResolverVisitor::Visit(DotNode& dotNode)
+{
+    Scope* scope = nullptr;
+    if (NamespaceTypeSymbol* nsType = dynamic_cast<NamespaceTypeSymbol*>(type))
+    {
+        scope = nsType->Ns()->GetContainerScope();
+    }
+    else if (ClassTypeSymbol* classType = dynamic_cast<ClassTypeSymbol*>(type))
+    {
+        scope = type->GetContainerScope();
+    }
+    else
+    {
+        throw Exception("symbol '" + ToUtf8(type->FullName()) + "' does not denote a class or namespace", dotNode.GetSpan(), type->GetSpan());
+    }
+    utf32_string s = ToUtf32(dotNode.MemberStr());
+    Symbol* symbol = scope->Lookup(StringPtr(s.c_str()), ScopeLookup::this_and_base);
+    if (symbol)
+    {
+        ResolveSymbol(dotNode, symbol);
+    }
+    else
+    {
+        throw Exception("type symbol '" + dotNode.MemberStr() + "' not found", dotNode.GetSpan());
+    }
+}
+
+void TypeResolverVisitor::Visit(ArrayNode& arrayNode)
+{
+    arrayNode.Child()->Accept(*this);
+    TypeSymbol* elementType = type;
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().CreateArrayType(arrayNode, elementType);
 }
 
 TypeSymbol* ResolveType(BoundCompileUnit& boundCompileUnit, ContainerScope* containerScope, Node* typeExprNode)

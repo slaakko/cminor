@@ -10,6 +10,7 @@
 #include <cminor/binder/TypeBinderVisitor.hpp>
 #include <cminor/binder/StatementBinderVisitor.hpp>
 #include <cminor/binder/BoundCompileUnit.hpp>
+#include <cminor/binder/BoundFunction.hpp>
 #include <cminor/emitter/Emitter.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/Assembly.hpp>
@@ -46,6 +47,10 @@ std::vector<std::unique_ptr<CompileUnitNode>> ParseSources(const std::vector<std
         MappedInputFile sourceFile(sourceFilePath);
         int fileIndex = FileRegistry::Instance()->RegisterParsedFile(sourceFilePath);
         ParsingContext parsingContext;
+        if (GetGlobalFlag(GlobalFlags::debugParsing))
+        {
+            compileUnitGrammar->SetLog(&std::cout);
+        }
         std::unique_ptr<CompileUnitNode> compileUnit(compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), fileIndex, sourceFilePath, &parsingContext));
         compileUnits.push_back(std::move(compileUnit));
     }
@@ -105,6 +110,25 @@ void CopyAssemblyFile(const std::string& from, const std::string& to, std::unord
     }
 }
 
+void GenerateCodeForCreatedClasses(Assembly& assembly)
+{
+    BoundCompileUnit synthesizedCompileUnit(assembly, nullptr);
+    for (ClassTypeSymbol* classType : assembly.GetSymbolTable().CreatedClasses())
+    {
+        for (ConstructorSymbol* ctor : classType->Constructors())
+        {
+            std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(ctor));
+            synthesizedCompileUnit.AddBoundNode(std::move(boundFunction));
+        }
+        for (MemberFunctionSymbol* memFun : classType->MemberFunctions())
+        {
+            std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(memFun));
+            synthesizedCompileUnit.AddBoundNode(std::move(boundFunction));
+        }
+    }
+    GenerateCode(synthesizedCompileUnit, assembly.GetMachine());
+}
+
 void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
 {
     std::string config = GetConfig();
@@ -138,6 +162,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
         GenerateCode(*boundCompileUnit, machine);
         boundCompileUnit.reset();
     }
+    GenerateCodeForCreatedClasses(assembly);
     boost::filesystem::path obp(assembly.FilePath());
     obp.remove_filename();
     boost::filesystem::create_directories(obp);

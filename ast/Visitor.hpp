@@ -79,6 +79,8 @@ class ComplementNode;
 class IsNode;
 class AsNode;
 class DotNode;
+class ArrayNode;
+class IndexingNode;
 class InvokeNode;
 class CastNode;
 class NewNode;
@@ -175,6 +177,8 @@ public:
     virtual void Visit(IsNode& isNode) {}
     virtual void Visit(AsNode& asNode) {}
     virtual void Visit(DotNode& dotNode) {}
+    virtual void Visit(ArrayNode& arrayNode) {}
+    virtual void Visit(IndexingNode& indexingNode) {}
     virtual void Visit(InvokeNode& invokeNode) {}
     virtual void Visit(CastNode& castNode) {}
     virtual void Visit(NewNode& newNode) {}

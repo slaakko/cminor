@@ -136,7 +136,6 @@ void StatementBinderVisitor::Visit(ClassNode& classNode)
     {
         defaultConstructorSymbol->SetBound();
         std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(defaultConstructorSymbol));
-        boundFunction->SetBody(std::unique_ptr<BoundCompoundStatement>(new BoundCompoundStatement(boundCompileUnit.GetAssembly())));
         boundClass->AddMember(std::move(boundFunction));
     }
     boundCompileUnit.AddBoundNode(std::move(currentClass));
@@ -162,10 +161,6 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
         compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
         Assert(compoundStatement, "compound statement expected");
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
-    }
-    else
-    {
-        function->SetBody(std::unique_ptr<BoundCompoundStatement>(new BoundCompoundStatement(boundCompileUnit.GetAssembly())));
     }
     if (constructorNode.Initializer())
     {
@@ -249,10 +244,6 @@ void StatementBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         Assert(compoundStatement, "compound statement expected");
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
     }
-    else
-    {
-        function->SetBody(std::unique_ptr<BoundCompoundStatement>(new BoundCompoundStatement(boundCompileUnit.GetAssembly())));
-    }
     CheckFunctionReturnPaths(memberFunctionSymbol, memberFunctionNode);
     boundClass->AddMember(std::move(boundFunction));
     containerScope = prevContainerScope;
@@ -275,10 +266,6 @@ void StatementBinderVisitor::Visit(FunctionNode& functionNode)
         BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
         Assert(compoundStatement, "compound statement expected");
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
-    }
-    else
-    {
-        function->SetBody(std::unique_ptr<BoundCompoundStatement>(new BoundCompoundStatement(boundCompileUnit.GetAssembly())));
     }
     CheckFunctionReturnPaths(functionSymbol, functionNode);
     boundCompileUnit.AddBoundNode(std::move(boundFunction));

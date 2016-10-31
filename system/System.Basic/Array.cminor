@@ -1,0 +1,15 @@
+namespace System
+{
+    public class Array
+    {
+        public Array(int length)
+        {
+            this.length = length;
+        }
+        public int Length()
+        {
+            return length;
+        }
+        private int length;
+    }
+}

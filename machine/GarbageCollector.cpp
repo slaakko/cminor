@@ -112,11 +112,11 @@ void GarbageCollector::DoCollectGarbage()
 
 void GarbageCollector::DoGarbageCollectArena(ArenaId arenaId)
 {
-    machine.GetObjectPool().ResetObjectsLiveFlag();
+    machine.GetManagedMemoryPool().ResetObjectsLiveFlag();
     MarkLiveObjects();
     if (arenaId == ArenaId::gen1Arena)
     {
-        machine.GetObjectPool().MoveLiveObjectsToArena(arenaId, machine.Gen2Arena());
+        machine.GetManagedMemoryPool().MoveLiveObjectsToArena(arenaId, machine.Gen2Arena());
         machine.Gen1Arena().Clear();
     }
     else
@@ -125,24 +125,26 @@ void GarbageCollector::DoGarbageCollectArena(ArenaId arenaId)
     }
 }
 
-inline void GarbageCollector::MarkLiveObjects(IntegralValue value, std::unordered_set<ObjectReference, ObjectReferenceHash>& checked)
+inline void GarbageCollector::MarkLiveObjects(IntegralValue value, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked)
 {
+/*
     if (value.GetType() == ValueType::objectReference)
     {
         ObjectReference objectRef(value.Value());
         if (!objectRef.IsNull() && checked.find(objectRef) == checked.cend())
         {
             checked.insert(objectRef);
-            Object& object = machine.GetObjectPool().GetObject(objectRef);
+            Object& object = machine.GetManagedMemoryPool().GetObject(objectRef);
             object.SetLive();
-            object.MarkLiveObjects(checked, machine.GetObjectPool());
+            object.MarkLiveObjects(checked, machine.GetManagedMemoryPool());
         }
     }
+    */
 }
 
 void GarbageCollector::MarkLiveObjects()
 {
-    std::unordered_set<ObjectReference, ObjectReferenceHash> checked;
+    std::unordered_set<AllocationHandle, AllocationHandleHash> checked;
     for (const std::unique_ptr<Thread>& thread : machine.Threads())
     {
         for (const Frame& frame : thread->Frames())

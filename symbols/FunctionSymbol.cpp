@@ -440,6 +440,75 @@ bool ConstructorSymbol::IsDefaultConstructorSymbol() const
     return Parameters().size() == 1;
 }
 
+bool ConstructorSymbol::IsIntConstructorSymbol() const
+{
+    return Parameters().size() == 2 && Parameters()[1]->GetType() == GetAssembly()->GetSymbolTable().GetType(U"System.Int32");
+}
+
+ArraySizeConstructorSymbol::ArraySizeConstructorSymbol(const Span& span_, Constant name_) : ConstructorSymbol(span_, name_)
+{
+}
+
+void ArraySizeConstructorSymbol::CreateMachineFunction()
+{
+    SetBaseConstructorCallGenerated();
+
+    ConstructorSymbol::CreateMachineFunction();
+
+    ClassTypeSymbol* containingClass = ContainingClass();;
+    Assert(containingClass, "containing class not found");
+    Assert(containingClass->BaseClass(), "base class expected");
+    bool intConstructorFound = false;
+    for (ConstructorSymbol* constructorSymbol : containingClass->BaseClass()->Constructors())
+    {
+        if (constructorSymbol->IsIntConstructorSymbol())
+        {
+            std::unique_ptr<Instruction> loadArrayLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
+            LoadLocalInst* loadArrayLocalInst = dynamic_cast<LoadLocalInst*>(loadArrayLocal.get());
+            Assert(loadArrayLocalInst, "load local inst expected");
+            loadArrayLocalInst->SetIndex(0);
+            MachineFunction()->AddInst(std::move(loadArrayLocal));
+
+            std::unique_ptr<Instruction> loadSizeLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
+            LoadLocalInst* loadSizeLocalInst = dynamic_cast<LoadLocalInst*>(loadSizeLocal.get());
+            Assert(loadSizeLocalInst, "load local inst expected");
+            loadSizeLocalInst->SetIndex(1);
+            MachineFunction()->AddInst(std::move(loadSizeLocal));
+
+            std::vector<GenObject*> objects;
+            constructorSymbol->GenerateCall(GetAssembly()->GetMachine(), *GetAssembly(), *MachineFunction(), objects);
+            intConstructorFound = true;
+            break;
+        }
+    }
+    Assert(intConstructorFound, "Array class has no constructor taking an int");
+
+    std::unique_ptr<Instruction> loadArrayLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
+    LoadLocalInst* loadArrayLocalInst = dynamic_cast<LoadLocalInst*>(loadArrayLocal.get());
+    Assert(loadArrayLocalInst, "load local inst expected");
+    loadArrayLocalInst->SetIndex(0);
+    MachineFunction()->AddInst(std::move(loadArrayLocal));
+
+    std::unique_ptr<Instruction> loadSizeLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
+    LoadLocalInst* loadSizeLocalInst = dynamic_cast<LoadLocalInst*>(loadSizeLocal.get());
+    Assert(loadSizeLocalInst, "load local inst expected");
+    loadSizeLocalInst->SetIndex(1);
+    MachineFunction()->AddInst(std::move(loadSizeLocal));
+
+    std::unique_ptr<Instruction> allocElems = GetAssembly()->GetMachine().CreateInst("allocelems");
+    AllocateArrayElementsInst* allocElemsInst = dynamic_cast<AllocateArrayElementsInst*>(allocElems.get());
+
+    TypeSymbol* type = Parameters()[0]->GetType();
+    ArrayTypeSymbol* arrayType = dynamic_cast<ArrayTypeSymbol*>(type);
+    Assert(arrayType, "array type expected");
+    TypeSymbol* elementType = arrayType->ElementType();
+    utf32_string elementTypeName = elementType->FullName();
+    ConstantPool& constantPool = GetAssembly()->GetConstantPool();
+    Constant elementTypeNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(elementTypeName.c_str())));
+    allocElemsInst->SetTypeName(elementTypeNameConstant);
+    MachineFunction()->AddInst(std::move(allocElems));
+}
+
 std::string MemberFunctionSymbolFlagStr(MemberFunctionSymbolFlags flags)
 {
     std::string s;
@@ -570,7 +639,7 @@ void ClassTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Fun
     utf32_string targetTypeClassName = targetType->FullName();
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant targetTypeClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(targetTypeClassName.c_str())));
-    typeInstruction->SetClassName(targetTypeClassNameConstant);
+    typeInstruction->SetTypeName(targetTypeClassNameConstant);
     function.AddInst(std::move(inst));
 }
 

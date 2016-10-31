@@ -15,7 +15,6 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/machine/Util.hpp>
-#include <cminor/machine/Type.hpp>
 #include <boost/filesystem.hpp>
 
 namespace cminor { namespace symbols {
@@ -889,60 +888,93 @@ BasicTypeSymbol::BasicTypeSymbol(const Span& span_, Constant name_) : TypeSymbol
 {
 }
 
+void BasicTypeSymbol::SetMachineType(BasicType* machineType_)
+{
+    machineType.reset(machineType_);
+    machineType->SetNameConstant(NameConstant());
+}
+
+void BasicTypeSymbol::Write(SymbolWriter& writer)
+{
+    TypeSymbol::Write(writer);
+    machineType->Write(writer.AsMachineWriter());
+}
+
+void BasicTypeSymbol::Read(SymbolReader& reader)
+{
+    TypeSymbol::Read(reader);
+    machineType->Read(reader);
+    TypeTable::Instance().SetType(machineType.get());
+}
+
 BoolTypeSymbol::BoolTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new Bool());
 }
 
 CharTypeSymbol::CharTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new Char());
 }
 
 VoidTypeSymbol::VoidTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new Void());
 }
 
 SByteTypeSymbol::SByteTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new SByte());
 }
 
 ByteTypeSymbol::ByteTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new Byte());
 }
 
 ShortTypeSymbol::ShortTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new Short());
 }
 
 UShortTypeSymbol::UShortTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new UShort());
 }
 
 IntTypeSymbol::IntTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new Int());
 }
 
 UIntTypeSymbol::UIntTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new UInt());
 }
 
 LongTypeSymbol::LongTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new Long());
 }
 
 ULongTypeSymbol::ULongTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new ULong());
 }
 
 FloatTypeSymbol::FloatTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new Float());
 }
 
 DoubleTypeSymbol::DoubleTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new Double());
 }
 
 NullReferenceTypeSymbol::NullReferenceTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
 {
+    SetMachineType(new Null());
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), baseClass(nullptr), objectType(new ObjectType()), classData(new ClassData(objectType.get())), 
@@ -979,7 +1011,7 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
     }
     Assert(objectType, "object type not set");
     objectType->Read(reader);
-    ObjectTypeTable::Instance().SetObjectType(objectType.get());
+    TypeTable::Instance().SetType(objectType.get());
     classData->Read(reader);
     ClassDataTable::Instance().SetClassData(classData.get());
     flags = ClassTypeSymbolFlags(reader.GetByte());
@@ -1033,6 +1065,7 @@ void ClassTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
     }
     else if (ConstructorSymbol* constructorSymbol = dynamic_cast<ConstructorSymbol*>(s))
     {
+        constructors.push_back(constructorSymbol);
         if (constructorSymbol->IsDefaultConstructorSymbol())
         {
             defaultConstructorSymbol = constructorSymbol;
@@ -1199,22 +1232,36 @@ void ClassTypeSymbol::LinkVmt()
     }
 }
 
-ObjectTypeSymbol::ObjectTypeSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_)
+ArrayTypeSymbol::ArrayTypeSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_), elementType(nullptr)
 {
 }
 
-StringTypeSymbol::StringTypeSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_)
-{
-}
-
-void StringTypeSymbol::Write(SymbolWriter& writer)
+void ArrayTypeSymbol::Write(SymbolWriter& writer)
 {
     ClassTypeSymbol::Write(writer);
+    ConstantId elementTypeId = writer.GetConstantPool()->GetIdFor(elementType->FullName());
+    Assert(elementTypeId != noConstantId, "got no id for element type");
+    elementTypeId.Write(writer);
 }
 
-void StringTypeSymbol::Read(SymbolReader& reader)
+void ArrayTypeSymbol::Read(SymbolReader& reader)
 {
     ClassTypeSymbol::Read(reader);
+    ConstantId elementTypeId;
+    elementTypeId.Read(reader);
+    reader.EmplaceTypeRequest(this, elementTypeId, 1);
+}
+
+void ArrayTypeSymbol::EmplaceType(TypeSymbol* type, int index)
+{
+    if (index == 1)
+    {
+        elementType = type;
+    }
+    else
+    {
+        ClassTypeSymbol::EmplaceType(type, index);
+    }
 }
 
 } } // namespace cminor::symbols

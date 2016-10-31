@@ -256,7 +256,9 @@ void CreateBasicTypeUnaryOpFun(Assembly& assembly, TypeSymbol* type, const utf32
     fun->AddSymbol(std::unique_ptr<Symbol>(operandParam));
     fun->SetReturnType(type);
     fun->ComputeName();
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(fun));
+    assembly.GetSymbolTable().BeginNamespace(StringPtr(U"System"), Span());
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(fun));
+    assembly.GetSymbolTable().EndNamespace();
 }
 
 void CreateBasicTypeBinaryOpFun(Assembly& assembly, TypeSymbol* type, const utf32_string& groupName, const std::string& instGroupName)
@@ -282,7 +284,9 @@ void CreateBasicTypeBinaryOpFun(Assembly& assembly, TypeSymbol* type, const utf3
     fun->AddSymbol(std::unique_ptr<Symbol>(rightParam));
     fun->SetReturnType(type);
     fun->ComputeName();
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(fun));
+    assembly.GetSymbolTable().BeginNamespace(StringPtr(U"System"), Span());
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(fun));
+    assembly.GetSymbolTable().EndNamespace();
 }
 
 void CreateBasicTypeComparisonFun(Assembly& assembly, TypeSymbol* type, TypeSymbol* boolType, const utf32_string& groupName, const std::string& instGroupName)
@@ -308,11 +312,14 @@ void CreateBasicTypeComparisonFun(Assembly& assembly, TypeSymbol* type, TypeSymb
     fun->AddSymbol(std::unique_ptr<Symbol>(rightParam));
     fun->SetReturnType(boolType);
     fun->ComputeName();
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(fun));
+    assembly.GetSymbolTable().BeginNamespace(StringPtr(U"System"), Span());
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(fun));
+    assembly.GetSymbolTable().EndNamespace();
 }
 
 void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type)
 {
+    assembly.GetSymbolTable().BeginNamespace(StringPtr(U"System"), Span());
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
     Constant thatParamName = constantPool.GetConstant(constantPool.Install(U"that"));
@@ -324,7 +331,7 @@ void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type)
     defaultInit->SetType(type);
     defaultInit->AddSymbol(std::unique_ptr<Symbol>(thisParam1));
     defaultInit->ComputeName();
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(defaultInit));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(defaultInit));
 
     ParameterSymbol* thisParam2 = new ParameterSymbol(Span(), thisParamName);
     thisParam2->SetAssembly(&assembly);
@@ -338,7 +345,7 @@ void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type)
     copyInit->AddSymbol(std::unique_ptr<Symbol>(thisParam2));
     copyInit->AddSymbol(std::unique_ptr<Symbol>(thatParam2));
     copyInit->ComputeName();
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(copyInit));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(copyInit));
 
     ParameterSymbol* thisParam3 = new ParameterSymbol(Span(), thisParamName);
     thisParam3->SetAssembly(&assembly);
@@ -352,7 +359,7 @@ void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type)
     assignment->AddSymbol(std::unique_ptr<Symbol>(thisParam3));
     assignment->AddSymbol(std::unique_ptr<Symbol>(thatParam3));
     assignment->ComputeName();
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(assignment));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(assignment));
 
     BasicTypeReturn* returnFun = new BasicTypeReturn(Span(), constantPool.GetEmptyStringConstant());
     returnFun->SetAssembly(&assembly);
@@ -364,7 +371,8 @@ void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type)
     valueParam->SetType(type);
     returnFun->AddSymbol(std::unique_ptr<Symbol>(valueParam));
     returnFun->ComputeName();
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(returnFun));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(returnFun));
+    assembly.GetSymbolTable().EndNamespace();
 }
 
 void CreateBasicTypeBoolFun(Assembly& assembly, TypeSymbol* boolType)
@@ -417,6 +425,7 @@ void CreateBasicTypeFloatFun(Assembly& assembly, TypeSymbol* type, TypeSymbol* b
 void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSymbol* charType, TypeSymbol* sbyteType, TypeSymbol* byteType, TypeSymbol* shortType, TypeSymbol* ushortType,
     TypeSymbol* intType, TypeSymbol* uintType, TypeSymbol* longType, TypeSymbol* ulongType, TypeSymbol* floatType, TypeSymbol* doubleType)
 {
+    assembly.GetSymbolTable().BeginNamespace(StringPtr(U"System"), Span());
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
 
@@ -428,7 +437,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     sbyte2byte->SetSourceType(sbyteType);
     sbyte2byte->SetTargetType(byteType);
     sbyte2byte->SetConversionInstructionName("sb2by");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2byte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2byte));
 
     BasicTypeConversion* sbyte2short = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"sbyte2short")));
     sbyte2short->SetAssembly(&assembly);
@@ -438,7 +447,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     sbyte2short->SetSourceType(sbyteType);
     sbyte2short->SetTargetType(shortType);
     sbyte2short->SetConversionInstructionName("sb2sh");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2short));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2short));
 
     BasicTypeConversion* sbyte2ushort = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"sbyte2ushort")));
     sbyte2ushort->SetAssembly(&assembly);
@@ -448,7 +457,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     sbyte2ushort->SetSourceType(sbyteType);
     sbyte2ushort->SetTargetType(ushortType);
     sbyte2ushort->SetConversionInstructionName("sb2us");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2ushort));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2ushort));
 
     BasicTypeConversion* sbyte2int = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"sbyte2int")));
     sbyte2int->SetAssembly(&assembly);
@@ -458,7 +467,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     sbyte2int->SetSourceType(sbyteType);
     sbyte2int->SetTargetType(intType);
     sbyte2int->SetConversionInstructionName("sb2in");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2int));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2int));
 
     BasicTypeConversion* sbyte2uint = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"sbyte2uint")));
     sbyte2uint->SetAssembly(&assembly);
@@ -468,7 +477,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     sbyte2uint->SetSourceType(sbyteType);
     sbyte2uint->SetTargetType(uintType);
     sbyte2uint->SetConversionInstructionName("sb2ui");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2uint));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2uint));
 
     BasicTypeConversion* sbyte2long = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"sbyte2long")));
     sbyte2long->SetAssembly(&assembly);
@@ -478,7 +487,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     sbyte2long->SetSourceType(sbyteType);
     sbyte2long->SetTargetType(longType);
     sbyte2long->SetConversionInstructionName("sb2lo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2long));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2long));
 
     BasicTypeConversion* sbyte2ulong = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"sbyte2ulong")));
     sbyte2ulong->SetAssembly(&assembly);
@@ -488,7 +497,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     sbyte2ulong->SetSourceType(sbyteType);
     sbyte2ulong->SetTargetType(ulongType);
     sbyte2ulong->SetConversionInstructionName("sb2ul");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2ulong));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2ulong));
 
     BasicTypeConversion* sbyte2float = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"sbyte2float")));
     sbyte2float->SetAssembly(&assembly);
@@ -498,7 +507,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     sbyte2float->SetSourceType(sbyteType);
     sbyte2float->SetTargetType(floatType);
     sbyte2float->SetConversionInstructionName("sb2fl");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2float));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2float));
 
     BasicTypeConversion* sbyte2double = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"sbyte2double")));
     sbyte2double->SetAssembly(&assembly);
@@ -508,7 +517,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     sbyte2double->SetSourceType(sbyteType);
     sbyte2double->SetTargetType(doubleType);
     sbyte2double->SetConversionInstructionName("sb2do");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2double));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2double));
 
     BasicTypeConversion* sbyte2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"sbyte2char")));
     sbyte2char->SetAssembly(&assembly);
@@ -518,7 +527,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     sbyte2char->SetSourceType(sbyteType);
     sbyte2char->SetTargetType(charType);
     sbyte2char->SetConversionInstructionName("sb2ch");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2char));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2char));
 
     BasicTypeConversion* sbyte2bool = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"sbyte2bool")));
     sbyte2bool->SetAssembly(&assembly);
@@ -528,7 +537,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     sbyte2bool->SetSourceType(sbyteType);
     sbyte2bool->SetTargetType(boolType);
     sbyte2bool->SetConversionInstructionName("sb2bo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2bool));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2bool));
 
     BasicTypeConversion* byte2sbyte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"byte2sbyte")));
     byte2sbyte->SetAssembly(&assembly);
@@ -538,7 +547,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     byte2sbyte->SetSourceType(byteType);
     byte2sbyte->SetTargetType(sbyteType);
     byte2sbyte->SetConversionInstructionName("by2sb");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(byte2sbyte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2sbyte));
 
     BasicTypeConversion* byte2short = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"byte2short")));
     byte2short->SetAssembly(&assembly);
@@ -548,7 +557,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     byte2short->SetSourceType(byteType);
     byte2short->SetTargetType(shortType);
     byte2short->SetConversionInstructionName("by2sh");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(byte2short));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2short));
 
     BasicTypeConversion* byte2ushort = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"byte2ushort")));
     byte2ushort->SetAssembly(&assembly);
@@ -558,7 +567,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     byte2ushort->SetSourceType(byteType);
     byte2ushort->SetTargetType(ushortType);
     byte2ushort->SetConversionInstructionName("by2us");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(byte2ushort));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2ushort));
 
     BasicTypeConversion* byte2int = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"byte2int")));
     byte2int->SetAssembly(&assembly);
@@ -568,7 +577,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     byte2int->SetSourceType(byteType);
     byte2int->SetTargetType(intType);
     byte2int->SetConversionInstructionName("by2in");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(byte2int));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2int));
 
     BasicTypeConversion* byte2uint = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"byte2uint")));
     byte2uint->SetAssembly(&assembly);
@@ -578,7 +587,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     byte2uint->SetSourceType(byteType);
     byte2uint->SetTargetType(uintType);
     byte2uint->SetConversionInstructionName("by2ui");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(byte2uint));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2uint));
 
     BasicTypeConversion* byte2long = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"byte2long")));
     byte2long->SetAssembly(&assembly);
@@ -588,7 +597,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     byte2long->SetSourceType(byteType);
     byte2long->SetTargetType(longType);
     byte2long->SetConversionInstructionName("by2lo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(byte2long));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2long));
 
     BasicTypeConversion* byte2ulong = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"byte2ulong")));
     byte2ulong->SetAssembly(&assembly);
@@ -598,7 +607,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     byte2ulong->SetSourceType(byteType);
     byte2ulong->SetTargetType(ulongType);
     byte2ulong->SetConversionInstructionName("by2ul");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(byte2ulong));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2ulong));
 
     BasicTypeConversion* byte2float = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"byte2float")));
     byte2float->SetAssembly(&assembly);
@@ -608,7 +617,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     byte2float->SetSourceType(byteType);
     byte2float->SetTargetType(floatType);
     byte2float->SetConversionInstructionName("by2fl");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(byte2float));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2float));
 
     BasicTypeConversion* byte2double = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"byte2double")));
     byte2double->SetAssembly(&assembly);
@@ -618,7 +627,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     byte2double->SetSourceType(byteType);
     byte2double->SetTargetType(doubleType);
     byte2double->SetConversionInstructionName("by2do");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(byte2double));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2double));
 
     BasicTypeConversion* byte2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"byte2char")));
     byte2char->SetAssembly(&assembly);
@@ -628,7 +637,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     byte2char->SetSourceType(byteType);
     byte2char->SetTargetType(charType);
     byte2char->SetConversionInstructionName("by2ch");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(byte2char));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2char));
 
     BasicTypeConversion* byte2bool = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"byte2bool")));
     byte2bool->SetAssembly(&assembly);
@@ -638,7 +647,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     byte2bool->SetSourceType(byteType);
     byte2bool->SetTargetType(boolType);
     byte2bool->SetConversionInstructionName("by2bo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(byte2bool));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2bool));
 
     BasicTypeConversion* short2sbyte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"short2sbyte")));
     short2sbyte->SetAssembly(&assembly);
@@ -648,7 +657,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     short2sbyte->SetSourceType(shortType);
     short2sbyte->SetTargetType(sbyteType);
     short2sbyte->SetConversionInstructionName("sh2sb");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(short2sbyte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2sbyte));
 
     BasicTypeConversion* short2byte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"short2byte")));
     short2byte->SetAssembly(&assembly);
@@ -658,7 +667,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     short2byte->SetSourceType(shortType);
     short2byte->SetTargetType(byteType);
     short2byte->SetConversionInstructionName("sh2by");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(short2byte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2byte));
 
     BasicTypeConversion* short2ushort = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"short2ushort")));
     short2ushort->SetAssembly(&assembly);
@@ -668,7 +677,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     short2ushort->SetSourceType(shortType);
     short2ushort->SetTargetType(ushortType);
     short2ushort->SetConversionInstructionName("sh2us");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(short2ushort));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2ushort));
 
     BasicTypeConversion* short2int = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"short2int")));
     short2int->SetAssembly(&assembly);
@@ -678,7 +687,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     short2int->SetSourceType(shortType);
     short2int->SetTargetType(intType);
     short2int->SetConversionInstructionName("sh2in");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(short2int));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2int));
 
     BasicTypeConversion* short2uint = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"short2uint")));
     short2uint->SetAssembly(&assembly);
@@ -688,7 +697,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     short2uint->SetSourceType(shortType);
     short2uint->SetTargetType(uintType);
     short2uint->SetConversionInstructionName("sh2ui");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(short2uint));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2uint));
 
     BasicTypeConversion* short2long = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"short2long")));
     short2long->SetAssembly(&assembly);
@@ -698,7 +707,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     short2long->SetSourceType(shortType);
     short2long->SetTargetType(longType);
     short2long->SetConversionInstructionName("sh2lo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(short2long));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2long));
 
     BasicTypeConversion* short2ulong = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"short2ulong")));
     short2ulong->SetAssembly(&assembly);
@@ -708,7 +717,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     short2ulong->SetSourceType(shortType);
     short2ulong->SetTargetType(ulongType);
     short2ulong->SetConversionInstructionName("sh2ul");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(short2ulong));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2ulong));
 
     BasicTypeConversion* short2float = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"short2float")));
     short2float->SetAssembly(&assembly);
@@ -718,7 +727,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     short2float->SetSourceType(shortType);
     short2float->SetTargetType(floatType);
     short2float->SetConversionInstructionName("sh2fl");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(short2float));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2float));
 
     BasicTypeConversion* short2double = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"short2double")));
     short2double->SetAssembly(&assembly);
@@ -728,7 +737,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     short2double->SetSourceType(shortType);
     short2double->SetTargetType(doubleType);
     short2double->SetConversionInstructionName("sh2do");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(short2double));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2double));
 
     BasicTypeConversion* short2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"short2char")));
     short2char->SetAssembly(&assembly);
@@ -738,7 +747,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     short2char->SetSourceType(shortType);
     short2char->SetTargetType(charType);
     short2char->SetConversionInstructionName("sh2ch");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(short2char));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2char));
 
     BasicTypeConversion* short2bool = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"short2bool")));
     short2bool->SetAssembly(&assembly);
@@ -748,7 +757,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     short2bool->SetSourceType(shortType);
     short2bool->SetTargetType(boolType);
     short2bool->SetConversionInstructionName("sh2bo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(short2bool));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2bool));
 
     BasicTypeConversion* ushort2sbyte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ushort2sbyte")));
     ushort2sbyte->SetAssembly(&assembly);
@@ -758,7 +767,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ushort2sbyte->SetSourceType(ushortType);
     ushort2sbyte->SetTargetType(sbyteType);
     ushort2sbyte->SetConversionInstructionName("us2sb");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2sbyte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2sbyte));
 
     BasicTypeConversion* ushort2byte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ushort2byte")));
     ushort2byte->SetAssembly(&assembly);
@@ -768,7 +777,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ushort2byte->SetSourceType(ushortType);
     ushort2byte->SetTargetType(byteType);
     ushort2byte->SetConversionInstructionName("us2by");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2byte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2byte));
 
     BasicTypeConversion* ushort2short = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ushort2short")));
     ushort2short->SetAssembly(&assembly);
@@ -778,7 +787,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ushort2short->SetSourceType(ushortType);
     ushort2short->SetTargetType(shortType);
     ushort2short->SetConversionInstructionName("us2sh");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2short));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2short));
 
     BasicTypeConversion* ushort2int = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ushort2int")));
     ushort2int->SetAssembly(&assembly);
@@ -788,7 +797,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ushort2int->SetSourceType(ushortType);
     ushort2int->SetTargetType(intType);
     ushort2int->SetConversionInstructionName("us2in");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2int));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2int));
 
     BasicTypeConversion* ushort2uint = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ushort2uint")));
     ushort2uint->SetAssembly(&assembly);
@@ -798,7 +807,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ushort2uint->SetSourceType(ushortType);
     ushort2uint->SetTargetType(uintType);
     ushort2uint->SetConversionInstructionName("us2ui");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2uint));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2uint));
 
     BasicTypeConversion* ushort2long = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ushort2long")));
     ushort2long->SetAssembly(&assembly);
@@ -808,7 +817,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ushort2long->SetSourceType(ushortType);
     ushort2long->SetTargetType(longType);
     ushort2long->SetConversionInstructionName("us2lo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2long));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2long));
 
     BasicTypeConversion* ushort2ulong = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ushort2ulong")));
     ushort2ulong->SetAssembly(&assembly);
@@ -818,7 +827,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ushort2ulong->SetSourceType(ushortType);
     ushort2ulong->SetTargetType(ulongType);
     ushort2ulong->SetConversionInstructionName("us2ul");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2ulong));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2ulong));
 
     BasicTypeConversion* ushort2float = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ushort2float")));
     ushort2float->SetAssembly(&assembly);
@@ -828,7 +837,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ushort2float->SetSourceType(ushortType);
     ushort2float->SetTargetType(floatType);
     ushort2float->SetConversionInstructionName("us2fl");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2float));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2float));
 
     BasicTypeConversion* ushort2double = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ushort2double")));
     ushort2double->SetAssembly(&assembly);
@@ -838,7 +847,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ushort2double->SetSourceType(ushortType);
     ushort2double->SetTargetType(doubleType);
     ushort2double->SetConversionInstructionName("us2do");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2double));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2double));
 
     BasicTypeConversion* ushort2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ushort2char")));
     ushort2char->SetAssembly(&assembly);
@@ -848,7 +857,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ushort2char->SetSourceType(ushortType);
     ushort2char->SetTargetType(charType);
     ushort2char->SetConversionInstructionName("us2ch");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2char));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2char));
 
     BasicTypeConversion* ushort2bool = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ushort2bool")));
     ushort2bool->SetAssembly(&assembly);
@@ -858,7 +867,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ushort2bool->SetSourceType(ushortType);
     ushort2bool->SetTargetType(boolType);
     ushort2bool->SetConversionInstructionName("us2bo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2bool));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2bool));
 
     BasicTypeConversion* int2sbyte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"int2sbyte")));
     int2sbyte->SetAssembly(&assembly);
@@ -868,7 +877,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     int2sbyte->SetSourceType(intType);
     int2sbyte->SetTargetType(sbyteType);
     int2sbyte->SetConversionInstructionName("in2sb");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(int2sbyte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2sbyte));
 
     BasicTypeConversion* int2byte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"int2byte")));
     int2byte->SetAssembly(&assembly);
@@ -878,7 +887,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     int2byte->SetSourceType(intType);
     int2byte->SetTargetType(byteType);
     int2byte->SetConversionInstructionName("in2by");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(int2byte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2byte));
 
     BasicTypeConversion* int2short = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"int2short")));
     int2short->SetAssembly(&assembly);
@@ -888,7 +897,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     int2short->SetSourceType(intType);
     int2short->SetTargetType(shortType);
     int2short->SetConversionInstructionName("in2sh");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(int2short));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2short));
 
     BasicTypeConversion* int2ushort = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"int2ushort")));
     int2ushort->SetAssembly(&assembly);
@@ -898,7 +907,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     int2ushort->SetSourceType(intType);
     int2ushort->SetTargetType(ushortType);
     int2ushort->SetConversionInstructionName("in2us");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(int2ushort));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2ushort));
 
     BasicTypeConversion* int2uint = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"int2uint")));
     int2uint->SetAssembly(&assembly);
@@ -908,7 +917,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     int2uint->SetSourceType(intType);
     int2uint->SetTargetType(uintType);
     int2uint->SetConversionInstructionName("in2ui");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(int2uint));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2uint));
 
     BasicTypeConversion* int2long = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"int2long")));
     int2long->SetAssembly(&assembly);
@@ -918,7 +927,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     int2long->SetSourceType(intType);
     int2long->SetTargetType(longType);
     int2long->SetConversionInstructionName("in2lo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(int2long));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2long));
 
     BasicTypeConversion* int2ulong = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"int2ulong")));
     int2ulong->SetAssembly(&assembly);
@@ -928,7 +937,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     int2ulong->SetSourceType(intType);
     int2ulong->SetTargetType(ulongType);
     int2ulong->SetConversionInstructionName("in2ul");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(int2ulong));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2ulong));
 
     BasicTypeConversion* int2float = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"int2float")));
     int2float->SetAssembly(&assembly);
@@ -938,7 +947,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     int2float->SetSourceType(intType);
     int2float->SetTargetType(floatType);
     int2float->SetConversionInstructionName("in2fl");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(int2float));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2float));
 
     BasicTypeConversion* int2double = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"int2double")));
     int2double->SetAssembly(&assembly);
@@ -948,7 +957,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     int2double->SetSourceType(intType);
     int2double->SetTargetType(doubleType);
     int2double->SetConversionInstructionName("in2do");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(int2double));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2double));
 
     BasicTypeConversion* int2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"int2char")));
     int2char->SetAssembly(&assembly);
@@ -958,7 +967,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     int2char->SetSourceType(intType);
     int2char->SetTargetType(charType);
     int2char->SetConversionInstructionName("in2ch");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(int2char));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2char));
 
     BasicTypeConversion* int2bool = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"int2bool")));
     int2bool->SetAssembly(&assembly);
@@ -968,7 +977,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     int2bool->SetSourceType(intType);
     int2bool->SetTargetType(boolType);
     int2bool->SetConversionInstructionName("in2bo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(int2bool));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2bool));
 
     BasicTypeConversion* uint2sbyte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"uint2sbyte")));
     uint2sbyte->SetAssembly(&assembly);
@@ -978,7 +987,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     uint2sbyte->SetSourceType(uintType);
     uint2sbyte->SetTargetType(sbyteType);
     uint2sbyte->SetConversionInstructionName("ui2sb");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(uint2sbyte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2sbyte));
 
     BasicTypeConversion* uint2byte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"uint2byte")));
     uint2byte->SetAssembly(&assembly);
@@ -988,7 +997,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     uint2byte->SetSourceType(uintType);
     uint2byte->SetTargetType(byteType);
     uint2byte->SetConversionInstructionName("ui2by");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(uint2byte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2byte));
 
     BasicTypeConversion* uint2short = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"uint2short")));
     uint2short->SetAssembly(&assembly);
@@ -998,7 +1007,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     uint2short->SetSourceType(uintType);
     uint2short->SetTargetType(shortType);
     uint2short->SetConversionInstructionName("ui2sh");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(uint2short));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2short));
 
     BasicTypeConversion* uint2ushort = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"uint2ushort")));
     uint2ushort->SetAssembly(&assembly);
@@ -1008,7 +1017,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     uint2ushort->SetSourceType(uintType);
     uint2ushort->SetTargetType(ushortType);
     uint2ushort->SetConversionInstructionName("ui2us");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(uint2ushort));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2ushort));
 
     BasicTypeConversion* uint2int = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"uint2int")));
     uint2int->SetAssembly(&assembly);
@@ -1018,7 +1027,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     uint2int->SetSourceType(uintType);
     uint2int->SetTargetType(intType);
     uint2int->SetConversionInstructionName("ui2in");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(uint2int));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2int));
 
     BasicTypeConversion* uint2long = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"uint2long")));
     uint2long->SetAssembly(&assembly);
@@ -1028,7 +1037,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     uint2long->SetSourceType(uintType);
     uint2long->SetTargetType(longType);
     uint2long->SetConversionInstructionName("ui2lo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(uint2long));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2long));
 
     BasicTypeConversion* uint2ulong = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"uint2ulong")));
     uint2ulong->SetAssembly(&assembly);
@@ -1038,7 +1047,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     uint2ulong->SetSourceType(uintType);
     uint2ulong->SetTargetType(ulongType);
     uint2ulong->SetConversionInstructionName("ui2ul");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(uint2ulong));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2ulong));
 
     BasicTypeConversion* uint2float = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"uint2float")));
     uint2float->SetAssembly(&assembly);
@@ -1048,7 +1057,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     uint2float->SetSourceType(uintType);
     uint2float->SetTargetType(floatType);
     uint2float->SetConversionInstructionName("ui2fl");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(uint2float));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2float));
 
     BasicTypeConversion* uint2double = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"uint2double")));
     uint2double->SetAssembly(&assembly);
@@ -1058,7 +1067,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     uint2double->SetSourceType(uintType);
     uint2double->SetTargetType(doubleType);
     uint2double->SetConversionInstructionName("ui2do");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(uint2double));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2double));
 
     BasicTypeConversion* uint2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"uint2char")));
     uint2char->SetAssembly(&assembly);
@@ -1068,7 +1077,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     uint2char->SetSourceType(uintType);
     uint2char->SetTargetType(charType);
     uint2char->SetConversionInstructionName("ui2ch");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(uint2char));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2char));
 
     BasicTypeConversion* uint2bool = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"uint2bool")));
     uint2bool->SetAssembly(&assembly);
@@ -1078,7 +1087,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     uint2bool->SetSourceType(uintType);
     uint2bool->SetTargetType(boolType);
     uint2bool->SetConversionInstructionName("ui2bo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(uint2bool));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2bool));
 
     BasicTypeConversion* long2sbyte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"long2sbyte")));
     long2sbyte->SetAssembly(&assembly);
@@ -1088,7 +1097,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     long2sbyte->SetSourceType(longType);
     long2sbyte->SetTargetType(sbyteType);
     long2sbyte->SetConversionInstructionName("lo2sb");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(long2sbyte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2sbyte));
 
     BasicTypeConversion* long2byte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"long2byte")));
     long2byte->SetAssembly(&assembly);
@@ -1098,7 +1107,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     long2byte->SetSourceType(longType);
     long2byte->SetTargetType(byteType);
     long2byte->SetConversionInstructionName("lo2by");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(long2byte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2byte));
 
     BasicTypeConversion* long2short = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"long2short")));
     long2short->SetAssembly(&assembly);
@@ -1108,7 +1117,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     long2short->SetSourceType(longType);
     long2short->SetTargetType(shortType);
     long2short->SetConversionInstructionName("lo2sh");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(long2short));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2short));
 
     BasicTypeConversion* long2ushort = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"long2ushort")));
     long2ushort->SetAssembly(&assembly);
@@ -1118,7 +1127,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     long2ushort->SetSourceType(longType);
     long2ushort->SetTargetType(ushortType);
     long2ushort->SetConversionInstructionName("lo2us");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(long2ushort));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2ushort));
 
     BasicTypeConversion* long2int = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"long2int")));
     long2int->SetAssembly(&assembly);
@@ -1128,7 +1137,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     long2int->SetSourceType(longType);
     long2int->SetTargetType(intType);
     long2int->SetConversionInstructionName("lo2in");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(long2int));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2int));
 
     BasicTypeConversion* long2uint = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"long2uint")));
     long2uint->SetAssembly(&assembly);
@@ -1138,7 +1147,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     long2uint->SetSourceType(longType);
     long2uint->SetTargetType(uintType);
     long2uint->SetConversionInstructionName("lo2ui");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(long2uint));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2uint));
 
     BasicTypeConversion* long2ulong = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"long2ulong")));
     long2ulong->SetAssembly(&assembly);
@@ -1148,7 +1157,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     long2ulong->SetSourceType(longType);
     long2ulong->SetTargetType(ulongType);
     long2ulong->SetConversionInstructionName("lo2ul");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(long2ulong));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2ulong));
 
     BasicTypeConversion* long2float = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"long2float")));
     long2float->SetAssembly(&assembly);
@@ -1158,7 +1167,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     long2float->SetSourceType(longType);
     long2float->SetTargetType(floatType);
     long2float->SetConversionInstructionName("lo2fl");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(long2float));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2float));
 
     BasicTypeConversion* long2double = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"long2double")));
     long2double->SetAssembly(&assembly);
@@ -1168,7 +1177,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     long2double->SetSourceType(longType);
     long2double->SetTargetType(doubleType);
     long2double->SetConversionInstructionName("lo2do");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(long2double));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2double));
 
     BasicTypeConversion* long2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"long2char")));
     long2char->SetAssembly(&assembly);
@@ -1178,7 +1187,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     long2char->SetSourceType(longType);
     long2char->SetTargetType(charType);
     long2char->SetConversionInstructionName("lo2ch");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(long2char));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2char));
 
     BasicTypeConversion* long2bool = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"long2bool")));
     long2bool->SetAssembly(&assembly);
@@ -1188,7 +1197,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     long2bool->SetSourceType(longType);
     long2bool->SetTargetType(boolType);
     long2bool->SetConversionInstructionName("lo2bo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(long2bool));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2bool));
 
     BasicTypeConversion* ulong2sbyte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ulong2sbyte")));
     ulong2sbyte->SetAssembly(&assembly);
@@ -1198,7 +1207,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ulong2sbyte->SetSourceType(ulongType);
     ulong2sbyte->SetTargetType(sbyteType);
     ulong2sbyte->SetConversionInstructionName("ul2sb");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2sbyte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2sbyte));
 
     BasicTypeConversion* ulong2byte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ulong2byte")));
     ulong2byte->SetAssembly(&assembly);
@@ -1208,7 +1217,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ulong2byte->SetSourceType(ulongType);
     ulong2byte->SetTargetType(byteType);
     ulong2byte->SetConversionInstructionName("ul2by");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2byte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2byte));
 
     BasicTypeConversion* ulong2short = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ulong2short")));
     ulong2short->SetAssembly(&assembly);
@@ -1218,7 +1227,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ulong2short->SetSourceType(ulongType);
     ulong2short->SetTargetType(shortType);
     ulong2short->SetConversionInstructionName("ul2sh");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2short));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2short));
 
     BasicTypeConversion* ulong2ushort = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ulong2ushort")));
     ulong2ushort->SetAssembly(&assembly);
@@ -1228,7 +1237,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ulong2ushort->SetSourceType(ulongType);
     ulong2ushort->SetTargetType(ushortType);
     ulong2ushort->SetConversionInstructionName("ul2us");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2ushort));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2ushort));
 
     BasicTypeConversion* ulong2int = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ulong2int")));
     ulong2int->SetAssembly(&assembly);
@@ -1238,7 +1247,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ulong2int->SetSourceType(ulongType);
     ulong2int->SetTargetType(intType);
     ulong2int->SetConversionInstructionName("ul2in");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2int));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2int));
 
     BasicTypeConversion* ulong2uint = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ulong2uint")));
     ulong2uint->SetAssembly(&assembly);
@@ -1248,7 +1257,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ulong2uint->SetSourceType(ulongType);
     ulong2uint->SetTargetType(uintType);
     ulong2uint->SetConversionInstructionName("ul2ui");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2uint));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2uint));
 
     BasicTypeConversion* ulong2long = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ulong2long")));
     ulong2long->SetAssembly(&assembly);
@@ -1258,7 +1267,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ulong2long->SetSourceType(ulongType);
     ulong2long->SetTargetType(longType);
     ulong2long->SetConversionInstructionName("ul2lo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2long));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2long));
 
     BasicTypeConversion* ulong2float = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ulong2float")));
     ulong2float->SetAssembly(&assembly);
@@ -1268,7 +1277,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ulong2float->SetSourceType(ulongType);
     ulong2float->SetTargetType(floatType);
     ulong2float->SetConversionInstructionName("ul2fl");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2float));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2float));
 
     BasicTypeConversion* ulong2double = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ulong2double")));
     ulong2double->SetAssembly(&assembly);
@@ -1278,7 +1287,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ulong2double->SetSourceType(ulongType);
     ulong2double->SetTargetType(doubleType);
     ulong2double->SetConversionInstructionName("ul2do");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2double));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2double));
 
     BasicTypeConversion* ulong2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ulong2char")));
     ulong2char->SetAssembly(&assembly);
@@ -1288,7 +1297,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ulong2char->SetSourceType(ulongType);
     ulong2char->SetTargetType(charType);
     ulong2char->SetConversionInstructionName("ul2ch");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2char));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2char));
 
     BasicTypeConversion* ulong2bool = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"ulong2bool")));
     ulong2bool->SetAssembly(&assembly);
@@ -1298,7 +1307,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     ulong2bool->SetSourceType(ulongType);
     ulong2bool->SetTargetType(boolType);
     ulong2bool->SetConversionInstructionName("ul2bo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2bool));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2bool));
 
     BasicTypeConversion* float2sbyte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"float2sbyte")));
     float2sbyte->SetAssembly(&assembly);
@@ -1308,7 +1317,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     float2sbyte->SetSourceType(floatType);
     float2sbyte->SetTargetType(sbyteType);
     float2sbyte->SetConversionInstructionName("fl2sb");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(float2sbyte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2sbyte));
 
     BasicTypeConversion* float2byte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"float2byte")));
     float2byte->SetAssembly(&assembly);
@@ -1318,7 +1327,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     float2byte->SetSourceType(floatType);
     float2byte->SetTargetType(byteType);
     float2byte->SetConversionInstructionName("fl2by");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(float2byte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2byte));
 
     BasicTypeConversion* float2short = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"float2short")));
     float2short->SetAssembly(&assembly);
@@ -1328,7 +1337,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     float2short->SetSourceType(floatType);
     float2short->SetTargetType(shortType);
     float2short->SetConversionInstructionName("fl2sh");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(float2short));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2short));
 
     BasicTypeConversion* float2ushort = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"float2ushort")));
     float2ushort->SetAssembly(&assembly);
@@ -1338,7 +1347,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     float2ushort->SetSourceType(floatType);
     float2ushort->SetTargetType(ushortType);
     float2ushort->SetConversionInstructionName("fl2us");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(float2ushort));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2ushort));
 
     BasicTypeConversion* float2int = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"float2int")));
     float2int->SetAssembly(&assembly);
@@ -1348,7 +1357,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     float2int->SetSourceType(floatType);
     float2int->SetTargetType(intType);
     float2int->SetConversionInstructionName("fl2in");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(float2int));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2int));
 
     BasicTypeConversion* float2uint = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"float2uint")));
     float2uint->SetAssembly(&assembly);
@@ -1358,7 +1367,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     float2uint->SetSourceType(floatType);
     float2uint->SetTargetType(uintType);
     float2uint->SetConversionInstructionName("fl2ui");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(float2uint));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2uint));
 
     BasicTypeConversion* float2long = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"float2long")));
     float2long->SetAssembly(&assembly);
@@ -1368,7 +1377,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     float2long->SetSourceType(floatType);
     float2long->SetTargetType(longType);
     float2long->SetConversionInstructionName("fl2lo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(float2long));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2long));
 
     BasicTypeConversion* float2ulong = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"float2ulong")));
     float2ulong->SetAssembly(&assembly);
@@ -1378,7 +1387,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     float2ulong->SetSourceType(floatType);
     float2ulong->SetTargetType(ulongType);
     float2ulong->SetConversionInstructionName("fl2ul");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(float2ulong));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2ulong));
 
     BasicTypeConversion* float2double = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"float2double")));
     float2double->SetAssembly(&assembly);
@@ -1388,7 +1397,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     float2double->SetSourceType(floatType);
     float2double->SetTargetType(doubleType);
     float2double->SetConversionInstructionName("fl2do");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(float2double));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2double));
 
     BasicTypeConversion* float2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"float2char")));
     float2char->SetAssembly(&assembly);
@@ -1398,7 +1407,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     float2char->SetSourceType(floatType);
     float2char->SetTargetType(charType);
     float2char->SetConversionInstructionName("fl2ch");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(float2char));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2char));
 
     BasicTypeConversion* float2bool = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"float2bool")));
     float2bool->SetAssembly(&assembly);
@@ -1408,7 +1417,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     float2bool->SetSourceType(floatType);
     float2bool->SetTargetType(boolType);
     float2bool->SetConversionInstructionName("fl2bo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(float2bool));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2bool));
 
     BasicTypeConversion* double2sbyte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2sbyte")));
     double2sbyte->SetAssembly(&assembly);
@@ -1418,7 +1427,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     double2sbyte->SetSourceType(doubleType);
     double2sbyte->SetTargetType(sbyteType);
     double2sbyte->SetConversionInstructionName("do2sb");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(double2sbyte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2sbyte));
 
     BasicTypeConversion* double2byte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2byte")));
     double2byte->SetAssembly(&assembly);
@@ -1428,7 +1437,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     double2byte->SetSourceType(doubleType);
     double2byte->SetTargetType(byteType);
     double2byte->SetConversionInstructionName("do2by");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(double2byte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2byte));
 
     BasicTypeConversion* double2short = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2short")));
     double2short->SetAssembly(&assembly);
@@ -1438,7 +1447,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     double2short->SetSourceType(doubleType);
     double2short->SetTargetType(shortType);
     double2short->SetConversionInstructionName("do2sh");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(double2short));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2short));
 
     BasicTypeConversion* double2ushort = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2ushort")));
     double2ushort->SetAssembly(&assembly);
@@ -1448,7 +1457,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     double2ushort->SetSourceType(doubleType);
     double2ushort->SetTargetType(ushortType);
     double2ushort->SetConversionInstructionName("do2us");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(double2ushort));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2ushort));
 
     BasicTypeConversion* double2int = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2int")));
     double2int->SetAssembly(&assembly);
@@ -1458,7 +1467,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     double2int->SetSourceType(doubleType);
     double2int->SetTargetType(intType);
     double2int->SetConversionInstructionName("do2in");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(double2int));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2int));
 
     BasicTypeConversion* double2uint = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2uint")));
     double2uint->SetAssembly(&assembly);
@@ -1468,7 +1477,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     double2uint->SetSourceType(doubleType);
     double2uint->SetTargetType(uintType);
     double2uint->SetConversionInstructionName("do2ui");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(double2uint));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2uint));
 
     BasicTypeConversion* double2long = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2long")));
     double2long->SetAssembly(&assembly);
@@ -1478,7 +1487,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     double2long->SetSourceType(doubleType);
     double2long->SetTargetType(longType);
     double2long->SetConversionInstructionName("do2lo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(double2long));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2long));
 
     BasicTypeConversion* double2ulong = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2ulong")));
     double2ulong->SetAssembly(&assembly);
@@ -1488,7 +1497,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     double2ulong->SetSourceType(doubleType);
     double2ulong->SetTargetType(ulongType);
     double2ulong->SetConversionInstructionName("do2ul");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(double2ulong));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2ulong));
 
     BasicTypeConversion* double2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2char")));
     double2char->SetAssembly(&assembly);
@@ -1498,7 +1507,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     double2char->SetSourceType(doubleType);
     double2char->SetTargetType(charType);
     double2char->SetConversionInstructionName("do2ch");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(double2char));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2char));
 
     BasicTypeConversion* double2bool = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2bool")));
     double2bool->SetAssembly(&assembly);
@@ -1508,7 +1517,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     double2bool->SetSourceType(doubleType);
     double2bool->SetTargetType(boolType);
     double2bool->SetConversionInstructionName("do2bo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(double2bool));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2bool));
 
     BasicTypeConversion* char2sbyte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"char2sbyte")));
     char2sbyte->SetAssembly(&assembly);
@@ -1518,7 +1527,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     char2sbyte->SetSourceType(charType);
     char2sbyte->SetTargetType(sbyteType);
     char2sbyte->SetConversionInstructionName("ch2sb");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(char2sbyte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2sbyte));
 
     BasicTypeConversion* char2byte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"char2byte")));
     char2byte->SetAssembly(&assembly);
@@ -1528,7 +1537,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     char2byte->SetSourceType(charType);
     char2byte->SetTargetType(byteType);
     char2byte->SetConversionInstructionName("ch2by");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(char2byte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2byte));
 
     BasicTypeConversion* char2short = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"char2short")));
     char2short->SetAssembly(&assembly);
@@ -1538,7 +1547,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     char2short->SetSourceType(charType);
     char2short->SetTargetType(shortType);
     char2short->SetConversionInstructionName("ch2sh");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(char2short));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2short));
 
     BasicTypeConversion* char2ushort = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"char2ushort")));
     char2ushort->SetAssembly(&assembly);
@@ -1548,7 +1557,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     char2ushort->SetSourceType(charType);
     char2ushort->SetTargetType(ushortType);
     char2ushort->SetConversionInstructionName("ch2us");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(char2ushort));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2ushort));
 
     BasicTypeConversion* char2int = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"char2int")));
     char2int->SetAssembly(&assembly);
@@ -1558,7 +1567,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     char2int->SetSourceType(charType);
     char2int->SetTargetType(intType);
     char2int->SetConversionInstructionName("ch2in");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(char2int));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2int));
 
     BasicTypeConversion* char2uint = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"char2uint")));
     char2uint->SetAssembly(&assembly);
@@ -1568,7 +1577,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     char2uint->SetSourceType(charType);
     char2uint->SetTargetType(uintType);
     char2uint->SetConversionInstructionName("ch2ui");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(char2uint));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2uint));
 
     BasicTypeConversion* char2long = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"char2long")));
     char2long->SetAssembly(&assembly);
@@ -1578,7 +1587,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     char2long->SetSourceType(charType);
     char2long->SetTargetType(longType);
     char2long->SetConversionInstructionName("ch2lo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(char2long));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2long));
 
     BasicTypeConversion* char2ulong = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"char2ulong")));
     char2ulong->SetAssembly(&assembly);
@@ -1588,7 +1597,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     char2ulong->SetSourceType(charType);
     char2ulong->SetTargetType(ulongType);
     char2ulong->SetConversionInstructionName("ch2ul");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(char2ulong));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2ulong));
 
     BasicTypeConversion* char2float = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"char2float")));
     char2float->SetAssembly(&assembly);
@@ -1598,7 +1607,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     char2float->SetSourceType(charType);
     char2float->SetTargetType(floatType);
     char2float->SetConversionInstructionName("ch2fl");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(char2float));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2float));
 
     BasicTypeConversion* char2double = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"char2double")));
     char2double->SetAssembly(&assembly);
@@ -1608,7 +1617,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     char2double->SetSourceType(charType);
     char2double->SetTargetType(doubleType);
     char2double->SetConversionInstructionName("ch2do");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(char2double));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2double));
 
     BasicTypeConversion* char2bool = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"char2bool")));
     char2bool->SetAssembly(&assembly);
@@ -1618,7 +1627,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     char2bool->SetSourceType(charType);
     char2bool->SetTargetType(boolType);
     char2bool->SetConversionInstructionName("ch2bo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(char2bool));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2bool));
 
     BasicTypeConversion* bool2sbyte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"bool2sbyte")));
     bool2sbyte->SetAssembly(&assembly);
@@ -1628,7 +1637,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     bool2sbyte->SetSourceType(boolType);
     bool2sbyte->SetTargetType(sbyteType);
     bool2sbyte->SetConversionInstructionName("bo2sb");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(bool2sbyte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2sbyte));
 
     BasicTypeConversion* bool2byte = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"bool2byte")));
     bool2byte->SetAssembly(&assembly);
@@ -1638,7 +1647,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     bool2byte->SetSourceType(boolType);
     bool2byte->SetTargetType(byteType);
     bool2byte->SetConversionInstructionName("bo2by");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(bool2byte));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2byte));
 
     BasicTypeConversion* bool2short = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"bool2short")));
     bool2short->SetAssembly(&assembly);
@@ -1648,7 +1657,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     bool2short->SetSourceType(boolType);
     bool2short->SetTargetType(shortType);
     bool2short->SetConversionInstructionName("bo2sh");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(bool2short));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2short));
 
     BasicTypeConversion* bool2ushort = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"bool2ushort")));
     bool2ushort->SetAssembly(&assembly);
@@ -1658,7 +1667,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     bool2ushort->SetSourceType(boolType);
     bool2ushort->SetTargetType(ushortType);
     bool2ushort->SetConversionInstructionName("bo2us");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(bool2ushort));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2ushort));
 
     BasicTypeConversion* bool2int = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"bool2int")));
     bool2int->SetAssembly(&assembly);
@@ -1668,7 +1677,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     bool2int->SetSourceType(boolType);
     bool2int->SetTargetType(intType);
     bool2int->SetConversionInstructionName("bo2in");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(bool2int));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2int));
 
     BasicTypeConversion* bool2uint = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"bool2uint")));
     bool2uint->SetAssembly(&assembly);
@@ -1678,7 +1687,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     bool2uint->SetSourceType(boolType);
     bool2uint->SetTargetType(uintType);
     bool2uint->SetConversionInstructionName("bo2ui");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(bool2uint));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2uint));
 
     BasicTypeConversion* bool2long = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"bool2long")));
     bool2long->SetAssembly(&assembly);
@@ -1688,7 +1697,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     bool2long->SetSourceType(boolType);
     bool2long->SetTargetType(longType);
     bool2long->SetConversionInstructionName("bo2lo");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(bool2long));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2long));
 
     BasicTypeConversion* bool2ulong = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"bool2ulong")));
     bool2ulong->SetAssembly(&assembly);
@@ -1698,7 +1707,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     bool2ulong->SetSourceType(boolType);
     bool2ulong->SetTargetType(ulongType);
     bool2ulong->SetConversionInstructionName("bo2ul");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(bool2ulong));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2ulong));
 
     BasicTypeConversion* bool2float = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"bool2float")));
     bool2float->SetAssembly(&assembly);
@@ -1708,7 +1717,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     bool2float->SetSourceType(boolType);
     bool2float->SetTargetType(floatType);
     bool2float->SetConversionInstructionName("bo2fl");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(bool2float));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2float));
 
     BasicTypeConversion* bool2double = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"bool2double")));
     bool2double->SetAssembly(&assembly);
@@ -1718,7 +1727,7 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     bool2double->SetSourceType(boolType);
     bool2double->SetTargetType(doubleType);
     bool2double->SetConversionInstructionName("bo2do");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(bool2double));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2double));
 
     BasicTypeConversion* bool2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"bool2char")));
     bool2char->SetAssembly(&assembly);
@@ -1728,34 +1737,35 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     bool2char->SetSourceType(boolType);
     bool2char->SetTargetType(charType);
     bool2char->SetConversionInstructionName("bo2ch");
-    assembly.GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<FunctionSymbol>(bool2char));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2char));
+    assembly.GetSymbolTable().EndNamespace();
 }
 
 void InitBasicTypeFun(Assembly& assembly)
 {
-    TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"bool");
+    TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"System.Boolean");
     CreateBasicTypeBoolFun(assembly, boolType);
-    TypeSymbol* charType = assembly.GetSymbolTable().GetType(U"char");
+    TypeSymbol* charType = assembly.GetSymbolTable().GetType(U"System.Char");
     CreateBasicTypeCharFun(assembly, charType, boolType);
-    TypeSymbol* sbyteType = assembly.GetSymbolTable().GetType(U"sbyte");
+    TypeSymbol* sbyteType = assembly.GetSymbolTable().GetType(U"System.Int8");
     CreateBasicTypeIntFun(assembly, sbyteType, boolType);
-    TypeSymbol* byteType = assembly.GetSymbolTable().GetType(U"byte");
+    TypeSymbol* byteType = assembly.GetSymbolTable().GetType(U"System.UInt8");
     CreateBasicTypeIntFun(assembly, byteType, boolType);
-    TypeSymbol* shortType = assembly.GetSymbolTable().GetType(U"short");
+    TypeSymbol* shortType = assembly.GetSymbolTable().GetType(U"System.Int16");
     CreateBasicTypeIntFun(assembly, shortType, boolType);
-    TypeSymbol* ushortType = assembly.GetSymbolTable().GetType(U"ushort");
+    TypeSymbol* ushortType = assembly.GetSymbolTable().GetType(U"System.UInt16");
     CreateBasicTypeIntFun(assembly, ushortType, boolType);
-    TypeSymbol* intType = assembly.GetSymbolTable().GetType(U"int");
+    TypeSymbol* intType = assembly.GetSymbolTable().GetType(U"System.Int32");
     CreateBasicTypeIntFun(assembly, intType, boolType);
-    TypeSymbol* uintType = assembly.GetSymbolTable().GetType(U"uint");
+    TypeSymbol* uintType = assembly.GetSymbolTable().GetType(U"System.UInt32");
     CreateBasicTypeIntFun(assembly, uintType, boolType);
-    TypeSymbol* longType = assembly.GetSymbolTable().GetType(U"long");
+    TypeSymbol* longType = assembly.GetSymbolTable().GetType(U"System.Int64");
     CreateBasicTypeIntFun(assembly, longType, boolType);
-    TypeSymbol* ulongType = assembly.GetSymbolTable().GetType(U"ulong");
+    TypeSymbol* ulongType = assembly.GetSymbolTable().GetType(U"System.UInt64");
     CreateBasicTypeIntFun(assembly, ulongType, boolType);
-    TypeSymbol* floatType = assembly.GetSymbolTable().GetType(U"float");
+    TypeSymbol* floatType = assembly.GetSymbolTable().GetType(U"System.Float");
     CreateBasicTypeFloatFun(assembly, floatType, boolType);
-    TypeSymbol* doubleType = assembly.GetSymbolTable().GetType(U"double");
+    TypeSymbol* doubleType = assembly.GetSymbolTable().GetType(U"System.Double");
     CreateBasicTypeFloatFun(assembly, doubleType, boolType);
     CreateBasicTypeConversions(assembly, boolType, charType, sbyteType, byteType, shortType, ushortType, intType, uintType, longType, ulongType, floatType, doubleType);
 }

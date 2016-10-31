@@ -80,10 +80,12 @@ class BoundMemberVariable : public BoundExpression
 {
 public:
     BoundMemberVariable(Assembly& assembly_, TypeSymbol* type_, MemberVariableSymbol* memberVariableSymbol_);
+    void SetClassObject(std::unique_ptr<BoundExpression>&& classObject_);
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
 private:
+    std::unique_ptr<BoundExpression> classObject;
     MemberVariableSymbol* memberVariableSymbol;
 };
 

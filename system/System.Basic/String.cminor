@@ -1,0 +1,12 @@
+namespace System
+{
+    public class String
+    {
+        [VmFunctionName=Vm.System.String.Length]
+        public extern int Length();
+        public override string ToString()
+        {
+            return this;
+        }
+    }
+}

@@ -19,7 +19,7 @@ Arena::~Arena()
     FreeMemory(mem);
 }
 
-ObjectMemPtr Arena::Allocate(uint64_t blockSize)
+MemPtr Arena::Allocate(uint64_t blockSize)
 {
     std::lock_guard<std::mutex> lock(mtx);
     if (blockSize == 0)
@@ -42,7 +42,7 @@ ObjectMemPtr Arena::Allocate(uint64_t blockSize)
     }
     if (free + blockSize <= commit)
     {
-        ObjectMemPtr ptr(free);
+        MemPtr ptr(free);
         free += blockSize;
         return ptr;
     }
@@ -52,7 +52,7 @@ ObjectMemPtr Arena::Allocate(uint64_t blockSize)
     }
 }
 
-ObjectMemPtr Arena::Allocate(Thread& thread, uint64_t blockSize)
+MemPtr Arena::Allocate(Thread& thread, uint64_t blockSize)
 {
     std::lock_guard<std::mutex> lock(mtx);
     if (blockSize == 0)
@@ -76,7 +76,7 @@ ObjectMemPtr Arena::Allocate(Thread& thread, uint64_t blockSize)
     }
     if (free + blockSize <= commit)
     {
-        ObjectMemPtr ptr(free);
+        MemPtr ptr(free);
         free += blockSize;
         return ptr;
     }

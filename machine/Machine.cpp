@@ -10,7 +10,7 @@
 
 namespace cminor { namespace machine {
 
-Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*this),
+Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this),
     garbageCollector(*this, defaultGarbageCollectionIntervalMs), gen1Arena(ArenaId::gen1Arena, defaultArenaSize), gen2Arena(ArenaId::gen2Arena, defaultArenaSize), exiting(), exited(), nextFrameId(0)
 {
     // no operation:
@@ -18,197 +18,197 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
 
     // loading default value of basic types:
 
-    rootInst.SetInst(0x01, new LoadDefaultValueInst<ValueType::boolType>("defsb", "sbyte"));
-    rootInst.SetInst(0x02, new LoadDefaultValueInst<ValueType::byteType>("defby", "byte"));
-    rootInst.SetInst(0x03, new LoadDefaultValueInst<ValueType::shortType>("defsh", "short"));
-    rootInst.SetInst(0x04, new LoadDefaultValueInst<ValueType::ushortType>("defus", "ushort"));
-    rootInst.SetInst(0x05, new LoadDefaultValueInst<ValueType::intType>("defin", "int"));
-    rootInst.SetInst(0x06, new LoadDefaultValueInst<ValueType::uintType>("defui", "uint"));
-    rootInst.SetInst(0x07, new LoadDefaultValueInst<ValueType::longType>("deflo", "long"));
-    rootInst.SetInst(0x08, new LoadDefaultValueInst<ValueType::ulongType>("deful", "ulong"));
-    rootInst.SetInst(0x09, new LoadDefaultValueInst<ValueType::floatType>("deffl", "float"));
-    rootInst.SetInst(0x0A, new LoadDefaultValueInst<ValueType::doubleType>("defdo", "double"));
-    rootInst.SetInst(0x0B, new LoadDefaultValueInst<ValueType::charType>("defch", "char"));
-    rootInst.SetInst(0x0C, new LoadDefaultValueInst<ValueType::boolType>("defbo", "bool"));
+    rootInst.SetInst(0x01, new LoadDefaultValueInst<ValueType::sbyteType>("defsb", "System.Int8"));
+    rootInst.SetInst(0x02, new LoadDefaultValueInst<ValueType::byteType>("defby", "System.UInt8"));
+    rootInst.SetInst(0x03, new LoadDefaultValueInst<ValueType::shortType>("defsh", "System.Int16"));
+    rootInst.SetInst(0x04, new LoadDefaultValueInst<ValueType::ushortType>("defus", "System.UInt16"));
+    rootInst.SetInst(0x05, new LoadDefaultValueInst<ValueType::intType>("defin", "System.Int32"));
+    rootInst.SetInst(0x06, new LoadDefaultValueInst<ValueType::uintType>("defui", "System.UInt32"));
+    rootInst.SetInst(0x07, new LoadDefaultValueInst<ValueType::longType>("deflo", "System.Int64"));
+    rootInst.SetInst(0x08, new LoadDefaultValueInst<ValueType::ulongType>("deful", "System.UInt64"));
+    rootInst.SetInst(0x09, new LoadDefaultValueInst<ValueType::floatType>("deffl", "System.Float"));
+    rootInst.SetInst(0x0A, new LoadDefaultValueInst<ValueType::doubleType>("defdo", "System.Double"));
+    rootInst.SetInst(0x0B, new LoadDefaultValueInst<ValueType::charType>("defch", "System.Char"));
+    rootInst.SetInst(0x0C, new LoadDefaultValueInst<ValueType::boolType>("defbo", "System.Boolean"));
 
     //  arithmetic unary operators:
     //  ---------------------------
 
     //  unary plus:
-    rootInst.SetInst(0x0D, new UnaryOpInst<int8_t, std::identity<int8_t>, ValueType::sbyteType>("uplussb", "uplus", "sbyte"));
-    rootInst.SetInst(0x0E, new UnaryOpInst<uint8_t, std::identity<uint8_t>, ValueType::byteType>("uplusby", "uplus", "byte"));
-    rootInst.SetInst(0x0F, new UnaryOpInst<int16_t, std::identity<int16_t>, ValueType::shortType>("uplussh", "uplus", "short"));
-    rootInst.SetInst(0x10, new UnaryOpInst<uint16_t, std::identity<uint16_t>, ValueType::ushortType>("uplusus", "uplus", "ushort"));
-    rootInst.SetInst(0x11, new UnaryOpInst<int32_t, std::identity<int32_t>, ValueType::intType>("uplusin", "uplus", "int"));
-    rootInst.SetInst(0x12, new UnaryOpInst<uint32_t, std::identity<uint32_t>, ValueType::uintType>("uplusui", "uplus", "uint"));
-    rootInst.SetInst(0x13, new UnaryOpInst<int64_t, std::identity<int64_t>, ValueType::longType>("upluslo", "uplus", "long"));
-    rootInst.SetInst(0x14, new UnaryOpInst<uint64_t, std::identity<uint64_t>, ValueType::ulongType>("uplusul", "uplus", "ulong"));
-    rootInst.SetInst(0x15, new UnaryOpInst<float, std::identity<float>, ValueType::floatType>("uplusfl", "uplus", "float"));
-    rootInst.SetInst(0x16, new UnaryOpInst<double, std::identity<double>, ValueType::doubleType>("uplusdo", "uplus", "double"));
+    rootInst.SetInst(0x0D, new UnaryOpInst<int8_t, std::identity<int8_t>, ValueType::sbyteType>("uplussb", "uplus", "System.Int8"));
+    rootInst.SetInst(0x0E, new UnaryOpInst<uint8_t, std::identity<uint8_t>, ValueType::byteType>("uplusby", "uplus", "System.UInt8"));
+    rootInst.SetInst(0x0F, new UnaryOpInst<int16_t, std::identity<int16_t>, ValueType::shortType>("uplussh", "uplus", "System.Int16"));
+    rootInst.SetInst(0x10, new UnaryOpInst<uint16_t, std::identity<uint16_t>, ValueType::ushortType>("uplusus", "uplus", "System.UInt16"));
+    rootInst.SetInst(0x11, new UnaryOpInst<int32_t, std::identity<int32_t>, ValueType::intType>("uplusin", "uplus", "System.Int32"));
+    rootInst.SetInst(0x12, new UnaryOpInst<uint32_t, std::identity<uint32_t>, ValueType::uintType>("uplusui", "uplus", "System.UInt32"));
+    rootInst.SetInst(0x13, new UnaryOpInst<int64_t, std::identity<int64_t>, ValueType::longType>("upluslo", "uplus", "System.Int64"));
+    rootInst.SetInst(0x14, new UnaryOpInst<uint64_t, std::identity<uint64_t>, ValueType::ulongType>("uplusul", "uplus", "System.UInt64"));
+    rootInst.SetInst(0x15, new UnaryOpInst<float, std::identity<float>, ValueType::floatType>("uplusfl", "uplus", "System.Float"));
+    rootInst.SetInst(0x16, new UnaryOpInst<double, std::identity<double>, ValueType::doubleType>("uplusdo", "uplus", "System.Double"));
 
     //  unary minus:
-    rootInst.SetInst(0x17, new UnaryOpInst<int8_t, std::negate<int8_t>, ValueType::sbyteType>("negsb", "neg", "sbyte"));
-    rootInst.SetInst(0x18, new UnaryOpInst<uint8_t, std::negate<uint8_t>, ValueType::byteType>("negby", "neg", "byte"));
-    rootInst.SetInst(0x19, new UnaryOpInst<int16_t, std::negate<int16_t>, ValueType::shortType>("negsh", "neg", "short"));
-    rootInst.SetInst(0x1A, new UnaryOpInst<uint16_t, std::negate<uint16_t>, ValueType::ushortType>("negus", "neg", "ushort"));
-    rootInst.SetInst(0x1B, new UnaryOpInst<int32_t, std::negate<int32_t>, ValueType::intType>("negin", "neg", "int"));
-    rootInst.SetInst(0x1C, new UnaryOpInst<uint32_t, std::negate<uint32_t>, ValueType::uintType>("negui", "neg", "uint"));
-    rootInst.SetInst(0x1D, new UnaryOpInst<int64_t, std::negate<int64_t>, ValueType::longType>("neglo", "neg", "long"));
-    rootInst.SetInst(0x1E, new UnaryOpInst<uint64_t, std::negate<uint64_t>, ValueType::ulongType>("negul", "neg", "ulong"));
-    rootInst.SetInst(0x1F, new UnaryOpInst<float, std::negate<float>, ValueType::floatType>("negfl", "neg", "float"));
-    rootInst.SetInst(0x20, new UnaryOpInst<double, std::negate<double>, ValueType::doubleType>("negdo", "neg", "double"));
+    rootInst.SetInst(0x17, new UnaryOpInst<int8_t, std::negate<int8_t>, ValueType::sbyteType>("negsb", "neg", "System.Int8"));
+    rootInst.SetInst(0x18, new UnaryOpInst<uint8_t, std::negate<uint8_t>, ValueType::byteType>("negby", "neg", "System.UInt8"));
+    rootInst.SetInst(0x19, new UnaryOpInst<int16_t, std::negate<int16_t>, ValueType::shortType>("negsh", "neg", "System.Int16"));
+    rootInst.SetInst(0x1A, new UnaryOpInst<uint16_t, std::negate<uint16_t>, ValueType::ushortType>("negus", "neg", "System.UInt16"));
+    rootInst.SetInst(0x1B, new UnaryOpInst<int32_t, std::negate<int32_t>, ValueType::intType>("negin", "neg", "System.Int32"));
+    rootInst.SetInst(0x1C, new UnaryOpInst<uint32_t, std::negate<uint32_t>, ValueType::uintType>("negui", "neg", "System.UInt32"));
+    rootInst.SetInst(0x1D, new UnaryOpInst<int64_t, std::negate<int64_t>, ValueType::longType>("neglo", "neg", "System.Int64"));
+    rootInst.SetInst(0x1E, new UnaryOpInst<uint64_t, std::negate<uint64_t>, ValueType::ulongType>("negul", "neg", "System.UInt64"));
+    rootInst.SetInst(0x1F, new UnaryOpInst<float, std::negate<float>, ValueType::floatType>("negfl", "neg", "System.Float"));
+    rootInst.SetInst(0x20, new UnaryOpInst<double, std::negate<double>, ValueType::doubleType>("negdo", "neg", "System.Double"));
 
     //  bitwise complement:
-    rootInst.SetInst(0x21, new UnaryOpInst<int8_t, std::bit_not<int8_t>, ValueType::sbyteType>("cplsb", "cpl", "sbyte"));
-    rootInst.SetInst(0x22, new UnaryOpInst<uint8_t, std::bit_not<uint8_t>, ValueType::byteType>("cplby", "cpl", "byte"));
-    rootInst.SetInst(0x23, new UnaryOpInst<int16_t, std::bit_not<int16_t>, ValueType::shortType>("cplsh", "cpl", "short"));
-    rootInst.SetInst(0x24, new UnaryOpInst<uint16_t, std::bit_not<uint16_t>, ValueType::ushortType>("cplus", "cpl", "ushort"));
-    rootInst.SetInst(0x25, new UnaryOpInst<int32_t, std::bit_not<int32_t>, ValueType::intType>("cplin", "cpl", "int"));
-    rootInst.SetInst(0x26, new UnaryOpInst<uint32_t, std::bit_not<uint32_t>, ValueType::uintType>("cplui", "cpl", "uint"));
-    rootInst.SetInst(0x27, new UnaryOpInst<int64_t, std::bit_not<int64_t>, ValueType::longType>("cpllo", "cpl", "long"));
-    rootInst.SetInst(0x28, new UnaryOpInst<uint64_t, std::bit_not<uint64_t>, ValueType::ulongType>("cplul", "cpl", "ulong"));
+    rootInst.SetInst(0x21, new UnaryOpInst<int8_t, std::bit_not<int8_t>, ValueType::sbyteType>("cplsb", "cpl", "System.Int8"));
+    rootInst.SetInst(0x22, new UnaryOpInst<uint8_t, std::bit_not<uint8_t>, ValueType::byteType>("cplby", "cpl", "System.UInt8"));
+    rootInst.SetInst(0x23, new UnaryOpInst<int16_t, std::bit_not<int16_t>, ValueType::shortType>("cplsh", "cpl", "System.Int16"));
+    rootInst.SetInst(0x24, new UnaryOpInst<uint16_t, std::bit_not<uint16_t>, ValueType::ushortType>("cplus", "cpl", "System.UInt16"));
+    rootInst.SetInst(0x25, new UnaryOpInst<int32_t, std::bit_not<int32_t>, ValueType::intType>("cplin", "cpl", "System.Int32"));
+    rootInst.SetInst(0x26, new UnaryOpInst<uint32_t, std::bit_not<uint32_t>, ValueType::uintType>("cplui", "cpl", "System.UInt32"));
+    rootInst.SetInst(0x27, new UnaryOpInst<int64_t, std::bit_not<int64_t>, ValueType::longType>("cpllo", "cpl", "System.Int64"));
+    rootInst.SetInst(0x28, new UnaryOpInst<uint64_t, std::bit_not<uint64_t>, ValueType::ulongType>("cplul", "cpl", "System.UInt64"));
 
     // arithmetic binary operators:
     // ----------------------------
 
     //  add:
-    rootInst.SetInst(0x29, new BinaryOpInst<int8_t, std::plus<int8_t>, ValueType::sbyteType>("addsb", "add", "sbyte"));
-    rootInst.SetInst(0x2A, new BinaryOpInst<uint8_t, std::plus<uint8_t>, ValueType::byteType>("addby", "add", "byte"));
-    rootInst.SetInst(0x2B, new BinaryOpInst<int16_t, std::plus<int16_t>, ValueType::shortType>("addsh", "add", "short"));
-    rootInst.SetInst(0x2C, new BinaryOpInst<uint16_t, std::plus<uint16_t>, ValueType::ushortType>("addus", "add", "ushort"));
-    rootInst.SetInst(0x2D, new BinaryOpInst<int32_t, std::plus<int32_t>, ValueType::intType>("addin", "add", "int"));
-    rootInst.SetInst(0x2E, new BinaryOpInst<uint32_t, std::plus<uint32_t>, ValueType::uintType>("addui", "add", "uint"));
-    rootInst.SetInst(0x2F, new BinaryOpInst<int64_t, std::plus<int64_t>, ValueType::longType>("addlo", "add", "long"));
-    rootInst.SetInst(0x30, new BinaryOpInst<uint64_t, std::plus<uint64_t>, ValueType::ulongType>("addul", "add", "ulong"));
-    rootInst.SetInst(0x31, new BinaryOpInst<float, std::plus<float>, ValueType::floatType>("addfl", "add", "float"));
-    rootInst.SetInst(0x32, new BinaryOpInst<double, std::plus<double>, ValueType::doubleType>("adddo", "add", "double"));
+    rootInst.SetInst(0x29, new BinaryOpInst<int8_t, std::plus<int8_t>, ValueType::sbyteType>("addsb", "add", "System.Int8"));
+    rootInst.SetInst(0x2A, new BinaryOpInst<uint8_t, std::plus<uint8_t>, ValueType::byteType>("addby", "add", "System.UInt8"));
+    rootInst.SetInst(0x2B, new BinaryOpInst<int16_t, std::plus<int16_t>, ValueType::shortType>("addsh", "add", "System.Int16"));
+    rootInst.SetInst(0x2C, new BinaryOpInst<uint16_t, std::plus<uint16_t>, ValueType::ushortType>("addus", "add", "System.UInt16"));
+    rootInst.SetInst(0x2D, new BinaryOpInst<int32_t, std::plus<int32_t>, ValueType::intType>("addin", "add", "System.Int32"));
+    rootInst.SetInst(0x2E, new BinaryOpInst<uint32_t, std::plus<uint32_t>, ValueType::uintType>("addui", "add", "System.UInt32"));
+    rootInst.SetInst(0x2F, new BinaryOpInst<int64_t, std::plus<int64_t>, ValueType::longType>("addlo", "add", "System.Int64"));
+    rootInst.SetInst(0x30, new BinaryOpInst<uint64_t, std::plus<uint64_t>, ValueType::ulongType>("addul", "add", "System.UInt64"));
+    rootInst.SetInst(0x31, new BinaryOpInst<float, std::plus<float>, ValueType::floatType>("addfl", "add", "System.Float"));
+    rootInst.SetInst(0x32, new BinaryOpInst<double, std::plus<double>, ValueType::doubleType>("adddo", "add", "System.Double"));
 
     //  subtract:
-    rootInst.SetInst(0x33, new BinaryOpInst<int8_t, std::minus<int8_t>, ValueType::sbyteType>("subsb", "sub", "sbyte"));
-    rootInst.SetInst(0x34, new BinaryOpInst<uint8_t, std::minus<uint8_t>, ValueType::byteType>("subby", "sub", "byte"));
-    rootInst.SetInst(0x35, new BinaryOpInst<int16_t, std::minus<int16_t>, ValueType::shortType>("subsh", "sub", "short"));
-    rootInst.SetInst(0x36, new BinaryOpInst<uint16_t, std::minus<uint16_t>, ValueType::ushortType>("subus", "sub", "ushort"));
-    rootInst.SetInst(0x37, new BinaryOpInst<int32_t, std::minus<int32_t>, ValueType::intType>("subin", "sub", "int"));
-    rootInst.SetInst(0x38, new BinaryOpInst<uint32_t, std::minus<uint32_t>, ValueType::uintType>("subui", "sub", "uint"));
-    rootInst.SetInst(0x39, new BinaryOpInst<int64_t, std::minus<int64_t>, ValueType::longType>("sublo", "sub", "long"));
-    rootInst.SetInst(0x3A, new BinaryOpInst<uint64_t, std::minus<uint64_t>, ValueType::ulongType>("subul", "sub", "ulong"));
-    rootInst.SetInst(0x3B, new BinaryOpInst<float, std::minus<float>, ValueType::floatType>("subfl", "sub", "float"));
-    rootInst.SetInst(0x3C, new BinaryOpInst<double, std::minus<double>, ValueType::doubleType>("subdo", "sub", "double"));
+    rootInst.SetInst(0x33, new BinaryOpInst<int8_t, std::minus<int8_t>, ValueType::sbyteType>("subsb", "sub", "System.Int8"));
+    rootInst.SetInst(0x34, new BinaryOpInst<uint8_t, std::minus<uint8_t>, ValueType::byteType>("subby", "sub", "System.UInt8"));
+    rootInst.SetInst(0x35, new BinaryOpInst<int16_t, std::minus<int16_t>, ValueType::shortType>("subsh", "sub", "System.Int16"));
+    rootInst.SetInst(0x36, new BinaryOpInst<uint16_t, std::minus<uint16_t>, ValueType::ushortType>("subus", "sub", "System.UInt16"));
+    rootInst.SetInst(0x37, new BinaryOpInst<int32_t, std::minus<int32_t>, ValueType::intType>("subin", "sub", "System.Int32"));
+    rootInst.SetInst(0x38, new BinaryOpInst<uint32_t, std::minus<uint32_t>, ValueType::uintType>("subui", "sub", "System.UInt32"));
+    rootInst.SetInst(0x39, new BinaryOpInst<int64_t, std::minus<int64_t>, ValueType::longType>("sublo", "sub", "System.Int64"));
+    rootInst.SetInst(0x3A, new BinaryOpInst<uint64_t, std::minus<uint64_t>, ValueType::ulongType>("subul", "sub", "System.UInt64"));
+    rootInst.SetInst(0x3B, new BinaryOpInst<float, std::minus<float>, ValueType::floatType>("subfl", "sub", "System.Float"));
+    rootInst.SetInst(0x3C, new BinaryOpInst<double, std::minus<double>, ValueType::doubleType>("subdo", "sub", "System.Double"));
 
     //  multiply:
-    rootInst.SetInst(0x3D, new BinaryOpInst<int8_t, std::multiplies<int8_t>, ValueType::sbyteType>("mulsb", "mul", "sbyte"));
-    rootInst.SetInst(0x3E, new BinaryOpInst<uint8_t, std::multiplies<uint8_t>, ValueType::byteType>("mulby", "mul", "byte"));
-    rootInst.SetInst(0x3F, new BinaryOpInst<int16_t, std::multiplies<int16_t>, ValueType::shortType>("mulsh", "mul", "short"));
-    rootInst.SetInst(0x40, new BinaryOpInst<uint16_t, std::multiplies<uint16_t>, ValueType::ushortType>("mulus", "mul", "ushort"));
-    rootInst.SetInst(0x41, new BinaryOpInst<int32_t, std::multiplies<int32_t>, ValueType::intType>("mulin", "mul", "int"));
-    rootInst.SetInst(0x42, new BinaryOpInst<uint32_t, std::multiplies<uint32_t>, ValueType::uintType>("mului", "mul", "uint"));
-    rootInst.SetInst(0x43, new BinaryOpInst<int64_t, std::multiplies<int64_t>, ValueType::longType>("mullo", "mul", "long"));
-    rootInst.SetInst(0x44, new BinaryOpInst<uint64_t, std::multiplies<uint64_t>, ValueType::ulongType>("mulul", "mul", "ulong"));
-    rootInst.SetInst(0x45, new BinaryOpInst<float, std::multiplies<float>, ValueType::floatType>("mulfl", "mul", "float"));
-    rootInst.SetInst(0x46, new BinaryOpInst<double, std::multiplies<double>, ValueType::doubleType>("muldo", "mul", "double"));
+    rootInst.SetInst(0x3D, new BinaryOpInst<int8_t, std::multiplies<int8_t>, ValueType::sbyteType>("mulsb", "mul", "System.Int8"));
+    rootInst.SetInst(0x3E, new BinaryOpInst<uint8_t, std::multiplies<uint8_t>, ValueType::byteType>("mulby", "mul", "System.UInt8"));
+    rootInst.SetInst(0x3F, new BinaryOpInst<int16_t, std::multiplies<int16_t>, ValueType::shortType>("mulsh", "mul", "System.Int16"));
+    rootInst.SetInst(0x40, new BinaryOpInst<uint16_t, std::multiplies<uint16_t>, ValueType::ushortType>("mulus", "mul", "System.UInt16"));
+    rootInst.SetInst(0x41, new BinaryOpInst<int32_t, std::multiplies<int32_t>, ValueType::intType>("mulin", "mul", "System.Int32"));
+    rootInst.SetInst(0x42, new BinaryOpInst<uint32_t, std::multiplies<uint32_t>, ValueType::uintType>("mului", "mul", "System.UInt32"));
+    rootInst.SetInst(0x43, new BinaryOpInst<int64_t, std::multiplies<int64_t>, ValueType::longType>("mullo", "mul", "System.Int64"));
+    rootInst.SetInst(0x44, new BinaryOpInst<uint64_t, std::multiplies<uint64_t>, ValueType::ulongType>("mulul", "mul", "System.UInt64"));
+    rootInst.SetInst(0x45, new BinaryOpInst<float, std::multiplies<float>, ValueType::floatType>("mulfl", "mul", "System.Float"));
+    rootInst.SetInst(0x46, new BinaryOpInst<double, std::multiplies<double>, ValueType::doubleType>("muldo", "mul", "System.Double"));
 
     //  divide:
-    rootInst.SetInst(0x47, new BinaryOpInst<int8_t, std::divides<int8_t>, ValueType::sbyteType>("divsb", "div", "sbyte"));
-    rootInst.SetInst(0x48, new BinaryOpInst<uint8_t, std::divides<uint8_t>, ValueType::byteType>("divby", "div", "byte"));
-    rootInst.SetInst(0x49, new BinaryOpInst<int16_t, std::divides<int16_t>, ValueType::shortType>("divsh", "div", "short"));
-    rootInst.SetInst(0x4A, new BinaryOpInst<uint16_t, std::divides<uint16_t>, ValueType::ushortType>("divus", "div", "ushort"));
-    rootInst.SetInst(0x4B, new BinaryOpInst<int32_t, std::divides<int32_t>, ValueType::intType>("divin", "div", "int"));
-    rootInst.SetInst(0x4C, new BinaryOpInst<uint32_t, std::divides<uint32_t>, ValueType::uintType>("divui", "div", "uint"));
-    rootInst.SetInst(0x4D, new BinaryOpInst<int64_t, std::divides<int64_t>, ValueType::longType>("divlo", "div", "long"));
-    rootInst.SetInst(0x4E, new BinaryOpInst<uint64_t, std::divides<uint64_t>, ValueType::ulongType>("divul", "div", "ulong"));
-    rootInst.SetInst(0x4F, new BinaryOpInst<float, std::divides<float>, ValueType::floatType>("divfl", "div", "float"));
-    rootInst.SetInst(0x50, new BinaryOpInst<double, std::divides<double>, ValueType::doubleType>("divdo", "div", "double"));
+    rootInst.SetInst(0x47, new BinaryOpInst<int8_t, std::divides<int8_t>, ValueType::sbyteType>("divsb", "div", "System.Int8"));
+    rootInst.SetInst(0x48, new BinaryOpInst<uint8_t, std::divides<uint8_t>, ValueType::byteType>("divby", "div", "System.UInt8"));
+    rootInst.SetInst(0x49, new BinaryOpInst<int16_t, std::divides<int16_t>, ValueType::shortType>("divsh", "div", "System.Int16"));
+    rootInst.SetInst(0x4A, new BinaryOpInst<uint16_t, std::divides<uint16_t>, ValueType::ushortType>("divus", "div", "System.UInt16"));
+    rootInst.SetInst(0x4B, new BinaryOpInst<int32_t, std::divides<int32_t>, ValueType::intType>("divin", "div", "System.Int32"));
+    rootInst.SetInst(0x4C, new BinaryOpInst<uint32_t, std::divides<uint32_t>, ValueType::uintType>("divui", "div", "System.UInt32"));
+    rootInst.SetInst(0x4D, new BinaryOpInst<int64_t, std::divides<int64_t>, ValueType::longType>("divlo", "div", "System.Int64"));
+    rootInst.SetInst(0x4E, new BinaryOpInst<uint64_t, std::divides<uint64_t>, ValueType::ulongType>("divul", "div", "System.UInt64"));
+    rootInst.SetInst(0x4F, new BinaryOpInst<float, std::divides<float>, ValueType::floatType>("divfl", "div", "System.Float"));
+    rootInst.SetInst(0x50, new BinaryOpInst<double, std::divides<double>, ValueType::doubleType>("divdo", "div", "System.Double"));
 
     //  remainder:
-    rootInst.SetInst(0x51, new BinaryOpInst<int8_t, std::modulus<int8_t>, ValueType::sbyteType>("remsb", "rem", "sbyte"));
-    rootInst.SetInst(0x52, new BinaryOpInst<uint8_t, std::modulus<uint8_t>, ValueType::byteType>("remby", "rem", "byte"));
-    rootInst.SetInst(0x53, new BinaryOpInst<int16_t, std::modulus<int16_t>, ValueType::shortType>("remsh", "rem", "short"));
-    rootInst.SetInst(0x54, new BinaryOpInst<uint16_t, std::modulus<uint16_t>, ValueType::ushortType>("remus", "rem", "ushort"));
-    rootInst.SetInst(0x55, new BinaryOpInst<int32_t, std::modulus<int32_t>, ValueType::intType>("remin", "rem", "int"));
-    rootInst.SetInst(0x56, new BinaryOpInst<uint32_t, std::modulus<uint32_t>, ValueType::uintType>("remui", "rem", "uint"));
-    rootInst.SetInst(0x57, new BinaryOpInst<int64_t, std::modulus<int64_t>, ValueType::longType>("remlo", "rem", "long"));
-    rootInst.SetInst(0x58, new BinaryOpInst<uint64_t, std::modulus<uint64_t>, ValueType::ulongType>("remul", "rem", "ulong"));
+    rootInst.SetInst(0x51, new BinaryOpInst<int8_t, std::modulus<int8_t>, ValueType::sbyteType>("remsb", "rem", "System.Int8"));
+    rootInst.SetInst(0x52, new BinaryOpInst<uint8_t, std::modulus<uint8_t>, ValueType::byteType>("remby", "rem", "System.UInt8"));
+    rootInst.SetInst(0x53, new BinaryOpInst<int16_t, std::modulus<int16_t>, ValueType::shortType>("remsh", "rem", "System.Int16"));
+    rootInst.SetInst(0x54, new BinaryOpInst<uint16_t, std::modulus<uint16_t>, ValueType::ushortType>("remus", "rem", "System.UInt16"));
+    rootInst.SetInst(0x55, new BinaryOpInst<int32_t, std::modulus<int32_t>, ValueType::intType>("remin", "rem", "System.Int32"));
+    rootInst.SetInst(0x56, new BinaryOpInst<uint32_t, std::modulus<uint32_t>, ValueType::uintType>("remui", "rem", "System.UInt32"));
+    rootInst.SetInst(0x57, new BinaryOpInst<int64_t, std::modulus<int64_t>, ValueType::longType>("remlo", "rem", "System.Int64"));
+    rootInst.SetInst(0x58, new BinaryOpInst<uint64_t, std::modulus<uint64_t>, ValueType::ulongType>("remul", "rem", "System.UInt64"));
 
     //  bitwise and:
-    rootInst.SetInst(0x59, new BinaryOpInst<int8_t, std::bit_and<int8_t>, ValueType::sbyteType>("andsb", "and", "sbyte"));
-    rootInst.SetInst(0x5A, new BinaryOpInst<uint8_t, std::bit_and<uint8_t>, ValueType::byteType>("andby", "and", "byte"));
-    rootInst.SetInst(0x5B, new BinaryOpInst<int16_t, std::bit_and<int16_t>, ValueType::shortType>("andsh", "and", "short"));
-    rootInst.SetInst(0x5C, new BinaryOpInst<uint16_t, std::bit_and<uint16_t>, ValueType::ushortType>("andus", "and", "ushort"));
-    rootInst.SetInst(0x5D, new BinaryOpInst<int32_t, std::bit_and<int32_t>, ValueType::intType>("andin", "and", "int"));
-    rootInst.SetInst(0x5E, new BinaryOpInst<uint32_t, std::bit_and<uint32_t>, ValueType::uintType>("andui", "and", "uint"));
-    rootInst.SetInst(0x5F, new BinaryOpInst<int64_t, std::bit_and<int64_t>, ValueType::longType>("andlo", "and", "long"));
-    rootInst.SetInst(0x60, new BinaryOpInst<uint64_t, std::bit_and<uint64_t>, ValueType::ulongType>("andul", "and", "ulong"));
+    rootInst.SetInst(0x59, new BinaryOpInst<int8_t, std::bit_and<int8_t>, ValueType::sbyteType>("andsb", "and", "System.Int8"));
+    rootInst.SetInst(0x5A, new BinaryOpInst<uint8_t, std::bit_and<uint8_t>, ValueType::byteType>("andby", "and", "System.UInt8"));
+    rootInst.SetInst(0x5B, new BinaryOpInst<int16_t, std::bit_and<int16_t>, ValueType::shortType>("andsh", "and", "System.Int16"));
+    rootInst.SetInst(0x5C, new BinaryOpInst<uint16_t, std::bit_and<uint16_t>, ValueType::ushortType>("andus", "and", "System.UInt16"));
+    rootInst.SetInst(0x5D, new BinaryOpInst<int32_t, std::bit_and<int32_t>, ValueType::intType>("andin", "and", "System.Int32"));
+    rootInst.SetInst(0x5E, new BinaryOpInst<uint32_t, std::bit_and<uint32_t>, ValueType::uintType>("andui", "and", "System.UInt32"));
+    rootInst.SetInst(0x5F, new BinaryOpInst<int64_t, std::bit_and<int64_t>, ValueType::longType>("andlo", "and", "System.Int64"));
+    rootInst.SetInst(0x60, new BinaryOpInst<uint64_t, std::bit_and<uint64_t>, ValueType::ulongType>("andul", "and", "System.UInt64"));
 
     //  bitwise or:
-    rootInst.SetInst(0x61, new BinaryOpInst<int8_t, std::bit_or<int8_t>, ValueType::sbyteType>("orsb", "or", "sbyte"));
-    rootInst.SetInst(0x62, new BinaryOpInst<uint8_t, std::bit_or<uint8_t>, ValueType::byteType>("orby", "or", "byte"));
-    rootInst.SetInst(0x63, new BinaryOpInst<int16_t, std::bit_or<int16_t>, ValueType::shortType>("orsh", "or", "short"));
-    rootInst.SetInst(0x64, new BinaryOpInst<uint16_t, std::bit_or<uint16_t>, ValueType::ushortType>("orus", "or", "ushort"));
-    rootInst.SetInst(0x65, new BinaryOpInst<int32_t, std::bit_or<int32_t>, ValueType::intType>("orin", "or", "int"));
-    rootInst.SetInst(0x66, new BinaryOpInst<uint32_t, std::bit_or<uint32_t>, ValueType::uintType>("orui", "or", "uint"));
-    rootInst.SetInst(0x67, new BinaryOpInst<int64_t, std::bit_or<int64_t>, ValueType::longType>("orlo", "or", "long"));
-    rootInst.SetInst(0x68, new BinaryOpInst<uint64_t, std::bit_or<uint64_t>, ValueType::ulongType>("orul", "or", "ulong"));
+    rootInst.SetInst(0x61, new BinaryOpInst<int8_t, std::bit_or<int8_t>, ValueType::sbyteType>("orsb", "or", "System.Int8"));
+    rootInst.SetInst(0x62, new BinaryOpInst<uint8_t, std::bit_or<uint8_t>, ValueType::byteType>("orby", "or", "System.UInt8"));
+    rootInst.SetInst(0x63, new BinaryOpInst<int16_t, std::bit_or<int16_t>, ValueType::shortType>("orsh", "or", "System.Int16"));
+    rootInst.SetInst(0x64, new BinaryOpInst<uint16_t, std::bit_or<uint16_t>, ValueType::ushortType>("orus", "or", "System.UInt16"));
+    rootInst.SetInst(0x65, new BinaryOpInst<int32_t, std::bit_or<int32_t>, ValueType::intType>("orin", "or", "System.Int32"));
+    rootInst.SetInst(0x66, new BinaryOpInst<uint32_t, std::bit_or<uint32_t>, ValueType::uintType>("orui", "or", "System.UInt32"));
+    rootInst.SetInst(0x67, new BinaryOpInst<int64_t, std::bit_or<int64_t>, ValueType::longType>("orlo", "or", "System.Int64"));
+    rootInst.SetInst(0x68, new BinaryOpInst<uint64_t, std::bit_or<uint64_t>, ValueType::ulongType>("orul", "or", "System.UInt64"));
 
     //  bitwise xor:
-    rootInst.SetInst(0x69, new BinaryOpInst<int8_t, std::bit_xor<int8_t>, ValueType::sbyteType>("xorsb", "xor", "sbyte"));
-    rootInst.SetInst(0x6A, new BinaryOpInst<uint8_t, std::bit_xor<uint8_t>, ValueType::byteType>("xorby", "xor", "byte"));
-    rootInst.SetInst(0x6B, new BinaryOpInst<int16_t, std::bit_xor<int16_t>, ValueType::shortType>("xorsh", "xor", "short"));
-    rootInst.SetInst(0x6C, new BinaryOpInst<uint16_t, std::bit_xor<uint16_t>, ValueType::ushortType>("xorus", "xor", "ushort"));
-    rootInst.SetInst(0x6D, new BinaryOpInst<int32_t, std::bit_xor<int32_t>, ValueType::intType>("xorin", "xor", "int"));
-    rootInst.SetInst(0x6E, new BinaryOpInst<uint32_t, std::bit_xor<uint32_t>, ValueType::uintType>("xorui", "xor", "uint"));
-    rootInst.SetInst(0x6F, new BinaryOpInst<int64_t, std::bit_xor<int64_t>, ValueType::longType>("xorlo", "xor", "long"));
-    rootInst.SetInst(0x70, new BinaryOpInst<uint64_t, std::bit_xor<uint64_t>, ValueType::ulongType>("xorul", "xor", "ulong"));
+    rootInst.SetInst(0x69, new BinaryOpInst<int8_t, std::bit_xor<int8_t>, ValueType::sbyteType>("xorsb", "xor", "System.Int8"));
+    rootInst.SetInst(0x6A, new BinaryOpInst<uint8_t, std::bit_xor<uint8_t>, ValueType::byteType>("xorby", "xor", "System.UInt8"));
+    rootInst.SetInst(0x6B, new BinaryOpInst<int16_t, std::bit_xor<int16_t>, ValueType::shortType>("xorsh", "xor", "System.Int16"));
+    rootInst.SetInst(0x6C, new BinaryOpInst<uint16_t, std::bit_xor<uint16_t>, ValueType::ushortType>("xorus", "xor", "System.UInt16"));
+    rootInst.SetInst(0x6D, new BinaryOpInst<int32_t, std::bit_xor<int32_t>, ValueType::intType>("xorin", "xor", "System.Int32"));
+    rootInst.SetInst(0x6E, new BinaryOpInst<uint32_t, std::bit_xor<uint32_t>, ValueType::uintType>("xorui", "xor", "System.UInt32"));
+    rootInst.SetInst(0x6F, new BinaryOpInst<int64_t, std::bit_xor<int64_t>, ValueType::longType>("xorlo", "xor", "System.Int64"));
+    rootInst.SetInst(0x70, new BinaryOpInst<uint64_t, std::bit_xor<uint64_t>, ValueType::ulongType>("xorul", "xor", "System.UInt64"));
 
     //  shift left:
-    rootInst.SetInst(0x71, new BinaryOpInst<int8_t, ShiftLeft<int8_t>, ValueType::sbyteType>("shlsb", "shl", "sbyte"));
-    rootInst.SetInst(0x72, new BinaryOpInst<uint8_t, ShiftLeft<uint8_t>, ValueType::byteType>("shlby", "shl", "byte"));
-    rootInst.SetInst(0x73, new BinaryOpInst<int16_t, ShiftLeft<int16_t>, ValueType::shortType>("shlsh", "shl", "short"));
-    rootInst.SetInst(0x74, new BinaryOpInst<uint16_t, ShiftLeft<uint16_t>, ValueType::ushortType>("shlus", "shl", "ushort"));
-    rootInst.SetInst(0x75, new BinaryOpInst<int32_t, ShiftLeft<int32_t>, ValueType::intType>("shlin", "shl", "int"));
-    rootInst.SetInst(0x76, new BinaryOpInst<uint32_t, ShiftLeft<uint32_t>, ValueType::uintType>("shlui", "shl", "uint"));
-    rootInst.SetInst(0x77, new BinaryOpInst<int64_t, ShiftLeft<int64_t>, ValueType::longType>("shllo", "shl", "long"));
-    rootInst.SetInst(0x78, new BinaryOpInst<uint64_t, ShiftLeft<uint64_t>, ValueType::ulongType>("shlul", "shl", "ulong"));
+    rootInst.SetInst(0x71, new BinaryOpInst<int8_t, ShiftLeft<int8_t>, ValueType::sbyteType>("shlsb", "shl", "System.Int8"));
+    rootInst.SetInst(0x72, new BinaryOpInst<uint8_t, ShiftLeft<uint8_t>, ValueType::byteType>("shlby", "shl", "System.UInt8"));
+    rootInst.SetInst(0x73, new BinaryOpInst<int16_t, ShiftLeft<int16_t>, ValueType::shortType>("shlsh", "shl", "System.Int16"));
+    rootInst.SetInst(0x74, new BinaryOpInst<uint16_t, ShiftLeft<uint16_t>, ValueType::ushortType>("shlus", "shl", "System.UInt16"));
+    rootInst.SetInst(0x75, new BinaryOpInst<int32_t, ShiftLeft<int32_t>, ValueType::intType>("shlin", "shl", "System.Int32"));
+    rootInst.SetInst(0x76, new BinaryOpInst<uint32_t, ShiftLeft<uint32_t>, ValueType::uintType>("shlui", "shl", "System.UInt32"));
+    rootInst.SetInst(0x77, new BinaryOpInst<int64_t, ShiftLeft<int64_t>, ValueType::longType>("shllo", "shl", "System.Int64"));
+    rootInst.SetInst(0x78, new BinaryOpInst<uint64_t, ShiftLeft<uint64_t>, ValueType::ulongType>("shlul", "shl", "System.UInt64"));
 
     //  shift right:
-    rootInst.SetInst(0x79, new BinaryOpInst<int8_t, ShiftRight<int8_t>, ValueType::sbyteType>("shrsb", "shr", "sbyte"));
-    rootInst.SetInst(0x7A, new BinaryOpInst<uint8_t, ShiftRight<uint8_t>, ValueType::byteType>("shrby", "shr", "byte"));
-    rootInst.SetInst(0x7B, new BinaryOpInst<int16_t, ShiftRight<int16_t>, ValueType::shortType>("shrsh", "shr", "short"));
-    rootInst.SetInst(0x7C, new BinaryOpInst<uint16_t, ShiftRight<uint16_t>, ValueType::ushortType>("shrus", "shr", "ushort"));
-    rootInst.SetInst(0x7D, new BinaryOpInst<int32_t, ShiftRight<int32_t>, ValueType::intType>("shrin", "shr", "int"));
-    rootInst.SetInst(0x7E, new BinaryOpInst<uint32_t, ShiftRight<uint32_t>, ValueType::uintType>("shrui", "shr", "uint"));
-    rootInst.SetInst(0x7F, new BinaryOpInst<int64_t, ShiftRight<int64_t>, ValueType::longType>("shrlo", "shr", "long"));
-    rootInst.SetInst(0x80, new BinaryOpInst<uint64_t, ShiftRight<uint64_t>, ValueType::ulongType>("shrul", "shr", "ulong"));
+    rootInst.SetInst(0x79, new BinaryOpInst<int8_t, ShiftRight<int8_t>, ValueType::sbyteType>("shrsb", "shr", "System.Int8"));
+    rootInst.SetInst(0x7A, new BinaryOpInst<uint8_t, ShiftRight<uint8_t>, ValueType::byteType>("shrby", "shr", "System.UInt8"));
+    rootInst.SetInst(0x7B, new BinaryOpInst<int16_t, ShiftRight<int16_t>, ValueType::shortType>("shrsh", "shr", "System.Int16"));
+    rootInst.SetInst(0x7C, new BinaryOpInst<uint16_t, ShiftRight<uint16_t>, ValueType::ushortType>("shrus", "shr", "System.UInt16"));
+    rootInst.SetInst(0x7D, new BinaryOpInst<int32_t, ShiftRight<int32_t>, ValueType::intType>("shrin", "shr", "System.Int32"));
+    rootInst.SetInst(0x7E, new BinaryOpInst<uint32_t, ShiftRight<uint32_t>, ValueType::uintType>("shrui", "shr", "System.UInt32"));
+    rootInst.SetInst(0x7F, new BinaryOpInst<int64_t, ShiftRight<int64_t>, ValueType::longType>("shrlo", "shr", "System.Int64"));
+    rootInst.SetInst(0x80, new BinaryOpInst<uint64_t, ShiftRight<uint64_t>, ValueType::ulongType>("shrul", "shr", "System.UInt64"));
 
     // comparisons:
     // ------------
 
     //  equal:
-    rootInst.SetInst(0x81, new BinaryPredInst<int8_t, std::equal_to<int8_t>, ValueType::sbyteType>("equalsb", "equal", "sbyte"));
-    rootInst.SetInst(0x82, new BinaryPredInst<uint8_t, std::equal_to<uint8_t>, ValueType::byteType>("equalby", "equal", "byte"));
-    rootInst.SetInst(0x83, new BinaryPredInst<int16_t, std::equal_to<int16_t>, ValueType::shortType>("equalsh", "equal", "short"));
-    rootInst.SetInst(0x84, new BinaryPredInst<uint16_t, std::equal_to<uint16_t>, ValueType::ushortType>("equalus", "equal", "ushort"));
-    rootInst.SetInst(0x85, new BinaryPredInst<int32_t, std::equal_to<int32_t>, ValueType::intType>("equalin", "equal", "int"));
-    rootInst.SetInst(0x86, new BinaryPredInst<uint32_t, std::equal_to<uint32_t>, ValueType::uintType>("equalui", "equal", "uint"));
-    rootInst.SetInst(0x87, new BinaryPredInst<int64_t, std::equal_to<int64_t>, ValueType::longType>("equallo", "equal", "long"));
-    rootInst.SetInst(0x88, new BinaryPredInst<uint64_t, std::equal_to<uint64_t>, ValueType::ulongType>("equalul", "equal", "ulong"));
-    rootInst.SetInst(0x89, new BinaryPredInst<float, std::equal_to<float>, ValueType::floatType>("equalfl", "equal", "float"));
-    rootInst.SetInst(0x8A, new BinaryPredInst<double, std::equal_to<double>, ValueType::doubleType>("equaldo", "equal", "double"));
-    rootInst.SetInst(0x8B, new BinaryPredInst<char32_t, std::equal_to<char32_t>, ValueType::charType>("equalch", "equal", "char"));
-    rootInst.SetInst(0x8C, new BinaryPredInst<bool, std::equal_to<bool>, ValueType::boolType>("equalbo", "equal", "bool"));
+    rootInst.SetInst(0x81, new BinaryPredInst<int8_t, std::equal_to<int8_t>, ValueType::sbyteType>("equalsb", "equal", "System.Int8"));
+    rootInst.SetInst(0x82, new BinaryPredInst<uint8_t, std::equal_to<uint8_t>, ValueType::byteType>("equalby", "equal", "System.UInt8"));
+    rootInst.SetInst(0x83, new BinaryPredInst<int16_t, std::equal_to<int16_t>, ValueType::shortType>("equalsh", "equal", "System.Int16"));
+    rootInst.SetInst(0x84, new BinaryPredInst<uint16_t, std::equal_to<uint16_t>, ValueType::ushortType>("equalus", "equal", "System.UInt16"));
+    rootInst.SetInst(0x85, new BinaryPredInst<int32_t, std::equal_to<int32_t>, ValueType::intType>("equalin", "equal", "System.Int32"));
+    rootInst.SetInst(0x86, new BinaryPredInst<uint32_t, std::equal_to<uint32_t>, ValueType::uintType>("equalui", "equal", "System.UInt32"));
+    rootInst.SetInst(0x87, new BinaryPredInst<int64_t, std::equal_to<int64_t>, ValueType::longType>("equallo", "equal", "System.Int64"));
+    rootInst.SetInst(0x88, new BinaryPredInst<uint64_t, std::equal_to<uint64_t>, ValueType::ulongType>("equalul", "equal", "System.UInt64"));
+    rootInst.SetInst(0x89, new BinaryPredInst<float, std::equal_to<float>, ValueType::floatType>("equalfl", "equal", "System.Float"));
+    rootInst.SetInst(0x8A, new BinaryPredInst<double, std::equal_to<double>, ValueType::doubleType>("equaldo", "equal", "System.Double"));
+    rootInst.SetInst(0x8B, new BinaryPredInst<char32_t, std::equal_to<char32_t>, ValueType::charType>("equalch", "equal", "System.Char"));
+    rootInst.SetInst(0x8C, new BinaryPredInst<bool, std::equal_to<bool>, ValueType::boolType>("equalbo", "equal", "System.Boolean"));
 
     //  less:
-    rootInst.SetInst(0x8D, new BinaryPredInst<int8_t, std::less<int8_t>, ValueType::sbyteType>("lesssb", "less", "sbyte"));
-    rootInst.SetInst(0x8E, new BinaryPredInst<uint8_t, std::less<uint8_t>, ValueType::byteType>("lessby", "less", "byte"));
-    rootInst.SetInst(0x8F, new BinaryPredInst<int16_t, std::less<int16_t>, ValueType::shortType>("lesssh", "less", "short"));
-    rootInst.SetInst(0x90, new BinaryPredInst<uint16_t, std::less<uint16_t>, ValueType::ushortType>("lessus", "less", "ushort"));
-    rootInst.SetInst(0x91, new BinaryPredInst<int32_t, std::less<int32_t>, ValueType::intType>("lessin", "less", "int"));
-    rootInst.SetInst(0x92, new BinaryPredInst<uint32_t, std::less<uint32_t>, ValueType::uintType>("lessui", "less", "uint"));
-    rootInst.SetInst(0x93, new BinaryPredInst<int64_t, std::less<int64_t>, ValueType::longType>("lesslo", "less", "long"));
-    rootInst.SetInst(0x94, new BinaryPredInst<uint64_t, std::less<uint64_t>, ValueType::ulongType>("lessul", "less", "ulong"));
-    rootInst.SetInst(0x95, new BinaryPredInst<float, std::less<float>, ValueType::floatType>("lessfl", "less", "float"));
-    rootInst.SetInst(0x96, new BinaryPredInst<double, std::less<double>, ValueType::doubleType>("lessdo", "less", "double"));
-    rootInst.SetInst(0x97, new BinaryPredInst<char32_t, std::less<char32_t>, ValueType::charType>("lessch", "less", "char"));
-    rootInst.SetInst(0x98, new BinaryPredInst<bool, std::less<bool>, ValueType::boolType>("lessbo", "less", "bool"));
+    rootInst.SetInst(0x8D, new BinaryPredInst<int8_t, std::less<int8_t>, ValueType::sbyteType>("lesssb", "less", "System.Int8"));
+    rootInst.SetInst(0x8E, new BinaryPredInst<uint8_t, std::less<uint8_t>, ValueType::byteType>("lessby", "less", "System.UInt8"));
+    rootInst.SetInst(0x8F, new BinaryPredInst<int16_t, std::less<int16_t>, ValueType::shortType>("lesssh", "less", "System.Int16"));
+    rootInst.SetInst(0x90, new BinaryPredInst<uint16_t, std::less<uint16_t>, ValueType::ushortType>("lessus", "less", "System.UInt16"));
+    rootInst.SetInst(0x91, new BinaryPredInst<int32_t, std::less<int32_t>, ValueType::intType>("lessin", "less", "System.Int32"));
+    rootInst.SetInst(0x92, new BinaryPredInst<uint32_t, std::less<uint32_t>, ValueType::uintType>("lessui", "less", "System.UInt32"));
+    rootInst.SetInst(0x93, new BinaryPredInst<int64_t, std::less<int64_t>, ValueType::longType>("lesslo", "less", "System.Int64"));
+    rootInst.SetInst(0x94, new BinaryPredInst<uint64_t, std::less<uint64_t>, ValueType::ulongType>("lessul", "less", "System.UInt64"));
+    rootInst.SetInst(0x95, new BinaryPredInst<float, std::less<float>, ValueType::floatType>("lessfl", "less", "System.Float"));
+    rootInst.SetInst(0x96, new BinaryPredInst<double, std::less<double>, ValueType::doubleType>("lessdo", "less", "System.Double"));
+    rootInst.SetInst(0x97, new BinaryPredInst<char32_t, std::less<char32_t>, ValueType::charType>("lessch", "less", "System.Char"));
+    rootInst.SetInst(0x98, new BinaryPredInst<bool, std::less<bool>, ValueType::boolType>("lessbo", "less", "System.Boolean"));
 
     //  logical operations:
     //  -------------------
@@ -222,19 +222,21 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
     rootInst.SetInst(0x9B, new StoreLocalInst());
     rootInst.SetInst(0x9C, new LoadFieldInst());
     rootInst.SetInst(0x9D, new StoreFieldInst());
-    rootInst.SetInst(0x9E, new LoadConstantInst());
-    rootInst.SetInst(0x9F, new ReceiveInst());
+    rootInst.SetInst(0x9E, new LoadElemInst());
+    rootInst.SetInst(0x9F, new StoreElemInst());
+    rootInst.SetInst(0xA0, new LoadConstantInst());
+    rootInst.SetInst(0xA1, new ReceiveInst());
 
     // jump & call:
     // ------------
 
-    rootInst.SetInst(0xA0, new JumpInst());
-    rootInst.SetInst(0xA1, new JumpTrueInst());
-    rootInst.SetInst(0xA2, new JumpFalseInst());
-    rootInst.SetInst(0xA3, new CallInst());
-    rootInst.SetInst(0xA4, new VirtualCallInst());
-    rootInst.SetInst(0xA5, new EnterBlockInst());
-    rootInst.SetInst(0xA6, new ExitBlockInst());
+    rootInst.SetInst(0xA2, new JumpInst());
+    rootInst.SetInst(0xA3, new JumpTrueInst());
+    rootInst.SetInst(0xA4, new JumpFalseInst());
+    rootInst.SetInst(0xA5, new CallInst());
+    rootInst.SetInst(0xA6, new VirtualCallInst());
+    rootInst.SetInst(0xA7, new EnterBlockInst());
+    rootInst.SetInst(0xA8, new ExitBlockInst());
 
     // objects:
     // --------
@@ -247,11 +249,17 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), objectPool(*th
     rootInst.SetInst(0xB5, new UpCastInst());
     rootInst.SetInst(0xB6, new DownCastInst());
 
-
     // strings:
     // --------
 
     rootInst.SetInst(0xC0, new StrLitToStringInst());
+    rootInst.SetInst(0xC1, new LengthStringInst());
+
+    // arrays:
+    // -------
+
+    rootInst.SetInst(0xD0, new AllocateArrayElementsInst());
+    rootInst.SetInst(0xD1, new LengthArrayInst());
 
     // vmcall:
     // -------
@@ -499,7 +507,7 @@ std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
     return std::unique_ptr<Instruction>(clonedInst);
 }
 
-std::pair<ArenaId, ObjectMemPtr> Machine::AllocateMemory(Thread& thread, uint64_t blockSize)
+std::pair<ArenaId, MemPtr> Machine::AllocateMemory(Thread& thread, uint64_t blockSize)
 {
     if (blockSize < defaultLargeObjectThresholdSize)
     {

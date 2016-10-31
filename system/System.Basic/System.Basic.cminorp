@@ -1,0 +1,6 @@
+project System.Basic;
+reference <../System.Core/System.Core.cminorp>;
+source <Algorithm.cminor>;
+source <Array.cminor>;
+source <Object.cminor>;
+source <String.cminor>;

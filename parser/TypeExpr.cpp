@@ -9,6 +9,7 @@
 #include <Cm.Parsing/StdLib.hpp>
 #include <Cm.Parsing/XmlLog.hpp>
 #include <cminor/parser/BasicType.hpp>
+#include <cminor/parser/Expression.hpp>
 #include <cminor/parser/Identifier.hpp>
 
 namespace cminor { namespace parser {
@@ -169,11 +170,16 @@ public:
         a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PostfixTypeExprRule>(this, &PostfixTypeExprRule::A1Action));
         Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
         a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PostfixTypeExprRule>(this, &PostfixTypeExprRule::A2Action));
+        Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
+        a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PostfixTypeExprRule>(this, &PostfixTypeExprRule::A3Action));
         Cm::Parsing::NonterminalParser* primaryTypeExprNonterminalParser = GetNonterminal("PrimaryTypeExpr");
         primaryTypeExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PostfixTypeExprRule>(this, &PostfixTypeExprRule::PrePrimaryTypeExpr));
         primaryTypeExprNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PostfixTypeExprRule>(this, &PostfixTypeExprRule::PostPrimaryTypeExpr));
         Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
         identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PostfixTypeExprRule>(this, &PostfixTypeExprRule::PostIdentifier));
+        Cm::Parsing::NonterminalParser* sizeNonterminalParser = GetNonterminal("size");
+        sizeNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PostfixTypeExprRule>(this, &PostfixTypeExprRule::Presize));
+        sizeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PostfixTypeExprRule>(this, &PostfixTypeExprRule::Postsize));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -188,6 +194,11 @@ public:
     {
         context.s.SetEnd(span.End());
         context.typeExpr.reset(new DotNode(context.s, context.typeExpr.release(), context.fromIdentifier));
+    }
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.s.SetEnd(span.End());
+        context.typeExpr.reset(new ArrayNode(context.s, context.typeExpr.release(), context.fromsize));
     }
     void PrePrimaryTypeExpr(Cm::Parsing::ObjectStack& stack)
     {
@@ -211,16 +222,30 @@ public:
             stack.pop();
         }
     }
+    void Presize(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void Postsize(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromsize_value = std::move(stack.top());
+            context.fromsize = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromsize_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): ctx(), value(), typeExpr(), s(), fromPrimaryTypeExpr(), fromIdentifier() {}
+        Context(): ctx(), value(), typeExpr(), s(), fromPrimaryTypeExpr(), fromIdentifier(), fromsize() {}
         ParsingContext* ctx;
         Node* value;
         std::unique_ptr<Node> typeExpr;
         Span s;
         Node* fromPrimaryTypeExpr;
         IdentifierNode* fromIdentifier;
+        Node* fromsize;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -317,12 +342,19 @@ void TypeExprGrammar::GetReferencedGrammars()
         grammar1 = cminor::parser::BasicTypeGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    if (!grammar2)
+    {
+        grammar2 = cminor::parser::ExpressionGrammar::Create(pd);
+    }
+    AddGrammarReference(grammar2);
 }
 
 void TypeExprGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRule(new TypeExprRule("TypeExpr", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::NonterminalParser("PostfixTypeExpr", "PostfixTypeExpr", 1))));
@@ -332,11 +364,20 @@ void TypeExprGrammar::CreateRules()
                 new Cm::Parsing::ActionParser("A1",
                     new Cm::Parsing::NonterminalParser("PrimaryTypeExpr", "PrimaryTypeExpr", 1)),
                 new Cm::Parsing::KleeneStarParser(
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::CharParser('.'),
-                        new Cm::Parsing::ActionParser("A2",
-                            new Cm::Parsing::ExpectationParser(
-                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0)))))))));
+                    new Cm::Parsing::AlternativeParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::CharParser('.'),
+                            new Cm::Parsing::ActionParser("A2",
+                                new Cm::Parsing::ExpectationParser(
+                                    new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0)))),
+                        new Cm::Parsing::ActionParser("A3",
+                            new Cm::Parsing::SequenceParser(
+                                new Cm::Parsing::SequenceParser(
+                                    new Cm::Parsing::CharParser('['),
+                                    new Cm::Parsing::OptionalParser(
+                                        new Cm::Parsing::NonterminalParser("size", "Expression", 1))),
+                                new Cm::Parsing::ExpectationParser(
+                                    new Cm::Parsing::CharParser(']'))))))))));
     AddRule(new PrimaryTypeExprRule("PrimaryTypeExpr", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::ActionParser("A0",

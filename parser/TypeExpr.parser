@@ -6,7 +6,9 @@
 [hpp]#include <cminor/ast/Expression.hpp>
 [hpp]#include <cminor/parser/ParsingContext.hpp>
 [cpp]#include <cminor/parser/BasicType.hpp>
+[cpp]#include <cminor/parser/Expression.hpp>
 [cpp]#include <cminor/parser/Identifier.hpp>
+
 
 namespace cminor.parser
 {
@@ -16,6 +18,7 @@ namespace cminor.parser
     {
         using IdentifierGrammar.Identifier;
         using BasicTypeGrammar.BasicType;
+        using ExpressionGrammar.Expression;
 
         TypeExpr(ParsingContext* ctx) : Node*
             ::= PostfixTypeExpr(ctx){ value = PostfixTypeExpr; }
@@ -25,6 +28,7 @@ namespace cminor.parser
             ::= 
             (   PrimaryTypeExpr(ctx){ typeExpr.reset(PrimaryTypeExpr); s = span; }
                 (   '.' Identifier!{ s.SetEnd(span.End()); typeExpr.reset(new DotNode(s, typeExpr.release(), Identifier)); }
+                |   ('[' Expression(ctx):size? ']'!){ s.SetEnd(span.End()); typeExpr.reset(new ArrayNode(s, typeExpr.release(), size)); }
                 )*
             )
             {

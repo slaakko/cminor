@@ -10,6 +10,7 @@
 namespace cminor { namespace symbols {
 
 class Assembly;
+class ArrayTypeSymbol;
 
 class ObjectDefaultInit : public BasicTypeInit
 {
@@ -44,6 +45,7 @@ public:
 };
 
 void CreateDefaultConstructor(Assembly& assembly, ClassTypeSymbol* classTypeSymbol);
+void CreateArraySizeConstructor(Assembly& assembly, ArrayTypeSymbol* arrayTypeSymbol);
 void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType);
 void InitObjectFun(Assembly& assembly);
 

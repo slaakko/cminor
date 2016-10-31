@@ -13,7 +13,6 @@
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/ast/Project.hpp>
-#include <cminor/machine/Type.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -427,6 +426,44 @@ void SymbolTable::AddConversion(FunctionSymbol* conversionFun)
     conversionTable.AddConversion(conversionFun);
 }
 
+TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* elementType)
+{
+    utf32_string arrayName = elementType->FullName() + U"[]";
+    TypeSymbol* arrayType = GetTypeNoThrow(arrayName);
+    if (arrayType) 
+    {
+        return arrayType;
+    }
+    else
+    {
+        Constant arrayNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(arrayName.c_str())));
+        ArrayTypeSymbol* arrayTypeSymbol = new ArrayTypeSymbol(arrayNode.GetSpan(), arrayNameConstant);
+        arrayTypeSymbol->SetAssembly(assembly);
+        arrayTypeSymbol->SetPublic();
+        globalNs.AddSymbol(std::unique_ptr<Symbol>(arrayTypeSymbol));
+        TypeSymbol* systemArrayType = GetType(U"System.Array");
+        ClassTypeSymbol* systemArrayClassType = dynamic_cast<ClassTypeSymbol*>(systemArrayType);
+        Assert(systemArrayClassType, "class type symbol expected");
+        arrayTypeSymbol->SetBaseClass(systemArrayClassType);
+        arrayTypeSymbol->SetElementType(elementType);
+        utf32_string fullElementName = elementType->FullName();
+        assembly->GetConstantPool().Install(StringPtr(fullElementName.c_str()));
+        ConstantPool& constantPool = assembly->GetConstantPool();
+        utf32_string fullName = arrayTypeSymbol->FullName();
+        Constant fullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
+        arrayTypeSymbol->GetObjectType()->SetNameConstant(fullNameConstant);
+        arrayTypeSymbol->GetContainerScope()->SetBase(arrayTypeSymbol->BaseClass()->GetContainerScope());
+        ObjectType* baseClassObjectType = arrayTypeSymbol->BaseClass()->GetObjectType();
+        arrayTypeSymbol->GetObjectType()->AddFields(baseClassObjectType->Fields());
+        arrayTypeSymbol->GetObjectType()->AddField(ValueType::allocationHandle);
+        CreateBasicTypeObjectFun(*assembly, arrayTypeSymbol);
+        CreateArraySizeConstructor(*assembly, arrayTypeSymbol);
+        arrayTypeSymbol->InitVmt();
+        createdClasses.push_back(arrayTypeSymbol);
+        return arrayTypeSymbol;
+    }
+}
+
 SymbolCreator::~SymbolCreator()
 {
 }
@@ -508,12 +545,12 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::doubleTypeSymbol, new ConcreteSymbolCreator<DoubleTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::nullReferenceTypeSymbol, new ConcreteSymbolCreator<NullReferenceTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::classTypeSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
-    SymbolFactory::Instance().Register(SymbolType::objectTypeSymbol, new ConcreteSymbolCreator<ObjectTypeSymbol>());
-    SymbolFactory::Instance().Register(SymbolType::stringTypeSymbol, new ConcreteSymbolCreator<StringTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::arrayTypeSymbol, new ConcreteSymbolCreator<ArrayTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::functionSymbol, new ConcreteSymbolCreator<FunctionSymbol>());
     SymbolFactory::Instance().Register(SymbolType::memberFunctionSymbol, new ConcreteSymbolCreator<MemberFunctionSymbol>());
     SymbolFactory::Instance().Register(SymbolType::staticConstructorSymbol, new ConcreteSymbolCreator<StaticConstructorSymbol>());
     SymbolFactory::Instance().Register(SymbolType::constructorSymbol, new ConcreteSymbolCreator<ConstructorSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::arraySizeConstructorSymbol, new ConcreteSymbolCreator<ArraySizeConstructorSymbol>());
     SymbolFactory::Instance().Register(SymbolType::declarationBlock, new ConcreteSymbolCreator<DeclarationBlock>());
     SymbolFactory::Instance().Register(SymbolType::parameterSymbol, new ConcreteSymbolCreator<ParameterSymbol>());
     SymbolFactory::Instance().Register(SymbolType::localVariableSymbol, new ConcreteSymbolCreator<LocalVariableSymbol>());
@@ -541,68 +578,65 @@ void DoneSymbol()
 std::unique_ptr<Assembly> CreateSystemCoreAssembly(Machine& machine, const std::string& config)
 {
     std::unique_ptr<Assembly> systemCoreAssembly(new Assembly(machine, U"System.Core", CminorSystemCoreAssemblyFilePath(config)));
-    TypeSymbol* boolTypeSymbol = new BoolTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"bool")));
+    systemCoreAssembly->GetSymbolTable().BeginNamespace(StringPtr(U"System"), Span());
+    BasicTypeSymbol* boolTypeSymbol = new BoolTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"Boolean")));
     boolTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(boolTypeSymbol));
-    TypeSymbol* charTypeSymbol = new CharTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"char")));
+    boolTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.Boolean")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(boolTypeSymbol));
+    BasicTypeSymbol* charTypeSymbol = new CharTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"Char")));
     charTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(charTypeSymbol));
-    TypeSymbol* voidTypeSymbol = new VoidTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"void")));
+    charTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.Char")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(charTypeSymbol));
+    BasicTypeSymbol* voidTypeSymbol = new VoidTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"Void")));
     voidTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(voidTypeSymbol));
-    TypeSymbol* sbyteTypeSymbol = new SByteTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"sbyte")));
+    voidTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.Void")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(voidTypeSymbol));
+    BasicTypeSymbol* sbyteTypeSymbol = new SByteTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"Int8")));
     sbyteTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(sbyteTypeSymbol));
-    TypeSymbol* byteTypeSymbol = new ByteTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"byte")));
+    sbyteTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.Int8")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(sbyteTypeSymbol));
+    BasicTypeSymbol* byteTypeSymbol = new ByteTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"UInt8")));
     byteTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(byteTypeSymbol));
-    TypeSymbol* shortTypeSymbol = new ShortTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"short")));
+    byteTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.UInt8")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(byteTypeSymbol));
+    BasicTypeSymbol* shortTypeSymbol = new ShortTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"Int16")));
     shortTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(shortTypeSymbol));
-    TypeSymbol* ushortTypeSymbol = new UShortTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"ushort")));
+    shortTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.Int16")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(shortTypeSymbol));
+    BasicTypeSymbol* ushortTypeSymbol = new UShortTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"UInt16")));
     ushortTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(ushortTypeSymbol));
-    TypeSymbol* intTypeSymbol = new IntTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"int")));
+    ushortTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.UInt16")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(ushortTypeSymbol));
+    BasicTypeSymbol* intTypeSymbol = new IntTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"Int32")));
     intTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(intTypeSymbol));
-    TypeSymbol* uintTypeSymbol = new UIntTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"uint")));
+    intTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.Int32")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(intTypeSymbol));
+    BasicTypeSymbol* uintTypeSymbol = new UIntTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"UInt32")));
     uintTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(uintTypeSymbol));
-    TypeSymbol* longTypeSymbol = new LongTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"long")));
+    uintTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.UInt32")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(uintTypeSymbol));
+    BasicTypeSymbol* longTypeSymbol = new LongTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"Int64")));
     longTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(longTypeSymbol));
-    TypeSymbol* ulongTypeSymbol = new ULongTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"ulong")));
+    longTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.Int64")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(longTypeSymbol));
+    BasicTypeSymbol* ulongTypeSymbol = new ULongTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"UInt64")));
     ulongTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(ulongTypeSymbol));
-    TypeSymbol* floatTypeSymbol = new FloatTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"float")));
+    ulongTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.UInt64")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(ulongTypeSymbol));
+    BasicTypeSymbol* floatTypeSymbol = new FloatTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"Float")));
     floatTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(floatTypeSymbol));
-    TypeSymbol* doubleTypeSymbol = new DoubleTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"double")));
+    floatTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.Float")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(floatTypeSymbol));
+    BasicTypeSymbol* doubleTypeSymbol = new DoubleTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"Double")));
     doubleTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(doubleTypeSymbol));
-    TypeSymbol* nullReferenceTypeSymbol = new NullReferenceTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"@nullref")));
+    doubleTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.Double")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(doubleTypeSymbol));
+    BasicTypeSymbol* nullReferenceTypeSymbol = new NullReferenceTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"@nullref")));
     nullReferenceTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(nullReferenceTypeSymbol));
-/*
-    ObjectTypeSymbol* objectTypeSymbol = new ObjectTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"object")));
-    objectTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    objectTypeSymbol->SetPublic();
-    objectTypeSymbol->GetObjectType()->SetNameConstant(objectTypeSymbol->NameConstant());
-    objectTypeSymbol->GetObjectType()->AddField(ValueType::classDataPtr);
-    objectTypeSymbol->InitVmt();
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(objectTypeSymbol));
-    StringTypeSymbol* stringTypeSymbol = new StringTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"string")));
-    stringTypeSymbol->SetAssembly(systemCoreAssembly.get());
-    stringTypeSymbol->SetPublic();
-    stringTypeSymbol->SetBaseClass(objectTypeSymbol);
-    stringTypeSymbol->GetContainerScope()->SetBase(stringTypeSymbol->BaseClass()->GetContainerScope());
-    stringTypeSymbol->GetObjectType()->SetNameConstant(stringTypeSymbol->NameConstant());
-    stringTypeSymbol->GetObjectType()->AddFields(objectTypeSymbol->GetObjectType()->Fields());
-    stringTypeSymbol->InitVmt();
-    systemCoreAssembly->GetSymbolTable().GlobalNs().AddSymbol(std::unique_ptr<TypeSymbol>(stringTypeSymbol));
-*/
+    nullReferenceTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.@nullref")));
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(nullReferenceTypeSymbol));
+    systemCoreAssembly->GetSymbolTable().EndNamespace();
     InitBasicTypeFun(*systemCoreAssembly);
-    //InitObjectFun(*systemCoreAssembly);
     return systemCoreAssembly;
 }
 

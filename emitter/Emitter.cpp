@@ -152,7 +152,10 @@ void EmitterVisitor::Visit(BoundFunction& boundFunction)
     function = boundFunction.GetFunctionSymbol()->MachineFunction();
     Emitter* prevEmitter = function->GetEmitter();
     function->SetEmitter(this);
-    boundFunction.Body()->Accept(*this);
+    if (boundFunction.Body())
+    {
+        boundFunction.Body()->Accept(*this);
+    }
     function->SetEmitter(prevEmitter);
     function = prevFunction;
 }

@@ -475,6 +475,52 @@ void DotNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+ArrayNode::ArrayNode(const Span& span_) : UnaryNode(span_)
+{
+}
+
+ArrayNode::ArrayNode(const Span& span_, Node* subject_, Node* size_) : UnaryNode(span_, subject_), size(size_)
+{
+    if (size)
+    {
+        size->SetParent(this);
+    }
+}
+
+Node* ArrayNode::Clone(CloneContext& cloneContext) const
+{
+    Node* clonedSize = nullptr;
+    if (size)
+    {
+        clonedSize = size->Clone(cloneContext);
+    }
+    return new ArrayNode(GetSpan(), Child()->Clone(cloneContext), clonedSize);
+}
+
+void ArrayNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+IndexingNode::IndexingNode(const Span& span_) : UnaryNode(span_)
+{
+}
+
+IndexingNode::IndexingNode(const Span& span_, Node* subject_, Node* index_) : UnaryNode(span_, subject_), index(index_)
+{
+    index->SetParent(this);
+}
+
+Node* IndexingNode::Clone(CloneContext& cloneContext) const
+{
+    return new IndexingNode(GetSpan(), Child()->Clone(cloneContext), index->Clone(cloneContext));
+}
+
+void IndexingNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 InvokeNode::InvokeNode(const Span& span_) : UnaryNode(span_)
 {
 }

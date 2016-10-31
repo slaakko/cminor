@@ -21,6 +21,7 @@ namespace cminor.parser
         using BasicTypeGrammar.BasicType;
         using IdentifierGrammar.Identifier;
         using TypeExprGrammar.TypeExpr;
+        using stdlib.identifier;
 
         Expression(ParsingContext* ctx) : Node*
             ::= Disjunction(ctx){ value = Disjunction; }
@@ -245,6 +246,7 @@ namespace cminor.parser
             ::=
             (   Primary(ctx){ s = span; expr.reset(Primary); }
                 (   '.' Identifier:dotMemberId{ s.SetEnd(span.End()); expr.reset(new DotNode(s, expr.release(), dotMemberId)); } 
+                |   ('[' Expression(ctx):index ']'!){ s.SetEnd(span.End()); expr.reset(new IndexingNode(s, expr.release(), index)); }
                 |   ('('{ expr.reset(new InvokeNode(s, expr.release())); } ArgumentList(ctx, expr.get()) ')'!){ expr->GetSpan().SetEnd(span.End());  }
                 )*
             )
@@ -258,8 +260,8 @@ namespace cminor.parser
             |   Literal{ value = Literal; }
             |   BasicType{ value = BasicType; }
             |   Identifier{ value = Identifier; }
-            |   keyword("this"){ value = new ThisNode(span); }
-            |   keyword("base"){ value = new BaseNode(span); }
+            |   keyword("this", identifier){ value = new ThisNode(span); }
+            |   keyword("base", identifier){ value = new BaseNode(span); }
             |   CastExpr(ctx){ value = CastExpr; }
             |   NewExpr(ctx){ value = NewExpr; }
             ;
@@ -269,7 +271,7 @@ namespace cminor.parser
             ;
 
         NewExpr(ParsingContext* ctx) : Node*
-            ::= keyword("new") TypeExpr(ctx)! '('!{ value = new NewNode(span, TypeExpr); } ArgumentList(ctx, value) ')'!{ value->GetSpan().SetEnd(span.End()); }
+            ::= keyword("new") TypeExpr(ctx)!{ value = new NewNode(span, TypeExpr); } (('(' ArgumentList(ctx, value) ')'){ value->GetSpan().SetEnd(span.End()); })?
             ;
 
         ArgumentList(ParsingContext* ctx, Node* node)

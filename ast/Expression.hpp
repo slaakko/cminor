@@ -269,6 +269,32 @@ private:
     std::unique_ptr<Node> memberId;
 };
 
+class ArrayNode : public UnaryNode
+{
+public:
+    ArrayNode(const Span& span_);
+    ArrayNode(const Span& span_, Node* subject_, Node* size_);
+    NodeType GetNodeType() const override { return NodeType::arrayNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    Node* Size() const { return size.get(); }
+private:
+    std::unique_ptr<Node> size;
+};
+
+class IndexingNode : public UnaryNode
+{
+public:
+    IndexingNode(const Span& span_);
+    IndexingNode(const Span& span_, Node* subject_, Node* index_);
+    NodeType GetNodeType() const override { return NodeType::indexingNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    Node* Index() const { return index.get(); }
+private:
+    std::unique_ptr<Node> index;
+};
+
 class InvokeNode : public UnaryNode
 {
 public:

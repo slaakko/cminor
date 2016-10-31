@@ -240,6 +240,22 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class LoadElemInst : public Instruction
+{
+public:
+    LoadElemInst();
+    Instruction* Clone() const override { return new LoadElemInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreElemInst : public Instruction
+{
+public:
+    StoreElemInst();
+    Instruction* Clone() const override { return new StoreElemInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class LoadConstantInst : public IndexParamInst
 {
 public:
@@ -380,10 +396,10 @@ class TypeInstruction : public Instruction
 {
 public:
     TypeInstruction(const std::string& name_);
-    void SetClassName(Constant fullClassName);
-    StringPtr GetClassName() const;
-    void SetType(ObjectType* typePtr);
-    ObjectType* GetType();
+    void SetTypeName(Constant fullTypeName);
+    StringPtr GetTypeName() const;
+    void SetType(Type* typePtr);
+    Type* GetType();
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
     void Dump(CodeFormatter& formatter) override;
@@ -447,19 +463,19 @@ public:
     void Execute(Frame& frame) override;
 };
 
-class CreateArrayInst : public TypeInstruction
+class AllocateArrayElementsInst : public TypeInstruction
 {
 public:
-    CreateArrayInst();
-    Instruction* Clone() const override { return new CreateArrayInst(*this); }
+    AllocateArrayElementsInst();
+    Instruction* Clone() const override { return new AllocateArrayElementsInst(*this); }
     void Execute(Frame& frame) override;
 };
 
-class LengthArraryInst : public Instruction
+class LengthArrayInst : public Instruction
 {
 public:
-    LengthArraryInst();
-    Instruction* Clone() const override { return new LengthArraryInst(*this); }
+    LengthArrayInst();
+    Instruction* Clone() const override { return new LengthArrayInst(*this); }
     void Execute(Frame& frame) override;
 };
 

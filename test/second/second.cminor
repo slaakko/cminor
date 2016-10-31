@@ -1,18 +1,5 @@
-using System;
-
-class Alpha
-{
-    public virtual void Foo()
-    {
-    }
-    public void Bar()
-    {
-        Foo();
-    }
-}
-
 void main()
 {
-    Alpha a = new Alpha();
-    a.Bar();
+    int[] x = new int[23];
+    int n = x.Length();
 }

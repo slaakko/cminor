@@ -469,8 +469,8 @@ void Link(const std::vector<CallInst*>& callInstructions, const std::vector<Type
     }
     for (TypeInstruction* typeInst : typeInstructions)
     {
-        ObjectType* objectType = ObjectTypeTable::Instance().GetObjectType(typeInst->GetClassName());
-        typeInst->SetType(objectType);
+        Type* type = TypeTable::Instance().GetType(typeInst->GetTypeName());
+        typeInst->SetType(type);
     }
     for (SetClassDataInst* setClassDataInst : setClassDataInstructions)
     {

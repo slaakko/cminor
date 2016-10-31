@@ -125,12 +125,22 @@ public:
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects) override;
     void CreateMachineFunction() override;
     bool IsDefaultConstructorSymbol() const;
+    bool IsIntConstructorSymbol() const;
     void SetBaseConstructorCallGenerated() { SetFlag(ConstructorSymbolFlags::baseConstructorCallGenerated); }
     bool BaseConstructorCallGenerated() const { return GetFlag(ConstructorSymbolFlags::baseConstructorCallGenerated); }
 private:
     ConstructorSymbolFlags flags;
     bool GetFlag(ConstructorSymbolFlags flag) const { return (flags & flag) != ConstructorSymbolFlags::none; }
     void SetFlag(ConstructorSymbolFlags flag) { flags = flags | flag; }
+};
+
+class ArraySizeConstructorSymbol : public ConstructorSymbol
+{
+public:
+    ArraySizeConstructorSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::arraySizeConstructorSymbol; }
+    std::string TypeString() const override { return "array size constructor"; }
+    void CreateMachineFunction() override;
 };
 
 enum class MemberFunctionSymbolFlags : uint8_t

@@ -33,7 +33,7 @@ public:
     void ResetCollectingGarbage();
     void DoCollectGarbage();
     void DoGarbageCollectArena(ArenaId arenaId);
-    void MarkLiveObjects(IntegralValue value, std::unordered_set<ObjectReference, ObjectReferenceHash>& checked);
+    void MarkLiveObjects(IntegralValue value, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked);
     void MarkLiveObjects();
     void RequestGarbageCollection();
     void WaitForGarbageCollection();

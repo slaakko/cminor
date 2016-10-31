@@ -11,7 +11,7 @@
 namespace cminor { namespace machine {
 
 class Machine;
-class ObjectPool;
+class ManagedMemoryPool;
 class ConstantPool;
 class Function;
 class Instruction;
@@ -24,7 +24,7 @@ public:
     int32_t Id() const { return id; }
     Thread& GetThread() { return thread; }
     Function& Fun() { return fun; }
-    ObjectPool& GetObjectPool() { return objectPool; }
+    ManagedMemoryPool& GetManagedMemoryPool() { return managedMemoryPool; }
     ConstantPool& GetConstantPool() { return constantPool; }
     OperandStack& OpStack() { return opStack; }
     const OperandStack& OpStack() const { return opStack; }
@@ -38,7 +38,7 @@ private:
     int32_t id;
     Thread& thread;
     Function& fun;
-    ObjectPool& objectPool;
+    ManagedMemoryPool& managedMemoryPool;
     ConstantPool& constantPool;
     OperandStack& opStack;
     LocalVariableVector locals;

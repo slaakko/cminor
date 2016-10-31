@@ -132,49 +132,4 @@ void ClassDataTable::SetClassData(ClassData* classData)
     classDataMap[classData->Type()->Name()] = classData;
 }
 
-std::unique_ptr<ObjectTypeTable> ObjectTypeTable::instance;
-
-void ObjectTypeTable::Init()
-{
-    instance.reset(new ObjectTypeTable());
-}
-
-void ObjectTypeTable::Done()
-{
-    instance.reset();
-}
-
-ObjectTypeTable::ObjectTypeTable()
-{
-}
-
-ObjectTypeTable& ObjectTypeTable::Instance()
-{
-    Assert(instance, "object type table instance not set");
-    return *instance;
-}
-
-ObjectType* ObjectTypeTable::GetObjectType(StringPtr fullClassName)
-{
-    auto it = objectTypeMap.find(fullClassName);
-    if (it != objectTypeMap.cend())
-    {
-        return it->second;
-    }
-    else
-    {
-        throw std::runtime_error("object type for class name '" + ToUtf8(fullClassName.Value()) + "' not found");
-    }
-}
-
-void ObjectTypeTable::SetObjectType(ObjectType* objectType)
-{
-    auto it = objectTypeMap.find(objectType->Name());
-    if (it != objectTypeMap.cend())
-    {
-        throw std::runtime_error("object type with class name '" + ToUtf8(objectType->Name().Value()) + "' already in use");
-    }
-    objectTypeMap[objectType->Name()] = objectType;
-}
-
 } } // namespace cminor::machine

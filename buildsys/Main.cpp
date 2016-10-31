@@ -36,7 +36,7 @@ struct InitDone
         FileRegistry::Init();
         FunctionTable::Init();
         ClassDataTable::Init();
-        ObjectTypeTable::Init();
+        TypeTable::Init();
         InitSymbol();
         InitAssembly();
         Cm::Parsing::Init();
@@ -46,7 +46,7 @@ struct InitDone
         Cm::Parsing::Done();
         DoneAssembly();
         DoneSymbol();
-        ObjectTypeTable::Done();
+        TypeTable::Done();
         ClassDataTable::Done();
         FunctionTable::Done();
     }

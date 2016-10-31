@@ -6,6 +6,7 @@
 #ifndef CMINOR_SYMBOLS_SYMBOL_TABLE_INCLUDED
 #define CMINOR_SYMBOLS_SYMBOL_TABLE_INCLUDED
 #include <cminor/symbols/FunctionSymbol.hpp>
+#include <cminor/ast/Expression.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -48,6 +49,8 @@ public:
     void MapNode(Node& node, Symbol* symbol);
     void AddConversion(FunctionSymbol* conversionFun);
     const ConversionTable& GetConversionTable() const { return conversionTable; }
+    TypeSymbol* CreateArrayType(ArrayNode& arrayNode, TypeSymbol* elementType);
+    const std::vector<ClassTypeSymbol*>& CreatedClasses() const { return createdClasses; }
 private:
     Assembly* assembly;
     NamespaceSymbol globalNs;
@@ -63,6 +66,7 @@ private:
     ConversionTable conversionTable;
     int declarationBlockId;
     bool doNotAddTypes;
+    std::vector<ClassTypeSymbol*> createdClasses;
 };
 
 class SymbolCreator

@@ -30,7 +30,7 @@ struct InitDone
         FileRegistry::Init();
         FunctionTable::Init();
         ClassDataTable::Init();
-        ObjectTypeTable::Init();
+        TypeTable::Init();
         InitSymbol();
         InitAssembly();
         Cm::Parsing::Init();
@@ -40,7 +40,7 @@ struct InitDone
         Cm::Parsing::Done();
         DoneAssembly();
         DoneSymbol();
-        ObjectTypeTable::Init();
+        TypeTable::Init();
         ClassDataTable::Init();
         FunctionTable::Init();
     }
@@ -57,6 +57,7 @@ void PrintHelp()
         "Options:\n" <<
         "-v | --verbose : verbose output\n" << 
         "-h | --help    : print this help message\n" <<
+        "-d | --dparse  : debug parsing to stdout\n" <<
         "-c=CONFIG\n" <<
         "   Use CONFIG configuration. CONFIG can be debug or release.\n" <<
         "   The default is debug.\n" <<
@@ -82,6 +83,10 @@ int main(int argc, const char** argv)
                 {
                     PrintHelp();
                     return 0;
+                }
+                else if (arg == "-d" || arg == "--dparse")
+                {
+                    SetGlobalFlag(GlobalFlags::debugParsing);
                 }
                 else if (arg.find('=', 0) != std::string::npos)
                 {

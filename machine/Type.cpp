@@ -108,18 +108,57 @@ void ObjectType::Write(Writer& writer)
 {
     Type::Write(writer);
     objectLayout.Write(writer);
-    staticLayout.Write(writer);
 }
 
 void ObjectType::Read(Reader& reader)
 {
     Type::Read(reader);
     objectLayout.Read(reader);
-    staticLayout.Read(reader);
 }
 
-ArrayType::ArrayType(std::unique_ptr<Type>&& elementType_) : elementType(std::move(elementType_))
+std::unique_ptr<TypeTable> TypeTable::instance;
+
+void TypeTable::Init()
 {
+    instance.reset(new TypeTable());
+}
+
+void TypeTable::Done()
+{
+    instance.reset();
+}
+
+TypeTable::TypeTable()
+{
+}
+
+TypeTable& TypeTable::Instance()
+{
+    Assert(instance, "object type table instance not set");
+    return *instance;
+}
+
+Type* TypeTable::GetType(StringPtr fullTypeName)
+{
+    auto it = typeMap.find(fullTypeName);
+    if (it != typeMap.cend())
+    {
+        return it->second;
+    }
+    else
+    {
+        throw std::runtime_error("type for type name '" + ToUtf8(fullTypeName.Value()) + "' not found");
+    }
+}
+
+void TypeTable::SetType(Type* type)
+{
+    auto it = typeMap.find(type->Name());
+    if (it != typeMap.cend())
+    {
+        throw std::runtime_error("type with type name '" + ToUtf8(type->Name().Value()) + "' already in use");
+    }
+    typeMap[type->Name()] = type;
 }
 
 } } // namespace cminor::machine

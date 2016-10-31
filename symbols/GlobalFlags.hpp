@@ -14,7 +14,8 @@ enum class GlobalFlags : uint8_t
 {
     none = 0,
     verbose = 1 << 0,
-    release = 1 << 1
+    release = 1 << 1,
+    debugParsing = 1 << 2
 };
 
 void SetGlobalFlag(GlobalFlags flag);

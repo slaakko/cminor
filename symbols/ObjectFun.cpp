@@ -27,6 +27,27 @@ void CreateDefaultConstructor(Assembly& assembly, ClassTypeSymbol* classTypeSymb
     classTypeSymbol->AddSymbol(std::unique_ptr<Symbol>(defaultConstructorSymbol));
 }
 
+void CreateArraySizeConstructor(Assembly& assembly, ArrayTypeSymbol* arrayTypeSymbol)
+{
+    ConstantPool& constantPool = assembly.GetConstantPool();
+    ArraySizeConstructorSymbol* arraySizeConstructorSymbol = new ArraySizeConstructorSymbol(Span(), constantPool.GetEmptyStringConstant());
+    arraySizeConstructorSymbol->SetAssembly(&assembly);
+    arraySizeConstructorSymbol->SetPublic();
+    arraySizeConstructorSymbol->SetGroupNameConstant(constantPool.GetConstant(constantPool.Install(U"@constructor")));
+    ParameterSymbol* thisParameterSymbol = new ParameterSymbol(Span(), constantPool.GetConstant(constantPool.Install(U"this")));
+    thisParameterSymbol->SetAssembly(&assembly);
+    thisParameterSymbol->SetType(arrayTypeSymbol);
+    thisParameterSymbol->SetBound();
+    arraySizeConstructorSymbol->AddSymbol(std::unique_ptr<Symbol>(thisParameterSymbol));
+    ParameterSymbol* sizeParameterSymbol = new ParameterSymbol(Span(), constantPool.GetConstant(constantPool.Install(U"size")));
+    sizeParameterSymbol->SetAssembly(&assembly);
+    sizeParameterSymbol->SetType(assembly.GetSymbolTable().GetType(U"System.Int32"));
+    sizeParameterSymbol->SetBound();
+    arraySizeConstructorSymbol->AddSymbol(std::unique_ptr<Symbol>(sizeParameterSymbol));
+    arraySizeConstructorSymbol->ComputeName();
+    arrayTypeSymbol->AddSymbol(std::unique_ptr<Symbol>(arraySizeConstructorSymbol));
+}
+
 ObjectDefaultInit::ObjectDefaultInit(const Span& span_, Constant name_) : BasicTypeInit(span_, name_)
 {
 }
@@ -110,7 +131,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType, Ty
     copyInit->ComputeName();
     classType->AddSymbol(std::unique_ptr<FunctionSymbol>(copyInit));
 
-    TypeSymbol* nullRefType = assembly.GetSymbolTable().GetType(U"@nullref");
+    TypeSymbol* nullRefType = assembly.GetSymbolTable().GetType(U"System.@nullref");
 
     ParameterSymbol* thisParam3 = new ParameterSymbol(Span(), thisParamName);
     thisParam3->SetAssembly(&assembly);
@@ -157,16 +178,16 @@ void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType, Ty
 
 void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType)
 {
-    TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"bool");
+    TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"System.Boolean");
     CreateBasicTypeObjectFun(assembly, classType, boolType);
 }
 
 void InitObjectFun(Assembly& assembly)
 {
-    TypeSymbol* type = assembly.GetSymbolTable().GetType(U"object");
+    TypeSymbol* type = assembly.GetSymbolTable().GetType(U"System.Object");
     ClassTypeSymbol* objectType = dynamic_cast<ClassTypeSymbol*>(type);
     Assert(objectType, "object type expected");
-    TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"bool");
+    TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"System.Boolean");
     CreateBasicTypeObjectFun(assembly, objectType, boolType);
     CreateDefaultConstructor(assembly, objectType);
     CreateStringFunctions(assembly);

@@ -10,7 +10,6 @@
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
-#include <cminor/machine/Type.hpp>
 
 namespace cminor { namespace binder {
 
@@ -145,6 +144,9 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
         if (objectType != classTypeSymbol)
         {
             Assert(objectType, "class type symbol expected");
+            Node* node = boundCompileUnit.GetAssembly().GetSymbolTable().GetNode(objectType);
+            ClassNode* objectTypeNode = dynamic_cast<ClassNode*>(node);
+            BindClass(objectType, *objectTypeNode);
             classTypeSymbol->SetBaseClass(objectType);
         }
         else
@@ -168,6 +170,7 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
     for (int i = 0; i < nmv; ++i)
     {
         MemberVariableSymbol* memberVariableSymbol = classTypeSymbol->MemberVariables()[i];
+        memberVariableSymbol->SetIndex(classTypeSymbol->GetObjectType()->FieldCount());
         TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
         Assert(memberVariableType, "got no type");
         ValueType memberVariableValueType = memberVariableType->GetValueType();

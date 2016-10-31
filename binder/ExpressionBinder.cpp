@@ -13,7 +13,6 @@
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
-#include <cminor/machine/Type.hpp>
 
 namespace cminor { namespace binder {
 
@@ -103,73 +102,73 @@ ExpressionBinder::ExpressionBinder(BoundCompileUnit& boundCompileUnit_, BoundFun
 
 void ExpressionBinder::Visit(BoolNode& boolNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"bool");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Boolean");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(SByteNode& sbyteNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"sbyte");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int8");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(ByteNode& byteNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"byte");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt8");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(ShortNode& shortNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"short");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int16");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(UShortNode& ushortNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"ushort");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt16");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(IntNode& intNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"int");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int32");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(UIntNode& uintNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"uint");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt32");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(LongNode& longNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"long");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int64");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(ULongNode& ulongNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"ulong");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt64");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(FloatNode& floatNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"float");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Float");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(DoubleNode& doubleNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"double");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Double");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(CharNode& charNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"char");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Char");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
@@ -181,7 +180,7 @@ void ExpressionBinder::Visit(StringNode& stringNode)
 
 void ExpressionBinder::Visit(VoidNode& voidNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"void");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Void");
     expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
 }
 
@@ -193,7 +192,7 @@ void ExpressionBinder::Visit(ObjectNode& objectNode)
 
 void ExpressionBinder::Visit(BooleanLiteralNode& booleanLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"bool");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Boolean");
     Constant value(IntegralValue(booleanLiteralNode.Value(), ValueType::boolType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
@@ -203,7 +202,7 @@ void ExpressionBinder::Visit(BooleanLiteralNode& booleanLiteralNode)
 
 void ExpressionBinder::Visit(SByteLiteralNode& sbyteLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"sbyte");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int8");
     Constant value(IntegralValue(sbyteLiteralNode.Value(), ValueType::sbyteType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
@@ -213,7 +212,7 @@ void ExpressionBinder::Visit(SByteLiteralNode& sbyteLiteralNode)
 
 void ExpressionBinder::Visit(ByteLiteralNode& byteLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"byte");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt8");
     Constant value(IntegralValue(byteLiteralNode.Value(), ValueType::byteType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
@@ -223,7 +222,7 @@ void ExpressionBinder::Visit(ByteLiteralNode& byteLiteralNode)
 
 void ExpressionBinder::Visit(ShortLiteralNode& shortLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"short");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int16");
     Constant value(IntegralValue(shortLiteralNode.Value(), ValueType::shortType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
@@ -233,7 +232,7 @@ void ExpressionBinder::Visit(ShortLiteralNode& shortLiteralNode)
 
 void ExpressionBinder::Visit(UShortLiteralNode& ushortLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"ushort");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt16");
     Constant value(IntegralValue(ushortLiteralNode.Value(), ValueType::ushortType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
@@ -243,7 +242,7 @@ void ExpressionBinder::Visit(UShortLiteralNode& ushortLiteralNode)
 
 void ExpressionBinder::Visit(IntLiteralNode& intLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"int");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int32");
     Constant value(IntegralValue(intLiteralNode.Value(), ValueType::intType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
@@ -253,7 +252,7 @@ void ExpressionBinder::Visit(IntLiteralNode& intLiteralNode)
 
 void ExpressionBinder::Visit(UIntLiteralNode& uintLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"uint");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt32");
     Constant value(IntegralValue(uintLiteralNode.Value(), ValueType::uintType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
@@ -263,7 +262,7 @@ void ExpressionBinder::Visit(UIntLiteralNode& uintLiteralNode)
 
 void ExpressionBinder::Visit(LongLiteralNode& longLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"long");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int64");
     Constant value(IntegralValue(longLiteralNode.Value(), ValueType::longType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
@@ -273,7 +272,7 @@ void ExpressionBinder::Visit(LongLiteralNode& longLiteralNode)
 
 void ExpressionBinder::Visit(ULongLiteralNode& ulongLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"ulong");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt64");
     Constant value(IntegralValue(ulongLiteralNode.Value(), ValueType::ulongType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
@@ -283,7 +282,7 @@ void ExpressionBinder::Visit(ULongLiteralNode& ulongLiteralNode)
 
 void ExpressionBinder::Visit(FloatLiteralNode& floatLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"float");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Float");
 #pragma warning(disable : 4244)
     Constant value(IntegralValue(floatLiteralNode.Value(), ValueType::floatType));
 #pragma warning(default : 4244)
@@ -295,7 +294,7 @@ void ExpressionBinder::Visit(FloatLiteralNode& floatLiteralNode)
 
 void ExpressionBinder::Visit(DoubleLiteralNode& doubleLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"double");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Double");
 #pragma warning(disable : 4244)
     Constant value(IntegralValue(doubleLiteralNode.Value(), ValueType::doubleType));
 #pragma warning(default : 4244)
@@ -307,7 +306,7 @@ void ExpressionBinder::Visit(DoubleLiteralNode& doubleLiteralNode)
 
 void ExpressionBinder::Visit(CharLiteralNode& charLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"char");
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Char");
     Constant value(IntegralValue(charLiteralNode.Value(), ValueType::charType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
@@ -329,8 +328,8 @@ void ExpressionBinder::Visit(StringLiteralNode& stringLiteralNode)
 
 void ExpressionBinder::Visit(NullLiteralNode& nullLiteralNode)
 {
-    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"@nullref");
-    ObjectReference nullReference;
+    TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.@nullref");
+    AllocationHandle nullReference;
     Constant value(IntegralValue(nullReference.Value(), ValueType::objectReference));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
@@ -529,8 +528,6 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
 {
     switch (symbol->GetSymbolType())
     {
-        case SymbolType::classTypeSymbol: /* todo */
-        case SymbolType::stringTypeSymbol: /* todo */
         case SymbolType::functionGroupSymbol: 
         {
             FunctionGroupSymbol* functionGroupSymbol = static_cast<FunctionGroupSymbol*>(symbol);
@@ -555,7 +552,19 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
         {
             MemberVariableSymbol* memberVariableSymbol = static_cast<MemberVariableSymbol*>(symbol);
             CheckAccess(boundFunction->GetFunctionSymbol(), memberVariableSymbol);
-            expression.reset(new BoundMemberVariable(boundCompileUnit.GetAssembly(), memberVariableSymbol->GetType(), memberVariableSymbol));
+            BoundMemberVariable* bmv = new BoundMemberVariable(boundCompileUnit.GetAssembly(), memberVariableSymbol->GetType(), memberVariableSymbol);
+            if (MemberFunctionSymbol* memFun = dynamic_cast<MemberFunctionSymbol*>(boundFunction->GetFunctionSymbol()))
+            {
+                if (!memFun->IsStatic())
+                {
+                    bmv->SetClassObject(std::unique_ptr<BoundExpression>(new BoundParameter(boundCompileUnit.GetAssembly(), memFun->Parameters()[0]->GetType(), memFun->Parameters()[0])));
+                }
+            }
+            else if (ConstructorSymbol* ctor = dynamic_cast<ConstructorSymbol*>(boundFunction->GetFunctionSymbol()))
+            {
+                bmv->SetClassObject(std::unique_ptr<BoundExpression>(new BoundParameter(boundCompileUnit.GetAssembly(), ctor->Parameters()[0]->GetType(), ctor->Parameters()[0])));
+            }
+            expression.reset(bmv);
             break;
         }
         case SymbolType::constantSymbol:
@@ -635,7 +644,28 @@ void ExpressionBinder::Visit(DotNode& dotNode)
                 BindSymbol(symbol);
                 if (BoundFunctionGroupExpression* bfg = dynamic_cast<BoundFunctionGroupExpression*>(expression.get()))
                 {
+                    if (!classObject->GetFlag(BoundExpressionFlags::argIsThisOrBase))
+                    {
+                        Symbol* parent = symbol->Parent();
+                        ClassTypeSymbol* owner = dynamic_cast<ClassTypeSymbol*>(parent);
+                        Assert(owner, "class type symbol expected");
+                        if (classType->HasBaseClass(owner))
+                        {
+                            classObject = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(classObject), boundCompileUnit.GetConversion(classType, owner));
+                        }
+                    }
                     expression.reset(new BoundMemberExpression(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(classObject), std::move(expression)));
+                }
+                else if (BoundMemberVariable* bmv = dynamic_cast<BoundMemberVariable*>(expression.get()))
+                {
+                    Symbol* parent = symbol->Parent();
+                    ClassTypeSymbol* owner = dynamic_cast<ClassTypeSymbol*>(parent);
+                    Assert(owner, "class type symbol expected");
+                    if (classType->HasBaseClass(owner))
+                    {
+                        classObject = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(classObject), boundCompileUnit.GetConversion(classType, owner));
+                    }
+                    bmv->SetClassObject(std::unique_ptr<BoundExpression>(classObject));
                 }
                 else
                 {
@@ -784,6 +814,20 @@ void ExpressionBinder::Visit(NewNode& newNode)
         Node* argument = newNode.Arguments()[i];
         argument->Accept(*this);
         arguments.push_back(std::unique_ptr<BoundExpression>(expression.release()));
+    }
+    if (ArrayTypeSymbol* arrayTypeSymbol = dynamic_cast<ArrayTypeSymbol*>(type))
+    {
+        ArrayNode* arrayNode = dynamic_cast<ArrayNode*>(newNode.TypeExpr());
+        Assert(arrayNode, "array node expected");
+        if (arrayNode->Size())
+        {
+            arrayNode->Size()->Accept(*this);
+            arguments.push_back(std::move(expression));
+        }
+        else
+        {
+            throw Exception("size of array must be specified in array new expression", newNode.TypeExpr()->GetSpan());
+        }
     }
     std::vector<FunctionScopeLookup> functionScopeLookups;
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, type->ClassOrNsScope()));

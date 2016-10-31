@@ -22,8 +22,8 @@ public:
     Arena(ArenaId id_, uint64_t size_);
     ~Arena();
     ArenaId Id() const { return id; }
-    ObjectMemPtr Allocate(uint64_t blockSize);
-    ObjectMemPtr Allocate(Thread& thread, uint64_t blockSize);
+    MemPtr Allocate(uint64_t blockSize);
+    MemPtr Allocate(Thread& thread, uint64_t blockSize);
     void Clear();
 private:
     ArenaId id;

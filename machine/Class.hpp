@@ -33,6 +33,7 @@ public:
     void Write(Writer& writer);
     void Read(Reader& reader);
     ObjectType* Type() const { return type; }
+    void SetType(ObjectType* type_) { type = type_; }
     MethodTable& Vmt() { return vmt; }
 private:
     ObjectType* type;
@@ -51,20 +52,6 @@ private:
     static std::unique_ptr<ClassDataTable> instance;
     ClassDataTable();
     std::unordered_map<StringPtr, ClassData*, StringPtrHash> classDataMap;
-};
-
-class ObjectTypeTable
-{
-public:
-    static void Init();
-    static void Done();
-    static ObjectTypeTable& Instance();
-    ObjectType* GetObjectType(StringPtr fullClassName);
-    void SetObjectType(ObjectType* objectType);
-private:
-    static std::unique_ptr<ObjectTypeTable> instance;
-    ObjectTypeTable();
-    std::unordered_map<StringPtr, ObjectType*, StringPtrHash> objectTypeMap;
 };
 
 } } // namespace cminor::machine

@@ -15,20 +15,21 @@ std::string ValueTypeStr(ValueType type)
 {
     switch (type)
     {
-        case ValueType::boolType: return "bool";
-        case ValueType::sbyteType: return "sbyte";
-        case ValueType::byteType: return "byte";
-        case ValueType::shortType: return "short";
-        case ValueType::ushortType: return "ushort";
-        case ValueType::intType: return "int";
-        case ValueType::uintType: return "uint";
-        case ValueType::longType: return "long";
-        case ValueType::ulongType: return "ulong";
-        case ValueType::floatType: return "float";
-        case ValueType::doubleType: return "double";
-        case ValueType::charType: return "char";
+        case ValueType::boolType: return "System.Boolean";
+        case ValueType::sbyteType: return "System.Int8";
+        case ValueType::byteType: return "System.UInt8";
+        case ValueType::shortType: return "System.Int16";
+        case ValueType::ushortType: return "System.UInt16";
+        case ValueType::intType: return "System.Int32";
+        case ValueType::uintType: return "System.UInt32";
+        case ValueType::longType: return "System.Int64";
+        case ValueType::ulongType: return "System.UInt64";
+        case ValueType::floatType: return "System.Float";
+        case ValueType::doubleType: return "System.Double";
+        case ValueType::charType: return "System.Char";
         case ValueType::memPtr: return "memory pointer";
         case ValueType::stringLiteral: return "string literal";
+        case ValueType::allocationHandle: return "allocation handle";
         case ValueType::objectReference: return "object reference";
     }
     return "no type";
@@ -52,7 +53,8 @@ void IntegralValue::Write(Writer& writer)
         case ValueType::doubleType: writer.Put(AsDouble()); break;
         case ValueType::charType: writer.Put(AsChar()); break;
         case ValueType::stringLiteral: writer.Put(utf32_string(AsStringLiteral())); break;
-        case ValueType::objectReference: if (value != 0) throw std::runtime_error("cannot write nonnull object references"); writer.Put(AsULong()); break;
+        case ValueType::allocationHandle: throw std::runtime_error("cannot write allocation handles"); writer.Put(AsULong()); break;
+        case ValueType::objectReference: if (value != 0) { throw std::runtime_error("cannot write nonnull object references"); } writer.Put(AsULong()); break;
         default: throw std::runtime_error("invalid integral value type to write");
     }
 }
@@ -77,7 +79,8 @@ void IntegralValue::Read(Reader& reader)
 #pragma warning(default : 4244)
         case ValueType::charType: value = reader.GetChar(); break;
         case ValueType::stringLiteral: /* do not read yet */ break;
-        case ValueType::objectReference: value = reader.GetULong(); if (value != 0) throw std::runtime_error("read nonnull object reference");  break;
+        case ValueType::allocationHandle: throw std::runtime_error("read allocation handle");  break;
+        case ValueType::objectReference: value = reader.GetULong(); if (value != 0) throw std::runtime_error("read nonull object reference"); break;
         default: throw std::runtime_error("invalid integral value type to read");
     }
 }
@@ -100,42 +103,52 @@ uint64_t ValueSize(ValueType type)
         case ValueType::charType: return sizeof(char32_t);
         case ValueType::memPtr: return sizeof(uint8_t*);
         case ValueType::stringLiteral: return sizeof(const char32_t*);
+        case ValueType::allocationHandle: return sizeof(uint64_t);
         case ValueType::objectReference: return sizeof(uint64_t);
         case ValueType::classDataPtr: return sizeof(ClassData*);
-        case ValueType::typePtr: return sizeof(ObjectType*);
+        case ValueType::typePtr: return sizeof(Type*);
     }
     return sizeof(uint64_t);
 }
 
-Object::Object(ObjectReference reference_, ArenaId arenaId_, ObjectMemPtr memPtr_, ObjectType* type_, uint64_t size_) :
-    reference(reference_), arenaId(arenaId_), memPtr(memPtr_), size(size_), type(type_), flags(ObjectFlags::none)
+ManagedAllocation::ManagedAllocation(ArenaId arenaId_, MemPtr memPtr_, uint64_t size_) : arenaId(arenaId_), memPtr(memPtr_), size(size_)
+{
+}
+
+ManagedAllocation::~ManagedAllocation()
+{
+}
+
+Object::Object(ObjectReference reference_, ArenaId arenaId_, MemPtr memPtr_, ObjectType* type_, uint64_t size_) : 
+    ManagedAllocation(arenaId_, memPtr_, size_), reference(reference_), type(type_), flags(ObjectFlags::none)
 {
 }
 
 IntegralValue Object::GetField(int index) const
 {
     Field field = type->GetField(index);
-    ObjectMemPtr fieldPtr = memPtr + field.Offset();
+    MemPtr fieldPtr = GetMemPtr() + field.Offset();
     switch (field.GetType())
     {
-        case ValueType::boolType: return IntegralValue(*reinterpret_cast<bool*>(fieldPtr.Value()), field.GetType());
-        case ValueType::sbyteType: return IntegralValue(*reinterpret_cast<int8_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::byteType: return IntegralValue(*reinterpret_cast<uint8_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::shortType: return IntegralValue(*reinterpret_cast<int16_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::ushortType: return IntegralValue(*reinterpret_cast<uint16_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::intType: return IntegralValue(*reinterpret_cast<int32_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::uintType: return IntegralValue(*reinterpret_cast<uint32_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::longType: return IntegralValue(*reinterpret_cast<int64_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::ulongType: return IntegralValue(*reinterpret_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::floatType: return IntegralValue(static_cast<uint64_t>(*reinterpret_cast<float*>(fieldPtr.Value())), field.GetType());
-        case ValueType::doubleType: return IntegralValue(static_cast<uint64_t>(*reinterpret_cast<double*>(fieldPtr.Value())), field.GetType());
-        case ValueType::charType: return IntegralValue(*reinterpret_cast<char32_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::memPtr: return IntegralValue(fieldPtr.Value());
-        case ValueType::classDataPtr: return IntegralValue(*reinterpret_cast<ClassData**>(fieldPtr.Value()));
-        case ValueType::typePtr: return IntegralValue(*reinterpret_cast<ObjectType**>(fieldPtr.Value()));
-        case ValueType::stringLiteral: return IntegralValue(reinterpret_cast<const char32_t*>(fieldPtr.Value()));
-        case ValueType::objectReference: return IntegralValue(*reinterpret_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
-        default: return IntegralValue(*reinterpret_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::boolType: return IntegralValue(*static_cast<bool*>(fieldPtr.Value()), field.GetType());
+        case ValueType::sbyteType: return IntegralValue(*static_cast<int8_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::byteType: return IntegralValue(*static_cast<uint8_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::shortType: return IntegralValue(*static_cast<int16_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::ushortType: return IntegralValue(*static_cast<uint16_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::intType: return IntegralValue(*static_cast<int32_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::uintType: return IntegralValue(*static_cast<uint32_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::longType: return IntegralValue(*static_cast<int64_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::ulongType: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::floatType: return IntegralValue(static_cast<uint64_t>(*static_cast<float*>(fieldPtr.Value())), field.GetType());
+        case ValueType::doubleType: return IntegralValue(static_cast<uint64_t>(*static_cast<double*>(fieldPtr.Value())), field.GetType());
+        case ValueType::charType: return IntegralValue(*static_cast<char32_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::memPtr: return IntegralValue(static_cast<uint8_t*>(fieldPtr.Value()));
+        case ValueType::classDataPtr: return IntegralValue(*static_cast<ClassData**>(fieldPtr.Value()));
+        case ValueType::typePtr: return IntegralValue(*static_cast<ObjectType**>(fieldPtr.Value()));
+        case ValueType::stringLiteral: return IntegralValue(static_cast<const char32_t*>(fieldPtr.Value()));
+        case ValueType::allocationHandle: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::objectReference: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
+        default: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
     }
 }
 
@@ -143,26 +156,27 @@ void Object::SetField(IntegralValue fieldValue, int index)
 {
     Field field = type->GetField(index);
     Assert(field.GetType() == fieldValue.GetType(), "value types do not match in set field");
-    ObjectMemPtr fieldPtr = memPtr + field.Offset();
+    MemPtr fieldPtr = GetMemPtr() + field.Offset();
     switch (field.GetType())
     {
-        case ValueType::boolType: *reinterpret_cast<bool*>(fieldPtr.Value()) = fieldValue.AsBool(); break;
-        case ValueType::sbyteType: *reinterpret_cast<int8_t*>(fieldPtr.Value()) = fieldValue.AsSByte(); break;
-        case ValueType::byteType: *reinterpret_cast<uint8_t*>(fieldPtr.Value()) = fieldValue.AsByte(); break;
-        case ValueType::shortType: *reinterpret_cast<int16_t*>(fieldPtr.Value()) = fieldValue.AsShort(); break;
-        case ValueType::ushortType: *reinterpret_cast<uint16_t*>(fieldPtr.Value()) = fieldValue.AsUShort(); break;
-        case ValueType::intType: *reinterpret_cast<int32_t*>(fieldPtr.Value()) = fieldValue.AsInt(); break;
-        case ValueType::uintType: *reinterpret_cast<uint32_t*>(fieldPtr.Value()) = fieldValue.AsUInt(); break;
-        case ValueType::longType: *reinterpret_cast<int64_t*>(fieldPtr.Value()) = fieldValue.AsLong(); break;
-        case ValueType::ulongType: *reinterpret_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.AsULong(); break;
-        case ValueType::floatType: *reinterpret_cast<float*>(fieldPtr.Value()) = fieldValue.AsFloat(); break;
-        case ValueType::doubleType: *reinterpret_cast<double*>(fieldPtr.Value()) = fieldValue.AsDouble(); break;
-        case ValueType::charType: *reinterpret_cast<char32_t*>(fieldPtr.Value()) = fieldValue.AsChar(); break;
-        case ValueType::memPtr: *reinterpret_cast<uint8_t**>(fieldPtr.Value()) = fieldValue.AsMemPtr(); break;
-        case ValueType::classDataPtr: *reinterpret_cast<ClassData**>(fieldPtr.Value()) = fieldValue.AsClassDataPtr(); break;
-        case ValueType::typePtr: *reinterpret_cast<ObjectType**>(fieldPtr.Value()) = fieldValue.AsTypePtr(); break;
-        case ValueType::stringLiteral: *reinterpret_cast<const char32_t**>(fieldPtr.Value()) = fieldValue.AsStringLiteral(); break;
-        case ValueType::objectReference: *reinterpret_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
+        case ValueType::boolType: *static_cast<bool*>(fieldPtr.Value()) = fieldValue.AsBool(); break;
+        case ValueType::sbyteType: *static_cast<int8_t*>(fieldPtr.Value()) = fieldValue.AsSByte(); break;
+        case ValueType::byteType: *static_cast<uint8_t*>(fieldPtr.Value()) = fieldValue.AsByte(); break;
+        case ValueType::shortType: *static_cast<int16_t*>(fieldPtr.Value()) = fieldValue.AsShort(); break;
+        case ValueType::ushortType: *static_cast<uint16_t*>(fieldPtr.Value()) = fieldValue.AsUShort(); break;
+        case ValueType::intType: *static_cast<int32_t*>(fieldPtr.Value()) = fieldValue.AsInt(); break;
+        case ValueType::uintType: *static_cast<uint32_t*>(fieldPtr.Value()) = fieldValue.AsUInt(); break;
+        case ValueType::longType: *static_cast<int64_t*>(fieldPtr.Value()) = fieldValue.AsLong(); break;
+        case ValueType::ulongType: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.AsULong(); break;
+        case ValueType::floatType: *static_cast<float*>(fieldPtr.Value()) = fieldValue.AsFloat(); break;
+        case ValueType::doubleType: *static_cast<double*>(fieldPtr.Value()) = fieldValue.AsDouble(); break;
+        case ValueType::charType: *static_cast<char32_t*>(fieldPtr.Value()) = fieldValue.AsChar(); break;
+        case ValueType::memPtr: *static_cast<uint8_t**>(fieldPtr.Value()) = fieldValue.AsMemPtr(); break;
+        case ValueType::classDataPtr: *static_cast<ClassData**>(fieldPtr.Value()) = fieldValue.AsClassDataPtr(); break;
+        case ValueType::typePtr: *static_cast<Type**>(fieldPtr.Value()) = fieldValue.AsTypePtr(); break;
+        case ValueType::stringLiteral: *static_cast<const char32_t**>(fieldPtr.Value()) = fieldValue.AsStringLiteral(); break;
+        case ValueType::allocationHandle: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
+        case ValueType::objectReference: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
         default: throw std::runtime_error("invalid field type " + std::to_string(int(field.GetType())));
     }
 }
@@ -172,7 +186,7 @@ int32_t Object::FieldCount() const
     return type->FieldCount();
 }
 
-void Object::MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ObjectPool& objectBool)
+void Object::MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ManagedMemoryPool& managedMemoryPool)
 {
     int32_t n = type->FieldCount();
     for (int32_t i = 0; i < n; ++i)
@@ -184,23 +198,86 @@ void Object::MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReference
             if (!objectRef.IsNull() && checked.find(objectRef) == checked.cend())
             {
                 checked.insert(objectRef);
-                Object& object = objectBool.GetObject(objectRef);
+                Object& object = managedMemoryPool.GetObject(objectRef);
                 object.SetLive();
-                object.MarkLiveObjects(checked, objectBool);
+                object.MarkLiveObjects(checked, managedMemoryPool);
             }
         }
     }
 }
 
-ObjectPool::ObjectPool(Machine& machine_) : machine(machine_), nextReferenceValue(1)
+ArrayElements::ArrayElements(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, Type* elementType_, int32_t numElements_, uint64_t size_) :
+    ManagedAllocation(arenaId_, memPtr_, size_), handle(handle_), elementType(elementType_), numElements(numElements_)
 {
 }
 
-ObjectReference ObjectPool::CreateObject(Thread& thread, ObjectType* type)
+IntegralValue ArrayElements::GetElement(int32_t index) const
+{
+    if (index < 0 || index >= numElements) throw std::runtime_error("array index out of bounds");
+    ValueType valueType = elementType->GetValueType();
+    MemPtr elementPtr = ElementPtr(GetMemPtr(), valueType, index);
+    switch (valueType)
+    {
+        case ValueType::boolType: return IntegralValue(*static_cast<bool*>(elementPtr.Value()), valueType);
+        case ValueType::sbyteType: return IntegralValue(*static_cast<int8_t*>(elementPtr.Value()), valueType);
+        case ValueType::byteType: return IntegralValue(*static_cast<uint8_t*>(elementPtr.Value()), valueType);
+        case ValueType::shortType: return IntegralValue(*static_cast<int16_t*>(elementPtr.Value()), valueType);
+        case ValueType::ushortType: return IntegralValue(*static_cast<uint16_t*>(elementPtr.Value()), valueType);
+        case ValueType::intType: return IntegralValue(*static_cast<int32_t*>(elementPtr.Value()), valueType);
+        case ValueType::uintType: return IntegralValue(*static_cast<uint32_t*>(elementPtr.Value()), valueType);
+        case ValueType::longType: return IntegralValue(*static_cast<int64_t*>(elementPtr.Value()), valueType);
+        case ValueType::ulongType: return IntegralValue(*static_cast<uint64_t*>(elementPtr.Value()), valueType);
+        case ValueType::floatType: return IntegralValue(static_cast<uint64_t>(*static_cast<float*>(elementPtr.Value())), valueType);
+        case ValueType::doubleType: return IntegralValue(static_cast<uint64_t>(*static_cast<double*>(elementPtr.Value())), valueType);
+        case ValueType::charType: return IntegralValue(*static_cast<char32_t*>(elementPtr.Value()), valueType);
+        case ValueType::memPtr: return IntegralValue(static_cast<uint8_t*>(elementPtr.Value()));
+        case ValueType::classDataPtr: return IntegralValue(*static_cast<ClassData**>(elementPtr.Value()));
+        case ValueType::typePtr: return IntegralValue(*static_cast<ObjectType**>(elementPtr.Value()));
+        case ValueType::stringLiteral: return IntegralValue(static_cast<const char32_t*>(elementPtr.Value()));
+        case ValueType::allocationHandle: return IntegralValue(*static_cast<uint64_t*>(elementPtr.Value()), valueType);
+        case ValueType::objectReference: return IntegralValue(*static_cast<uint64_t*>(elementPtr.Value()), valueType);
+        default: return IntegralValue(*static_cast<uint64_t*>(elementPtr.Value()), valueType);
+    }
+}
+
+void ArrayElements::SetElement(IntegralValue elementValue, int32_t index)
+{
+    if (index < 0 || index >= numElements) throw std::runtime_error("array index out of bounds");
+    ValueType valueType = elementType->GetValueType();
+    MemPtr elementPtr = ElementPtr(GetMemPtr(), valueType, index);
+    switch (valueType)
+    {
+        case ValueType::boolType: *static_cast<bool*>(elementPtr.Value()) = elementValue.AsBool(); break;
+        case ValueType::sbyteType: *static_cast<int8_t*>(elementPtr.Value()) = elementValue.AsSByte(); break;
+        case ValueType::byteType: *static_cast<uint8_t*>(elementPtr.Value()) = elementValue.AsByte(); break;
+        case ValueType::shortType: *static_cast<int16_t*>(elementPtr.Value()) = elementValue.AsShort(); break;
+        case ValueType::ushortType: *static_cast<uint16_t*>(elementPtr.Value()) = elementValue.AsUShort(); break;
+        case ValueType::intType: *static_cast<int32_t*>(elementPtr.Value()) = elementValue.AsInt(); break;
+        case ValueType::uintType: *static_cast<uint32_t*>(elementPtr.Value()) = elementValue.AsUInt(); break;
+        case ValueType::longType: *static_cast<int64_t*>(elementPtr.Value()) = elementValue.AsLong(); break;
+        case ValueType::ulongType: *static_cast<uint64_t*>(elementPtr.Value()) = elementValue.AsULong(); break;
+        case ValueType::floatType: *static_cast<float*>(elementPtr.Value()) = elementValue.AsFloat(); break;
+        case ValueType::doubleType: *static_cast<double*>(elementPtr.Value()) = elementValue.AsDouble(); break;
+        case ValueType::charType: *static_cast<char32_t*>(elementPtr.Value()) = elementValue.AsChar(); break;
+        case ValueType::memPtr: *static_cast<uint8_t**>(elementPtr.Value()) = elementValue.AsMemPtr(); break;
+        case ValueType::classDataPtr: *static_cast<ClassData**>(elementPtr.Value()) = elementValue.AsClassDataPtr(); break;
+        case ValueType::typePtr: *static_cast<Type**>(elementPtr.Value()) = elementValue.AsTypePtr(); break;
+        case ValueType::stringLiteral: *static_cast<const char32_t**>(elementPtr.Value()) = elementValue.AsStringLiteral(); break;
+        case ValueType::allocationHandle: *static_cast<uint64_t*>(elementPtr.Value()) = elementValue.Value(); break;
+        case ValueType::objectReference: *static_cast<uint64_t*>(elementPtr.Value()) = elementValue.Value(); break;
+        default: throw std::runtime_error("invalid element type " + std::to_string(int(valueType)));
+    }
+}
+
+ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextReferenceValue(1)
+{
+}
+
+ObjectReference ManagedMemoryPool::CreateObject(Thread& thread, ObjectType* type)
 {
     ObjectReference reference(nextReferenceValue++);
-    std::pair<ArenaId, ObjectMemPtr> arenaMemPtr = machine.AllocateMemory(thread, type->ObjectSize());
-    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, arenaMemPtr.first, arenaMemPtr.second, type, type->ObjectSize())));
+    std::pair<ArenaId, MemPtr> arenaMemPtr = machine.AllocateMemory(thread, type->ObjectSize());
+    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, arenaMemPtr.first, arenaMemPtr.second, type, type->ObjectSize()))));
     if (!pairItBool.second)
     {
         throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
@@ -208,7 +285,7 @@ ObjectReference ObjectPool::CreateObject(Thread& thread, ObjectType* type)
     return reference;
 }
 
-ObjectReference ObjectPool::CopyObject(ObjectReference from)
+ObjectReference ManagedMemoryPool::CopyObject(ObjectReference from)
 {
     if (from.IsNull())
     {
@@ -216,7 +293,7 @@ ObjectReference ObjectPool::CopyObject(ObjectReference from)
     }
     ObjectReference reference(nextReferenceValue++);
     Object& object = GetObject(from);
-    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, object.GetArenaId(), object.MemPtr(), object.Type(), object.Size())));
+    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, object.GetArenaId(), object.GetMemPtr(), object.GetType(), object.Size()))));
     if (!pairItBool.second)
     {
         throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
@@ -224,136 +301,197 @@ ObjectReference ObjectPool::CopyObject(ObjectReference from)
     return reference;
 }
 
-void ObjectPool::DestroyObject(ObjectReference reference)
+void ManagedMemoryPool::DestroyObject(ObjectReference reference)
 {
     if (reference.IsNull())
     {
         throw std::runtime_error("cannot destroy null reference");
     }
-    auto n = objects.erase(reference);
+    auto n = allocations.erase(reference);
     if (n != 1)
     {
         throw std::runtime_error("could not erase: object with reference " + std::to_string(reference.Value()) + " not found");
     }
 }
 
-Object& ObjectPool::GetObject(ObjectReference reference)
+Object& ManagedMemoryPool::GetObject(ObjectReference reference)
 {
     if (reference.IsNull())
     {
-        throw std::runtime_error("cannot get null reference from object pool");
+        throw std::runtime_error("cannot get null reference from managed memory pool");
     }
-    auto it = objects.find(reference);
-    if (it != objects.cend())
+    auto it = allocations.find(reference);
+    if (it != allocations.cend())
     {
-        return it->second;
+        ManagedAllocation* allocation = it->second.get();
+        Object* object = dynamic_cast<Object*>(allocation);
+        Assert(object, "object expected");
+        return *object;
     }
     throw std::runtime_error("object with reference " + std::to_string(reference.Value()) + " not found");
 }
 
-ObjectReference ObjectPool::CreateStringFromLiteral(const char32_t* strLit, uint64_t len)
-{
-    ObjectReference reference(nextReferenceValue++);
-    uint64_t stringSize = sizeof(char32_t) * (len + 1);
-    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, ArenaId::notGCMem, ObjectMemPtr(strLit), ObjectTypeTable::Instance().GetObjectType(U"System.String"), stringSize)));
-    if (!pairItBool.second)
-    {
-        throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
-    }
-    return reference;
-}
-
-int32_t ObjectPool::GetStringLength(ObjectReference str) 
-{
-    Object& s = GetObject(str);
-    Assert(s.Type() == ObjectTypeTable::Instance().GetObjectType(U"System.String"), "string type expected");
-    uint64_t len = s.Size() / sizeof(char32_t) - 1;
-    return static_cast<int32_t>(len);
-}
-
-ObjectReference ObjectPool::CreateArray(Thread& thread, int32_t length, ArrayType* type)
-{
-    Assert(length != 0, "zero length arrays not supported");
-    ObjectReference reference(nextReferenceValue++);
-    uint64_t arraySize = sizeof(ValueType) * uint64_t(length);
-    std::pair<ArenaId, ObjectMemPtr> arenaMemPtr = machine.AllocateMemory(thread, arraySize);
-    auto pairItBool = objects.insert(std::make_pair(reference, Object(reference, arenaMemPtr.first, arenaMemPtr.second, type, arraySize)));
-    if (!pairItBool.second)
-    {
-        throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
-    }
-    return reference;
-}
-
-int32_t ObjectPool::GetArrayLength(ObjectReference arr)
-{
-    Object& a = GetObject(arr);
-    Assert(dynamic_cast<ArrayType*>(a.Type()) != nullptr, "array type expected");
-    uint64_t len = a.Size() / sizeof(ValueType);
-    return static_cast<int32_t>(len);
-}
-
-IntegralValue ObjectPool::GetField(ObjectReference reference, int32_t fieldIndex)
+IntegralValue ManagedMemoryPool::GetField(ObjectReference reference, int32_t fieldIndex)
 {
     if (reference.IsNull())
     {
         throw std::runtime_error("cannot get field of null reference");
     }
-    auto it = objects.find(reference);
-    if (it != objects.cend())
-    {
-        const Object& object = it->second;
-        return object.GetField(fieldIndex);
-    }
-    throw std::runtime_error("object with reference " + std::to_string(reference.Value()) + " not found");
+    Object& object = GetObject(reference);
+    return object.GetField(fieldIndex);
 }
 
-void ObjectPool::SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue)
+void ManagedMemoryPool::SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue)
 {
     if (reference.IsNull())
     {
         throw std::runtime_error("cannot set field of null reference");
     }
-    auto it = objects.find(reference);
-    if (it != objects.cend())
+    Object& object = GetObject(reference);
+    object.SetField(fieldValue, fieldIndex);
+}
+
+ObjectReference ManagedMemoryPool::CreateStringFromLiteral(const char32_t* strLit, uint64_t len)
+{
+    ObjectReference handle(nextReferenceValue++);
+    uint64_t stringSize = sizeof(char32_t) * (len + 1);
+    Type* type = TypeTable::Instance().GetType(U"System.String");
+    ObjectType* stringType = dynamic_cast<ObjectType*>(type);
+    Assert(stringType, "string type expected");
+    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new Object(handle, ArenaId::notGCMem, MemPtr(strLit), stringType, stringSize))));
+    if (!pairItBool.second)
     {
-        Object& object = it->second;
-        object.SetField(fieldValue, fieldIndex);
+        throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+    }
+    return handle;
+}
+
+int32_t ManagedMemoryPool::GetStringLength(ObjectReference str)
+{
+    Object& s = GetObject(str);
+    Assert(s.GetType() == TypeTable::Instance().GetType(U"System.String"), "string type expected");
+    uint64_t len = s.Size() / sizeof(char32_t) - 1;
+    return static_cast<int32_t>(len);
+}
+
+void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference arr, Type* elementType, int32_t length)
+{
+    if (length <= 0)
+    {
+        throw std::runtime_error("invalid array length");
+    }
+    Object& a = GetObject(arr);
+    AllocationHandle handle(nextReferenceValue++);
+    uint64_t arraySize = ValueSize(elementType->GetValueType()) * uint64_t(length);
+    std::pair<ArenaId, MemPtr> arenaMemPtr = machine.AllocateMemory(thread, arraySize);
+    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, arenaMemPtr.first, arenaMemPtr.second, elementType, length, arraySize))));
+    if (!pairItBool.second)
+    {
+        throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+    }
+    a.SetField(handle, 1);
+}
+
+int32_t ManagedMemoryPool::GetArrayLength(ObjectReference arr)
+{
+    Object& a = GetObject(arr);
+    IntegralValue elementsHandleValue = a.GetField(1);
+    Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
+    AllocationHandle handle(elementsHandleValue.Value());
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
+        Assert(elements, "array elements expected");
+        return elements->NumElements();
     }
     else
     {
-        throw std::runtime_error("object with reference " + std::to_string(reference.Value()) + " not found");
+        throw std::runtime_error("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
 }
 
-ObjectMemPtr ObjectPool::GetObjectMemPtr(ObjectReference reference)
+IntegralValue ManagedMemoryPool::GetArrayElement(ObjectReference reference, int32_t index)
+{
+    if (reference.IsNull())
+    { 
+        throw std::runtime_error("cannot get element of null array");
+    }
+    Object& arr = GetObject(reference);
+    IntegralValue elementsHandleValue = arr.GetField(1);
+    Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
+    AllocationHandle handle(elementsHandleValue.Value());
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
+        Assert(elements, "array elements expected");
+        return elements->GetElement(index);
+    }
+    else
+    {
+        throw std::runtime_error("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
+    }
+}
+
+void ManagedMemoryPool::SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue)
 {
     if (reference.IsNull())
     {
-        throw std::runtime_error("cannot retrieve pointer of null reference");
+        throw std::runtime_error("cannot set element of null array");
     }
-    auto it = objects.find(reference);
-    if (it != objects.cend())
+    Object& arr = GetObject(reference);
+    IntegralValue elementsHandleValue = arr.GetField(1);
+    Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
+    AllocationHandle handle(elementsHandleValue.Value());
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
     {
-        const Object& object = it->second;
-        return object.MemPtr();
+        ManagedAllocation* allocation = it->second.get();
+        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
+        Assert(elements, "array elements expected");
+        elements->SetElement(elementValue, index);
     }
-    throw std::runtime_error("object with reference " + std::to_string(reference.Value()) + " not found");
+    else
+    {
+        throw std::runtime_error("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
+    }
 }
 
-void ObjectPool::ResetObjectsLiveFlag()
+MemPtr ManagedMemoryPool::GetMemPtr(ObjectReference handle)
 {
-    for (auto& objectRefObjectPair : objects)
+    if (handle.IsNull())
+    {
+        throw std::runtime_error("cannot retrieve pointer of null handle");
+    }
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        Object* object = dynamic_cast<Object*>(allocation);
+        return object->GetMemPtr();
+    }
+    throw std::runtime_error("object with handle " + std::to_string(handle.Value()) + " not found");
+}
+
+void ManagedMemoryPool::ResetObjectsLiveFlag()
+{
+/*
+    for (auto& objectRefObjectPair : allocations)
     {
         Object& object = objectRefObjectPair.second;
         object.ResetLive();
     }
+*/
 }
 
-void ObjectPool::MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena)
+void ManagedMemoryPool::MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena)
 {
+    /*
     std::vector<ObjectReference> toBeDestroyed;
-    for (auto& objectRefObjectPair : objects)
+    for (auto& objectRefObjectPair : allocations)
     {
         Object& object = objectRefObjectPair.second;
         if (object.GetArenaId() == fromArenaId)
@@ -361,8 +499,8 @@ void ObjectPool::MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena)
             if (object.IsLive())
             {
                 uint64_t n = object.Size();
-                ObjectMemPtr oldMemPtr = object.MemPtr();
-                ObjectMemPtr newMemPtr = toArena.Allocate(n);
+                MemPtr oldMemPtr = object.GetMemPtr();
+                MemPtr newMemPtr = toArena.Allocate(n);
                 std::memcpy(newMemPtr.Value(), oldMemPtr.Value(), n);
                 object.SetMemPtr(newMemPtr);
                 object.SetArenaId(toArena.Id());
@@ -373,10 +511,11 @@ void ObjectPool::MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena)
             }
         }
     }
-    for (ObjectReference reference : toBeDestroyed)
+    for (ObjectReference handle : toBeDestroyed)
     {
-        DestroyObject(reference);
+        DestroyObject(handle);
     }
+    */
 }
 
 } } // namespace cminor::machine

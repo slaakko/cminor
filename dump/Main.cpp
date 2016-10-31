@@ -28,7 +28,7 @@ struct InitDone
         FileRegistry::Init();
         FunctionTable::Init();
         ClassDataTable::Init();
-        ObjectTypeTable::Init();
+        TypeTable::Init();
         InitSymbol();
         InitAssembly();
     }
@@ -122,7 +122,7 @@ int main(int argc, const char** argv)
         classTypes.clear();
         FunctionTable::Done();
         ClassDataTable::Done();
-        ObjectTypeTable::Done();
+        TypeTable::Done();
         std::ostream* outputStream = &std::cout;
         std::ofstream outputFileStream;
         if (!outputFileName.empty())
