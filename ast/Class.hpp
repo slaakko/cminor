@@ -109,6 +109,29 @@ private:
     std::unique_ptr<IdentifierNode> id;
 };
 
+class PropertyNode : public Node
+{
+public:
+    PropertyNode(const Span& span_);
+    PropertyNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_);
+    NodeType GetNodeType() const override { return NodeType::propertyNode; };
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Accept(Visitor& visitor) override;
+    Specifiers GetSpecifiers() const { return specifiers; }
+    Node* TypeExpr() const { return typeExpr.get(); }
+    IdentifierNode* Id() const { return id.get(); }
+    void SetGetter(CompoundStatementNode* getter_) override;
+    void SetSetter(CompoundStatementNode* setter_) override;
+    CompoundStatementNode* Getter() const { return getter.get(); }
+    CompoundStatementNode* Setter() const { return setter.get(); }
+private:
+    Specifiers specifiers;
+    std::unique_ptr<Node> typeExpr;
+    std::unique_ptr<IdentifierNode> id;
+    std::unique_ptr<CompoundStatementNode> getter;
+    std::unique_ptr<CompoundStatementNode> setter;
+};
+
 } } // namespace cminor::ast
 
 #endif // CMINOR_AST_CLASS_INCLUDED

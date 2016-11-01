@@ -430,6 +430,13 @@ void ConstructorSymbol::CreateMachineFunction()
         Assert(loadLocalInst, "load local inst expected");
         MachineFunction()->AddInst(std::move(loadLocal));
         loadLocalInst->SetIndex(0);
+        std::unique_ptr<Instruction> upCast = GetAssembly()->GetMachine().CreateInst("upcast");
+        UpCastInst* upCastInst = dynamic_cast<UpCastInst*>(upCast.get());
+        Assert(upCastInst, "up cast inst expected");
+        utf32_string baseClassFullName = containingClass->BaseClass()->FullName();
+        Constant baseClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(baseClassFullName.c_str())));
+        upCastInst->SetTypeName(baseClassNameConstant);
+        MachineFunction()->AddInst(std::move(upCast));
         std::vector<GenObject*> objects;
         containingClass->BaseClass()->DefaultConstructorSymbol()->GenerateCall(GetAssembly()->GetMachine(), *GetAssembly(), *MachineFunction(), objects, 1);
     }
@@ -468,6 +475,15 @@ void ArraySizeConstructorSymbol::CreateMachineFunction()
             Assert(loadArrayLocalInst, "load local inst expected");
             loadArrayLocalInst->SetIndex(0);
             MachineFunction()->AddInst(std::move(loadArrayLocal));
+
+            std::unique_ptr<Instruction> upCast = GetAssembly()->GetMachine().CreateInst("upcast");
+            UpCastInst* upCastInst = dynamic_cast<UpCastInst*>(upCast.get());
+            Assert(upCastInst, "up cast inst expected");
+            utf32_string baseClassFullName = containingClass->BaseClass()->FullName();
+            ConstantPool& constantPool = GetAssembly()->GetConstantPool();
+            Constant baseClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(baseClassFullName.c_str())));
+            upCastInst->SetTypeName(baseClassNameConstant);
+            MachineFunction()->AddInst(std::move(upCast));
 
             std::unique_ptr<Instruction> loadSizeLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
             LoadLocalInst* loadSizeLocalInst = dynamic_cast<LoadLocalInst*>(loadSizeLocal.get());

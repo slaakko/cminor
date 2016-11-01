@@ -27,6 +27,7 @@ class BoundLiteral;
 class BoundConstant;
 class BoundLocalVariable;
 class BoundMemberVariable;
+class BoundProperty;
 class BoundParameter;
 class BoundArrayElement;
 class BoundConversion;
@@ -58,6 +59,7 @@ public:
     virtual void Visit(BoundConstant& boundConstant) {}
     virtual void Visit(BoundLocalVariable& boundLocalVariable) {}
     virtual void Visit(BoundMemberVariable& boundMemberVariable) {}
+    virtual void Visit(BoundProperty& boundProperty) {}
     virtual void Visit(BoundParameter& boundParameter) {}
     virtual void Visit(BoundArrayElement& boundArrayElement) {}
     virtual void Visit(BoundConversion& boundConversion) {}

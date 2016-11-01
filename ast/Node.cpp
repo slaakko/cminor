@@ -34,6 +34,17 @@ void Node::AddParameter(ParameterNode* parameter)
     throw std::runtime_error("add parameter missing");
 }
 
+void Node::SetGetter(CompoundStatementNode* getter)
+{
+    throw std::runtime_error("set getter missing");
+}
+
+void Node::SetSetter(CompoundStatementNode* setter)
+{
+    throw std::runtime_error("set setter missing");
+}
+
+
 UnaryNode::UnaryNode(const Span& span_) : Node(span_)
 {
 }

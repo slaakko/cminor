@@ -447,6 +447,14 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class SwapInst : public Instruction
+{
+public:
+    SwapInst();
+    Instruction* Clone() const override { return new SwapInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class UpCastInst : public TypeInstruction
 {
 public:

@@ -32,6 +32,11 @@ public:
         Assert(!s.empty(), "cannot dup: operand stack is empty");
         s.push_back(s.back());
     }
+    void Swap()
+    {
+        Assert(s.size() >= 2, "cannot swap: less than two operands in the operand stack");
+        std::swap(s.back(), s[s.size() - 2]);
+    }
 private:
     std::vector<IntegralValue> s;
 };

@@ -30,6 +30,7 @@ public:
     void Visit(ThisInitializerNode& thisInitializerNode) override;
     void Visit(MemberFunctionNode& memberFunctionNode) override;
     void Visit(FunctionNode& functionNode) override;
+    void Visit(PropertyNode& propertyNode) override;
     void Visit(CompoundStatementNode& compoundStatementNode) override;
     void Visit(ReturnStatementNode& returnStatementNode) override;
     void Visit(IfStatementNode& ifStatementNode) override;

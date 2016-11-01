@@ -1,5 +1,5 @@
-#ifndef Class_hpp_1328
-#define Class_hpp_1328
+#ifndef Class_hpp_27796
+#define Class_hpp_27796
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -29,8 +29,10 @@ private:
     class InitializerRule;
     class MemberFunctionRule;
     class MemberVariableRule;
+    class PropertyRule;
+    class GetterOrSetterRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // Class_hpp_1328
+#endif // Class_hpp_27796

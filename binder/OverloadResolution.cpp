@@ -90,7 +90,7 @@ bool FindConversions(BoundCompileUnit& boundCompileUnit, FunctionSymbol* functio
         }
         else
         {
-            if (arity == 2 && function->GroupName() == U"@init" && i == 0)
+            if (arity == 2 && i == 0  && (function->GroupName() == U"@init" || function->GroupName() == U"@assignment"))
             {
                 return false;
             }

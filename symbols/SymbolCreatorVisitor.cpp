@@ -5,6 +5,7 @@
 
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/symbols/Assembly.hpp>
+#include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/ast/Statement.hpp>
 #include <cminor/ast/Class.hpp>
@@ -106,6 +107,24 @@ void SymbolCreatorVisitor::Visit(MemberFunctionNode& memberFunctionNode)
 void SymbolCreatorVisitor::Visit(MemberVariableNode& memberVariableNode)
 {
     symbolTable.AddMemberVariable(memberVariableNode);
+}
+
+void SymbolCreatorVisitor::Visit(PropertyNode& propertyNode)
+{
+    symbolTable.BeginProperty(propertyNode);
+    if (propertyNode.Getter())
+    {
+        symbolTable.BeginPropertyGetter(propertyNode);
+        propertyNode.Getter()->Accept(*this);
+        symbolTable.EndPropertyGetter();
+    }
+    if (propertyNode.Setter())
+    {
+        symbolTable.BeginPropertySetter(propertyNode);
+        propertyNode.Setter()->Accept(*this);
+        symbolTable.EndPropertySetter();
+    }
+    symbolTable.EndProperty();
 }
 
 void SymbolCreatorVisitor::Visit(ParameterNode& parameterNode)

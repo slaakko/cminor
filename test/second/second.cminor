@@ -1,6 +1,16 @@
+class Alpha
+{
+    public int Foo
+    {
+        get { return x; }
+        set { x = value; }
+    }
+    private int x;
+}
+
 void main()
 {
-    int[] x = new int[23];
-    x[0] = 1;
-    int y = x[0];
+    Alpha a = new Alpha();
+    a.Foo = 1;
+    int y = a.Foo;
 }

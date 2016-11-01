@@ -17,6 +17,8 @@ class BoundFunction;
 
 std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node);
 
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue);
+
 } } // namespace cminor::binder
 
 #endif // CMINOR_BINDER_EXPRESSION_BINDER_INCLUDED

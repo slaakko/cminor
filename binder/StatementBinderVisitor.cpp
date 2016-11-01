@@ -11,7 +11,7 @@
 #include <cminor/binder/ExpressionBinder.hpp>
 #include <cminor/binder/OverloadResolution.hpp>
 #include <cminor/binder/Access.hpp>
-#include <cminor/symbols/FunctionSymbol.hpp>
+#include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
@@ -76,19 +76,26 @@ bool TerminatesFunction(StatementNode* statement, bool inForEverLoop)
     return false;
 }
 
+void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, CompoundStatementNode* bodyNode, const Span& span);
+
 void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, FunctionNode& functionNode)
+{
+    CheckFunctionReturnPaths(functionSymbol, functionNode.Body(), functionNode.GetSpan());
+}
+
+void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, CompoundStatementNode* bodyNode, const Span& span)
 {
     TypeSymbol* returnType = functionSymbol->ReturnType();
     if (!returnType || dynamic_cast<VoidTypeSymbol*>(returnType)) return;
     if (functionSymbol->IsExternal()) return;
-    CompoundStatementNode* body = functionNode.Body();
+    CompoundStatementNode* body = bodyNode;
     int n = body->Statements().Count();
     for (int i = 0; i < n; ++i)
     {
         StatementNode* statement = body->Statements()[i];
         if (TerminatesFunction(statement, false)) return;
     }
-    throw Exception("not all control paths terminate in return or throw statement", functionNode.GetSpan());
+    throw Exception("not all control paths terminate in return or throw statement", span);
 }
 
 StatementBinderVisitor::StatementBinderVisitor(BoundCompileUnit& boundCompileUnit_) : 
@@ -275,6 +282,50 @@ void StatementBinderVisitor::Visit(FunctionNode& functionNode)
     boundCompileUnit.AddBoundNode(std::move(boundFunction));
     containerScope = prevContainerScope;
     function = prevFunction;
+}
+
+void StatementBinderVisitor::Visit(PropertyNode& propertyNode)
+{
+    ContainerScope* prevContainerScope = containerScope;
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(propertyNode);
+    PropertySymbol* propertySymbol = dynamic_cast<PropertySymbol*>(symbol);
+    Assert(propertySymbol, "property symbol expected");
+    prevContainerScope = containerScope;
+    PropertyGetterFunctionSymbol* getter = propertySymbol->Getter();
+    PropertySetterFunctionSymbol* setter = propertySymbol->Setter();
+    if (getter)
+    {
+        prevContainerScope = containerScope;
+        std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(getter));
+        BoundFunction* prevFunction = function;
+        function = boundFunction.get();
+        containerScope = getter->GetContainerScope();
+        propertyNode.Getter()->Accept(*this);
+        CheckFunctionReturnPaths(getter, propertyNode.Getter(), propertyNode.Getter()->GetSpan());
+        BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
+        Assert(compoundStatement, "compound statement expected");
+        function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
+        boundClass->AddMember(std::move(boundFunction));
+        function = prevFunction;
+        containerScope = prevContainerScope;
+    }
+    if (setter)
+    {
+        prevContainerScope = containerScope;
+        containerScope = setter->GetContainerScope();
+        std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(setter));
+        BoundFunction* prevFunction = function;
+        function = boundFunction.get();
+        propertyNode.Setter()->Accept(*this);
+        CheckFunctionReturnPaths(setter, propertyNode.Setter(), propertyNode.Setter()->GetSpan());
+        BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
+        Assert(compoundStatement, "compound statement expected");
+        function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
+        boundClass->AddMember(std::move(boundFunction));
+        function = prevFunction;
+        containerScope = prevContainerScope;
+    }
+    containerScope = prevContainerScope;
 }
 
 void StatementBinderVisitor::Visit(CompoundStatementNode& compoundStatementNode)
@@ -474,7 +525,7 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
 
 void StatementBinderVisitor::Visit(AssignmentStatementNode& assignmentStatementNode)
 {
-    std::unique_ptr<BoundExpression> target = BindExpression(boundCompileUnit, function, containerScope, assignmentStatementNode.TargetExpr());
+    std::unique_ptr<BoundExpression> target = BindExpression(boundCompileUnit, function, containerScope, assignmentStatementNode.TargetExpr(), true);
     TypeSymbol* targetType = target->GetType();
     std::unique_ptr<BoundExpression> source = BindExpression(boundCompileUnit, function, containerScope, assignmentStatementNode.SourceExpr());
     std::vector<std::unique_ptr<BoundExpression>> arguments;

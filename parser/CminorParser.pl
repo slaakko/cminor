@@ -37,6 +37,8 @@ namespace cminor.parser
         Initializer(ParsingContext* ctx): InitializerNode*;
         MemberFunction(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<MemberFunctionNode> memFun, var std::unique_ptr<IdentifierNode> qid): Node*;
         MemberVariable(ParsingContext* ctx): Node*;
+        Property(ParsingContext* ctx, var std::unique_ptr<Node> property): Node*;
+        GetterOrSetter(ParsingContext* ctx, Node* subject);
     }
     grammar IdentifierGrammar
     {

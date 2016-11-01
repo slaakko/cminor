@@ -697,6 +697,15 @@ void DupInst::Execute(Frame& frame)
     frame.OpStack().Dup();
 }
 
+SwapInst::SwapInst() : Instruction("swap")
+{
+}
+
+void SwapInst::Execute(Frame& frame)
+{
+    frame.OpStack().Swap();
+}
+
 UpCastInst::UpCastInst() : TypeInstruction("upcast")
 {
 }

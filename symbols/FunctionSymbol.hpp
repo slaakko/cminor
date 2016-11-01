@@ -69,6 +69,7 @@ public:
     void AddLocalVariable(LocalVariableSymbol* localVariable);
     bool IsConversionFun() const { return GetFlag(FunctionSymbolFlags::conversionFun);  }
     void SetConversionFun() { SetFlag(FunctionSymbolFlags::conversionFun); }
+    virtual ParameterSymbol* GetThisParam() const { return nullptr; }
     virtual ConversionType GetConversionType() const { return ConversionType::implicit_; }
     virtual int ConversionDistance() const { return 0; }
     virtual TypeSymbol* ConversionSourceType() const { return nullptr; }
@@ -128,6 +129,7 @@ public:
     bool IsIntConstructorSymbol() const;
     void SetBaseConstructorCallGenerated() { SetFlag(ConstructorSymbolFlags::baseConstructorCallGenerated); }
     bool BaseConstructorCallGenerated() const { return GetFlag(ConstructorSymbolFlags::baseConstructorCallGenerated); }
+    ParameterSymbol* GetThisParam() const override { return Parameters()[0]; }
 private:
     ConstructorSymbolFlags flags;
     bool GetFlag(ConstructorSymbolFlags flag) const { return (flags & flag) != ConstructorSymbolFlags::none; }
@@ -183,6 +185,7 @@ public:
     int32_t VmtIndex() const { return vmtIndex; }
     void SetVmtIndex(int32_t vmtIndex_) { vmtIndex = vmtIndex_; }
     void GenerateVirtualCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects);
+    ParameterSymbol* GetThisParam() const override { if (IsStatic()) return nullptr; else return Parameters()[0]; }
 private:
     int32_t vmtIndex;
     MemberFunctionSymbolFlags flags;

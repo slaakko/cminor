@@ -53,6 +53,7 @@ class ThisInitializerNode;
 class ConstructorNode;
 class MemberFunctionNode;
 class MemberVariableNode;
+class PropertyNode;
 
 class DisjunctionNode;
 class ConjunctionNode;
@@ -151,6 +152,7 @@ public:
     virtual void Visit(ConstructorNode& constructorNode) {}
     virtual void Visit(MemberFunctionNode& memberFunctionNode) {}
     virtual void Visit(MemberVariableNode& memberVariableNode) {}
+    virtual void Visit(PropertyNode& propertyNode) {}
 
     virtual void Visit(DisjunctionNode& disjunctionNode) {}
     virtual void Visit(ConjunctionNode& conjunctionNode) {}

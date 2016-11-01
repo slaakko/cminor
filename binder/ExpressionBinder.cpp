@@ -10,6 +10,7 @@
 #include <cminor/binder/Access.hpp>
 #include <cminor/binder/BoundFunction.hpp>
 #include <cminor/binder/TypeResolver.hpp>
+#include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
@@ -19,7 +20,7 @@ namespace cminor { namespace binder {
 class ExpressionBinder : public Visitor
 {
 public:
-    ExpressionBinder(BoundCompileUnit& boundCompileUnit_, BoundFunction* boundFunction_, ContainerScope* containerScope_);
+    ExpressionBinder(BoundCompileUnit& boundCompileUnit_, BoundFunction* boundFunction_, ContainerScope* containerScope_, const Span& span_, bool lvalue);
     std::unique_ptr<BoundExpression> GetExpression() { return std::move(expression); }
 
     void Visit(BoolNode& boolNode) override;
@@ -88,6 +89,8 @@ private:
     BoundCompileUnit& boundCompileUnit;
     BoundFunction* boundFunction;
     ContainerScope* containerScope;
+    bool lvalue;
+    Span span;
     std::unique_ptr<BoundExpression> expression;
     void BindSymbol(Symbol* symbol);
     void BindUnaryOp(UnaryNode& unaryNode, StringPtr groupName);
@@ -96,8 +99,8 @@ private:
     void BindBinaryOp(BoundExpression* left, BoundExpression* right, Node& node, StringPtr groupName);
 };
 
-ExpressionBinder::ExpressionBinder(BoundCompileUnit& boundCompileUnit_, BoundFunction* boundFunction_, ContainerScope* containerScope_) : 
-    boundCompileUnit(boundCompileUnit_), boundFunction(boundFunction_), containerScope(containerScope_)
+ExpressionBinder::ExpressionBinder(BoundCompileUnit& boundCompileUnit_, BoundFunction* boundFunction_, ContainerScope* containerScope_, const Span& span_, bool lvalue_) :
+    boundCompileUnit(boundCompileUnit_), boundFunction(boundFunction_), containerScope(containerScope_), span(span_), lvalue(lvalue_)
 {
 }
 
@@ -554,18 +557,39 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
             MemberVariableSymbol* memberVariableSymbol = static_cast<MemberVariableSymbol*>(symbol);
             CheckAccess(boundFunction->GetFunctionSymbol(), memberVariableSymbol);
             BoundMemberVariable* bmv = new BoundMemberVariable(boundCompileUnit.GetAssembly(), memberVariableSymbol->GetType(), memberVariableSymbol);
-            if (MemberFunctionSymbol* memFun = dynamic_cast<MemberFunctionSymbol*>(boundFunction->GetFunctionSymbol()))
+            ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->GetThisParam();
+            if (thisParam)
             {
-                if (!memFun->IsStatic())
-                {
-                    bmv->SetClassObject(std::unique_ptr<BoundExpression>(new BoundParameter(boundCompileUnit.GetAssembly(), memFun->Parameters()[0]->GetType(), memFun->Parameters()[0])));
-                }
-            }
-            else if (ConstructorSymbol* ctor = dynamic_cast<ConstructorSymbol*>(boundFunction->GetFunctionSymbol()))
-            {
-                bmv->SetClassObject(std::unique_ptr<BoundExpression>(new BoundParameter(boundCompileUnit.GetAssembly(), ctor->Parameters()[0]->GetType(), ctor->Parameters()[0])));
+                bmv->SetClassObject(std::unique_ptr<BoundExpression>(new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam)));
             }
             expression.reset(bmv);
+            break;
+        }
+        case SymbolType::propertySymbol:
+        {
+            PropertySymbol* propertySymbol = static_cast<PropertySymbol*>(symbol);
+            CheckAccess(boundFunction->GetFunctionSymbol(), propertySymbol);
+            if (!lvalue)
+            {
+                if (!propertySymbol->Getter())
+                {
+                    throw Exception("property '" + ToUtf8(propertySymbol->FullName()) + "' is write-only", span, propertySymbol->GetSpan());
+                }
+            }
+            else
+            {
+                if (!propertySymbol->Setter())
+                {
+                    throw Exception("property '" + ToUtf8(propertySymbol->FullName()) + "' is read-only", span, propertySymbol->GetSpan());
+                }
+            }
+            BoundProperty* bp = new BoundProperty(boundCompileUnit.GetAssembly(), propertySymbol->GetType(), propertySymbol);
+            ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->GetThisParam();
+            if (thisParam)
+            {
+                bp->SetClassObject(std::unique_ptr<BoundExpression>(new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam)));
+            }
+            expression.reset(bp);
             break;
         }
         case SymbolType::constantSymbol:
@@ -668,6 +692,17 @@ void ExpressionBinder::Visit(DotNode& dotNode)
                     }
                     bmv->SetClassObject(std::unique_ptr<BoundExpression>(classObject));
                 }
+                else if (BoundProperty* bp = dynamic_cast<BoundProperty*>(expression.get()))
+                {
+                    Symbol* parent = symbol->Parent();
+                    ClassTypeSymbol* owner = dynamic_cast<ClassTypeSymbol*>(parent);
+                    Assert(owner, "class type symbol expected");
+                    if (classType->HasBaseClass(owner))
+                    {
+                        classObject = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(classObject), boundCompileUnit.GetConversion(classType, owner));
+                    }
+                    bp->SetClassObject(std::unique_ptr<BoundExpression>(classObject));
+                }
                 else
                 {
                     throw Exception("symbol '" + dotNode.MemberStr() + "' does not denote a function group", dotNode.MemberId()->GetSpan());
@@ -758,20 +793,13 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
     std::unique_ptr<BoundFunctionCall> functionCall = ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan(), OverloadResolutionFlags::dontThrow, exception);
     if (!functionCall)
     {
-        if (MemberFunctionSymbol* memberFunction = dynamic_cast<MemberFunctionSymbol*>(boundFunction->GetFunctionSymbol()))
+        ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->GetThisParam();
+        if (thisParam)
         {
-            if (!memberFunction->IsStatic())
-            {
-                ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->Parameters()[0];
-                BoundParameter* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam);
-                arguments.insert(arguments.begin(), std::unique_ptr<BoundExpression>(boundThisParam));
-                functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base, thisParam->GetType()->ClassOrNsScope()));
-                functionCall = std::move(ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan()));
-            }
-            else
-            {
-                throw *exception;
-            }
+            BoundParameter* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam);
+            arguments.insert(arguments.begin(), std::unique_ptr<BoundExpression>(boundThisParam));
+            functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base, thisParam->GetType()->ClassOrNsScope()));
+            functionCall = std::move(ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan()));
         }
         else
         {
@@ -869,23 +897,8 @@ void ExpressionBinder::Visit(NewNode& newNode)
 
 void ExpressionBinder::Visit(ThisNode& thisNode)
 {
-    ParameterSymbol* thisParam = nullptr;
-    if (MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(boundFunction->GetFunctionSymbol()))
-    {
-        if (!memberFunctionSymbol->IsStatic())
-        {
-            thisParam = boundFunction->GetFunctionSymbol()->Parameters()[0];
-        }
-        else
-        {
-            throw Exception("'this' cannot be used in static member function context", thisNode.GetSpan());
-        }
-    }
-    else if (ConstructorSymbol* constructorSymbol = dynamic_cast<ConstructorSymbol*>(boundFunction->GetFunctionSymbol()))
-    {
-        thisParam = boundFunction->GetFunctionSymbol()->Parameters()[0];
-    }
-    else
+    ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->GetThisParam();
+    if (!thisParam)
     {
         throw Exception("'this' can be used only in non-static member function context", thisNode.GetSpan());
     }
@@ -896,23 +909,8 @@ void ExpressionBinder::Visit(ThisNode& thisNode)
 
 void ExpressionBinder::Visit(BaseNode& baseNode)
 {
-    ParameterSymbol* thisParam = nullptr;
-    if (MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(boundFunction->GetFunctionSymbol()))
-    {
-        if (!memberFunctionSymbol->IsStatic())
-        {
-            thisParam = boundFunction->GetFunctionSymbol()->Parameters()[0];
-        }
-        else
-        {
-            throw Exception("'base' cannot be used in static member function context", baseNode.GetSpan());
-        }
-    }
-    else if (ConstructorSymbol* constructorSymbol = dynamic_cast<ConstructorSymbol*>(boundFunction->GetFunctionSymbol()))
-    {
-        thisParam = boundFunction->GetFunctionSymbol()->Parameters()[0];
-    }
-    else
+    ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->GetThisParam();
+    if (!thisParam)
     {
         throw Exception("'base' can be used only in non-static member function context", baseNode.GetSpan());
     }
@@ -938,7 +936,12 @@ void ExpressionBinder::Visit(BaseNode& baseNode)
 
 std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node)
 {
-    ExpressionBinder expressionBinder(boundCompileUnit, boundFunction, containerScope);
+    return BindExpression(boundCompileUnit, boundFunction, containerScope, node, false);
+}
+
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue)
+{
+    ExpressionBinder expressionBinder(boundCompileUnit, boundFunction, containerScope, node->GetSpan(), lvalue);
     node->Accept(expressionBinder);
     return expressionBinder.GetExpression();
 }

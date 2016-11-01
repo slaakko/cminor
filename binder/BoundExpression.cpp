@@ -160,6 +160,38 @@ void BoundMemberVariable::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundProperty::BoundProperty(Assembly& assembly_, TypeSymbol* type_, PropertySymbol* propertySymbol_) : BoundExpression(assembly_, type_), propertySymbol(propertySymbol_)
+{
+}
+
+void BoundProperty::SetClassObject(std::unique_ptr<BoundExpression>&& classObject_)
+{
+    classObject = std::move(classObject_);
+}
+
+void BoundProperty::GenLoad(Machine& machine, Function& function)
+{
+    classObject->GenLoad(machine, function);
+    std::vector<GenObject*> emptyObjects;
+    Assert(propertySymbol->Getter(), "property has no getter");
+    propertySymbol->Getter()->GenerateCall(machine, GetAssembly(), function, emptyObjects, 0);
+}
+
+void BoundProperty::GenStore(Machine& machine, Function& function)
+{
+    classObject->GenLoad(machine, function);
+    std::unique_ptr<Instruction> swapInst = machine.CreateInst("swap");
+    function.AddInst(std::move(swapInst));
+    std::vector<GenObject*> emptyObjects;
+    Assert(propertySymbol->Setter(), "property has no setter");
+    propertySymbol->Setter()->GenerateCall(machine, GetAssembly(), function, emptyObjects, 0);
+}
+
+void BoundProperty::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundParameter::BoundParameter(Assembly& assembly_, TypeSymbol* type_, ParameterSymbol* parameterSymbol_) : BoundExpression(assembly_, type_), parameterSymbol(parameterSymbol_)
 {
 }

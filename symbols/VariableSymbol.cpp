@@ -16,6 +16,7 @@ VariableSymbol::VariableSymbol(const Span& span_, Constant name_) : Symbol(span_
 
 void VariableSymbol::Write(SymbolWriter& writer)
 {
+    Symbol::Write(writer);
     utf32_string typeFullName = type->FullName();
     ConstantId id = GetAssembly()->GetConstantPool().GetIdFor(typeFullName);
     Assert(id != noConstantId, "got no id");
@@ -24,6 +25,7 @@ void VariableSymbol::Write(SymbolWriter& writer)
 
 void VariableSymbol::Read(SymbolReader& reader)
 {
+    Symbol::Read(reader);
     ConstantId id;
     id.Read(reader);
     reader.EmplaceTypeRequest(this, id, 0);

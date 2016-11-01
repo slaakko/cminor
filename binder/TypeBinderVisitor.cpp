@@ -9,6 +9,7 @@
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
+#include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
 
 namespace cminor { namespace binder {
@@ -144,9 +145,12 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
         if (objectType != classTypeSymbol)
         {
             Assert(objectType, "class type symbol expected");
-            Node* node = boundCompileUnit.GetAssembly().GetSymbolTable().GetNode(objectType);
-            ClassNode* objectTypeNode = dynamic_cast<ClassNode*>(node);
-            BindClass(objectType, *objectTypeNode);
+            if (objectType->IsProject())
+            {
+                Node* node = boundCompileUnit.GetAssembly().GetSymbolTable().GetNode(objectType);
+                ClassNode* objectTypeNode = dynamic_cast<ClassNode*>(node);
+                BindClass(objectType, *objectTypeNode);
+            }
             classTypeSymbol->SetBaseClass(objectType);
         }
         else
@@ -276,6 +280,44 @@ void TypeBinderVisitor::Visit(MemberVariableNode& memberVariableNode)
     memberVariableSymbol->SetSpecifiers(memberVariableNode.GetSpecifiers());
     TypeSymbol* memberVariableType = ResolveType(boundCompileUnit, containerScope, memberVariableNode.TypeExpr());
     memberVariableSymbol->SetType(memberVariableType);
+}
+
+void TypeBinderVisitor::Visit(PropertyNode& propertyNode)
+{
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(propertyNode);
+    PropertySymbol* propertySymbol = dynamic_cast<PropertySymbol*>(symbol);
+    Assert(propertySymbol, "property symbol expected");
+    propertySymbol->SetSpecifiers(propertyNode.GetSpecifiers());
+    TypeSymbol* propertyType = ResolveType(boundCompileUnit, containerScope, propertyNode.TypeExpr());
+    propertySymbol->SetType(propertyType);
+    ContainerScope* prevContainerScope = containerScope;
+    containerScope = propertySymbol->GetContainerScope();
+    PropertyGetterFunctionSymbol* getter = propertySymbol->Getter();
+    PropertySetterFunctionSymbol* setter = propertySymbol->Setter();
+    if (!getter && !setter)
+    {
+        throw Exception("property '" + ToUtf8(propertySymbol->FullName()) + "' must have either getter or setter or both", propertySymbol->GetSpan());
+    }
+    if (getter)
+    {
+        getter->SetReturnType(propertyType);
+        prevContainerScope = containerScope;
+        containerScope = getter->GetContainerScope();
+        propertyNode.Getter()->Accept(*this);
+        containerScope = prevContainerScope;
+    }
+    if (setter)
+    {
+        prevContainerScope = containerScope;
+        containerScope = setter->GetContainerScope();
+        Symbol* valueSymbol = containerScope->Lookup(StringPtr(U"value"));
+        ParameterSymbol* value = dynamic_cast<ParameterSymbol*>(valueSymbol);
+        Assert(value, "parameter symbol expected");
+        value->SetType(propertyType);
+        propertyNode.Setter()->Accept(*this);
+        containerScope = prevContainerScope;
+    }
+    containerScope = prevContainerScope;
 }
 
 void TypeBinderVisitor::Visit(CompoundStatementNode& compoundStatementNode)

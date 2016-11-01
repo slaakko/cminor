@@ -6,6 +6,7 @@
 #include <cminor/symbols/SymbolTable.hpp>
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
+#include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/ConstantSymbol.hpp>
 #include <cminor/symbols/BasicTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
@@ -277,6 +278,88 @@ void SymbolTable::AddMemberVariable(MemberVariableNode& memberVariableNode)
     }
     container->AddSymbol(std::unique_ptr<Symbol>(memberVariableSymbol));
     MapNode(memberVariableNode, memberVariableSymbol);
+}
+
+void SymbolTable::BeginProperty(PropertyNode& propertyNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(propertyNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    PropertySymbol* propertySymbol = new PropertySymbol(propertyNode.GetSpan(), nameConstant);
+    propertySymbol->SetAssembly(assembly);
+    MapNode(propertyNode, propertySymbol);
+    ContainerScope* containerScope = container->GetContainerScope();
+    ContainerScope* propertyScope = propertySymbol->GetContainerScope();
+    propertyScope->SetParent(containerScope);
+    container->AddSymbol(std::unique_ptr<Symbol>(propertySymbol));
+    BeginContainer(propertySymbol);
+}
+
+void SymbolTable::EndProperty()
+{
+    EndContainer();
+}
+
+void SymbolTable::BeginPropertyGetter(PropertyNode& propertyNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string getterName = U"@get";
+    Constant getterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(getterName.c_str())));
+    PropertyGetterFunctionSymbol* getter = new PropertyGetterFunctionSymbol(propertyNode.Getter()->GetSpan(), getterNameConstant);
+    getter->SetAssembly(assembly);
+    getter->SetGroupNameConstant(getterNameConstant);
+    getter->SetPublic();
+    ContainerScope* containerScope = container->GetContainerScope();
+    ContainerScope* getterScope = getter->GetContainerScope();
+    getterScope->SetParent(containerScope);
+    container->AddSymbol(std::unique_ptr<Symbol>(getter));
+    BeginContainer(getter);
+    declarationBlockId = 0;
+    Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+    ParameterSymbol* thisParam = new ParameterSymbol(propertyNode.GetSpan(), thisParamName);
+    thisParam->SetAssembly(assembly);
+    TypeSymbol* thisParamType = currentClass;
+    thisParam->SetType(thisParamType);
+    thisParam->SetBound();
+    getter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+}
+
+void SymbolTable::EndPropertyGetter()
+{
+    EndContainer();
+}
+
+void SymbolTable::BeginPropertySetter(PropertyNode& propertyNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string setterName = U"@set";
+    Constant setterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(setterName.c_str())));
+    PropertySetterFunctionSymbol* setter = new PropertySetterFunctionSymbol(propertyNode.Setter()->GetSpan(), setterNameConstant);
+    setter->SetAssembly(assembly);
+    setter->SetGroupNameConstant(setterNameConstant);
+    setter->SetPublic();
+    ContainerScope* containerScope = container->GetContainerScope();
+    ContainerScope* setterScope = setter->GetContainerScope();
+    setterScope->SetParent(containerScope);
+    container->AddSymbol(std::unique_ptr<Symbol>(setter));
+    BeginContainer(setter);
+    Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+    ParameterSymbol* thisParam = new ParameterSymbol(propertyNode.GetSpan(), thisParamName);
+    thisParam->SetAssembly(assembly);
+    TypeSymbol* thisParamType = currentClass;
+    thisParam->SetType(thisParamType);
+    thisParam->SetBound();
+    setter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+    declarationBlockId = 0;
+    Constant valueConstantName = constantPool.GetConstant(constantPool.Install(U"value"));
+    ParameterSymbol* valueParam = new ParameterSymbol(propertyNode.GetSpan(), valueConstantName);
+    valueParam->SetAssembly(assembly);
+    setter->AddSymbol(std::unique_ptr<Symbol>(valueParam));
+}
+
+void SymbolTable::EndPropertySetter()
+{
+    EndContainer();
 }
 
 void SymbolTable::Write(SymbolWriter& writer)
@@ -555,6 +638,9 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::parameterSymbol, new ConcreteSymbolCreator<ParameterSymbol>());
     SymbolFactory::Instance().Register(SymbolType::localVariableSymbol, new ConcreteSymbolCreator<LocalVariableSymbol>());
     SymbolFactory::Instance().Register(SymbolType::memberVariableSymbol, new ConcreteSymbolCreator<MemberVariableSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::propertySymbol, new ConcreteSymbolCreator<PropertySymbol>());
+    SymbolFactory::Instance().Register(SymbolType::propertyGetterSymbol, new ConcreteSymbolCreator<PropertyGetterFunctionSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::propertySetterSymbol, new ConcreteSymbolCreator<PropertySetterFunctionSymbol>());
     SymbolFactory::Instance().Register(SymbolType::constantSymbol, new ConcreteSymbolCreator<ConstantSymbol>());
     SymbolFactory::Instance().Register(SymbolType::namespaceSymbol, new ConcreteSymbolCreator<NamespaceSymbol>());
     SymbolFactory::Instance().Register(SymbolType::basicTypeDefaultInit, new ConcreteSymbolCreator<BasicTypeDefaultInit>());

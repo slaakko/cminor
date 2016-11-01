@@ -8,6 +8,7 @@
 #include <cminor/binder/BoundNode.hpp>
 #include <cminor/symbols/ConstantSymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
+#include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/machine/GenObject.hpp>
 
 namespace cminor { namespace binder {
@@ -87,6 +88,19 @@ public:
 private:
     std::unique_ptr<BoundExpression> classObject;
     MemberVariableSymbol* memberVariableSymbol;
+};
+
+class BoundProperty : public BoundExpression
+{
+public:
+    BoundProperty(Assembly& assembly_, TypeSymbol* type_, PropertySymbol* propertySymbol_);
+    void SetClassObject(std::unique_ptr<BoundExpression>&& classObject_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    std::unique_ptr<BoundExpression> classObject;
+    PropertySymbol* propertySymbol;
 };
 
 class BoundParameter : public BoundExpression

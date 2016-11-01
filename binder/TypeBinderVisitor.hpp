@@ -28,6 +28,7 @@ public:
     void Visit(ConstructorNode& constructorNode) override;
     void Visit(MemberFunctionNode& memberFunctionNode) override;
     void Visit(MemberVariableNode& memberVariableNode) override;
+    void Visit(PropertyNode& propertyNode) override;
     void Visit(FunctionNode& functionNode) override;
     void Visit(CompoundStatementNode& compoundStatementNode) override;
     void Visit(ForStatementNode& forStatementNode) override;

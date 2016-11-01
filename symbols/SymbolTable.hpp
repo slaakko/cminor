@@ -37,6 +37,12 @@ public:
     void EndDeclarationBlock();
     void AddLocalVariable(ConstructionStatementNode& constructionStatementNode);
     void AddMemberVariable(MemberVariableNode& memberVariableNode);
+    void BeginProperty(PropertyNode& propertyNode);
+    void EndProperty();
+    void BeginPropertyGetter(PropertyNode& propertyNode);
+    void EndPropertyGetter();
+    void BeginPropertySetter(PropertyNode& propertyNode);
+    void EndPropertySetter();
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader);
     void Import(SymbolTable& symbolTable);

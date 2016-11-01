@@ -36,6 +36,8 @@ public:
     void Visit(BoundLiteral& boundLiteral) override;
     void Visit(BoundConstant& boundConstant) override;
     void Visit(BoundLocalVariable& boundLocalVariable) override;
+    void Visit(BoundMemberVariable& boundMemberVariable) override;
+    void Visit(BoundProperty& boundProperty) override;
     void Visit(BoundParameter& boundParameter) override;
     void Visit(BoundConversion& boundConversion) override;
     void Visit(BoundFunctionCall& boundFunctionCall) override;
@@ -448,6 +450,18 @@ void EmitterVisitor::Visit(BoundConstant& boundConstant)
 void EmitterVisitor::Visit(BoundLocalVariable& boundLocalVariable)
 {
     boundLocalVariable.GenLoad(machine, *function);
+    GenJumpingBoolCode();
+}
+
+void EmitterVisitor::Visit(BoundMemberVariable& boundMemberVariable)
+{
+    boundMemberVariable.GenLoad(machine, *function);
+    GenJumpingBoolCode();
+}
+
+void EmitterVisitor::Visit(BoundProperty& boundProperty)
+{
+    boundProperty.GenLoad(machine, *function);
     GenJumpingBoolCode();
 }
 

@@ -6,8 +6,11 @@
 #include <cminor/ast/Class.hpp>
 #include <cminor/ast/Statement.hpp>
 #include <cminor/ast/Visitor.hpp>
+#include <cminor/machine/Error.hpp>
 
 namespace cminor { namespace ast {
+
+using namespace cminor::machine;
 
 ClassNode::ClassNode(const Span& span_) : Node(span_)
 {
@@ -206,6 +209,56 @@ Node* MemberVariableNode::Clone(CloneContext& cloneContext) const
 void MemberVariableNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+PropertyNode::PropertyNode(const Span& span_) : Node(span_)
+{
+}
+
+PropertyNode::PropertyNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_) : Node(span_), specifiers(specifiers_), typeExpr(typeExpr_), id(id_)
+{
+    typeExpr->SetParent(this);
+    id->SetParent(this);
+}
+
+
+Node* PropertyNode::Clone(CloneContext& cloneContext) const
+{
+    PropertyNode* clone = new PropertyNode(GetSpan(), specifiers, typeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
+    if (getter)
+    {
+        clone->SetGetter(static_cast<CompoundStatementNode*>(getter->Clone(cloneContext)));
+    }
+    if (setter)
+    {
+        clone->SetSetter(static_cast<CompoundStatementNode*>(setter->Clone(cloneContext)));
+    }
+    return clone;
+}
+
+void PropertyNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+void PropertyNode::SetGetter(CompoundStatementNode* getter_)
+{
+    if (getter)
+    {
+        throw Exception("property '" + id->Str() + "' already has a getter", GetSpan());
+    }
+    getter.reset(getter_);
+    getter->SetParent(this);
+}
+
+void PropertyNode::SetSetter(CompoundStatementNode* setter_)
+{
+    if (setter)
+    {
+        throw Exception("property '" + id->Str() + "' already has a setter", GetSpan());
+    }
+    setter.reset(setter_);
+    setter->SetParent(this);
 }
 
 } } // namespace cminor::ast
