@@ -39,6 +39,8 @@ public:
     TypeSymbol* GetType() const { return type; }
     void SetFlag(BoundExpressionFlags flag) { flags = flags | flag;  }
     bool GetFlag(BoundExpressionFlags flag) const { return (flags & flag) != BoundExpressionFlags::none;  }
+    virtual bool IsComplete() const { return true; }
+    virtual bool IsLvalueExpression() const { return false; }
 private:
     TypeSymbol* type;
     BoundExpressionFlags flags;
@@ -74,6 +76,7 @@ public:
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
+    bool IsLvalueExpression() const override { return true; }
 private:
     LocalVariableSymbol* localVariableSymbol;
 };
@@ -86,6 +89,7 @@ public:
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
+    bool IsLvalueExpression() const override { return true; }
 private:
     std::unique_ptr<BoundExpression> classObject;
     MemberVariableSymbol* memberVariableSymbol;
@@ -99,6 +103,7 @@ public:
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
+    bool IsLvalueExpression() const override { return true; }
 private:
     std::unique_ptr<BoundExpression> classObject;
     PropertySymbol* propertySymbol;
@@ -111,6 +116,7 @@ public:
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
+    bool IsLvalueExpression() const override { return true; }
 private:
     std::unique_ptr<BoundExpression> classObject;
     std::unique_ptr<BoundExpression> index;
@@ -124,6 +130,7 @@ public:
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
+    bool IsLvalueExpression() const override { return true; }
 private:
     ParameterSymbol* parameterSymbol;
 };
@@ -135,6 +142,7 @@ public:
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
+    bool IsLvalueExpression() const override { return true; }
 private:
     std::unique_ptr<BoundExpression> arr;
     std::unique_ptr<BoundExpression> index;
@@ -160,6 +168,7 @@ public:
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
+    bool IsComplete() const override { return false; }
 private:
     NamespaceSymbol* ns;
 };
@@ -171,6 +180,7 @@ public:
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
+    bool IsComplete() const override { return false; }
 };
 
 class BoundFunctionGroupExpression : public BoundExpression
@@ -181,6 +191,7 @@ public:
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
+    bool IsComplete() const override { return false; }
 private:
     FunctionGroupSymbol* functionGroupSymbol;
 };
@@ -195,6 +206,7 @@ public:
     BoundExpression* ClassObject() const { return classObject.get(); }
     BoundExpression* ReleaseClassObject() { return classObject.release(); }
     BoundExpression* Member() const { return member.get(); }
+    bool IsComplete() const override { return false; }
 private:
     std::unique_ptr<BoundExpression> classObject;
     std::unique_ptr<BoundExpression> member;

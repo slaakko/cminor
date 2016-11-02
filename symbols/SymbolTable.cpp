@@ -366,7 +366,7 @@ void SymbolTable::EndPropertySetter()
 void SymbolTable::BeginIndexer(IndexerNode& indexerNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = U"@indexer";
+    utf32_string name = U"this";
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     IndexerSymbol* indexerSymbol = new IndexerSymbol(indexerNode.GetSpan(), nameConstant);
     indexerSymbol->SetAssembly(assembly);
@@ -750,6 +750,7 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::objectCopyInit, new ConcreteSymbolCreator<ObjectCopyInit>());
     SymbolFactory::Instance().Register(SymbolType::objectNullInit, new ConcreteSymbolCreator<ObjectNullInit>());
     SymbolFactory::Instance().Register(SymbolType::objectAssignment, new ConcreteSymbolCreator<ObjectAssignment>());
+    SymbolFactory::Instance().Register(SymbolType::objectNullAssignment, new ConcreteSymbolCreator<ObjectNullAssignment>());
 }
 
 void DoneSymbol()

@@ -42,7 +42,7 @@ enum class SymbolType : uint8_t
     localVariableSymbol, memberVariableSymbol, propertySymbol, propertyGetterSymbol, propertySetterSymbol, indexerSymbol, indexerGetterSymbol, indexerSetterSymbol, indexerGroupSymbol,
     constantSymbol, namespaceSymbol, declarationBlock, 
     basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, objectDefaultInit, objectCopyInit, objectNullInit, 
-    objectAssignment, classTypeConversion,
+    objectAssignment, objectNullAssignment, classTypeConversion,
     maxSymbol
 };
 
@@ -257,6 +257,7 @@ public:
     virtual ValueType GetValueType() const { return ValueType::none; }
     virtual bool IsAbstract() const { return false; }
     virtual Type* GetMachineType() const = 0;
+    virtual bool IsInComplete() const { return false; }
 };
 
 class BasicTypeSymbol : public TypeSymbol

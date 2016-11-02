@@ -608,7 +608,7 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
         }
         default:
         {
-            throw Exception("could not bind '" + ToUtf8(symbol->FullName()) + "'", symbol->GetSpan());
+            throw Exception("could not bind '" + ToUtf8(symbol->FullName()) + "'", span, symbol->GetSpan());
         }
     }
 }
@@ -786,6 +786,20 @@ void ExpressionBinder::Visit(IndexingNode& indexingNode)
             else
             {
                 IndexerSymbol* indexerSymbol = matchedIndexers[0];
+                if (!lvalue)
+                {
+                    if (!indexerSymbol->Getter())
+                    {
+                        throw Exception("indexer '" + ToUtf8(indexerSymbol->FullName() + U"[" + indexerSymbol->GetIndexType()->FullName()) + "]' is write-only", span, indexerSymbol->GetSpan());
+                    }
+                }
+                else 
+                {
+                    if (!indexerSymbol->Setter())
+                    {
+                        throw Exception("indexer '" + ToUtf8(indexerSymbol->FullName() + U"[" + indexerSymbol->GetIndexType()->FullName()) + "]' is read-only", span, indexerSymbol->GetSpan());
+                    }
+                }
                 FunctionSymbol* conversionFun = conversions[0];
                 if (conversionFun)
                 {
@@ -998,7 +1012,16 @@ std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUn
 {
     ExpressionBinder expressionBinder(boundCompileUnit, boundFunction, containerScope, node->GetSpan(), lvalue);
     node->Accept(expressionBinder);
-    return expressionBinder.GetExpression();
+    std::unique_ptr<BoundExpression> expression = expressionBinder.GetExpression();
+    if (!expression->IsComplete())
+    {
+        throw Exception("incomplete expression", node->GetSpan());
+    }
+    if (lvalue && !expression->IsLvalueExpression())
+    {
+        throw Exception("not an lvalue expression", node->GetSpan());
+    }
+    return expression;
 }
 
 } } // namespace cminor::binder

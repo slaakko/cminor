@@ -102,6 +102,18 @@ void ObjectAssignment::GenerateCall(Machine& machine, Assembly& assembly, Functi
     target->GenStore(machine, function);
 }
 
+ObjectNullAssignment::ObjectNullAssignment(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
+{
+}
+
+void ObjectNullAssignment::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
+{
+    std::unique_ptr<Instruction> inst = machine.CreateInst("def", "object");
+    function.AddInst(std::move(inst));
+    GenObject* target = objects[0];
+    target->GenStore(machine, function);
+}
+
 void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType, TypeSymbol* boolType)
 {
     ConstantPool& constantPool = assembly.GetConstantPool();
@@ -162,6 +174,21 @@ void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType, Ty
     assignment->AddSymbol(std::unique_ptr<Symbol>(thatParam4));
     assignment->ComputeName();
     classType->AddSymbol(std::unique_ptr<FunctionSymbol>(assignment));
+
+    ParameterSymbol* thisParam5 = new ParameterSymbol(Span(), thisParamName);
+    thisParam5->SetAssembly(&assembly);
+    thisParam5->SetType(classType);
+    ParameterSymbol* thatParam5 = new ParameterSymbol(Span(), thatParamName);
+    thatParam5->SetAssembly(&assembly);
+    thatParam5->SetType(nullRefType);
+    ObjectNullAssignment* nullAssignment = new ObjectNullAssignment(Span(), constantPool.GetEmptyStringConstant());
+    nullAssignment->SetAssembly(&assembly);
+    nullAssignment->SetGroupNameConstant(assignmentGroupName);
+    nullAssignment->SetType(classType);
+    nullAssignment->AddSymbol(std::unique_ptr<Symbol>(thisParam5));
+    nullAssignment->AddSymbol(std::unique_ptr<Symbol>(thatParam5));
+    nullAssignment->ComputeName();
+    classType->AddSymbol(std::unique_ptr<FunctionSymbol>(nullAssignment));
 
     BasicTypeReturn* returnFun = new BasicTypeReturn(Span(), constantPool.GetEmptyStringConstant());
     returnFun->SetAssembly(&assembly);

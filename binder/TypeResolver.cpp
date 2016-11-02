@@ -18,6 +18,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::namespaceSymbol; }
     NamespaceSymbol* Ns() const { return ns; }
     Type* GetMachineType() const override { Assert(false, "cannot get machine type from namespace type");  return nullptr; }
+    bool IsInComplete() const override { return true; }
 private:
     NamespaceSymbol* ns;
 };
@@ -212,7 +213,12 @@ TypeSymbol* ResolveType(BoundCompileUnit& boundCompileUnit, ContainerScope* cont
 {
     TypeResolverVisitor typeResolver(boundCompileUnit, containerScope);
     typeExprNode->Accept(typeResolver);
-    return typeResolver.GetType();
+    TypeSymbol* type = typeResolver.GetType();
+    if (type->IsInComplete())
+    {
+        throw Exception("incomplete type expression", typeExprNode->GetSpan());
+    }
+    return type;
 }
 
 } } // namespace cminor::binder
