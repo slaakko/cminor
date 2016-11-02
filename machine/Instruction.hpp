@@ -455,6 +455,14 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class RotateInst : public Instruction
+{
+public:
+    RotateInst();
+    Instruction* Clone() const override { return new RotateInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class UpCastInst : public TypeInstruction
 {
 public:

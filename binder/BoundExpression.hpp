@@ -9,6 +9,7 @@
 #include <cminor/symbols/ConstantSymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
+#include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/machine/GenObject.hpp>
 
 namespace cminor { namespace binder {
@@ -101,6 +102,19 @@ public:
 private:
     std::unique_ptr<BoundExpression> classObject;
     PropertySymbol* propertySymbol;
+};
+
+class BoundIndexer : public BoundExpression
+{
+public:
+    BoundIndexer(Assembly& assembly_, TypeSymbol* type_, IndexerSymbol* indexerSymbol_, std::unique_ptr<BoundExpression>&& classObject_, std::unique_ptr<BoundExpression>&& index_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    std::unique_ptr<BoundExpression> classObject;
+    std::unique_ptr<BoundExpression> index;
+    IndexerSymbol* indexerSymbol;
 };
 
 class BoundParameter : public BoundExpression

@@ -10,6 +10,7 @@
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
+#include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
 
 namespace cminor { namespace binder {
@@ -315,6 +316,52 @@ void TypeBinderVisitor::Visit(PropertyNode& propertyNode)
         Assert(value, "parameter symbol expected");
         value->SetType(propertyType);
         propertyNode.Setter()->Accept(*this);
+        containerScope = prevContainerScope;
+    }
+    containerScope = prevContainerScope;
+}
+
+void TypeBinderVisitor::Visit(IndexerNode& indexerNode)
+{
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(indexerNode);
+    IndexerSymbol* indexerSymbol = dynamic_cast<IndexerSymbol*>(symbol);
+    Assert(indexerSymbol, "indexer symbol expected");
+    indexerSymbol->SetSpecifiers(indexerNode.GetSpecifiers());
+    TypeSymbol* indexerValueType = ResolveType(boundCompileUnit, containerScope, indexerNode.ValueTypeExpr());
+    indexerSymbol->SetValueType(indexerValueType);
+    TypeSymbol* indexerIndexType = ResolveType(boundCompileUnit, containerScope, indexerNode.IndexTypeExpr());
+    indexerSymbol->SetIndexType(indexerIndexType);
+    ContainerScope* prevContainerScope = containerScope;
+    containerScope = indexerSymbol->GetContainerScope();
+    IndexerGetterFunctionSymbol* getter = indexerSymbol->Getter();
+    IndexerSetterFunctionSymbol* setter = indexerSymbol->Setter();
+    if (!getter && !setter)
+    {
+        throw Exception("indexer '" + ToUtf8(indexerSymbol->FullName()) + "' must have either getter or setter or both", indexerSymbol->GetSpan());
+    }
+    if (getter)
+    {
+        getter->SetReturnType(indexerValueType);
+        prevContainerScope = containerScope;
+        containerScope = getter->GetContainerScope();
+        Assert(getter->Parameters().size() > 1, "more than one parameter expected");
+        ParameterSymbol* indexParam = getter->Parameters()[1];
+        indexParam->SetType(indexerIndexType);
+        indexerNode.Getter()->Accept(*this);
+        containerScope = prevContainerScope;
+    }
+    if (setter)
+    {
+        prevContainerScope = containerScope;
+        containerScope = setter->GetContainerScope();
+        Symbol* valueSymbol = containerScope->Lookup(StringPtr(U"value"));
+        ParameterSymbol* value = dynamic_cast<ParameterSymbol*>(valueSymbol);
+        Assert(value, "parameter symbol expected");
+        value->SetType(indexerValueType);
+        Assert(setter->Parameters().size() > 1, "more than one parameter expected");
+        ParameterSymbol* indexParam = setter->Parameters()[1];
+        indexParam->SetType(indexerIndexType);
+        indexerNode.Setter()->Accept(*this);
         containerScope = prevContainerScope;
     }
     containerScope = prevContainerScope;

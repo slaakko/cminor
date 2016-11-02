@@ -39,7 +39,7 @@ void PropertySymbol::EmplaceType(TypeSymbol* type, int index)
     }
     else
     {
-        throw std::runtime_error("variable symbol emplace type got invalid type index " + std::to_string(index));
+        throw std::runtime_error("property symbol emplace type got invalid type index " + std::to_string(index));
     }
 }
 

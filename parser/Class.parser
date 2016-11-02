@@ -56,6 +56,7 @@ namespace cminor.parser
             |   MemberFunction(ctx, classNode){ value= MemberFunction; }
             |   MemberVariable(ctx){ value = MemberVariable; }
             |   Property(ctx){ value = Property; }
+            |   Indexer(ctx){ value = Indexer; }
             ;
 
         StaticConstructor(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<IdentifierNode> id) : StaticConstructorNode*
@@ -101,9 +102,18 @@ namespace cminor.parser
             }
             ;
 
+        Indexer(ParsingContext* ctx, var std::unique_ptr<Node> indexer) : Node*
+            ::= ((Specifiers TypeExpr(ctx):valueType keyword("this", identifier) '['! TypeExpr(ctx):indexType! Identifier:index! ']'!)
+                { indexer.reset(new IndexerNode(span, Specifiers, valueType, indexType, index)); } '{' GetterOrSetter(ctx, indexer.get())+ '}')
+            {
+                value = indexer.release();
+            }
+            ;
+
         GetterOrSetter(ParsingContext* ctx, Node* subject)
             ::= keyword("get") CompoundStatement(ctx):getter{ subject->SetGetter(getter); }
             |   keyword("set") CompoundStatement(ctx):setter{ subject->SetSetter(setter); }
             ;
+
     }
 }

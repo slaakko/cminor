@@ -7,6 +7,7 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
+#include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/symbols/ConstantSymbol.hpp>
 #include <cminor/symbols/BasicTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
@@ -362,6 +363,98 @@ void SymbolTable::EndPropertySetter()
     EndContainer();
 }
 
+void SymbolTable::BeginIndexer(IndexerNode& indexerNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = U"@indexer";
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    IndexerSymbol* indexerSymbol = new IndexerSymbol(indexerNode.GetSpan(), nameConstant);
+    indexerSymbol->SetAssembly(assembly);
+    MapNode(indexerNode, indexerSymbol);
+    ContainerScope* containerScope = container->GetContainerScope();
+    ContainerScope* indexerScope = indexerSymbol->GetContainerScope();
+    indexerScope->SetParent(containerScope);
+    container->AddSymbol(std::unique_ptr<Symbol>(indexerSymbol));
+    BeginContainer(indexerSymbol);
+}
+
+void SymbolTable::EndIndexer()
+{
+    EndContainer();
+}
+
+void SymbolTable::BeginIndexerGetter(IndexerNode& indexerNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string getterName = U"@get";
+    Constant getterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(getterName.c_str())));
+    IndexerGetterFunctionSymbol* getter = new IndexerGetterFunctionSymbol(indexerNode.Getter()->GetSpan(), getterNameConstant);
+    getter->SetAssembly(assembly);
+    getter->SetGroupNameConstant(getterNameConstant);
+    getter->SetPublic();
+    ContainerScope* containerScope = container->GetContainerScope();
+    ContainerScope* getterScope = getter->GetContainerScope();
+    getterScope->SetParent(containerScope);
+    container->AddSymbol(std::unique_ptr<Symbol>(getter));
+    BeginContainer(getter);
+    declarationBlockId = 0;
+    Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+    ParameterSymbol* thisParam = new ParameterSymbol(indexerNode.GetSpan(), thisParamName);
+    thisParam->SetAssembly(assembly);
+    TypeSymbol* thisParamType = currentClass;
+    thisParam->SetType(thisParamType);
+    thisParam->SetBound();
+    getter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+    utf32_string indexParamName = ToUtf32(indexerNode.Id()->Str());
+    Constant indexParamNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(indexParamName.c_str())));
+    ParameterSymbol* indexParam = new ParameterSymbol(indexerNode.Id()->GetSpan(), indexParamNameConstant);
+    indexParam->SetAssembly(assembly);
+    getter->AddSymbol(std::unique_ptr<Symbol>(indexParam));
+}
+
+void SymbolTable::EndIndexerGetter()
+{
+    EndContainer();
+}
+
+void SymbolTable::BeginIndexerSetter(IndexerNode& indexerNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string setterName = U"@set";
+    Constant setterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(setterName.c_str())));
+    IndexerSetterFunctionSymbol* setter = new IndexerSetterFunctionSymbol(indexerNode.Setter()->GetSpan(), setterNameConstant);
+    setter->SetAssembly(assembly);
+    setter->SetGroupNameConstant(setterNameConstant);
+    setter->SetPublic();
+    ContainerScope* containerScope = container->GetContainerScope();
+    ContainerScope* setterScope = setter->GetContainerScope();
+    setterScope->SetParent(containerScope);
+    container->AddSymbol(std::unique_ptr<Symbol>(setter));
+    BeginContainer(setter);
+    Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+    ParameterSymbol* thisParam = new ParameterSymbol(indexerNode.GetSpan(), thisParamName);
+    thisParam->SetAssembly(assembly);
+    TypeSymbol* thisParamType = currentClass;
+    thisParam->SetType(thisParamType);
+    thisParam->SetBound();
+    setter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+    declarationBlockId = 0;
+    utf32_string indexParamName = ToUtf32(indexerNode.Id()->Str());
+    Constant indexParamNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(indexParamName.c_str())));
+    ParameterSymbol* indexParam = new ParameterSymbol(indexerNode.Id()->GetSpan(), indexParamNameConstant);
+    indexParam->SetAssembly(assembly);
+    setter->AddSymbol(std::unique_ptr<Symbol>(indexParam));
+    Constant valueConstantName = constantPool.GetConstant(constantPool.Install(U"value"));
+    ParameterSymbol* valueParam = new ParameterSymbol(indexerNode.GetSpan(), valueConstantName);
+    valueParam->SetAssembly(assembly);
+    setter->AddSymbol(std::unique_ptr<Symbol>(valueParam));
+}
+
+void SymbolTable::EndIndexerSetter()
+{
+    EndContainer();
+}
+
 void SymbolTable::Write(SymbolWriter& writer)
 {
     globalNs.Write(writer);
@@ -641,6 +734,9 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::propertySymbol, new ConcreteSymbolCreator<PropertySymbol>());
     SymbolFactory::Instance().Register(SymbolType::propertyGetterSymbol, new ConcreteSymbolCreator<PropertyGetterFunctionSymbol>());
     SymbolFactory::Instance().Register(SymbolType::propertySetterSymbol, new ConcreteSymbolCreator<PropertySetterFunctionSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::indexerSymbol, new ConcreteSymbolCreator<IndexerSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::indexerGetterSymbol, new ConcreteSymbolCreator<IndexerGetterFunctionSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::indexerSetterSymbol, new ConcreteSymbolCreator<IndexerSetterFunctionSymbol>());
     SymbolFactory::Instance().Register(SymbolType::constantSymbol, new ConcreteSymbolCreator<ConstantSymbol>());
     SymbolFactory::Instance().Register(SymbolType::namespaceSymbol, new ConcreteSymbolCreator<NamespaceSymbol>());
     SymbolFactory::Instance().Register(SymbolType::basicTypeDefaultInit, new ConcreteSymbolCreator<BasicTypeDefaultInit>());

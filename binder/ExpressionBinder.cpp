@@ -11,6 +11,7 @@
 #include <cminor/binder/BoundFunction.hpp>
 #include <cminor/binder/TypeResolver.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
+#include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
@@ -728,26 +729,80 @@ void ExpressionBinder::Visit(IndexingNode& indexingNode)
     TypeSymbol* subjectType = subject->GetType();
     indexingNode.Index()->Accept(*this);
     BoundExpression* index = expression.release();
-    TypeSymbol* intType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int32");
-    if (index->GetType() != intType)
+    if (ArrayTypeSymbol* arrayTypeSymbol = dynamic_cast<ArrayTypeSymbol*>(subjectType))
     {
-        FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(index->GetType(), intType);
-        if (conversionFun)
+        TypeSymbol* intType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int32");
+        if (index->GetType() != intType)
         {
-            index = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(index), conversionFun);
+            FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(index->GetType(), intType);
+            if (conversionFun)
+            {
+                index = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(index), conversionFun);
+            }
+            else
+            {
+                throw Exception("no implicit conversion from '" + ToUtf8(index->GetType()->FullName()) + "' to '" + ToUtf8(intType->FullName()) + " exists for array index", indexingNode.Index()->GetSpan());
+            }
+        }
+        expression.reset(new BoundArrayElement(boundCompileUnit.GetAssembly(), arrayTypeSymbol, std::unique_ptr<BoundExpression>(subject), std::unique_ptr<BoundExpression>(index)));
+    }
+    else if (ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(subjectType))
+    {
+        Symbol* symbol = classTypeSymbol->GetContainerScope()->Lookup(StringPtr(U"@indexers"));
+        if (symbol)
+        {
+            IndexerGroupSymbol* indexerGroupSymbol = dynamic_cast<IndexerGroupSymbol*>(symbol);
+            Assert(indexerGroupSymbol, "indexer group symbol expected");
+            std::vector<IndexerSymbol*> matchedIndexers;
+            std::vector<FunctionSymbol*> conversions;
+            for (IndexerSymbol* indexer : indexerGroupSymbol->Indexers())
+            {
+                TypeSymbol* indexType = indexer->GetIndexType();
+                if (indexType != index->GetType())
+                {
+                    FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(index->GetType(), indexType);
+                    if (conversionFun)
+                    {
+                        matchedIndexers.push_back(indexer);
+                        conversions.push_back(conversionFun);
+                    }
+                }
+                else
+                {
+                    matchedIndexers.push_back(indexer);
+                    conversions.push_back(nullptr);
+                }
+            }
+            if (matchedIndexers.empty())
+            {
+                throw Exception("indexer resolution failed: no implicit conversion exists for index type '" + ToUtf8(index->GetType()->FullName()) + "'. " +
+                    std::to_string(indexerGroupSymbol->Indexers().size()) + " indexers examined.", indexingNode.GetSpan());
+            }
+            else if (matchedIndexers.size() > 1)
+            {
+                throw Exception("indexer resolution failed: more than one possible indexer exists for index type '" + ToUtf8(index->GetType()->FullName()) + "'. " +
+                    std::to_string(indexerGroupSymbol->Indexers().size()) + " indexers examined.", indexingNode.GetSpan());
+            }
+            else
+            {
+                IndexerSymbol* indexerSymbol = matchedIndexers[0];
+                FunctionSymbol* conversionFun = conversions[0];
+                if (conversionFun)
+                {
+                    index = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(index), conversionFun);
+                }
+                expression.reset(new BoundIndexer(boundCompileUnit.GetAssembly(), indexerSymbol->GetValueType(), indexerSymbol, std::unique_ptr<BoundExpression>(subject), 
+                    std::unique_ptr<BoundExpression>(index)));
+            }
         }
         else
         {
-            throw Exception("no implicit conversion from '" + ToUtf8(index->GetType()->FullName()) + "' to '" + ToUtf8(intType->FullName()) + " exists for array index", indexingNode.Index()->GetSpan());
+            throw Exception("class '" + ToUtf8(classTypeSymbol->FullName()) + "' does not contain any indexers", indexingNode.GetSpan());
         }
-    }
-    if (ArrayTypeSymbol* arrayTypeSymbol = dynamic_cast<ArrayTypeSymbol*>(subjectType))
-    {
-        expression.reset(new BoundArrayElement(boundCompileUnit.GetAssembly(), arrayTypeSymbol, std::unique_ptr<BoundExpression>(subject), std::unique_ptr<BoundExpression>(index)));
     }
     else
     {
-        throw Exception("array type expected", indexingNode.GetSpan());
+        throw Exception("array or class type expected", indexingNode.GetSpan());
     }
 }
 

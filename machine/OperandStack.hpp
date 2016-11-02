@@ -37,6 +37,12 @@ public:
         Assert(s.size() >= 2, "cannot swap: less than two operands in the operand stack");
         std::swap(s.back(), s[s.size() - 2]);
     }
+    void Rotate()
+    {
+        Assert(s.size() >= 3, "cannot rotate: less than three operands in the operand stack");
+        std::swap(s[s.size() - 3], s[s.size() - 2]);
+        std::swap(s.back(), s[s.size() - 2]);
+    }
 private:
     std::vector<IntegralValue> s;
 };

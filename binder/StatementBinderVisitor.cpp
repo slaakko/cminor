@@ -12,6 +12,7 @@
 #include <cminor/binder/OverloadResolution.hpp>
 #include <cminor/binder/Access.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
+#include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
@@ -318,6 +319,50 @@ void StatementBinderVisitor::Visit(PropertyNode& propertyNode)
         function = boundFunction.get();
         propertyNode.Setter()->Accept(*this);
         CheckFunctionReturnPaths(setter, propertyNode.Setter(), propertyNode.Setter()->GetSpan());
+        BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
+        Assert(compoundStatement, "compound statement expected");
+        function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
+        boundClass->AddMember(std::move(boundFunction));
+        function = prevFunction;
+        containerScope = prevContainerScope;
+    }
+    containerScope = prevContainerScope;
+}
+
+void StatementBinderVisitor::Visit(IndexerNode& indexerNode)
+{
+    ContainerScope* prevContainerScope = containerScope;
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(indexerNode);
+    IndexerSymbol* indexerSymbol = dynamic_cast<IndexerSymbol*>(symbol);
+    Assert(indexerSymbol, "indexer symbol expected");
+    prevContainerScope = containerScope;
+    IndexerGetterFunctionSymbol* getter = indexerSymbol->Getter();
+    IndexerSetterFunctionSymbol* setter = indexerSymbol->Setter();
+    if (getter)
+    {
+        prevContainerScope = containerScope;
+        std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(getter));
+        BoundFunction* prevFunction = function;
+        function = boundFunction.get();
+        containerScope = getter->GetContainerScope();
+        indexerNode.Getter()->Accept(*this);
+        CheckFunctionReturnPaths(getter, indexerNode.Getter(), indexerNode.Getter()->GetSpan());
+        BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
+        Assert(compoundStatement, "compound statement expected");
+        function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
+        boundClass->AddMember(std::move(boundFunction));
+        function = prevFunction;
+        containerScope = prevContainerScope;
+    }
+    if (setter)
+    {
+        prevContainerScope = containerScope;
+        containerScope = setter->GetContainerScope();
+        std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(setter));
+        BoundFunction* prevFunction = function;
+        function = boundFunction.get();
+        indexerNode.Setter()->Accept(*this);
+        CheckFunctionReturnPaths(setter, indexerNode.Setter(), indexerNode.Setter()->GetSpan());
         BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
         Assert(compoundStatement, "compound statement expected");
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));

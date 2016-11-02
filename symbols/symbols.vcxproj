@@ -24,6 +24,7 @@
     <ClInclude Include="ConstantSymbol.hpp" />
     <ClInclude Include="FunctionSymbol.hpp" />
     <ClInclude Include="GlobalFlags.hpp" />
+    <ClInclude Include="IndexerSymbol.hpp" />
     <ClInclude Include="MachineFunctionTable.hpp" />
     <ClInclude Include="ObjectFun.hpp" />
     <ClInclude Include="PropertySymbol.hpp" />
@@ -41,6 +42,7 @@
     <ClCompile Include="ConstantSymbol.cpp" />
     <ClCompile Include="FunctionSymbol.cpp" />
     <ClCompile Include="GlobalFlags.cpp" />
+    <ClCompile Include="IndexerSymbol.cpp" />
     <ClCompile Include="MachineFunctionTable.cpp" />
     <ClCompile Include="ObjectFun.cpp" />
     <ClCompile Include="PropertySymbol.cpp" />

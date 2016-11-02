@@ -243,6 +243,7 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
 
     rootInst.SetInst(0xA9, new DupInst());
     rootInst.SetInst(0xAA, new SwapInst());
+    rootInst.SetInst(0xAB, new RotateInst());
 
 
     // objects:

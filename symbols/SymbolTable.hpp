@@ -43,6 +43,12 @@ public:
     void EndPropertyGetter();
     void BeginPropertySetter(PropertyNode& propertyNode);
     void EndPropertySetter();
+    void BeginIndexer(IndexerNode& indexerNode);
+    void EndIndexer();
+    void BeginIndexerGetter(IndexerNode& indexerNode);
+    void EndIndexerGetter();
+    void BeginIndexerSetter(IndexerNode& indexerNode);
+    void EndIndexerSetter();
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader);
     void Import(SymbolTable& symbolTable);

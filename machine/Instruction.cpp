@@ -706,6 +706,15 @@ void SwapInst::Execute(Frame& frame)
     frame.OpStack().Swap();
 }
 
+RotateInst::RotateInst() : Instruction("rotate")
+{
+}
+
+void RotateInst::Execute(Frame& frame)
+{
+    frame.OpStack().Rotate();
+}
+
 UpCastInst::UpCastInst() : TypeInstruction("upcast")
 {
 }

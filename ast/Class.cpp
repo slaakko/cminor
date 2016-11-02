@@ -261,4 +261,55 @@ void PropertyNode::SetSetter(CompoundStatementNode* setter_)
     setter->SetParent(this);
 }
 
+IndexerNode::IndexerNode(const Span& span_) : Node(span_)
+{
+}
+
+IndexerNode::IndexerNode(const Span& span_, Specifiers specifiers_, Node* valueTypeExpr_, Node* indexTypeExpr_, IdentifierNode* id_) : 
+    Node(span_), specifiers(specifiers_), valueTypeExpr(valueTypeExpr_), indexTypeExpr(indexTypeExpr_), id(id_)
+{
+    valueTypeExpr->SetParent(this);
+    indexTypeExpr->SetParent(this);
+    id->SetParent(this);
+}
+
+Node* IndexerNode::Clone(CloneContext& cloneContext) const
+{
+    IndexerNode* clone = new IndexerNode(GetSpan(), specifiers, valueTypeExpr->Clone(cloneContext), indexTypeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
+    if (getter)
+    {
+        clone->SetGetter(static_cast<CompoundStatementNode*>(getter->Clone(cloneContext)));
+    }
+    if (setter)
+    {
+        clone->SetSetter(static_cast<CompoundStatementNode*>(setter->Clone(cloneContext)));
+    }
+    return clone;
+}
+
+void IndexerNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+void IndexerNode::SetGetter(CompoundStatementNode* getter_)
+{
+    if (getter)
+    {
+        throw Exception("property '" + id->Str() + "' already has a getter", GetSpan());
+    }
+    getter.reset(getter_);
+    getter->SetParent(this);
+}
+
+void IndexerNode::SetSetter(CompoundStatementNode* setter_)
+{
+    if (setter)
+    {
+        throw Exception("property '" + id->Str() + "' already has a setter", GetSpan());
+    }
+    setter.reset(setter_);
+    setter->SetParent(this);
+}
+
 } } // namespace cminor::ast

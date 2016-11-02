@@ -192,6 +192,36 @@ void BoundProperty::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundIndexer::BoundIndexer(Assembly& assembly_, TypeSymbol* type_, IndexerSymbol* indexerSymbol_, std::unique_ptr<BoundExpression>&& classObject_, std::unique_ptr<BoundExpression>&& index_) : 
+    BoundExpression(assembly_, type_), indexerSymbol(indexerSymbol_), classObject(std::move(classObject_)), index(std::move(index_))
+{
+}
+
+void BoundIndexer::GenLoad(Machine& machine, Function& function)
+{
+    classObject->GenLoad(machine, function);
+    index->GenLoad(machine, function);
+    std::vector<GenObject*> emptyObjects;
+    Assert(indexerSymbol->Getter(), "indexer has no getter");
+    indexerSymbol->Getter()->GenerateCall(machine, GetAssembly(), function, emptyObjects, 0);
+}
+
+void BoundIndexer::GenStore(Machine& machine, Function& function)
+{
+    classObject->GenLoad(machine, function);
+    index->GenLoad(machine, function);
+    std::unique_ptr<Instruction> rotateInst = machine.CreateInst("rotate");
+    function.AddInst(std::move(rotateInst));
+    std::vector<GenObject*> emptyObjects;
+    Assert(indexerSymbol->Setter(), "indexer has no setter");
+    indexerSymbol->Setter()->GenerateCall(machine, GetAssembly(), function, emptyObjects, 0);
+}
+
+void BoundIndexer::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundParameter::BoundParameter(Assembly& assembly_, TypeSymbol* type_, ParameterSymbol* parameterSymbol_) : BoundExpression(assembly_, type_), parameterSymbol(parameterSymbol_)
 {
 }

@@ -127,6 +127,24 @@ void SymbolCreatorVisitor::Visit(PropertyNode& propertyNode)
     symbolTable.EndProperty();
 }
 
+void SymbolCreatorVisitor::Visit(IndexerNode& indexerNode)
+{
+    symbolTable.BeginIndexer(indexerNode);
+    if (indexerNode.Getter())
+    {
+        symbolTable.BeginIndexerGetter(indexerNode);
+        indexerNode.Getter()->Accept(*this);
+        symbolTable.EndIndexerGetter();
+    }
+    if (indexerNode.Setter())
+    {
+        symbolTable.BeginIndexerSetter(indexerNode);
+        indexerNode.Setter()->Accept(*this);
+        symbolTable.EndIndexerSetter();
+    }
+    symbolTable.EndIndexer();
+}
+
 void SymbolCreatorVisitor::Visit(ParameterNode& parameterNode)
 {
     symbolTable.AddParameter(parameterNode);

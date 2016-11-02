@@ -12,6 +12,7 @@
 #include <cminor/symbols/ConstantSymbol.hpp>
 #include <cminor/symbols/BasicTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
+#include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/machine/Util.hpp>
@@ -796,6 +797,11 @@ void ContainerSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
         FunctionGroupSymbol* functionGroupSymbol = MakeFunctionGroupSymbol(functionSymbol->GroupName(), functionSymbol->GetSpan());
         functionGroupSymbol->AddFunction(functionSymbol);
     }
+    else if (IndexerSymbol* indexerSymbol = dynamic_cast<IndexerSymbol*>(symbol.get()))
+    {
+        IndexerGroupSymbol* indexerGroupSymbol = MakeIndexerGroupSymbol(indexerSymbol->GetSpan());
+        indexerGroupSymbol->AddIndexer(indexerSymbol);
+    }
     else 
     {
         containerScope.Install(symbol.get());
@@ -837,6 +843,30 @@ FunctionGroupSymbol* ContainerSymbol::MakeFunctionGroupSymbol(StringPtr groupNam
     else
     {
         throw Exception("name of symbol '" + ToUtf8(symbol->FullName()) + "' conflicts with a function group '" + ToUtf8(groupName.Value()) + "'", symbol->GetSpan(), span);
+    }
+}
+
+IndexerGroupSymbol* ContainerSymbol::MakeIndexerGroupSymbol(const Span& span)
+{
+    Symbol* symbol = containerScope.Lookup(StringPtr(U"@indexers"));
+    if (!symbol)
+    {
+        ConstantPool& constantPool = GetAssembly()->GetConstantPool();
+        Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(U"@indexers")));
+        std::unique_ptr<IndexerGroupSymbol> indexerGroupSymbol(new IndexerGroupSymbol(span, nameConstant));
+        indexerGroupSymbol->SetAssembly(GetAssembly());
+        IndexerGroupSymbol* indexerGroup = indexerGroupSymbol.get();
+        AddSymbol(std::move(indexerGroupSymbol));
+        return indexerGroup;
+    }
+    if (IndexerGroupSymbol* indexerGroupSymbol = dynamic_cast<IndexerGroupSymbol*>(symbol))
+    {
+        return indexerGroupSymbol;
+    }
+    else
+    {
+        Assert(false, "indexer group symbol expected");
+        return nullptr;
     }
 }
 

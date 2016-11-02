@@ -1,16 +1,20 @@
 class Alpha
 {
-    public int Foo
+    public Alpha()
     {
-        get { return x; }
-        set { x = value; }
+        this.x = new int[10];
     }
-    private int x;
+    public int this[int index]
+    {
+        get { return x[index]; }
+        set { x[index] = value; }
+    }
+    private int[] x;
 }
 
 void main()
 {
     Alpha a = new Alpha();
-    a.Foo = 1;
-    int y = a.Foo;
+    a[0] = 1;
+    int y = a[0];
 }

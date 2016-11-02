@@ -26,6 +26,7 @@ class ContainerSymbol;
 class NamespaceSymbol;
 class FunctionSymbol;
 class FunctionGroupSymbol;
+class IndexerGroupSymbol;
 class TypeSymbol;
 class ClassTypeSymbol;
 class SymbolTable;
@@ -38,9 +39,10 @@ enum class SymbolType : uint8_t
     boolTypeSymbol, charTypeSymbol, voidTypeSymbol, sbyteTypeSymbol, byteTypeSymbol, shortTypeSymbol, ushortTypeSymbol, intTypeSymbol, uintTypeSymbol, longTypeSymbol, ulongTypeSymbol,
     floatTypeSymbol, doubleTypeSymbol, nullReferenceTypeSymbol,
     classTypeSymbol, arrayTypeSymbol, functionSymbol, staticConstructorSymbol, constructorSymbol, arraySizeConstructorSymbol, memberFunctionSymbol, functionGroupSymbol, parameterSymbol,
-    localVariableSymbol, memberVariableSymbol, propertySymbol, propertyGetterSymbol, propertySetterSymbol, constantSymbol, namespaceSymbol,
-    declarationBlock, basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, 
-    objectDefaultInit, objectCopyInit, objectNullInit, objectAssignment, classTypeConversion,
+    localVariableSymbol, memberVariableSymbol, propertySymbol, propertyGetterSymbol, propertySetterSymbol, indexerSymbol, indexerGetterSymbol, indexerSetterSymbol, indexerGroupSymbol,
+    constantSymbol, namespaceSymbol, declarationBlock, 
+    basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, objectDefaultInit, objectCopyInit, objectNullInit, 
+    objectAssignment, classTypeConversion,
     maxSymbol
 };
 
@@ -221,6 +223,7 @@ public:
     std::vector<std::unique_ptr<Symbol>>& Symbols() { return symbols; }
     void Clear();
     FunctionGroupSymbol* MakeFunctionGroupSymbol(StringPtr groupName, const Span& span);
+    IndexerGroupSymbol* MakeIndexerGroupSymbol(const Span& span);
 private:
     ContainerScope containerScope;
     std::vector<std::unique_ptr<Symbol>> symbols;

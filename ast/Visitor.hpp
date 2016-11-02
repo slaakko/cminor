@@ -54,6 +54,7 @@ class ConstructorNode;
 class MemberFunctionNode;
 class MemberVariableNode;
 class PropertyNode;
+class IndexerNode;
 
 class DisjunctionNode;
 class ConjunctionNode;
@@ -153,6 +154,7 @@ public:
     virtual void Visit(MemberFunctionNode& memberFunctionNode) {}
     virtual void Visit(MemberVariableNode& memberVariableNode) {}
     virtual void Visit(PropertyNode& propertyNode) {}
+    virtual void Visit(IndexerNode& indexerNode) {}
 
     virtual void Visit(DisjunctionNode& disjunctionNode) {}
     virtual void Visit(ConjunctionNode& conjunctionNode) {}

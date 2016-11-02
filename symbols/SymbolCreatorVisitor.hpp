@@ -29,6 +29,7 @@ public:
     void Visit(MemberFunctionNode& memberFunctionNode) override;
     void Visit(MemberVariableNode& memberVariableNode) override;
     void Visit(PropertyNode& propertyNode) override;
+    void Visit(IndexerNode& indexerNode) override;
     void Visit(CompoundStatementNode& compoundStatementNode) override;
     void Visit(IfStatementNode& ifStatementNode) override;
     void Visit(WhileStatementNode& whileStatementNode) override;

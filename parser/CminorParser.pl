@@ -38,6 +38,7 @@ namespace cminor.parser
         MemberFunction(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<MemberFunctionNode> memFun, var std::unique_ptr<IdentifierNode> qid): Node*;
         MemberVariable(ParsingContext* ctx): Node*;
         Property(ParsingContext* ctx, var std::unique_ptr<Node> property): Node*;
+        Indexer(ParsingContext* ctx, var std::unique_ptr<Node> indexer): Node*;
         GetterOrSetter(ParsingContext* ctx, Node* subject);
     }
     grammar IdentifierGrammar
