@@ -1,5 +1,5 @@
-#ifndef Keyword_hpp_5887
-#define Keyword_hpp_5887
+#ifndef Keyword_hpp_30204
+#define Keyword_hpp_30204
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -20,4 +20,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Keyword_hpp_5887
+#endif // Keyword_hpp_30204

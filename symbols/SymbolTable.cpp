@@ -19,7 +19,7 @@
 namespace cminor { namespace symbols {
 
 SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs), function(nullptr),
-mainFunction(nullptr), currentClass(nullptr), declarationBlockId(0), doNotAddTypes(false), conversionTable(*assembly)
+    mainFunction(nullptr), currentClass(nullptr), currentInterface(nullptr), declarationBlockId(0), doNotAddTypes(false), conversionTable(*assembly)
 {
     globalNs.SetAssembly(assembly);
 }
@@ -187,7 +187,19 @@ void SymbolTable::BeginMemberFunction(MemberFunctionNode& memberFunctionNode)
     Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
     ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), thisParamName);
     thisParam->SetAssembly(assembly);
-    TypeSymbol* thisParamType = currentClass;
+    TypeSymbol* thisParamType = nullptr;
+    if (currentClass)
+    {
+        thisParamType = currentClass;
+    }
+    else if (currentInterface)
+    {
+        thisParamType = currentInterface;
+    }
+    else
+    {
+        Assert(false, "class or interface expected");
+    }
     thisParam->SetType(thisParamType);
     thisParam->SetBound();
     function->AddSymbol(std::unique_ptr<Symbol>(thisParam));
@@ -222,6 +234,30 @@ void SymbolTable::EndClass()
     EndContainer();
     currentClass = classStack.top();
     classStack.pop();
+}
+
+void SymbolTable::BeginInterface(InterfaceNode& interfaceNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(interfaceNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    InterfaceTypeSymbol* interfaceTypeSymbol = new InterfaceTypeSymbol(interfaceNode.GetSpan(), nameConstant);
+    interfaceTypeSymbol->SetAssembly(assembly);
+    interfaceStack.push(currentInterface);
+    currentInterface = interfaceTypeSymbol;
+    MapNode(interfaceNode, interfaceTypeSymbol);
+    ContainerScope* containerScope = container->GetContainerScope();
+    ContainerScope* interfaceScope = interfaceTypeSymbol->GetContainerScope();
+    interfaceScope->SetParent(containerScope);
+    container->AddSymbol(std::unique_ptr<Symbol>(interfaceTypeSymbol));
+    BeginContainer(interfaceTypeSymbol);
+}
+
+void SymbolTable::EndInterface()
+{
+    currentInterface = interfaceStack.top();
+    interfaceStack.pop();
+    EndContainer();
 }
 
 void SymbolTable::AddParameter(ParameterNode& parameterNode)
@@ -721,6 +757,7 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::doubleTypeSymbol, new ConcreteSymbolCreator<DoubleTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::nullReferenceTypeSymbol, new ConcreteSymbolCreator<NullReferenceTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::classTypeSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::interfaceTypeSymbol, new ConcreteSymbolCreator<InterfaceTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::arrayTypeSymbol, new ConcreteSymbolCreator<ArrayTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::functionSymbol, new ConcreteSymbolCreator<FunctionSymbol>());
     SymbolFactory::Instance().Register(SymbolType::memberFunctionSymbol, new ConcreteSymbolCreator<MemberFunctionSymbol>());

@@ -26,6 +26,7 @@
     <ClInclude Include="Expression.hpp" />
     <ClInclude Include="Function.hpp" />
     <ClInclude Include="Identifier.hpp" />
+    <ClInclude Include="Interface.hpp" />
     <ClInclude Include="Literal.hpp" />
     <ClInclude Include="Namespace.hpp" />
     <ClInclude Include="Node.hpp" />
@@ -44,6 +45,7 @@
     <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Function.cpp" />
     <ClCompile Include="Identifier.cpp" />
+    <ClCompile Include="Interface.cpp" />
     <ClCompile Include="Literal.cpp" />
     <ClCompile Include="Namespace.cpp" />
     <ClCompile Include="Node.cpp" />

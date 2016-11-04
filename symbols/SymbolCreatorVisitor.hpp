@@ -24,6 +24,7 @@ public:
     void Visit(FunctionNode& functionNode) override;
     void Visit(ParameterNode& parameterNode) override;
     void Visit(ClassNode& classNode) override;
+    void Visit(InterfaceNode& interfaceNode) override;
     void Visit(StaticConstructorNode& staticConstructorNode) override;
     void Visit(ConstructorNode& constructorNode) override;
     void Visit(MemberFunctionNode& memberFunctionNode) override;

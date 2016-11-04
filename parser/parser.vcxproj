@@ -26,6 +26,7 @@
     <None Include="Expression.parser" />
     <None Include="Function.parser" />
     <None Include="Identifier.parser" />
+    <None Include="Interface.parser" />
     <None Include="Keyword.parser" />
     <None Include="CminorParser.pp" />
     <None Include="Literal.parser" />
@@ -43,6 +44,7 @@
     <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Function.cpp" />
     <ClCompile Include="Identifier.cpp" />
+    <ClCompile Include="Interface.cpp" />
     <ClCompile Include="Keyword.cpp" />
     <ClCompile Include="Literal.cpp" />
     <ClCompile Include="Parameter.cpp" />
@@ -60,6 +62,7 @@
     <ClInclude Include="Expression.hpp" />
     <ClInclude Include="Function.hpp" />
     <ClInclude Include="Identifier.hpp" />
+    <ClInclude Include="Interface.hpp" />
     <ClInclude Include="Keyword.hpp" />
     <ClInclude Include="Literal.hpp" />
     <ClInclude Include="Operator.hpp" />

@@ -235,15 +235,16 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     rootInst.SetInst(0xA4, new JumpFalseInst());
     rootInst.SetInst(0xA5, new CallInst());
     rootInst.SetInst(0xA6, new VirtualCallInst());
-    rootInst.SetInst(0xA7, new EnterBlockInst());
-    rootInst.SetInst(0xA8, new ExitBlockInst());
+    rootInst.SetInst(0xA7, new InterfaceCallInst());
+    rootInst.SetInst(0xA8, new EnterBlockInst());
+    rootInst.SetInst(0xA9, new ExitBlockInst());
 
     // stack manipulation:
     // -------------------
 
-    rootInst.SetInst(0xA9, new DupInst());
-    rootInst.SetInst(0xAA, new SwapInst());
-    rootInst.SetInst(0xAB, new RotateInst());
+    rootInst.SetInst(0xAA, new DupInst());
+    rootInst.SetInst(0xAB, new SwapInst());
+    rootInst.SetInst(0xAC, new RotateInst());
 
 
     // objects:

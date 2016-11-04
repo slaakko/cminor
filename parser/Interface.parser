@@ -1,0 +1,45 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Interface.hpp>
+[hpp]#include <cminor/parser/ParsingContext.hpp>
+[cpp]#include <cminor/parser/Specifier.hpp>
+[cpp]#include <cminor/parser/Identifier.hpp>
+[cpp]#include <cminor/parser/TypeExpr.hpp>
+[cpp]#include <cminor/parser/Parameter.hpp>
+[cpp]#include <cminor/parser/Keyword.hpp>
+[cpp]#include <cminor/ast/Class.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar InterfaceGrammar
+    {
+        using SpecifierGrammar.Specifiers;
+        using IdentifierGrammar.Identifier;
+        using TypeExprGrammar.TypeExpr;
+        using ParameterGrammar.ParameterList;
+        using KeywordGrammar.Keyword;
+        using stdlib.identifier;
+        
+        Interface(ParsingContext* ctx) : InterfaceNode*
+            ::= (Specifiers keyword("interface") Identifier!){ value = new InterfaceNode(span, Specifiers, Identifier); } '{'! InterfaceContent(ctx, value) '}'!
+            ;
+
+        InterfaceContent(ParsingContext* ctx, InterfaceNode* intf)
+            ::= (InterfaceMemFun(ctx){ intf->AddMember(InterfaceMemFun); })*
+            ;
+
+        InterfaceMemFun(ParsingContext* ctx, var std::unique_ptr<MemberFunctionNode> memFun) : Node*
+            ::= (TypeExpr(ctx):returnTypeExpr InterfaceFunctionGroupId:groupId!{ memFun.reset(new MemberFunctionNode(span, Specifiers(), returnTypeExpr, groupId)); }
+                ParameterList(ctx, memFun.get())! ';'!){ value = memFun.release(); }
+            ;
+
+        InterfaceFunctionGroupId : FunctionGroupIdNode*
+            ::= token(identifier - Keyword){ value = new FunctionGroupIdNode(span, identifier); }
+            ;
+    }
+}

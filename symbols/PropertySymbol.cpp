@@ -65,6 +65,10 @@ void PropertySymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("properties cannot be static", GetSpan());
     }
+    if ((specifiers & Specifiers::external_) != Specifiers::none)
+    {
+        throw Exception("properties cannot be external", GetSpan());
+    }
     if ((specifiers & Specifiers::virtual_) != Specifiers::none)
     {
         throw Exception("properties cannot be virtual", GetSpan());

@@ -8,6 +8,7 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
+#include <cminor/symbols/ObjectFun.hpp>
 #include <cminor/machine/Machine.hpp>
 
 namespace cminor { namespace symbols {
@@ -204,8 +205,29 @@ utf32_string FunctionSymbol::FullName() const
     return fullName;
 }
 
-void FunctionSymbol::AddToFlagStr(std::string& flagStr) const
+utf32_string FunctionSymbol::FullParsingName() const
 {
+    utf32_string fullParsingName;
+    utf32_string parentFullName = Parent()->FullName();
+    fullParsingName.append(parentFullName);
+    if (!parentFullName.empty())
+    {
+        fullParsingName.append(1, U'.');
+    }
+    fullParsingName.append(GroupName().Value());
+    fullParsingName.append(1, U'(');
+    int n = int(Parameters().size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            fullParsingName.append(U", ");
+        }
+        ParameterSymbol* parameter = Parameters()[i];
+        fullParsingName.append(parameter->GetType()->FullName());
+    }
+    fullParsingName.append(1, U')');
+    return fullParsingName;
 }
 
 utf32_string FunctionSymbol::FriendlyName() const
@@ -213,7 +235,6 @@ utf32_string FunctionSymbol::FriendlyName() const
     utf32_string friendlyName;
     friendlyName.append(ToUtf32(SymbolFlagStr(Symbol::Flags())));
     std::string functionSymbolFlagStr = FunctionSymbolFlagStr(flags);
-    AddToFlagStr(functionSymbolFlagStr);
     if (!functionSymbolFlagStr.empty())
     {
         if (!friendlyName.empty())
@@ -356,6 +377,25 @@ void StaticConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
+utf32_string StaticConstructorSymbol::FullParsingName() const
+{
+    utf32_string fullParsingName;
+    utf32_string parentFullName = Parent()->FullName();
+    fullParsingName.append(parentFullName);
+    if (!parentFullName.empty())
+    {
+        fullParsingName.append(1, U'.');
+    }
+    fullParsingName.append(Parent()->Name().Value());
+    fullParsingName.append(U"()");
+    return fullParsingName;
+}
+
+utf32_string StaticConstructorSymbol::FriendlyName() const
+{
+    return FullParsingName();
+}
+
 ConstructorSymbol::ConstructorSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), flags(ConstructorSymbolFlags::none)
 {
 }
@@ -384,6 +424,72 @@ void ConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("constructor constructor cannot be external", GetSpan());
     }
+}
+
+utf32_string ConstructorSymbol::FullParsingName() const
+{
+    utf32_string fullParsingName;
+    utf32_string parentFullName = Parent()->FullName();
+    fullParsingName.append(parentFullName);
+    if (!parentFullName.empty())
+    {
+        fullParsingName.append(1, U'.');
+    }
+    fullParsingName.append(Parent()->Name().Value());
+    fullParsingName.append(1, U'(');
+    int n = int(Parameters().size());
+    for (int i = 1; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            fullParsingName.append(U", ");
+        }
+        ParameterSymbol* parameter = Parameters()[i];
+        fullParsingName.append(parameter->GetType()->FullName());
+    }
+    fullParsingName.append(1, U')');
+    return fullParsingName;
+}
+
+utf32_string ConstructorSymbol::FriendlyName() const
+{
+    utf32_string friendlyName;
+    friendlyName.append(ToUtf32(SymbolFlagStr(Symbol::Flags())));
+    std::string functionSymbolFlagStr = FunctionSymbolFlagStr(GetFlags());
+    if (!functionSymbolFlagStr.empty())
+    {
+        if (!friendlyName.empty())
+        {
+            friendlyName.append(1, U' ');
+        }
+        friendlyName.append(ToUtf32(functionSymbolFlagStr));
+    }
+    utf32_string parentFullName = Parent()->FullName();
+    if (!parentFullName.empty())
+    {
+        if (!friendlyName.empty())
+        {
+            friendlyName.append(1, U' ');
+        }
+        friendlyName.append(parentFullName);
+        friendlyName.append(1, U'.');
+    }
+    friendlyName.append(Parent()->Name().Value());
+    friendlyName.append(1, U'(');
+    int n = int(Parameters().size());
+    for (int i = 1; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            friendlyName.append(U", ");
+        }
+        ParameterSymbol* parameter = Parameters()[i];
+        friendlyName.append(parameter->GetType()->FullName());
+        friendlyName.append(1, U' ');
+        friendlyName.append(utf32_string(parameter->Name().Value()));
+    }
+    friendlyName.append(1, U')');
+    return friendlyName;
 }
 
 void ConstructorSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
@@ -551,12 +657,23 @@ std::string MemberFunctionSymbolFlagStr(MemberFunctionSymbolFlags flags)
     return s;
 }
 
-MemberFunctionSymbol::MemberFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), vmtIndex(-1), flags(MemberFunctionSymbolFlags::none)
+MemberFunctionSymbol::MemberFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), vmtIndex(-1), imtIndex(-1), flags(MemberFunctionSymbolFlags::none)
 {
 }
 
-void MemberFunctionSymbol::AddToFlagStr(std::string& flagStr) const
+utf32_string MemberFunctionSymbol::FriendlyName() const
 {
+    utf32_string friendlyName;
+    std::string flagStr = SymbolFlagStr(Symbol::Flags());
+    std::string functionSymbolFlagStr = FunctionSymbolFlagStr(GetFlags());
+    if (!functionSymbolFlagStr.empty())
+    {
+        if (!flagStr.empty())
+        {
+            flagStr.append(1, ' ');
+        }
+        flagStr.append(functionSymbolFlagStr);
+    }
     std::string myFlagStr = MemberFunctionSymbolFlagStr(flags);
     if (!myFlagStr.empty())
     {
@@ -566,8 +683,53 @@ void MemberFunctionSymbol::AddToFlagStr(std::string& flagStr) const
         }
         flagStr.append(myFlagStr);
     }
-}
+    if (!flagStr.empty())
+    {
+        friendlyName.append(ToUtf32(flagStr));
+    }
+    if (ReturnType())
+    {
+        if (!friendlyName.empty())
+        {
+            friendlyName.append(1, U' ');
+        }
+        friendlyName.append(ReturnType()->FullName());
+    }
+    utf32_string parentFullName = Parent()->FullName();
+    if (!parentFullName.empty())
+    {
+        if (!friendlyName.empty())
+        {
+            friendlyName.append(1, U' ');
+        }
+        friendlyName.append(parentFullName);
+        friendlyName.append(1, U'.');
+    }
+    else
+    {
+        if (!friendlyName.empty())
+        {
+            friendlyName.append(1, U' ');
+        }
+    }
+    friendlyName.append(GroupName().Value());
+    friendlyName.append(1, U'(');
+    int n = int(Parameters().size());
+    for (int i = 1; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            friendlyName.append(U", ");
+        }
+        ParameterSymbol* parameter = Parameters()[i];
+        friendlyName.append(parameter->GetType()->FullName());
+        friendlyName.append(1, U' ');
+        friendlyName.append(utf32_string(parameter->Name().Value()));
+    }
+    friendlyName.append(1, U')');
+    return friendlyName;
 
+}
 void MemberFunctionSymbol::Write(SymbolWriter& writer)
 {
     FunctionSymbol::Write(writer);
@@ -620,6 +782,31 @@ void MemberFunctionSymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
+utf32_string MemberFunctionSymbol::FullParsingName() const
+{
+    utf32_string fullParsingName;
+    utf32_string parentFullName = Parent()->FullName();
+    fullParsingName.append(parentFullName);
+    if (!parentFullName.empty())
+    {
+        fullParsingName.append(1, U'.');
+    }
+    fullParsingName.append(GroupName().Value());
+    fullParsingName.append(1, U'(');
+    int n = int(Parameters().size());
+    for (int i = 1; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            fullParsingName.append(U", ");
+        }
+        ParameterSymbol* parameter = Parameters()[i];
+        fullParsingName.append(parameter->GetType()->FullName());
+    }
+    fullParsingName.append(1, U')');
+    return fullParsingName;
+}
+
 void MemberFunctionSymbol::GenerateVirtualCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
 {
     int n = int(objects.size());
@@ -633,6 +820,22 @@ void MemberFunctionSymbol::GenerateVirtualCall(Machine& machine, Assembly& assem
     Assert(vcall, "virtual call instruction expected");
     vcall->SetNumArgs(n);
     vcall->SetVmtIndex(vmtIndex);
+    function.AddInst(std::move(inst));
+}
+
+void MemberFunctionSymbol::GenerateInterfaceCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
+{
+    int n = int(objects.size());
+    for (int i = 0; i < n; ++i)
+    {
+        GenObject* genObject = objects[i];
+        genObject->GenLoad(machine, function);
+    }
+    std::unique_ptr<Instruction> inst = machine.CreateInst("calli");
+    InterfaceCallInst* icall = dynamic_cast<InterfaceCallInst*>(inst.get());
+    Assert(icall, "interface call instruction expected");
+    icall->SetNumArgs(n);
+    icall->SetImtIndex(imtIndex);
     function.AddInst(std::move(inst));
 }
 
@@ -657,6 +860,56 @@ void ClassTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Fun
     Constant targetTypeClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(targetTypeClassName.c_str())));
     typeInstruction->SetTypeName(targetTypeClassNameConstant);
     function.AddInst(std::move(inst));
+}
+
+ClassToInterfaceConversion::ClassToInterfaceConversion(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), itabIndex(-1)
+{
+    SetConversionFun();
+}
+
+void ClassToInterfaceConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
+{
+    std::unique_ptr<Instruction> createInst;
+    createInst = machine.CreateInst("createo");
+    ConstantPool& constantPool = assembly.GetConstantPool();
+    utf32_string targetTypeInterfaceName = targetType->FullName();
+    Constant targetTypeInterfaceNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(targetTypeInterfaceName.c_str())));
+    CreateObjectInst* createObjectInst = dynamic_cast<CreateObjectInst*>(createInst.get());
+    Assert(createObjectInst, "CreateObject instruction expected");
+    createObjectInst->SetTypeName(targetTypeInterfaceNameConstant);
+    function.AddInst(std::move(createInst));
+    std::unique_ptr<Instruction> dupInst;
+    dupInst = machine.CreateInst("dup");
+    function.AddInst(std::move(dupInst));
+    Constant itabIndexConstant(IntegralValue(itabIndex, ValueType::intType));
+    ConstantId itabIndexId = constantPool.Install(itabIndexConstant);
+    std::unique_ptr<Instruction> loadConstant;
+    loadConstant = machine.CreateInst("loadconstant");
+    LoadConstantInst* loadConstantInst = dynamic_cast<LoadConstantInst*>(loadConstant.get());
+    loadConstantInst->SetIndex(itabIndexId.Value());
+    function.AddInst(std::move(loadConstant));
+    std::unique_ptr<Instruction> swap;
+    swap = machine.CreateInst("swap");
+    function.AddInst(std::move(swap));
+    std::unique_ptr<Instruction> storeField;
+    storeField = machine.CreateInst("storefield");
+    StoreFieldInst* storeFieldInst = dynamic_cast<StoreFieldInst*>(storeField.get());
+    storeFieldInst->SetIndex(1);
+    function.AddInst(std::move(storeField));
+    std::unique_ptr<Instruction> dupInst2;
+    dupInst2 = machine.CreateInst("dup");
+    function.AddInst(std::move(dupInst2));
+    std::unique_ptr<Instruction> rotate;
+    rotate = machine.CreateInst("rotate");
+    function.AddInst(std::move(rotate));
+    std::unique_ptr<Instruction> swap2;
+    swap2 = machine.CreateInst("swap");
+    function.AddInst(std::move(swap2));
+    std::unique_ptr<Instruction> storeField2;
+    storeField2 = machine.CreateInst("storefield");
+    StoreFieldInst* storeFieldInst2 = dynamic_cast<StoreFieldInst*>(storeField2.get());
+    storeFieldInst2->SetIndex(0);
+    function.AddInst(std::move(storeField2));
 }
 
 FunctionGroupSymbol::FunctionGroupSymbol(const Span& span_, Constant name_, ContainerScope* containerScope_) : Symbol(span_, name_), containerScope(containerScope_)
@@ -712,7 +965,25 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
     {
         return it->second;
     }
-    if (ClassTypeSymbol* sourceClassType = dynamic_cast<ClassTypeSymbol*>(sourceType))
+    if (NullReferenceTypeSymbol* nullReferenceTypeSymbol = dynamic_cast<NullReferenceTypeSymbol*>(sourceType))
+    {
+        if (ClassTypeSymbol* targetClassType = dynamic_cast<ClassTypeSymbol*>(targetType))
+        {
+            ConstantPool& constantPool = assembly.GetConstantPool();
+            Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
+            utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
+            Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
+            std::unique_ptr<NullToObjectConversion> conversion(new NullToObjectConversion(targetClassType->GetSpan(), conversionNameConstant));
+            FunctionSymbol* conversionFun = conversion.get();
+            conversion->SetAssembly(&assembly);
+            conversion->SetSourceType(sourceType);
+            conversion->SetTargetType(targetType);
+            conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
+            nullConversions.push_back(std::move(conversion));
+            return conversionFun;
+        }
+    }
+    else if (ClassTypeSymbol* sourceClassType = dynamic_cast<ClassTypeSymbol*>(sourceType))
     {
         if (ClassTypeSymbol* targetClassType = dynamic_cast<ClassTypeSymbol*>(targetType))
         {
@@ -751,6 +1022,31 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
                     conversion->SetTargetType(targetType);
                     conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
                     classTypeConversions.push_back(std::move(conversion));
+                    return conversionFun;
+                }
+            }
+        }
+        else if (InterfaceTypeSymbol* interfaceTypeSymbol = dynamic_cast<InterfaceTypeSymbol*>(targetType))
+        {
+            int32_t n = int32_t(sourceClassType->ImplementedInterfaces().size());
+            for (int32_t i = 0; i < n; ++i)
+            {
+                InterfaceTypeSymbol* implementedInterface = sourceClassType->ImplementedInterfaces()[i];
+                if (implementedInterface == interfaceTypeSymbol)
+                {
+                    int32_t itabIndex = i;
+                    ConstantPool& constantPool = assembly.GetConstantPool();
+                    Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
+                    utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
+                    Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
+                    std::unique_ptr<ClassToInterfaceConversion> conversion(new ClassToInterfaceConversion(sourceClassType->GetSpan(), conversionNameConstant));
+                    FunctionSymbol* conversionFun = conversion.get();
+                    conversion->SetITabIndex(itabIndex);
+                    conversion->SetAssembly(&assembly);
+                    conversion->SetSourceType(sourceType);
+                    conversion->SetTargetType(targetType);
+                    conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
+                    interfaceTypeConversions.push_back(std::move(conversion));
                     return conversionFun;
                 }
             }

@@ -387,7 +387,7 @@ void BoundMemberExpression::Accept(BoundNodeVisitor& visitor)
 }
 
 BoundFunctionCall::BoundFunctionCall(Assembly& assembly_, FunctionSymbol* functionSymbol_) : 
-    BoundExpression(assembly_, functionSymbol_->ReturnType()), functionSymbol(functionSymbol_), genVirtualCall(false)
+    BoundExpression(assembly_, functionSymbol_->ReturnType()), functionSymbol(functionSymbol_), callType(FunctionCallType::regularCall)
 {
 }
 
@@ -408,15 +408,32 @@ void BoundFunctionCall::GenLoad(Machine& machine, Function& function)
     {
         objects.push_back(argument.get());
     }
-    if (genVirtualCall)
+    switch (callType)
     {
-        MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(functionSymbol);
-        Assert(memberFunctionSymbol, "member function symbol exptected");
-        memberFunctionSymbol->GenerateVirtualCall(machine, GetAssembly(), function, objects);
-    }
-    else
-    {
-        functionSymbol->GenerateCall(machine, GetAssembly(), function, objects, 0);
+        case FunctionCallType::regularCall:
+        {
+            functionSymbol->GenerateCall(machine, GetAssembly(), function, objects, 0);
+            break;
+        }
+        case FunctionCallType::virtualCall:
+        {
+            MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(functionSymbol);
+            Assert(memberFunctionSymbol, "member function symbol exptected");
+            memberFunctionSymbol->GenerateVirtualCall(machine, GetAssembly(), function, objects);
+            break;
+        }
+        case FunctionCallType::interfaceCall:
+        {
+            MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(functionSymbol);
+            Assert(memberFunctionSymbol, "member function symbol exptected");
+            memberFunctionSymbol->GenerateInterfaceCall(machine, GetAssembly(), function, objects);
+            break;
+        }
+        default:
+        {
+            Assert(false, "unknown call type");
+            break;
+        }
     }
 }
 

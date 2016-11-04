@@ -9,6 +9,7 @@
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/ast/Statement.hpp>
 #include <cminor/ast/Class.hpp>
+#include <cminor/ast/Interface.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -60,6 +61,18 @@ void SymbolCreatorVisitor::Visit(ClassNode& classNode)
         member->Accept(*this);
     }
     symbolTable.EndClass();
+}
+
+void SymbolCreatorVisitor::Visit(InterfaceNode& interfaceNode)
+{
+    symbolTable.BeginInterface(interfaceNode);
+    int n = interfaceNode.Members().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        Node* member = interfaceNode.Members()[i];
+        member->Accept(*this);
+    }
+    symbolTable.EndInterface();
 }
 
 void SymbolCreatorVisitor::Visit(StaticConstructorNode& staticConstructorNode)

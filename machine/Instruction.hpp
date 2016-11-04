@@ -368,6 +368,19 @@ private:
     int32_t vmtIndex;
 };
 
+class InterfaceCallInst : public Instruction
+{
+public:
+    InterfaceCallInst();
+    Instruction* Clone() const override { return new InterfaceCallInst(*this); }
+    void SetNumArgs(int32_t numArgs_) { numArgs = numArgs_; };
+    void SetImtIndex(int32_t imtIndex_) { imtIndex = imtIndex_; }
+    void Execute(Frame& frame) override;
+private:
+    int32_t numArgs;
+    int32_t imtIndex;
+};
+
 class VmCallInst : public IndexParamInst
 {
 public:

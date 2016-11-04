@@ -400,7 +400,7 @@ void StatementBinderVisitor::Visit(ReturnStatementNode& returnStatementNode)
             returnTypeArgs.push_back(std::unique_ptr<BoundTypeExpression>(new BoundTypeExpression(boundCompileUnit.GetAssembly(), returnType)));
             std::vector<FunctionScopeLookup> functionScopeLookups;
             functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
-            functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, returnType->ClassOrNsScope()));
+            functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, returnType->ClassInterfaceOrNsScope()));
             functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
             std::unique_ptr<BoundFunctionCall> returnFunctionCall = ResolveOverload(boundCompileUnit, U"@return", functionScopeLookups, returnTypeArgs, returnStatementNode.GetSpan());
             std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, returnStatementNode.Expression());
@@ -554,7 +554,7 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
     std::vector<std::unique_ptr<BoundExpression>> arguments;
     arguments.push_back(std::unique_ptr<BoundExpression>(new BoundLocalVariable(boundCompileUnit.GetAssembly(), localVariableSymbol->GetType(), localVariableSymbol)));
     std::vector<FunctionScopeLookup> functionScopeLookups;
-    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, localVariableSymbol->GetType()->ClassOrNsScope()));
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, localVariableSymbol->GetType()->ClassInterfaceOrNsScope()));
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
     int n = constructionStatementNode.Arguments().Count();
     for (int i = 0; i < n; ++i)
@@ -577,7 +577,7 @@ void StatementBinderVisitor::Visit(AssignmentStatementNode& assignmentStatementN
     arguments.push_back(std::move(target));
     arguments.push_back(std::move(source));
     std::vector<FunctionScopeLookup> functionScopeLookups;
-    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, targetType->ClassOrNsScope()));
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, targetType->ClassInterfaceOrNsScope()));
     std::unique_ptr<BoundFunctionCall> assignmentCall = ResolveOverload(boundCompileUnit, U"@assignment", functionScopeLookups, arguments, assignmentStatementNode.GetSpan());
     CheckAccess(function->GetFunctionSymbol(), assignmentCall->GetFunctionSymbol());
     statement.reset(new BoundAssignmentStatement(boundCompileUnit.GetAssembly(), std::move(assignmentCall)));

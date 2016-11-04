@@ -114,110 +114,102 @@ void ObjectNullAssignment::GenerateCall(Machine& machine, Assembly& assembly, Fu
     target->GenStore(machine, function);
 }
 
-void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType, TypeSymbol* boolType)
+NullToObjectConversion::NullToObjectConversion(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
+{
+    SetConversionFun();
+}
+
+void NullToObjectConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
+{
+}
+
+void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceType)
 {
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
     Constant thatParamName = constantPool.GetConstant(constantPool.Install(U"that"));
     ParameterSymbol* thisParam1 = new ParameterSymbol(Span(), thisParamName);
     thisParam1->SetAssembly(&assembly);
-    thisParam1->SetType(classType);
+    thisParam1->SetType(classOrInterfaceType);
     ObjectDefaultInit* defaultInit = new ObjectDefaultInit(Span(), constantPool.GetEmptyStringConstant());
     defaultInit->SetAssembly(&assembly);
-    defaultInit->SetType(classType);
+    defaultInit->SetType(classOrInterfaceType);
     defaultInit->AddSymbol(std::unique_ptr<Symbol>(thisParam1));
     defaultInit->ComputeName();
-    classType->AddSymbol(std::unique_ptr<FunctionSymbol>(defaultInit));
+    classOrInterfaceType->AddSymbol(std::unique_ptr<FunctionSymbol>(defaultInit));
 
     ParameterSymbol* thisParam2 = new ParameterSymbol(Span(), thisParamName);
     thisParam2->SetAssembly(&assembly);
-    thisParam2->SetType(classType);
+    thisParam2->SetType(classOrInterfaceType);
     ParameterSymbol* thatParam2 = new ParameterSymbol(Span(), thatParamName);
     thatParam2->SetAssembly(&assembly);
-    thatParam2->SetType(classType);
+    thatParam2->SetType(classOrInterfaceType);
     ObjectCopyInit* copyInit = new ObjectCopyInit(Span(), constantPool.GetEmptyStringConstant());
     copyInit->SetAssembly(&assembly);
-    copyInit->SetType(classType);
+    copyInit->SetType(classOrInterfaceType);
     copyInit->AddSymbol(std::unique_ptr<Symbol>(thisParam2));
     copyInit->AddSymbol(std::unique_ptr<Symbol>(thatParam2));
     copyInit->ComputeName();
-    classType->AddSymbol(std::unique_ptr<FunctionSymbol>(copyInit));
+    classOrInterfaceType->AddSymbol(std::unique_ptr<FunctionSymbol>(copyInit));
 
     TypeSymbol* nullRefType = assembly.GetSymbolTable().GetType(U"System.@nullref");
 
     ParameterSymbol* thisParam3 = new ParameterSymbol(Span(), thisParamName);
     thisParam3->SetAssembly(&assembly);
-    thisParam3->SetType(classType);
+    thisParam3->SetType(classOrInterfaceType);
     ParameterSymbol* thatParam3 = new ParameterSymbol(Span(), thatParamName);
     thatParam3->SetAssembly(&assembly);
     thatParam3->SetType(nullRefType);
     ObjectNullInit* nullInit = new ObjectNullInit(Span(), constantPool.GetEmptyStringConstant());
     nullInit->SetAssembly(&assembly);
-    nullInit->SetType(classType);
+    nullInit->SetType(classOrInterfaceType);
     nullInit->AddSymbol(std::unique_ptr<Symbol>(thisParam3));
     nullInit->AddSymbol(std::unique_ptr<Symbol>(thatParam3));
     nullInit->ComputeName();
-    classType->AddSymbol(std::unique_ptr<FunctionSymbol>(nullInit));
+    classOrInterfaceType->AddSymbol(std::unique_ptr<FunctionSymbol>(nullInit));
 
     ParameterSymbol* thisParam4 = new ParameterSymbol(Span(), thisParamName);
     thisParam4->SetAssembly(&assembly);
-    thisParam4->SetType(classType);
+    thisParam4->SetType(classOrInterfaceType);
     ParameterSymbol* thatParam4 = new ParameterSymbol(Span(), thatParamName);
     thatParam4->SetAssembly(&assembly);
-    thatParam4->SetType(classType);
+    thatParam4->SetType(classOrInterfaceType);
     ObjectAssignment* assignment = new ObjectAssignment(Span(), constantPool.GetEmptyStringConstant());
     Constant assignmentGroupName = assembly.GetConstantPool().GetConstant(assembly.GetConstantPool().Install(U"@assignment"));
     assignment->SetGroupNameConstant(assignmentGroupName);
     assignment->SetAssembly(&assembly);
-    assignment->SetType(classType);
+    assignment->SetType(classOrInterfaceType);
     assignment->AddSymbol(std::unique_ptr<Symbol>(thisParam4));
     assignment->AddSymbol(std::unique_ptr<Symbol>(thatParam4));
     assignment->ComputeName();
-    classType->AddSymbol(std::unique_ptr<FunctionSymbol>(assignment));
+    classOrInterfaceType->AddSymbol(std::unique_ptr<FunctionSymbol>(assignment));
 
     ParameterSymbol* thisParam5 = new ParameterSymbol(Span(), thisParamName);
     thisParam5->SetAssembly(&assembly);
-    thisParam5->SetType(classType);
+    thisParam5->SetType(classOrInterfaceType);
     ParameterSymbol* thatParam5 = new ParameterSymbol(Span(), thatParamName);
     thatParam5->SetAssembly(&assembly);
     thatParam5->SetType(nullRefType);
     ObjectNullAssignment* nullAssignment = new ObjectNullAssignment(Span(), constantPool.GetEmptyStringConstant());
     nullAssignment->SetAssembly(&assembly);
     nullAssignment->SetGroupNameConstant(assignmentGroupName);
-    nullAssignment->SetType(classType);
+    nullAssignment->SetType(classOrInterfaceType);
     nullAssignment->AddSymbol(std::unique_ptr<Symbol>(thisParam5));
     nullAssignment->AddSymbol(std::unique_ptr<Symbol>(thatParam5));
     nullAssignment->ComputeName();
-    classType->AddSymbol(std::unique_ptr<FunctionSymbol>(nullAssignment));
+    classOrInterfaceType->AddSymbol(std::unique_ptr<FunctionSymbol>(nullAssignment));
 
     BasicTypeReturn* returnFun = new BasicTypeReturn(Span(), constantPool.GetEmptyStringConstant());
     returnFun->SetAssembly(&assembly);
-    returnFun->SetType(classType);
-    returnFun->SetReturnType(classType);
+    returnFun->SetType(classOrInterfaceType);
+    returnFun->SetReturnType(classOrInterfaceType);
     Constant valueParamName = constantPool.GetConstant(constantPool.Install(U"value"));
     ParameterSymbol* valueParam = new ParameterSymbol(Span(), valueParamName);
     valueParam->SetAssembly(&assembly);
-    valueParam->SetType(classType);
+    valueParam->SetType(classOrInterfaceType);
     returnFun->AddSymbol(std::unique_ptr<Symbol>(valueParam));
     returnFun->ComputeName();
-    classType->AddSymbol(std::unique_ptr<FunctionSymbol>(returnFun));
-}
-
-void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType)
-{
-    TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"System.Boolean");
-    CreateBasicTypeObjectFun(assembly, classType, boolType);
-}
-
-void InitObjectFun(Assembly& assembly)
-{
-    TypeSymbol* type = assembly.GetSymbolTable().GetType(U"System.Object");
-    ClassTypeSymbol* objectType = dynamic_cast<ClassTypeSymbol*>(type);
-    Assert(objectType, "object type expected");
-    TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"System.Boolean");
-    CreateBasicTypeObjectFun(assembly, objectType, boolType);
-    CreateDefaultConstructor(assembly, objectType);
-    CreateStringFunctions(assembly);
+    classOrInterfaceType->AddSymbol(std::unique_ptr<FunctionSymbol>(returnFun));
 }
 
 } } // namespace cminor::symbols

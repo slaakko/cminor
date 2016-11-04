@@ -480,6 +480,7 @@ void Link(const std::vector<CallInst*>& callInstructions, const std::vector<Type
     for (ClassTypeSymbol* classType : classTypes)
     {
         classType->LinkVmt();
+        classType->LinkImts();
     }
     AssignClassTypeIds(classTypes);
 }

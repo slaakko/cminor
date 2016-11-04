@@ -80,11 +80,34 @@ ClassData::ClassData(ObjectType* type_) : type(type_)
 void ClassData::Write(Writer& writer)
 {
     vmt.Write(writer);
+    int32_t n = int32_t(imts.size());
+    writer.Put(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        imts[i].Write(writer);
+    }
 }
 
 void ClassData::Read(Reader& reader)
 {
     vmt.Read(reader);
+    int32_t n = reader.GetInt();
+    AllocImts(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        imts[i].Read(reader);
+    }
+}
+
+MethodTable& ClassData::Imt(int32_t index)
+{
+    Assert(index >= 0 && index < int32_t(imts.size()), "invalid itable index");
+    return imts[index];
+}
+
+void ClassData::AllocImts(int32_t numInterfaces)
+{
+    imts.resize(numInterfaces);
 }
 
 std::unique_ptr<ClassDataTable> ClassDataTable::instance;

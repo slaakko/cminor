@@ -8,6 +8,7 @@
 [cpp]#include <cminor/parser/Identifier.hpp>
 [cpp]#include <cminor/parser/Function.hpp>
 [cpp]#include <cminor/parser/Class.hpp>
+[cpp]#include <cminor/parser/Interface.hpp>
 
 namespace cminor.parser
 {
@@ -20,6 +21,7 @@ namespace cminor.parser
         using IdentifierGrammar.QualifiedId;
         using FunctionGrammar.Function;
         using ClassGrammar.Class;
+        using InterfaceGrammar.Interface;
         skip spaces_and_comments;
 
         CompileUnit(ParsingContext* ctx) : CompileUnitNode*
@@ -57,6 +59,7 @@ namespace cminor.parser
             ::= NamespaceDefinition(ctx, compileUnit, ns){ value = NamespaceDefinition; }
             |   FunctionDefinition(ctx, compileUnit){ value = FunctionDefinition; }
             |   ClassDefinition(ctx, compileUnit){ value = ClassDefinition; }
+            |   InterfaceDefinition(ctx, compileUnit){ value = InterfaceDefinition; }
             ;
 
         NamespaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns) : NamespaceNode*
@@ -69,6 +72,10 @@ namespace cminor.parser
 
         ClassDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit) : ClassNode*
             ::= Class(ctx){ value = Class; }
+            ;
+
+        InterfaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit) : InterfaceNode*
+            ::= Interface(ctx){ value = Interface; }
             ;
     }
 }

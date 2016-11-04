@@ -74,6 +74,20 @@ namespace cminor.parser
     {
         Keyword;
     }
+    grammar SolutionGrammar
+    {
+        Solution: Solution*;
+        Declaration: SolutionDeclaration*;
+        SolutionProjectDeclaration: SolutionDeclaration*;
+        FilePath: std::string;
+    }
+    grammar InterfaceGrammar
+    {
+        Interface(ParsingContext* ctx): InterfaceNode*;
+        InterfaceContent(ParsingContext* ctx, InterfaceNode* intf);
+        InterfaceMemFun(ParsingContext* ctx, var std::unique_ptr<MemberFunctionNode> memFun): Node*;
+        InterfaceFunctionGroupId: FunctionGroupIdNode*;
+    }
     grammar CompileUnitGrammar
     {
         CompileUnit(ParsingContext* ctx): CompileUnitNode*;
@@ -87,6 +101,7 @@ namespace cminor.parser
         NamespaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns): NamespaceNode*;
         FunctionDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): FunctionNode*;
         ClassDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): ClassNode*;
+        InterfaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): InterfaceNode*;
     }
     grammar FunctionGrammar
     {
@@ -117,13 +132,6 @@ namespace cminor.parser
         SourceFileDeclaration: ProjectDeclaration*;
         TargetDeclaration: ProjectDeclaration*;
         Target: Target;
-        FilePath: std::string;
-    }
-    grammar SolutionGrammar
-    {
-        Solution: Solution*;
-        Declaration: SolutionDeclaration*;
-        SolutionProjectDeclaration: SolutionDeclaration*;
         FilePath: std::string;
     }
     grammar SpecifierGrammar

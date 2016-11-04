@@ -508,6 +508,43 @@ void VirtualCallInst::Dump(CodeFormatter& formatter)
     formatter.Write(" " + std::to_string(numArgs) + " " + std::to_string(vmtIndex));
 }
 
+InterfaceCallInst::InterfaceCallInst() : Instruction("calli"), numArgs(0), imtIndex(-1)
+{
+}
+
+void InterfaceCallInst::Execute(Frame& frame)
+{
+    IntegralValue interfaceObjectValue = frame.OpStack().GetValue(numArgs);
+    Assert(interfaceObjectValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference interfaceObject(interfaceObjectValue.Value());
+    IntegralValue receiverField = frame.GetManagedMemoryPool().GetField(interfaceObject, 0);
+    Assert(receiverField.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference receiver(receiverField.Value());
+    IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(receiver, 0);
+    Assert(classDataField.GetType() == ValueType::classDataPtr, "class data field expected");
+    ClassData* classData = classDataField.AsClassDataPtr();
+    if (classData)
+    {
+        IntegralValue itabIndex = frame.GetManagedMemoryPool().GetField(interfaceObject, 1);
+        Assert(itabIndex.GetType() == ValueType::intType, "int expected");
+        MethodTable& imt = classData->Imt(itabIndex.AsInt());
+        Function* method = imt.GetMethod(imtIndex);
+        if (method)
+        {
+            frame.OpStack().SetValue(numArgs, receiver);
+            frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *method));
+        }
+        else
+        {
+            throw std::runtime_error("interface method has no implementation");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("class data field not set");
+    }
+}
+
 VmCallInst::VmCallInst() : IndexParamInst("callvm")
 {
 }

@@ -52,10 +52,26 @@ public:
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
+class NullToObjectConversion : public BasicTypeFun
+{
+public:
+    NullToObjectConversion(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::nullToObjectConversion; }
+    ConversionType GetConversionType() const override { return ConversionType::implicit_; }
+    int32_t ConversionDistance() const override { return 1; }
+    void SetSourceType(TypeSymbol* sourceType_) { sourceType = sourceType_; }
+    TypeSymbol* ConversionSourceType() const override { return sourceType; }
+    void SetTargetType(TypeSymbol* targetType_) { targetType = targetType_; SetType(targetType); }
+    TypeSymbol* ConversionTargetType() const override { return targetType; }
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
+private:
+    TypeSymbol* sourceType;
+    TypeSymbol* targetType;
+};
+
 void CreateDefaultConstructor(Assembly& assembly, ClassTypeSymbol* classTypeSymbol);
 void CreateArraySizeConstructor(Assembly& assembly, ArrayTypeSymbol* arrayTypeSymbol);
-void CreateBasicTypeObjectFun(Assembly& assembly, ClassTypeSymbol* classType);
-void InitObjectFun(Assembly& assembly);
+void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceType);
 
 } } // namespace cminor::symbols
 

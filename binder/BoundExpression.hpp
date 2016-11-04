@@ -212,6 +212,11 @@ private:
     std::unique_ptr<BoundExpression> member;
 };
 
+enum class FunctionCallType : uint8_t
+{
+    regularCall, virtualCall, interfaceCall
+};
+
 class BoundFunctionCall : public BoundExpression
 {
 public:
@@ -224,11 +229,11 @@ public:
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
-    void SetGenVirtualCall() { genVirtualCall = true; }
+    void SetFunctionCallType(FunctionCallType callType_) { callType = callType_; }
 private:
     FunctionSymbol* functionSymbol;
     std::vector<std::unique_ptr<BoundExpression>> arguments;
-    bool genVirtualCall;
+    FunctionCallType callType;
 };
 
 class BoundNewExpression : public BoundExpression

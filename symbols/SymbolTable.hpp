@@ -7,6 +7,7 @@
 #define CMINOR_SYMBOLS_SYMBOL_TABLE_INCLUDED
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/ast/Expression.hpp>
+#include <cminor/ast/Interface.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -32,6 +33,8 @@ public:
     void EndMemberFunction();
     void BeginClass(ClassNode& classNode);
     void EndClass();
+    void BeginInterface(InterfaceNode& interfaceNode);
+    void EndInterface();
     void AddParameter(ParameterNode& parameterNode);
     void BeginDeclarationBlock(StatementNode& statementNode);
     void EndDeclarationBlock();
@@ -67,11 +70,13 @@ private:
     Assembly* assembly;
     NamespaceSymbol globalNs;
     ContainerSymbol* container;
+    std::stack<ContainerSymbol*> containerStack;
     FunctionSymbol* function;
     FunctionSymbol* mainFunction;
     ClassTypeSymbol* currentClass;
     std::stack<ClassTypeSymbol*> classStack;
-    std::stack<ContainerSymbol*> containerStack;
+    InterfaceTypeSymbol* currentInterface;
+    std::stack<InterfaceTypeSymbol*> interfaceStack;
     std::unordered_map<Constant, TypeSymbol*, ConstantHash> typeSymbolMap;
     std::unordered_map<Node*, Symbol*> nodeSymbolMap;
     std::unordered_map<Symbol*, Node*> symbolNodeMap;

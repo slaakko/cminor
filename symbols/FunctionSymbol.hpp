@@ -47,7 +47,6 @@ public:
     FunctionSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::functionSymbol; }
     std::string TypeString() const override { return "function"; }
-    virtual void AddToFlagStr(std::string& flagStr) const;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
     void SetSpecifiers(Specifiers specifiers);
@@ -58,8 +57,9 @@ public:
     StringPtr GroupName() const { return StringPtr(groupName.Value().AsStringLiteral()); }
     void SetGroupNameConstant(Constant groupName_) { groupName = groupName_; }
     virtual void ComputeName();
-    utf32_string FriendlyName() const;
+    virtual utf32_string FriendlyName() const;
     utf32_string FullName() const override;
+    virtual utf32_string FullParsingName() const;
     int Arity() const { return int(parameters.size()); }
     void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
@@ -81,6 +81,7 @@ public:
     virtual void CreateMachineFunction();
     void EmplaceType(TypeSymbol* type, int index) override;
     void SetVmFunctionName(StringPtr vmFunctionName_);
+    FunctionSymbolFlags GetFlags() const { return flags; }
 private:
     Constant groupName;
     Constant vmFunctionName;
@@ -98,6 +99,8 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::staticConstructorSymbol; }
     std::string TypeString() const override { return "static constructor"; }
     void SetSpecifiers(Specifiers specifiers);
+    utf32_string FullParsingName() const override;
+    utf32_string FriendlyName() const override;
 };
 
 enum class ConstructorSymbolFlags : uint8_t
@@ -123,6 +126,8 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::constructorSymbol; }
     std::string TypeString() const override { return "constructor"; }
     void SetSpecifiers(Specifiers specifiers);
+    utf32_string FullParsingName() const override;
+    utf32_string FriendlyName() const override;
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
     void CreateMachineFunction() override;
     bool IsDefaultConstructorSymbol() const;
@@ -171,10 +176,11 @@ public:
     MemberFunctionSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::memberFunctionSymbol; }
     std::string TypeString() const override { return "member function"; }
-    void AddToFlagStr(std::string& flagStr) const;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
     void SetSpecifiers(Specifiers specifiers);
+    utf32_string FullParsingName() const override;
+    utf32_string FriendlyName() const override;
     bool IsVirtual() const { return GetFlag(MemberFunctionSymbolFlags::virtual_); }
     void SetVirtual() { SetFlag(MemberFunctionSymbolFlags::virtual_); }
     bool IsAbstract() const { return GetFlag(MemberFunctionSymbolFlags::abstract_); }
@@ -184,10 +190,14 @@ public:
     bool IsVirtualAbstractOrOverride() const { return GetFlag(MemberFunctionSymbolFlags::virtual_ | MemberFunctionSymbolFlags::abstract_ | MemberFunctionSymbolFlags::override_); }
     int32_t VmtIndex() const { return vmtIndex; }
     void SetVmtIndex(int32_t vmtIndex_) { vmtIndex = vmtIndex_; }
+    int32_t ImtIndex() const { return imtIndex; }
+    void SetImtIndex(int32_t imtIndex_) { imtIndex = imtIndex_; }
     void GenerateVirtualCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects);
+    void GenerateInterfaceCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects);
     ParameterSymbol* GetThisParam() const override { if (IsStatic()) return nullptr; else return Parameters()[0]; }
 private:
     int32_t vmtIndex;
+    int32_t imtIndex;
     MemberFunctionSymbolFlags flags;
     bool GetFlag(MemberFunctionSymbolFlags flag) const { return (flags & flag) != MemberFunctionSymbolFlags::none; }
     void SetFlag(MemberFunctionSymbolFlags flag) { flags = flags | flag; }
@@ -212,6 +222,25 @@ private:
     int32_t conversionDistance;
     TypeSymbol* sourceType;
     TypeSymbol* targetType;
+};
+
+class ClassToInterfaceConversion : public FunctionSymbol
+{
+public:
+    ClassToInterfaceConversion(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::classToInterfaceConversion; }
+    ConversionType GetConversionType() const override { return ConversionType::implicit_; }
+    int32_t ConversionDistance() const override { return 1; }
+    void SetSourceType(TypeSymbol* sourceType_) { sourceType = sourceType_; }
+    TypeSymbol* ConversionSourceType() const override { return sourceType; }
+    void SetTargetType(TypeSymbol* targetType_) { targetType = targetType_; SetReturnType(targetType); }
+    TypeSymbol* ConversionTargetType() const override { return targetType; }
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
+    void SetITabIndex(int32_t itabIndex_) { itabIndex = itabIndex_; }
+private:
+    TypeSymbol* sourceType;
+    TypeSymbol* targetType;
+    int32_t itabIndex;
 };
 
 class FunctionGroupSymbol : public Symbol
@@ -251,7 +280,9 @@ public:
 private:
     Assembly& assembly;
     std::unordered_map<std::pair<TypeSymbol*, TypeSymbol*>, FunctionSymbol*, ConversionTypeHash> conversionMap;
+    std::vector<std::unique_ptr<FunctionSymbol>> nullConversions;
     std::vector<std::unique_ptr<ClassTypeConversion>> classTypeConversions;
+    std::vector<std::unique_ptr<ClassToInterfaceConversion>> interfaceTypeConversions;
 };
 
 } } // namespace cminor::symbols

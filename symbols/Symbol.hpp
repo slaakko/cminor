@@ -29,6 +29,7 @@ class FunctionGroupSymbol;
 class IndexerGroupSymbol;
 class TypeSymbol;
 class ClassTypeSymbol;
+class InterfaceTypeSymbol;
 class SymbolTable;
 class MemberVariableSymbol;
 class ConstructorSymbol;
@@ -38,11 +39,11 @@ enum class SymbolType : uint8_t
 {
     boolTypeSymbol, charTypeSymbol, voidTypeSymbol, sbyteTypeSymbol, byteTypeSymbol, shortTypeSymbol, ushortTypeSymbol, intTypeSymbol, uintTypeSymbol, longTypeSymbol, ulongTypeSymbol,
     floatTypeSymbol, doubleTypeSymbol, nullReferenceTypeSymbol,
-    classTypeSymbol, arrayTypeSymbol, functionSymbol, staticConstructorSymbol, constructorSymbol, arraySizeConstructorSymbol, memberFunctionSymbol, functionGroupSymbol, parameterSymbol,
-    localVariableSymbol, memberVariableSymbol, propertySymbol, propertyGetterSymbol, propertySetterSymbol, indexerSymbol, indexerGetterSymbol, indexerSetterSymbol, indexerGroupSymbol,
-    constantSymbol, namespaceSymbol, declarationBlock, 
+    classTypeSymbol, arrayTypeSymbol, interfaceTypeSymbol, functionSymbol, staticConstructorSymbol, constructorSymbol, arraySizeConstructorSymbol, memberFunctionSymbol, functionGroupSymbol, 
+    parameterSymbol, localVariableSymbol, memberVariableSymbol, propertySymbol, propertyGetterSymbol, propertySetterSymbol, indexerSymbol, indexerGetterSymbol, indexerSetterSymbol, 
+    indexerGroupSymbol, constantSymbol, namespaceSymbol, declarationBlock, 
     basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, objectDefaultInit, objectCopyInit, objectNullInit, 
-    objectAssignment, objectNullAssignment, classTypeConversion,
+    objectAssignment, objectNullAssignment, nullToObjectConversion, classTypeConversion, classToInterfaceConversion,
     maxSymbol
 };
 
@@ -123,12 +124,16 @@ public:
     NamespaceSymbol* Ns() const;
     ClassTypeSymbol* Class() const;
     ClassTypeSymbol* ClassNoThrow() const;
+    InterfaceTypeSymbol* InterfaceNoThrow() const;
     ContainerSymbol* ClassOrNs() const;
+    ContainerSymbol* ClassInterfaceOrNs() const;
     FunctionSymbol* GetFunction() const;
     FunctionSymbol* ContainingFunction() const;
     ClassTypeSymbol* ContainingClass() const;
+    InterfaceTypeSymbol* ContainingInterface() const;
     ContainerScope* NsScope() const;
     ContainerScope* ClassOrNsScope() const;
+    ContainerScope* ClassInterfaceOrNsScope() const;
     SymbolFlags Flags() const { return flags; }
     bool GetFlag(SymbolFlags flag) const { return (flags & flag) != SymbolFlags::none; }
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }
@@ -441,6 +446,8 @@ public:
     bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const;
     ClassTypeSymbol* BaseClass() const { return baseClass; }
     void SetBaseClass(ClassTypeSymbol* baseClass_) { baseClass = baseClass_; }
+    const std::vector<InterfaceTypeSymbol*>& ImplementedInterfaces() const { return implementedInterfaces; }
+    void AddImplementedInterface(InterfaceTypeSymbol* interfaceTypeSymbol);
     void SetObjectType(ObjectType* objectType_) { objectType.reset(objectType_); }
     ObjectType* GetObjectType() const { return objectType.get(); }
     ClassData* GetClassData() const { return classData.get(); }
@@ -465,8 +472,11 @@ public:
     void SetCid(uint64_t cid_);
     void InitVmt();
     void LinkVmt();
+    void InitImts();
+    void LinkImts();
 private:
     ClassTypeSymbol* baseClass;
+    std::vector<InterfaceTypeSymbol*> implementedInterfaces;
     std::unique_ptr<ObjectType> objectType;
     std::unique_ptr<ClassData> classData;
     ClassTypeSymbolFlags flags;
@@ -503,6 +513,24 @@ public:
     void EmplaceType(TypeSymbol* type, int index);
 private:
     TypeSymbol* elementType;
+};
+
+class InterfaceTypeSymbol : public TypeSymbol
+{
+public:
+    InterfaceTypeSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::interfaceTypeSymbol; }
+    std::string TypeString() const override { return "interface"; }
+    const std::vector<MemberFunctionSymbol*>& MemberFunctions() const { return memberFunctions; }
+    void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
+    ObjectType* GetObjectType() const { return objectType.get(); }
+    Type* GetMachineType() const override { return objectType.get(); }
+    void SetSpecifiers(Specifiers specifiers);
+private:
+    std::unique_ptr<ObjectType> objectType; 
+    std::vector<MemberFunctionSymbol*> memberFunctions;
 };
 
 } } // namespace cminor::symbols

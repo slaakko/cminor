@@ -35,9 +35,12 @@ public:
     ObjectType* Type() const { return type; }
     void SetType(ObjectType* type_) { type = type_; }
     MethodTable& Vmt() { return vmt; }
+    MethodTable& Imt(int32_t index);
+    void AllocImts(int32_t numInterfaces);
 private:
     ObjectType* type;
     MethodTable vmt;
+    std::vector<MethodTable> imts;
 };
 
 class ClassDataTable

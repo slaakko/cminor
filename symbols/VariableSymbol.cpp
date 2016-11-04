@@ -69,6 +69,10 @@ void MemberVariableSymbol::SetSpecifiers(Specifiers specifiers)
     {
         SetStatic();
     }
+    if ((specifiers & Specifiers::external_) != Specifiers::none)
+    {
+        throw Exception("member variables cannot be external", GetSpan());
+    }
     if ((specifiers & Specifiers::virtual_) != Specifiers::none)
     {
         throw Exception("member variables cannot be virtual", GetSpan());

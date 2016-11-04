@@ -131,6 +131,9 @@ void GenerateCodeForCreatedClasses(Assembly& assembly)
 
 void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
 {
+    FunctionTable::Init();
+    ClassDataTable::Init();
+    TypeTable::Init();
     std::string config = GetConfig();
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
@@ -216,6 +219,9 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
             }
         }
     }
+    TypeTable::Done();
+    ClassDataTable::Done();
+    FunctionTable::Done();
 }
 
 ProjectGrammar* projectGrammar = nullptr;

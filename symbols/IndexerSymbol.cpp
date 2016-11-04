@@ -76,6 +76,10 @@ void IndexerSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("indexers cannot be static", GetSpan());
     }
+    if ((specifiers & Specifiers::external_) != Specifiers::none)
+    {
+        throw Exception("indexers cannot be external", GetSpan());
+    }
     if ((specifiers & Specifiers::virtual_) != Specifiers::none)
     {
         throw Exception("indexers cannot be virtual", GetSpan());

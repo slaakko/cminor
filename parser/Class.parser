@@ -57,6 +57,7 @@ namespace cminor.parser
             |   MemberVariable(ctx){ value = MemberVariable; }
             |   Property(ctx){ value = Property; }
             |   Indexer(ctx){ value = Indexer; }
+            |   Class(ctx){ value = Class; }
             ;
 
         StaticConstructor(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<IdentifierNode> id) : StaticConstructorNode*

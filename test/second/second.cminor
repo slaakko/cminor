@@ -1,20 +1,80 @@
-class Alpha
+public interface Foo
+{
+    int bar();
+}
+
+class Alpha : Foo
 {
     public Alpha()
     {
-        this.x = new int[10];
+        this.x = 10;
     }
-    public int this[int index]
+    public int bar()
     {
-        get { return x[index]; }
-        set { x[index] = value; }
+        return x;
     }
-    private int[] x;
+    private int x;
+}
+
+void foo(Foo f)
+{
+    int x = f.bar();
 }
 
 void main()
 {
     Alpha a = new Alpha();
-    a[0] = 1;
-    int y = a[0];
+    foo(a);
 }
+
+/*
+public interface Enumerator
+{
+    object Current();
+    void Next();
+    bool AtEnd();
+}
+
+public interface Enumerable
+{
+    Enumerator GetEnumerator();
+}
+
+public void Enumerate(Enumerable enumerable)
+{
+    Enumerator enumerator = enumerable.GetEnumerator();
+    while (!enumerator.AtEnd())
+    {
+        object current = enumerator.Current();
+        enumerator.Next();
+    }
+}
+
+class Alpha : Enumerable
+{
+    public Enumerator GetEnumerator()
+    {
+        return new AlphaEnumerator();
+    }
+    private class AlphaEnumerator : Enumerator
+    {
+        public object Current() 
+        { 
+            return null; 
+        }
+        public void Next()
+        {
+        }
+        public bool AtEnd() 
+        {
+            return true;
+        }
+    }
+}
+
+void main()
+{
+    Alpha a = new Alpha();
+    Enumerate(a);
+}
+*/

@@ -89,6 +89,11 @@ void Symbol::SetAccess(Specifiers accessSpecifiers)
     {
         access = SymbolAccess::internal_;
         classMember = false;
+        ContainerSymbol* intf = ContainingInterface();
+        if (intf)
+        {
+            access = SymbolAccess::public_;
+        }
     }
     if (accessSpecifiers == Specifiers::public_)
     {
@@ -231,6 +236,25 @@ ClassTypeSymbol* Symbol::ClassNoThrow() const
     }
 }
 
+InterfaceTypeSymbol* Symbol::InterfaceNoThrow() const
+{
+    if (const InterfaceTypeSymbol* intf = dynamic_cast<const InterfaceTypeSymbol*>(this))
+    {
+        return const_cast<InterfaceTypeSymbol*>(intf);
+    }
+    else
+    {
+        if (parent)
+        {
+            return parent->InterfaceNoThrow();
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+}
+
 ContainerSymbol* Symbol::ClassOrNs() const
 {
     if (const NamespaceSymbol* ns = dynamic_cast<const NamespaceSymbol*>(this))
@@ -250,6 +274,33 @@ ContainerSymbol* Symbol::ClassOrNs() const
         else
         {
             throw std::runtime_error("class or namespace not found");
+        }
+    }
+}
+
+ContainerSymbol* Symbol::ClassInterfaceOrNs() const
+{
+    if (const NamespaceSymbol* ns = dynamic_cast<const NamespaceSymbol*>(this))
+    {
+        return const_cast<NamespaceSymbol*>(ns);
+    }
+    else if (const ClassTypeSymbol* cls = dynamic_cast<const ClassTypeSymbol*>(this))
+    {
+        return const_cast<ClassTypeSymbol*>(cls);
+    }
+    else if (const InterfaceTypeSymbol* intf = dynamic_cast<const InterfaceTypeSymbol*>(this))
+    {
+        return const_cast<InterfaceTypeSymbol*>(intf);
+    }
+    else
+    {
+        if (parent)
+        {
+            return parent->ClassInterfaceOrNs();
+        }
+        else
+        {
+            throw std::runtime_error("class, interface or namespace not found");
         }
     }
 }
@@ -297,6 +348,18 @@ ClassTypeSymbol* Symbol::ContainingClass() const
     }
 }
 
+InterfaceTypeSymbol* Symbol::ContainingInterface() const
+{
+    if (parent)
+    {
+        return  parent->InterfaceNoThrow();
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
 ContainerScope* Symbol::NsScope() const
 {
     ContainerSymbol* ns = Ns();
@@ -313,6 +376,19 @@ ContainerScope* Symbol::ClassOrNsScope() const
     else
     {
         throw std::runtime_error("class or namespace scope not found");
+    }
+}
+
+ContainerScope* Symbol::ClassInterfaceOrNsScope() const
+{
+    ContainerSymbol* classInterfaceOrNs = ClassInterfaceOrNs();
+    if (classInterfaceOrNs)
+    {
+        return classInterfaceOrNs->GetContainerScope();
+    }
+    else
+    {
+        throw std::runtime_error("class, interface or namespace scope not found");
     }
 }
 
@@ -1021,7 +1097,18 @@ void ClassTypeSymbol::Write(SymbolWriter& writer)
     {
         utf32_string baseClassFullName = baseClass->FullName();
         ConstantId baseClassNameId = GetAssembly()->GetConstantPool().GetIdFor(baseClassFullName);
+        Assert(baseClassNameId != noConstantId, "got no id");
         baseClassNameId.Write(writer);
+    }
+    int32_t n = int32_t(implementedInterfaces.size());
+    writer.AsMachineWriter().Put(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        InterfaceTypeSymbol* intf = implementedInterfaces[i];
+        utf32_string interfaceFullName = intf->FullName();
+        ConstantId intfNameId = GetAssembly()->GetConstantPool().GetIdFor(interfaceFullName);
+        Assert(intfNameId != noConstantId, "got no id");
+        intfNameId.Write(writer);
     }
     Assert(objectType, "object type not set");
     objectType->Write(writer);
@@ -1039,6 +1126,13 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
         baseClassNameId.Read(reader);
         reader.EmplaceTypeRequest(this, baseClassNameId, 0);
     }
+    int32_t n = reader.GetInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        ConstantId intfNameId;
+        intfNameId.Read(reader);
+        reader.EmplaceTypeRequest(this, intfNameId, -1);
+    }
     Assert(objectType, "object type not set");
     objectType->Read(reader);
     TypeTable::Instance().SetType(objectType.get());
@@ -1055,6 +1149,10 @@ void ClassTypeSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::static_) != Specifiers::none)
     {
         SetStatic();
+    }
+    if ((specifiers & Specifiers::external_) != Specifiers::none)
+    {
+        throw Exception("class type symbol cannot be external", GetSpan());
     }
     if ((specifiers & Specifiers::virtual_) != Specifiers::none)
     {
@@ -1103,6 +1201,14 @@ void ClassTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
     }
 }
 
+void ClassTypeSymbol::AddImplementedInterface(InterfaceTypeSymbol* interfaceTypeSymbol)
+{
+    if (std::find(implementedInterfaces.cbegin(), implementedInterfaces.cend(), interfaceTypeSymbol) == implementedInterfaces.cend())
+    {
+        implementedInterfaces.push_back(interfaceTypeSymbol);
+    }
+}
+
 void ClassTypeSymbol::EmplaceType(TypeSymbol* type, int index)
 {
     if (index == 0)
@@ -1115,6 +1221,17 @@ void ClassTypeSymbol::EmplaceType(TypeSymbol* type, int index)
         else
         {
             throw std::runtime_error("class type symbol expected");
+        }
+    }
+    else if (index == -1)
+    {
+        if (InterfaceTypeSymbol* interfaceTypeSymbol = dynamic_cast<InterfaceTypeSymbol*>(type))
+        {
+            AddImplementedInterface(interfaceTypeSymbol);
+        }
+        else
+        {
+            throw std::runtime_error("interface type symbol expected");
         }
     }
     else
@@ -1205,7 +1322,7 @@ void ClassTypeSymbol::InitVmt(std::vector<MemberFunctionSymbol*>& vmt)
         {
             if (f->IsOverride())
             {
-                throw Exception("no suitable function to override ('" + ToUtf8(f->FullName()) + "')", f->GetSpan());
+                throw Exception("no suitable function to override ('" + ToUtf8(f->FullParsingName()) + "')", f->GetSpan());
             }
             f->SetVmtIndex(m);
             vmt.push_back(f);
@@ -1262,6 +1379,105 @@ void ClassTypeSymbol::LinkVmt()
     }
 }
 
+bool Implements(MemberFunctionSymbol* classMemFun, MemberFunctionSymbol* interfaceMemFun)
+{
+    if (classMemFun->GroupName() != interfaceMemFun->GroupName()) return false;
+    if (!classMemFun->ReturnType() || !interfaceMemFun->ReturnType()) return false;
+    if (classMemFun->ReturnType() != interfaceMemFun->ReturnType()) return false;
+    int n = int(classMemFun->Parameters().size());
+    if (n != int(interfaceMemFun->Parameters().size())) return false;
+    for (int i = 1; i < n; ++i)
+    {
+        TypeSymbol* classMemFunParamType = classMemFun->Parameters()[i]->GetType();
+        TypeSymbol* intfMemFunParamType = interfaceMemFun->Parameters()[i]->GetType();
+        if (classMemFunParamType != intfMemFunParamType) return false;
+    }
+    return true;
+}
+
+void ClassTypeSymbol::InitImts()
+{
+    ConstantPool& constantPool = GetAssembly()->GetConstantPool();
+    int32_t n = int32_t(implementedInterfaces.size());
+    if (n == 0) return;
+    Assert(classData, "class data not set");
+    classData->AllocImts(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        MethodTable& imt = classData->Imt(i);
+        InterfaceTypeSymbol* intf = implementedInterfaces[i];
+        int q = int(intf->MemberFunctions().size());
+        imt.Resize(q);
+        for (int k = 0; k < q; ++k)
+        {
+            imt.SetMethodName(k, constantPool.GetEmptyStringConstant());
+        }
+    }
+    int m = int(MemberFunctions().size());
+    for (int j = 0; j < m; ++j)
+    {
+        MemberFunctionSymbol* classMemFun = memberFunctions[j];
+        for (int32_t i = 0; i < n; ++i)
+        {
+            MethodTable& imt = classData->Imt(i);
+            InterfaceTypeSymbol* intf = implementedInterfaces[i];
+            int q = int(intf->MemberFunctions().size());
+            for (int k = 0; k < q; ++k)
+            {
+                MemberFunctionSymbol* intfMemFun = intf->MemberFunctions()[k];
+                if (Implements(classMemFun, intfMemFun))
+                {
+                    utf32_string fullName = classMemFun->FullName();
+                    Constant fullMethodNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
+                    imt.SetMethodName(intfMemFun->ImtIndex(), fullMethodNameConstant);
+                    break;
+                }
+            }
+        }
+    }
+    for (int32_t i = 0; i < n; ++i)
+    {
+        InterfaceTypeSymbol* intf = implementedInterfaces[i];
+        MethodTable& imt = classData->Imt(i);
+        int32_t m = imt.Count();
+        for (int j = 0; j < m; ++j)
+        {
+            StringPtr methodName = imt.GetMethodName(j);
+            if (!methodName.Value() || methodName == U"")
+            {
+                MemberFunctionSymbol* intfMemFun = intf->MemberFunctions()[j];
+                throw Exception("class '" + ToUtf8(FullName()) + "' does not implement interface '" + ToUtf8(intf->FullName()) + "' because implementation of interface function '" +
+                    ToUtf8(intfMemFun->FullParsingName()) + "' is missing", GetSpan(), intfMemFun->GetSpan());
+            }
+        }
+    }
+}
+
+void ClassTypeSymbol::LinkImts()
+{
+    Assert(classData, "class data not set");
+    int32_t n = int32_t(implementedInterfaces.size());
+    for (int32_t i = 0; i < n; ++i)
+    {
+        MethodTable& imt = classData->Imt(i);
+        int32_t m = imt.Count();
+        for (int32_t j = 0; j < m; ++j)
+        {
+            StringPtr methodName = imt.GetMethodName(j);
+            if (methodName == StringPtr(U""))
+            {
+                Function* method = nullptr;
+                imt.SetMethod(j, method);
+            }
+            else
+            {
+                Function* method = FunctionTable::Instance().GetFunction(methodName);
+                imt.SetMethod(j, method);
+            }
+        }
+    }
+}
+
 ArrayTypeSymbol::ArrayTypeSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_), elementType(nullptr)
 {
 }
@@ -1291,6 +1507,66 @@ void ArrayTypeSymbol::EmplaceType(TypeSymbol* type, int index)
     else
     {
         ClassTypeSymbol::EmplaceType(type, index);
+    }
+}
+
+InterfaceTypeSymbol::InterfaceTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), objectType(new ObjectType())
+{
+}
+
+void InterfaceTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
+{
+    Symbol* s = symbol.get();
+    TypeSymbol::AddSymbol(std::move(symbol));
+    if (MemberFunctionSymbol* memFun = dynamic_cast<MemberFunctionSymbol*>(s))
+    {
+        memFun->SetImtIndex(int32_t(memberFunctions.size()));
+        memberFunctions.push_back(memFun);
+    }
+}
+
+void InterfaceTypeSymbol::Write(SymbolWriter& writer)
+{
+    TypeSymbol::Write(writer);
+    Assert(objectType, "object type not set");
+    objectType->Write(writer);
+}
+
+void InterfaceTypeSymbol::Read(SymbolReader& reader)
+{
+    TypeSymbol::Read(reader);
+    Assert(objectType, "object type not set");
+    objectType->Read(reader);
+    TypeTable::Instance().SetType(objectType.get());
+}
+
+void InterfaceTypeSymbol::SetSpecifiers(Specifiers specifiers)
+{
+    Specifiers accessSpecifiers = specifiers & Specifiers::access_;
+    SetAccess(accessSpecifiers);
+    if ((specifiers & Specifiers::static_) != Specifiers::none)
+    {
+        throw Exception("interface cannot be static", GetSpan());
+    }
+    if ((specifiers & Specifiers::abstract_) != Specifiers::none)
+    {
+        throw Exception("interface cannot be abstract", GetSpan());
+    }
+    if ((specifiers & Specifiers::external_) != Specifiers::none)
+    {
+        throw Exception("interface cannot be external", GetSpan());
+    }
+    if ((specifiers & Specifiers::inline_) != Specifiers::none)
+    {
+        throw Exception("interface cannot be inline", GetSpan());
+    }
+    if ((specifiers & Specifiers::override_) != Specifiers::none)
+    {
+        throw Exception("interface cannot be override", GetSpan());
+    }
+    if ((specifiers & Specifiers::virtual_) != Specifiers::none)
+    {
+        throw Exception("interface cannot be virtual", GetSpan());
     }
 }
 

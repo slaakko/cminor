@@ -1,5 +1,5 @@
-#ifndef CompileUnit_hpp_14743
-#define CompileUnit_hpp_14743
+#ifndef CompileUnit_hpp_11899
+#define CompileUnit_hpp_11899
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -30,8 +30,9 @@ private:
     class NamespaceDefinitionRule;
     class FunctionDefinitionRule;
     class ClassDefinitionRule;
+    class InterfaceDefinitionRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // CompileUnit_hpp_14743
+#endif // CompileUnit_hpp_11899

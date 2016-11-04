@@ -49,6 +49,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("if");
     keywords0.push_back("inline");
     keywords0.push_back("int");
+    keywords0.push_back("interface");
     keywords0.push_back("internal");
     keywords0.push_back("long");
     keywords0.push_back("namespace");

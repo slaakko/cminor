@@ -24,6 +24,7 @@ public:
     void Visit(NamespaceImportNode& namespaceImportNode) override;
     void Visit(AliasNode& aliasNode) override;
     void Visit(ClassNode& classNode) override;
+    void Visit(InterfaceNode& interfaceNode) override;
     void Visit(StaticConstructorNode& staticConstructorNode) override;
     void Visit(ConstructorNode& constructorNode) override;
     void Visit(MemberFunctionNode& memberFunctionNode) override;
@@ -32,12 +33,16 @@ public:
     void Visit(IndexerNode& indexerNode) override;
     void Visit(FunctionNode& functionNode) override;
     void Visit(CompoundStatementNode& compoundStatementNode) override;
+    void Visit(IfStatementNode& ifStatementNode) override;
+    void Visit(WhileStatementNode& whileStatementNode) override;
+    void Visit(DoStatementNode& doStatementNode) override;
     void Visit(ForStatementNode& forStatementNode) override;
     void Visit(ConstructionStatementNode& constructionStatementNode) override;
 private:
     BoundCompileUnit& boundCompileUnit;
     ContainerScope* containerScope;
     void BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& classNode);
+    void BindInterface(InterfaceTypeSymbol* interfaceTypeSymbol, InterfaceNode& interfaceNode);
 };
 
 } } // namespace cminor::binder

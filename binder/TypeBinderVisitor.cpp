@@ -88,6 +88,13 @@ void TypeBinderVisitor::Visit(FunctionNode& functionNode)
     {
         functionNode.Body()->Accept(*this);
     }
+    else
+    {
+        if (!functionSymbol->IsExternal())
+        {
+            throw Exception("function has no body", functionSymbol->GetSpan());
+        }
+    }
     containerScope = prevContainerScope;
 }
 
@@ -107,13 +114,15 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
     {
         Node* baseOrInterfaceNode = classNode.BaseClassOrInterfaces()[i];
         TypeSymbol* baseOrInterfaceSymbol = ResolveType(boundCompileUnit, containerScope, baseOrInterfaceNode);
-        ClassTypeSymbol* baseClassSymbol = dynamic_cast<ClassTypeSymbol*>(baseOrInterfaceSymbol);
-        if (baseClassSymbol)
+        if (ClassTypeSymbol* baseClassSymbol = dynamic_cast<ClassTypeSymbol*>(baseOrInterfaceSymbol))
         {
-            Node* node = boundCompileUnit.GetAssembly().GetSymbolTable().GetNode(baseClassSymbol);
-            ClassNode* baseClassNode = dynamic_cast<ClassNode*>(node);
-            Assert(baseClassNode, "class node expected");
-            BindClass(baseClassSymbol, *baseClassNode);
+            if (baseClassSymbol->IsProject())
+            {
+                Node* node = boundCompileUnit.GetAssembly().GetSymbolTable().GetNode(baseClassSymbol);
+                ClassNode* baseClassNode = dynamic_cast<ClassNode*>(node);
+                Assert(baseClassNode, "class node expected");
+                BindClass(baseClassSymbol, *baseClassNode);
+            }
             if (classTypeSymbol->BaseClass())
             {
                 throw Exception("class type can have at most one base class", classTypeSymbol->GetSpan(), baseClassSymbol->GetSpan());
@@ -126,6 +135,17 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
             {
                 classTypeSymbol->SetBaseClass(baseClassSymbol);
             }
+        }
+        else if (InterfaceTypeSymbol* interfaceTypeSymbol = dynamic_cast<InterfaceTypeSymbol*>(baseOrInterfaceSymbol))
+        {
+            if (interfaceTypeSymbol->IsProject())
+            {
+                Node* node = boundCompileUnit.GetAssembly().GetSymbolTable().GetNode(interfaceTypeSymbol);
+                InterfaceNode* intfNode = dynamic_cast<InterfaceNode*>(node);
+                Assert(intfNode, "interface node expected");
+                BindInterface(interfaceTypeSymbol, *intfNode);
+            }
+            classTypeSymbol->AddImplementedInterface(interfaceTypeSymbol);
         }
         else
         {
@@ -171,6 +191,7 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
     }
     CreateBasicTypeObjectFun(boundCompileUnit.GetAssembly(), classTypeSymbol);
     classTypeSymbol->InitVmt();
+    classTypeSymbol->InitImts();
     int nmv = int(classTypeSymbol->MemberVariables().size());
     for (int i = 0; i < nmv; ++i)
     {
@@ -192,6 +213,38 @@ void TypeBinderVisitor::Visit(ClassNode& classNode)
     BindClass(classTypeSymbol, classNode);
 }
 
+void TypeBinderVisitor::BindInterface(InterfaceTypeSymbol* interfaceTypeSymbol, InterfaceNode& interfaceNode)
+{
+    if (interfaceTypeSymbol->IsBound()) return;
+    interfaceTypeSymbol->SetBound();
+    interfaceTypeSymbol->SetSpecifiers(interfaceNode.GetSpecifiers());
+    ContainerScope* prevContainerScope = containerScope;
+    containerScope = interfaceTypeSymbol->GetContainerScope();
+    ObjectType* objectType = interfaceTypeSymbol->GetObjectType();
+    ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
+    utf32_string fullName = interfaceTypeSymbol->FullName();
+    Constant fullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
+    objectType->SetNameConstant(fullNameConstant);
+    objectType->AddField(ValueType::objectReference);
+    objectType->AddField(ValueType::intType);
+    int nm = interfaceNode.Members().Count();
+    for (int i = 0; i < nm; ++i)
+    {
+        Node* member = interfaceNode.Members()[i];
+        member->Accept(*this);
+    }
+    CreateBasicTypeObjectFun(boundCompileUnit.GetAssembly(), interfaceTypeSymbol);
+    containerScope = prevContainerScope;
+}
+
+void TypeBinderVisitor::Visit(InterfaceNode& interfaceNode)
+{
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(interfaceNode);
+    InterfaceTypeSymbol* interfaceTypeSymbol = dynamic_cast<InterfaceTypeSymbol*>(symbol);
+    Assert(interfaceTypeSymbol, "interface type expected");
+    BindInterface(interfaceTypeSymbol, interfaceNode);
+}
+
 void TypeBinderVisitor::Visit(StaticConstructorNode& staticConstructorNode)
 {
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(staticConstructorNode);
@@ -201,7 +254,17 @@ void TypeBinderVisitor::Visit(StaticConstructorNode& staticConstructorNode)
     ContainerScope* prevContainerScope = containerScope;
     containerScope = staticConstructorSymbol->GetContainerScope();
     staticConstructorSymbol->ComputeName();
-    staticConstructorNode.Body()->Accept(*this);
+    if (staticConstructorNode.HasBody())
+    {
+        staticConstructorNode.Body()->Accept(*this);
+    }
+    else
+    {
+        if (!staticConstructorSymbol->IsExternal())
+        {
+            throw Exception("static constructor has no body", staticConstructorSymbol->GetSpan());
+        }
+    }
     containerScope = prevContainerScope;
 }
 
@@ -228,7 +291,17 @@ void TypeBinderVisitor::Visit(ConstructorNode& constructorNode)
     {
         constructorSymbol->SetBound();
     }
-    constructorNode.Body()->Accept(*this);
+    if (constructorNode.HasBody())
+    {
+        constructorNode.Body()->Accept(*this);
+    }
+    else
+    {
+        if (!constructorSymbol->IsExternal())
+        {
+            throw Exception("constructor has no body", constructorSymbol->GetSpan());
+        }
+    }
     containerScope = prevContainerScope;
 }
 
@@ -269,6 +342,13 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
     if (memberFunctionNode.HasBody())
     {
         memberFunctionNode.Body()->Accept(*this);
+    }
+    else
+    {
+        if (!memberFunctionSymbol->ContainingInterface() && !memberFunctionSymbol->IsAbstract() && !memberFunctionSymbol->IsExternal())
+        {
+            throw Exception("member function has no body", memberFunctionSymbol->GetSpan());
+        }
     }
     containerScope = prevContainerScope;
 }
@@ -380,11 +460,31 @@ void TypeBinderVisitor::Visit(CompoundStatementNode& compoundStatementNode)
     containerScope = prevContainerScope;
 }
 
+void TypeBinderVisitor::Visit(IfStatementNode& ifStatementNode)
+{
+    ifStatementNode.ThenS()->Accept(*this);
+    if (ifStatementNode.ElseS())
+    {
+        ifStatementNode.ElseS()->Accept(*this);
+    }
+}
+
+void TypeBinderVisitor::Visit(WhileStatementNode& whileStatementNode)
+{
+    whileStatementNode.Statement()->Accept(*this);
+}
+
+void TypeBinderVisitor::Visit(DoStatementNode& doStatementNode)
+{
+    doStatementNode.Statement()->Accept(*this);
+}
+
 void TypeBinderVisitor::Visit(ForStatementNode& forStatementNode)
 {
     ContainerScope* prevContainerScope = containerScope;
     containerScope = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(forStatementNode)->GetContainerScope();
     forStatementNode.InitS()->Accept(*this);
+    forStatementNode.ActionS()->Accept(*this);
     containerScope = prevContainerScope;
 }
 

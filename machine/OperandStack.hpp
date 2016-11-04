@@ -27,6 +27,7 @@ public:
     }
     const std::vector<IntegralValue>& Values() const { return s; }
     IntegralValue GetValue(int32_t index) const { Assert(s.size() - index >= 0 && s.size() - index < s.size(), "invalid get value index"); return s[int32_t(s.size()) - index]; }
+    void SetValue(int32_t index, IntegralValue value) { Assert(s.size() - index >= 0 && s.size() - index < s.size(), "invalid set value index"); s[int32_t(s.size()) - index] = value; }
     void Dup()
     {
         Assert(!s.empty(), "cannot dup: operand stack is empty");
