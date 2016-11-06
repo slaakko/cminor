@@ -31,6 +31,8 @@ public:
     virtual void Encode(Writer& writer);
     virtual Instruction* Decode(Reader& reader);
     virtual void SetIndex(int32_t index_);
+    virtual void SetIndex(uint8_t index_);
+    virtual void SetIndex(uint16_t index_);
     void SetParent(Instruction* parent_) { parent = parent_; }
     void SetOpCode(uint8_t opCode_) { opCode = opCode_; }
     uint8_t OpCode() const { return opCode; }
@@ -208,11 +210,87 @@ private:
     int32_t index;
 };
 
+class ByteParamInst : public Instruction
+{
+public:
+    ByteParamInst(const std::string& name_);
+    ByteParamInst(const ByteParamInst&) = default;
+    void SetIndex(uint8_t index_) override { index = index_; }
+    uint8_t Index() const { return index; }
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Dump(CodeFormatter& formatter) override;
+private:
+    uint8_t index;
+};
+
+class UShortParamInst : public Instruction
+{
+public:
+    UShortParamInst(const std::string& name_);
+    UShortParamInst(const UShortParamInst&) = default;
+    void SetIndex(uint16_t index_) override { index = index_; }
+    uint16_t Index() const { return index; }
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Dump(CodeFormatter& formatter) override;
+private:
+    uint16_t index;
+};
+
 class LoadLocalInst : public IndexParamInst
 {
 public:
     LoadLocalInst();
     Instruction* Clone() const override { return new LoadLocalInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadLocal0Inst : public Instruction
+{
+public:
+    LoadLocal0Inst();
+    Instruction* Clone() const override { return new LoadLocal0Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadLocal1Inst : public Instruction
+{
+public:
+    LoadLocal1Inst();
+    Instruction* Clone() const override { return new LoadLocal1Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadLocal2Inst : public Instruction
+{
+public:
+    LoadLocal2Inst();
+    Instruction* Clone() const override { return new LoadLocal2Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadLocal3Inst : public Instruction
+{
+public:
+    LoadLocal3Inst();
+    Instruction* Clone() const override { return new LoadLocal3Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadLocalBInst : public ByteParamInst
+{
+public:
+    LoadLocalBInst();
+    Instruction* Clone() const override { return new LoadLocalBInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadLocalSInst : public UShortParamInst
+{
+public:
+    LoadLocalSInst();
+    Instruction* Clone() const override { return new LoadLocalSInst(*this); }
     void Execute(Frame& frame) override;
 };
 
@@ -224,6 +302,54 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class StoreLocal0Inst : public Instruction
+{
+public:
+    StoreLocal0Inst();
+    Instruction* Clone() const override { return new StoreLocal0Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreLocal1Inst : public Instruction
+{
+public:
+    StoreLocal1Inst();
+    Instruction* Clone() const override { return new StoreLocal1Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreLocal2Inst : public Instruction
+{
+public:
+    StoreLocal2Inst();
+    Instruction* Clone() const override { return new StoreLocal2Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreLocal3Inst : public Instruction
+{
+public:
+    StoreLocal3Inst();
+    Instruction* Clone() const override { return new StoreLocal3Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreLocalBInst : public ByteParamInst
+{
+public:
+    StoreLocalBInst();
+    Instruction* Clone() const override { return new StoreLocalBInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreLocalSInst : public UShortParamInst
+{
+public:
+    StoreLocalSInst();
+    Instruction* Clone() const override { return new StoreLocalSInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class LoadFieldInst : public IndexParamInst
 {
 public:
@@ -232,11 +358,107 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class LoadField0Inst : public Instruction
+{
+public:
+    LoadField0Inst();
+    Instruction* Clone() const override { return new LoadField0Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadField1Inst : public Instruction
+{
+public:
+    LoadField1Inst();
+    Instruction* Clone() const override { return new LoadField1Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadField2Inst : public Instruction
+{
+public:
+    LoadField2Inst();
+    Instruction* Clone() const override { return new LoadField2Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadField3Inst : public Instruction
+{
+public:
+    LoadField3Inst();
+    Instruction* Clone() const override { return new LoadField3Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadFieldBInst : public ByteParamInst
+{
+public:
+    LoadFieldBInst();
+    Instruction* Clone() const override { return new LoadFieldBInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadFieldSInst : public UShortParamInst
+{
+public:
+    LoadFieldSInst();
+    Instruction* Clone() const override { return new LoadFieldSInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class StoreFieldInst : public IndexParamInst
 {
 public:
     StoreFieldInst();
     Instruction* Clone() const override { return new StoreFieldInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreField0Inst : public Instruction
+{
+public:
+    StoreField0Inst();
+    Instruction* Clone() const override { return new StoreField0Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreField1Inst : public Instruction
+{
+public:
+    StoreField1Inst();
+    Instruction* Clone() const override { return new StoreField1Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreField2Inst : public Instruction
+{
+public:
+    StoreField2Inst();
+    Instruction* Clone() const override { return new StoreField2Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreField3Inst : public Instruction
+{
+public:
+    StoreField3Inst();
+    Instruction* Clone() const override { return new StoreField3Inst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreFieldBInst : public ByteParamInst
+{
+public:
+    StoreFieldBInst();
+    Instruction* Clone() const override { return new StoreFieldBInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreFieldSInst : public UShortParamInst
+{
+public:
+    StoreFieldSInst();
+    Instruction* Clone() const override { return new StoreFieldSInst(*this); }
     void Execute(Frame& frame) override;
 };
 
@@ -261,6 +483,22 @@ class LoadConstantInst : public IndexParamInst
 public:
     LoadConstantInst();
     Instruction* Clone() const override { return new LoadConstantInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadConstantBInst : public ByteParamInst
+{
+public:
+    LoadConstantBInst();
+    Instruction* Clone() const override { return new LoadConstantBInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadConstantSInst : public UShortParamInst
+{
+public:
+    LoadConstantSInst();
+    Instruction* Clone() const override { return new LoadConstantSInst(*this); }
     void Execute(Frame& frame) override;
 };
 
@@ -373,9 +611,12 @@ class InterfaceCallInst : public Instruction
 public:
     InterfaceCallInst();
     Instruction* Clone() const override { return new InterfaceCallInst(*this); }
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
     void SetNumArgs(int32_t numArgs_) { numArgs = numArgs_; };
     void SetImtIndex(int32_t imtIndex_) { imtIndex = imtIndex_; }
     void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
 private:
     int32_t numArgs;
     int32_t imtIndex;

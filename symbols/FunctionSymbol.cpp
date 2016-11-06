@@ -479,7 +479,7 @@ utf32_string ConstructorSymbol::FriendlyName() const
     int n = int(Parameters().size());
     for (int i = 1; i < n; ++i)
     {
-        if (i > 0)
+        if (i > 1)
         {
             friendlyName.append(U", ");
         }
@@ -513,11 +513,8 @@ void ConstructorSymbol::GenerateCall(Machine& machine, Assembly& assembly, Funct
 void ConstructorSymbol::CreateMachineFunction()
 {
     FunctionSymbol::CreateMachineFunction();
-    std::unique_ptr<Instruction> loadLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
-    LoadLocalInst* loadLocalInst = dynamic_cast<LoadLocalInst*>(loadLocal.get());
-    Assert(loadLocalInst, "load local inst expected");
+    std::unique_ptr<Instruction> loadLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.0");
     MachineFunction()->AddInst(std::move(loadLocal));
-    loadLocalInst->SetIndex(0);
     std::unique_ptr<Instruction> inst = GetAssembly()->GetMachine().CreateInst("setclassdata");
     SetClassDataInst* setClassDataInst = dynamic_cast<SetClassDataInst*>(inst.get());
     Assert(setClassDataInst, "set class data inst expected");
@@ -531,11 +528,8 @@ void ConstructorSymbol::CreateMachineFunction()
     if (!BaseConstructorCallGenerated() && containingClass->BaseClass())
     {
         Assert(containingClass->BaseClass()->DefaultConstructorSymbol(), "base class has no default constructor");
-        std::unique_ptr<Instruction> loadLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
-        LoadLocalInst* loadLocalInst = dynamic_cast<LoadLocalInst*>(loadLocal.get());
-        Assert(loadLocalInst, "load local inst expected");
+        std::unique_ptr<Instruction> loadLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.0");
         MachineFunction()->AddInst(std::move(loadLocal));
-        loadLocalInst->SetIndex(0);
         std::unique_ptr<Instruction> upCast = GetAssembly()->GetMachine().CreateInst("upcast");
         UpCastInst* upCastInst = dynamic_cast<UpCastInst*>(upCast.get());
         Assert(upCastInst, "up cast inst expected");
@@ -576,10 +570,7 @@ void ArraySizeConstructorSymbol::CreateMachineFunction()
     {
         if (constructorSymbol->IsIntConstructorSymbol())
         {
-            std::unique_ptr<Instruction> loadArrayLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
-            LoadLocalInst* loadArrayLocalInst = dynamic_cast<LoadLocalInst*>(loadArrayLocal.get());
-            Assert(loadArrayLocalInst, "load local inst expected");
-            loadArrayLocalInst->SetIndex(0);
+            std::unique_ptr<Instruction> loadArrayLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.0");
             MachineFunction()->AddInst(std::move(loadArrayLocal));
 
             std::unique_ptr<Instruction> upCast = GetAssembly()->GetMachine().CreateInst("upcast");
@@ -591,10 +582,7 @@ void ArraySizeConstructorSymbol::CreateMachineFunction()
             upCastInst->SetTypeName(baseClassNameConstant);
             MachineFunction()->AddInst(std::move(upCast));
 
-            std::unique_ptr<Instruction> loadSizeLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
-            LoadLocalInst* loadSizeLocalInst = dynamic_cast<LoadLocalInst*>(loadSizeLocal.get());
-            Assert(loadSizeLocalInst, "load local inst expected");
-            loadSizeLocalInst->SetIndex(1);
+            std::unique_ptr<Instruction> loadSizeLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.1");
             MachineFunction()->AddInst(std::move(loadSizeLocal));
 
             std::vector<GenObject*> objects;
@@ -605,16 +593,10 @@ void ArraySizeConstructorSymbol::CreateMachineFunction()
     }
     Assert(intConstructorFound, "Array class has no constructor taking an int");
 
-    std::unique_ptr<Instruction> loadArrayLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
-    LoadLocalInst* loadArrayLocalInst = dynamic_cast<LoadLocalInst*>(loadArrayLocal.get());
-    Assert(loadArrayLocalInst, "load local inst expected");
-    loadArrayLocalInst->SetIndex(0);
+    std::unique_ptr<Instruction> loadArrayLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.0");
     MachineFunction()->AddInst(std::move(loadArrayLocal));
 
-    std::unique_ptr<Instruction> loadSizeLocal = GetAssembly()->GetMachine().CreateInst("loadlocal");
-    LoadLocalInst* loadSizeLocalInst = dynamic_cast<LoadLocalInst*>(loadSizeLocal.get());
-    Assert(loadSizeLocalInst, "load local inst expected");
-    loadSizeLocalInst->SetIndex(1);
+    std::unique_ptr<Instruction> loadSizeLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.1");
     MachineFunction()->AddInst(std::move(loadSizeLocal));
 
     std::unique_ptr<Instruction> allocElems = GetAssembly()->GetMachine().CreateInst("allocelems");
@@ -717,7 +699,7 @@ utf32_string MemberFunctionSymbol::FriendlyName() const
     int n = int(Parameters().size());
     for (int i = 1; i < n; ++i)
     {
-        if (i > 0)
+        if (i > 1)
         {
             friendlyName.append(U", ");
         }
@@ -884,17 +866,27 @@ void ClassToInterfaceConversion::GenerateCall(Machine& machine, Assembly& assemb
     Constant itabIndexConstant(IntegralValue(itabIndex, ValueType::intType));
     ConstantId itabIndexId = constantPool.Install(itabIndexConstant);
     std::unique_ptr<Instruction> loadConstant;
-    loadConstant = machine.CreateInst("loadconstant");
-    LoadConstantInst* loadConstantInst = dynamic_cast<LoadConstantInst*>(loadConstant.get());
-    loadConstantInst->SetIndex(itabIndexId.Value());
+    if (itabIndexId.Value() < 256)
+    {
+        loadConstant = machine.CreateInst("loadconstant.b");
+        loadConstant->SetIndex(static_cast<uint8_t>(itabIndexId.Value()));
+    }
+    else if (itabIndexId.Value() < 65536)
+    {
+        loadConstant = machine.CreateInst("loadconstant.s");
+        loadConstant->SetIndex(static_cast<uint16_t>(itabIndexId.Value()));
+    }
+    else
+    {
+        loadConstant = machine.CreateInst("loadconstant");
+        loadConstant->SetIndex(itabIndexId.Value());
+    }
     function.AddInst(std::move(loadConstant));
     std::unique_ptr<Instruction> swap;
     swap = machine.CreateInst("swap");
     function.AddInst(std::move(swap));
     std::unique_ptr<Instruction> storeField;
-    storeField = machine.CreateInst("storefield");
-    StoreFieldInst* storeFieldInst = dynamic_cast<StoreFieldInst*>(storeField.get());
-    storeFieldInst->SetIndex(1);
+    storeField = machine.CreateInst("storefield.1");
     function.AddInst(std::move(storeField));
     std::unique_ptr<Instruction> dupInst2;
     dupInst2 = machine.CreateInst("dup");
@@ -906,9 +898,7 @@ void ClassToInterfaceConversion::GenerateCall(Machine& machine, Assembly& assemb
     swap2 = machine.CreateInst("swap");
     function.AddInst(std::move(swap2));
     std::unique_ptr<Instruction> storeField2;
-    storeField2 = machine.CreateInst("storefield");
-    StoreFieldInst* storeFieldInst2 = dynamic_cast<StoreFieldInst*>(storeField2.get());
-    storeFieldInst2->SetIndex(0);
+    storeField2 = machine.CreateInst("storefield.0");
     function.AddInst(std::move(storeField2));
 }
 

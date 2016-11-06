@@ -46,6 +46,16 @@ void Instruction::SetIndex(int32_t index_)
     throw std::runtime_error("instruction '" + name + "' does not support set index");
 }
 
+void Instruction::SetIndex(uint8_t index_)
+{
+    throw std::runtime_error("instruction '" + name + "' does not support set index");
+}
+
+void Instruction::SetIndex(uint16_t index_)
+{
+    throw std::runtime_error("instruction '" + name + "' does not support set index");
+}
+
 void Instruction::Execute(Frame& frame)
 {
 }
@@ -196,6 +206,52 @@ void IndexParamInst::Dump(CodeFormatter& formatter)
     formatter.Write(" " + std::to_string(index));
 }
 
+ByteParamInst::ByteParamInst(const std::string& name_) : Instruction(name_, "", ""), index(0)
+{
+}
+
+void ByteParamInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(index);
+}
+
+Instruction* ByteParamInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    index = reader.GetByte();
+    return this;
+}
+
+void ByteParamInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    formatter.Write(" " + std::to_string(index));
+}
+
+UShortParamInst::UShortParamInst(const std::string& name_) : Instruction(name_, "", ""), index(0)
+{
+}
+
+void UShortParamInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(index);
+}
+
+Instruction* UShortParamInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    index = reader.GetUShort();
+    return this;
+}
+
+void UShortParamInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    formatter.Write(" " + std::to_string(index));
+}
+
 LoadLocalInst::LoadLocalInst() : IndexParamInst("loadlocal")
 {
 }
@@ -205,11 +261,119 @@ void LoadLocalInst::Execute(Frame& frame)
     frame.OpStack().Push(frame.Local(Index()).GetValue());
 }
 
+LoadLocal0Inst::LoadLocal0Inst() : Instruction("loadlocal.0")
+{
+}
+
+void LoadLocal0Inst::Execute(Frame& frame)
+{
+    frame.OpStack().Push(frame.Local(0).GetValue());
+}
+
+LoadLocal1Inst::LoadLocal1Inst() : Instruction("loadlocal.1")
+{
+}
+
+void LoadLocal1Inst::Execute(Frame& frame)
+{
+    frame.OpStack().Push(frame.Local(1).GetValue());
+}
+
+LoadLocal2Inst::LoadLocal2Inst() : Instruction("loadlocal.2")
+{
+}
+
+void LoadLocal2Inst::Execute(Frame& frame)
+{
+    frame.OpStack().Push(frame.Local(2).GetValue());
+}
+
+LoadLocal3Inst::LoadLocal3Inst() : Instruction("loadlocal.3")
+{
+}
+
+void LoadLocal3Inst::Execute(Frame& frame)
+{
+    frame.OpStack().Push(frame.Local(3).GetValue());
+}
+
+LoadLocalBInst::LoadLocalBInst() : ByteParamInst("loadlocal.b")
+{
+}
+
+void LoadLocalBInst::Execute(Frame& frame)
+{
+    frame.OpStack().Push(frame.Local(Index()).GetValue());
+}
+
+LoadLocalSInst::LoadLocalSInst() : UShortParamInst("loadlocal.s")
+{
+}
+
+void LoadLocalSInst::Execute(Frame& frame)
+{
+    frame.OpStack().Push(frame.Local(Index()).GetValue());
+}
+
 StoreLocalInst::StoreLocalInst() : IndexParamInst("storelocal")
 {
 }
 
 void StoreLocalInst::Execute(Frame& frame)
+{
+    frame.Local(Index()).SetValue(frame.OpStack().Pop());
+}
+
+StoreLocal0Inst::StoreLocal0Inst() : Instruction("storelocal.0")
+{
+}
+
+void StoreLocal0Inst::Execute(Frame& frame)
+{
+    frame.Local(0).SetValue(frame.OpStack().Pop());
+}
+
+StoreLocal1Inst::StoreLocal1Inst() : Instruction("storelocal.1")
+{
+}
+
+void StoreLocal1Inst::Execute(Frame& frame)
+{
+    frame.Local(1).SetValue(frame.OpStack().Pop());
+}
+
+StoreLocal2Inst::StoreLocal2Inst() : Instruction("storelocal.2")
+{
+}
+
+void StoreLocal2Inst::Execute(Frame& frame)
+{
+    frame.Local(2).SetValue(frame.OpStack().Pop());
+}
+
+StoreLocal3Inst::StoreLocal3Inst() : Instruction("storelocal.3")
+{
+}
+
+void StoreLocal3Inst::Execute(Frame& frame)
+{
+    frame.Local(3).SetValue(frame.OpStack().Pop());
+}
+
+StoreLocalBInst::StoreLocalBInst() : ByteParamInst("storelocal.b")
+{
+}
+
+void StoreLocalBInst::Execute(Frame& frame)
+{
+    frame.Local(Index()).SetValue(frame.OpStack().Pop());
+}
+
+StoreLocalSInst::StoreLocalSInst() : UShortParamInst("storelocal.s")
+{
+}
+
+void StoreLocalSInst::Execute(Frame& frame)
 {
     frame.Local(Index()).SetValue(frame.OpStack().Pop());
 }
@@ -227,11 +391,167 @@ void LoadFieldInst::Execute(Frame& frame)
     frame.OpStack().Push(fieldValue);
 }
 
+LoadField0Inst::LoadField0Inst() : Instruction("loadfield.0")
+{
+}
+
+void LoadField0Inst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 0);
+    frame.OpStack().Push(fieldValue);
+}
+
+LoadField1Inst::LoadField1Inst() : Instruction("loadfield.1")
+{
+}
+
+void LoadField1Inst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 1);
+    frame.OpStack().Push(fieldValue);
+}
+
+LoadField2Inst::LoadField2Inst() : Instruction("loadfield.2")
+{
+}
+
+void LoadField2Inst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 2);
+    frame.OpStack().Push(fieldValue);
+}
+
+LoadField3Inst::LoadField3Inst() : Instruction("loadfield.3")
+{
+}
+
+void LoadField3Inst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 3);
+    frame.OpStack().Push(fieldValue);
+}
+
+LoadFieldBInst::LoadFieldBInst() : ByteParamInst("loadfield.b")
+{
+}
+
+void LoadFieldBInst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, Index());
+    frame.OpStack().Push(fieldValue);
+}
+
+LoadFieldSInst::LoadFieldSInst() : UShortParamInst("loadfield.s")
+{
+}
+
+void LoadFieldSInst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, Index());
+    frame.OpStack().Push(fieldValue);
+}
+
 StoreFieldInst::StoreFieldInst() : IndexParamInst("storefield")
 {
 }
 
 void StoreFieldInst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.OpStack().Pop();
+    frame.GetManagedMemoryPool().SetField(reference, Index(), fieldValue);
+}
+
+StoreField0Inst::StoreField0Inst() : Instruction("storefield.0")
+{
+}
+
+void StoreField0Inst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.OpStack().Pop();
+    frame.GetManagedMemoryPool().SetField(reference, 0, fieldValue);
+}
+
+StoreField1Inst::StoreField1Inst() : Instruction("storefield.1")
+{
+}
+
+void StoreField1Inst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.OpStack().Pop();
+    frame.GetManagedMemoryPool().SetField(reference, 1, fieldValue);
+}
+
+StoreField2Inst::StoreField2Inst() : Instruction("storefield.2")
+{
+}
+
+void StoreField2Inst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.OpStack().Pop();
+    frame.GetManagedMemoryPool().SetField(reference, 2, fieldValue);
+}
+
+StoreField3Inst::StoreField3Inst() : Instruction("storefield.3")
+{
+}
+
+void StoreField3Inst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.OpStack().Pop();
+    frame.GetManagedMemoryPool().SetField(reference, 3, fieldValue);
+}
+
+StoreFieldBInst::StoreFieldBInst() : ByteParamInst("storefield.b")
+{
+}
+
+void StoreFieldBInst::Execute(Frame& frame)
+{
+    IntegralValue operand = frame.OpStack().Pop();
+    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+    ObjectReference reference = ObjectReference(operand.Value());
+    IntegralValue fieldValue = frame.OpStack().Pop();
+    frame.GetManagedMemoryPool().SetField(reference, Index(), fieldValue);
+}
+
+StoreFieldSInst::StoreFieldSInst() : UShortParamInst("storefield.s")
+{
+}
+
+void StoreFieldSInst::Execute(Frame& frame)
 {
     IntegralValue operand = frame.OpStack().Pop();
     Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
@@ -274,6 +594,26 @@ LoadConstantInst::LoadConstantInst() : IndexParamInst("loadconstant")
 }
 
 void LoadConstantInst::Execute(Frame& frame)
+{
+    ConstantId constantId(Index());
+    frame.OpStack().Push(frame.GetConstantPool().GetConstant(constantId).Value());
+}
+
+LoadConstantBInst::LoadConstantBInst() : ByteParamInst("loadconstant.b")
+{
+}
+
+void LoadConstantBInst::Execute(Frame& frame)
+{
+    ConstantId constantId(Index());
+    frame.OpStack().Push(frame.GetConstantPool().GetConstant(constantId).Value());
+}
+
+LoadConstantSInst::LoadConstantSInst() : UShortParamInst("loadconstant.s")
+{
+}
+
+void LoadConstantSInst::Execute(Frame& frame)
 {
     ConstantId constantId(Index());
     frame.OpStack().Push(frame.GetConstantPool().GetConstant(constantId).Value());
@@ -512,6 +852,23 @@ InterfaceCallInst::InterfaceCallInst() : Instruction("calli"), numArgs(0), imtIn
 {
 }
 
+void InterfaceCallInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    Assert(numArgs != 0, "invalid number of arguments");
+    writer.Put(numArgs);
+    Assert(imtIndex != -1, "invalid imt index");
+    writer.Put(imtIndex);
+}
+
+Instruction* InterfaceCallInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    numArgs = reader.GetInt();
+    imtIndex = reader.GetInt();
+    return this;
+}
+
 void InterfaceCallInst::Execute(Frame& frame)
 {
     IntegralValue interfaceObjectValue = frame.OpStack().GetValue(numArgs);
@@ -543,6 +900,12 @@ void InterfaceCallInst::Execute(Frame& frame)
     {
         throw std::runtime_error("class data field not set");
     }
+}
+
+void InterfaceCallInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    formatter.Write(" " + std::to_string(numArgs) + " " + std::to_string(imtIndex));
 }
 
 VmCallInst::VmCallInst() : IndexParamInst("callvm")

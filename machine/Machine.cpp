@@ -219,54 +219,80 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     //  -------------
 
     rootInst.SetInst(0x9A, new LoadLocalInst());
-    rootInst.SetInst(0x9B, new StoreLocalInst());
-    rootInst.SetInst(0x9C, new LoadFieldInst());
-    rootInst.SetInst(0x9D, new StoreFieldInst());
-    rootInst.SetInst(0x9E, new LoadElemInst());
-    rootInst.SetInst(0x9F, new StoreElemInst());
-    rootInst.SetInst(0xA0, new LoadConstantInst());
-    rootInst.SetInst(0xA1, new ReceiveInst());
+    rootInst.SetInst(0x9B, new LoadLocal0Inst());
+    rootInst.SetInst(0x9C, new LoadLocal1Inst());
+    rootInst.SetInst(0x9D, new LoadLocal2Inst());
+    rootInst.SetInst(0x9E, new LoadLocal3Inst());
+    rootInst.SetInst(0x9F, new LoadLocalBInst());
+    rootInst.SetInst(0xA0, new LoadLocalSInst());
+    rootInst.SetInst(0xA1, new StoreLocalInst());
+    rootInst.SetInst(0xA2, new StoreLocal0Inst());
+    rootInst.SetInst(0xA3, new StoreLocal1Inst());
+    rootInst.SetInst(0xA4, new StoreLocal2Inst());
+    rootInst.SetInst(0xA5, new StoreLocal3Inst());
+    rootInst.SetInst(0xA6, new StoreLocalBInst());
+    rootInst.SetInst(0xA7, new StoreLocalSInst());
+    rootInst.SetInst(0xA8, new LoadFieldInst());
+    rootInst.SetInst(0xA9, new LoadField0Inst());
+    rootInst.SetInst(0xAA, new LoadField1Inst());
+    rootInst.SetInst(0xAB, new LoadField2Inst());
+    rootInst.SetInst(0xAC, new LoadField3Inst());
+    rootInst.SetInst(0xAD, new LoadFieldBInst());
+    rootInst.SetInst(0xAE, new LoadFieldSInst());
+    rootInst.SetInst(0xAF, new StoreFieldInst());
+    rootInst.SetInst(0xB0, new StoreField0Inst());
+    rootInst.SetInst(0xB1, new StoreField1Inst());
+    rootInst.SetInst(0xB2, new StoreField2Inst());
+    rootInst.SetInst(0xB3, new StoreField3Inst());
+    rootInst.SetInst(0xB4, new StoreFieldBInst());
+    rootInst.SetInst(0xB5, new StoreFieldSInst());
+    rootInst.SetInst(0xB6, new LoadElemInst());
+    rootInst.SetInst(0xB7, new StoreElemInst());
+    rootInst.SetInst(0xB8, new LoadConstantInst());
+    rootInst.SetInst(0xB9, new LoadConstantBInst());
+    rootInst.SetInst(0xBA, new LoadConstantSInst());
+    rootInst.SetInst(0xBC, new ReceiveInst());
 
     // jump & call:
     // ------------
 
-    rootInst.SetInst(0xA2, new JumpInst());
-    rootInst.SetInst(0xA3, new JumpTrueInst());
-    rootInst.SetInst(0xA4, new JumpFalseInst());
-    rootInst.SetInst(0xA5, new CallInst());
-    rootInst.SetInst(0xA6, new VirtualCallInst());
-    rootInst.SetInst(0xA7, new InterfaceCallInst());
-    rootInst.SetInst(0xA8, new EnterBlockInst());
-    rootInst.SetInst(0xA9, new ExitBlockInst());
+    rootInst.SetInst(0xBD, new JumpInst());
+    rootInst.SetInst(0xBE, new JumpTrueInst());
+    rootInst.SetInst(0xBF, new JumpFalseInst());
+    rootInst.SetInst(0xC0, new CallInst());
+    rootInst.SetInst(0xC1, new VirtualCallInst());
+    rootInst.SetInst(0xC2, new InterfaceCallInst());
+    rootInst.SetInst(0xC3, new EnterBlockInst());
+    rootInst.SetInst(0xC4, new ExitBlockInst());
 
     // stack manipulation:
     // -------------------
 
-    rootInst.SetInst(0xAA, new DupInst());
-    rootInst.SetInst(0xAB, new SwapInst());
-    rootInst.SetInst(0xAC, new RotateInst());
+    rootInst.SetInst(0xC5, new DupInst());
+    rootInst.SetInst(0xC6, new SwapInst());
+    rootInst.SetInst(0xC7, new RotateInst());
 
 
     // objects:
     // --------
 
-    rootInst.SetInst(0xB0, new LoadDefaultValueInst<ValueType::objectReference>("defo", "object"));
-    rootInst.SetInst(0xB1, new CreateObjectInst());
-    rootInst.SetInst(0xB2, new CopyObjectInst());
-    rootInst.SetInst(0xB3, new SetClassDataInst());
-    rootInst.SetInst(0xB4, new UpCastInst());
-    rootInst.SetInst(0xB5, new DownCastInst());
+    rootInst.SetInst(0xC8, new LoadDefaultValueInst<ValueType::objectReference>("defo", "object"));
+    rootInst.SetInst(0xC9, new CreateObjectInst());
+    rootInst.SetInst(0xCA, new CopyObjectInst());
+    rootInst.SetInst(0xCB, new SetClassDataInst());
+    rootInst.SetInst(0xCC, new UpCastInst());
+    rootInst.SetInst(0xCD, new DownCastInst());
 
     // strings:
     // --------
 
-    rootInst.SetInst(0xC0, new StrLitToStringInst());
-    rootInst.SetInst(0xC1, new LengthStringInst());
+    rootInst.SetInst(0xD0, new StrLitToStringInst());
+    rootInst.SetInst(0xD1, new LengthStringInst());
 
     // arrays:
     // -------
 
-    rootInst.SetInst(0xD0, new AllocateArrayElementsInst());
+    rootInst.SetInst(0xE0, new AllocateArrayElementsInst());
 
     // vmcall:
     // -------
