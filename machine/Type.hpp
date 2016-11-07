@@ -200,6 +200,10 @@ private:
     std::unordered_map<StringPtr, Type*, StringPtrHash> typeMap;
 };
 
+ObjectType* GetBoxedType(ValueType valueType);
+
+void TypeInit();
+void TypeDone();
 
 } } // namespace cminor::machine
 

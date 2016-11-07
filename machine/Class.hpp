@@ -57,6 +57,8 @@ private:
     std::unordered_map<StringPtr, ClassData*, StringPtrHash> classDataMap;
 };
 
+ClassData* GetClassDataForBoxedType(ValueType valueType);
+
 } } // namespace cminor::machine
 
 #endif // CMINOR_MACHINE_CLASS_INCLUDED

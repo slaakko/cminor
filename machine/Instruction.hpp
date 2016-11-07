@@ -11,6 +11,8 @@
 #include <cminor/machine/Error.hpp>
 #include <cminor/machine/Frame.hpp>
 #include <cminor/machine/Constant.hpp>
+#include <cminor/machine/Type.hpp>
+#include <cminor/machine/Class.hpp>
 #include <unordered_map>
 #include <string>
 #include <memory>
@@ -731,6 +733,53 @@ public:
     DownCastInst();
     Instruction* Clone() const override { return new DownCastInst(*this); }
     void Execute(Frame& frame) override;
+};
+
+template<ValueType valueType>
+class BoxInst : public Instruction
+{
+public:
+    BoxInst(const std::string& name_) : Instruction(name_) {}
+    Instruction* Clone() const override { return new BoxInst<valueType>(*this); }
+    void Execute(Frame& frame)
+    {
+        ObjectType* objectType = GetBoxedType(valueType);
+        ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
+        ClassData* classData = GetClassDataForBoxedType(valueType);
+        IntegralValue classDataValue(classData);
+        frame.GetManagedMemoryPool().SetField(objectReference, 0, classDataValue);
+        IntegralValue value = frame.OpStack().Pop();
+        Assert(value.GetType() == valueType, "value type mismatch");
+        frame.GetManagedMemoryPool().SetField(objectReference, 1, value);
+        frame.OpStack().Push(objectReference);
+    }
+};
+
+template<ValueType valueType>
+class UnboxInst : public Instruction
+{
+public:
+    UnboxInst(const std::string& name_) : Instruction(name_) {}
+    Instruction* Clone() const override { return new UnboxInst<valueType>(*this); }
+    void Execute(Frame& frame)
+    {
+        IntegralValue value = frame.OpStack().Pop();
+        Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference objectReference(value.Value());
+        if (objectReference.IsNull())
+        {
+            throw std::runtime_error("tried to unbox null object reference");
+        }
+        else
+        {
+            IntegralValue value = frame.GetManagedMemoryPool().GetField(objectReference, 1);
+            if (value.GetType() != valueType)
+            {
+                throw std::runtime_error("invalid unbox operation: value type does not match");
+            }
+            frame.OpStack().Push(value);
+        }
+    }
 };
 
 class AllocateArrayElementsInst : public TypeInstruction

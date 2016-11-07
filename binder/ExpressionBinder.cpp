@@ -901,7 +901,7 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
     CheckAccess(boundFunction->GetFunctionSymbol(), functionCall->GetFunctionSymbol());
     if (MemberFunctionSymbol* memFun = dynamic_cast<MemberFunctionSymbol*>(functionCall->GetFunctionSymbol()))
     {
-        Assert(!functionCall->Arguments().empty(), "nonempty argument list exptected");
+        Assert(!functionCall->Arguments().empty(), "nonempty argument list expected");
         if (InterfaceTypeSymbol* interfaceType = dynamic_cast<InterfaceTypeSymbol*>(functionCall->Arguments()[0]->GetType()))
         {
             functionCall->SetFunctionCallType(FunctionCallType::interfaceCall);
@@ -1011,7 +1011,7 @@ void ExpressionBinder::Visit(BaseNode& baseNode)
         throw Exception("'base' can be used only in non-static member function context", baseNode.GetSpan());
     }
     ClassTypeSymbol* classType = dynamic_cast<ClassTypeSymbol*>(thisParam->GetType());
-    Assert(classType, "class type exptected");
+    Assert(classType, "class type expected");
     if (classType->BaseClass())
     {
         BoundParameter* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam);

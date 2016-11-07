@@ -463,6 +463,34 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     convContainerInst->SetInst(0xB7, new ConversionInst<bool, float, ValueType::floatType>("bo2fl"));
     convContainerInst->SetInst(0xB8, new ConversionInst<bool, double, ValueType::doubleType>("bo2do"));
     convContainerInst->SetInst(0xB9, new ConversionInst<bool, char32_t, ValueType::charType>("bo2ch"));
+
+//  boxing:
+    convContainerInst->SetInst(0xBA, new BoxInst<ValueType::sbyteType>("sb2o"));
+    convContainerInst->SetInst(0xBB, new BoxInst<ValueType::byteType>("by2o"));
+    convContainerInst->SetInst(0xBC, new BoxInst<ValueType::shortType>("sh2o"));
+    convContainerInst->SetInst(0xBD, new BoxInst<ValueType::ushortType>("us2o"));
+    convContainerInst->SetInst(0xBE, new BoxInst<ValueType::intType>("in2o"));
+    convContainerInst->SetInst(0xBF, new BoxInst<ValueType::uintType>("ui2o"));
+    convContainerInst->SetInst(0xC0, new BoxInst<ValueType::longType>("lo2o"));
+    convContainerInst->SetInst(0xC1, new BoxInst<ValueType::ulongType>("ul2o"));
+    convContainerInst->SetInst(0xC2, new BoxInst<ValueType::floatType>("fl2o"));
+    convContainerInst->SetInst(0xC3, new BoxInst<ValueType::doubleType>("do2o"));
+    convContainerInst->SetInst(0xC4, new BoxInst<ValueType::charType>("ch2o"));
+    convContainerInst->SetInst(0xC5, new BoxInst<ValueType::boolType>("bo2o"));
+
+//  unboxing:
+    convContainerInst->SetInst(0xC6, new UnboxInst<ValueType::sbyteType>("o2sb"));
+    convContainerInst->SetInst(0xC7, new UnboxInst<ValueType::byteType>("o2by"));
+    convContainerInst->SetInst(0xC8, new UnboxInst<ValueType::shortType>("o2sh"));
+    convContainerInst->SetInst(0xC9, new UnboxInst<ValueType::ushortType>("o2us"));
+    convContainerInst->SetInst(0xCA, new UnboxInst<ValueType::intType>("o2in"));
+    convContainerInst->SetInst(0xCB, new UnboxInst<ValueType::uintType>("o2ui"));
+    convContainerInst->SetInst(0xCC, new UnboxInst<ValueType::longType>("o2lo"));
+    convContainerInst->SetInst(0xCD, new UnboxInst<ValueType::ulongType>("o2ul"));
+    convContainerInst->SetInst(0xCE, new UnboxInst<ValueType::floatType>("o2fl"));
+    convContainerInst->SetInst(0xCF, new UnboxInst<ValueType::doubleType>("o2do"));
+    convContainerInst->SetInst(0xD0, new UnboxInst<ValueType::charType>("o2ch"));
+    convContainerInst->SetInst(0xD1, new UnboxInst<ValueType::boolType>("o2bo"));
 }
 
 Machine::~Machine()

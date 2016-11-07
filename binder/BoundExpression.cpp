@@ -596,14 +596,14 @@ void BoundFunctionCall::GenLoad(Machine& machine, Function& function)
         case FunctionCallType::virtualCall:
         {
             MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(functionSymbol);
-            Assert(memberFunctionSymbol, "member function symbol exptected");
+            Assert(memberFunctionSymbol, "member function symbol expected");
             memberFunctionSymbol->GenerateVirtualCall(machine, GetAssembly(), function, objects);
             break;
         }
         case FunctionCallType::interfaceCall:
         {
             MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(functionSymbol);
-            Assert(memberFunctionSymbol, "member function symbol exptected");
+            Assert(memberFunctionSymbol, "member function symbol expected");
             memberFunctionSymbol->GenerateInterfaceCall(machine, GetAssembly(), function, objects);
             break;
         }

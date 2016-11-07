@@ -17,6 +17,7 @@
 #include <Cm.Util/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
+#include <chrono>
 
 using namespace cminor::machine;
 using namespace cminor::symbols;
@@ -31,7 +32,7 @@ struct InitDone
         FileRegistry::Init();
         FunctionTable::Init();
         ClassDataTable::Init();
-        TypeTable::Init();
+        TypeInit();
         VmFunctionTable::Init();
         InitSymbol();
         InitAssembly();
@@ -43,7 +44,7 @@ struct InitDone
         DoneAssembly();
         DoneSymbol();
         VmFunctionTable::Done();
-        TypeTable::Done();
+        TypeDone();
         ClassDataTable::Done();
         FunctionTable::Done();
     }

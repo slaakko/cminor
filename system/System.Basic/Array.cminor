@@ -6,9 +6,9 @@ namespace System
         {
             this.length = length;
         }
-        public int Length()
+        public int Length
         {
-            return length;
+            get { return length; }
         }
         private int length;
     }

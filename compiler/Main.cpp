@@ -30,7 +30,7 @@ struct InitDone
         FileRegistry::Init();
         FunctionTable::Init();
         ClassDataTable::Init();
-        TypeTable::Init();
+        TypeInit();
         InitSymbol();
         InitAssembly();
         Cm::Parsing::Init();
@@ -40,9 +40,9 @@ struct InitDone
         Cm::Parsing::Done();
         DoneAssembly();
         DoneSymbol();
-        TypeTable::Init();
-        ClassDataTable::Init();
-        FunctionTable::Init();
+        TypeDone();
+        ClassDataTable::Done();
+        FunctionTable::Done();
     }
 };
 

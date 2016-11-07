@@ -28,7 +28,7 @@ struct InitDone
         FileRegistry::Init();
         FunctionTable::Init();
         ClassDataTable::Init();
-        TypeTable::Init();
+        TypeInit();
         InitSymbol();
         InitAssembly();
     }
@@ -36,6 +36,9 @@ struct InitDone
     {
         DoneAssembly();
         DoneSymbol();
+        TypeDone();
+        ClassDataTable::Done();
+        FunctionTable::Done();
     }
 };
 

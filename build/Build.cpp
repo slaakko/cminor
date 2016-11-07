@@ -133,7 +133,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
 {
     FunctionTable::Init();
     ClassDataTable::Init();
-    TypeTable::Init();
+    TypeInit();
     std::string config = GetConfig();
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
@@ -219,7 +219,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
             }
         }
     }
-    TypeTable::Done();
+    TypeDone();
     ClassDataTable::Done();
     FunctionTable::Done();
 }

@@ -155,4 +155,25 @@ void ClassDataTable::SetClassData(ClassData* classData)
     classDataMap[classData->Type()->Name()] = classData;
 }
 
+ClassData* GetClassDataForBoxedType(ValueType valueType)
+{
+    switch (valueType)
+    {
+        case cminor::machine::ValueType::boolType: return ClassDataTable::Instance().GetClassData(U"System.BoxedBoolean");
+        case cminor::machine::ValueType::sbyteType: return ClassDataTable::Instance().GetClassData(U"System.BoxedInt8");
+        case cminor::machine::ValueType::byteType: return ClassDataTable::Instance().GetClassData(U"System.BoxedUInt8");
+        case cminor::machine::ValueType::shortType: return ClassDataTable::Instance().GetClassData(U"System.BoxedInt16");
+        case cminor::machine::ValueType::ushortType: return ClassDataTable::Instance().GetClassData(U"System.BoxedUInt16");
+        case cminor::machine::ValueType::intType: return ClassDataTable::Instance().GetClassData(U"System.BoxedInt32");
+        case cminor::machine::ValueType::uintType: return ClassDataTable::Instance().GetClassData(U"System.BoxedUInt32");
+        case cminor::machine::ValueType::longType: return ClassDataTable::Instance().GetClassData(U"System.BoxedInt64");
+        case cminor::machine::ValueType::ulongType: return ClassDataTable::Instance().GetClassData(U"System.BoxedUInt64");
+        case cminor::machine::ValueType::floatType: return ClassDataTable::Instance().GetClassData(U"System.BoxedFloat");
+        case cminor::machine::ValueType::doubleType: return ClassDataTable::Instance().GetClassData(U"System.BoxedDouble");
+        case cminor::machine::ValueType::charType: return ClassDataTable::Instance().GetClassData(U"System.BoxedChar");
+    }
+    Assert(false, "unknown value type");
+    return nullptr;
+}
+
 } } // namespace cminor::machine

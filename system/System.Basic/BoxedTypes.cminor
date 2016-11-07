@@ -1,0 +1,62 @@
+namespace System
+{
+    public class BoxedInt8
+    {
+        public sbyte value;
+    }
+
+    public class BoxedUInt8
+    {
+        public byte value;
+    }
+
+    public class BoxedInt16
+    {
+        public short value;
+    }
+
+    public class BoxedUInt16
+    {
+        public ushort value;
+    }
+
+    public class BoxedInt32
+    {
+        public int value;
+    }
+
+    public class BoxedUInt32
+    {
+        public uint value;
+    }
+
+    public class BoxedInt64
+    {
+        public long value;
+    }
+
+    public class BoxedUInt64
+    {
+        public ulong value;
+    }
+
+    public class BoxedFloat
+    {
+        public float value;
+    }
+
+    public class BoxedDouble
+    {
+        public double value;
+    }
+
+    public class BoxedChar
+    {
+        public char value;
+    }
+
+    public class BoxedBoolean
+    {
+        public bool value;
+    }
+}

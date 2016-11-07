@@ -30,7 +30,7 @@ void VmSystemObjectToString::Execute(Frame& frame)
     Assert(value.GetType() == ValueType::objectReference, "object reference expected");
     ObjectReference reference(value.Value());
     IntegralValue classDataValue = frame.GetManagedMemoryPool().GetField(reference, 0);
-    Assert(classDataValue.GetType() == ValueType::classDataPtr, "class data pointer exptected");
+    Assert(classDataValue.GetType() == ValueType::classDataPtr, "class data pointer expected");
     ClassData* classData = classDataValue.AsClassDataPtr();
     StringPtr name = classData->Type()->Name();
     const char32_t* nameLiteral = name.Value();
