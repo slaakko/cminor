@@ -22,6 +22,18 @@ Node* FunctionGroupIdNode::Clone(CloneContext& cloneContext) const
     return new FunctionGroupIdNode(GetSpan(), functionGroupId);
 }
 
+void FunctionGroupIdNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(functionGroupId);
+}
+
+void FunctionGroupIdNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    functionGroupId = reader.GetUtf8String();
+}
+
 void AttributeMap::AddAttribute(const std::string& name_, const std::string& value_)
 {
     nameValuePairs[name_] = value_;
@@ -37,6 +49,36 @@ std::string AttributeMap::GetAttribute(const std::string& name) const
     return std::string();
 }
 
+void AttributeMap::Write(AstWriter& writer)
+{
+    bool hasAttributes = !nameValuePairs.empty();
+    writer.AsMachineWriter().Put(hasAttributes);
+    if (hasAttributes)
+    {
+        int32_t n = int32_t(nameValuePairs.size());
+        writer.AsMachineWriter().Put(n);
+        for (const auto& p : nameValuePairs)
+        {
+            writer.AsMachineWriter().Put(p.first);
+            writer.AsMachineWriter().Put(p.second);
+        }
+    }
+}
+
+void AttributeMap::Read(AstReader& reader)
+{
+    bool hasAttributes = reader.GetBool();
+    if (hasAttributes)
+    {
+        int32_t n = reader.GetInt();
+        for (int32_t i = 0; i < n; ++i)
+        {
+            std::string name = reader.GetUtf8String();
+            std::string value = reader.GetUtf8String();
+            nameValuePairs[name] = value;
+        }
+    }
+}
 
 FunctionNode::FunctionNode(const Span& span_) : Node(span_), compileUnit(nullptr)
 {
@@ -82,6 +124,45 @@ Node* FunctionNode::Clone(CloneContext& cloneContext) const
     }
 
     return clone;
+}
+
+void FunctionNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(specifiers);
+    bool hasReturnTypeExpr = returnTypeExpr != nullptr;
+    writer.AsMachineWriter().Put(hasReturnTypeExpr);
+    if (hasReturnTypeExpr)
+    {
+        writer.Put(returnTypeExpr.get());
+    }
+    writer.Put(groupId.get());
+    parameters.Write(writer);
+    bool hasBody = body != nullptr;
+    writer.AsMachineWriter().Put(hasBody);
+    attributes.Write(writer);
+}
+
+void FunctionNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    specifiers = reader.GetSpecifiers();
+    bool hasReturnTypeExpr = reader.GetBool();
+    if (hasReturnTypeExpr)
+    {
+        returnTypeExpr.reset(reader.GetNode());
+        returnTypeExpr->SetParent(this);
+    }
+    groupId.reset(reader.GetFunctionGroupIdNode());
+    groupId->SetParent(this);
+    parameters.Read(reader);
+    parameters.SetParent(this);
+    bool hasBody = reader.GetBool();
+    if (hasBody)
+    {
+        body.reset(reader.GetCompoundStatementNode());
+    }
+    attributes.Read(reader);
 }
 
 void FunctionNode::Accept(Visitor& visitor)

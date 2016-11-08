@@ -6,11 +6,12 @@
 #ifndef CMINOR_SYMBOLS_SYMBOL_READER_INCLUDED
 #define CMINOR_SYMBOLS_SYMBOL_READER_INCLUDED
 #include <cminor/symbols/Symbol.hpp>
-#include <cminor/machine/Reader.hpp>
+#include <cminor/ast/AstReader.hpp>
 
 namespace cminor { namespace symbols {
 
 using namespace cminor::machine;
+using namespace cminor::ast;
 
 class LocalVariableSymbol;
 
@@ -22,7 +23,7 @@ struct TypeRequest
     int index;
 };
 
-class SymbolReader : public Reader
+class SymbolReader : public AstReader
 {
 public:
     SymbolReader(const std::string& fileName_);

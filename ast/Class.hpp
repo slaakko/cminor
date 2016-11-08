@@ -6,6 +6,7 @@
 #ifndef CMINOR_AST_CLASS_INCLUDED
 #define CMINOR_AST_CLASS_INCLUDED
 #include <cminor/ast/Function.hpp>
+#include <cminor/ast/Template.hpp>
 
 namespace cminor { namespace ast {
 
@@ -17,7 +18,10 @@ public:
     NodeType GetNodeType() const override { return NodeType::classNode; }
     void AddBaseClassOrInterface(Node* baseClassOrInterface);
     void AddMember(Node* member);
+    void AddTemplateParameter(TemplateParameterNode* templateParameter) override;
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     Specifiers GetSpecifiers() const { return specifiers; }
     IdentifierNode* Id() const { return id.get(); }
     const NodeList<Node>& BaseClassOrInterfaces() const { return baseClassOrInterfaces; }
@@ -26,6 +30,7 @@ public:
 private:
     Specifiers specifiers;
     std::unique_ptr<IdentifierNode> id;
+    NodeList<TemplateParameterNode> templateParameters;
     NodeList<Node> baseClassOrInterfaces;
     NodeList<Node> members;
 };
@@ -46,6 +51,8 @@ public:
     InitializerNode(const Span& span_);
     void AddArgument(Node* argument) override;
     const NodeList<Node>& Arguments() const { return arguments; }
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
 private:
     NodeList<Node> arguments;
 };
@@ -75,6 +82,8 @@ public:
     ConstructorNode(const Span& span_, Specifiers specifiers_);
     NodeType GetNodeType() const override { return NodeType::constructorNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     void SetInitializer(InitializerNode* initializer_);
     InitializerNode* Initializer() const { return initializer.get(); }
@@ -99,6 +108,8 @@ public:
     MemberVariableNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::memberVariableNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* TypeExpr() const { return typeExpr.get(); }
@@ -116,6 +127,8 @@ public:
     PropertyNode(const Span& span_, Specifiers specifiers_, Node* typeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::propertyNode; };
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* TypeExpr() const { return typeExpr.get(); }
@@ -139,6 +152,8 @@ public:
     IndexerNode(const Span& span_, Specifiers specifiers_, Node* valueTypeExpr_, Node* indexTypeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::indexerNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* ValueTypeExpr() const { return valueTypeExpr.get(); }

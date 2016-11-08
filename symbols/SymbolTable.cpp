@@ -684,7 +684,7 @@ template<typename T>
 class ConcreteSymbolCreator : public SymbolCreator
 {
 public:
-    virtual Symbol* CreateSymbol(const Span& span, Constant name)
+    Symbol* CreateSymbol(const Span& span, Constant name) override
     {
         return new T(span, name);
     }

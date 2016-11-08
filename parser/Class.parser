@@ -12,6 +12,7 @@
 [cpp]#include <cminor/parser/Statement.hpp>
 [cpp]#include <cminor/parser/Parameter.hpp>
 [cpp]#include <cminor/parser/Function.hpp>
+[cpp]#include <cminor/parser/Template.hpp>
 
 namespace cminor.parser
 {
@@ -28,10 +29,12 @@ namespace cminor.parser
         using ParameterGrammar.ParameterList;
         using FunctionGrammar.FunctionGroupId;
         using FunctionGrammar.Attributes;
+        using TemplateGrammar.TemplateParameterList;
         using stdlib.identifier;
 
         Class(ParsingContext* ctx) : ClassNode*
             ::= Specifiers keyword("class") Identifier{ value = new ClassNode(span, Specifiers, Identifier); }
+                TemplateParameterList(ctx, value)?
                 InheritanceAndInterfaces(ctx, value)? '{'! ClassContent(ctx, value) '}'!
             ;
 

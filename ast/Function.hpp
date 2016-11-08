@@ -8,6 +8,7 @@
 #include <cminor/ast/Specifier.hpp>
 #include <cminor/ast/Parameter.hpp>
 #include <cminor/ast/Identifier.hpp>
+#include <cminor/ast/NodeList.hpp>
 #include <unordered_map>
 
 namespace cminor { namespace ast {
@@ -22,6 +23,8 @@ public:
     FunctionGroupIdNode(const Span& span_, const std::string& functionGroupId_);
     NodeType GetNodeType() const override { return NodeType::functionGroupIdNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     const std::string& Str() const { return functionGroupId; }
 private:
     std::string functionGroupId;
@@ -32,6 +35,8 @@ class AttributeMap
 public:
     void AddAttribute(const std::string& name_, const std::string& value_);
     std::string GetAttribute(const std::string& name) const;
+    void Write(AstWriter& writer);
+    void Read(AstReader& reader);
 private:
     std::unordered_map<std::string, std::string> nameValuePairs;
 };
@@ -45,6 +50,8 @@ public:
     void AddParameter(ParameterNode* parameter) override;
     void SetBody(CompoundStatementNode* body_);
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }

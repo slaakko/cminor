@@ -5,6 +5,8 @@
 
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Visitor.hpp>
+#include <cminor/ast/AstWriter.hpp>
+#include <cminor/ast/AstReader.hpp>
 
 namespace cminor { namespace ast {
 
@@ -19,6 +21,18 @@ BooleanLiteralNode::BooleanLiteralNode(const Span& span_, bool value_) : Node(sp
 Node* BooleanLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new BooleanLiteralNode(GetSpan(), value);
+}
+
+void BooleanLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void BooleanLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetBool();
 }
 
 void BooleanLiteralNode::Accept(Visitor& visitor) 
@@ -39,6 +53,18 @@ Node* SByteLiteralNode::Clone(CloneContext& cloneContext) const
     return new SByteLiteralNode(GetSpan(), value);
 }
 
+void SByteLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void SByteLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetSByte();
+}
+
 void SByteLiteralNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -55,6 +81,18 @@ ByteLiteralNode::ByteLiteralNode(const Span& span_, uint8_t value_) : Node(span_
 Node* ByteLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new ByteLiteralNode(GetSpan(), value);
+}
+
+void ByteLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void ByteLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetByte();
 }
 
 void ByteLiteralNode::Accept(Visitor& visitor)
@@ -75,6 +113,18 @@ Node* ShortLiteralNode::Clone(CloneContext& cloneContext) const
     return new ShortLiteralNode(GetSpan(), value);
 }
 
+void ShortLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void ShortLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetShort();
+}
+
 void ShortLiteralNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -91,6 +141,18 @@ UShortLiteralNode::UShortLiteralNode(const Span& span_, uint16_t value_) : Node(
 Node* UShortLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new UShortLiteralNode(GetSpan(), value);
+}
+
+void UShortLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void UShortLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetUShort();
 }
 
 void UShortLiteralNode::Accept(Visitor& visitor)
@@ -111,6 +173,18 @@ Node* IntLiteralNode::Clone(CloneContext& cloneContext) const
     return new IntLiteralNode(GetSpan(), value);
 }
 
+void IntLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void IntLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetInt();
+}
+
 void IntLiteralNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -127,6 +201,18 @@ UIntLiteralNode::UIntLiteralNode(const Span& span_, uint32_t value_) : Node(span
 Node* UIntLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new UIntLiteralNode(GetSpan(), value);
+}
+
+void UIntLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void UIntLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetUInt();
 }
 
 void UIntLiteralNode::Accept(Visitor& visitor)
@@ -147,6 +233,18 @@ Node* LongLiteralNode::Clone(CloneContext& cloneContext) const
     return new LongLiteralNode(GetSpan(), value);
 }
 
+void LongLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void LongLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetLong();
+}
+
 void LongLiteralNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -163,6 +261,18 @@ ULongLiteralNode::ULongLiteralNode(const Span& span_, uint64_t value_) : Node(sp
 Node* ULongLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new ULongLiteralNode(GetSpan(), value);
+}
+
+void ULongLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void ULongLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetULong();
 }
 
 void ULongLiteralNode::Accept(Visitor& visitor)
@@ -207,6 +317,18 @@ Node* FloatLiteralNode::Clone(CloneContext& cloneContext) const
     return new FloatLiteralNode(GetSpan(), value);
 }
 
+void FloatLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void FloatLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetFloat();
+}
+
 void FloatLiteralNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -223,6 +345,18 @@ DoubleLiteralNode::DoubleLiteralNode(const Span& span_, double value_) : Node(sp
 Node* DoubleLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new DoubleLiteralNode(GetSpan(), value);
+}
+
+void DoubleLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void DoubleLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetDouble();
 }
 
 void DoubleLiteralNode::Accept(Visitor& visitor)
@@ -255,6 +389,18 @@ Node* CharLiteralNode::Clone(CloneContext& cloneContext) const
     return new CharLiteralNode(GetSpan(), value);
 }
 
+void CharLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void CharLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetChar();
+}
+
 void CharLiteralNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -271,6 +417,18 @@ StringLiteralNode::StringLiteralNode(const Span& span_, const utf32_string& valu
 Node* StringLiteralNode::Clone(CloneContext& cloneContext) const
 {
     return new StringLiteralNode(GetSpan(), value);
+}
+
+void StringLiteralNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(value);
+}
+
+void StringLiteralNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    value = reader.GetUtf32String();
 }
 
 void StringLiteralNode::Accept(Visitor& visitor)

@@ -1,5 +1,5 @@
-#ifndef Expression_hpp_505
-#define Expression_hpp_505
+#ifndef Expression_hpp_11374
+#define Expression_hpp_11374
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -42,4 +42,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Expression_hpp_505
+#endif // Expression_hpp_11374

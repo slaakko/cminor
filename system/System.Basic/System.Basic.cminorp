@@ -3,5 +3,6 @@ reference <../System.Core/System.Core.cminorp>;
 source <Algorithm.cminor>;
 source <Array.cminor>;
 source <BoxedTypes.cminor>;
+source <Enumerator.cminor>;
 source <Object.cminor>;
 source <String.cminor>;

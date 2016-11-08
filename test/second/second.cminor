@@ -1,14 +1,4 @@
-public interface Enumerator
-{
-    object Current();
-    void Next();
-    bool AtEnd();
-}
-
-public interface Enumerable
-{
-    Enumerator GetEnumerator();
-}
+using System;
 
 public void Enumerate(Enumerable enumerable)
 {
@@ -16,7 +6,7 @@ public void Enumerate(Enumerable enumerable)
     while (!enumerator.AtEnd())
     {
         object current = enumerator.Current();
-        enumerator.Next();
+        enumerator.MoveNext();
     }
 }
 
@@ -32,7 +22,7 @@ class Alpha : Enumerable
         { 
             return null; 
         }
-        public void Next()
+        public void MoveNext()
         {
         }
         public bool AtEnd() 

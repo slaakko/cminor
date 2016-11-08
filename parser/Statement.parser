@@ -26,11 +26,11 @@ namespace cminor.parser
         Statement(ParsingContext* ctx) : StatementNode*
             ::= LabeledStatement(ctx){ value = LabeledStatement; }
             |   ControlStatement(ctx){ value = ControlStatement; }
+            |   IncrementStatement(ctx){ value = IncrementStatement; }
+            |   DecrementStatement(ctx){ value = DecrementStatement; }
             |   ExpressionStatement(ctx){ value = ExpressionStatement; }
             |   AssignmentStatement(ctx){ value = AssignmentStatement; }
             |   ConstructionStatement(ctx){ value = ConstructionStatement; }
-            |   IncrementStatement(ctx){ value = IncrementStatement; }
-            |   DecrementStatement(ctx){ value = DecrementStatement; }
             |   EmptyStatement(ctx){ value = EmptyStatement; }
             ;
 

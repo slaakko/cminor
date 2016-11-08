@@ -419,6 +419,22 @@ Node* IsNode::Clone(CloneContext& cloneContext) const
     return new IsNode(GetSpan(), expr->Clone(cloneContext), targetTypeExpr->Clone(cloneContext));
 }
 
+void IsNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(expr.get());
+    writer.Put(targetTypeExpr.get());
+}
+
+void IsNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    expr.reset(reader.GetNode());
+    expr->SetParent(this);
+    targetTypeExpr.reset(reader.GetNode());
+    targetTypeExpr->SetParent(this);
+}
+
 void IsNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -439,6 +455,22 @@ Node* AsNode::Clone(CloneContext& cloneContext) const
     return new AsNode(GetSpan(), expr->Clone(cloneContext), targetTypeExpr->Clone(cloneContext));
 }
 
+void AsNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(expr.get());
+    writer.Put(targetTypeExpr.get());
+}
+
+void AsNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    expr.reset(reader.GetNode());
+    expr->SetParent(this);
+    targetTypeExpr.reset(reader.GetNode());
+    targetTypeExpr->SetParent(this);
+}
+
 void AsNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -456,6 +488,19 @@ DotNode::DotNode(const Span& span_, Node* subject_, Node* memberId_) : UnaryNode
 Node* DotNode::Clone(CloneContext& cloneContext) const
 {
     return new DotNode(GetSpan(), Child()->Clone(cloneContext), memberId->Clone(cloneContext));
+}
+
+void DotNode::Write(AstWriter& writer)
+{
+    UnaryNode::Write(writer);
+    writer.Put(memberId.get());
+}
+
+void DotNode::Read(AstReader& reader)
+{
+    UnaryNode::Read(reader);
+    memberId.reset(reader.GetIdentifierNode());
+    memberId->SetParent(this);
 }
 
 const std::string& DotNode::MemberStr() const
@@ -497,6 +542,28 @@ Node* ArrayNode::Clone(CloneContext& cloneContext) const
     return new ArrayNode(GetSpan(), Child()->Clone(cloneContext), clonedSize);
 }
 
+void ArrayNode::Write(AstWriter& writer)
+{
+    UnaryNode::Write(writer);
+    bool hasSize = size != nullptr;
+    writer.AsMachineWriter().Put(hasSize);
+    if (hasSize)
+    {
+        writer.Put(size.get());
+    }
+}
+
+void ArrayNode::Read(AstReader& reader)
+{
+    UnaryNode::Read(reader);
+    bool hasSize = reader.GetBool();
+    if (hasSize)
+    {
+        size.reset(reader.GetNode());
+        size->SetParent(this);
+    }
+}
+
 void ArrayNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -514,6 +581,19 @@ IndexingNode::IndexingNode(const Span& span_, Node* subject_, Node* index_) : Un
 Node* IndexingNode::Clone(CloneContext& cloneContext) const
 {
     return new IndexingNode(GetSpan(), Child()->Clone(cloneContext), index->Clone(cloneContext));
+}
+
+void IndexingNode::Write(AstWriter& writer)
+{
+    UnaryNode::Write(writer);
+    writer.Put(index.get());
+}
+
+void IndexingNode::Read(AstReader& reader)
+{
+    UnaryNode::Read(reader);
+    index.reset(reader.GetNode());
+    index->SetParent(this);
 }
 
 void IndexingNode::Accept(Visitor& visitor)
@@ -547,6 +627,19 @@ Node* InvokeNode::Clone(CloneContext& cloneContext) const
     return clone;
 }
 
+void InvokeNode::Write(AstWriter& writer)
+{
+    UnaryNode::Write(writer);
+    arguments.Write(writer);
+}
+
+void InvokeNode::Read(AstReader& reader)
+{
+    UnaryNode::Read(reader);
+    arguments.Read(reader);
+    arguments.SetParent(this);
+}
+
 void InvokeNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -565,6 +658,22 @@ CastNode::CastNode(const Span& span_, Node* targetTypeExpr_, Node* sourceExpr_) 
 Node* CastNode::Clone(CloneContext& cloneContext) const
 {
     return new CastNode(GetSpan(), targetTypeExpr->Clone(cloneContext), sourceExpr->Clone(cloneContext));
+}
+
+void CastNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(targetTypeExpr.get());
+    writer.Put(sourceExpr.get());
+}
+
+void CastNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    targetTypeExpr.reset(reader.GetNode());
+    targetTypeExpr->SetParent(this);
+    sourceExpr.reset(reader.GetNode());
+    sourceExpr->SetParent(this);
 }
 
 void CastNode::Accept(Visitor& visitor)
@@ -596,6 +705,21 @@ Node* NewNode::Clone(CloneContext& cloneContext) const
         clone->AddArgument(arguments[i]->Clone(cloneContext));
     }
     return clone;
+}
+
+void NewNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(typeExpr.get());
+    arguments.Write(writer);
+}
+
+void NewNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    typeExpr.reset(reader.GetNode());
+    arguments.Read(reader);
+    arguments.SetParent(this);
 }
 
 void NewNode::Accept(Visitor& visitor)

@@ -15,6 +15,7 @@
 #include <cminor/parser/Statement.hpp>
 #include <cminor/parser/Parameter.hpp>
 #include <cminor/parser/Function.hpp>
+#include <cminor/parser/Template.hpp>
 
 namespace cminor { namespace parser {
 
@@ -109,6 +110,8 @@ public:
         specifiersNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassRule>(this, &ClassRule::PostSpecifiers));
         Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
         identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassRule>(this, &ClassRule::PostIdentifier));
+        Cm::Parsing::NonterminalParser* templateParameterListNonterminalParser = GetNonterminal("TemplateParameterList");
+        templateParameterListNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreTemplateParameterList));
         Cm::Parsing::NonterminalParser* inheritanceAndInterfacesNonterminalParser = GetNonterminal("InheritanceAndInterfaces");
         inheritanceAndInterfacesNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreInheritanceAndInterfaces));
         Cm::Parsing::NonterminalParser* classContentNonterminalParser = GetNonterminal("ClassContent");
@@ -135,6 +138,11 @@ public:
             context.fromIdentifier = *static_cast<Cm::Parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
+    }
+    void PreTemplateParameterList(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
     }
     void PreInheritanceAndInterfaces(Cm::Parsing::ObjectStack& stack)
     {
@@ -1443,10 +1451,10 @@ private:
 void ClassGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.FunctionGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.StatementGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::FunctionGrammar::Create(pd);
+        grammar0 = cminor::parser::StatementGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
     Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.SpecifierGrammar");
@@ -1455,55 +1463,62 @@ void ClassGrammar::GetReferencedGrammars()
         grammar1 = cminor::parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar2)
     {
-        grammar2 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar2 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar3)
     {
-        grammar3 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar3 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.FunctionGrammar");
     if (!grammar4)
     {
-        grammar4 = cminor::parser::ExpressionGrammar::Create(pd);
+        grammar4 = cminor::parser::FunctionGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parser.StatementGrammar");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar5)
     {
-        grammar5 = cminor::parser::StatementGrammar::Create(pd);
+        grammar5 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar5);
-    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("cminor.parser.ParameterGrammar");
+    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
     if (!grammar6)
     {
-        grammar6 = cminor::parser::ParameterGrammar::Create(pd);
+        grammar6 = cminor::parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar6);
-    Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("cminor.parser.ParameterGrammar");
     if (!grammar7)
     {
-        grammar7 = Cm::Parsing::stdlib::Create(pd);
+        grammar7 = cminor::parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar7);
+    Cm::Parsing::Grammar* grammar8 = pd->GetGrammar("cminor.parser.TemplateGrammar");
+    if (!grammar8)
+    {
+        grammar8 = cminor::parser::TemplateGrammar::Create(pd);
+    }
+    AddGrammarReference(grammar8);
 }
 
 void ClassGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Attributes", this, "FunctionGrammar.Attributes"));
-    AddRuleLink(new Cm::Parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new Cm::Parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+    AddRuleLink(new Cm::Parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
     AddRuleLink(new Cm::Parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
+    AddRuleLink(new Cm::Parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Attributes", this, "FunctionGrammar.Attributes"));
     AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRule(new ClassRule("Class", GetScope(),
         new Cm::Parsing::SequenceParser(
@@ -1512,10 +1527,13 @@ void ClassGrammar::CreateRules()
                     new Cm::Parsing::SequenceParser(
                         new Cm::Parsing::SequenceParser(
                             new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0),
-                                new Cm::Parsing::KeywordParser("class")),
-                            new Cm::Parsing::ActionParser("A0",
-                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                                new Cm::Parsing::SequenceParser(
+                                    new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0),
+                                    new Cm::Parsing::KeywordParser("class")),
+                                new Cm::Parsing::ActionParser("A0",
+                                    new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                            new Cm::Parsing::OptionalParser(
+                                new Cm::Parsing::NonterminalParser("TemplateParameterList", "TemplateParameterList", 2))),
                         new Cm::Parsing::OptionalParser(
                             new Cm::Parsing::NonterminalParser("InheritanceAndInterfaces", "InheritanceAndInterfaces", 2))),
                     new Cm::Parsing::ExpectationParser(

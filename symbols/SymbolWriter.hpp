@@ -6,23 +6,24 @@
 #ifndef CMINOR_SYMBOLS_SYMBOL_WRITER_INCLUDED
 #define CMINOR_SYMBOLS_SYMBOL_WRITER_INCLUDED
 #include <cminor/symbols/Symbol.hpp>
-#include <cminor/machine/Writer.hpp>
+#include <cminor/ast/AstWriter.hpp>
 
 namespace cminor { namespace symbols {
 
 using namespace cminor::machine;
+using namespace cminor::ast;
 
 class Assembly;
 class Symbol;
 
-class SymbolWriter : public Writer
+class SymbolWriter : public AstWriter
 {
 public:
     SymbolWriter(const std::string& fileName_);
     Assembly* GetAssembly() const { Assert(assembly, "assembly not set"); return assembly; }
     void SetAssembly(Assembly* assembly_) { assembly = assembly_; }
     void Put(Symbol* symbol);
-    Writer& AsMachineWriter() { return *this; }
+    AstWriter& AsAstWriter() { return *this; }
 private:
     Assembly* assembly;
 };

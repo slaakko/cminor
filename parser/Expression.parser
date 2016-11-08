@@ -7,6 +7,7 @@
 [hpp]#include <cminor/parser/ParsingContext.hpp>
 [cpp]#include <cminor/parser/Literal.hpp>
 [cpp]#include <cminor/parser/BasicType.hpp>
+[cpp]#include <cminor/parser/Template.hpp>
 [cpp]#include <cminor/parser/Identifier.hpp>
 [hpp]#include <cminor/parser/TypeExpr.hpp>
 [cpp]#include <cminor/parser/Operator.hpp>
@@ -19,6 +20,7 @@ namespace cminor.parser
     {
         using LiteralGrammar.Literal;
         using BasicTypeGrammar.BasicType;
+        using TemplateGrammar.TemplateId;
         using IdentifierGrammar.Identifier;
         using TypeExprGrammar.TypeExpr;
         using stdlib.identifier;
@@ -259,6 +261,7 @@ namespace cminor.parser
             ::= ('(' Expression(ctx) ')'){ value = Expression; }
             |   Literal{ value = Literal; }
             |   BasicType{ value = BasicType; }
+            |   TemplateId(ctx){ value = TemplateId; }
             |   Identifier{ value = Identifier; }
             |   keyword("this", identifier){ value = new ThisNode(span); }
             |   keyword("base", identifier){ value = new BaseNode(span); }

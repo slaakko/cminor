@@ -166,4 +166,10 @@ namespace cminor.parser
         ExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): StatementNode*;
         EmptyStatement(ParsingContext* ctx): StatementNode*;
     }
+    grammar TemplateGrammar
+    {
+        TemplateId(ParsingContext* ctx, var std::unique_ptr<TemplateIdNode> templateId): Node*;
+        TemplateParameter(ParsingContext* ctx): TemplateParameterNode*;
+        TemplateParameterList(ParsingContext* ctx, Node* owner);
+    }
 }

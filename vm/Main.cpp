@@ -33,6 +33,7 @@ struct InitDone
         FunctionTable::Init();
         ClassDataTable::Init();
         TypeInit();
+        NodeInit();
         VmFunctionTable::Init();
         InitSymbol();
         InitAssembly();
@@ -44,6 +45,7 @@ struct InitDone
         DoneAssembly();
         DoneSymbol();
         VmFunctionTable::Done();
+        NodeDone();
         TypeDone();
         ClassDataTable::Done();
         FunctionTable::Done();

@@ -19,6 +19,8 @@ public:
     BooleanLiteralNode(const Span& span_, bool value_);
     NodeType GetNodeType() const override { return NodeType::booleanLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     bool Value() const { return value; }
 private:
@@ -32,6 +34,8 @@ public:
     SByteLiteralNode(const Span& span_, int8_t value_);
     NodeType GetNodeType() const override { return NodeType::sbyteLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     int8_t Value() const { return value; }
 private:
@@ -45,6 +49,8 @@ public:
     ByteLiteralNode(const Span& span_, uint8_t value_);
     NodeType GetNodeType() const override { return NodeType::byteLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     uint8_t Value() const { return value; }
 private:
@@ -58,6 +64,8 @@ public:
     ShortLiteralNode(const Span& span_, int16_t value_);
     NodeType GetNodeType() const override { return NodeType::shortLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     int16_t Value() const { return value; }
 private:
@@ -71,6 +79,8 @@ public:
     UShortLiteralNode(const Span& span_, uint16_t value_);
     NodeType GetNodeType() const override { return NodeType::ushortLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     uint16_t Value() const { return value; }
 private:
@@ -84,6 +94,8 @@ public:
     IntLiteralNode(const Span& span_, int32_t value_);
     NodeType GetNodeType() const override { return NodeType::intLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     int32_t Value() const { return value; }
 private:
@@ -97,6 +109,8 @@ public:
     UIntLiteralNode(const Span& span_, uint32_t value_);
     NodeType GetNodeType() const override { return NodeType::uintLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     uint32_t Value() const { return value; }
 private:
@@ -110,6 +124,8 @@ public:
     LongLiteralNode(const Span& span_, int64_t value_);
     NodeType GetNodeType() const override { return NodeType::longLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     int64_t Value() const { return value; }
 private:
@@ -123,6 +139,8 @@ public:
     ULongLiteralNode(const Span& span_, uint64_t value_);
     NodeType GetNodeType() const override { return NodeType::ulongLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     uint64_t Value() const { return value; }
 private:
@@ -138,6 +156,8 @@ public:
     FloatLiteralNode(const Span& span_, float value_);
     NodeType GetNodeType() const override { return NodeType::floatLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     float Value() const { return value; }
 private:
@@ -151,6 +171,8 @@ public:
     DoubleLiteralNode(const Span& span_, double value_);
     NodeType GetNodeType() const override { return NodeType::doubleLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     double Value() const { return value; }
 private:
@@ -166,6 +188,8 @@ public:
     CharLiteralNode(const Span& span_, char32_t value_);
     NodeType GetNodeType() const override { return NodeType::charLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     char32_t Value() const { return value; }
 private:
@@ -179,6 +203,8 @@ public:
     StringLiteralNode(const Span& span_, const utf32_string& value_);
     NodeType GetNodeType() const override { return NodeType::stringLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     const utf32_string& Value() const { return value; }
 private:

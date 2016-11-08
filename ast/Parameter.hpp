@@ -18,6 +18,8 @@ public:
     ParameterNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::parameterNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     std::string ToString() const override;
     Node* TypeExpr() const { return typeExpr.get(); }

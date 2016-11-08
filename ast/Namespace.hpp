@@ -6,6 +6,7 @@
 #ifndef CMINOR_AST_NAMESPACE_INCLUDED
 #define CMINOR_AST_NAMESPACE_INCLUDED
 #include <cminor/ast/Identifier.hpp>
+#include <cminor/ast/NodeList.hpp>
 
 namespace cminor { namespace ast {
 
@@ -18,6 +19,8 @@ public:
     NamespaceNode(const Span& span_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::namespaceNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     std::string ToString() const override { return id->Str(); }
     void AddMember(Node* member);
@@ -37,6 +40,8 @@ public:
     AliasNode(const Span& span_, IdentifierNode* id_, IdentifierNode* qid_);
     NodeType GetNodeType() const override { return NodeType::aliasNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     IdentifierNode* Id() const { return id.get(); }
     IdentifierNode* Qid() const { return qid.get(); }
@@ -52,6 +57,8 @@ public:
     NamespaceImportNode(const Span& span_, IdentifierNode* ns_);
     NodeType GetNodeType() const override { return NodeType::namespaceImportNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     IdentifierNode* Ns() const { return ns.get(); }
 private:

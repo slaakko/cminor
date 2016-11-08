@@ -14,4 +14,5 @@ source <ProjectFile.parser>;
 source <SolutionFile.parser>;
 source <Specifier.parser>;
 source <Statement.parser>;
+source <Template.parser>;
 source <TypeExpr.parser>;

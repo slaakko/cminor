@@ -1,0 +1,37 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/parser/ParsingContext.hpp>
+[hpp]#include <cminor/ast/Template.hpp>
+[cpp]#include <cminor/parser/Identifier.hpp>
+[cpp]#include <cminor/parser/TypeExpr.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar TemplateGrammar
+    {
+        using IdentifierGrammar.QualifiedId;
+        using IdentifierGrammar.Identifier;
+        using TypeExprGrammar.TypeExpr;
+
+        TemplateId(ParsingContext* ctx, var std::unique_ptr<TemplateIdNode> templateId) : Node*
+            ::= (QualifiedId:primary{ templateId.reset(new TemplateIdNode(span, primary)); }
+                '<' (TypeExpr(ctx):templateArg{ templateId->AddTemplateArgument(templateArg); } % ',') '>')
+            {
+                value = templateId.release();
+            }
+            ;
+
+        TemplateParameter(ParsingContext* ctx) : TemplateParameterNode*
+            ::= (Identifier ('=' TypeExpr(ctx))?){ value = new TemplateParameterNode(span, Identifier, TypeExpr); }
+            ;
+
+        TemplateParameterList(ParsingContext* ctx, Node* owner)
+            ::= '<' (TemplateParameter(ctx){ owner->AddTemplateParameter(TemplateParameter); } % ',') '>'!
+            ;
+    }
+}

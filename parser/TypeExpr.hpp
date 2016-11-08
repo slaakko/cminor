@@ -1,5 +1,5 @@
-#ifndef TypeExpr_hpp_24545
-#define TypeExpr_hpp_24545
+#ifndef TypeExpr_hpp_11374
+#define TypeExpr_hpp_11374
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -26,4 +26,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // TypeExpr_hpp_24545
+#endif // TypeExpr_hpp_11374

@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AstReader.hpp" />
+    <ClInclude Include="AstWriter.hpp" />
     <ClInclude Include="BasicType.hpp" />
     <ClInclude Include="Class.hpp" />
     <ClInclude Include="Clone.hpp" />
@@ -30,14 +32,18 @@
     <ClInclude Include="Literal.hpp" />
     <ClInclude Include="Namespace.hpp" />
     <ClInclude Include="Node.hpp" />
+    <ClInclude Include="NodeList.hpp" />
     <ClInclude Include="Parameter.hpp" />
     <ClInclude Include="Project.hpp" />
     <ClInclude Include="Solution.hpp" />
     <ClInclude Include="Specifier.hpp" />
     <ClInclude Include="Statement.hpp" />
+    <ClInclude Include="Template.hpp" />
     <ClInclude Include="Visitor.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AstReader.cpp" />
+    <ClCompile Include="AstWriter.cpp" />
     <ClCompile Include="BasicType.cpp" />
     <ClCompile Include="Class.cpp" />
     <ClCompile Include="Clone.cpp" />
@@ -54,6 +60,7 @@
     <ClCompile Include="Solution.cpp" />
     <ClCompile Include="Specifier.cpp" />
     <ClCompile Include="Statement.cpp" />
+    <ClCompile Include="Template.cpp" />
     <ClCompile Include="Visitor.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

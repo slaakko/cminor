@@ -33,6 +33,12 @@ void ClassNode::AddMember(Node* member)
     members.Add(member);
 }
 
+void ClassNode::AddTemplateParameter(TemplateParameterNode* templateParameter)
+{
+    templateParameter->SetParent(this);
+    templateParameters.Add(templateParameter);
+}
+
 Node* ClassNode::Clone(CloneContext& cloneContext) const
 {
     ClassNode* clone = new ClassNode(GetSpan(), specifiers, static_cast<IdentifierNode*>(id->Clone(cloneContext)));
@@ -49,6 +55,30 @@ Node* ClassNode::Clone(CloneContext& cloneContext) const
         clone->AddMember(member->Clone(cloneContext));
     }
     return clone;
+}
+
+void ClassNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(specifiers);
+    writer.Put(id.get());
+    templateParameters.Write(writer);
+    baseClassOrInterfaces.Write(writer);
+    members.Write(writer);
+}
+
+void ClassNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    specifiers = reader.GetSpecifiers();
+    id.reset(reader.GetIdentifierNode());
+    id->SetParent(this);
+    templateParameters.Read(reader);
+    templateParameters.SetParent(this);
+    baseClassOrInterfaces.Read(reader);
+    baseClassOrInterfaces.SetParent(this);
+    members.Read(reader);
+    members.SetParent(this);
 }
 
 void ClassNode::Accept(Visitor& visitor)
@@ -85,6 +115,20 @@ void InitializerNode::AddArgument(Node* argument)
     argument->SetParent(this);
     arguments.Add(argument);
 }
+
+void InitializerNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    arguments.Write(writer);
+}
+
+void InitializerNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    arguments.Read(reader);
+    arguments.SetParent(this);
+}
+
 
 BaseInitializerNode::BaseInitializerNode(const Span& span_) : InitializerNode(span_)
 {
@@ -151,6 +195,31 @@ Node* ConstructorNode::Clone(CloneContext& cloneContext) const
     return clone;
 }
 
+void ConstructorNode::Write(AstWriter& writer)
+{
+    FunctionNode::Write(writer);
+    bool hasInitializer = initializer != nullptr;
+    writer.AsMachineWriter().Put(hasInitializer);
+    if (hasInitializer)
+    {
+        writer.Put(initializer.get());
+    }
+}
+
+void ConstructorNode::Read(AstReader& reader)
+{
+    FunctionNode::Read(reader);
+    bool hasInitializer = reader.GetBool();
+    if (hasInitializer)
+    {
+        Node* node = reader.GetNode();
+        InitializerNode* initializerNode = dynamic_cast<InitializerNode*>(node);
+        Assert(initializerNode, "initializer node expected");
+        initializer.reset(initializerNode);
+        initializer->SetParent(this);
+    }
+}
+
 void ConstructorNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -206,6 +275,24 @@ Node* MemberVariableNode::Clone(CloneContext& cloneContext) const
     return new MemberVariableNode(GetSpan(), specifiers, typeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
 }
 
+void MemberVariableNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(specifiers);
+    writer.Put(typeExpr.get());
+    writer.Put(id.get());
+}
+
+void MemberVariableNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    specifiers = reader.GetSpecifiers();
+    typeExpr.reset(reader.GetNode());
+    typeExpr->SetParent(this);
+    id.reset(reader.GetIdentifierNode());
+    id->SetParent(this);
+}
+
 void MemberVariableNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -234,6 +321,48 @@ Node* PropertyNode::Clone(CloneContext& cloneContext) const
         clone->SetSetter(static_cast<CompoundStatementNode*>(setter->Clone(cloneContext)));
     }
     return clone;
+}
+
+void PropertyNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(specifiers);
+    writer.Put(typeExpr.get());
+    writer.Put(id.get());
+    bool hasGetter = getter != nullptr;
+    writer.AsMachineWriter().Put(hasGetter);
+    if (hasGetter)
+    {
+        writer.Put(getter.get());
+    }
+    bool hasSetter = setter != nullptr;
+    writer.AsMachineWriter().Put(hasSetter);
+    if (hasSetter)
+    {
+        writer.Put(setter.get());
+    }
+}
+
+void PropertyNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    specifiers = reader.GetSpecifiers();
+    typeExpr.reset(reader.GetNode());
+    typeExpr->SetParent(this);
+    id.reset(reader.GetIdentifierNode());
+    id->SetParent(this);
+    bool hasGetter = reader.GetBool();
+    if (hasGetter)
+    {
+        getter.reset(reader.GetCompoundStatementNode());
+        getter->SetParent(this);
+    }
+    bool hasSetter = reader.GetBool();
+    if (hasSetter)
+    {
+        setter.reset(reader.GetCompoundStatementNode());
+        setter->SetParent(this);
+    }
 }
 
 void PropertyNode::Accept(Visitor& visitor)
@@ -285,6 +414,51 @@ Node* IndexerNode::Clone(CloneContext& cloneContext) const
         clone->SetSetter(static_cast<CompoundStatementNode*>(setter->Clone(cloneContext)));
     }
     return clone;
+}
+
+void IndexerNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(specifiers);
+    writer.Put(valueTypeExpr.get());
+    writer.Put(indexTypeExpr.get());
+    writer.Put(id.get());
+    bool hasGetter = getter != nullptr;
+    writer.AsMachineWriter().Put(hasGetter);
+    if (hasGetter)
+    {
+        writer.Put(getter.get());
+    }
+    bool hasSetter = setter != nullptr;
+    writer.AsMachineWriter().Put(hasSetter);
+    if (hasSetter)
+    {
+        writer.Put(setter.get());
+    }
+}
+
+void IndexerNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    specifiers = reader.GetSpecifiers();
+    valueTypeExpr.reset(reader.GetNode());
+    valueTypeExpr->SetParent(this);
+    indexTypeExpr.reset(reader.GetNode());
+    indexTypeExpr->SetParent(this);
+    id.reset(reader.GetIdentifierNode());
+    id->SetParent(this);
+    bool hasGetter = reader.GetBool();
+    if (hasGetter)
+    {
+        getter.reset(reader.GetCompoundStatementNode());
+        getter->SetParent(this);
+    }
+    bool hasSetter = reader.GetBool();
+    if (hasSetter)
+    {
+        setter.reset(reader.GetCompoundStatementNode());
+        setter->SetParent(this);
+    }
 }
 
 void IndexerNode::Accept(Visitor& visitor)

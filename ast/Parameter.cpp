@@ -6,6 +6,8 @@
 #include <cminor/ast/Parameter.hpp>
 #include <cminor/ast/Identifier.hpp>
 #include <cminor/ast/Visitor.hpp>
+#include <cminor/ast/AstWriter.hpp>
+#include <cminor/ast/AstReader.hpp>
 
 namespace cminor { namespace ast {
 
@@ -30,6 +32,22 @@ Node* ParameterNode::Clone(CloneContext& cloneContext) const
         clonedId = static_cast<IdentifierNode*>(id->Clone(cloneContext));
     }
     return new ParameterNode(GetSpan(), typeExpr->Clone(cloneContext), clonedId);
+}
+
+void ParameterNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(typeExpr.get());
+    writer.Put(id.get());
+}
+
+void ParameterNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    typeExpr.reset(reader.GetNode());
+    typeExpr->SetParent(this);
+    id.reset(reader.GetIdentifierNode());
+    id->SetParent(this);
 }
 
 void ParameterNode::Accept(Visitor& visitor)

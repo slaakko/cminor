@@ -35,6 +35,7 @@
     <None Include="SolutionFile.parser" />
     <None Include="Specifier.parser" />
     <None Include="Statement.parser" />
+    <None Include="Template.parser" />
     <None Include="TypeExpr.parser" />
   </ItemGroup>
   <ItemGroup>
@@ -53,6 +54,7 @@
     <ClCompile Include="SolutionFile.cpp" />
     <ClCompile Include="Specifier.cpp" />
     <ClCompile Include="Statement.cpp" />
+    <ClCompile Include="Template.cpp" />
     <ClCompile Include="TypeExpr.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -72,6 +74,7 @@
     <ClInclude Include="SolutionFile.hpp" />
     <ClInclude Include="Specifier.hpp" />
     <ClInclude Include="Statement.hpp" />
+    <ClInclude Include="Template.hpp" />
     <ClInclude Include="TypeExpr.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -6,6 +6,7 @@
 #ifndef CMINOR_AST_EXPRESSION_INCLUDED
 #define CMINOR_AST_EXPRESSION_INCLUDED
 #include <cminor/ast/Identifier.hpp>
+#include <cminor/ast/NodeList.hpp>
 
 namespace cminor { namespace ast {
 
@@ -236,6 +237,8 @@ public:
     IsNode(const Span& span_, Node* expr_, Node* targetTypeExpr_);
     NodeType GetNodeType() const override { return NodeType::isNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> expr;
@@ -249,6 +252,8 @@ public:
     AsNode(const Span& span_, Node* expr_, Node* targetTypeExpr_);
     NodeType GetNodeType() const override { return NodeType::isNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> expr;
@@ -263,6 +268,8 @@ public:
     NodeType GetNodeType() const override { return NodeType::dotNode; }
     Node* MemberId() const { return memberId.get(); }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     const std::string& MemberStr() const;
     void Accept(Visitor& visitor) override;
 private:
@@ -276,6 +283,8 @@ public:
     ArrayNode(const Span& span_, Node* subject_, Node* size_);
     NodeType GetNodeType() const override { return NodeType::arrayNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* Size() const { return size.get(); }
 private:
@@ -289,6 +298,8 @@ public:
     IndexingNode(const Span& span_, Node* subject_, Node* index_);
     NodeType GetNodeType() const override { return NodeType::indexingNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* Index() const { return index.get(); }
 private:
@@ -303,6 +314,8 @@ public:
     NodeType GetNodeType() const override { return NodeType::invokeNode; }
     void AddArgument(Node* argument) override;
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     const NodeList<Node>& Arguments() const { return arguments; }
 private:
@@ -316,6 +329,8 @@ public:
     CastNode(const Span& span_, Node* targetTypeExpr_, Node* sourceExpr_);
     NodeType GetNodeType() const override { return NodeType::castNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* TargetTypeExpr() const { return targetTypeExpr.get(); }
     Node* SourceExpr() const { return sourceExpr.get(); }
@@ -332,6 +347,8 @@ public:
     NodeType GetNodeType() const override { return NodeType::newNode; }
     void AddArgument(Node* argument) override;
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* TypeExpr() const { return typeExpr.get(); }
     const NodeList<Node>& Arguments() const { return arguments; }

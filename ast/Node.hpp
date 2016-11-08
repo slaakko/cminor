@@ -12,7 +12,10 @@ namespace cminor { namespace ast {
 
 using Cm::Parsing::Span;
 class ParameterNode;
+class TemplateParameterNode;
 class CompoundStatementNode;
+class AstWriter;
+class AstReader;
 
 enum class NodeType : uint8_t
 {
@@ -23,11 +26,13 @@ enum class NodeType : uint8_t
     disjunctionNode, conjunctionNode, bitOrNode, bitXorNode, bitAndNode, equalNode, notEqualNode, lessNode, greaterNode, lessOrEqualNode, greaterOrEqualNode,
     shiftLeftNode, shiftRightNode, addNode, subNode, mulNode, divNode, remNode, notNode, unaryPlusNode, unaryMinusNode, complementNode, isNode, asNode, dotNode, arrayNode,
     indexingNode, invokeNode, castNode, classNode, interfaceNode, newNode, memberVariableNode, propertyNode, indexerNode, staticConstructorNode, constructorNode, memberFunctionNode,
-    baseInitializerNode, thisInitializerNode, labelNode, thisNode, baseNode,
+    baseInitializerNode, thisInitializerNode, labelNode, thisNode, baseNode, templateIdNode, templateParameterNode,
     compoundStatementNode, returnStatementNode, ifStatementNode, whileStatementNode, doStatementNode, forStatementNode, breakStatementNode, continueStatementNode, 
     constructionStatementNode, assignmentStatementNode, expressionStatementNode, emptyStatementNode, incrementStatementNode, decrementStatementNode,
     maxNode
 };
+
+std::string NodeTypeStr(NodeType nodeType);
 
 class Visitor;
 
@@ -39,6 +44,8 @@ public:
     virtual ~Node();
     virtual NodeType GetNodeType() const = 0;
     virtual Node* Clone(CloneContext& cloneContext) const = 0;
+    virtual void Write(AstWriter& writer);
+    virtual void Read(AstReader& reader);
     virtual void Accept(Visitor& visitor);
     virtual std::string ToString() const { return ""; }
     Span& GetSpan() { return span; }
@@ -47,6 +54,7 @@ public:
     void SetParent(Node* parent_) { parent = parent_; }
     virtual void AddArgument(Node* argument);
     virtual void AddParameter(ParameterNode* parameter);
+    virtual void AddTemplateParameter(TemplateParameterNode* templateParameter);
     virtual void SetGetter(CompoundStatementNode* getter);
     virtual void SetSetter(CompoundStatementNode* setter);
     virtual bool IsBreakEnclosingStatementNode() const { return false; }
@@ -61,6 +69,8 @@ class UnaryNode : public Node
 public:
     UnaryNode(const Span& span_);
     UnaryNode(const Span& span_, Node* child_);
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     Node* Child() const { return child.get(); }
     void Accept(Visitor& visitor) override;
 private:
@@ -72,6 +82,8 @@ class BinaryNode : public Node
 public:
     BinaryNode(const Span& span_);
     BinaryNode(const Span& span_, Node* left_, Node* right_);
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     Node* Left() const { return left.get(); }
     Node* Right() const { return right.get(); }
     void Accept(Visitor& visitor) override;
@@ -80,32 +92,29 @@ private:
     std::unique_ptr<Node> right;
 };
 
-template<typename T>
-class NodeList
+class NodeCreator
 {
 public:
-    int Count() const
-    {
-        return static_cast<int>(nodes.size());
-    }
-    T* operator[](int index) const
-    {
-        return nodes[index].get();
-    }
-    void Add(T* node)
-    {
-        nodes.push_back(std::unique_ptr<T>(node));
-    }
-    void SetParent(Node* parent)
-    {
-        for (const std::unique_ptr<T>& node : nodes)
-        {
-            node->SetParent(parent);
-        }
-    }
+    virtual ~NodeCreator();
+    virtual Node* CreateNode(const Span& span) = 0;
+};
+
+class NodeFactory
+{
+public:
+    static void Init();
+    static void Done();
+    static NodeFactory& Instance();
+    void Register(NodeType nodeType, NodeCreator* creator);
+    Node* CreateNode(NodeType nodeType, const Span& span);
 private:
-    std::vector<std::unique_ptr<T>> nodes;
-}; 
+    static std::unique_ptr<NodeFactory> instance;
+    std::vector<std::unique_ptr<NodeCreator>> creators;
+    NodeFactory();
+};
+
+void NodeInit();
+void NodeDone();
 
 } } // namespace cminor::ast
 

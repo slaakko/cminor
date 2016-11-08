@@ -22,6 +22,18 @@ Node* LabelNode::Clone(CloneContext& cloneContext) const
     return new LabelNode(GetSpan(), label);
 }
 
+void LabelNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.AsMachineWriter().Put(label);
+}
+
+void LabelNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    label = reader.GetUtf8String();
+}
+
 StatementNode::StatementNode(const Span& span_) : Node(span_)
 {
 }
@@ -34,6 +46,32 @@ void StatementNode::SetLabelNode(LabelNode* labelNode_)
         labelNode->SetParent(this);
     }
 }
+
+void StatementNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    bool hasLabel = labelNode != nullptr;
+    writer.AsMachineWriter().Put(hasLabel);
+    if (hasLabel)
+    {
+        writer.Put(labelNode.get());
+    }
+}
+
+void StatementNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    bool hasLabel = reader.GetBool();
+    if (hasLabel)
+    {
+        Node* node = reader.GetNode();
+        LabelNode* lblNode = dynamic_cast<LabelNode*>(node);
+        Assert(lblNode, "label node expected");
+        labelNode.reset(lblNode);
+        labelNode->SetParent(this);
+    }
+}
+
 
 void StatementNode::CloneLabelTo(StatementNode* clone, CloneContext& cloneContext) const
 {
@@ -72,6 +110,25 @@ Node* ConstructionStatementNode::Clone(CloneContext& cloneContext) const
     return clone;
 }
 
+void ConstructionStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(typeExpr.get());
+    writer.Put(id.get());
+    arguments.Write(writer);
+}
+
+void ConstructionStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    typeExpr.reset(reader.GetNode());
+    typeExpr->SetParent(this);
+    id.reset(reader.GetIdentifierNode());
+    id->SetParent(this);
+    arguments.Read(reader);
+    arguments.SetParent(this);
+}
+
 void ConstructionStatementNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -92,6 +149,22 @@ Node* AssignmentStatementNode::Clone(CloneContext& cloneContext) const
     AssignmentStatementNode* clone = new AssignmentStatementNode(GetSpan(), targetExpr->Clone(cloneContext), sourceExpr->Clone(cloneContext));
     CloneLabelTo(clone, cloneContext);
     return clone;
+}
+
+void AssignmentStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(targetExpr.get());
+    writer.Put(sourceExpr.get());
+}
+
+void AssignmentStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    targetExpr.reset(reader.GetNode());
+    targetExpr->SetParent(this);
+    sourceExpr.reset(reader.GetNode());
+    sourceExpr->SetParent(this);
 }
 
 void AssignmentStatementNode::Accept(Visitor& visitor)
@@ -124,6 +197,23 @@ Node* CompoundStatementNode::Clone(CloneContext& cloneContext) const
     return clone;
 }
 
+void CompoundStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    statements.Write(writer);
+    writer.AsMachineWriter().Put(beginBraceSpan);
+    writer.AsMachineWriter().Put(endBraceSpan);
+}
+
+void CompoundStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    statements.Read(reader);
+    statements.SetParent(this);
+    beginBraceSpan = reader.GetSpan();
+    endBraceSpan = reader.GetSpan();
+}
+
 void CompoundStatementNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -151,6 +241,28 @@ Node* ReturnStatementNode::Clone(CloneContext& cloneContext) const
     ReturnStatementNode* clone = new ReturnStatementNode(GetSpan(), clonedExpression);
     CloneLabelTo(clone, cloneContext);
     return clone;
+}
+
+void ReturnStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    bool hasExpression = expression != nullptr;
+    writer.AsMachineWriter().Put(hasExpression);
+    if (hasExpression)
+    {
+        writer.Put(expression.get());
+    }
+}
+
+void ReturnStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    bool hasExpression = reader.GetBool();
+    if (hasExpression)
+    {
+        expression.reset(reader.GetNode());
+        expression->SetParent(this);
+    }
 }
 
 void ReturnStatementNode::Accept(Visitor& visitor)
@@ -184,6 +296,34 @@ Node* IfStatementNode::Clone(CloneContext& cloneContext) const
     return clone;
 }
 
+void IfStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(condition.get());
+    writer.Put(thenS.get());
+    bool hasElseS = elseS != nullptr;
+    writer.AsMachineWriter().Put(hasElseS);
+    if (hasElseS)
+    {
+        writer.Put(elseS.get());
+    }
+}
+
+void IfStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    condition.reset(reader.GetNode());
+    condition->SetParent(this);
+    thenS.reset(reader.GetStatementNode());
+    thenS->SetParent(this);
+    bool hasElseS = reader.GetBool();
+    if (hasElseS)
+    {
+        elseS.reset(reader.GetStatementNode());
+        elseS->SetParent(this);
+    }
+}
+
 void IfStatementNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -206,6 +346,22 @@ Node* WhileStatementNode::Clone(CloneContext& cloneContext) const
     return clone;
 }
 
+void WhileStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(condition.get());
+    writer.Put(statement.get());
+}
+
+void WhileStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    condition.reset(reader.GetNode());
+    condition->SetParent(this);
+    statement.reset(reader.GetStatementNode());
+    statement->SetParent(this);
+}
+
 void WhileStatementNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -226,6 +382,22 @@ Node* DoStatementNode::Clone(CloneContext& cloneContext) const
     DoStatementNode* clone = new DoStatementNode(GetSpan(), static_cast<StatementNode*>(statement->Clone(cloneContext)), condition->Clone(cloneContext));
     CloneLabelTo(clone, cloneContext);
     return clone;
+}
+
+void DoStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(statement.get());
+    writer.Put(condition.get());
+}
+
+void DoStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    statement.reset(reader.GetStatementNode());
+    statement->SetParent(this);
+    condition.reset(reader.GetNode());
+    condition->SetParent(this);
 }
 
 void DoStatementNode::Accept(Visitor& visitor)
@@ -260,6 +432,37 @@ Node* ForStatementNode::Clone(CloneContext& cloneContext) const
         static_cast<StatementNode*>(actionS->Clone(cloneContext)));
     CloneLabelTo(clone, cloneContext);
     return clone;
+}
+
+void ForStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(initS.get());
+    bool hasCondition = condition != nullptr;
+    writer.AsMachineWriter().Put(hasCondition);
+    if (hasCondition)
+    {
+        writer.Put(condition.get());
+    }
+    writer.Put(loopS.get());
+    writer.Put(actionS.get());
+}
+
+void ForStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    initS.reset(reader.GetStatementNode());
+    initS->SetParent(this);
+    bool hasCondition = reader.GetBool();
+    if (hasCondition)
+    {
+        condition.reset(reader.GetNode());
+        condition->SetParent(this);
+    }
+    loopS.reset(reader.GetStatementNode());
+    loopS->SetParent(this);
+    actionS.reset(reader.GetStatementNode());
+    actionS->SetParent(this);
 }
 
 void ForStatementNode::Accept(Visitor& visitor)
@@ -311,6 +514,19 @@ Node* ExpressionStatementNode::Clone(CloneContext& cloneContext) const
     return clone;
 }
 
+void ExpressionStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(expression.get());
+}
+
+void ExpressionStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    expression.reset(reader.GetNode());
+    expression->SetParent(this);
+}
+
 void ExpressionStatementNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -348,6 +564,19 @@ Node* IncrementStatementNode::Clone(CloneContext& cloneContext) const
     return clone;
 }
 
+void IncrementStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(expression.get());
+}
+
+void IncrementStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    expression.reset(reader.GetNode());
+    expression->SetParent(this);
+}
+
 void IncrementStatementNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
@@ -366,6 +595,19 @@ Node* DecrementStatementNode::Clone(CloneContext& cloneContext) const
     DecrementStatementNode* clone = new DecrementStatementNode(GetSpan(), expression->Clone(cloneContext));
     CloneLabelTo(clone, cloneContext);
     return clone;
+}
+
+void DecrementStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(expression.get());
+}
+
+void DecrementStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    expression.reset(reader.GetNode());
+    expression->SetParent(this);
 }
 
 void DecrementStatementNode::Accept(Visitor& visitor)

@@ -37,6 +37,7 @@ struct InitDone
         FunctionTable::Init();
         ClassDataTable::Init();
         TypeInit();
+        NodeInit();
         InitSymbol();
         InitAssembly();
         Cm::Parsing::Init();
@@ -46,6 +47,7 @@ struct InitDone
         Cm::Parsing::Done();
         DoneAssembly();
         DoneSymbol();
+        NodeDone();
         TypeDone();
         ClassDataTable::Done();
         FunctionTable::Done();

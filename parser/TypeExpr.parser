@@ -7,8 +7,8 @@
 [hpp]#include <cminor/parser/ParsingContext.hpp>
 [cpp]#include <cminor/parser/BasicType.hpp>
 [cpp]#include <cminor/parser/Expression.hpp>
+[cpp]#include <cminor/parser/Template.hpp>
 [cpp]#include <cminor/parser/Identifier.hpp>
-
 
 namespace cminor.parser
 {
@@ -16,6 +16,7 @@ namespace cminor.parser
 
     grammar TypeExprGrammar
     {
+        using TemplateGrammar.TemplateId;
         using IdentifierGrammar.Identifier;
         using BasicTypeGrammar.BasicType;
         using ExpressionGrammar.Expression;
@@ -38,6 +39,7 @@ namespace cminor.parser
 
         PrimaryTypeExpr(ParsingContext* ctx) : Node*
             ::= BasicType{ value = BasicType; }
+            |   TemplateId(ctx){ value = TemplateId; }
             |   Identifier{ value = Identifier; }
             ;
     }

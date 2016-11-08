@@ -34,6 +34,24 @@ Node* InterfaceNode::Clone(CloneContext& cloneContext) const
     return clone;
 }
 
+void InterfaceNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(specifiers);
+    writer.Put(id.get());
+    members.Write(writer);
+}
+
+void InterfaceNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    specifiers = reader.GetSpecifiers();
+    id.reset(reader.GetIdentifierNode());
+    id->SetParent(this);
+    members.Read(reader);
+    members.SetParent(this);
+}
+
 void InterfaceNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);

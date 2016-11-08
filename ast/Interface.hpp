@@ -18,6 +18,8 @@ public:
     void AddMember(Node* member);
     const NodeList<Node>& Members() const { return members; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     Specifiers GetSpecifiers() const { return specifiers; }
     IdentifierNode* Id() const { return id.get(); }
     void Accept(Visitor& visitor) override;

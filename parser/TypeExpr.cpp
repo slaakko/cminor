@@ -10,6 +10,7 @@
 #include <Cm.Parsing/XmlLog.hpp>
 #include <cminor/parser/BasicType.hpp>
 #include <cminor/parser/Expression.hpp>
+#include <cminor/parser/Template.hpp>
 #include <cminor/parser/Identifier.hpp>
 
 namespace cminor { namespace parser {
@@ -283,8 +284,13 @@ public:
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::A0Action));
         Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
         a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::A2Action));
         Cm::Parsing::NonterminalParser* basicTypeNonterminalParser = GetNonterminal("BasicType");
         basicTypeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PostBasicType));
+        Cm::Parsing::NonterminalParser* templateIdNonterminalParser = GetNonterminal("TemplateId");
+        templateIdNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PreTemplateId));
+        templateIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PostTemplateId));
         Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
         identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PrimaryTypeExprRule>(this, &PrimaryTypeExprRule::PostIdentifier));
     }
@@ -294,6 +300,10 @@ public:
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
+        context.value = context.fromTemplateId;
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
         context.value = context.fromIdentifier;
     }
     void PostBasicType(Cm::Parsing::ObjectStack& stack, bool matched)
@@ -302,6 +312,19 @@ public:
         {
             std::unique_ptr<Cm::Parsing::Object> fromBasicType_value = std::move(stack.top());
             context.fromBasicType = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromBasicType_value.get());
+            stack.pop();
+        }
+    }
+    void PreTemplateId(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostTemplateId(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromTemplateId_value = std::move(stack.top());
+            context.fromTemplateId = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromTemplateId_value.get());
             stack.pop();
         }
     }
@@ -317,10 +340,11 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), value(), fromBasicType(), fromIdentifier() {}
+        Context(): ctx(), value(), fromBasicType(), fromTemplateId(), fromIdentifier() {}
         ParsingContext* ctx;
         Node* value;
         Node* fromBasicType;
+        Node* fromTemplateId;
         IdentifierNode* fromIdentifier;
     };
     std::stack<Context> contextStack;
@@ -330,28 +354,35 @@ private:
 void TypeExprGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.TemplateGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar0 = cminor::parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.BasicTypeGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::BasicTypeGrammar::Create(pd);
+        grammar1 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.BasicTypeGrammar");
     if (!grammar2)
     {
-        grammar2 = cminor::parser::ExpressionGrammar::Create(pd);
+        grammar2 = cminor::parser::BasicTypeGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    if (!grammar3)
+    {
+        grammar3 = cminor::parser::ExpressionGrammar::Create(pd);
+    }
+    AddGrammarReference(grammar3);
 }
 
 void TypeExprGrammar::CreateRules()
 {
+    AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRuleLink(new Cm::Parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
@@ -380,9 +411,12 @@ void TypeExprGrammar::CreateRules()
                                     new Cm::Parsing::CharParser(']'))))))))));
     AddRule(new PrimaryTypeExprRule("PrimaryTypeExpr", GetScope(),
         new Cm::Parsing::AlternativeParser(
-            new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::NonterminalParser("BasicType", "BasicType", 0)),
-            new Cm::Parsing::ActionParser("A1",
+            new Cm::Parsing::AlternativeParser(
+                new Cm::Parsing::ActionParser("A0",
+                    new Cm::Parsing::NonterminalParser("BasicType", "BasicType", 0)),
+                new Cm::Parsing::ActionParser("A1",
+                    new Cm::Parsing::NonterminalParser("TemplateId", "TemplateId", 1))),
+            new Cm::Parsing::ActionParser("A2",
                 new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0)))));
 }
 

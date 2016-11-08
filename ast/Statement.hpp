@@ -6,6 +6,7 @@
 #ifndef CMINOR_AST_STATEMENT_INCLUDED
 #define CMINOR_AST_STATEMENT_INCLUDED
 #include <cminor/ast/Node.hpp>
+#include <cminor/ast/NodeList.hpp>
 
 namespace cminor { namespace ast {
 
@@ -18,6 +19,8 @@ public:
     LabelNode(const Span& span_, const std::string& label_);
     NodeType GetNodeType() const override { return NodeType::labelNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     const std::string& Label() const { return label; }
 private:
     std::string label;
@@ -28,6 +31,8 @@ class StatementNode : public Node
 public:
     StatementNode(const Span& span_);
     void SetLabelNode(LabelNode* labelNode_);
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void CloneLabelTo(StatementNode* clone, CloneContext& cloneContext) const;
     LabelNode* Label() const { return labelNode.get(); }
     virtual bool IsFunctionTerminatingNode() const { return false; }
@@ -43,6 +48,8 @@ public:
     void AddStatement(StatementNode* statement);
     NodeList<StatementNode>& Statements() { return statements; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     void SetBeginBraceSpan(const Span& beginBraceSpan_) { beginBraceSpan = beginBraceSpan_; }
     const Span& BeginBraceSpan() const { return beginBraceSpan; }
@@ -61,6 +68,8 @@ public:
     ReturnStatementNode(const Span& span_, Node* expression_);
     NodeType GetNodeType() const override { return NodeType::returnStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* Expression() const { return expression.get(); }
     bool IsFunctionTerminatingNode() const override { return true; }
@@ -75,6 +84,8 @@ public:
     IfStatementNode(const Span& span_, Node* condition_, StatementNode* thenS_, StatementNode* elseS_);
     NodeType GetNodeType() const override { return NodeType::ifStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* Condition() const { return condition.get(); }
     StatementNode* ThenS() const { return thenS.get(); }
@@ -92,6 +103,8 @@ public:
     WhileStatementNode(const Span& span_, Node* condition_, StatementNode* statement_);
     NodeType GetNodeType() const override { return NodeType::whileStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* Condition() const { return condition.get(); }
     StatementNode* Statement() const { return statement.get(); }
@@ -109,6 +122,8 @@ public:
     DoStatementNode(const Span& span_, StatementNode* statement_, Node* condition_);
     NodeType GetNodeType() const override { return NodeType::doStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     StatementNode* Statement() const { return statement.get(); }
     Node* Condition() const { return condition.get(); }
@@ -126,6 +141,8 @@ public:
     ForStatementNode(const Span& span_, StatementNode* initS_, Node* condition_, StatementNode* loopS_, StatementNode* actionS_);
     NodeType GetNodeType() const override { return NodeType::forStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     StatementNode* InitS() const { return initS.get(); }
     Node* Condition() const { return condition.get(); }
@@ -165,6 +182,8 @@ public:
     ConstructionStatementNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::constructionStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* TypeExpr() const { return typeExpr.get(); }
     IdentifierNode* Id() const { return id.get(); }
@@ -183,6 +202,8 @@ public:
     AssignmentStatementNode(const Span& span_, Node* targetExpr_, Node* sourceExpr_);
     NodeType GetNodeType() const override { return NodeType::assignmentStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* TargetExpr() const { return targetExpr.get(); }
     Node* SourceExpr() const { return sourceExpr.get(); }
@@ -198,6 +219,8 @@ public:
     ExpressionStatementNode(const Span& span_, Node* expression_);
     NodeType GetNodeType() const override { return NodeType::expressionStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* Expression() const { return expression.get(); }
 private:
@@ -220,6 +243,8 @@ public:
     IncrementStatementNode(const Span& span_, Node* expression_);
     NodeType GetNodeType() const override { return NodeType::incrementStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* Expression() const { return expression.get(); }
 private:
@@ -233,6 +258,8 @@ public:
     DecrementStatementNode(const Span& span_, Node* expression_);
     NodeType GetNodeType() const override { return NodeType::decrementStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     Node* Expression() const { return expression.get(); }
 private:
