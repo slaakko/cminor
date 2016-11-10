@@ -51,6 +51,8 @@ public:
     const std::vector<TypeInstruction*>& TypeInstructions() const { return typeInstructions; }
     std::vector<SetClassDataInst*> GetSetClassDataInstructions() { return std::move(setClassDataInstructions); }
     const std::vector<SetClassDataInst*>& SetClassDataInstructions() const { return setClassDataInstructions; }
+    uint32_t Pos() const { return pos; }
+    void Skip(uint32_t size);
 private:
     Machine* machine;
     std::string filePath;
@@ -58,6 +60,7 @@ private:
     const uint8_t* begin;
     const uint8_t* end;
     ConstantPool* constantPool;
+    uint32_t pos;
     std::vector<CallInst*> callInstructions;
     std::vector<TypeInstruction*> typeInstructions;
     std::vector<SetClassDataInst*> setClassDataInstructions;

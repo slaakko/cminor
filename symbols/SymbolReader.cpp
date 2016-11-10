@@ -22,6 +22,7 @@ Symbol* SymbolReader::GetSymbol()
     Symbol* symbol = SymbolFactory::Instance().CreateSymbol(symbolType, span, name);
     symbol->SetAssembly(assembly);
     symbol->Read(*this);
+    assembly->GetSymbolTable().AddSymbol(symbol);
     return symbol;
 }
 

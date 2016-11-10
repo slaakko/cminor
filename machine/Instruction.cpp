@@ -1126,7 +1126,7 @@ void UpCastInst::Execute(Frame& frame)
     ObjectReference objectReference(value.Value());
     if (objectReference.IsNull())
     {
-        frame.OpStack().Push(AllocationHandle(0));
+        frame.OpStack().Push(ObjectReference(0));
     }
     else
     {
@@ -1151,7 +1151,7 @@ void DownCastInst::Execute(Frame& frame)
     ObjectReference objectReference(value.Value());
     if (objectReference.IsNull())
     {
-        frame.OpStack().Push(AllocationHandle(0));
+        frame.OpStack().Push(ObjectReference(0));
     }
     else
     {

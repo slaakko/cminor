@@ -54,6 +54,8 @@ public:
     void Put(const std::string& s);
     void Put(const utf32_string& s);
     void Put(const Span& span);
+    uint32_t Pos() const { return pos; }
+    void Seek(uint32_t pos_);
 private:
     static const int N = 8192;
     std::string fileName;
@@ -62,6 +64,7 @@ private:
     uint8_t* bufp;
     uint8_t* bufend;
     ConstantPool* constantPool;
+    uint32_t pos;
     void BufferReset() { bufp = buffer; bufend = buffer + N;  }
     bool BufferFull() const { return bufp == bufend; }
     void FlushBuffer();

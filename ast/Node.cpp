@@ -37,11 +37,11 @@ std::string NodeTypeStr(NodeType nodeType)
     return nodeTypeStr[int(nodeType)];
 }
 
-Node::Node() : span(), parent(nullptr)
+Node::Node() : span(), parent(nullptr), symbolId(-1)
 {
 }
 
-Node::Node(const Span& span_) : span(span_), parent(nullptr)
+Node::Node(const Span& span_) : span(span_), parent(nullptr), symbolId(-1)
 {
 }
 
@@ -51,10 +51,12 @@ Node::~Node()
 
 void Node::Write(AstWriter& writer)
 {
+    writer.AsMachineWriter().Put(symbolId);
 }
 
 void Node::Read(AstReader& reader)
 {
+    symbolId = reader.GetUInt();
 }
 
 void Node::Accept(Visitor& visitor)
@@ -99,11 +101,13 @@ UnaryNode::UnaryNode(const Span& span_, Node* child_) : Node(span_), child(child
 
 void UnaryNode::Write(AstWriter& writer)
 {
+    Node::Write(writer);
     writer.Put(child.get());
 }
 
 void UnaryNode::Read(AstReader& reader)
 {
+    Node::Read(reader);
     child.reset(reader.GetNode());
     child->SetParent(this);
 }
@@ -125,12 +129,14 @@ BinaryNode::BinaryNode(const Span& span_, Node* left_, Node* right_) : Node(span
 
 void BinaryNode::Write(AstWriter& writer)
 {
+    Node::Write(writer);
     writer.Put(left.get());
     writer.Put(right.get());
 }
 
 void BinaryNode::Read(AstReader& reader)
 {
+    Node::Read(reader);
     left.reset(reader.GetNode());
     left->SetParent(this);
     right.reset(reader.GetNode());

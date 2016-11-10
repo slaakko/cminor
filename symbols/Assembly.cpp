@@ -108,12 +108,12 @@ inline bool operator!=(const AssemblyTag& left, const AssemblyTag& right)
     return !(left == right);
 }
 
-Assembly::Assembly(Machine& machine_) : machine(machine_), filePath(), constantPool(), symbolTable(this), name()
+Assembly::Assembly(Machine& machine_) : machine(machine_), filePath(), constantPool(), symbolTable(this), name(), id(-1)
 {
 }
 
 Assembly::Assembly(Machine& machine_, const utf32_string& name_, const std::string& filePath_) : machine(machine_), filePath(filePath_), constantPool(), symbolTable(this),
-    name(constantPool.GetConstant(constantPool.Install(StringPtr(name_.c_str()))))
+    name(constantPool.GetConstant(constantPool.Install(StringPtr(name_.c_str())))), id(-1)
 {
 }
 
@@ -217,6 +217,7 @@ void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadTy
         {
             importSet.insert(assemblyReference);
             std::unique_ptr<Assembly> referencedAssembly(new Assembly(machine));
+            AssemblyTable::Instance().AddAssembly(referencedAssembly.get());
             std::string config = GetConfig();
             boost::filesystem::path afn = boost::filesystem::path(assemblyReference).filename();
             boost::filesystem::path afp;
@@ -485,13 +486,46 @@ void Link(const std::vector<CallInst*>& callInstructions, const std::vector<Type
     AssignClassTypeIds(classTypes);
 }
 
+void AssemblyTable::Init()
+{
+    instance.reset(new AssemblyTable);
+}
+
+void AssemblyTable::Done()
+{
+    instance.reset();
+}
+
+AssemblyTable& AssemblyTable::Instance()
+{
+    Assert(instance, "assembly table instance not set");
+    return *instance;
+}
+
+std::unique_ptr<AssemblyTable> AssemblyTable::instance;
+
+void AssemblyTable::AddAssembly(Assembly* assembly)
+{
+    uint32_t assemblyId = uint32_t(assemblies.size());
+    assembly->SetId(assemblyId);
+    assemblies.push_back(assembly);
+}
+
+Assembly* AssemblyTable::GetAssembly(uint32_t assemblyId) const
+{
+    Assert(assemblyId < assemblies.size(), "invalid assembly id");
+    return assemblies[assemblyId];
+}
+
 void InitAssembly()
 {
     CminorSystemAssemblyNameCollection::Init();
+    AssemblyTable::Init();
 }
 
 void DoneAssembly()
 {
+    AssemblyTable::Done();
     CminorSystemAssemblyNameCollection::Done();
 }
 

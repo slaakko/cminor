@@ -8,7 +8,7 @@
 namespace cminor { namespace machine {
 
 Reader::Reader(const std::string& filePath_) :
-    machine(nullptr), filePath(filePath_), file(filePath), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End())), constantPool(nullptr)
+    machine(nullptr), filePath(filePath_), file(filePath), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End())), constantPool(nullptr), pos(0)
 {
 }
 
@@ -40,7 +40,9 @@ bool Reader::GetBool()
 uint8_t Reader::GetByte()
 {
     CheckEof();
-    return *begin++;
+    uint8_t x = *begin++;
+    ++pos;
+    return x;
 }
 
 int8_t Reader::GetSByte()
@@ -161,6 +163,12 @@ Span Reader::GetSpan()
     int32_t start = GetInt();
     int32_t end = GetInt();
     return Span(fileIndex, lineNumber, start, end);
+}
+
+void Reader::Skip(uint32_t size)
+{
+    begin += size;
+    pos += size;
 }
 
 } } // namespace cminor::machine

@@ -19,6 +19,8 @@ class SymbolCreatorVisitor : public Visitor
 {
 public:
     SymbolCreatorVisitor(Assembly& assembly_);
+    void SetClassInstanceNode(ClassNode* classInstanceNode_) { classInstanceNode = classInstanceNode_; }
+    void SetClassTemplateSpecialization(ClassTemplateSpecializationSymbol* classTemplateSpecialization_) { classTemplateSpecialization = classTemplateSpecialization_; }
     void Visit(CompileUnitNode& compileUnitNode) override;
     void Visit(NamespaceNode& namespaceNode) override;
     void Visit(FunctionNode& functionNode) override;
@@ -40,6 +42,8 @@ public:
 private:
     Assembly& assembly;
     SymbolTable& symbolTable;
+    ClassNode* classInstanceNode;
+    ClassTemplateSpecializationSymbol* classTemplateSpecialization;
 };
 
 } } // namespace cminor::symbols

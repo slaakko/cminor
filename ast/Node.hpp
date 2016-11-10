@@ -59,9 +59,12 @@ public:
     virtual void SetSetter(CompoundStatementNode* setter);
     virtual bool IsBreakEnclosingStatementNode() const { return false; }
     virtual bool IsContinueEnclosingStatementNode() const { return false; }
+    uint32_t SymbolId() const { return symbolId; }
+    void SetSymbolId(uint32_t symbolId_) { symbolId = symbolId_; }
 private:
     Span span;
     Node* parent;
+    uint32_t symbolId;
 };
 
 class UnaryNode : public Node

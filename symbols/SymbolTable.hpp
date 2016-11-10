@@ -33,9 +33,12 @@ public:
     void EndMemberFunction();
     void BeginClass(ClassNode& classNode);
     void EndClass();
+    void BeginClassTemplateSpecialization(ClassNode& classInstanceNode, ClassTemplateSpecializationSymbol* classTemplateSpecialization);
+    void EndClassTemplateSpecialization();
     void BeginInterface(InterfaceNode& interfaceNode);
     void EndInterface();
     void AddParameter(ParameterNode& parameterNode);
+    void AddTemplateParameter(TemplateParameterNode& templateParameterNode);
     void BeginDeclarationBlock(StatementNode& statementNode);
     void EndDeclarationBlock();
     void AddLocalVariable(ConstructionStatementNode& constructionStatementNode);
@@ -60,12 +63,18 @@ public:
     TypeSymbol* GetType(const utf32_string& typeFullName) const;
     void AddType(TypeSymbol* type);
     Symbol* GetSymbol(Node& node) const;
+    Symbol* GetSymbol(uint32_t symbolId) const;
+    Symbol* GetSymbolNothrow(uint32_t symbolId) const;
+    void AddSymbol(Symbol* symbol);
     Node* GetNode(Symbol* symbol) const;
+    Node* GetNodeNothrow(Symbol* symbol) const;
     void MapNode(Node& node, Symbol* symbol);
     void AddConversion(FunctionSymbol* conversionFun);
     const ConversionTable& GetConversionTable() const { return conversionTable; }
     TypeSymbol* CreateArrayType(ArrayNode& arrayNode, TypeSymbol* elementType);
     const std::vector<ClassTypeSymbol*>& CreatedClasses() const { return createdClasses; }
+    ClassTemplateSpecializationSymbol* MakeClassTemplateSpecialization(ClassTypeSymbol* primaryClassTemplate, const std::vector<TypeSymbol*>& typeArguments, const Span& span);
+    bool AddTypes() const { return !doNotAddTypes; }
 private:
     Assembly* assembly;
     NamespaceSymbol globalNs;
@@ -84,6 +93,9 @@ private:
     int declarationBlockId;
     bool doNotAddTypes;
     std::vector<ClassTypeSymbol*> createdClasses;
+    std::unordered_map<ClassTemplateSpecializationKey, ClassTemplateSpecializationSymbol*, ClassTemplateSpecializationKeyHash> classTemplateSpecializationMap;
+    uint32_t nextSymbolId;
+    std::unordered_map<uint32_t, Symbol*> idSymbolMap;
 };
 
 class SymbolCreator

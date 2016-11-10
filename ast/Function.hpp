@@ -49,6 +49,8 @@ public:
     NodeType GetNodeType() const override { return NodeType::functionNode; }
     void AddParameter(ParameterNode* parameter) override;
     void SetBody(CompoundStatementNode* body_);
+    void SetBodySource(CompoundStatementNode* bodySource_);
+    void SwitchToBody();
     Node* Clone(CloneContext& cloneContext) const override;
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
@@ -61,6 +63,7 @@ public:
     const NodeList<ParameterNode>& Parameters() const { return parameters; }
     CompoundStatementNode* Body() const { return body.get(); }
     bool HasBody() const { return body != nullptr; }
+    CompoundStatementNode* BodySource() const { return bodySource.get(); }
     CompileUnitNode* GetCompileUnit() const { return compileUnit; }
     void SetCompileUnit(CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
     void SetAttributes(const AttributeMap& attributes_);
@@ -71,6 +74,7 @@ private:
     std::unique_ptr<FunctionGroupIdNode> groupId;
     NodeList<ParameterNode> parameters;
     std::unique_ptr<CompoundStatementNode> body;
+    std::unique_ptr<CompoundStatementNode> bodySource;
     CompileUnitNode* compileUnit;
     AttributeMap attributes;
 };

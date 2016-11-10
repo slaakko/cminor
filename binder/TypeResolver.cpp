@@ -44,6 +44,7 @@ public:
     void Visit(VoidNode& voidNode) override;
     void Visit(ObjectNode& objectNode) override;
     void Visit(IdentifierNode& identifierNode) override;
+    void Visit(TemplateIdNode& templateIdNode) override;
     void Visit(DotNode& dotNode) override;
     void Visit(ArrayNode& arrayNode) override;
 private:
@@ -139,6 +140,11 @@ void TypeResolverVisitor::ResolveSymbol(Node& node, Symbol* symbol)
     {
         type = typeSymbol;
     }
+    else if (BoundTypeParameterSymbol* boundTypeParameterSymbol = dynamic_cast<BoundTypeParameterSymbol*>(symbol))
+    {
+        Assert(boundTypeParameterSymbol->GetType(), "type expected");
+        type = boundTypeParameterSymbol->GetType();
+    }
     else if (NamespaceSymbol* nsSymbol = dynamic_cast<NamespaceSymbol*>(symbol))
     {
         nsTypeSymbol.reset(new NamespaceTypeSymbol(nsSymbol));
@@ -173,6 +179,27 @@ void TypeResolverVisitor::Visit(IdentifierNode& identifierNode)
     {
         throw Exception("type symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());;
     }
+}
+
+void TypeResolverVisitor::Visit(TemplateIdNode& templateIdNode)
+{
+    std::vector<TypeSymbol*> typeArguments;
+    TypeSymbol* primaryType = ResolveType(boundCompileUnit, containerScope, templateIdNode.Primary());
+    ClassTypeSymbol* primaryClassTemplate = dynamic_cast<ClassTypeSymbol*>(primaryType);
+    if (!primaryClassTemplate || !primaryClassTemplate->IsClassTemplate())
+    {
+        throw Exception("class template expected", templateIdNode.Primary()->GetSpan());
+    }
+    int n = templateIdNode.TemplateArguments().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        TypeSymbol* typeArgument = ResolveType(boundCompileUnit, containerScope, templateIdNode.TemplateArguments()[i]);
+        typeArguments.push_back(typeArgument);
+    }
+    ClassTemplateSpecializationSymbol* classTemplateSpecialization = boundCompileUnit.GetAssembly().GetSymbolTable().MakeClassTemplateSpecialization(primaryClassTemplate, typeArguments, 
+        templateIdNode.GetSpan());
+    boundCompileUnit.GetClassTemplateRepository().BindClassTemplateSpecialization(classTemplateSpecialization, containerScope);
+    type = classTemplateSpecialization;
 }
 
 void TypeResolverVisitor::Visit(DotNode& dotNode)

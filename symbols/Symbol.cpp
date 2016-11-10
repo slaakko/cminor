@@ -72,12 +72,14 @@ bool Symbol::IsExportSymbol() const
 
 void Symbol::Write(SymbolWriter& writer)
 {
-    writer.AsMachineWriter().Put(uint8_t(flags & ~(SymbolFlags::project | SymbolFlags::bound)));
+    writer.AsMachineWriter().Put(uint8_t(flags & ~(SymbolFlags::project | SymbolFlags::bound | SymbolFlags::instantiationRequested)));
+    writer.AsMachineWriter().Put(id);
 }
 
 void Symbol::Read(SymbolReader& reader)
 {
     flags = static_cast<SymbolFlags>(reader.GetByte());
+    id = reader.GetUInt();
 }
 
 void Symbol::SetAccess(Specifiers accessSpecifiers)
@@ -855,6 +857,13 @@ void ContainerSymbol::Read(SymbolReader& reader)
     {
         Symbol* symbol = reader.GetSymbol();
         AddSymbol(std::unique_ptr<Symbol>(symbol));
+        if (!GetAssembly()->GetSymbolTable().AddTypes())
+        {
+            if (TypeSymbol* type = dynamic_cast<TypeSymbol*>(symbol))
+            {
+                reader.AddType(type);
+            }
+        }
         if (FunctionSymbol* functionSymbol = dynamic_cast<FunctionSymbol*>(symbol))
         {
             if (functionSymbol->IsConversionFun())
@@ -1083,63 +1092,116 @@ NullReferenceTypeSymbol::NullReferenceTypeSymbol(const Span& span_, Constant nam
     SetMachineType(new Null());
 }
 
+TypeParameterSymbol::TypeParameterSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_)
+{
+}
+
+BoundTypeParameterSymbol::BoundTypeParameterSymbol(const Span& span_, Constant name_) : Symbol(span_, name_), type(nullptr)
+{
+}
+
+utf32_string TypeParameterSymbol::FullName() const
+{
+    return Name().Value();
+}
+
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), baseClass(nullptr), objectType(new ObjectType()), classData(new ClassData(objectType.get())), 
-    flags(), defaultConstructorSymbol(nullptr), level(0), priority(0), key(0), cid(0)
+    flags(), defaultConstructorSymbol(nullptr), level(0), priority(0), key(0), cid(0), assemblyId(-1), classNodePos(0)
 {
 }
 
 void ClassTypeSymbol::Write(SymbolWriter& writer)
 {
     TypeSymbol::Write(writer);
-    bool hasBaseClass = baseClass != nullptr;
-    writer.AsMachineWriter().Put(hasBaseClass);
-    if (hasBaseClass)
+    if (IsClassTemplate())
     {
-        utf32_string baseClassFullName = baseClass->FullName();
-        ConstantId baseClassNameId = GetAssembly()->GetConstantPool().GetIdFor(baseClassFullName);
-        Assert(baseClassNameId != noConstantId, "got no id");
-        baseClassNameId.Write(writer);
+        Node* node = GetAssembly()->GetSymbolTable().GetNode(this);
+        uint32_t sizePos = writer.Pos();
+        uint32_t size = 0;
+        writer.AsMachineWriter().Put(size);
+        uint32_t start = writer.Pos();
+        usingNodes.Write(writer);
+        writer.AsAstWriter().Put(node);
+        uint32_t end = writer.Pos();
+        size = end - start;
+        writer.Seek(sizePos);
+        writer.AsMachineWriter().Put(size);
+        writer.Seek(end);
     }
-    int32_t n = int32_t(implementedInterfaces.size());
-    writer.AsMachineWriter().Put(n);
-    for (int32_t i = 0; i < n; ++i)
+    else
     {
-        InterfaceTypeSymbol* intf = implementedInterfaces[i];
-        utf32_string interfaceFullName = intf->FullName();
-        ConstantId intfNameId = GetAssembly()->GetConstantPool().GetIdFor(interfaceFullName);
-        Assert(intfNameId != noConstantId, "got no id");
-        intfNameId.Write(writer);
+        bool hasBaseClass = baseClass != nullptr;
+        writer.AsMachineWriter().Put(hasBaseClass);
+        if (hasBaseClass)
+        {
+            utf32_string baseClassFullName = baseClass->FullName();
+            ConstantId baseClassNameId = GetAssembly()->GetConstantPool().GetIdFor(baseClassFullName);
+            Assert(baseClassNameId != noConstantId, "got no id");
+            baseClassNameId.Write(writer);
+        }
+        int32_t n = int32_t(implementedInterfaces.size());
+        writer.AsMachineWriter().Put(n);
+        for (int32_t i = 0; i < n; ++i)
+        {
+            InterfaceTypeSymbol* intf = implementedInterfaces[i];
+            utf32_string interfaceFullName = intf->FullName();
+            ConstantId intfNameId = GetAssembly()->GetConstantPool().GetIdFor(interfaceFullName);
+            Assert(intfNameId != noConstantId, "got no id");
+            intfNameId.Write(writer);
+        }
+        Assert(objectType, "object type not set");
+        objectType->Write(writer);
+        classData->Write(writer);
+        writer.AsMachineWriter().Put(uint8_t(flags));
     }
-    Assert(objectType, "object type not set");
-    objectType->Write(writer);
-    classData->Write(writer);
-    writer.AsMachineWriter().Put(uint8_t(flags));
 }
 
 void ClassTypeSymbol::Read(SymbolReader& reader)
 {
     TypeSymbol::Read(reader);
-    bool hasBaseClass = reader.GetBool();
-    if (hasBaseClass)
+    if (IsClassTemplate())
     {
-        ConstantId baseClassNameId;
-        baseClassNameId.Read(reader);
-        reader.EmplaceTypeRequest(this, baseClassNameId, 0);
+        uint32_t classNodeSize = reader.GetUInt();
+        assemblyId = reader.GetAssembly()->Id();
+        classNodePos = reader.Pos();
+        reader.Skip(classNodeSize);
     }
-    int32_t n = reader.GetInt();
-    for (int32_t i = 0; i < n; ++i)
+    else
     {
-        ConstantId intfNameId;
-        intfNameId.Read(reader);
-        reader.EmplaceTypeRequest(this, intfNameId, -1);
+        bool hasBaseClass = reader.GetBool();
+        if (hasBaseClass)
+        {
+            ConstantId baseClassNameId;
+            baseClassNameId.Read(reader);
+            reader.EmplaceTypeRequest(this, baseClassNameId, 0);
+        }
+        int32_t n = reader.GetInt();
+        for (int32_t i = 0; i < n; ++i)
+        {
+            ConstantId intfNameId;
+            intfNameId.Read(reader);
+            reader.EmplaceTypeRequest(this, intfNameId, -1);
+        }
+        Assert(objectType, "object type not set");
+        objectType->Read(reader);
+        TypeTable::Instance().SetType(objectType.get());
+        classData->Read(reader);
+        ClassDataTable::Instance().SetClassData(classData.get());
+        flags = ClassTypeSymbolFlags(reader.GetByte());
+        reader.AddClassTypeSymbol(this);
     }
-    Assert(objectType, "object type not set");
-    objectType->Read(reader);
-    TypeTable::Instance().SetType(objectType.get());
-    classData->Read(reader);
-    ClassDataTable::Instance().SetClassData(classData.get());
-    flags = ClassTypeSymbolFlags(reader.GetByte());
-    reader.AddClassTypeSymbol(this);
+}
+
+void ClassTypeSymbol::ReadClassNode()
+{
+    Assert(IsClassTemplate(), "class template expected");
+    Assert(assemblyId != -1, "assembly id not valid");
+    Assembly* nodeAssembly = AssemblyTable::Instance().GetAssembly(assemblyId);
+    AstReader reader(nodeAssembly->FilePath());
+    usingNodes.Read(reader);
+    Node* node = reader.GetNode();
+    classNode.reset(node);
+    GetAssembly()->GetSymbolTable().MapNode(*node, this);
 }
 
 void ClassTypeSymbol::SetSpecifiers(Specifiers specifiers)
@@ -1199,6 +1261,10 @@ void ClassTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
             defaultConstructorSymbol = constructorSymbol;
         }
     }
+    else if (TypeParameterSymbol* typeParameterSymbol = dynamic_cast<TypeParameterSymbol*>(s))
+    {
+        typeParameters.push_back(typeParameterSymbol);
+    }
 }
 
 void ClassTypeSymbol::AddImplementedInterface(InterfaceTypeSymbol* interfaceTypeSymbol)
@@ -1206,6 +1272,15 @@ void ClassTypeSymbol::AddImplementedInterface(InterfaceTypeSymbol* interfaceType
     if (std::find(implementedInterfaces.cbegin(), implementedInterfaces.cend(), interfaceTypeSymbol) == implementedInterfaces.cend())
     {
         implementedInterfaces.push_back(interfaceTypeSymbol);
+    }
+}
+
+void ClassTypeSymbol::CloneUsingNodes(const std::vector<Node*>& usingNodes_)
+{
+    CloneContext cloneContext;
+    for (Node* usingNode : usingNodes_)
+    {
+        usingNodes.Add(usingNode->Clone(cloneContext));
     }
 }
 
@@ -1568,6 +1643,30 @@ void InterfaceTypeSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("interface cannot be virtual", GetSpan());
     }
+}
+
+ClassTemplateSpecializationSymbol::ClassTemplateSpecializationSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_), key()
+{
+}
+
+void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)
+{
+    ClassTypeSymbol::Write(writer);
+}
+
+void ClassTemplateSpecializationSymbol::Read(SymbolReader& reader)
+{
+    ClassTypeSymbol::Read(reader);
+}
+
+void ClassTemplateSpecializationSymbol::SetKey(const ClassTemplateSpecializationKey& key_)
+{
+    key = key_;
+}
+
+void ClassTemplateSpecializationSymbol::SetGlobalNs(std::unique_ptr<NamespaceNode>&& globalNs_)
+{
+    globalNs = std::move(globalNs_);
 }
 
 } } // namespace cminor::symbols

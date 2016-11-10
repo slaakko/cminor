@@ -5,4 +5,10 @@ namespace System
         [VmFunctionName=Vm.System.Object.ToString]
         public extern virtual string ToString();
     }
+
+    [VmFunctionName=Vm.System.Object.Equal]
+    public extern bool operator==(Object left, Object right);
+
+    [VmFunctionName=Vm.System.Object.Less]
+    public extern bool operator<(Object left, Object right);
 }

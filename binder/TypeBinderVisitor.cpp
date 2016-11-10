@@ -15,7 +15,7 @@
 
 namespace cminor { namespace binder {
 
-TypeBinderVisitor::TypeBinderVisitor(BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), containerScope(nullptr)
+TypeBinderVisitor::TypeBinderVisitor(BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), containerScope(nullptr), instantiateRequested(false)
 {
 }
 
@@ -42,11 +42,13 @@ void TypeBinderVisitor::Visit(NamespaceNode& namespaceNode)
 void TypeBinderVisitor::Visit(NamespaceImportNode& namespaceImportNode)
 {
     boundCompileUnit.FirstFileScope()->InstallNamespaceImport(containerScope, &namespaceImportNode);
+    usingNodes.push_back(&namespaceImportNode);
 }
 
 void TypeBinderVisitor::Visit(AliasNode& aliasNode)
 {
     boundCompileUnit.FirstFileScope()->InstallAlias(containerScope, &aliasNode);
+    usingNodes.push_back(&aliasNode);
 }
 
 void TypeBinderVisitor::Visit(FunctionNode& functionNode)
@@ -102,6 +104,21 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
 {
     if (classTypeSymbol->IsBound()) return;
     classTypeSymbol->SetBound();
+    if (instantiateRequested)
+    {
+        int nm = classNode.Members().Count();
+        for (int i = 0; i < nm; ++i)
+        {
+            Node* member = classNode.Members()[i];
+            member->Accept(*this);
+        }
+        return;
+    }
+    if (classTypeSymbol->IsClassTemplate())
+    {
+        classTypeSymbol->CloneUsingNodes(usingNodes);
+        return;
+    }
     classTypeSymbol->SetSpecifiers(classNode.GetSpecifiers());
     utf32_string fullName = classTypeSymbol->FullName();
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
@@ -250,17 +267,27 @@ void TypeBinderVisitor::Visit(StaticConstructorNode& staticConstructorNode)
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(staticConstructorNode);
     StaticConstructorSymbol* staticConstructorSymbol = dynamic_cast<StaticConstructorSymbol*>(symbol);
     Assert(staticConstructorSymbol, "static constructor function symbol expected");
-    staticConstructorSymbol->SetSpecifiers(staticConstructorNode.GetSpecifiers());
     ContainerScope* prevContainerScope = containerScope;
     containerScope = staticConstructorSymbol->GetContainerScope();
-    staticConstructorSymbol->ComputeName();
+    if (instantiateRequested)
+    {
+        if (!staticConstructorSymbol->IsInstantiationRequested())
+        {
+            return;
+        }
+    }
+    else
+    {
+        staticConstructorSymbol->SetSpecifiers(staticConstructorNode.GetSpecifiers());
+        staticConstructorSymbol->ComputeName();
+    }
     if (staticConstructorNode.HasBody())
     {
         staticConstructorNode.Body()->Accept(*this);
     }
     else
     {
-        if (!staticConstructorSymbol->IsExternal())
+        if (!staticConstructorSymbol->IsExternal() && dynamic_cast<ClassTemplateSpecializationSymbol*>(staticConstructorSymbol->ContainingClass()) == nullptr)
         {
             throw Exception("static constructor has no body", staticConstructorSymbol->GetSpan());
         }
@@ -273,23 +300,33 @@ void TypeBinderVisitor::Visit(ConstructorNode& constructorNode)
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(constructorNode);
     ConstructorSymbol* constructorSymbol = dynamic_cast<ConstructorSymbol*>(symbol);
     Assert(constructorSymbol, "constructor function symbol expected");
-    constructorSymbol->SetSpecifiers(constructorNode.GetSpecifiers());
     ContainerScope* prevContainerScope = containerScope;
     containerScope = constructorSymbol->GetContainerScope();
-    int n = constructorNode.Parameters().Count();
-    for (int i = 0; i < n; ++i)
+    if (instantiateRequested)
     {
-        ParameterNode* parameterNode = constructorNode.Parameters()[i];
-        TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
-        Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
-        ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
-        Assert(parameterSymbol, "parameter symbol expected");
-        parameterSymbol->SetType(parameterType);
+        if (!constructorSymbol->IsInstantiationRequested())
+        {
+            return;
+        }
     }
-    constructorSymbol->ComputeName();
-    if (constructorSymbol->IsDefaultConstructorSymbol())
+    else
     {
-        constructorSymbol->SetBound();
+        constructorSymbol->SetSpecifiers(constructorNode.GetSpecifiers());
+        int n = constructorNode.Parameters().Count();
+        for (int i = 0; i < n; ++i)
+        {
+            ParameterNode* parameterNode = constructorNode.Parameters()[i];
+            TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
+            Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
+            ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
+            Assert(parameterSymbol, "parameter symbol expected");
+            parameterSymbol->SetType(parameterType);
+        }
+        constructorSymbol->ComputeName();
+        if (constructorSymbol->IsDefaultConstructorSymbol())
+        {
+            constructorSymbol->SetBound();
+        }
     }
     if (constructorNode.HasBody())
     {
@@ -297,7 +334,7 @@ void TypeBinderVisitor::Visit(ConstructorNode& constructorNode)
     }
     else
     {
-        if (!constructorSymbol->IsExternal())
+        if (!constructorSymbol->IsExternal() && dynamic_cast<ClassTemplateSpecializationSymbol*>(constructorSymbol->ContainingClass()) == nullptr)
         {
             throw Exception("constructor has no body", constructorSymbol->GetSpan());
         }
@@ -310,42 +347,53 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(memberFunctionNode);
     MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(symbol);
     Assert(memberFunctionSymbol, "member function symbol expected");
-    memberFunctionSymbol->SetSpecifiers(memberFunctionNode.GetSpecifiers());
-    if (memberFunctionSymbol->IsExternal())
-    {
-        if (memberFunctionNode.HasBody())
-        {
-            throw Exception("external function cannot have a body", memberFunctionNode.GetSpan());
-        }
-        utf32_string vmFunctionName = ToUtf32(memberFunctionNode.Attributes().GetAttribute("VmFunctionName"));
-        if (vmFunctionName.empty())
-        {
-            throw Exception("virtual machine function name attribute (VmFunctionName) not set for external function", memberFunctionNode.GetSpan());
-        }
-        memberFunctionSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
-    }
     ContainerScope* prevContainerScope = containerScope;
     containerScope = memberFunctionSymbol->GetContainerScope();
-    int n = memberFunctionNode.Parameters().Count();
-    for (int i = 0; i < n; ++i)
+    if (instantiateRequested)
     {
-        ParameterNode* parameterNode = memberFunctionNode.Parameters()[i];
-        TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
-        Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
-        ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
-        Assert(parameterSymbol, "parameter symbol expected");
-        parameterSymbol->SetType(parameterType);
+        if (!memberFunctionSymbol->IsInstantiationRequested())
+        {
+            return;
+        }
     }
-    TypeSymbol* returnType = ResolveType(boundCompileUnit, containerScope, memberFunctionNode.ReturnTypeExpr());
-    memberFunctionSymbol->SetReturnType(returnType);
-    memberFunctionSymbol->ComputeName();
+    else
+    {
+        memberFunctionSymbol->SetSpecifiers(memberFunctionNode.GetSpecifiers());
+        if (memberFunctionSymbol->IsExternal())
+        {
+            if (memberFunctionNode.HasBody())
+            {
+                throw Exception("external function cannot have a body", memberFunctionNode.GetSpan());
+            }
+            utf32_string vmFunctionName = ToUtf32(memberFunctionNode.Attributes().GetAttribute("VmFunctionName"));
+            if (vmFunctionName.empty())
+            {
+                throw Exception("virtual machine function name attribute (VmFunctionName) not set for external function", memberFunctionNode.GetSpan());
+            }
+            memberFunctionSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
+        }
+        int n = memberFunctionNode.Parameters().Count();
+        for (int i = 0; i < n; ++i)
+        {
+            ParameterNode* parameterNode = memberFunctionNode.Parameters()[i];
+            TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
+            Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
+            ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
+            Assert(parameterSymbol, "parameter symbol expected");
+            parameterSymbol->SetType(parameterType);
+        }
+        TypeSymbol* returnType = ResolveType(boundCompileUnit, containerScope, memberFunctionNode.ReturnTypeExpr());
+        memberFunctionSymbol->SetReturnType(returnType);
+        memberFunctionSymbol->ComputeName();
+    }
     if (memberFunctionNode.HasBody())
     {
         memberFunctionNode.Body()->Accept(*this);
     }
     else
     {
-        if (!memberFunctionSymbol->ContainingInterface() && !memberFunctionSymbol->IsAbstract() && !memberFunctionSymbol->IsExternal())
+        if (!memberFunctionSymbol->ContainingInterface() && !memberFunctionSymbol->IsAbstract() && !memberFunctionSymbol->IsExternal() && 
+            dynamic_cast<ClassTemplateSpecializationSymbol*>(memberFunctionSymbol->ContainingClass()) == nullptr)
         {
             throw Exception("member function has no body", memberFunctionSymbol->GetSpan());
         }
@@ -406,13 +454,13 @@ void TypeBinderVisitor::Visit(IndexerNode& indexerNode)
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(indexerNode);
     IndexerSymbol* indexerSymbol = dynamic_cast<IndexerSymbol*>(symbol);
     Assert(indexerSymbol, "indexer symbol expected");
+    ContainerScope* prevContainerScope = containerScope;
+    containerScope = indexerSymbol->GetContainerScope();
     indexerSymbol->SetSpecifiers(indexerNode.GetSpecifiers());
     TypeSymbol* indexerValueType = ResolveType(boundCompileUnit, containerScope, indexerNode.ValueTypeExpr());
     indexerSymbol->SetValueType(indexerValueType);
     TypeSymbol* indexerIndexType = ResolveType(boundCompileUnit, containerScope, indexerNode.IndexTypeExpr());
     indexerSymbol->SetIndexType(indexerIndexType);
-    ContainerScope* prevContainerScope = containerScope;
-    containerScope = indexerSymbol->GetContainerScope();
     IndexerGetterFunctionSymbol* getter = indexerSymbol->Getter();
     IndexerSetterFunctionSymbol* setter = indexerSymbol->Setter();
     if (!getter && !setter)

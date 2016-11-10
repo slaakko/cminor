@@ -39,6 +39,94 @@ void VmSystemObjectToString::Execute(Frame& frame)
     frame.OpStack().Push(stringReference);
 }
 
+class VmSystemObjectEqual : public VmFunction
+{
+public:
+    VmSystemObjectEqual(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemObjectEqual::VmSystemObjectEqual(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Object.Equal"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemObjectEqual::Execute(Frame& frame)
+{
+    IntegralValue leftValue = frame.Local(0).GetValue();
+    Assert(leftValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference leftRef(leftValue.Value());
+    IntegralValue rightValue = frame.Local(1).GetValue();
+    Assert(rightValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference rightRef(rightValue.Value());
+    bool result = false;
+    if (leftRef.IsNull() && rightRef.IsNull())
+    {
+        result = true;
+    }
+    else if (leftRef.IsNull() || rightRef.IsNull())
+    {
+        result = false;
+    }
+    else
+    {
+        Object& left = frame.GetManagedMemoryPool().GetObject(leftRef);
+        MemPtr leftMem = left.GetMemPtr();
+        Object& right = frame.GetManagedMemoryPool().GetObject(rightRef);
+        MemPtr rightMem = right.GetMemPtr();
+        result = leftMem == rightMem;
+    }
+    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
+}
+
+class VmSystemObjectLess : public VmFunction
+{
+public:
+    VmSystemObjectLess(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemObjectLess::VmSystemObjectLess(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Object.Less"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemObjectLess::Execute(Frame& frame)
+{
+    IntegralValue leftValue = frame.Local(0).GetValue();
+    Assert(leftValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference leftRef(leftValue.Value());
+    IntegralValue rightValue = frame.Local(1).GetValue();
+    Assert(rightValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference rightRef(rightValue.Value());
+    bool result = false;
+    if (leftRef.IsNull() && rightRef.IsNull())
+    {
+        result = false;
+    }
+    else if (leftRef.IsNull())
+    {
+        result = true;
+    }
+    else if (rightRef.IsNull())
+    {
+        result = false;
+    }
+    else
+    {
+        Object& left = frame.GetManagedMemoryPool().GetObject(leftRef);
+        MemPtr leftMem = left.GetMemPtr();
+        Object& right = frame.GetManagedMemoryPool().GetObject(rightRef);
+        MemPtr rightMem = right.GetMemPtr();
+        result = leftMem < rightMem;
+    }
+    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
+}
+
 class VmSystemStringLength : public VmFunction
 {
 public:
@@ -95,6 +183,7 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
 {
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectToString(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemStringLength(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectEqual(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool) 

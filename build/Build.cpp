@@ -16,6 +16,7 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
+#include <cminor/symbols/MappingSymbolVisitor.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/MappedInputFile.hpp>
 #include <cminor/machine/Machine.hpp>
@@ -129,6 +130,36 @@ void GenerateCodeForCreatedClasses(Assembly& assembly)
     GenerateCode(synthesizedCompileUnit, assembly.GetMachine());
 }
 
+void GenerateCodeForClassTemplateSpecializations(Assembly& assembly, std::unordered_set<ClassTemplateSpecializationSymbol*>&& classTemplateSpecializations)
+{
+    BoundCompileUnit synthesizedCompileUnit(assembly, nullptr);
+    synthesizedCompileUnit.AddFileScope(std::unique_ptr<FileScope>(new FileScope()));
+    std::unordered_set<ClassTemplateSpecializationSymbol*> specializations = std::move(classTemplateSpecializations);
+    while (!specializations.empty())
+    {
+        for (ClassTemplateSpecializationSymbol* specialization : specializations)
+        {
+            NamespaceNode* globalNs = specialization->GlobalNs();
+            MappingSymbolVisitor mappingSymbolVisitor(assembly);
+            globalNs->Accept(mappingSymbolVisitor);
+            specialization->ResetFlag(SymbolFlags::bound);
+            TypeBinderVisitor typeBinderVisitor(synthesizedCompileUnit);
+            typeBinderVisitor.SetInstantiateRequested();
+            globalNs->Accept(typeBinderVisitor);
+            StatementBinderVisitor statementBinderVisitor(synthesizedCompileUnit);
+            statementBinderVisitor.SetInstantiateRequested();
+            globalNs->Accept(statementBinderVisitor);
+        }
+        specializations.clear();
+        for (ClassTemplateSpecializationSymbol* specialization : synthesizedCompileUnit.GetClassTemplateRepository().ClassTemplateSpecializations())
+        {
+            specializations.insert(specialization);
+        }
+        synthesizedCompileUnit.GetClassTemplateRepository().Clear();
+    }
+    GenerateCode(synthesizedCompileUnit, assembly.GetMachine());
+}
+
 void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
 {
     FunctionTable::Init();
@@ -142,7 +173,9 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     std::vector<std::unique_ptr<CompileUnitNode>> compileUnits = ParseSources(project->SourceFilePaths());
     utf32_string assemblyName = ToUtf32(project->Name());
     Machine machine;
+    AssemblyTable::Init();
     Assembly assembly(machine, assemblyName, project->AssemblyFilePath());
+    AssemblyTable::Instance().AddAssembly(&assembly);
     const Assembly* rootAssembly = &assembly;
     std::vector<CallInst*> callInstructions;
     std::vector<TypeInstruction*> typeInstructions;
@@ -159,13 +192,20 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     classTypes.clear();
     BuildSymbolTable(assembly, compileUnits);
     std::vector<std::unique_ptr<BoundCompileUnit>> boundCompileUnits = BindTypes(assembly, compileUnits);
+    std::unordered_set<ClassTemplateSpecializationSymbol*> classTemplateSpecializations;
     for (std::unique_ptr<BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
     {
         BindStatements(*boundCompileUnit);
         GenerateCode(*boundCompileUnit, machine);
+        const std::unordered_set<ClassTemplateSpecializationSymbol*> specializations = boundCompileUnit->GetClassTemplateRepository().ClassTemplateSpecializations();
+        for (ClassTemplateSpecializationSymbol* specialization : specializations)
+        {
+            classTemplateSpecializations.insert(specialization);
+        }
         boundCompileUnit.reset();
     }
     GenerateCodeForCreatedClasses(assembly);
+    GenerateCodeForClassTemplateSpecializations(assembly, std::move(classTemplateSpecializations));
     boost::filesystem::path obp(assembly.FilePath());
     obp.remove_filename();
     boost::filesystem::create_directories(obp);
@@ -219,6 +259,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
             }
         }
     }
+    AssemblyTable::Done();
     TypeDone();
     ClassDataTable::Done();
     FunctionTable::Done();

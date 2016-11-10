@@ -191,13 +191,10 @@ public:
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<TemplateParameterRule>(this, &TemplateParameterRule::A0Action));
         Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
         identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<TemplateParameterRule>(this, &TemplateParameterRule::PostIdentifier));
-        Cm::Parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
-        typeExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<TemplateParameterRule>(this, &TemplateParameterRule::PreTypeExpr));
-        typeExprNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<TemplateParameterRule>(this, &TemplateParameterRule::PostTypeExpr));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new TemplateParameterNode(span, context.fromIdentifier, context.fromTypeExpr);
+        context.value = new TemplateParameterNode(span, context.fromIdentifier);
     }
     void PostIdentifier(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -208,27 +205,13 @@ public:
             stack.pop();
         }
     }
-    void PreTypeExpr(Cm::Parsing::ObjectStack& stack)
-    {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-    }
-    void PostTypeExpr(Cm::Parsing::ObjectStack& stack, bool matched)
-    {
-        if (matched)
-        {
-            std::unique_ptr<Cm::Parsing::Object> fromTypeExpr_value = std::move(stack.top());
-            context.fromTypeExpr = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
-            stack.pop();
-        }
-    }
 private:
     struct Context
     {
-        Context(): ctx(), value(), fromIdentifier(), fromTypeExpr() {}
+        Context(): ctx(), value(), fromIdentifier() {}
         ParsingContext* ctx;
         TemplateParameterNode* value;
         IdentifierNode* fromIdentifier;
-        Node* fromTypeExpr;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -315,8 +298,8 @@ void TemplateGrammar::GetReferencedGrammars()
 
 void TemplateGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRule(new TemplateIdRule("TemplateId", GetScope(),
         new Cm::Parsing::ActionParser("A0",
@@ -333,12 +316,7 @@ void TemplateGrammar::CreateRules()
                 new Cm::Parsing::CharParser('>')))));
     AddRule(new TemplateParameterRule("TemplateParameter", GetScope(),
         new Cm::Parsing::ActionParser("A0",
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0),
-                new Cm::Parsing::OptionalParser(
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::CharParser('='),
-                        new Cm::Parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)))))));
+            new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))));
     AddRule(new TemplateParameterListRule("TemplateParameterList", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(

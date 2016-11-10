@@ -41,7 +41,7 @@ enum class SymbolType : uint8_t
     floatTypeSymbol, doubleTypeSymbol, nullReferenceTypeSymbol,
     classTypeSymbol, arrayTypeSymbol, interfaceTypeSymbol, functionSymbol, staticConstructorSymbol, constructorSymbol, arraySizeConstructorSymbol, memberFunctionSymbol, functionGroupSymbol, 
     parameterSymbol, localVariableSymbol, memberVariableSymbol, propertySymbol, propertyGetterSymbol, propertySetterSymbol, indexerSymbol, indexerGetterSymbol, indexerSetterSymbol, 
-    indexerGroupSymbol, constantSymbol, namespaceSymbol, declarationBlock, 
+    indexerGroupSymbol, constantSymbol, namespaceSymbol, declarationBlock, typeParameterSymbol, boundTypeParameterSymbol, classTemplateSpecializationSymbol,
     basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, objectDefaultInit, objectCopyInit, objectNullInit, 
     objectAssignment, objectNullAssignment, nullToObjectConversion, classTypeConversion, classToInterfaceConversion,
     maxSymbol
@@ -65,7 +65,9 @@ enum class SymbolFlags : uint8_t
     access = 1 << 0 | 1 << 1,
     static_ = 1 << 2,
     project = 1 << 3,
-    bound = 1 << 4
+    bound = 1 << 4,
+    instantiated = 1 << 5,
+    instantiationRequested = 1 << 6
 };
 
 inline SymbolFlags operator~(SymbolFlags flag)
@@ -115,6 +117,10 @@ public:
     void SetSource(SymbolSource source) { if (source == SymbolSource::project) SetFlag(SymbolFlags::project); else ResetFlag(SymbolFlags::project); }
     bool IsProject() const { return GetFlag(SymbolFlags::project); }
     void SetProject() { SetFlag(SymbolFlags::project); }
+    void SetInstantiationRequested() { SetFlag(SymbolFlags::instantiationRequested); }
+    bool IsInstantiationRequested() const { return GetFlag(SymbolFlags::instantiationRequested); }
+    void SetInstantiated() { SetFlag(SymbolFlags::instantiated); }
+    bool IsInstantiated() const { return GetFlag(SymbolFlags::instantiated); }
     Symbol* Parent() const { return parent; }
     void SetParent(Symbol* parent_) { parent = parent_; }
     Assembly* GetAssembly() const { Assert(assembly, "symbol's assembly not set");  return assembly; }
@@ -139,12 +145,15 @@ public:
     void SetFlag(SymbolFlags flag) { flags = flags | flag; }
     void ResetFlag(SymbolFlags flag) { flags = flags & ~flag; }
     virtual void EmplaceType(TypeSymbol* type, int index);
+    uint32_t Id() const { return id; }
+    void SetId(uint32_t id_) { id = id_; }
 private:
     Span span;
     Constant name;
     SymbolFlags flags;
     Symbol* parent;
     Assembly* assembly;
+    uint32_t id;
 };
 
 enum class ScopeLookup : uint8_t
@@ -242,6 +251,7 @@ public:
     std::string TypeString() const override { return "namespace"; }
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
     void Import(NamespaceSymbol* that, SymbolTable& symbolTable);
+    bool IsGlobalNamespace() const { return Name() == U""; }
 };
 
 class DeclarationBlock : public ContainerSymbol
@@ -407,6 +417,28 @@ public:
     std::string TypeString() const override { return "null reference type"; }
 };
 
+class TypeParameterSymbol : public TypeSymbol
+{
+public:
+    TypeParameterSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::typeParameterSymbol; }
+    std::string TypeString() const override { return "type parameter"; };
+    utf32_string FullName() const override;
+    Type* GetMachineType() const override { Assert(false, "no machine type");  return nullptr; }
+};
+
+class BoundTypeParameterSymbol : public Symbol
+{
+public:
+    BoundTypeParameterSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::boundTypeParameterSymbol; }
+    std::string TypeString() const override { return "bound type parameter"; };
+    TypeSymbol* GetType() const { return type; }
+    void SetType(TypeSymbol* type_) { type = type_; }
+private:
+    TypeSymbol* type;
+};
+
 bool Overrides(MemberFunctionSymbol* f, MemberFunctionSymbol* g);
 
 enum class ClassTypeSymbolFlags : uint8_t
@@ -440,6 +472,7 @@ public:
     ValueType GetValueType() const override { return ValueType::objectReference; }
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
+    void ReadClassNode();
     void SetSpecifiers(Specifiers specifiers); 
     void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
     bool HasBaseClass(ClassTypeSymbol* cls) const;
@@ -457,6 +490,10 @@ public:
     const std::vector<MemberFunctionSymbol*>& MemberFunctions() const { return memberFunctions; }
     const std::vector<ConstructorSymbol*>& Constructors() const { return constructors; }
     ConstructorSymbol* DefaultConstructorSymbol() const { return defaultConstructorSymbol; }
+    bool IsClassTemplate() const { return !typeParameters.empty(); }
+    const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
+    void CloneUsingNodes(const std::vector<Node*>& usingNodes_);
+    const NodeList<Node>& UsingNodes() const { return usingNodes; }
     bool IsAbstract() const override { return GetFlag(ClassTypeSymbolFlags::abstract_); }
     void SetAbstract() { SetFlag(ClassTypeSymbolFlags::abstract_); }
     void EmplaceType(TypeSymbol* type, int index) override;
@@ -485,10 +522,15 @@ private:
     std::vector<MemberFunctionSymbol*> memberFunctions;
     std::vector<ConstructorSymbol*> constructors;
     ConstructorSymbol* defaultConstructorSymbol;
+    std::vector<TypeParameterSymbol*> typeParameters;
     int level;
     int priority;
     uint64_t key;
     uint64_t cid;
+    uint32_t assemblyId;
+    uint32_t classNodePos;
+    NodeList<Node> usingNodes;
+    std::unique_ptr<Node> classNode;
     bool GetFlag(ClassTypeSymbolFlags flag) const
     {
         return (flags & flag) != ClassTypeSymbolFlags::none;
@@ -531,6 +573,66 @@ public:
 private:
     std::unique_ptr<ObjectType> objectType; 
     std::vector<MemberFunctionSymbol*> memberFunctions;
+};
+
+struct ClassTemplateSpecializationKey
+{
+    ClassTemplateSpecializationKey() : classTypeSymbol(nullptr), typeArguments() {}
+    ClassTemplateSpecializationKey(ClassTypeSymbol* classTypeSymbol_, std::vector<TypeSymbol*> typeArguments_) : classTypeSymbol(classTypeSymbol_), typeArguments(typeArguments_) {}
+    ClassTypeSymbol* classTypeSymbol;
+    std::vector<TypeSymbol*> typeArguments;
+};
+
+inline bool operator==(const ClassTemplateSpecializationKey& left, const ClassTemplateSpecializationKey& right)
+{
+    if (left.classTypeSymbol != right.classTypeSymbol) return false;
+    if (left.typeArguments.size() != right.typeArguments.size()) return false;
+    int n = int(left.typeArguments.size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (left.typeArguments[i] != right.typeArguments[i]) return false;
+    }
+    return true;
+}
+
+inline bool operator!=(const ClassTemplateSpecializationKey& left, const ClassTemplateSpecializationKey& right)
+{
+    return !(left == right);
+}
+
+struct ClassTemplateSpecializationKeyHash
+{
+    size_t operator()(const ClassTemplateSpecializationKey& key) const
+    {
+        if (!key.classTypeSymbol) return 0;
+        size_t hashCode = std::hash<ClassTypeSymbol*>()(key.classTypeSymbol);
+        int n = int(key.typeArguments.size());
+        for (int i = 0; i < n; ++i)
+        {
+            size_t argumentHash = std::hash<TypeSymbol*>()(key.typeArguments[i]);
+            hashCode = 1099511628211 * hashCode + argumentHash;
+        }
+        return hashCode;
+    }
+};
+
+class ClassTemplateSpecializationSymbol : public ClassTypeSymbol
+{
+public:
+    ClassTemplateSpecializationSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::classTemplateSpecializationSymbol; }
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
+    void SetKey(const ClassTemplateSpecializationKey& key_);
+    const ClassTemplateSpecializationKey& Key() const { return key; }
+    ClassTypeSymbol* PrimaryClassTemplate() const { return key.classTypeSymbol; }
+    int NumTypeArguments() const { return int(key.typeArguments.size()); }
+    TypeSymbol* TypeArgument(int index) const { Assert(index >= 0 && index < key.typeArguments.size(), "invalid type argument index"); return key.typeArguments[index]; }
+    void SetGlobalNs(std::unique_ptr<NamespaceNode>&& globalNs_);
+    NamespaceNode* GlobalNs() const { return globalNs.get(); }
+private:
+    ClassTemplateSpecializationKey key;
+    std::unique_ptr<NamespaceNode> globalNs;
 };
 
 } } // namespace cminor::symbols

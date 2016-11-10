@@ -109,6 +109,23 @@ void FunctionNode::SetBody(CompoundStatementNode* body_)
     }
 }
 
+void FunctionNode::SetBodySource(CompoundStatementNode* bodySource_)
+{
+    bodySource.reset(bodySource_);
+    if (bodySource)
+    {
+        bodySource->SetParent(this);
+    }
+}
+
+void FunctionNode::SwitchToBody()
+{
+    if (bodySource && !body)
+    {
+        SetBody(bodySource.release());
+    }
+}
+
 Node* FunctionNode::Clone(CloneContext& cloneContext) const
 {
     FunctionNode* clone = new FunctionNode(GetSpan(), specifiers, returnTypeExpr->Clone(cloneContext), static_cast<FunctionGroupIdNode*>(groupId->Clone(cloneContext)));
@@ -122,7 +139,6 @@ Node* FunctionNode::Clone(CloneContext& cloneContext) const
     {
         clone->SetBody(static_cast<CompoundStatementNode*>(body->Clone(cloneContext)));
     }
-
     return clone;
 }
 

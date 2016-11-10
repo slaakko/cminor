@@ -60,35 +60,21 @@ TemplateParameterNode::TemplateParameterNode(const Span& span_) : Node(span_)
 {
 }
 
-TemplateParameterNode::TemplateParameterNode(const Span& span_, IdentifierNode* id_, Node* defaultTemplateArgument_) : Node(span_), id(id_), defaultTemplateArgument(defaultTemplateArgument_)
+TemplateParameterNode::TemplateParameterNode(const Span& span_, IdentifierNode* id_) : Node(span_), id(id_)
 {
     id->SetParent(this);
-    if (defaultTemplateArgument)
-    {
-        defaultTemplateArgument->SetParent(this);
-    }
 }
 
 Node* TemplateParameterNode::Clone(CloneContext& cloneContext) const
 {
     Node* clonedDefaultTemplateArgument = nullptr;
-    if (defaultTemplateArgument)
-    {
-        clonedDefaultTemplateArgument = defaultTemplateArgument->Clone(cloneContext);
-    }
-    return new TemplateParameterNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone(cloneContext)), clonedDefaultTemplateArgument);
+    return new TemplateParameterNode(GetSpan(), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
 }
 
 void TemplateParameterNode::Write(AstWriter& writer)
 {
     Node::Write(writer);
     writer.Put(id.get());
-    bool hasDefaultTemplateArgument = defaultTemplateArgument != nullptr;
-    writer.AsMachineWriter().Put(hasDefaultTemplateArgument);
-    if (hasDefaultTemplateArgument)
-    {
-        writer.Put(defaultTemplateArgument.get());
-    }
 }
 
 void TemplateParameterNode::Read(AstReader& reader)
@@ -96,12 +82,6 @@ void TemplateParameterNode::Read(AstReader& reader)
     Node::Read(reader);
     id.reset(reader.GetIdentifierNode());
     id->SetParent(this);
-    bool hasDefaultTemplateArgument = reader.GetBool();
-    if (hasDefaultTemplateArgument)
-    {
-        defaultTemplateArgument.reset(reader.GetNode());
-        defaultTemplateArgument->SetParent(this);
-    }
 }
 
 void TemplateParameterNode::Accept(Visitor& visitor)

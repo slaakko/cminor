@@ -349,6 +349,7 @@ void ExpressionBinder::BindUnaryOp(BoundExpression* operand, Node& node, StringP
     std::vector<FunctionScopeLookup> functionScopeLookups;
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, operand->GetType()->ClassOrNsScope()));
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
     std::unique_ptr<BoundFunctionCall> operatorFunCall = ResolveOverload(boundCompileUnit, groupName, functionScopeLookups, arguments, node.GetSpan());
     CheckAccess(boundFunction->GetFunctionSymbol(), operatorFunCall->GetFunctionSymbol());
     expression.reset(operatorFunCall.release());
@@ -370,6 +371,7 @@ void ExpressionBinder::BindBinaryOp(BoundExpression* left, BoundExpression* righ
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, left->GetType()->ClassOrNsScope()));
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, right->GetType()->ClassOrNsScope()));
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
     std::unique_ptr<BoundFunctionCall> operatorFunCall = ResolveOverload(boundCompileUnit, groupName, functionScopeLookups, arguments, node.GetSpan());
     CheckAccess(boundFunction->GetFunctionSymbol(), operatorFunCall->GetFunctionSymbol());
     expression.reset(operatorFunCall.release());
@@ -576,12 +578,34 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
                 {
                     throw Exception("property '" + ToUtf8(propertySymbol->FullName()) + "' is write-only", span, propertySymbol->GetSpan());
                 }
+                else
+                {
+                    if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(propertySymbol->ContainingClass()))
+                    {
+                        if (!propertySymbol->Getter()->IsInstantiated())
+                        {
+                            propertySymbol->Getter()->SetInstantiationRequested();
+                            boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
+                        }
+                    }
+                }
             }
             else
             {
                 if (!propertySymbol->Setter())
                 {
                     throw Exception("property '" + ToUtf8(propertySymbol->FullName()) + "' is read-only", span, propertySymbol->GetSpan());
+                }
+                else
+                {
+                    if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(propertySymbol->ContainingClass()))
+                    {
+                        if (!propertySymbol->Setter()->IsInstantiated())
+                        {
+                            propertySymbol->Setter()->SetInstantiationRequested();
+                            boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
+                        }
+                    }
                 }
             }
             BoundProperty* bp = new BoundProperty(boundCompileUnit.GetAssembly(), propertySymbol->GetType(), propertySymbol);
@@ -815,12 +839,34 @@ void ExpressionBinder::Visit(IndexingNode& indexingNode)
                     {
                         throw Exception("indexer '" + ToUtf8(indexerSymbol->FullName() + U"[" + indexerSymbol->GetIndexType()->FullName()) + "]' is write-only", span, indexerSymbol->GetSpan());
                     }
+                    else
+                    {
+                        if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(indexerSymbol->ContainingClass()))
+                        {
+                            if (!indexerSymbol->Getter()->IsInstantiated())
+                            {
+                                indexerSymbol->Getter()->SetInstantiationRequested();
+                                boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
+                            }
+                        }
+                    }
                 }
                 else 
                 {
                     if (!indexerSymbol->Setter())
                     {
                         throw Exception("indexer '" + ToUtf8(indexerSymbol->FullName() + U"[" + indexerSymbol->GetIndexType()->FullName()) + "]' is read-only", span, indexerSymbol->GetSpan());
+                    }
+                    else
+                    {
+                        if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(indexerSymbol->ContainingClass()))
+                        {
+                            if (!indexerSymbol->Setter()->IsInstantiated())
+                            {
+                                indexerSymbol->Setter()->SetInstantiationRequested();
+                                boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
+                            }
+                        }
                     }
                 }
                 FunctionSymbol* conversionFun = conversions[0];

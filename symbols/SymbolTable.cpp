@@ -19,7 +19,7 @@
 namespace cminor { namespace symbols {
 
 SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs), function(nullptr),
-    mainFunction(nullptr), currentClass(nullptr), currentInterface(nullptr), declarationBlockId(0), doNotAddTypes(false), conversionTable(*assembly)
+    mainFunction(nullptr), currentClass(nullptr), currentInterface(nullptr), declarationBlockId(0), doNotAddTypes(false), conversionTable(*assembly), nextSymbolId(0)
 {
     globalNs.SetAssembly(assembly);
 }
@@ -236,6 +236,25 @@ void SymbolTable::EndClass()
     classStack.pop();
 }
 
+void SymbolTable::BeginClassTemplateSpecialization(ClassNode& classInstanceNode, ClassTemplateSpecializationSymbol* classTemplateSpecialization)
+{
+    classStack.push(currentClass);
+    currentClass = classTemplateSpecialization;
+    MapNode(classInstanceNode, classTemplateSpecialization);
+    ContainerScope* containerScope = container->GetContainerScope();
+    ContainerScope* classScope = classTemplateSpecialization->GetContainerScope();
+    classScope->SetParent(containerScope);
+    container->AddSymbol(std::unique_ptr<Symbol>(classTemplateSpecialization));
+    BeginContainer(classTemplateSpecialization);
+}
+
+void SymbolTable::EndClassTemplateSpecialization()
+{
+    EndContainer();
+    currentClass = classStack.top();
+    classStack.pop();
+}
+
 void SymbolTable::BeginInterface(InterfaceNode& interfaceNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
@@ -269,6 +288,17 @@ void SymbolTable::AddParameter(ParameterNode& parameterNode)
     parameter->SetAssembly(assembly);
     container->AddSymbol(std::unique_ptr<Symbol>(parameter));
     MapNode(parameterNode, parameter);
+}
+
+void SymbolTable::AddTemplateParameter(TemplateParameterNode& templateParameterNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(templateParameterNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    TypeParameterSymbol* typeParameter = new TypeParameterSymbol(templateParameterNode.GetSpan(), nameConstant);
+    typeParameter->SetAssembly(assembly);
+    container->AddSymbol(std::unique_ptr<Symbol>(typeParameter));
+    MapNode(templateParameterNode, typeParameter);
 }
 
 void SymbolTable::BeginDeclarationBlock(StatementNode& statementNode)
@@ -509,11 +539,16 @@ void SymbolTable::Read(SymbolReader& reader)
 {
     NamespaceSymbol ns(Span(), assembly->GetConstantPool().GetEmptyStringConstant());
     ns.SetAssembly(assembly);
-    ns.Read(reader);
     bool prevDoNotAddTypes = doNotAddTypes;
     doNotAddTypes = true;
+    ns.Read(reader);
     globalNs.Import(&ns, *this);
     doNotAddTypes = prevDoNotAddTypes;
+    for (TypeSymbol* type : reader.Types())
+    {
+        AddType(type);
+    }
+    reader.ClearTypes();
     bool hasMainFunction = reader.GetBool();
     if (hasMainFunction)
     {
@@ -599,6 +634,10 @@ void SymbolTable::AddType(TypeSymbol* type)
     {
         typeSymbolMap[c] = type;
     }
+    if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(type))
+    {
+        classTemplateSpecializationMap[classTemplateSpecialization->Key()] = classTemplateSpecialization;
+    }
 }
 
 Symbol* SymbolTable::GetSymbol(Node& node) const
@@ -614,6 +653,37 @@ Symbol* SymbolTable::GetSymbol(Node& node) const
     }
 }
 
+Symbol* SymbolTable::GetSymbol(uint32_t symbolId) const
+{
+    auto it = idSymbolMap.find(symbolId);
+    if (it != idSymbolMap.cend())
+    {
+        return it->second;
+    }
+    else
+    {
+        throw std::runtime_error("symbol for id " + std::to_string(symbolId) + " not found");
+    }
+}
+
+Symbol* SymbolTable::GetSymbolNothrow(uint32_t symbolId) const
+{
+    auto it = idSymbolMap.find(symbolId);
+    if (it != idSymbolMap.cend())
+    {
+        return it->second;
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+void SymbolTable::AddSymbol(Symbol* symbol)
+{
+    idSymbolMap[symbol->Id()] = symbol;
+}
+
 Node* SymbolTable::GetNode(Symbol* symbol) const
 {
     auto it = symbolNodeMap.find(symbol);
@@ -627,10 +697,24 @@ Node* SymbolTable::GetNode(Symbol* symbol) const
     }
 }
 
+Node* SymbolTable::GetNodeNothrow(Symbol* symbol) const
+{
+    auto it = symbolNodeMap.find(symbol);
+    if (it != symbolNodeMap.cend())
+    {
+        return it->second;
+    }
+    return nullptr;
+}
+
 void SymbolTable::MapNode(Node& node, Symbol* symbol)
 {
     nodeSymbolMap[&node] = symbol;
     symbolNodeMap[symbol] = &node;
+    uint32_t symbolId = nextSymbolId++;
+    idSymbolMap[symbolId] = symbol;
+    symbol->SetId(symbolId);
+    node.SetSymbolId(symbolId);
 }
 
 void SymbolTable::AddConversion(FunctionSymbol* conversionFun)
@@ -674,6 +758,42 @@ TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* eleme
         createdClasses.push_back(arrayTypeSymbol);
         return arrayTypeSymbol;
     }
+}
+
+utf32_string MakeClassTemplateSpecializationName(ClassTypeSymbol* primaryClassTemplate, const std::vector<TypeSymbol*>& typeArguments)
+{
+    utf32_string name;
+    name.append(primaryClassTemplate->Name().Value()).append(1, U'<');
+    int n = int(typeArguments.size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            name.append(U", ");
+        }
+        TypeSymbol* typeArgument = typeArguments[i];
+        name.append(typeArgument->FullName());
+    }
+    name.append(1, U'>');
+    return name;
+}
+
+ClassTemplateSpecializationSymbol* SymbolTable::MakeClassTemplateSpecialization(ClassTypeSymbol* primaryClassTemplate, const std::vector<TypeSymbol*>& typeArguments, const Span& span)
+{
+    ClassTemplateSpecializationKey classTemplateSpecializationKey(primaryClassTemplate, typeArguments);
+    auto it = classTemplateSpecializationMap.find(classTemplateSpecializationKey);
+    if (it != classTemplateSpecializationMap.cend())
+    {
+        return it->second;
+    }
+    utf32_string name = MakeClassTemplateSpecializationName(primaryClassTemplate, typeArguments);
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    ClassTemplateSpecializationSymbol* classTemplateSpecialization = new ClassTemplateSpecializationSymbol(span, nameConstant);
+    classTemplateSpecialization->SetAssembly(assembly);
+    classTemplateSpecialization->SetPublic();
+    classTemplateSpecialization->SetKey(classTemplateSpecializationKey);
+    return classTemplateSpecialization;
 }
 
 SymbolCreator::~SymbolCreator()
@@ -759,12 +879,15 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::classTypeSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::interfaceTypeSymbol, new ConcreteSymbolCreator<InterfaceTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::arrayTypeSymbol, new ConcreteSymbolCreator<ArrayTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::classTemplateSpecializationSymbol, new ConcreteSymbolCreator<ClassTemplateSpecializationSymbol>());
     SymbolFactory::Instance().Register(SymbolType::functionSymbol, new ConcreteSymbolCreator<FunctionSymbol>());
     SymbolFactory::Instance().Register(SymbolType::memberFunctionSymbol, new ConcreteSymbolCreator<MemberFunctionSymbol>());
     SymbolFactory::Instance().Register(SymbolType::staticConstructorSymbol, new ConcreteSymbolCreator<StaticConstructorSymbol>());
     SymbolFactory::Instance().Register(SymbolType::constructorSymbol, new ConcreteSymbolCreator<ConstructorSymbol>());
     SymbolFactory::Instance().Register(SymbolType::arraySizeConstructorSymbol, new ConcreteSymbolCreator<ArraySizeConstructorSymbol>());
     SymbolFactory::Instance().Register(SymbolType::declarationBlock, new ConcreteSymbolCreator<DeclarationBlock>());
+    SymbolFactory::Instance().Register(SymbolType::typeParameterSymbol, new ConcreteSymbolCreator<TypeParameterSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::boundTypeParameterSymbol, new ConcreteSymbolCreator<BoundTypeParameterSymbol>());
     SymbolFactory::Instance().Register(SymbolType::parameterSymbol, new ConcreteSymbolCreator<ParameterSymbol>());
     SymbolFactory::Instance().Register(SymbolType::localVariableSymbol, new ConcreteSymbolCreator<LocalVariableSymbol>());
     SymbolFactory::Instance().Register(SymbolType::memberVariableSymbol, new ConcreteSymbolCreator<MemberVariableSymbol>());

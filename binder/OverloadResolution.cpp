@@ -242,6 +242,14 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
             {
                 const FunctionMatch& bestMatch = functionMatches[0];
                 FunctionSymbol* bestFun = bestMatch.fun;
+                if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(bestFun->ContainingClass()))
+                {
+                    if (!bestFun->IsInstantiated())
+                    {
+                        bestFun->SetInstantiationRequested();
+                        boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
+                    }
+                }
                 std::unique_ptr<BoundFunctionCall> boundFunctionCall(new BoundFunctionCall(boundCompileUnit.GetAssembly(), bestFun));
                 for (int i = 0; i < arity; ++i)
                 {
@@ -302,6 +310,14 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
         {
             const FunctionMatch& bestMatch = functionMatches[0];
             FunctionSymbol* singleBest = bestMatch.fun;
+            if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(singleBest->ContainingClass()))
+            {
+                if (!singleBest->IsInstantiated())
+                {
+                    singleBest->SetInstantiationRequested();
+                    boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
+                }
+            }
             std::unique_ptr<BoundFunctionCall> boundFunctionCall(new BoundFunctionCall(boundCompileUnit.GetAssembly(), singleBest));
             for (int i = 0; i < arity; ++i)
             {

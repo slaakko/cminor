@@ -12,7 +12,7 @@ namespace cminor { namespace machine {
 
 class Thread;
 
-//const uint64_t defaultArenaSize = static_cast<uint64_t>(256) * 1024 * 1024; // 256 MB
+//const uint64_t defaultArenaSize = static_cast<uint64_t>(16) * 1024 * 1024; // 16 MB
 const uint64_t defaultArenaSize = static_cast<uint64_t>(4) * 1024; // 4 K
 const uint64_t defaultLargeObjectThresholdSize = static_cast<uint64_t>(64) * 1024; // 64 K
 

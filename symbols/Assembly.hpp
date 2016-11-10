@@ -28,6 +28,8 @@ class Assembly
 public:
     Assembly(Machine& machine_);
     Assembly(Machine& machine_, const utf32_string& name_, const std::string& filePath_);
+    void SetId(uint32_t id_) { id = id_; }
+    uint32_t Id() const { return id; }
     Machine& GetMachine() { return machine; }
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
@@ -55,6 +57,7 @@ private:
     std::vector<std::unique_ptr<Assembly>> referencedAssemblies;
     ConstantPool constantPool;
     Constant name;
+    uint32_t id;
     MachineFunctionTable machineFunctionTable;
     SymbolTable symbolTable;
     void Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, const std::string& currentAssemblyDir,
@@ -64,6 +67,19 @@ private:
 
 void InitAssembly();
 void DoneAssembly();
+
+class AssemblyTable
+{
+public:
+    static void Init();
+    static void Done();
+    static AssemblyTable& Instance();
+    void AddAssembly(Assembly* assembly);
+    Assembly* GetAssembly(uint32_t assemblyId) const;
+private:
+    static std::unique_ptr<AssemblyTable> instance;
+    std::vector<Assembly*> assemblies;
+};
 
 } } // namespace cminor::symbols
 

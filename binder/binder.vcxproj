@@ -26,6 +26,7 @@
     <ClInclude Include="BoundFunction.hpp" />
     <ClInclude Include="BoundNode.hpp" />
     <ClInclude Include="BoundStatement.hpp" />
+    <ClInclude Include="ClassTemplateRepository.hpp" />
     <ClInclude Include="ExpressionBinder.hpp" />
     <ClInclude Include="OverloadResolution.hpp" />
     <ClInclude Include="StatementBinderVisitor.hpp" />
@@ -42,6 +43,7 @@
     <ClCompile Include="BoundNode.cpp" />
     <ClCompile Include="BoundNodeVisitor.cpp" />
     <ClCompile Include="BoundStatement.cpp" />
+    <ClCompile Include="ClassTemplateRepository.cpp" />
     <ClCompile Include="ExpressionBinder.cpp" />
     <ClCompile Include="OverloadResolution.cpp" />
     <ClCompile Include="StatementBinderVisitor.cpp" />

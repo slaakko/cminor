@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="Assembly.hpp" />
     <ClInclude Include="BasicTypeFun.hpp" />
+    <ClInclude Include="MappingSymbolVisitor.hpp" />
     <ClInclude Include="ConstantSymbol.hpp" />
     <ClInclude Include="FunctionSymbol.hpp" />
     <ClInclude Include="GlobalFlags.hpp" />
@@ -39,6 +40,7 @@
   <ItemGroup>
     <ClCompile Include="Assembly.cpp" />
     <ClCompile Include="BasicTypeFun.cpp" />
+    <ClCompile Include="MappingSymbolVisitor.cpp" />
     <ClCompile Include="ConstantSymbol.cpp" />
     <ClCompile Include="FunctionSymbol.cpp" />
     <ClCompile Include="GlobalFlags.cpp" />

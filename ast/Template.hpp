@@ -32,17 +32,15 @@ class TemplateParameterNode : public Node
 {
 public:
     TemplateParameterNode(const Span& span_);
-    TemplateParameterNode(const Span& span_, IdentifierNode* id_, Node* defaultTemplateArgument_);
+    TemplateParameterNode(const Span& span_, IdentifierNode* id_);
     NodeType GetNodeType() const override { return NodeType::templateParameterNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
     IdentifierNode* Id() const { return id.get(); }
-    Node* DefaultTemplateArgument() const { return defaultTemplateArgument.get(); }
 private:
     std::unique_ptr<IdentifierNode> id;
-    std::unique_ptr<Node> defaultTemplateArgument;
 };
 
 } } // namespace cminor::ast

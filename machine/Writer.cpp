@@ -7,7 +7,7 @@
 
 namespace cminor { namespace machine {
 
-Writer::Writer(const std::string& fileName_) : fileName(fileName_), file(std::fopen(fileName.c_str(), "wb")), bufp(buffer), bufend(buffer + N), constantPool(nullptr)
+Writer::Writer(const std::string& fileName_) : fileName(fileName_), file(std::fopen(fileName.c_str(), "wb")), bufp(buffer), bufend(buffer + N), constantPool(nullptr), pos(0)
 {
     if (!file)
     {
@@ -29,6 +29,7 @@ void Writer::Put(uint8_t x)
 {
     if (BufferFull()) FlushBuffer();
     *bufp++ = x;
+    ++pos;
 }
 
 void Writer::Put(int8_t x)
@@ -151,6 +152,17 @@ void Writer::Put(const Span& span)
         Put(span.LineNumber());
         Put(span.Start());
         Put(span.End());
+    }
+}
+
+void Writer::Seek(uint32_t pos_)
+{
+    FlushBuffer();
+    pos = pos_;
+    int result = fseek(file, pos, SEEK_SET);
+    if (result != 0)
+    {
+        throw std::runtime_error("seek failed");
     }
 }
 

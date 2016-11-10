@@ -134,6 +134,16 @@ private:
     union { void* value; const char32_t* strValue; };
 };
 
+inline bool operator==(MemPtr left, MemPtr right)
+{
+    return left.Value() == right.Value();
+}
+
+inline bool operator<(MemPtr left, MemPtr right)
+{
+    return left.Value() < right.Value();
+}
+
 uint64_t ValueSize(ValueType type);
 
 enum class ObjectFlags : uint8_t

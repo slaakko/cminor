@@ -22,6 +22,8 @@ class StatementBinderVisitor : public Visitor
 {
 public:
     StatementBinderVisitor(BoundCompileUnit& boundCompileUnit_);
+    void SetDoNotInstantiate() { doNotInstantiate = true; }
+    void SetInstantiateRequested() { instantiateRequested = true; }
     void Visit(CompileUnitNode& compileUnitNode) override;
     void Visit(NamespaceNode& namespaceNode) override;
     void Visit(ClassNode& classNode) override;
@@ -53,6 +55,8 @@ private:
     BoundFunction* function;
     BoundCompoundStatement* compoundStatement;
     std::unique_ptr<BoundStatement> statement;
+    bool doNotInstantiate;
+    bool instantiateRequested;
 };
 
 } } // namespace cminor::binder

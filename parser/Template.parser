@@ -27,7 +27,7 @@ namespace cminor.parser
             ;
 
         TemplateParameter(ParsingContext* ctx) : TemplateParameterNode*
-            ::= (Identifier ('=' TypeExpr(ctx))?){ value = new TemplateParameterNode(span, Identifier, TypeExpr); }
+            ::= Identifier{ value = new TemplateParameterNode(span, Identifier); }
             ;
 
         TemplateParameterList(ParsingContext* ctx, Node* owner)

@@ -19,11 +19,13 @@ public:
     void AddBaseClassOrInterface(Node* baseClassOrInterface);
     void AddMember(Node* member);
     void AddTemplateParameter(TemplateParameterNode* templateParameter) override;
+    const NodeList<TemplateParameterNode>& TemplateParameters() const { return templateParameters; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
     Specifiers GetSpecifiers() const { return specifiers; }
     IdentifierNode* Id() const { return id.get(); }
+    void SetId(IdentifierNode* id_);
     const NodeList<Node>& BaseClassOrInterfaces() const { return baseClassOrInterfaces; }
     const NodeList<Node>& Members() const { return members; }
     void Accept(Visitor& visitor) override;

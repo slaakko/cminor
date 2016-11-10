@@ -33,6 +33,9 @@ public:
     void AddLocalVariable(LocalVariableSymbol* localVariable) { localVariables.push_back(localVariable); }
     std::vector<LocalVariableSymbol*> GetLocalVariables() { return std::move(localVariables); }
     void ResetLocalVariables() { localVariables = std::vector<LocalVariableSymbol*>(); }
+    void AddType(TypeSymbol* type) { types.push_back(type); }
+    const std::vector<TypeSymbol*>& Types() const { return types; }
+    void ClearTypes() { types.clear(); }
     void EmplaceTypeRequest(Symbol* forSymbol, ConstantId typeNameId, int index);
     void ProcessTypeRequests();
     void AddClassTypeSymbol(ClassTypeSymbol* classType);
@@ -43,6 +46,7 @@ public:
 private:
     Assembly* assembly;
     std::vector<LocalVariableSymbol*> localVariables;
+    std::vector<TypeSymbol*> types;
     std::vector<TypeRequest> typeRequests;
     std::vector<ClassTypeSymbol*> classTypeSymbols;
     std::vector<FunctionSymbol*> conversions;

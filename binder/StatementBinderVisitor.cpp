@@ -89,6 +89,7 @@ void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, CompoundStatementN
     TypeSymbol* returnType = functionSymbol->ReturnType();
     if (!returnType || dynamic_cast<VoidTypeSymbol*>(returnType)) return;
     if (functionSymbol->IsExternal()) return;
+    if (dynamic_cast<ClassTemplateSpecializationSymbol*>(functionSymbol->ContainingClass()) != nullptr && !bodyNode) return;
     CompoundStatementNode* body = bodyNode;
     int n = body->Statements().Count();
     for (int i = 0; i < n; ++i)
@@ -100,7 +101,7 @@ void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, CompoundStatementN
 }
 
 StatementBinderVisitor::StatementBinderVisitor(BoundCompileUnit& boundCompileUnit_) : 
-    boundCompileUnit(boundCompileUnit_), containerScope(nullptr), boundClass(nullptr), function(nullptr), compoundStatement(nullptr)
+    boundCompileUnit(boundCompileUnit_), containerScope(nullptr), boundClass(nullptr), function(nullptr), compoundStatement(nullptr), doNotInstantiate(false), instantiateRequested(false)
 {
 }
 
@@ -129,6 +130,10 @@ void StatementBinderVisitor::Visit(ClassNode& classNode)
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(classNode);
     ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(symbol);
     Assert(classTypeSymbol, "class type symbol expected");
+    if (classTypeSymbol->IsClassTemplate())
+    {
+        return;
+    }
     containerScope = symbol->GetContainerScope();
     std::unique_ptr<BoundClass> currentClass(new BoundClass(classTypeSymbol));
     BoundClass* prevClass = boundClass;
@@ -156,6 +161,18 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
     ContainerScope* prevContainerScope = containerScope;
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(constructorNode);
     ConstructorSymbol* constructorSymbol = dynamic_cast<ConstructorSymbol*>(symbol);
+    if (instantiateRequested)
+    {
+        if (!constructorSymbol->IsInstantiated() && constructorSymbol->IsInstantiationRequested())
+        {
+            constructorSymbol->ResetFlag(SymbolFlags::instantiationRequested);
+            constructorSymbol->SetInstantiated();
+        }
+        else
+        {
+            return;
+        }
+    }
     constructorSymbol->SetBaseConstructorCallGenerated();
     Assert(constructorSymbol, "constructor symbol expected");
     containerScope = symbol->GetContainerScope();
@@ -169,23 +186,26 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
         compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
         Assert(compoundStatement, "compound statement expected");
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
-    }
-    if (constructorNode.Initializer())
-    {
-        constructorNode.Initializer()->Accept(*this);
-    }
-    else if (boundClass->GetClassTypeSymbol()->BaseClass())
-    {
-        BoundFunctionCall* baseConstructorCall = new BoundFunctionCall(boundCompileUnit.GetAssembly(), boundClass->GetClassTypeSymbol()->BaseClass()->DefaultConstructorSymbol());
-        BoundExpression* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), constructorSymbol->Parameters()[0]->GetType(), constructorSymbol->Parameters()[0]);
-        BoundConversion* thisAsBase = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(boundThisParam),
-            boundCompileUnit.GetConversion(boundClass->GetClassTypeSymbol(), boundClass->GetClassTypeSymbol()->BaseClass()));
-        baseConstructorCall->AddArgument(std::unique_ptr<BoundExpression>(thisAsBase));
-        BoundExpressionStatement* baseConstructorCallStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(baseConstructorCall));
-        compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(baseConstructorCallStatement));
+        if (constructorNode.Initializer())
+        {
+            constructorNode.Initializer()->Accept(*this);
+        }
+        else if (boundClass->GetClassTypeSymbol()->BaseClass())
+        {
+            BoundFunctionCall* baseConstructorCall = new BoundFunctionCall(boundCompileUnit.GetAssembly(), boundClass->GetClassTypeSymbol()->BaseClass()->DefaultConstructorSymbol());
+            BoundExpression* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), constructorSymbol->Parameters()[0]->GetType(), constructorSymbol->Parameters()[0]);
+            BoundConversion* thisAsBase = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(boundThisParam),
+                boundCompileUnit.GetConversion(boundClass->GetClassTypeSymbol(), boundClass->GetClassTypeSymbol()->BaseClass()));
+            baseConstructorCall->AddArgument(std::unique_ptr<BoundExpression>(thisAsBase));
+            BoundExpressionStatement* baseConstructorCallStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(baseConstructorCall));
+            compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(baseConstructorCallStatement));
+        }
     }
     compoundStatement = prevCompoundStatement;
-    boundClass->AddMember(std::move(boundFunction));
+    if (!doNotInstantiate)
+    {
+        boundClass->AddMember(std::move(boundFunction));
+    }
     containerScope = prevContainerScope;
     function = prevFunction;
 }
@@ -245,6 +265,18 @@ void StatementBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(memberFunctionNode);
     MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(symbol);
     Assert(memberFunctionSymbol, "member function symbol expected");
+    if (instantiateRequested)
+    {
+        if (!memberFunctionSymbol->IsInstantiated() && memberFunctionSymbol->IsInstantiationRequested())
+        {
+            memberFunctionSymbol->ResetFlag(SymbolFlags::instantiationRequested);
+            memberFunctionSymbol->SetInstantiated();
+        }
+        else
+        {
+            return;
+        }
+    }
     containerScope = symbol->GetContainerScope();
     std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(memberFunctionSymbol));
     BoundFunction* prevFunction = function;
@@ -257,7 +289,10 @@ void StatementBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
     }
     CheckFunctionReturnPaths(memberFunctionSymbol, memberFunctionNode);
-    boundClass->AddMember(std::move(boundFunction));
+    if (!doNotInstantiate)
+    {
+        boundClass->AddMember(std::move(boundFunction));
+    }
     containerScope = prevContainerScope;
     function = prevFunction;
 }
@@ -294,7 +329,23 @@ void StatementBinderVisitor::Visit(PropertyNode& propertyNode)
     prevContainerScope = containerScope;
     PropertyGetterFunctionSymbol* getter = propertySymbol->Getter();
     PropertySetterFunctionSymbol* setter = propertySymbol->Setter();
-    if (getter)
+    bool instantiateGetter = true;
+    if (instantiateRequested)
+    {
+        if (getter)
+        {
+            if (!getter->IsInstantiated() && getter->IsInstantiationRequested())
+            {
+                getter->ResetFlag(SymbolFlags::instantiationRequested);
+                getter->SetInstantiated();
+            }
+            else
+            {
+                instantiateGetter = false;
+            }
+        }
+    }
+    if (getter && !doNotInstantiate && instantiateGetter)
     {
         prevContainerScope = containerScope;
         std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(getter));
@@ -310,7 +361,23 @@ void StatementBinderVisitor::Visit(PropertyNode& propertyNode)
         function = prevFunction;
         containerScope = prevContainerScope;
     }
-    if (setter)
+    bool instantiateSetter = true;
+    if (instantiateRequested)
+    {
+        if (setter)
+        {
+            if (!setter->IsInstantiated() && setter->IsInstantiationRequested())
+            {
+                setter->ResetFlag(SymbolFlags::instantiationRequested);
+                setter->SetInstantiated();
+            }
+            else
+            {
+                instantiateSetter = false;
+            }
+        }
+    }
+    if (setter && !doNotInstantiate && instantiateSetter)
     {
         prevContainerScope = containerScope;
         containerScope = setter->GetContainerScope();
@@ -338,7 +405,23 @@ void StatementBinderVisitor::Visit(IndexerNode& indexerNode)
     prevContainerScope = containerScope;
     IndexerGetterFunctionSymbol* getter = indexerSymbol->Getter();
     IndexerSetterFunctionSymbol* setter = indexerSymbol->Setter();
-    if (getter)
+    bool instantiateGetter = true;
+    if (instantiateRequested)
+    {
+        if (getter)
+        {
+            if (!getter->IsInstantiated() && getter->IsInstantiationRequested())
+            {
+                getter->ResetFlag(SymbolFlags::instantiationRequested);
+                getter->SetInstantiated();
+            }
+            else
+            {
+                instantiateGetter = false;
+            }
+        }
+    }
+    if (getter && !doNotInstantiate && instantiateGetter)
     {
         prevContainerScope = containerScope;
         std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(getter));
@@ -354,7 +437,23 @@ void StatementBinderVisitor::Visit(IndexerNode& indexerNode)
         function = prevFunction;
         containerScope = prevContainerScope;
     }
-    if (setter)
+    bool instantiateSetter = true;
+    if (instantiateRequested)
+    {
+        if (setter)
+        {
+            if (!setter->IsInstantiated() && setter->IsInstantiationRequested())
+            {
+                setter->ResetFlag(SymbolFlags::instantiationRequested);
+                setter->SetInstantiated();
+            }
+            else
+            {
+                instantiateSetter = false;
+            }
+        }
+    }
+    if (setter && !doNotInstantiate && instantiateSetter)
     {
         prevContainerScope = containerScope;
         containerScope = setter->GetContainerScope();

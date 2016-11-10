@@ -42,6 +42,14 @@ void ClassNode::AddTemplateParameter(TemplateParameterNode* templateParameter)
 Node* ClassNode::Clone(CloneContext& cloneContext) const
 {
     ClassNode* clone = new ClassNode(GetSpan(), specifiers, static_cast<IdentifierNode*>(id->Clone(cloneContext)));
+    if (!cloneContext.InstantiateClassNode())
+    {
+        int n = templateParameters.Count();
+        for (int i = 0; i < n; ++i)
+        {
+            clone->AddTemplateParameter(static_cast<TemplateParameterNode*>(templateParameters[i]->Clone(cloneContext)));
+        }
+    }
     int nb = baseClassOrInterfaces.Count();
     for (int i = 0; i < nb; ++i)
     {
@@ -86,6 +94,11 @@ void ClassNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+void ClassNode::SetId(IdentifierNode* id_)
+{
+    id.reset(id_);
+}
+
 StaticConstructorNode::StaticConstructorNode(const Span& span_) : FunctionNode(span_)
 {
 }
@@ -97,7 +110,17 @@ StaticConstructorNode::StaticConstructorNode(const Span& span_, Specifiers speci
 Node* StaticConstructorNode::Clone(CloneContext& cloneContext) const
 {
     StaticConstructorNode* clone = new StaticConstructorNode(GetSpan(), GetSpecifiers());
-    clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+    if (Body())
+    {
+        if (!cloneContext.InstantiateClassNode())
+        {
+            clone->SetBodySource(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+        }
+        else
+        {
+            clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+        }
+    }
     return clone;
 }
 
@@ -191,7 +214,17 @@ Node* ConstructorNode::Clone(CloneContext& cloneContext) const
     {
         clone->SetInitializer(static_cast<InitializerNode*>(initializer->Clone(cloneContext)));
     }
-    clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+    if (Body())
+    {
+        if (cloneContext.InstantiateClassNode())
+        {
+            clone->SetBodySource(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+        }
+        else
+        {
+            clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+        }
+    }
     return clone;
 }
 
@@ -250,7 +283,14 @@ Node* MemberFunctionNode::Clone(CloneContext& cloneContext) const
     }
     if (Body())
     {
-        clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+        if (cloneContext.InstantiateClassNode())
+        {
+            clone->SetBodySource(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+        }
+        else
+        {
+            clone->SetBody(static_cast<CompoundStatementNode*>(Body()->Clone(cloneContext)));
+        }
     }
     return clone;
 }

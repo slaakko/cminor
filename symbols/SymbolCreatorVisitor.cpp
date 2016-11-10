@@ -13,7 +13,7 @@
 
 namespace cminor { namespace symbols {
 
-SymbolCreatorVisitor::SymbolCreatorVisitor(Assembly& assembly_) : assembly(assembly_), symbolTable(assembly.GetSymbolTable())
+SymbolCreatorVisitor::SymbolCreatorVisitor(Assembly& assembly_) : assembly(assembly_), symbolTable(assembly.GetSymbolTable()), classInstanceNode(nullptr), classTemplateSpecialization(nullptr)
 {
 }
 
@@ -53,14 +53,37 @@ void SymbolCreatorVisitor::Visit(FunctionNode& functionNode)
 
 void SymbolCreatorVisitor::Visit(ClassNode& classNode)
 {
-    symbolTable.BeginClass(classNode);
-    int n = classNode.Members().Count();
-    for (int i = 0; i < n; ++i)
+    if (&classNode == classInstanceNode)
     {
-        Node* member = classNode.Members()[i];
-        member->Accept(*this);
+        symbolTable.BeginClassTemplateSpecialization(*classInstanceNode, classTemplateSpecialization);
     }
-    symbolTable.EndClass();
+    else
+    {
+        symbolTable.BeginClass(classNode);
+    }
+    int nt = classNode.TemplateParameters().Count();
+    for (int i = 0; i < nt; ++i)
+    {
+        TemplateParameterNode* templateParameterNode = classNode.TemplateParameters()[i];
+        symbolTable.AddTemplateParameter(*templateParameterNode);
+    }
+    if (nt == 0)
+    {
+        int n = classNode.Members().Count();
+        for (int i = 0; i < n; ++i)
+        {
+            Node* member = classNode.Members()[i];
+            member->Accept(*this);
+        }
+    }
+    if (&classNode == classInstanceNode)
+    {
+        symbolTable.EndClassTemplateSpecialization();
+    }
+    else
+    {
+        symbolTable.EndClass();
+    }
 }
 
 void SymbolCreatorVisitor::Visit(InterfaceNode& interfaceNode)
