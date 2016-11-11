@@ -27,6 +27,8 @@ public:
     void SetSpecifiers(Specifiers specifiers);
     PropertyGetterFunctionSymbol* Getter() const { return getter; }
     PropertySetterFunctionSymbol* Setter() const { return setter; }
+    void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol) override;
+    void Merge(const PropertySymbol& that);
 private:
     TypeSymbol* type;
     PropertyGetterFunctionSymbol* getter;

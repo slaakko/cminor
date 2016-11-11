@@ -167,6 +167,9 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
         {
             constructorSymbol->ResetFlag(SymbolFlags::instantiationRequested);
             constructorSymbol->SetInstantiated();
+            constructorSymbol->SetProject();
+            constructorSymbol->SetAssembly(&boundCompileUnit.GetAssembly());
+            boundCompileUnit.GetAssembly().GetConstantPool().Install(constructorSymbol->Name());
         }
         else
         {

@@ -34,6 +34,8 @@ class SymbolTable;
 class MemberVariableSymbol;
 class ConstructorSymbol;
 class MemberFunctionSymbol;
+class ClassTemplateSpecializationSymbol;
+class PropertySymbol;
 
 enum class SymbolType : uint8_t
 {
@@ -147,6 +149,8 @@ public:
     virtual void EmplaceType(TypeSymbol* type, int index);
     uint32_t Id() const { return id; }
     void SetId(uint32_t id_) { id = id_; }
+    virtual void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol);
+    void Merge(const Symbol& that);
 private:
     Span span;
     Constant name;
@@ -273,6 +277,7 @@ public:
     virtual bool IsAbstract() const { return false; }
     virtual Type* GetMachineType() const = 0;
     virtual bool IsInComplete() const { return false; }
+    virtual bool IsReopenedClassTemplateSpecialization() const { return false; }
 };
 
 class BasicTypeSymbol : public TypeSymbol
@@ -433,6 +438,9 @@ public:
     BoundTypeParameterSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::boundTypeParameterSymbol; }
     std::string TypeString() const override { return "bound type parameter"; };
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
+    void EmplaceType(TypeSymbol* type, int index) override;
     TypeSymbol* GetType() const { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }
 private:
@@ -489,6 +497,7 @@ public:
     const std::vector<MemberVariableSymbol*>& StaticMemberVariables() const { return staticMemberVariables; }
     const std::vector<MemberFunctionSymbol*>& MemberFunctions() const { return memberFunctions; }
     const std::vector<ConstructorSymbol*>& Constructors() const { return constructors; }
+    const std::vector<PropertySymbol*>& Properties() const { return properties; }
     ConstructorSymbol* DefaultConstructorSymbol() const { return defaultConstructorSymbol; }
     bool IsClassTemplate() const { return !typeParameters.empty(); }
     const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
@@ -523,6 +532,7 @@ private:
     std::vector<ConstructorSymbol*> constructors;
     ConstructorSymbol* defaultConstructorSymbol;
     std::vector<TypeParameterSymbol*> typeParameters;
+    std::vector<PropertySymbol*> properties;
     int level;
     int priority;
     uint64_t key;
@@ -616,6 +626,22 @@ struct ClassTemplateSpecializationKeyHash
     }
 };
 
+enum class ClassTemplateSpecializationSymbolFlags : uint8_t
+{
+    none = 0,
+    reopened = 1 << 0
+};
+
+inline ClassTemplateSpecializationSymbolFlags operator|(ClassTemplateSpecializationSymbolFlags left, ClassTemplateSpecializationSymbolFlags right)
+{
+    return ClassTemplateSpecializationSymbolFlags(uint8_t(left) | uint8_t(right));
+}
+
+inline ClassTemplateSpecializationSymbolFlags operator&(ClassTemplateSpecializationSymbolFlags left, ClassTemplateSpecializationSymbolFlags right)
+{
+    return ClassTemplateSpecializationSymbolFlags(uint8_t(left) & uint8_t(right));
+}
+
 class ClassTemplateSpecializationSymbol : public ClassTypeSymbol
 {
 public:
@@ -623,6 +649,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::classTemplateSpecializationSymbol; }
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
+    void EmplaceType(TypeSymbol* type, int index) override;
     void SetKey(const ClassTemplateSpecializationKey& key_);
     const ClassTemplateSpecializationKey& Key() const { return key; }
     ClassTypeSymbol* PrimaryClassTemplate() const { return key.classTypeSymbol; }
@@ -630,9 +657,21 @@ public:
     TypeSymbol* TypeArgument(int index) const { Assert(index >= 0 && index < key.typeArguments.size(), "invalid type argument index"); return key.typeArguments[index]; }
     void SetGlobalNs(std::unique_ptr<NamespaceNode>&& globalNs_);
     NamespaceNode* GlobalNs() const { return globalNs.get(); }
+    bool IsReopened() const { return GetFlag(ClassTemplateSpecializationSymbolFlags::reopened); }
+    void SetReopened() { SetFlag(ClassTemplateSpecializationSymbolFlags::reopened); }
+    bool IsReopenedClassTemplateSpecialization() const override { return IsReopened(); }
+    void AddToBeMerged(std::unique_ptr<ClassTemplateSpecializationSymbol>&& that);
+    void MergeOpenedInstances();
+    void MergeConstructorSymbol(const ConstructorSymbol& constructorSymbol);
+    void MergeMemberFunctionSymbol(const MemberFunctionSymbol& memberFunctionSymbol);
+    void MergePropertySymbol(const PropertySymbol& propertySymbol);
 private:
+    ClassTemplateSpecializationSymbolFlags flags;
     ClassTemplateSpecializationKey key;
     std::unique_ptr<NamespaceNode> globalNs;
+    bool GetFlag(ClassTemplateSpecializationSymbolFlags flag) const { return (flags & flag) != ClassTemplateSpecializationSymbolFlags::none; }
+    void SetFlag(ClassTemplateSpecializationSymbolFlags flag) { flags = flags | flag; }
+    std::vector<std::unique_ptr<ClassTemplateSpecializationSymbol>> toBeMerged;
 };
 
 } } // namespace cminor::symbols

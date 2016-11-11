@@ -23,6 +23,10 @@ Symbol* SymbolReader::GetSymbol()
     symbol->SetAssembly(assembly);
     symbol->Read(*this);
     assembly->GetSymbolTable().AddSymbol(symbol);
+    if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(symbol))
+    {
+        classTemplateSpecializations.push_back(classTemplateSpecialization);
+    }
     return symbol;
 }
 
@@ -35,8 +39,8 @@ void SymbolReader::ProcessTypeRequests()
 {
     for (const TypeRequest& typeRequest : typeRequests)
     {
-        Constant returnTypeNameConstant = assembly->GetConstantPool().GetConstant(typeRequest.typeNameId);
-        utf32_string typeName = returnTypeNameConstant.Value().AsStringLiteral();
+        Constant typeNameConstant = assembly->GetConstantPool().GetConstant(typeRequest.typeNameId);
+        utf32_string typeName = typeNameConstant.Value().AsStringLiteral();
         TypeSymbol* type = assembly->GetSymbolTable().GetTypeNoThrow(typeName);
         if (type)
         {
@@ -60,5 +64,10 @@ void SymbolReader::AddConversionFun(FunctionSymbol* conversion)
     conversions.push_back(conversion);
 }
 
+void SymbolReader::AddClassTemplateSpecialization(ClassTemplateSpecializationSymbol* classTemplateSpecialization)
+{
+    classTemplateSpecializations.push_back(classTemplateSpecialization);
+
+}
 
 } } // namespace cminor::symbols

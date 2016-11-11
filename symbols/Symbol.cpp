@@ -13,6 +13,7 @@
 #include <cminor/symbols/BasicTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
 #include <cminor/symbols/IndexerSymbol.hpp>
+#include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/machine/Util.hpp>
@@ -397,6 +398,18 @@ ContainerScope* Symbol::ClassInterfaceOrNsScope() const
 void Symbol::EmplaceType(TypeSymbol* type, int index)
 {
     throw std::runtime_error("symbol '" + ToUtf8(FullName()) + "' does not support emplace type");
+}
+
+void Symbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
+{
+}
+
+void Symbol::Merge(const Symbol& that)
+{
+    if (that.IsInstantiated())
+    {
+        SetInstantiated();
+    }
 }
 
 Scope::~Scope()
@@ -881,11 +894,13 @@ void ContainerSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
     {
         FunctionGroupSymbol* functionGroupSymbol = MakeFunctionGroupSymbol(functionSymbol->GroupName(), functionSymbol->GetSpan());
         functionGroupSymbol->AddFunction(functionSymbol);
+        functionSymbol->GetContainerScope()->SetParent(GetContainerScope());
     }
     else if (IndexerSymbol* indexerSymbol = dynamic_cast<IndexerSymbol*>(symbol.get()))
     {
         IndexerGroupSymbol* indexerGroupSymbol = MakeIndexerGroupSymbol(indexerSymbol->GetSpan());
         indexerGroupSymbol->AddIndexer(indexerSymbol);
+        indexerSymbol->GetContainerScope()->SetParent(GetContainerScope());
     }
     else 
     {
@@ -967,6 +982,28 @@ void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
         if (NamespaceSymbol* thatNs = dynamic_cast<NamespaceSymbol*>(symbol.get()))
         {
             Import(thatNs, symbolTable);
+        }
+        else if (ClassTemplateSpecializationSymbol* thatClassTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(symbol.get()))
+        {
+            utf32_string fullName = thatClassTemplateSpecialization->FullName();
+            Symbol* thisSymbol = symbolTable.Container()->GetContainerScope()->Lookup(StringPtr(fullName.c_str()));
+            if (thisSymbol)
+            {
+                if (ClassTemplateSpecializationSymbol* thisClassTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(thisSymbol))
+                {
+                    thisClassTemplateSpecialization->AddToBeMerged(std::unique_ptr<ClassTemplateSpecializationSymbol>(static_cast<ClassTemplateSpecializationSymbol*>(symbol.release())));
+                }
+                else
+                {
+                    throw Exception("cannot merge class template specialization '" + ToUtf8(thatClassTemplateSpecialization->FullName()) + "' into '" + ToUtf8(thisSymbol->FullName()) + "'", 
+                        thatClassTemplateSpecialization->GetSpan(), thisSymbol->GetSpan());
+                }
+            }
+            else
+            {
+                std::unique_ptr<Symbol> s(symbol.release());
+                symbolTable.Container()->AddSymbol(std::move(s));
+            }
         }
         else if (!dynamic_cast<FunctionGroupSymbol*>(symbol.get()))
         {
@@ -1100,6 +1137,35 @@ BoundTypeParameterSymbol::BoundTypeParameterSymbol(const Span& span_, Constant n
 {
 }
 
+void BoundTypeParameterSymbol::Write(SymbolWriter& writer)
+{
+    Symbol::Write(writer);
+    utf32_string typeName = type->FullName();
+    ConstantId typeId = GetAssembly()->GetConstantPool().GetIdFor(typeName);
+    Assert(typeId != noConstantId, "got no id");
+    typeId.Write(writer);
+}
+
+void BoundTypeParameterSymbol::Read(SymbolReader& reader)
+{
+    Symbol::Read(reader);
+    ConstantId typeId;
+    typeId.Read(reader);
+    reader.EmplaceTypeRequest(this, typeId, 0);
+}
+
+void BoundTypeParameterSymbol::EmplaceType(TypeSymbol* type, int index)
+{
+    if (index == 0)
+    {
+        this->type = type;
+    }
+    else
+    {
+        throw std::runtime_error("bound type parameter got invalid emplace type index " + std::to_string(index));
+    }
+}
+
 utf32_string TypeParameterSymbol::FullName() const
 {
     return Name().Value();
@@ -1113,6 +1179,10 @@ ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol
 void ClassTypeSymbol::Write(SymbolWriter& writer)
 {
     TypeSymbol::Write(writer);
+    if (IsReopenedClassTemplateSpecialization())
+    {
+        return;
+    }
     if (IsClassTemplate())
     {
         Node* node = GetAssembly()->GetSymbolTable().GetNode(this);
@@ -1159,6 +1229,10 @@ void ClassTypeSymbol::Write(SymbolWriter& writer)
 void ClassTypeSymbol::Read(SymbolReader& reader)
 {
     TypeSymbol::Read(reader);
+    if (IsReopenedClassTemplateSpecialization())
+    {
+        return;
+    }
     if (IsClassTemplate())
     {
         uint32_t classNodeSize = reader.GetUInt();
@@ -1264,6 +1338,10 @@ void ClassTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
     else if (TypeParameterSymbol* typeParameterSymbol = dynamic_cast<TypeParameterSymbol*>(s))
     {
         typeParameters.push_back(typeParameterSymbol);
+    }
+    else if (PropertySymbol* propertySymbol = dynamic_cast<PropertySymbol*>(s))
+    {
+        properties.push_back(propertySymbol);
     }
 }
 
@@ -1645,28 +1723,180 @@ void InterfaceTypeSymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
-ClassTemplateSpecializationSymbol::ClassTemplateSpecializationSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_), key()
+ClassTemplateSpecializationSymbol::ClassTemplateSpecializationSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_), key(), flags(ClassTemplateSpecializationSymbolFlags::none)
 {
 }
 
 void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)
 {
+    writer.AsMachineWriter().Put(uint8_t(flags));
     ClassTypeSymbol::Write(writer);
+    if (IsReopened())
+    {
+        return;
+    }
+    utf32_string keyFullClassName;
+    if (key.classTypeSymbol)
+    {
+        keyFullClassName = key.classTypeSymbol->FullName();
+    }
+    ConstantId classTypeId = GetAssembly()->GetConstantPool().GetIdFor(keyFullClassName);
+    Assert(classTypeId != noConstantId, "got no id for return type");
+    classTypeId.Write(writer);
+    int32_t n = int32_t(key.typeArguments.size());
+    writer.AsMachineWriter().Put(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        TypeSymbol* typeArgument = key.typeArguments[i];
+        utf32_string typeArgumentFullName = typeArgument->FullName();
+        ConstantId typeArgumentId = GetAssembly()->GetConstantPool().GetIdFor(typeArgumentFullName);
+        Assert(typeArgumentId != noConstantId, "got no id for type argument");
+        typeArgumentId.Write(writer);
+    }
+    writer.AsAstWriter().Put(globalNs.get());
 }
 
 void ClassTemplateSpecializationSymbol::Read(SymbolReader& reader)
 {
+    flags = ClassTemplateSpecializationSymbolFlags(reader.GetByte());
     ClassTypeSymbol::Read(reader);
+    if (IsReopened())
+    {
+        return;
+    }
+    ConstantId classTypeId;
+    classTypeId.Read(reader);
+    if (classTypeId != reader.GetAssembly()->GetConstantPool().GetEmptyStringConstantId())
+    {
+        reader.EmplaceTypeRequest(this, classTypeId, -2);
+    }
+    int32_t n = reader.GetInt();
+    key.typeArguments.resize(n);
+    for (int32_t i = 0; i < n; ++i)
+    {
+        ConstantId typeArgumentId;
+        typeArgumentId.Read(reader);
+        reader.EmplaceTypeRequest(this, typeArgumentId, i + 1);
+    }
+    Node* node = reader.GetNode();
+    NamespaceNode* ns = dynamic_cast<NamespaceNode*>(node);
+    Assert(ns, "namespace node expected");
+    globalNs.reset(ns);
+    SetBound();
+}
+
+void ClassTemplateSpecializationSymbol::EmplaceType(TypeSymbol* type, int index)
+{
+    if (index == -2)
+    {
+        ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(type);
+        Assert(classTypeSymbol, "class type symbol expected");
+        key.classTypeSymbol = classTypeSymbol;
+    }
+    else if (index > 0)
+    {
+        Assert(key.typeArguments.size() > index - 1, "invalid emplace type index");
+        key.typeArguments[index - 1] = type;
+    }
+    else
+    {
+        ClassTypeSymbol::EmplaceType(type, index);
+    }
 }
 
 void ClassTemplateSpecializationSymbol::SetKey(const ClassTemplateSpecializationKey& key_)
 {
     key = key_;
+    if (key.classTypeSymbol)
+    {
+        utf32_string classTypeFullName = key.classTypeSymbol->FullName();
+        GetAssembly()->GetConstantPool().Install(StringPtr(classTypeFullName.c_str()));
+    }
+    int32_t n = int32_t(key.typeArguments.size()); 
+    for (int32_t i = 0; i < n; ++i)
+    {
+        TypeSymbol* typeArgument = key.typeArguments[i];
+        utf32_string typeArgumentFullName = typeArgument->FullName();
+        GetAssembly()->GetConstantPool().Install(StringPtr(typeArgumentFullName.c_str()));
+    }
 }
 
 void ClassTemplateSpecializationSymbol::SetGlobalNs(std::unique_ptr<NamespaceNode>&& globalNs_)
 {
     globalNs = std::move(globalNs_);
+}
+
+void ClassTemplateSpecializationSymbol::AddToBeMerged(std::unique_ptr<ClassTemplateSpecializationSymbol>&& that)
+{
+    toBeMerged.push_back(std::move(that));
+}
+
+void ClassTemplateSpecializationSymbol::MergeOpenedInstances()
+{
+    for (const std::unique_ptr<ClassTemplateSpecializationSymbol>& openedInstance : toBeMerged)
+    {
+        for (const std::unique_ptr<Symbol>& symbol : openedInstance->Symbols())
+        {
+            symbol->MergeTo(this);
+        }
+    }
+}
+
+void ClassTemplateSpecializationSymbol::MergeConstructorSymbol(const ConstructorSymbol& constructorSymbol)
+{
+    uint32_t constructorSymbolId = constructorSymbol.Id();
+    bool found = false;
+    for (ConstructorSymbol* baseConstructor : Constructors())
+    {
+        if (constructorSymbolId == constructorSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseConstructor->GetAssembly()->Name().Value()), baseConstructor->Id()))
+        {
+            baseConstructor->Merge(constructorSymbol);
+            found = true;
+            break;
+        }
+    }
+    if (!found)
+    {
+        throw Exception("could not merge '" + ToUtf8(constructorSymbol.FullName()) + "': target symbol not found", constructorSymbol.GetSpan(), GetSpan());
+    }
+}
+
+void ClassTemplateSpecializationSymbol::MergeMemberFunctionSymbol(const MemberFunctionSymbol& memberFunctionSymbol)
+{
+    uint32_t memFunSymbolId = memberFunctionSymbol.Id();
+    bool found = false;
+    for (MemberFunctionSymbol* baseMemFun : MemberFunctions())
+    {
+        if (memFunSymbolId == memberFunctionSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseMemFun->GetAssembly()->Name().Value()), baseMemFun->Id()))
+        {
+            baseMemFun->Merge(memberFunctionSymbol);
+            found = true;
+            break;
+        }
+    }
+    if (!found)
+    {
+        throw Exception("could not merge '" + ToUtf8(memberFunctionSymbol.FullName()) + "': target symbol not found", memberFunctionSymbol.GetSpan(), GetSpan());
+    }
+}
+
+void ClassTemplateSpecializationSymbol::MergePropertySymbol(const PropertySymbol& propertySymbol)
+{
+    uint32_t propertySymbolId = propertySymbol.Id();
+    bool found = false;
+    for (PropertySymbol* baseProperty : Properties())
+    {
+        if (propertySymbolId == propertySymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseProperty->GetAssembly()->Name().Value()), baseProperty->Id()))
+        {
+            baseProperty->Merge(propertySymbol);
+            found = true;
+            break;
+        }
+    }
+    if (!found)
+    {
+        throw Exception("could not merge '" + ToUtf8(propertySymbol.FullName()) + "': target symbol not found", propertySymbol.GetSpan(), GetSpan());
+    }
 }
 
 } } // namespace cminor::symbols

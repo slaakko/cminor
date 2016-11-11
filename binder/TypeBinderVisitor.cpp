@@ -417,17 +417,28 @@ void TypeBinderVisitor::Visit(PropertyNode& propertyNode)
     PropertySymbol* propertySymbol = dynamic_cast<PropertySymbol*>(symbol);
     Assert(propertySymbol, "property symbol expected");
     propertySymbol->SetSpecifiers(propertyNode.GetSpecifiers());
-    TypeSymbol* propertyType = ResolveType(boundCompileUnit, containerScope, propertyNode.TypeExpr());
-    propertySymbol->SetType(propertyType);
     ContainerScope* prevContainerScope = containerScope;
     containerScope = propertySymbol->GetContainerScope();
+    TypeSymbol* propertyType = ResolveType(boundCompileUnit, containerScope, propertyNode.TypeExpr());
+    propertySymbol->SetType(propertyType);
     PropertyGetterFunctionSymbol* getter = propertySymbol->Getter();
     PropertySetterFunctionSymbol* setter = propertySymbol->Setter();
     if (!getter && !setter)
     {
         throw Exception("property '" + ToUtf8(propertySymbol->FullName()) + "' must have either getter or setter or both", propertySymbol->GetSpan());
     }
-    if (getter)
+    bool instantiateGetter = true;
+    if (instantiateRequested)
+    {
+        if (getter)
+        {
+            if (getter->IsInstantiated() || !getter->IsInstantiationRequested())
+            {
+                instantiateGetter = false;
+            }
+        }
+    }
+    if (getter && instantiateGetter)
     {
         getter->SetReturnType(propertyType);
         prevContainerScope = containerScope;
@@ -435,7 +446,18 @@ void TypeBinderVisitor::Visit(PropertyNode& propertyNode)
         propertyNode.Getter()->Accept(*this);
         containerScope = prevContainerScope;
     }
-    if (setter)
+    bool instantiateSetter = true;
+    if (instantiateRequested)
+    {
+        if (setter)
+        {
+            if (setter->IsInstantiated() || !setter->IsInstantiationRequested())
+            {
+                instantiateSetter = false;
+            }
+        }
+    }
+    if (setter && instantiateSetter)
     {
         prevContainerScope = containerScope;
         containerScope = setter->GetContainerScope();
@@ -467,7 +489,18 @@ void TypeBinderVisitor::Visit(IndexerNode& indexerNode)
     {
         throw Exception("indexer '" + ToUtf8(indexerSymbol->FullName()) + "' must have either getter or setter or both", indexerSymbol->GetSpan());
     }
-    if (getter)
+    bool instantiateGetter = true;
+    if (instantiateRequested)
+    {
+        if (getter)
+        {
+            if (getter->IsInstantiated() || !getter->IsInstantiationRequested())
+            {
+                instantiateGetter = false;
+            }
+        }
+    }
+    if (getter && instantiateGetter)
     {
         getter->SetReturnType(indexerValueType);
         prevContainerScope = containerScope;
@@ -478,7 +511,18 @@ void TypeBinderVisitor::Visit(IndexerNode& indexerNode)
         indexerNode.Getter()->Accept(*this);
         containerScope = prevContainerScope;
     }
-    if (setter)
+    bool instantiateSetter = true;
+    if (instantiateRequested)
+    {
+        if (setter)
+        {
+            if (setter->IsInstantiated() || !setter->IsInstantiationRequested())
+            {
+                instantiateSetter = false;
+            }
+        }
+    }
+    if (setter && instantiateSetter)
     {
         prevContainerScope = containerScope;
         containerScope = setter->GetContainerScope();

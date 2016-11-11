@@ -23,6 +23,14 @@ enum class LoadType
 void Link(const std::vector<CallInst*>& callInstructions, const std::vector<TypeInstruction*>& typeInstructions, const std::vector<SetClassDataInst*>& setClassDataInstructions,
     const std::vector<ClassTypeSymbol*>& classTypes);
 
+struct SymbolIdHash
+{
+    size_t operator()(const std::pair<std::string, uint32_t>& p) const
+    {
+        return std::hash<std::string>()(p.first) ^ size_t(p.second);
+    }
+};
+
 class Assembly
 {
 public:
@@ -50,6 +58,8 @@ public:
     void ImportSymbolTables();
     void Dump(CodeFormatter& formatter);
     const std::vector<std::unique_ptr<Assembly>>& ReferencedAssemblies() const { return referencedAssemblies; }
+    void AddSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId, uint32_t mySymbolId);
+    uint32_t GetSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId) const;
 private:
     Machine& machine;
     std::string filePath;
@@ -60,9 +70,12 @@ private:
     uint32_t id;
     MachineFunctionTable machineFunctionTable;
     SymbolTable symbolTable;
+    std::unordered_map<std::pair<std::string, uint32_t>, uint32_t, SymbolIdHash> symbolIdMapping;
     void Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, const std::string& currentAssemblyDir,
         std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
         std::vector<ClassTypeSymbol*>& classTypeSymbols);
+    void WriteSymbolIdMapping(SymbolWriter& writer);
+    void ReadSymbolIdMapping(SymbolReader& reader);
 };
 
 void InitAssembly();

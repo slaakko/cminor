@@ -19,7 +19,8 @@
 namespace cminor { namespace symbols {
 
 SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs), function(nullptr),
-    mainFunction(nullptr), currentClass(nullptr), currentInterface(nullptr), declarationBlockId(0), doNotAddTypes(false), conversionTable(*assembly), nextSymbolId(0)
+    mainFunction(nullptr), currentClass(nullptr), currentInterface(nullptr), declarationBlockId(0), doNotAddTypes(false), doNotAddClassTemplateSpecializations(false), conversionTable(*assembly), 
+    nextSymbolId(0)
 {
     globalNs.SetAssembly(assembly);
 }
@@ -539,8 +540,10 @@ void SymbolTable::Read(SymbolReader& reader)
 {
     NamespaceSymbol ns(Span(), assembly->GetConstantPool().GetEmptyStringConstant());
     ns.SetAssembly(assembly);
+    bool prevDoNotAddClassTemplateSpecializations = doNotAddClassTemplateSpecializations;
     bool prevDoNotAddTypes = doNotAddTypes;
     doNotAddTypes = true;
+    doNotAddClassTemplateSpecializations = true;
     ns.Read(reader);
     globalNs.Import(&ns, *this);
     doNotAddTypes = prevDoNotAddTypes;
@@ -549,6 +552,7 @@ void SymbolTable::Read(SymbolReader& reader)
         AddType(type);
     }
     reader.ClearTypes();
+    doNotAddClassTemplateSpecializations = prevDoNotAddClassTemplateSpecializations;
     bool hasMainFunction = reader.GetBool();
     if (hasMainFunction)
     {
@@ -571,6 +575,15 @@ void SymbolTable::Read(SymbolReader& reader)
     {
         AddConversion(conversion);
     }
+    reader.ClearConversions();
+    for (ClassTemplateSpecializationSymbol* classTemplateSpecialization : reader.ClassTemplateSpecializations())
+    {
+        if (!classTemplateSpecialization->IsReopened())
+        {
+            classTemplateSpecializationMap[classTemplateSpecialization->Key()] = classTemplateSpecialization;
+        }
+    }
+    reader.ClearClassTemplateSpecializations();
 }
 
 void SymbolTable::Import(SymbolTable& symbolTable)
@@ -628,12 +641,16 @@ void SymbolTable::AddType(TypeSymbol* type)
     auto it = typeSymbolMap.find(c);
     if (it != typeSymbolMap.cend())
     {
-        throw std::runtime_error("name '" + ToUtf8(typeFullName) + "' already found from symbol table of assembly '" + ToUtf8(assembly->Name().Value()) + "'");
+        if (!type->IsReopenedClassTemplateSpecialization())
+        {
+            throw std::runtime_error("name '" + ToUtf8(typeFullName) + "' already found from symbol table of assembly '" + ToUtf8(assembly->Name().Value()) + "'");
+        }
     }
     else
     {
         typeSymbolMap[c] = type;
     }
+    if (doNotAddClassTemplateSpecializations) return;
     if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(type))
     {
         classTemplateSpecializationMap[classTemplateSpecialization->Key()] = classTemplateSpecialization;
@@ -714,6 +731,11 @@ void SymbolTable::MapNode(Node& node, Symbol* symbol)
     uint32_t symbolId = nextSymbolId++;
     idSymbolMap[symbolId] = symbol;
     symbol->SetId(symbolId);
+    if (node.SymbolId() != -1 && symbol->GetAssembly() != assembly)
+    {
+        std::string assemblyName = ToUtf8(symbol->GetAssembly()->Name().Value());
+        assembly->AddSymbolIdMapping(assemblyName, node.SymbolId(), symbolId);
+    }
     node.SetSymbolId(symbolId);
 }
 
@@ -793,7 +815,16 @@ ClassTemplateSpecializationSymbol* SymbolTable::MakeClassTemplateSpecialization(
     classTemplateSpecialization->SetAssembly(assembly);
     classTemplateSpecialization->SetPublic();
     classTemplateSpecialization->SetKey(classTemplateSpecializationKey);
+    classTemplateSpecialization->SetProject();
     return classTemplateSpecialization;
+}
+
+void SymbolTable::MergeClassTemplateSpecializations()
+{
+    for (auto& p : classTemplateSpecializationMap)
+    {
+        p.second->MergeOpenedInstances();
+    }
 }
 
 SymbolCreator::~SymbolCreator()

@@ -156,6 +156,16 @@ void FunctionNode::Write(AstWriter& writer)
     parameters.Write(writer);
     bool hasBody = body != nullptr;
     writer.AsMachineWriter().Put(hasBody);
+    if (hasBody)
+    {
+        writer.Put(body.get());
+    }
+    bool hasBodySource = bodySource != nullptr;
+    writer.AsMachineWriter().Put(hasBodySource);
+    if (hasBodySource)
+    {
+        writer.Put(bodySource.get());
+    }
     attributes.Write(writer);
 }
 
@@ -177,6 +187,11 @@ void FunctionNode::Read(AstReader& reader)
     if (hasBody)
     {
         body.reset(reader.GetCompoundStatementNode());
+    }
+    bool hasBodySource = reader.GetBool();
+    if (hasBodySource)
+    {
+        bodySource.reset(reader.GetCompoundStatementNode());
     }
     attributes.Read(reader);
 }

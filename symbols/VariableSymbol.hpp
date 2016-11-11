@@ -29,6 +29,8 @@ public:
     ParameterSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::parameterSymbol; }
     std::string TypeString() const override { return "parameter"; }
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
     int32_t Index() const { return index; }
     void SetIndex(int32_t index_) { index = index_; }
@@ -40,9 +42,10 @@ class LocalVariableSymbol : public VariableSymbol
 {
 public:
     LocalVariableSymbol(const Span& span_, Constant name_);
-    void Read(SymbolReader& reader) override;
     SymbolType GetSymbolType() const override { return SymbolType::localVariableSymbol; }
     std::string TypeString() const override { return "local variable"; }
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
     int32_t Index() const { return index; }
     void SetIndex(int32_t index_) { index = index_; }
@@ -56,6 +59,8 @@ public:
     MemberVariableSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::memberVariableSymbol; }
     std::string TypeString() const override { return "member variable"; }
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
     int32_t Index() const { return index; }
     void SetIndex(int32_t index_) { index = index_; }
     void SetSpecifiers(Specifiers specifiers);

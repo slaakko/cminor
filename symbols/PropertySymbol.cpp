@@ -87,6 +87,25 @@ void PropertySymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
+void PropertySymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
+{
+    classTemplateSpecializationSymbol->MergePropertySymbol(*this);
+}
+
+void PropertySymbol::Merge(const PropertySymbol& that)
+{
+    if (that.Getter())
+    {
+        Assert(Getter(), "getter expected");
+        Getter()->Merge(*that.Getter());
+    }
+    if (that.Setter())
+    {
+        Assert(Setter(), "setter expected");
+        Setter()->Merge(*that.Setter());
+    }
+}
+
 PropertyGetterFunctionSymbol::PropertyGetterFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
 {
 }

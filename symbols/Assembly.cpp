@@ -137,6 +137,7 @@ void Assembly::Write(SymbolWriter& writer)
     nameId.Write(writer);
     machineFunctionTable.Write(writer);
     symbolTable.Write(writer);
+    WriteSymbolIdMapping(writer);
 }
 
 void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
@@ -168,6 +169,7 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
     ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols);
     ImportSymbolTables();
     symbolTable.Read(reader);
+    ReadSymbolIdMapping(reader);
     callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
     typeInstructions.insert(typeInstructions.end(), reader.TypeInstructions().cbegin(), reader.TypeInstructions().cend());
     setClassDataInstructions.insert(setClassDataInstructions.end(), reader.SetClassDataInstructions().cbegin(), reader.SetClassDataInstructions().cend());
@@ -199,11 +201,11 @@ void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferenc
     std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols)
 {
     std::vector<std::string> allAssemblyReferences;
+    allAssemblyReferences.insert(allAssemblyReferences.end(), assemblyReferences.cbegin(), assemblyReferences.cend());
     if (!IsSystemAssembly())
     {
         allAssemblyReferences.push_back(CminorSystemAssemblyFilePath(GetConfig()));
     }
-    allAssemblyReferences.insert(allAssemblyReferences.end(), assemblyReferences.cbegin(), assemblyReferences.cend());
     Import(allAssemblyReferences, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols);
 }
 
@@ -305,6 +307,48 @@ void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadTy
 void Assembly::Dump(CodeFormatter& formatter)
 {
     machineFunctionTable.Dump(formatter);
+}
+
+void Assembly::AddSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId, uint32_t mySymbolId)
+{
+    std::pair<std::string, uint32_t> key = std::make_pair(assemblyName, assemblySymbolId);
+    symbolIdMapping[key] = mySymbolId;
+}
+
+uint32_t Assembly::GetSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId) const
+{
+    std::pair<std::string, uint32_t> key = std::make_pair(assemblyName, assemblySymbolId);
+    auto it = symbolIdMapping.find(key);
+    if (it != symbolIdMapping.cend())
+    {
+        return it->second;
+    }
+    return uint32_t(-1);
+}
+
+void Assembly::WriteSymbolIdMapping(SymbolWriter& writer)
+{
+    int32_t n = int32_t(symbolIdMapping.size());
+    writer.AsMachineWriter().Put(n);
+    for (const auto& x : symbolIdMapping)
+    {
+        writer.AsMachineWriter().Put(x.first.first);
+        writer.AsMachineWriter().Put(x.first.second);
+        writer.AsMachineWriter().Put(x.second);
+    }
+}
+
+void Assembly::ReadSymbolIdMapping(SymbolReader& reader)
+{
+    int32_t n = reader.GetInt();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        std::string assemblyName = reader.GetUtf8String();
+        uint32_t assemblySymbolId = reader.GetUInt();
+        uint32_t mySymbolId = reader.GetUInt();
+        std::pair<std::string, uint32_t> key = std::make_pair(assemblyName, assemblySymbolId);
+        symbolIdMapping[key] = mySymbolId;
+    }
 }
 
 int NumberOfAncestors(ClassTypeSymbol* classType)

@@ -43,6 +43,10 @@ public:
     const std::vector<ClassTypeSymbol*>& ClassTypeSymbols() const { return classTypeSymbols; }
     void AddConversionFun(FunctionSymbol* conversion);
     const std::vector<FunctionSymbol*>& Conversions() const { return conversions; }
+    void ClearConversions() { conversions.clear(); }
+    void AddClassTemplateSpecialization(ClassTemplateSpecializationSymbol* classTemplateSpecialization);
+    const std::vector<ClassTemplateSpecializationSymbol*>& ClassTemplateSpecializations() const { return classTemplateSpecializations; }
+    void ClearClassTemplateSpecializations() { classTemplateSpecializations.clear(); }
 private:
     Assembly* assembly;
     std::vector<LocalVariableSymbol*> localVariables;
@@ -50,6 +54,7 @@ private:
     std::vector<TypeRequest> typeRequests;
     std::vector<ClassTypeSymbol*> classTypeSymbols;
     std::vector<FunctionSymbol*> conversions;
+    std::vector<ClassTemplateSpecializationSymbol*> classTemplateSpecializations;
 };
 
 } } // namespace cminor::symbols

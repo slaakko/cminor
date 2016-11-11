@@ -66,6 +66,7 @@ void FunctionSymbol::Write(SymbolWriter& writer)
         returnTypeFullName = returnType->FullName();
     }
     ConstantId returnTypeNameId = GetAssembly()->GetConstantPool().GetIdFor(returnTypeFullName);
+    Assert(returnTypeNameId != noConstantId, "got no id for return type");
     returnTypeNameId.Write(writer);
     writer.AsMachineWriter().Put(uint8_t(flags));
     bool hasMachineFunction = machineFunction != nullptr;
@@ -552,6 +553,16 @@ bool ConstructorSymbol::IsIntConstructorSymbol() const
     return Parameters().size() == 2 && Parameters()[1]->GetType() == GetAssembly()->GetSymbolTable().GetType(U"System.Int32");
 }
 
+void ConstructorSymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
+{
+    classTemplateSpecializationSymbol->MergeConstructorSymbol(*this);
+}
+
+void ConstructorSymbol::Merge(const ConstructorSymbol& that)
+{
+    Symbol::Merge(that);
+}
+
 ArraySizeConstructorSymbol::ArraySizeConstructorSymbol(const Span& span_, Constant name_) : ConstructorSymbol(span_, name_)
 {
 }
@@ -819,6 +830,16 @@ void MemberFunctionSymbol::GenerateInterfaceCall(Machine& machine, Assembly& ass
     icall->SetNumArgs(n);
     icall->SetImtIndex(imtIndex);
     function.AddInst(std::move(inst));
+}
+
+void MemberFunctionSymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
+{
+    classTemplateSpecializationSymbol->MergeMemberFunctionSymbol(*this);
+}
+
+void MemberFunctionSymbol::Merge(const MemberFunctionSymbol& that)
+{
+    Symbol::Merge(that);
 }
 
 ClassTypeConversion::ClassTypeConversion(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)

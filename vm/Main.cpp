@@ -146,6 +146,7 @@ int main(int argc, const char** argv)
         std::unordered_set<std::string> importSet;
         assembly.Read(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypes);
         Link(callInstructions, typeInstructions, setClassDataInstructions, classTypes);
+        assembly.GetSymbolTable().MergeClassTemplateSpecializations();
         callInstructions.clear();
         typeInstructions.clear();
         setClassDataInstructions.clear();

@@ -47,13 +47,32 @@ ParameterSymbol::ParameterSymbol(const Span& span_, Constant name_) : VariableSy
 {
 }
 
+void ParameterSymbol::Write(SymbolWriter& writer)
+{
+    VariableSymbol::Write(writer);
+    writer.AsMachineWriter().Put(index);
+}
+
+void ParameterSymbol::Read(SymbolReader& reader)
+{
+    VariableSymbol::Read(reader);
+    index = reader.GetInt();
+}
+
 LocalVariableSymbol::LocalVariableSymbol(const Span& span_, Constant name_) : VariableSymbol(span_, name_), index(-1)
 {
+}
+
+void LocalVariableSymbol::Write(SymbolWriter& writer)
+{
+    VariableSymbol::Write(writer);
+    writer.AsMachineWriter().Put(index);
 }
 
 void LocalVariableSymbol::Read(SymbolReader& reader)
 {
     VariableSymbol::Read(reader);
+    index = reader.GetInt();
     reader.AddLocalVariable(this);
 }
 
@@ -89,6 +108,18 @@ void MemberVariableSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("member variables cannot be inline", GetSpan());
     }
+}
+
+void MemberVariableSymbol::Write(SymbolWriter& writer)
+{
+    VariableSymbol::Write(writer);
+    writer.AsMachineWriter().Put(index);
+}
+
+void MemberVariableSymbol::Read(SymbolReader& reader)
+{
+    VariableSymbol::Read(reader);
+    index = reader.GetInt();
 }
 
 } } // namespace cminor::symbols

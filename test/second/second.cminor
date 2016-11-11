@@ -91,11 +91,9 @@ namespace Alpha.Collections
         private T[] items;
         private int count;
     }
-}
 
-void main()
-{
-    Alpha.Collections.List<int> x = new Alpha.Collections.List<int>();
-    x.Add(10);
-    int a = x[0];
+    public void foo()
+    {
+        List<int> x = new List<int>();
+    }
 }

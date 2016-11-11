@@ -75,6 +75,7 @@ public:
     const std::vector<ClassTypeSymbol*>& CreatedClasses() const { return createdClasses; }
     ClassTemplateSpecializationSymbol* MakeClassTemplateSpecialization(ClassTypeSymbol* primaryClassTemplate, const std::vector<TypeSymbol*>& typeArguments, const Span& span);
     bool AddTypes() const { return !doNotAddTypes; }
+    void MergeClassTemplateSpecializations();
 private:
     Assembly* assembly;
     NamespaceSymbol globalNs;
@@ -92,6 +93,7 @@ private:
     ConversionTable conversionTable;
     int declarationBlockId;
     bool doNotAddTypes;
+    bool doNotAddClassTemplateSpecializations;
     std::vector<ClassTypeSymbol*> createdClasses;
     std::unordered_map<ClassTemplateSpecializationKey, ClassTemplateSpecializationSymbol*, ClassTemplateSpecializationKeyHash> classTemplateSpecializationMap;
     uint32_t nextSymbolId;

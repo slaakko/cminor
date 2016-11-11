@@ -13,7 +13,7 @@ namespace cminor { namespace symbols {
 class MappingSymbolVisitor : public Visitor
 {
 public:
-    MappingSymbolVisitor(Assembly& assembly_);
+    MappingSymbolVisitor(Assembly& targetAssembly_, Assembly& sourceAssembly_);
     void Visit(NamespaceNode& namespaceNode) override;
     void Visit(ClassNode& classNode) override;
     void Visit(FunctionNode& functionNode) override;
@@ -31,7 +31,8 @@ public:
     void Visit(ForStatementNode& forStatementNode) override;
     void Visit(ConstructionStatementNode& constructionStatementNode) override;
 private:
-    Assembly& assembly;
+    Assembly& targetAssembly;
+    Assembly& sourceAssembly;
 };
 
 } } // namespace cminor::symbols

@@ -15,13 +15,13 @@
 
 namespace cminor { namespace symbols {
 
-MappingSymbolVisitor::MappingSymbolVisitor(Assembly& assembly_) : assembly(assembly_)
+MappingSymbolVisitor::MappingSymbolVisitor(Assembly& targetAssembly_, Assembly& sourceAssembly_) : targetAssembly(targetAssembly_), sourceAssembly(sourceAssembly_)
 {
 }
 
 void MappingSymbolVisitor::Visit(NamespaceNode& namespaceNode)
 {
-    assembly.GetSymbolTable().BeginNamespace(namespaceNode);
+    targetAssembly.GetSymbolTable().BeginNamespace(namespaceNode);
     NodeList<Node>& members = namespaceNode.Members();
     int n = members.Count();
     for (int i = 0; i < n; ++i)
@@ -29,32 +29,43 @@ void MappingSymbolVisitor::Visit(NamespaceNode& namespaceNode)
         Node* member = members[i];
         member->Accept(*this);
     }
-    assembly.GetSymbolTable().EndNamespace();
+    targetAssembly.GetSymbolTable().EndNamespace();
 }
 
 void MappingSymbolVisitor::Visit(ClassNode& classNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbol(classNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbol(classNode.SymbolId());
     ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(symbol);
     Assert(classTypeSymbol, "class type symbol expected");
-    assembly.GetSymbolTable().MapNode(classNode, classTypeSymbol);
-    assembly.GetSymbolTable().BeginContainer(classTypeSymbol);
+    targetAssembly.GetSymbolTable().MapNode(classNode, classTypeSymbol);
+    targetAssembly.GetSymbolTable().BeginContainer(classTypeSymbol);
+    classTypeSymbol->SetAssembly(&targetAssembly);
+    ConstantPool& constantPool = targetAssembly.GetConstantPool();
+    constantPool.Install(classTypeSymbol->Name());
+    utf32_string fullName = classTypeSymbol->FullName();
+    constantPool.Install(StringPtr(fullName.c_str()));
     int n = classNode.Members().Count();
     for (int i = 0; i < n; ++i)
     {
         Node* member = classNode.Members()[i];
         member->Accept(*this);
     }
-    assembly.GetSymbolTable().EndContainer();
+    targetAssembly.GetSymbolTable().EndContainer();
 }
 
 void MappingSymbolVisitor::Visit(FunctionNode& functionNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbol(functionNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbol(functionNode.SymbolId());
     FunctionSymbol* functionSymbol = dynamic_cast<FunctionSymbol*>(symbol);
     Assert(functionSymbol, "function symbol expected");
-    assembly.GetSymbolTable().MapNode(functionNode, functionSymbol);
-    assembly.GetSymbolTable().BeginContainer(functionSymbol);
+    targetAssembly.GetSymbolTable().MapNode(functionNode, functionSymbol);
+    targetAssembly.GetSymbolTable().BeginContainer(functionSymbol);
+    functionSymbol->SetAssembly(&targetAssembly);
+    functionSymbol->SetProject();
+    ConstantPool& constantPool = targetAssembly.GetConstantPool();
+    constantPool.Install(functionSymbol->Name());
+    utf32_string fullName = functionSymbol->FullName();
+    constantPool.Install(StringPtr(fullName.c_str()));
     int n = functionNode.Parameters().Count();
     for (int i = 0; i < n; ++i)
     {
@@ -68,25 +79,32 @@ void MappingSymbolVisitor::Visit(FunctionNode& functionNode)
         {
             functionNode.Body()->Accept(*this);
         }
-        assembly.GetSymbolTable().EndContainer();
     }
+    targetAssembly.GetSymbolTable().EndContainer();
 }
 
 void MappingSymbolVisitor::Visit(ParameterNode& parameterNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbol(parameterNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbol(parameterNode.SymbolId());
     ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(symbol);
     Assert(parameterSymbol, "parameter symbol expected");
-    assembly.GetSymbolTable().MapNode(parameterNode, parameterSymbol);
+    targetAssembly.GetSymbolTable().MapNode(parameterNode, parameterSymbol);
 }
 
 void MappingSymbolVisitor::Visit(StaticConstructorNode& staticConstructorNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbol(staticConstructorNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbol(staticConstructorNode.SymbolId());
     StaticConstructorSymbol* staticConstructorSymbol = dynamic_cast<StaticConstructorSymbol*>(symbol);
     Assert(staticConstructorSymbol, "static constructor symbol expected");
-    assembly.GetSymbolTable().MapNode(staticConstructorNode, staticConstructorSymbol);
-    assembly.GetSymbolTable().BeginContainer(staticConstructorSymbol);
+    targetAssembly.GetSymbolTable().MapNode(staticConstructorNode, staticConstructorSymbol);
+    targetAssembly.GetSymbolTable().BeginContainer(staticConstructorSymbol);
+    staticConstructorSymbol->SetAssembly(&targetAssembly);
+    staticConstructorSymbol->SetProject();
+    ConstantPool& constantPool = targetAssembly.GetConstantPool();
+    constantPool.Install(staticConstructorSymbol->Name());
+    utf32_string fullName = staticConstructorSymbol->FullName();
+    constantPool.Install(StringPtr(fullName.c_str()));
+    constantPool.Install(staticConstructorSymbol->GroupName());
     if (staticConstructorSymbol->IsInstantiationRequested())
     {
         staticConstructorNode.SwitchToBody();
@@ -94,17 +112,17 @@ void MappingSymbolVisitor::Visit(StaticConstructorNode& staticConstructorNode)
         {
             staticConstructorNode.Body()->Accept(*this);
         }
-        assembly.GetSymbolTable().EndContainer();
     }
+    targetAssembly.GetSymbolTable().EndContainer();
 }
 
 void MappingSymbolVisitor::Visit(ConstructorNode& constructorNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbol(constructorNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbol(constructorNode.SymbolId());
     ConstructorSymbol* constructorSymbol = dynamic_cast<ConstructorSymbol*>(symbol);
     Assert(constructorSymbol, "constructor symbol expected");
-    assembly.GetSymbolTable().MapNode(constructorNode, constructorSymbol);
-    assembly.GetSymbolTable().BeginContainer(constructorSymbol);
+    targetAssembly.GetSymbolTable().MapNode(constructorNode, constructorSymbol);
+    targetAssembly.GetSymbolTable().BeginContainer(constructorSymbol);
     int n = constructorNode.Parameters().Count();
     for (int i = 0; i < n; ++i)
     {
@@ -113,22 +131,29 @@ void MappingSymbolVisitor::Visit(ConstructorNode& constructorNode)
     }
     if (constructorSymbol->IsInstantiationRequested())
     {
+        constructorSymbol->SetAssembly(&targetAssembly);
+        constructorSymbol->SetProject();
+        ConstantPool& constantPool = targetAssembly.GetConstantPool();
+        constantPool.Install(constructorSymbol->Name());
+        utf32_string fullName = constructorSymbol->FullName();
+        constantPool.Install(StringPtr(fullName.c_str()));
+        constantPool.Install(constructorSymbol->GroupName());
         constructorNode.SwitchToBody();
         if (constructorNode.HasBody())
         {
             constructorNode.Body()->Accept(*this);
         }
-        assembly.GetSymbolTable().EndContainer();
     }
+    targetAssembly.GetSymbolTable().EndContainer();
 }
 
 void MappingSymbolVisitor::Visit(MemberFunctionNode& memberFunctionNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbol(memberFunctionNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbol(memberFunctionNode.SymbolId());
     MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(symbol);
     Assert(memberFunctionSymbol, "member function symbol expected");
-    assembly.GetSymbolTable().MapNode(memberFunctionNode, memberFunctionSymbol);
-    assembly.GetSymbolTable().BeginContainer(memberFunctionSymbol);
+    targetAssembly.GetSymbolTable().MapNode(memberFunctionNode, memberFunctionSymbol);
+    targetAssembly.GetSymbolTable().BeginContainer(memberFunctionSymbol);
     int n = memberFunctionNode.Parameters().Count();
     for (int i = 0; i < n; ++i)
     {
@@ -137,34 +162,55 @@ void MappingSymbolVisitor::Visit(MemberFunctionNode& memberFunctionNode)
     }
     if (memberFunctionSymbol->IsInstantiationRequested())
     {
+        memberFunctionSymbol->SetAssembly(&targetAssembly);
+        memberFunctionSymbol->SetProject();
+        ConstantPool& constantPool = targetAssembly.GetConstantPool();
+        constantPool.Install(memberFunctionSymbol->Name());
+        utf32_string fullName = memberFunctionSymbol->FullName();
+        constantPool.Install(StringPtr(fullName.c_str()));
+        constantPool.Install(memberFunctionSymbol->GroupName());
         memberFunctionNode.SwitchToBody();
         if (memberFunctionNode.HasBody())
         {
             memberFunctionNode.Body()->Accept(*this);
         }
-        assembly.GetSymbolTable().EndContainer();
     }
+    targetAssembly.GetSymbolTable().EndContainer();
 }
 
 void MappingSymbolVisitor::Visit(MemberVariableNode& memberVariableNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbol(memberVariableNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbol(memberVariableNode.SymbolId());
     MemberVariableSymbol* memberVariableSymbol = dynamic_cast<MemberVariableSymbol*>(symbol);
     Assert(memberVariableSymbol, "member variable symbol expected");
-    assembly.GetSymbolTable().MapNode(memberVariableNode, memberVariableSymbol);
+    targetAssembly.GetSymbolTable().MapNode(memberVariableNode, memberVariableSymbol);
 }
 
 void MappingSymbolVisitor::Visit(PropertyNode& propertyNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbol(propertyNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbol(propertyNode.SymbolId());
     PropertySymbol* propertySymbol = dynamic_cast<PropertySymbol*>(symbol);
     Assert(propertySymbol, "property symbol expected");
-    assembly.GetSymbolTable().MapNode(propertyNode, propertySymbol);
-    assembly.GetSymbolTable().BeginContainer(propertySymbol);
+    targetAssembly.GetSymbolTable().MapNode(propertyNode, propertySymbol);
+    targetAssembly.GetSymbolTable().BeginContainer(propertySymbol);
     if (propertyNode.Getter())
     {
         if (propertySymbol->Getter()->IsInstantiationRequested())
         {
+            propertySymbol->SetAssembly(&targetAssembly);
+            propertySymbol->SetProject();
+            ConstantPool& constantPool = targetAssembly.GetConstantPool();
+            constantPool.Install(propertySymbol->Name());
+            utf32_string fullName = propertySymbol->FullName();
+            constantPool.Install(StringPtr(fullName.c_str()));
+
+            propertySymbol->Getter()->SetAssembly(&targetAssembly);
+            propertySymbol->Getter()->SetProject();
+            constantPool.Install(propertySymbol->Getter()->Name());
+            utf32_string getterFullName = propertySymbol->Getter()->FullName();
+            constantPool.Install(StringPtr(getterFullName.c_str()));
+            constantPool.Install(propertySymbol->Getter()->GroupName());
+
             propertyNode.Getter()->Accept(*this);
         }
     }
@@ -172,23 +218,51 @@ void MappingSymbolVisitor::Visit(PropertyNode& propertyNode)
     {
         if (propertySymbol->Setter()->IsInstantiationRequested())
         {
+            propertySymbol->SetAssembly(&targetAssembly);
+            propertySymbol->SetProject();
+            ConstantPool& constantPool = targetAssembly.GetConstantPool();
+            constantPool.Install(propertySymbol->Name());
+            utf32_string fullName = propertySymbol->FullName();
+            constantPool.Install(StringPtr(fullName.c_str()));
+
+            propertySymbol->Setter()->SetAssembly(&targetAssembly);
+            propertySymbol->Setter()->SetProject();
+            constantPool.Install(propertySymbol->Setter()->Name());
+            utf32_string setterFullName = propertySymbol->Setter()->FullName();
+            constantPool.Install(StringPtr(setterFullName.c_str()));
+            constantPool.Install(propertySymbol->Setter()->GroupName());
+
             propertyNode.Setter()->Accept(*this);
         }
     }
-    assembly.GetSymbolTable().EndContainer();
+    targetAssembly.GetSymbolTable().EndContainer();
 }
 
 void MappingSymbolVisitor::Visit(IndexerNode& indexerNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbol(indexerNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbol(indexerNode.SymbolId());
     IndexerSymbol* indexerSymbol = dynamic_cast<IndexerSymbol*>(symbol);
     Assert(indexerSymbol, "indexer symbol expected");
-    assembly.GetSymbolTable().MapNode(indexerNode, indexerSymbol);
-    assembly.GetSymbolTable().BeginContainer(indexerSymbol);
+    targetAssembly.GetSymbolTable().MapNode(indexerNode, indexerSymbol);
+    targetAssembly.GetSymbolTable().BeginContainer(indexerSymbol);
     if (indexerNode.Getter())
     {
         if (indexerSymbol->Getter()->IsInstantiationRequested())
         {
+            indexerSymbol->SetAssembly(&targetAssembly);
+            indexerSymbol->SetProject();
+            ConstantPool& constantPool = targetAssembly.GetConstantPool();
+            constantPool.Install(indexerSymbol->Name());
+            utf32_string fullName = indexerSymbol->FullName();
+            constantPool.Install(StringPtr(fullName.c_str()));
+
+            indexerSymbol->Getter()->SetAssembly(&targetAssembly);
+            indexerSymbol->Getter()->SetProject();
+            constantPool.Install(indexerSymbol->Getter()->Name());
+            utf32_string getterFullName = indexerSymbol->Getter()->FullName();
+            constantPool.Install(StringPtr(getterFullName.c_str()));
+            constantPool.Install(indexerSymbol->Getter()->GroupName());
+
             indexerNode.Getter()->Accept(*this);
         }
     }
@@ -196,25 +270,39 @@ void MappingSymbolVisitor::Visit(IndexerNode& indexerNode)
     {
         if (indexerSymbol->Setter()->IsInstantiationRequested())
         {
+            indexerSymbol->SetAssembly(&targetAssembly);
+            indexerSymbol->SetProject();
+            ConstantPool& constantPool = targetAssembly.GetConstantPool();
+            constantPool.Install(indexerSymbol->Name());
+            utf32_string fullName = indexerSymbol->FullName();
+            constantPool.Install(StringPtr(fullName.c_str()));
+
+            indexerSymbol->Setter()->SetAssembly(&targetAssembly);
+            indexerSymbol->Setter()->SetProject();
+            constantPool.Install(indexerSymbol->Setter()->Name());
+            utf32_string setterFullName = indexerSymbol->Setter()->FullName();
+            constantPool.Install(StringPtr(setterFullName.c_str()));
+            constantPool.Install(indexerSymbol->Setter()->GroupName());
+
             indexerNode.Setter()->Accept(*this);
         }
     }
-    assembly.GetSymbolTable().EndContainer();
+    targetAssembly.GetSymbolTable().EndContainer();
 }
 
 void MappingSymbolVisitor::Visit(CompoundStatementNode& compoundStatementNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbolNothrow(compoundStatementNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbolNothrow(compoundStatementNode.SymbolId());
     if (symbol)
     {
         DeclarationBlock* declarationBlock = dynamic_cast<DeclarationBlock*>(symbol);
         Assert(declarationBlock, "declaration block expected");
-        assembly.GetSymbolTable().MapNode(compoundStatementNode, declarationBlock);
-        assembly.GetSymbolTable().BeginContainer(declarationBlock);
+        targetAssembly.GetSymbolTable().MapNode(compoundStatementNode, declarationBlock);
+        targetAssembly.GetSymbolTable().BeginContainer(declarationBlock);
     }
     else
     {
-        assembly.GetSymbolTable().BeginDeclarationBlock(compoundStatementNode);
+        targetAssembly.GetSymbolTable().BeginDeclarationBlock(compoundStatementNode);
     }
     int n = compoundStatementNode.Statements().Count();
     for (int i = 0; i < n; ++i)
@@ -224,11 +312,11 @@ void MappingSymbolVisitor::Visit(CompoundStatementNode& compoundStatementNode)
     }
     if (symbol)
     {
-        assembly.GetSymbolTable().EndContainer();
+        targetAssembly.GetSymbolTable().EndContainer();
     }
     else
     {
-        assembly.GetSymbolTable().EndDeclarationBlock();
+        targetAssembly.GetSymbolTable().EndDeclarationBlock();
     }
 }
 
@@ -253,42 +341,42 @@ void MappingSymbolVisitor::Visit(DoStatementNode& doStatementNode)
 
 void MappingSymbolVisitor::Visit(ForStatementNode& forStatementNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbolNothrow(forStatementNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbolNothrow(forStatementNode.SymbolId());
     if (symbol)
     {
         DeclarationBlock* declarationBlock = dynamic_cast<DeclarationBlock*>(symbol);
         Assert(declarationBlock, "declaration block expected");
-        assembly.GetSymbolTable().MapNode(forStatementNode, declarationBlock);
-        assembly.GetSymbolTable().BeginContainer(declarationBlock);
+        targetAssembly.GetSymbolTable().MapNode(forStatementNode, declarationBlock);
+        targetAssembly.GetSymbolTable().BeginContainer(declarationBlock);
     }
     else
     {
-        assembly.GetSymbolTable().BeginDeclarationBlock(forStatementNode);
+        targetAssembly.GetSymbolTable().BeginDeclarationBlock(forStatementNode);
     }
     forStatementNode.InitS()->Accept(*this);
     forStatementNode.ActionS()->Accept(*this);
     if (symbol)
     {
-        assembly.GetSymbolTable().EndContainer();
+        targetAssembly.GetSymbolTable().EndContainer();
     }
     else
     {
-        assembly.GetSymbolTable().EndDeclarationBlock();
+        targetAssembly.GetSymbolTable().EndDeclarationBlock();
     }
 }
 
 void MappingSymbolVisitor::Visit(ConstructionStatementNode& constructionStatementNode)
 {
-    Symbol* symbol = assembly.GetSymbolTable().GetSymbolNothrow(constructionStatementNode.SymbolId());
+    Symbol* symbol = sourceAssembly.GetSymbolTable().GetSymbolNothrow(constructionStatementNode.SymbolId());
     if (symbol)
     {
         LocalVariableSymbol* localVariableSymbol = dynamic_cast<LocalVariableSymbol*>(symbol);
         Assert(localVariableSymbol, "local variable symbol expected");
-        assembly.GetSymbolTable().MapNode(constructionStatementNode, localVariableSymbol);
+        targetAssembly.GetSymbolTable().MapNode(constructionStatementNode, localVariableSymbol);
     }
     else
     {
-        assembly.GetSymbolTable().AddLocalVariable(constructionStatementNode);
+        targetAssembly.GetSymbolTable().AddLocalVariable(constructionStatementNode);
     }
 }
 

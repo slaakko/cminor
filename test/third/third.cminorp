@@ -1,0 +1,4 @@
+project third;
+target=library;
+reference <../second/second.cminorp>;
+source <third.cminor>;

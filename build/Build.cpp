@@ -140,7 +140,7 @@ void GenerateCodeForClassTemplateSpecializations(Assembly& assembly, std::unorde
         for (ClassTemplateSpecializationSymbol* specialization : specializations)
         {
             NamespaceNode* globalNs = specialization->GlobalNs();
-            MappingSymbolVisitor mappingSymbolVisitor(assembly);
+            MappingSymbolVisitor mappingSymbolVisitor(assembly, *specialization->GetAssembly());
             globalNs->Accept(mappingSymbolVisitor);
             specialization->ResetFlag(SymbolFlags::bound);
             TypeBinderVisitor typeBinderVisitor(synthesizedCompileUnit);
@@ -149,6 +149,13 @@ void GenerateCodeForClassTemplateSpecializations(Assembly& assembly, std::unorde
             StatementBinderVisitor statementBinderVisitor(synthesizedCompileUnit);
             statementBinderVisitor.SetInstantiateRequested();
             globalNs->Accept(statementBinderVisitor);
+            if (!specialization->IsProject())
+            {
+                specialization->SetReopened();
+                specialization->SetProject();
+                specialization->InitVmt();
+                specialization->InitImts();
+            }
         }
         specializations.clear();
         for (ClassTemplateSpecializationSymbol* specialization : synthesizedCompileUnit.GetClassTemplateRepository().ClassTemplateSpecializations())
@@ -197,7 +204,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     {
         BindStatements(*boundCompileUnit);
         GenerateCode(*boundCompileUnit, machine);
-        const std::unordered_set<ClassTemplateSpecializationSymbol*> specializations = boundCompileUnit->GetClassTemplateRepository().ClassTemplateSpecializations();
+        const std::unordered_set<ClassTemplateSpecializationSymbol*>& specializations = boundCompileUnit->GetClassTemplateRepository().ClassTemplateSpecializations();
         for (ClassTemplateSpecializationSymbol* specialization : specializations)
         {
             classTemplateSpecializations.insert(specialization);
