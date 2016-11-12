@@ -400,6 +400,10 @@ void Symbol::EmplaceType(TypeSymbol* type, int index)
     throw std::runtime_error("symbol '" + ToUtf8(FullName()) + "' does not support emplace type");
 }
 
+void Symbol::AddTo(ClassTypeSymbol* classTypeSymbol)
+{
+}
+
 void Symbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
 {
 }
@@ -1171,6 +1175,11 @@ utf32_string TypeParameterSymbol::FullName() const
     return Name().Value();
 }
 
+void TypeParameterSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
+{
+    classTypeSymbol->Add(this);
+}
+
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), baseClass(nullptr), objectType(new ObjectType()), classData(new ClassData(objectType.get())), 
     flags(), defaultConstructorSymbol(nullptr), level(0), priority(0), key(0), cid(0), assemblyId(-1), classNodePos(0)
 {
@@ -1312,37 +1321,48 @@ void ClassTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
 {
     Symbol* s = symbol.get();
     TypeSymbol::AddSymbol(std::move(symbol));
-    if (MemberVariableSymbol* memberVariableSymbol = dynamic_cast<MemberVariableSymbol*>(s))
+    s->AddTo(this);
+}
+
+void ClassTypeSymbol::Add(MemberVariableSymbol* memberVariableSymbol)
+{
+    if (memberVariableSymbol->IsStatic())
     {
-        if (memberVariableSymbol->IsStatic())
-        {
-            staticMemberVariables.push_back(memberVariableSymbol);
-        }
-        else
-        {
-            memberVariables.push_back(memberVariableSymbol);
-        }
+        staticMemberVariables.push_back(memberVariableSymbol);
     }
-    else if (MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(s))
+    else
     {
-        memberFunctions.push_back(memberFunctionSymbol);
+        memberVariables.push_back(memberVariableSymbol);
     }
-    else if (ConstructorSymbol* constructorSymbol = dynamic_cast<ConstructorSymbol*>(s))
+}
+
+void ClassTypeSymbol::Add(MemberFunctionSymbol* memberFunctionSymbol)
+{
+    memberFunctions.push_back(memberFunctionSymbol);
+}
+
+void ClassTypeSymbol::Add(ConstructorSymbol* constructorSymbol)
+{
+    constructors.push_back(constructorSymbol);
+    if (constructorSymbol->IsDefaultConstructorSymbol())
     {
-        constructors.push_back(constructorSymbol);
-        if (constructorSymbol->IsDefaultConstructorSymbol())
-        {
-            defaultConstructorSymbol = constructorSymbol;
-        }
+        defaultConstructorSymbol = constructorSymbol;
     }
-    else if (TypeParameterSymbol* typeParameterSymbol = dynamic_cast<TypeParameterSymbol*>(s))
-    {
-        typeParameters.push_back(typeParameterSymbol);
-    }
-    else if (PropertySymbol* propertySymbol = dynamic_cast<PropertySymbol*>(s))
-    {
-        properties.push_back(propertySymbol);
-    }
+}
+
+void ClassTypeSymbol::Add(TypeParameterSymbol* typeParameterSymbol)
+{
+    typeParameters.push_back(typeParameterSymbol);
+}
+
+void ClassTypeSymbol::Add(PropertySymbol* propertySymbol)
+{
+    properties.push_back(propertySymbol);
+}
+
+void ClassTypeSymbol::Add(IndexerSymbol* indexerSymbol)
+{
+    indexers.push_back(indexerSymbol);
 }
 
 void ClassTypeSymbol::AddImplementedInterface(InterfaceTypeSymbol* interfaceTypeSymbol)
@@ -1896,6 +1916,25 @@ void ClassTemplateSpecializationSymbol::MergePropertySymbol(const PropertySymbol
     if (!found)
     {
         throw Exception("could not merge '" + ToUtf8(propertySymbol.FullName()) + "': target symbol not found", propertySymbol.GetSpan(), GetSpan());
+    }
+}
+
+void ClassTemplateSpecializationSymbol::MergeIndexerSymbol(const IndexerSymbol& indexerSymbol)
+{
+    uint32_t indexerSymbolId = indexerSymbol.Id();
+    bool found = false;
+    for (IndexerSymbol* baseIndexer : Indexers())
+    {
+        if (indexerSymbolId == indexerSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseIndexer->GetAssembly()->Name().Value()), baseIndexer->Id()))
+        {
+            baseIndexer->Merge(indexerSymbol);
+            found = true;
+            break;
+        }
+    }
+    if (!found)
+    {
+        throw Exception("could not merge '" + ToUtf8(indexerSymbol.FullName()) + "': target symbol not found", indexerSymbol.GetSpan(), GetSpan());
     }
 }
 

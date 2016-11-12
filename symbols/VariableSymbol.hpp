@@ -64,6 +64,7 @@ public:
     int32_t Index() const { return index; }
     void SetIndex(int32_t index_) { index = index_; }
     void SetSpecifiers(Specifiers specifiers);
+    void AddTo(ClassTypeSymbol* classTypeSymbol) override;
 private:
     int32_t index;
 };

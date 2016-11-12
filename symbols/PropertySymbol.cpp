@@ -87,6 +87,11 @@ void PropertySymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
+void PropertySymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
+{
+    classTypeSymbol->Add(this);
+}
+
 void PropertySymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
 {
     classTemplateSpecializationSymbol->MergePropertySymbol(*this);

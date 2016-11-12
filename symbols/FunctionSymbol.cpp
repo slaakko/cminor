@@ -553,6 +553,11 @@ bool ConstructorSymbol::IsIntConstructorSymbol() const
     return Parameters().size() == 2 && Parameters()[1]->GetType() == GetAssembly()->GetSymbolTable().GetType(U"System.Int32");
 }
 
+void ConstructorSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
+{
+    classTypeSymbol->Add(this);
+}
+
 void ConstructorSymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
 {
     classTemplateSpecializationSymbol->MergeConstructorSymbol(*this);
@@ -830,6 +835,11 @@ void MemberFunctionSymbol::GenerateInterfaceCall(Machine& machine, Assembly& ass
     icall->SetNumArgs(n);
     icall->SetImtIndex(imtIndex);
     function.AddInst(std::move(inst));
+}
+
+void MemberFunctionSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
+{
+    classTypeSymbol->Add(this);
 }
 
 void MemberFunctionSymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)

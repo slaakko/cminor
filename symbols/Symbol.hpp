@@ -36,6 +36,7 @@ class ConstructorSymbol;
 class MemberFunctionSymbol;
 class ClassTemplateSpecializationSymbol;
 class PropertySymbol;
+class IndexerSymbol;
 
 enum class SymbolType : uint8_t
 {
@@ -149,6 +150,7 @@ public:
     virtual void EmplaceType(TypeSymbol* type, int index);
     uint32_t Id() const { return id; }
     void SetId(uint32_t id_) { id = id_; }
+    virtual void AddTo(ClassTypeSymbol* classTypeSymbol);
     virtual void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol);
     void Merge(const Symbol& that);
 private:
@@ -430,6 +432,7 @@ public:
     std::string TypeString() const override { return "type parameter"; };
     utf32_string FullName() const override;
     Type* GetMachineType() const override { Assert(false, "no machine type");  return nullptr; }
+    void AddTo(ClassTypeSymbol* classTypeSymbol) override;
 };
 
 class BoundTypeParameterSymbol : public Symbol
@@ -483,6 +486,12 @@ public:
     void ReadClassNode();
     void SetSpecifiers(Specifiers specifiers); 
     void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
+    void Add(MemberVariableSymbol* memberVariableSymbol);
+    void Add(MemberFunctionSymbol* memberFunctionSymbol);
+    void Add(ConstructorSymbol* constructorSymbol);
+    void Add(TypeParameterSymbol* typeParameterSymbol);
+    void Add(PropertySymbol* propertySymbol);
+    void Add(IndexerSymbol* indexerSymbol);
     bool HasBaseClass(ClassTypeSymbol* cls) const;
     bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const;
     ClassTypeSymbol* BaseClass() const { return baseClass; }
@@ -498,6 +507,7 @@ public:
     const std::vector<MemberFunctionSymbol*>& MemberFunctions() const { return memberFunctions; }
     const std::vector<ConstructorSymbol*>& Constructors() const { return constructors; }
     const std::vector<PropertySymbol*>& Properties() const { return properties; }
+    const std::vector<IndexerSymbol*>& Indexers() const { return indexers; }
     ConstructorSymbol* DefaultConstructorSymbol() const { return defaultConstructorSymbol; }
     bool IsClassTemplate() const { return !typeParameters.empty(); }
     const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
@@ -533,6 +543,7 @@ private:
     ConstructorSymbol* defaultConstructorSymbol;
     std::vector<TypeParameterSymbol*> typeParameters;
     std::vector<PropertySymbol*> properties;
+    std::vector<IndexerSymbol*> indexers;
     int level;
     int priority;
     uint64_t key;
@@ -665,6 +676,7 @@ public:
     void MergeConstructorSymbol(const ConstructorSymbol& constructorSymbol);
     void MergeMemberFunctionSymbol(const MemberFunctionSymbol& memberFunctionSymbol);
     void MergePropertySymbol(const PropertySymbol& propertySymbol);
+    void MergeIndexerSymbol(const IndexerSymbol& indexerSymbol);
 private:
     ClassTemplateSpecializationSymbolFlags flags;
     ClassTemplateSpecializationKey key;

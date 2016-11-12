@@ -98,6 +98,30 @@ void IndexerSymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
+void IndexerSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
+{
+    classTypeSymbol->Add(this);
+}
+
+void IndexerSymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
+{
+    classTemplateSpecializationSymbol->MergeIndexerSymbol(*this);
+}
+
+void IndexerSymbol::Merge(const IndexerSymbol& that)
+{
+    if (that.Getter())
+    {
+        Assert(Getter(), "getter expected");
+        Getter()->Merge(*that.Getter());
+    }
+    if (that.Setter())
+    {
+        Assert(Setter(), "setter expected");
+        Setter()->Merge(*that.Setter());
+    }
+}
+
 IndexerGroupSymbol::IndexerGroupSymbol(const Span& span_, Constant name_) : Symbol(span_, name_)
 {
 }

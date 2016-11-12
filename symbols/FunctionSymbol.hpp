@@ -135,6 +135,7 @@ public:
     void SetBaseConstructorCallGenerated() { SetFlag(ConstructorSymbolFlags::baseConstructorCallGenerated); }
     bool BaseConstructorCallGenerated() const { return GetFlag(ConstructorSymbolFlags::baseConstructorCallGenerated); }
     ParameterSymbol* GetThisParam() const override { return Parameters()[0]; }
+    void AddTo(ClassTypeSymbol* classTypeSymbol) override;
     void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol) override;
     void Merge(const ConstructorSymbol& that);
 private:
@@ -197,6 +198,7 @@ public:
     void GenerateVirtualCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects);
     void GenerateInterfaceCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects);
     ParameterSymbol* GetThisParam() const override { if (IsStatic()) return nullptr; else return Parameters()[0]; }
+    void AddTo(ClassTypeSymbol* classTypeSymbol) override;
     void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol) override;
     void Merge(const MemberFunctionSymbol& that);
 private:

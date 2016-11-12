@@ -8,5 +8,7 @@ namespace Beta
         List<int> x = new List<int>();
         x.Add(1);
         int n = x.Count;
+        int a = x[0];
+        x[0] = a;
     }
 }

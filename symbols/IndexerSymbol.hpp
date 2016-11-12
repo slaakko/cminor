@@ -29,6 +29,9 @@ public:
     void SetSpecifiers(Specifiers specifiers);
     IndexerGetterFunctionSymbol* Getter() const { return getter; }
     IndexerSetterFunctionSymbol* Setter() const { return setter; }
+    void AddTo(ClassTypeSymbol* classTypeSymbol) override;
+    void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol) override;
+    void Merge(const IndexerSymbol& that);
 private:
     TypeSymbol* valueType;
     TypeSymbol* indexType;

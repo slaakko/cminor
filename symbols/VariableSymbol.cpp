@@ -122,4 +122,9 @@ void MemberVariableSymbol::Read(SymbolReader& reader)
     index = reader.GetInt();
 }
 
+void MemberVariableSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
+{
+    classTypeSymbol->Add(this);
+}
+
 } } // namespace cminor::symbols
