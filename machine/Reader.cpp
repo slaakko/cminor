@@ -158,11 +158,138 @@ Span Reader::GetSpan()
 {
     bool valid = GetBool();
     if (!valid) return Span();
-    int32_t fileIndex = GetInt();
-    int32_t lineNumber = GetInt();
-    int32_t start = GetInt();
-    int32_t end = GetInt();
+    uint32_t fileIndex = GetEncodedUInt();
+    uint32_t lineNumber = GetEncodedUInt();
+    uint32_t start = GetEncodedUInt();
+    uint32_t end = GetEncodedUInt();
     return Span(fileIndex, lineNumber, start, end);
+}
+
+uint32_t Reader::GetEncodedUInt()
+{
+    uint8_t x = GetByte();
+    if ((x & 0x80u) == 0u)
+    {
+        return x;
+    }
+    else if ((x & 0xE0u) == 0xC0u)
+    {
+        uint32_t result = 0;
+        uint8_t b1 = GetByte();
+        if ((b1 & 0xC0u) != 0x80u)
+        {
+            throw std::runtime_error("could not decode: invalid byte sequence");
+        }
+        uint8_t shift = 0u;
+        for (uint8_t i = 0u; i < 6u; ++i)
+        {
+            uint8_t bit = b1 & 1u;
+            b1 = b1 >> 1u;
+            result = result | static_cast<uint32_t>(bit) << shift;
+            ++shift;
+        }
+        uint8_t b0 = x;
+        for (uint8_t i = 0u; i < 5u; ++i)
+        {
+            uint8_t bit = b0 & 1u;
+            b0 = b0 >> 1u;
+            result = result | static_cast<uint32_t>(bit) << shift;
+            ++shift;
+        }
+        return result;
+    }
+    else if ((x & 0xF0u) == 0xE0u)
+    {
+        uint32_t result = 0;
+        uint8_t b1 = GetByte();
+        uint8_t b2 = GetByte();
+        if ((b2 & 0xC0u) != 0x80u)
+        {
+            throw std::runtime_error("could not decode: invalid byte sequence");
+        }
+        uint8_t shift = 0u;
+        for (uint8_t i = 0u; i < 6u; ++i)
+        {
+            uint8_t bit = b2 & 1u;
+            b2 = b2 >> 1u;
+            result = result | static_cast<uint32_t>(bit) << shift;
+            ++shift;
+        }
+        if ((b1 & 0xC0u) != 0x80u)
+        {
+            throw std::runtime_error("could not decode: invalid byte sequence");
+        }
+        for (uint8_t i = 0u; i < 6u; ++i)
+        {
+            uint8_t bit = b1 & 1u;
+            b1 = b1 >> 1u;
+            result = result | static_cast<uint32_t>(bit) << shift;
+            ++shift;
+        }
+        uint8_t b0 = x;
+        for (uint8_t i = 0u; i < 4u; ++i)
+        {
+            uint8_t bit = b0 & 1u;
+            b0 = b0 >> 1u;
+            result = result | static_cast<uint32_t>(bit) << shift;
+            ++shift;
+        }
+        return result;
+    }
+    else if ((x & 0xF8u) == 0xF0u)
+    {
+        uint32_t result = 0;
+        uint8_t b1 = GetByte();
+        uint8_t b2 = GetByte();
+        uint8_t b3 = GetByte();
+        if ((b3 & 0xC0u) != 0x80u)
+        {
+            throw std::runtime_error("could not decode: invalid byte sequence");
+        }
+        uint8_t shift = 0u;
+        for (uint8_t i = 0u; i < 6u; ++i)
+        {
+            uint8_t bit = b3 & 1u;
+            b3 = b3 >> 1u;
+            result = result | static_cast<uint32_t>(bit) << shift;
+            ++shift;
+        }
+        if ((b2 & 0xC0u) != 0x80u)
+        {
+            throw std::runtime_error("could not decode: invalid byte sequence");
+        }
+        for (uint8_t i = 0u; i < 6u; ++i)
+        {
+            uint8_t bit = b2 & 1u;
+            b2 = b2 >> 1u;
+            result = result | static_cast<uint32_t>(bit) << shift;
+            ++shift;
+        }
+        if ((b1 & 0xC0u) != 0x80u)
+        {
+            throw std::runtime_error("could not decode: invalid byte sequence");
+        }
+        for (uint8_t i = 0u; i < 6u; ++i)
+        {
+            uint8_t bit = b1 & 1u;
+            b1 = b1 >> 1u;
+            result = result | static_cast<uint32_t>(bit) << shift;
+            ++shift;
+        }
+        uint8_t b0 = x;
+        for (uint8_t i = 0u; i < 3u; ++i)
+        {
+            uint8_t bit = b0 & 1u;
+            b0 = b0 >> 1u;
+            result = result | static_cast<uint32_t>(bit) << shift;
+            ++shift;
+        }
+        return result;
+    }
+    else
+    {
+        throw std::runtime_error("could not decode: invalid byte sequence");
+    }
 }
 
 void Reader::Skip(uint32_t size)

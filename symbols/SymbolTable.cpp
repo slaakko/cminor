@@ -20,7 +20,7 @@ namespace cminor { namespace symbols {
 
 SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs), function(nullptr),
     mainFunction(nullptr), currentClass(nullptr), currentInterface(nullptr), declarationBlockId(0), doNotAddTypes(false), doNotAddClassTemplateSpecializations(false), conversionTable(*assembly), 
-    nextSymbolId(0)
+    nextSymbolId(firstFreeSymbolId)
 {
     globalNs.SetAssembly(assembly);
 }
@@ -698,7 +698,10 @@ Symbol* SymbolTable::GetSymbolNothrow(uint32_t symbolId) const
 
 void SymbolTable::AddSymbol(Symbol* symbol)
 {
-    idSymbolMap[symbol->Id()] = symbol;
+    if (symbol->HasId())
+    {
+        idSymbolMap[symbol->Id()] = symbol;
+    }
 }
 
 Node* SymbolTable::GetNode(Symbol* symbol) const
@@ -731,7 +734,7 @@ void SymbolTable::MapNode(Node& node, Symbol* symbol)
     uint32_t symbolId = nextSymbolId++;
     idSymbolMap[symbolId] = symbol;
     symbol->SetId(symbolId);
-    if (node.SymbolId() != -1 && symbol->GetAssembly() != assembly)
+    if (node.SymbolId() != noSymbolId && symbol->GetAssembly() != assembly)
     {
         std::string assemblyName = ToUtf8(symbol->GetAssembly()->Name().Value());
         assembly->AddSymbolIdMapping(assemblyName, node.SymbolId(), symbolId);

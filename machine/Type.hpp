@@ -19,12 +19,12 @@ class FieldOffset
 {
 public:
     FieldOffset() : value(0) {}
-    FieldOffset(uint64_t value_) : value(value_) {}
+    FieldOffset(uint32_t value_) : value(value_) {}
     uint64_t Value() const { return value; }
     void Write(Writer& writer);
     void Read(Reader& reader);
 private:
-    uint64_t value;
+    uint32_t value;
 };
 
 inline MemPtr operator+(MemPtr memPtr, FieldOffset offset)

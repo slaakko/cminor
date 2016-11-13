@@ -11,12 +11,12 @@ namespace cminor { namespace machine {
 
 void FieldOffset::Write(Writer& writer)
 {
-    writer.Put(value);
+    writer.PutEncodedUInt(value);
 }
 
 void FieldOffset::Read(Reader& reader)
 {
-    value = reader.GetULong();
+    value = reader.GetEncodedUInt();
 }
 
 Field::Field() : fieldType(), offset()
@@ -57,9 +57,9 @@ void Layout::AddField(ValueType fieldType)
 
 void Layout::Write(Writer& writer)
 {
-    int32_t numFields = int32_t(fields.size());
-    writer.Put(numFields);
-    for (int32_t i = 0; i < numFields; ++i)
+    uint32_t numFields = uint32_t(fields.size());
+    writer.PutEncodedUInt(numFields);
+    for (uint32_t i = 0; i < numFields; ++i)
     {
         fields[i].Write(writer);
     }
@@ -68,8 +68,8 @@ void Layout::Write(Writer& writer)
 
 void Layout::Read(Reader& reader)
 {
-    int32_t numFields = reader.GetInt();
-    for (int32_t i = 0; i < numFields; ++i)
+    uint32_t numFields = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < numFields; ++i)
     {
         Field field;
         field.Read(reader);

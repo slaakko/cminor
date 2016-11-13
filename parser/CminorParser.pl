@@ -91,17 +91,17 @@ namespace cminor.parser
     grammar CompileUnitGrammar
     {
         CompileUnit(ParsingContext* ctx): CompileUnitNode*;
-        NamespaceContent(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns);
+        NamespaceContent(ParsingContext* ctx, NamespaceNode* ns);
         UsingDirectives(ParsingContext* ctx, NamespaceNode* ns);
         UsingDirective(ParsingContext* ctx, NamespaceNode* ns);
         UsingAliasDirective(var std::unique_ptr<IdentifierNode> id): Node*;
         UsingNamespaceDirective: Node*;
-        Definitions(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns);
-        Definition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns): Node*;
-        NamespaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit, NamespaceNode* ns): NamespaceNode*;
-        FunctionDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): FunctionNode*;
-        ClassDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): ClassNode*;
-        InterfaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): InterfaceNode*;
+        Definitions(ParsingContext* ctx, NamespaceNode* ns);
+        Definition(ParsingContext* ctx, NamespaceNode* ns): Node*;
+        NamespaceDefinition(ParsingContext* ctx, NamespaceNode* ns): NamespaceNode*;
+        FunctionDefinition(ParsingContext* ctx): FunctionNode*;
+        ClassDefinition(ParsingContext* ctx): ClassNode*;
+        InterfaceDefinition(ParsingContext* ctx): InterfaceNode*;
     }
     grammar FunctionGrammar
     {

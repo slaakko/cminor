@@ -50,13 +50,13 @@ ParameterSymbol::ParameterSymbol(const Span& span_, Constant name_) : VariableSy
 void ParameterSymbol::Write(SymbolWriter& writer)
 {
     VariableSymbol::Write(writer);
-    writer.AsMachineWriter().Put(index);
+    writer.AsMachineWriter().PutEncodedUInt(index);
 }
 
 void ParameterSymbol::Read(SymbolReader& reader)
 {
     VariableSymbol::Read(reader);
-    index = reader.GetInt();
+    index = reader.GetEncodedUInt();
 }
 
 LocalVariableSymbol::LocalVariableSymbol(const Span& span_, Constant name_) : VariableSymbol(span_, name_), index(-1)
@@ -66,13 +66,13 @@ LocalVariableSymbol::LocalVariableSymbol(const Span& span_, Constant name_) : Va
 void LocalVariableSymbol::Write(SymbolWriter& writer)
 {
     VariableSymbol::Write(writer);
-    writer.AsMachineWriter().Put(index);
+    writer.AsMachineWriter().PutEncodedUInt(index);
 }
 
 void LocalVariableSymbol::Read(SymbolReader& reader)
 {
     VariableSymbol::Read(reader);
-    index = reader.GetInt();
+    index = reader.GetEncodedUInt();
     reader.AddLocalVariable(this);
 }
 
@@ -113,13 +113,13 @@ void MemberVariableSymbol::SetSpecifiers(Specifiers specifiers)
 void MemberVariableSymbol::Write(SymbolWriter& writer)
 {
     VariableSymbol::Write(writer);
-    writer.AsMachineWriter().Put(index);
+    writer.AsMachineWriter().PutEncodedUInt(index);
 }
 
 void MemberVariableSymbol::Read(SymbolReader& reader)
 {
     VariableSymbol::Read(reader);
-    index = reader.GetInt();
+    index = reader.GetEncodedUInt();
 }
 
 void MemberVariableSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)

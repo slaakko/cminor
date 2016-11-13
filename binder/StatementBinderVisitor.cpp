@@ -11,6 +11,7 @@
 #include <cminor/binder/ExpressionBinder.hpp>
 #include <cminor/binder/OverloadResolution.hpp>
 #include <cminor/binder/Access.hpp>
+#include <cminor/binder/ConstantPoolInstallerVisitor.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/ast/CompileUnit.hpp>
@@ -132,6 +133,8 @@ void StatementBinderVisitor::Visit(ClassNode& classNode)
     Assert(classTypeSymbol, "class type symbol expected");
     if (classTypeSymbol->IsClassTemplate())
     {
+        ConstantPoolInstallerVisitor constantPoolInstallerVisitor(boundCompileUnit.GetAssembly().GetConstantPool());
+        classNode.Accept(constantPoolInstallerVisitor);
         return;
     }
     containerScope = symbol->GetContainerScope();

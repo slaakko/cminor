@@ -112,7 +112,6 @@ public:
     void PreNamespaceContent(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<CompileUnitNode*>(context.value)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<NamespaceNode*>(context.value->GlobalNs())));
     }
 private:
@@ -133,7 +132,6 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        AddInheritedAttribute(AttrOrVariable("CompileUnitNode*", "compileUnit"));
         AddInheritedAttribute(AttrOrVariable("NamespaceNode*", "ns"));
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
@@ -142,9 +140,6 @@ public:
         context = Context();
         std::unique_ptr<Cm::Parsing::Object> ns_value = std::move(stack.top());
         context.ns = *static_cast<Cm::Parsing::ValueObject<NamespaceNode*>*>(ns_value.get());
-        stack.pop();
-        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
-        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<CompileUnitNode*>*>(compileUnit_value.get());
         stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
@@ -170,15 +165,13 @@ public:
     void PreDefinitions(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<CompileUnitNode*>(context.compileUnit)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<NamespaceNode*>(context.ns)));
     }
 private:
     struct Context
     {
-        Context(): ctx(), compileUnit(), ns() {}
+        Context(): ctx(), ns() {}
         ParsingContext* ctx;
-        CompileUnitNode* compileUnit;
         NamespaceNode* ns;
     };
     std::stack<Context> contextStack;
@@ -439,7 +432,6 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        AddInheritedAttribute(AttrOrVariable("CompileUnitNode*", "compileUnit"));
         AddInheritedAttribute(AttrOrVariable("NamespaceNode*", "ns"));
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
@@ -448,9 +440,6 @@ public:
         context = Context();
         std::unique_ptr<Cm::Parsing::Object> ns_value = std::move(stack.top());
         context.ns = *static_cast<Cm::Parsing::ValueObject<NamespaceNode*>*>(ns_value.get());
-        stack.pop();
-        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
-        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<CompileUnitNode*>*>(compileUnit_value.get());
         stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
@@ -476,7 +465,6 @@ public:
     void PreDefinition(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<CompileUnitNode*>(context.compileUnit)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<NamespaceNode*>(context.ns)));
     }
     void PostDefinition(Cm::Parsing::ObjectStack& stack, bool matched)
@@ -491,9 +479,8 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), compileUnit(), ns(), fromDefinition() {}
+        Context(): ctx(), ns(), fromDefinition() {}
         ParsingContext* ctx;
-        CompileUnitNode* compileUnit;
         NamespaceNode* ns;
         Node* fromDefinition;
     };
@@ -508,7 +495,6 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        AddInheritedAttribute(AttrOrVariable("CompileUnitNode*", "compileUnit"));
         AddInheritedAttribute(AttrOrVariable("NamespaceNode*", "ns"));
         SetValueTypeName("Node*");
     }
@@ -518,9 +504,6 @@ public:
         context = Context();
         std::unique_ptr<Cm::Parsing::Object> ns_value = std::move(stack.top());
         context.ns = *static_cast<Cm::Parsing::ValueObject<NamespaceNode*>*>(ns_value.get());
-        stack.pop();
-        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
-        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<CompileUnitNode*>*>(compileUnit_value.get());
         stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
@@ -577,7 +560,6 @@ public:
     void PreNamespaceDefinition(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<CompileUnitNode*>(context.compileUnit)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<NamespaceNode*>(context.ns)));
     }
     void PostNamespaceDefinition(Cm::Parsing::ObjectStack& stack, bool matched)
@@ -592,7 +574,6 @@ public:
     void PreFunctionDefinition(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<CompileUnitNode*>(context.compileUnit)));
     }
     void PostFunctionDefinition(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -606,7 +587,6 @@ public:
     void PreClassDefinition(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<CompileUnitNode*>(context.compileUnit)));
     }
     void PostClassDefinition(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -620,7 +600,6 @@ public:
     void PreInterfaceDefinition(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<CompileUnitNode*>(context.compileUnit)));
     }
     void PostInterfaceDefinition(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -634,9 +613,8 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), compileUnit(), ns(), value(), fromNamespaceDefinition(), fromFunctionDefinition(), fromClassDefinition(), fromInterfaceDefinition() {}
+        Context(): ctx(), ns(), value(), fromNamespaceDefinition(), fromFunctionDefinition(), fromClassDefinition(), fromInterfaceDefinition() {}
         ParsingContext* ctx;
-        CompileUnitNode* compileUnit;
         NamespaceNode* ns;
         Node* value;
         NamespaceNode* fromNamespaceDefinition;
@@ -655,7 +633,6 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        AddInheritedAttribute(AttrOrVariable("CompileUnitNode*", "compileUnit"));
         AddInheritedAttribute(AttrOrVariable("NamespaceNode*", "ns"));
         SetValueTypeName("NamespaceNode*");
     }
@@ -665,9 +642,6 @@ public:
         context = Context();
         std::unique_ptr<Cm::Parsing::Object> ns_value = std::move(stack.top());
         context.ns = *static_cast<Cm::Parsing::ValueObject<NamespaceNode*>*>(ns_value.get());
-        stack.pop();
-        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
-        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<CompileUnitNode*>*>(compileUnit_value.get());
         stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
@@ -707,15 +681,13 @@ public:
     void PreNamespaceContent(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<CompileUnitNode*>(context.compileUnit)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<NamespaceNode*>(context.value)));
     }
 private:
     struct Context
     {
-        Context(): ctx(), compileUnit(), ns(), value(), fromQualifiedId() {}
+        Context(): ctx(), ns(), value(), fromQualifiedId() {}
         ParsingContext* ctx;
-        CompileUnitNode* compileUnit;
         NamespaceNode* ns;
         NamespaceNode* value;
         IdentifierNode* fromQualifiedId;
@@ -731,16 +703,12 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        AddInheritedAttribute(AttrOrVariable("CompileUnitNode*", "compileUnit"));
         SetValueTypeName("FunctionNode*");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
-        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<CompileUnitNode*>*>(compileUnit_value.get());
-        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
@@ -765,7 +733,6 @@ public:
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = context.fromFunction;
-        context.value->SetCompileUnit(context.compileUnit);
     }
     void PreFunction(Cm::Parsing::ObjectStack& stack)
     {
@@ -783,9 +750,8 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), compileUnit(), value(), fromFunction() {}
+        Context(): ctx(), value(), fromFunction() {}
         ParsingContext* ctx;
-        CompileUnitNode* compileUnit;
         FunctionNode* value;
         FunctionNode* fromFunction;
     };
@@ -800,16 +766,12 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        AddInheritedAttribute(AttrOrVariable("CompileUnitNode*", "compileUnit"));
         SetValueTypeName("ClassNode*");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
-        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<CompileUnitNode*>*>(compileUnit_value.get());
-        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
@@ -851,9 +813,8 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), compileUnit(), value(), fromClass() {}
+        Context(): ctx(), value(), fromClass() {}
         ParsingContext* ctx;
-        CompileUnitNode* compileUnit;
         ClassNode* value;
         ClassNode* fromClass;
     };
@@ -868,16 +829,12 @@ public:
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        AddInheritedAttribute(AttrOrVariable("CompileUnitNode*", "compileUnit"));
         SetValueTypeName("InterfaceNode*");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> compileUnit_value = std::move(stack.top());
-        context.compileUnit = *static_cast<Cm::Parsing::ValueObject<CompileUnitNode*>*>(compileUnit_value.get());
-        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
         context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
@@ -919,9 +876,8 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), compileUnit(), value(), fromInterface() {}
+        Context(): ctx(), value(), fromInterface() {}
         ParsingContext* ctx;
-        CompileUnitNode* compileUnit;
         InterfaceNode* value;
         InterfaceNode* fromInterface;
     };
@@ -950,37 +906,37 @@ void CompileUnitGrammar::GetReferencedGrammars()
         grammar2 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.FunctionGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.ClassGrammar");
     if (!grammar3)
     {
-        grammar3 = cminor::parser::FunctionGrammar::Create(pd);
+        grammar3 = cminor::parser::ClassGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.ClassGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.FunctionGrammar");
     if (!grammar4)
     {
-        grammar4 = cminor::parser::ClassGrammar::Create(pd);
+        grammar4 = cminor::parser::FunctionGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
 }
 
 void CompileUnitGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Interface", this, "InterfaceGrammar.Interface"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Class", this, "ClassGrammar.Class"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Class", this, "ClassGrammar.Class"));
     AddRuleLink(new Cm::Parsing::RuleLink("Function", this, "FunctionGrammar.Function"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Interface", this, "InterfaceGrammar.Interface"));
     AddRule(new CompileUnitRule("CompileUnit", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",
                 new Cm::Parsing::EmptyParser()),
-            new Cm::Parsing::NonterminalParser("NamespaceContent", "NamespaceContent", 3))));
+            new Cm::Parsing::NonterminalParser("NamespaceContent", "NamespaceContent", 2))));
     AddRule(new NamespaceContentRule("NamespaceContent", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::NonterminalParser("UsingDirectives", "UsingDirectives", 2),
-            new Cm::Parsing::NonterminalParser("Definitions", "Definitions", 3))));
+            new Cm::Parsing::NonterminalParser("Definitions", "Definitions", 2))));
     AddRule(new UsingDirectivesRule("UsingDirectives", GetScope(),
         new Cm::Parsing::KleeneStarParser(
             new Cm::Parsing::NonterminalParser("UsingDirective", "UsingDirective", 2))));
@@ -1016,19 +972,19 @@ void CompileUnitGrammar::CreateRules()
     AddRule(new DefinitionsRule("Definitions", GetScope(),
         new Cm::Parsing::KleeneStarParser(
             new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::NonterminalParser("Definition", "Definition", 3)))));
+                new Cm::Parsing::NonterminalParser("Definition", "Definition", 2)))));
     AddRule(new DefinitionRule("Definition", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(
                 new Cm::Parsing::AlternativeParser(
                     new Cm::Parsing::ActionParser("A0",
-                        new Cm::Parsing::NonterminalParser("NamespaceDefinition", "NamespaceDefinition", 3)),
+                        new Cm::Parsing::NonterminalParser("NamespaceDefinition", "NamespaceDefinition", 2)),
                     new Cm::Parsing::ActionParser("A1",
-                        new Cm::Parsing::NonterminalParser("FunctionDefinition", "FunctionDefinition", 2))),
+                        new Cm::Parsing::NonterminalParser("FunctionDefinition", "FunctionDefinition", 1))),
                 new Cm::Parsing::ActionParser("A2",
-                    new Cm::Parsing::NonterminalParser("ClassDefinition", "ClassDefinition", 2))),
+                    new Cm::Parsing::NonterminalParser("ClassDefinition", "ClassDefinition", 1))),
             new Cm::Parsing::ActionParser("A3",
-                new Cm::Parsing::NonterminalParser("InterfaceDefinition", "InterfaceDefinition", 2)))));
+                new Cm::Parsing::NonterminalParser("InterfaceDefinition", "InterfaceDefinition", 1)))));
     AddRule(new NamespaceDefinitionRule("NamespaceDefinition", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(
@@ -1041,7 +997,7 @@ void CompileUnitGrammar::CreateRules()
                     new Cm::Parsing::ExpectationParser(
                         new Cm::Parsing::CharParser('{'))),
                 new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::NonterminalParser("NamespaceContent", "NamespaceContent", 3))),
+                    new Cm::Parsing::NonterminalParser("NamespaceContent", "NamespaceContent", 2))),
             new Cm::Parsing::ExpectationParser(
                 new Cm::Parsing::CharParser('}')))));
     AddRule(new FunctionDefinitionRule("FunctionDefinition", GetScope(),

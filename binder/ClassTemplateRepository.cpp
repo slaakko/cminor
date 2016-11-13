@@ -7,6 +7,7 @@
 #include <cminor/binder/BoundCompileUnit.hpp>
 #include <cminor/binder/TypeBinderVisitor.hpp>
 #include <cminor/binder/StatementBinderVisitor.hpp>
+#include <cminor/binder/ConstantPoolInstallerVisitor.hpp>
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/machine/Util.hpp>
 
@@ -59,7 +60,7 @@ void ClassTemplateRepository::BindClassTemplateSpecialization(ClassTemplateSpeci
     Node* node = boundCompileUnit.GetAssembly().GetSymbolTable().GetNodeNothrow(primaryClassTemplate);
     if (!node)
     {
-        primaryClassTemplate->ReadClassNode();
+        primaryClassTemplate->ReadClassNode(boundCompileUnit.GetAssembly());
         node = boundCompileUnit.GetAssembly().GetSymbolTable().GetNode(primaryClassTemplate);
     }
     ClassNode* classNode = dynamic_cast<ClassNode*>(node);
@@ -100,6 +101,8 @@ void ClassTemplateRepository::BindClassTemplateSpecialization(ClassTemplateSpeci
     StatementBinderVisitor statementBinderVisitor(boundCompileUnit);
     statementBinderVisitor.SetDoNotInstantiate();
     globalNs->Accept(statementBinderVisitor);
+    ConstantPoolInstallerVisitor constantPoolInstallerVisitor(boundCompileUnit.GetAssembly().GetConstantPool());
+    globalNs->Accept(constantPoolInstallerVisitor);
     classTemplateSpecialization->SetGlobalNs(std::move(globalNs));
     if (fileScopeAdded)
     {

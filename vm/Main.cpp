@@ -18,6 +18,7 @@
 #include <boost/filesystem.hpp>
 #include <stdexcept>
 #include <chrono>
+#include <cminor/machine/Unicode.hpp>
 
 using namespace cminor::machine;
 using namespace cminor::symbols;

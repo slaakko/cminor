@@ -6,6 +6,7 @@
 #include <cminor/ast/Function.hpp>
 #include <cminor/ast/Statement.hpp>
 #include <cminor/ast/Visitor.hpp>
+#include <cminor/machine/Constant.hpp>
 
 namespace cminor { namespace ast {
 
@@ -25,13 +26,25 @@ Node* FunctionGroupIdNode::Clone(CloneContext& cloneContext) const
 void FunctionGroupIdNode::Write(AstWriter& writer)
 {
     Node::Write(writer);
-    writer.AsMachineWriter().Put(functionGroupId);
+    utf32_string s = ToUtf32(functionGroupId);
+    ConstantId id = writer.GetConstantPool()->GetIdFor(s);
+    Assert(id != noConstantId, "got no id for constant");
+    id.Write(writer);
 }
 
 void FunctionGroupIdNode::Read(AstReader& reader)
 {
     Node::Read(reader);
-    functionGroupId = reader.GetUtf8String();
+    ConstantId id;
+    id.Read(reader);
+    Constant constant = reader.GetConstantPool()->GetConstant(id);
+    Assert(constant.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    functionGroupId = ToUtf8(constant.Value().AsStringLiteral());
+}
+
+void FunctionGroupIdNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 void AttributeMap::AddAttribute(const std::string& name_, const std::string& value_)
@@ -55,12 +68,20 @@ void AttributeMap::Write(AstWriter& writer)
     writer.AsMachineWriter().Put(hasAttributes);
     if (hasAttributes)
     {
-        int32_t n = int32_t(nameValuePairs.size());
-        writer.AsMachineWriter().Put(n);
+        uint32_t n = uint32_t(nameValuePairs.size());
+        writer.AsMachineWriter().PutEncodedUInt(n);
         for (const auto& p : nameValuePairs)
         {
-            writer.AsMachineWriter().Put(p.first);
-            writer.AsMachineWriter().Put(p.second);
+            const std::string& name = p.first;
+            utf32_string nameS = ToUtf32(name);
+            ConstantId nameId = writer.GetConstantPool()->GetIdFor(nameS);
+            Assert(nameId != noConstantId, "got no id for constant");
+            nameId.Write(writer);
+            const std::string& value = p.second;
+            utf32_string valueS = ToUtf32(value);
+            ConstantId valueId = writer.GetConstantPool()->GetIdFor(valueS);
+            Assert(valueId != noConstantId, "got no id for constant");
+            valueId.Write(writer);
         }
     }
 }
@@ -70,22 +91,35 @@ void AttributeMap::Read(AstReader& reader)
     bool hasAttributes = reader.GetBool();
     if (hasAttributes)
     {
-        int32_t n = reader.GetInt();
-        for (int32_t i = 0; i < n; ++i)
+        uint32_t n = reader.GetEncodedUInt();
+        for (uint32_t i = 0; i < n; ++i)
         {
-            std::string name = reader.GetUtf8String();
-            std::string value = reader.GetUtf8String();
+            ConstantId nameId;
+            nameId.Read(reader);
+            Constant nameConstant = reader.GetConstantPool()->GetConstant(nameId);
+            Assert(nameConstant.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+            std::string name = ToUtf8(nameConstant.Value().AsStringLiteral());
+            ConstantId valueId;
+            valueId.Read(reader);
+            Constant valueConstant = reader.GetConstantPool()->GetConstant(valueId);
+            Assert(valueConstant.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+            std::string value = ToUtf8(valueConstant.Value().AsStringLiteral());
             nameValuePairs[name] = value;
         }
     }
 }
 
-FunctionNode::FunctionNode(const Span& span_) : Node(span_), compileUnit(nullptr)
+void AttributeMap::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+FunctionNode::FunctionNode(const Span& span_) : Node(span_)
 {
 }
 
 FunctionNode::FunctionNode(const Span& span_, Specifiers specifiers_, Node* returnTypeExpr_, FunctionGroupIdNode* groupId_) :
-    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_), compileUnit(nullptr)
+    Node(span_), specifiers(specifiers_), returnTypeExpr(returnTypeExpr_), groupId(groupId_)
 {
     if (returnTypeExpr)
     {

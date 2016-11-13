@@ -596,16 +596,16 @@ class VirtualCallInst : public Instruction
 {
 public:
     VirtualCallInst();
-    void SetNumArgs(int32_t numArgs_) { numArgs = numArgs_; }
-    void SetVmtIndex(int32_t vmtIndex_) { vmtIndex = vmtIndex_; }
+    void SetNumArgs(uint32_t numArgs_) { numArgs = numArgs_; }
+    void SetVmtIndex(uint32_t vmtIndex_) { vmtIndex = vmtIndex_; }
     Instruction* Clone() const override { return new VirtualCallInst(*this); }
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
 private:
-    int32_t numArgs;
-    int32_t vmtIndex;
+    uint32_t numArgs;
+    uint32_t vmtIndex;
 };
 
 class InterfaceCallInst : public Instruction
@@ -615,13 +615,13 @@ public:
     Instruction* Clone() const override { return new InterfaceCallInst(*this); }
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
-    void SetNumArgs(int32_t numArgs_) { numArgs = numArgs_; };
-    void SetImtIndex(int32_t imtIndex_) { imtIndex = imtIndex_; }
+    void SetNumArgs(uint32_t numArgs_) { numArgs = numArgs_; };
+    void SetImtIndex(uint32_t imtIndex_) { imtIndex = imtIndex_; }
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
 private:
-    int32_t numArgs;
-    int32_t imtIndex;
+    uint32_t numArgs;
+    uint32_t imtIndex;
 };
 
 class VmCallInst : public IndexParamInst

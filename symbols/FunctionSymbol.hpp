@@ -191,10 +191,10 @@ public:
     bool IsOverride() const { return GetFlag(MemberFunctionSymbolFlags::override_); }
     void SetOverride() { SetFlag(MemberFunctionSymbolFlags::override_); }
     bool IsVirtualAbstractOrOverride() const { return GetFlag(MemberFunctionSymbolFlags::virtual_ | MemberFunctionSymbolFlags::abstract_ | MemberFunctionSymbolFlags::override_); }
-    int32_t VmtIndex() const { return vmtIndex; }
-    void SetVmtIndex(int32_t vmtIndex_) { vmtIndex = vmtIndex_; }
-    int32_t ImtIndex() const { return imtIndex; }
-    void SetImtIndex(int32_t imtIndex_) { imtIndex = imtIndex_; }
+    uint32_t VmtIndex() const { return vmtIndex; }
+    void SetVmtIndex(uint32_t vmtIndex_) { vmtIndex = vmtIndex_; }
+    uint32_t ImtIndex() const { return imtIndex; }
+    void SetImtIndex(uint32_t imtIndex_) { imtIndex = imtIndex_; }
     void GenerateVirtualCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects);
     void GenerateInterfaceCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects);
     ParameterSymbol* GetThisParam() const override { if (IsStatic()) return nullptr; else return Parameters()[0]; }
@@ -202,8 +202,8 @@ public:
     void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol) override;
     void Merge(const MemberFunctionSymbol& that);
 private:
-    int32_t vmtIndex;
-    int32_t imtIndex;
+    uint32_t vmtIndex;
+    uint32_t imtIndex;
     MemberFunctionSymbolFlags flags;
     bool GetFlag(MemberFunctionSymbolFlags flag) const { return (flags & flag) != MemberFunctionSymbolFlags::none; }
     void SetFlag(MemberFunctionSymbolFlags flag) { flags = flags | flag; }

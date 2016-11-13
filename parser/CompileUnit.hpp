@@ -1,5 +1,5 @@
-#ifndef CompileUnit_hpp_11899
-#define CompileUnit_hpp_11899
+#ifndef CompileUnit_hpp_20574
+#define CompileUnit_hpp_20574
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -35,4 +35,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // CompileUnit_hpp_11899
+#endif // CompileUnit_hpp_20574

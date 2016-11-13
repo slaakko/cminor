@@ -11,12 +11,12 @@ namespace cminor { namespace machine {
 
 void ConstantId::Write(Writer& writer)
 {
-    writer.Put(value);
+    writer.PutEncodedUInt(value);
 }
 
 void ConstantId::Read(Reader& reader)
 {
-    value = reader.GetInt();
+    value = reader.GetEncodedUInt();
 }
 
 Constant::Constant(IntegralValue value_) : value(value_)
@@ -135,8 +135,9 @@ ConstantId ConstantPool::Install(StringPtr s)
 
 void ConstantPool::Write(Writer& writer)
 {
-    int32_t n = static_cast<int32_t>(constants.size());
-    writer.Put(n - 1);
+    uint32_t n = static_cast<uint32_t>(constants.size());
+    Assert(n > 0, "positive value expected");
+    writer.PutEncodedUInt(n - 1);
     for (ConstantId id = ConstantId(emptyStringConstantId.Value() + 1); id.Value() != n; id = ConstantId(id.Value() + 1))
     {
         Constant constant = GetConstant(id);
@@ -146,8 +147,8 @@ void ConstantPool::Write(Writer& writer)
 
 void ConstantPool::Read(Reader& reader)
 {
-    int32_t n = reader.GetInt();
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < n; ++i)
     {
         ConstantId id = ConstantId((emptyStringConstantId.Value() + 1) + i);
         Constant constant;

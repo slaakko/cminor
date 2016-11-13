@@ -37,11 +37,13 @@ std::string NodeTypeStr(NodeType nodeType)
     return nodeTypeStr[int(nodeType)];
 }
 
-Node::Node() : span(), parent(nullptr), symbolId(-1)
+const uint32_t noSymbolId = 0;
+
+Node::Node() : span(), parent(nullptr), symbolId(noSymbolId)
 {
 }
 
-Node::Node(const Span& span_) : span(span_), parent(nullptr), symbolId(-1)
+Node::Node(const Span& span_) : span(span_), parent(nullptr), symbolId(noSymbolId)
 {
 }
 
@@ -51,12 +53,12 @@ Node::~Node()
 
 void Node::Write(AstWriter& writer)
 {
-    writer.AsMachineWriter().Put(symbolId);
+    writer.AsMachineWriter().PutEncodedUInt(symbolId);
 }
 
 void Node::Read(AstReader& reader)
 {
-    symbolId = reader.GetUInt();
+    symbolId = reader.GetEncodedUInt();
 }
 
 void Node::Accept(Visitor& visitor)

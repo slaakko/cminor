@@ -36,6 +36,8 @@ std::string NodeTypeStr(NodeType nodeType);
 
 class Visitor;
 
+extern const uint32_t noSymbolId;
+
 class Node
 {
 public:

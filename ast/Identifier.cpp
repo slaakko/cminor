@@ -7,6 +7,7 @@
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/ast/AstWriter.hpp>
 #include <cminor/ast/AstReader.hpp>
+#include <cminor/machine/Constant.hpp>
 
 namespace cminor { namespace ast {
 
@@ -26,13 +27,20 @@ Node* IdentifierNode::Clone(CloneContext& cloneContext) const
 void IdentifierNode::Write(AstWriter& writer)
 {
     Node::Write(writer);
-    writer.AsMachineWriter().Put(identifier);
+    utf32_string s = ToUtf32(identifier);
+    ConstantId id = writer.GetConstantPool()->GetIdFor(s);
+    Assert(id != noConstantId, "got no id for constant");
+    id.Write(writer);
 }
 
 void IdentifierNode::Read(AstReader& reader)
 {
     Node::Read(reader);
-    identifier = reader.GetUtf8String();
+    ConstantId id;
+    id.Read(reader);
+    Constant constant = reader.GetConstantPool()->GetConstant(id);
+    Assert(constant.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    identifier = ToUtf8(constant.Value().AsStringLiteral());
 }
 
 void IdentifierNode::Accept(Visitor& visitor)

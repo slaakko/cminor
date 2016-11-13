@@ -14,12 +14,12 @@ class ConstantId
 {
 public:
     constexpr ConstantId() : value(-1) {}
-    constexpr ConstantId(int32_t value_) : value(value_) {}
-    constexpr int32_t Value() const { return value; }
+    constexpr ConstantId(uint32_t value_) : value(value_) {}
+    constexpr uint32_t Value() const { return value; }
     void Write(Writer& writer);
     void Read(Reader& reader);
 private:
-    int32_t value;
+    uint32_t value;
 };
 
 constexpr ConstantId noConstantId = ConstantId();

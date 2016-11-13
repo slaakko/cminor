@@ -6,6 +6,7 @@
 #ifndef CMINOR_MACHINE_UNICODE_INCLUDED
 #define CMINOR_MACHINE_UNICODE_INCLUDED
 #include <string>
+#include <vector>
 
 namespace cminor { namespace machine {
 
@@ -20,6 +21,8 @@ utf16_string ToUtf16(const utf32_string& utf32Str);
 utf16_string ToUtf16(const std::string& utf8Str);
 std::string ToUtf8(const utf32_string& utf32Str);
 std::string ToUtf8(const utf16_string& utf16Str);
+std::vector<uint8_t> EncodeUInt(uint32_t x);
+uint32_t DecodeUInt(const std::vector<uint8_t>& bytes);
 
 } } // namespace cminor::machine
 

@@ -17,7 +17,7 @@ Function::Function() : callName(), friendlyName(), id(-1), numLocals(0), numPara
 {
 }
 
-Function::Function(Constant callName_, Constant friendlyName_, int32_t id_, ConstantPool* constantPool_) : 
+Function::Function(Constant callName_, Constant friendlyName_, uint32_t id_, ConstantPool* constantPool_) : 
     callName(callName_), friendlyName(friendlyName_), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false), emitter(nullptr)
 {
 }
@@ -30,16 +30,16 @@ void Function::Write(Writer& writer)
     ConstantId friendlyNameId = constantPool->GetIdFor(friendlyName);
     Assert(friendlyNameId != noConstantId, "got no constant id");
     friendlyNameId.Write(writer);
-    writer.Put(id);
-    int32_t n = static_cast<int32_t>(instructions.size());
-    writer.Put(n);
-    for (int32_t i = 0; i < n; ++i)
+    writer.PutEncodedUInt(id);
+    uint32_t n = static_cast<uint32_t>(instructions.size());
+    writer.PutEncodedUInt(n);
+    for (uint32_t i = 0; i < n; ++i)
     {
         Instruction* inst = instructions[i].get();
         inst->Encode(writer);
     }
-    writer.Put(numLocals);
-    writer.Put(numParameters);
+    writer.PutEncodedUInt(numLocals);
+    writer.PutEncodedUInt(numParameters);
 }
 
 void Function::Read(Reader& reader)
@@ -51,22 +51,22 @@ void Function::Read(Reader& reader)
     ConstantId friendlyNameId;
     friendlyNameId.Read(reader);
     friendlyName = constantPool->GetConstant(friendlyNameId);
-    id = reader.GetInt();
-    int32_t n = reader.GetInt();
-    for (int32_t i = 0; i < n; ++i)
+    id = reader.GetEncodedUInt();
+    uint32_t n = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < n; ++i)
     {
         AddInst(reader.GetMachine().DecodeInst(reader));
     }
-    numLocals = reader.GetInt();
-    numParameters = reader.GetInt();
+    numLocals = reader.GetEncodedUInt();
+    numParameters = reader.GetEncodedUInt();
 }
 
-void Function::SetNumLocals(int32_t numLocals_)
+void Function::SetNumLocals(uint32_t numLocals_)
 {
     numLocals = numLocals_;
 }
 
-void Function::SetNumParameters(int32_t numParameters_)
+void Function::SetNumParameters(uint32_t numParameters_)
 {
     numParameters = numParameters_;
 }

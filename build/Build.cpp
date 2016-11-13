@@ -139,6 +139,10 @@ void GenerateCodeForClassTemplateSpecializations(Assembly& assembly, std::unorde
     {
         for (ClassTemplateSpecializationSymbol* specialization : specializations)
         {
+            if (!specialization->HasGlobalNs())
+            {
+                specialization->ReadGlobalNs();
+            }
             NamespaceNode* globalNs = specialization->GlobalNs();
             MappingSymbolVisitor mappingSymbolVisitor(assembly, *specialization->GetAssembly());
             globalNs->Accept(mappingSymbolVisitor);

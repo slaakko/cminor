@@ -25,6 +25,7 @@ public:
     Node* Clone(CloneContext& cloneContext) const override;
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
+    void Accept(Visitor& visitor) override;
     const std::string& Str() const { return functionGroupId; }
 private:
     std::string functionGroupId;
@@ -37,6 +38,8 @@ public:
     std::string GetAttribute(const std::string& name) const;
     void Write(AstWriter& writer);
     void Read(AstReader& reader);
+    const std::unordered_map<std::string, std::string>& NameValuePairs() const { return nameValuePairs; }
+    void Accept(Visitor& visitor);
 private:
     std::unordered_map<std::string, std::string> nameValuePairs;
 };
@@ -64,10 +67,9 @@ public:
     CompoundStatementNode* Body() const { return body.get(); }
     bool HasBody() const { return body != nullptr; }
     CompoundStatementNode* BodySource() const { return bodySource.get(); }
-    CompileUnitNode* GetCompileUnit() const { return compileUnit; }
-    void SetCompileUnit(CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
     void SetAttributes(const AttributeMap& attributes_);
     const AttributeMap& Attributes() const { return attributes; }
+    AttributeMap& Attributes() { return attributes; }
 private:
     Specifiers specifiers;
     std::unique_ptr<Node> returnTypeExpr;
@@ -75,7 +77,6 @@ private:
     NodeList<ParameterNode> parameters;
     std::unique_ptr<CompoundStatementNode> body;
     std::unique_ptr<CompoundStatementNode> bodySource;
-    CompileUnitNode* compileUnit;
     AttributeMap attributes;
 };
 

@@ -32,10 +32,10 @@ public:
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
-    int32_t Index() const { return index; }
-    void SetIndex(int32_t index_) { index = index_; }
+    uint32_t Index() const { return index; }
+    void SetIndex(uint32_t index_) { index = index_; }
 private:
-    int32_t index;
+    uint32_t index;
 };
 
 class LocalVariableSymbol : public VariableSymbol
@@ -47,10 +47,10 @@ public:
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
-    int32_t Index() const { return index; }
-    void SetIndex(int32_t index_) { index = index_; }
+    uint32_t Index() const { return index; }
+    void SetIndex(uint32_t index_) { index = index_; }
 private:
-    int32_t index;
+    uint32_t index;
 };
 
 class MemberVariableSymbol : public VariableSymbol
@@ -61,12 +61,12 @@ public:
     std::string TypeString() const override { return "member variable"; }
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    int32_t Index() const { return index; }
-    void SetIndex(int32_t index_) { index = index_; }
+    uint32_t Index() const { return index; }
+    void SetIndex(uint32_t index_) { index = index_; }
     void SetSpecifiers(Specifiers specifiers);
     void AddTo(ClassTypeSymbol* classTypeSymbol) override;
 private:
-    int32_t index;
+    uint32_t index;
 };
 
 } } // namespace cminor::symbols

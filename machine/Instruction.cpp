@@ -775,7 +775,8 @@ void CallInst::Encode(Writer& writer)
 Instruction* CallInst::Decode(Reader& reader)
 {
     Instruction::Decode(reader);
-    ConstantId id = reader.GetInt();
+    ConstantId id;
+    id.Read(reader);
     function = reader.GetConstantPool()->GetConstant(id);
     return this;
 }
@@ -803,16 +804,16 @@ void VirtualCallInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
     Assert(numArgs != 0, "invalid number of arguments");
-    writer.Put(numArgs);
+    writer.PutEncodedUInt(numArgs);
     Assert(vmtIndex != -1, "invalid vmt index");
-    writer.Put(vmtIndex);
+    writer.PutEncodedUInt(vmtIndex);
 }
 
 Instruction* VirtualCallInst::Decode(Reader& reader)
 {
     Instruction::Decode(reader);
-    numArgs = reader.GetInt();
-    vmtIndex = reader.GetInt();
+    numArgs = reader.GetEncodedUInt();
+    vmtIndex = reader.GetEncodedUInt();
     return this;
 }
 
@@ -856,16 +857,16 @@ void InterfaceCallInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
     Assert(numArgs != 0, "invalid number of arguments");
-    writer.Put(numArgs);
+    writer.PutEncodedUInt(numArgs);
     Assert(imtIndex != -1, "invalid imt index");
-    writer.Put(imtIndex);
+    writer.PutEncodedUInt(imtIndex);
 }
 
 Instruction* InterfaceCallInst::Decode(Reader& reader)
 {
     Instruction::Decode(reader);
-    numArgs = reader.GetInt();
-    imtIndex = reader.GetInt();
+    numArgs = reader.GetEncodedUInt();
+    imtIndex = reader.GetEncodedUInt();
     return this;
 }
 
@@ -953,7 +954,8 @@ void SetClassDataInst::Encode(Writer& writer)
 Instruction* SetClassDataInst::Decode(Reader& reader)
 {
     Instruction::Decode(reader);
-    ConstantId id = reader.GetInt();
+    ConstantId id;
+    id.Read(reader);
     classData = reader.GetConstantPool()->GetConstant(id);
     return this;
 }
@@ -1020,7 +1022,8 @@ void TypeInstruction::Encode(Writer& writer)
 Instruction* TypeInstruction::Decode(Reader& reader)
 {
     Instruction::Decode(reader);
-    ConstantId id = reader.GetInt();
+    ConstantId id;
+    id.Read(reader);
     type = reader.GetConstantPool()->GetConstant(id);
     return this;
 }

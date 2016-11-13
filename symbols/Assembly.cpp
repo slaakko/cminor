@@ -123,9 +123,9 @@ void Assembly::Write(SymbolWriter& writer)
     tag.Write(writer);
     writer.SetAssembly(this);
     writer.AsMachineWriter().Put(filePath);
-    int32_t n = int32_t(referencedAssemblies.size());
-    writer.AsMachineWriter().Put(n);
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = uint32_t(referencedAssemblies.size());
+    writer.AsMachineWriter().PutEncodedUInt(n);
+    for (uint32_t i = 0; i < n; ++i)
     {
         const std::unique_ptr<Assembly>& referencedAssembly = referencedAssemblies[i];
         writer.AsMachineWriter().Put(referencedAssembly->FilePath());
@@ -154,8 +154,8 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
     }
     reader.SetAssembly(this);
     filePath = reader.GetUtf8String();
-    int32_t n = reader.GetInt();
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < n; ++i)
     {
         std::string referenceFilePath = reader.GetUtf8String();
         referenceFilePaths.push_back(referenceFilePath);
@@ -313,6 +313,8 @@ void Assembly::AddSymbolIdMapping(const std::string& assemblyName, uint32_t asse
 {
     std::pair<std::string, uint32_t> key = std::make_pair(assemblyName, assemblySymbolId);
     symbolIdMapping[key] = mySymbolId;
+    utf32_string an = ToUtf32(assemblyName);
+    constantPool.Install(StringPtr(an.c_str()));
 }
 
 uint32_t Assembly::GetSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId) const
@@ -323,29 +325,37 @@ uint32_t Assembly::GetSymbolIdMapping(const std::string& assemblyName, uint32_t 
     {
         return it->second;
     }
-    return uint32_t(-1);
+    return noSymbolId;
 }
 
 void Assembly::WriteSymbolIdMapping(SymbolWriter& writer)
 {
-    int32_t n = int32_t(symbolIdMapping.size());
-    writer.AsMachineWriter().Put(n);
+    uint32_t n = uint32_t(symbolIdMapping.size());
+    writer.AsMachineWriter().PutEncodedUInt(n);
     for (const auto& x : symbolIdMapping)
     {
-        writer.AsMachineWriter().Put(x.first.first);
-        writer.AsMachineWriter().Put(x.first.second);
-        writer.AsMachineWriter().Put(x.second);
+        const std::string& assemblyName = x.first.first;
+        utf32_string an = ToUtf32(assemblyName);
+        ConstantId id = constantPool.GetIdFor(an);
+        Assert(id != noConstantId, "got no id for constant");
+        id.Write(writer);
+        writer.AsMachineWriter().PutEncodedUInt(x.first.second);
+        writer.AsMachineWriter().PutEncodedUInt(x.second);
     }
 }
 
 void Assembly::ReadSymbolIdMapping(SymbolReader& reader)
 {
-    int32_t n = reader.GetInt();
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < n; ++i)
     {
-        std::string assemblyName = reader.GetUtf8String();
-        uint32_t assemblySymbolId = reader.GetUInt();
-        uint32_t mySymbolId = reader.GetUInt();
+        ConstantId id;
+        id.Read(reader);
+        Constant constant = constantPool.GetConstant(id);
+        Assert(constant.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+        std::string assemblyName = ToUtf8(constant.Value().AsStringLiteral());
+        uint32_t assemblySymbolId = reader.GetEncodedUInt();
+        uint32_t mySymbolId = reader.GetEncodedUInt();
         std::pair<std::string, uint32_t> key = std::make_pair(assemblyName, assemblySymbolId);
         symbolIdMapping[key] = mySymbolId;
     }

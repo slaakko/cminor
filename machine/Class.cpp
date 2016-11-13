@@ -44,9 +44,9 @@ void MethodTable::SetMethod(int32_t index, Function* function)
 
 void MethodTable::Write(Writer& writer)
 {
-    int32_t n = int32_t(methods.size());
-    writer.Put(n);
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = uint32_t(methods.size());
+    writer.PutEncodedUInt(n);
+    for (uint32_t i = 0; i < n; ++i)
     {
         Constant method = methods[i];
         ConstantId constantId = writer.GetConstantPool()->GetIdFor(method);
@@ -63,8 +63,8 @@ void MethodTable::Write(Writer& writer)
 
 void MethodTable::Read(Reader& reader) 
 {
-    int32_t n = reader.GetInt();
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < n; ++i)
     {
         ConstantId constantId;
         constantId.Read(reader);
@@ -80,9 +80,9 @@ ClassData::ClassData(ObjectType* type_) : type(type_)
 void ClassData::Write(Writer& writer)
 {
     vmt.Write(writer);
-    int32_t n = int32_t(imts.size());
-    writer.Put(n);
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = uint32_t(imts.size());
+    writer.PutEncodedUInt(n);
+    for (uint32_t i = 0; i < n; ++i)
     {
         imts[i].Write(writer);
     }
@@ -91,9 +91,9 @@ void ClassData::Write(Writer& writer)
 void ClassData::Read(Reader& reader)
 {
     vmt.Read(reader);
-    int32_t n = reader.GetInt();
+    uint32_t n = reader.GetEncodedUInt();
     AllocImts(n);
-    for (int32_t i = 0; i < n; ++i)
+    for (uint32_t i = 0; i < n; ++i)
     {
         imts[i].Read(reader);
     }

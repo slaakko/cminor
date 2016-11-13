@@ -42,6 +42,8 @@ class NullLiteralNode;
 class IdentifierNode;
 class ParameterNode;
 class FunctionNode;
+class FunctionGroupIdNode;
+class AttributeMap;
 class NamespaceNode;
 class CompileUnitNode;
 class AliasNode;
@@ -145,6 +147,8 @@ public:
     virtual void Visit(IdentifierNode& identifierNode) {}
     virtual void Visit(ParameterNode& parameterNode) {}
     virtual void Visit(FunctionNode& functionNode) {}
+    virtual void Visit(FunctionGroupIdNode& functionGroupIdNode) {}
+    virtual void Visit(AttributeMap& attributeMap) {}
     virtual void Visit(NamespaceNode& namespaceNode) {}
     virtual void Visit(AliasNode& aliasNode) {}
     virtual void Visit(NamespaceImportNode& namespaceImportNode) {}

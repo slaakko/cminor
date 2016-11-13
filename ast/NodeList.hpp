@@ -35,17 +35,17 @@ public:
     }
     void Write(AstWriter& writer)
     {
-        int32_t n = static_cast<int32_t>(nodes.size());
-        writer.AsMachineWriter().Put(n);
-        for (int i = 0; i < n; ++i)
+        uint32_t n = static_cast<uint32_t>(nodes.size());
+        writer.AsMachineWriter().PutEncodedUInt(n);
+        for (uint32_t i = 0; i < n; ++i)
         {
             writer.Put(nodes[i].get());
         }
     }
     void Read(AstReader& reader)
     {
-        int32_t n = reader.GetInt();
-        for (int i = 0; i < n; ++i)
+        uint32_t n = reader.GetEncodedUInt();
+        for (uint32_t i = 0; i < n; ++i)
         {
             Node* node = reader.GetNode();
             T* asTNode = dynamic_cast<T*>(node);

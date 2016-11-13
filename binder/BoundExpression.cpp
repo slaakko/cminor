@@ -39,7 +39,7 @@ void BoundLiteral::GenLoad(Machine& machine, Function& function)
         else
         {
             loadConstantInst = std::move(machine.CreateInst("loadconstant"));
-            loadConstantInst->SetIndex(constantId.Value());
+            loadConstantInst->SetIndex(int32_t(constantId.Value()));
         }
         function.AddInst(std::move(loadConstantInst));
     }
@@ -82,7 +82,7 @@ void BoundConstant::GenLoad(Machine& machine, Function& function)
         else
         {
             loadConstantInst = std::move(machine.CreateInst("loadconstant"));
-            loadConstantInst->SetIndex(constantId.Value());
+            loadConstantInst->SetIndex(int32_t(constantId.Value()));
         }
         function.AddInst(std::move(loadConstantInst));
     }

@@ -73,7 +73,7 @@ void FunctionSymbol::Write(SymbolWriter& writer)
     writer.AsMachineWriter().Put(hasMachineFunction);
     if (hasMachineFunction)
     {
-        writer.AsMachineWriter().Put(machineFunction->Id());
+        writer.AsMachineWriter().PutEncodedUInt(machineFunction->Id());
     }
 }
 
@@ -101,7 +101,7 @@ void FunctionSymbol::Read(SymbolReader& reader)
     bool hasMachineFunction = reader.GetBool();
     if (hasMachineFunction)
     {
-        int32_t machineFunctionId = reader.GetInt();
+        uint32_t machineFunctionId = reader.GetEncodedUInt();
         machineFunction = GetAssembly()->GetMachineFunctionTable().GetFunction(machineFunctionId);
         if (StringPtr(groupName.Value().AsStringLiteral()) == StringPtr(U"main"))
         {
@@ -336,7 +336,7 @@ void FunctionSymbol::CreateMachineFunction()
         ConstantPool& constantPool = GetAssembly()->GetConstantPool();
         ConstantId vmFunctionNameId = constantPool.GetIdFor(vmFunctionName);
         Assert(vmFunctionNameId != noConstantId, "got no constant id");
-        vmCallInst->SetIndex(vmFunctionNameId.Value());
+        vmCallInst->SetIndex(int32_t(vmFunctionNameId.Value()));
         machineFunction->AddInst(std::move(vmCallInst));
     }
 }
@@ -731,14 +731,34 @@ utf32_string MemberFunctionSymbol::FriendlyName() const
 void MemberFunctionSymbol::Write(SymbolWriter& writer)
 {
     FunctionSymbol::Write(writer);
-    writer.AsMachineWriter().Put(vmtIndex);
+    bool hasVmtIndex = vmtIndex != -1;
+    writer.AsMachineWriter().Put(hasVmtIndex);
+    if (hasVmtIndex)
+    {
+        writer.AsMachineWriter().PutEncodedUInt(vmtIndex);
+    }
+    bool hasImtIndex = imtIndex != -1;
+    writer.AsMachineWriter().Put(hasImtIndex);
+    if (hasImtIndex)
+    {
+        writer.AsMachineWriter().PutEncodedUInt(imtIndex);
+    }
     writer.AsMachineWriter().Put(uint8_t(flags));
 }
 
 void MemberFunctionSymbol::Read(SymbolReader& reader)
 {
     FunctionSymbol::Read(reader);
-    vmtIndex = reader.GetInt();
+    bool hasVmtIndex = reader.GetBool();
+    if (hasVmtIndex)
+    {
+        vmtIndex = reader.GetEncodedUInt();
+    }
+    bool hasImtIndex = reader.GetBool();
+    if (hasImtIndex)
+    {
+        imtIndex = reader.GetEncodedUInt();
+    }
     flags = MemberFunctionSymbolFlags(reader.GetByte());
 }
 
@@ -910,7 +930,7 @@ void ClassToInterfaceConversion::GenerateCall(Machine& machine, Assembly& assemb
     else
     {
         loadConstant = machine.CreateInst("loadconstant");
-        loadConstant->SetIndex(itabIndexId.Value());
+        loadConstant->SetIndex(int32_t(itabIndexId.Value()));
     }
     function.AddInst(std::move(loadConstant));
     std::unique_ptr<Instruction> swap;

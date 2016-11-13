@@ -23,17 +23,17 @@ Function* MachineFunctionTable::CreateFunction(FunctionSymbol* functionSymbol)
     return function;
 }
 
-Function* MachineFunctionTable::GetFunction(int32_t functionId) const
+Function* MachineFunctionTable::GetFunction(uint32_t functionId) const
 {
-    Assert(functionId < int32_t(machineFunctions.size()), "invalid function id");
+    Assert(functionId < uint32_t(machineFunctions.size()), "invalid function id");
     return machineFunctions[functionId].get();
 }
 
 void MachineFunctionTable::Write(SymbolWriter& writer)
 {
-    int32_t n = int32_t(machineFunctions.size());
-    writer.AsMachineWriter().Put(n);
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = uint32_t(machineFunctions.size());
+    writer.AsMachineWriter().PutEncodedUInt(n);
+    for (uint32_t i = 0; i < n; ++i)
     {
         Function* function = machineFunctions[i].get();
         function->Write(writer);
@@ -42,8 +42,8 @@ void MachineFunctionTable::Write(SymbolWriter& writer)
 
 void MachineFunctionTable::Read(SymbolReader& reader)
 {
-    int32_t n = reader.GetInt();
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < n; ++i)
     {
         std::unique_ptr<Function> function(new Function());
         function->Read(reader);

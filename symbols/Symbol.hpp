@@ -90,6 +90,8 @@ inline SymbolFlags operator&(SymbolFlags left, SymbolFlags right)
 
 std::string SymbolFlagStr(SymbolFlags flags);
 
+extern const uint32_t firstFreeSymbolId;
+
 class Symbol
 {
 public:
@@ -150,6 +152,7 @@ public:
     virtual void EmplaceType(TypeSymbol* type, int index);
     uint32_t Id() const { return id; }
     void SetId(uint32_t id_) { id = id_; }
+    bool HasId() const { return id != noSymbolId; }
     virtual void AddTo(ClassTypeSymbol* classTypeSymbol);
     virtual void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol);
     void Merge(const Symbol& that);
@@ -483,7 +486,7 @@ public:
     ValueType GetValueType() const override { return ValueType::objectReference; }
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    void ReadClassNode();
+    void ReadClassNode(Assembly& assembly);
     void SetSpecifiers(Specifiers specifiers); 
     void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
     void Add(MemberVariableSymbol* memberVariableSymbol);
@@ -677,13 +680,18 @@ public:
     void MergeMemberFunctionSymbol(const MemberFunctionSymbol& memberFunctionSymbol);
     void MergePropertySymbol(const PropertySymbol& propertySymbol);
     void MergeIndexerSymbol(const IndexerSymbol& indexerSymbol);
+    bool HasGlobalNs() const { return globalNs != nullptr; }
+    void ReadGlobalNs();
 private:
     ClassTemplateSpecializationSymbolFlags flags;
     ClassTemplateSpecializationKey key;
     std::unique_ptr<NamespaceNode> globalNs;
+    uint32_t assemblyId;
+    uint32_t globalNsPos;
     bool GetFlag(ClassTemplateSpecializationSymbolFlags flag) const { return (flags & flag) != ClassTemplateSpecializationSymbolFlags::none; }
     void SetFlag(ClassTemplateSpecializationSymbolFlags flag) { flags = flags | flag; }
     std::vector<std::unique_ptr<ClassTemplateSpecializationSymbol>> toBeMerged;
+    void WriteGlobalNs(SymbolWriter& symbolWriter);
 };
 
 } } // namespace cminor::symbols

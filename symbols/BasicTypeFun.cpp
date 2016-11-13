@@ -134,7 +134,7 @@ void BasicTypeConversion::Write(SymbolWriter& writer)
 {
     BasicTypeFun::Write(writer);
     writer.AsMachineWriter().Put(uint8_t(conversionType));
-    writer.AsMachineWriter().Put(conversionDistance);
+    writer.AsMachineWriter().PutEncodedUInt(conversionDistance);
     utf32_string sourceTypeFullName = sourceType->FullName();
     ConstantId sourceTypeId = GetAssembly()->GetConstantPool().GetIdFor(sourceTypeFullName);
     Assert(sourceTypeId != noConstantId, "got no id");
@@ -150,7 +150,7 @@ void BasicTypeConversion::Read(SymbolReader& reader)
 {
     BasicTypeFun::Read(reader);
     conversionType = ConversionType(reader.GetByte());
-    conversionDistance = reader.GetInt();
+    conversionDistance = reader.GetEncodedUInt();
     ConstantId sourceTypeId;
     sourceTypeId.Read(reader);
     reader.EmplaceTypeRequest(this, sourceTypeId, 2);

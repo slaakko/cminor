@@ -54,6 +54,7 @@ public:
     void Put(const std::string& s);
     void Put(const utf32_string& s);
     void Put(const Span& span);
+    void PutEncodedUInt(uint32_t x);
     uint32_t Pos() const { return pos; }
     void Seek(uint32_t pos_);
 private:

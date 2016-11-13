@@ -45,6 +45,7 @@ public:
     std::string GetUtf8String();
     utf32_string GetUtf32String();
     Span GetSpan();
+    uint32_t GetEncodedUInt();
     std::vector<CallInst*> GetCallInstructions() { return std::move(callInstructions); }
     const std::vector<CallInst*>& CallInstructions() const { return callInstructions; }
     std::vector<TypeInstruction*> GetTypeInstructions() { return std::move(typeInstructions); }

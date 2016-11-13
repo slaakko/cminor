@@ -56,7 +56,9 @@ std::string SymbolFlagStr(SymbolFlags flags)
     return s;
 }
 
-Symbol::Symbol(const Span& span_, Constant name_) : span(span_), name(name_), flags(SymbolFlags::none), parent(nullptr), assembly(nullptr)
+const uint32_t firstFreeSymbolId = noSymbolId + 1;
+
+Symbol::Symbol(const Span& span_, Constant name_) : span(span_), name(name_), flags(SymbolFlags::none), parent(nullptr), assembly(nullptr), id(noSymbolId)
 {
     Assert(name.Value().GetType() == ValueType::stringLiteral, "string literal expected");
     SetSource(SymbolSource::project);
@@ -74,13 +76,13 @@ bool Symbol::IsExportSymbol() const
 void Symbol::Write(SymbolWriter& writer)
 {
     writer.AsMachineWriter().Put(uint8_t(flags & ~(SymbolFlags::project | SymbolFlags::bound | SymbolFlags::instantiationRequested)));
-    writer.AsMachineWriter().Put(id);
+    writer.AsMachineWriter().PutEncodedUInt(id);
 }
 
 void Symbol::Read(SymbolReader& reader)
 {
     flags = static_cast<SymbolFlags>(reader.GetByte());
-    id = reader.GetUInt();
+    id = reader.GetEncodedUInt();
 }
 
 void Symbol::SetAccess(Specifiers accessSpecifiers)
@@ -858,9 +860,9 @@ void ContainerSymbol::Write(SymbolWriter& writer)
             exportSymbols.push_back(symbol.get());
         }
     }
-    int32_t n = int32_t(exportSymbols.size());
-    writer.AsMachineWriter().Put(n);
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = uint32_t(exportSymbols.size());
+    writer.AsMachineWriter().PutEncodedUInt(n);
+    for (uint32_t i = 0; i < n; ++i)
     {
         writer.Put(exportSymbols[i]);
     }
@@ -869,8 +871,8 @@ void ContainerSymbol::Write(SymbolWriter& writer)
 void ContainerSymbol::Read(SymbolReader& reader)
 {
     Symbol::Read(reader);
-    int32_t n = reader.GetInt();
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < n; ++i)
     {
         Symbol* symbol = reader.GetSymbol();
         AddSymbol(std::unique_ptr<Symbol>(symbol));
@@ -1181,7 +1183,7 @@ void TypeParameterSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), baseClass(nullptr), objectType(new ObjectType()), classData(new ClassData(objectType.get())), 
-    flags(), defaultConstructorSymbol(nullptr), level(0), priority(0), key(0), cid(0), assemblyId(-1), classNodePos(0)
+    flags(), defaultConstructorSymbol(nullptr), level(0), priority(0), key(0), cid(0), assemblyId(-1), classNodePos(-1)
 {
 }
 
@@ -1218,9 +1220,9 @@ void ClassTypeSymbol::Write(SymbolWriter& writer)
             Assert(baseClassNameId != noConstantId, "got no id");
             baseClassNameId.Write(writer);
         }
-        int32_t n = int32_t(implementedInterfaces.size());
-        writer.AsMachineWriter().Put(n);
-        for (int32_t i = 0; i < n; ++i)
+        uint32_t n = uint32_t(implementedInterfaces.size());
+        writer.AsMachineWriter().PutEncodedUInt(n);
+        for (uint32_t i = 0; i < n; ++i)
         {
             InterfaceTypeSymbol* intf = implementedInterfaces[i];
             utf32_string interfaceFullName = intf->FullName();
@@ -1258,8 +1260,8 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
             baseClassNameId.Read(reader);
             reader.EmplaceTypeRequest(this, baseClassNameId, 0);
         }
-        int32_t n = reader.GetInt();
-        for (int32_t i = 0; i < n; ++i)
+        uint32_t n = reader.GetEncodedUInt();
+        for (uint32_t i = 0; i < n; ++i)
         {
             ConstantId intfNameId;
             intfNameId.Read(reader);
@@ -1275,16 +1277,18 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
     }
 }
 
-void ClassTypeSymbol::ReadClassNode()
+void ClassTypeSymbol::ReadClassNode(Assembly& assembly)
 {
     Assert(IsClassTemplate(), "class template expected");
     Assert(assemblyId != -1, "assembly id not valid");
     Assembly* nodeAssembly = AssemblyTable::Instance().GetAssembly(assemblyId);
     AstReader reader(nodeAssembly->FilePath());
+    reader.SetConstantPool(&nodeAssembly->GetConstantPool());
+    reader.Skip(classNodePos);
     usingNodes.Read(reader);
     Node* node = reader.GetNode();
     classNode.reset(node);
-    GetAssembly()->GetSymbolTable().MapNode(*node, this);
+    assembly.GetSymbolTable().MapNode(*node, this);
 }
 
 void ClassTypeSymbol::SetSpecifiers(Specifiers specifiers)
@@ -1743,7 +1747,8 @@ void InterfaceTypeSymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
-ClassTemplateSpecializationSymbol::ClassTemplateSpecializationSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_), key(), flags(ClassTemplateSpecializationSymbolFlags::none)
+ClassTemplateSpecializationSymbol::ClassTemplateSpecializationSymbol(const Span& span_, Constant name_) : 
+    ClassTypeSymbol(span_, name_), key(), flags(ClassTemplateSpecializationSymbolFlags::none), assemblyId(-1), globalNsPos(-1)
 {
 }
 
@@ -1763,9 +1768,9 @@ void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)
     ConstantId classTypeId = GetAssembly()->GetConstantPool().GetIdFor(keyFullClassName);
     Assert(classTypeId != noConstantId, "got no id for return type");
     classTypeId.Write(writer);
-    int32_t n = int32_t(key.typeArguments.size());
-    writer.AsMachineWriter().Put(n);
-    for (int32_t i = 0; i < n; ++i)
+    uint32_t n = uint32_t(key.typeArguments.size());
+    writer.AsMachineWriter().PutEncodedUInt(n);
+    for (uint32_t i = 0; i < n; ++i)
     {
         TypeSymbol* typeArgument = key.typeArguments[i];
         utf32_string typeArgumentFullName = typeArgument->FullName();
@@ -1773,7 +1778,7 @@ void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)
         Assert(typeArgumentId != noConstantId, "got no id for type argument");
         typeArgumentId.Write(writer);
     }
-    writer.AsAstWriter().Put(globalNs.get());
+    WriteGlobalNs(writer);
 }
 
 void ClassTemplateSpecializationSymbol::Read(SymbolReader& reader)
@@ -1790,18 +1795,18 @@ void ClassTemplateSpecializationSymbol::Read(SymbolReader& reader)
     {
         reader.EmplaceTypeRequest(this, classTypeId, -2);
     }
-    int32_t n = reader.GetInt();
+    uint32_t n = reader.GetEncodedUInt();
     key.typeArguments.resize(n);
-    for (int32_t i = 0; i < n; ++i)
+    for (uint32_t i = 0; i < n; ++i)
     {
         ConstantId typeArgumentId;
         typeArgumentId.Read(reader);
         reader.EmplaceTypeRequest(this, typeArgumentId, i + 1);
     }
-    Node* node = reader.GetNode();
-    NamespaceNode* ns = dynamic_cast<NamespaceNode*>(node);
-    Assert(ns, "namespace node expected");
-    globalNs.reset(ns);
+    uint32_t globalNsSize = reader.GetUInt();
+    assemblyId = reader.GetAssembly()->Id();
+    globalNsPos = reader.Pos();
+    reader.Skip(globalNsSize);
     SetBound();
 }
 
@@ -1936,6 +1941,34 @@ void ClassTemplateSpecializationSymbol::MergeIndexerSymbol(const IndexerSymbol& 
     {
         throw Exception("could not merge '" + ToUtf8(indexerSymbol.FullName()) + "': target symbol not found", indexerSymbol.GetSpan(), GetSpan());
     }
+}
+
+void ClassTemplateSpecializationSymbol::WriteGlobalNs(SymbolWriter& writer)
+{
+    uint32_t sizePos = writer.Pos();
+    uint32_t size = 0;
+    writer.AsMachineWriter().Put(size);
+    uint32_t start = writer.Pos();
+    NamespaceNode* node = globalNs.get();
+    writer.AsAstWriter().Put(node);
+    uint32_t end = writer.Pos();
+    size = end - start;
+    writer.Seek(sizePos);
+    writer.AsMachineWriter().Put(size);
+    writer.Seek(end);
+}
+
+void ClassTemplateSpecializationSymbol::ReadGlobalNs()
+{
+    Assert(assemblyId != -1, "assembly id not valid");
+    Assert(globalNsPos != -1, "global ns pos not valid");
+    Assembly* nodeAssembly = AssemblyTable::Instance().GetAssembly(assemblyId);
+    AstReader reader(nodeAssembly->FilePath());
+    reader.Skip(globalNsPos);
+    Node* node = reader.GetNode();
+    NamespaceNode* ns = dynamic_cast<NamespaceNode*>(node);
+    Assert(ns, "namespace node expected");
+    globalNs.reset(ns);
 }
 
 } } // namespace cminor::symbols

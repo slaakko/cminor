@@ -240,6 +240,8 @@ public:
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
+    Node* Expr() const { return expr.get(); }
+    Node* TargetTypeExpr() const { return targetTypeExpr.get(); }
 private:
     std::unique_ptr<Node> expr;
     std::unique_ptr<Node> targetTypeExpr;
@@ -255,6 +257,8 @@ public:
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
+    Node* Expr() const { return expr.get(); }
+    Node* TargetTypeExpr() const { return targetTypeExpr.get(); }
 private:
     std::unique_ptr<Node> expr;
     std::unique_ptr<Node> targetTypeExpr;

@@ -91,9 +91,4 @@ namespace Alpha.Collections
         private T[] items;
         private int count;
     }
-
-    public void foo()
-    {
-        List<int> x = new List<int>();
-    }
 }

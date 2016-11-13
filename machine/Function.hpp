@@ -23,18 +23,18 @@ class Function
 {
 public:
     Function();
-    Function(Constant callName_, Constant friendlyName_, int32_t id_, ConstantPool* constantPool_);
+    Function(Constant callName_, Constant friendlyName_, uint32_t id_, ConstantPool* constantPool_);
     Constant CallName() const { return callName; }
     Constant FriendlyName() const { return friendlyName; }
-    int32_t Id() const { return id; }
+    uint32_t Id() const { return id; }
     ConstantPool& GetConstantPool() { Assert(constantPool, "constant pool not set"); return *constantPool; }
     void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
     void Write(Writer& writer);
     void Read(Reader& reader);
-    int32_t NumLocals() const { return numLocals; }
-    void SetNumLocals(int32_t numLocals_);
-    int32_t NumParameters() const { return numParameters; }
-    void SetNumParameters(int32_t numParameters_);
+    uint32_t NumLocals() const { return numLocals; }
+    void SetNumLocals(uint32_t numLocals_);
+    uint32_t NumParameters() const { return numParameters; }
+    void SetNumParameters(uint32_t numParameters_);
     int NumInsts() const { return int(instructions.size()); }
     Instruction* GetInst(int index) const { return instructions[index].get(); }
     void AddInst(std::unique_ptr<Instruction>&& inst);
@@ -46,11 +46,11 @@ public:
 private:
     Constant callName;
     Constant friendlyName;
-    int32_t id;
+    uint32_t id;
     ConstantPool* constantPool;
     std::vector<std::unique_ptr<Instruction>> instructions;
-    int32_t numLocals;
-    int32_t numParameters;
+    uint32_t numLocals;
+    uint32_t numParameters;
     bool isMain;
     Emitter* emitter;
 };

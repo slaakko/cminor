@@ -19,7 +19,7 @@ class MachineFunctionTable
 {
 public:
     Function* CreateFunction(FunctionSymbol* functionSymbol);
-    Function* GetFunction(int32_t functionId) const;
+    Function* GetFunction(uint32_t functionId) const;
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader);
     void Dump(CodeFormatter& formatter);
