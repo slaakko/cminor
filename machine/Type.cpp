@@ -50,7 +50,8 @@ void Layout::AddFields(const std::vector<Field>& fields_)
 
 void Layout::AddField(ValueType fieldType)
 {
-    FieldOffset fieldOffset(size);
+    Assert(size < std::numeric_limits<uint32_t>::max(), "size too big");
+    FieldOffset fieldOffset(static_cast<uint32_t>(size));
     fields.push_back(Field(fieldType, fieldOffset));
     size += ValueSize(fieldType);
 }

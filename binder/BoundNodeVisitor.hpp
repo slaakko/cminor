@@ -31,6 +31,7 @@ class BoundProperty;
 class BoundIndexer;
 class BoundParameter;
 class BoundArrayElement;
+class BoundStringChar;
 class BoundConversion;
 class BoundFunctionCall;
 class BoundNewExpression;
@@ -64,6 +65,7 @@ public:
     virtual void Visit(BoundIndexer& boundIndexer) {}
     virtual void Visit(BoundParameter& boundParameter) {}
     virtual void Visit(BoundArrayElement& boundArrayElement) {}
+    virtual void Visit(BoundStringChar& boundStringChar) {}
     virtual void Visit(BoundConversion& boundConversion) {}
     virtual void Visit(BoundFunctionCall& boundFunctionCall) {}
     virtual void Visit(BoundNewExpression& boundNewExpression) {}

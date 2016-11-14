@@ -277,17 +277,19 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     // --------
 
     rootInst.SetInst(0xC8, new LoadDefaultValueInst<ValueType::objectReference>("defo", "object"));
-    rootInst.SetInst(0xC9, new CreateObjectInst());
-    rootInst.SetInst(0xCA, new CopyObjectInst());
-    rootInst.SetInst(0xCB, new SetClassDataInst());
-    rootInst.SetInst(0xCC, new UpCastInst());
-    rootInst.SetInst(0xCD, new DownCastInst());
+    rootInst.SetInst(0xC9, new EqualObjectNullInst());
+    rootInst.SetInst(0xCA, new EqualNullObjectInst());
+    rootInst.SetInst(0xCB, new CreateObjectInst());
+    rootInst.SetInst(0xCC, new CopyObjectInst());
+    rootInst.SetInst(0xCD, new SetClassDataInst());
+    rootInst.SetInst(0xCE, new UpCastInst());
+    rootInst.SetInst(0xCF, new DownCastInst());
 
     // strings:
     // --------
 
     rootInst.SetInst(0xD0, new StrLitToStringInst());
-    rootInst.SetInst(0xD1, new LengthStringInst());
+    rootInst.SetInst(0xD1, new LoadStringCharInst());
 
     // arrays:
     // -------

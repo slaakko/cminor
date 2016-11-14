@@ -527,13 +527,6 @@ void SymbolTable::Write(SymbolWriter& writer)
     globalNs.Write(writer);
     bool hasMainFunction = mainFunction != nullptr;
     writer.AsMachineWriter().Put(hasMainFunction);
-    if (hasMainFunction)
-    {
-        utf32_string mainFunctionFullName = mainFunction->FullName();
-        ConstantId mainFunctionNameId = assembly->GetConstantPool().GetIdFor(mainFunctionFullName);
-        Assert(mainFunctionNameId != noConstantId, "got no constant id");
-        mainFunctionNameId.Write(writer);
-    }
 }
 
 void SymbolTable::Read(SymbolReader& reader)
@@ -941,6 +934,8 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::basicTypeUnaryOp, new ConcreteSymbolCreator<BasicTypeUnaryOpFun>());
     SymbolFactory::Instance().Register(SymbolType::basicTypBinaryOp, new ConcreteSymbolCreator<BasicTypeBinaryOpFun>());
     SymbolFactory::Instance().Register(SymbolType::objectDefaultInit, new ConcreteSymbolCreator<ObjectDefaultInit>());
+    SymbolFactory::Instance().Register(SymbolType::objectNullEqual, new ConcreteSymbolCreator<ObjectNullEqual>());
+    SymbolFactory::Instance().Register(SymbolType::nullObjectEqual, new ConcreteSymbolCreator<NullObjectEqual>());
     SymbolFactory::Instance().Register(SymbolType::objectCopyInit, new ConcreteSymbolCreator<ObjectCopyInit>());
     SymbolFactory::Instance().Register(SymbolType::objectNullInit, new ConcreteSymbolCreator<ObjectNullInit>());
     SymbolFactory::Instance().Register(SymbolType::objectAssignment, new ConcreteSymbolCreator<ObjectAssignment>());

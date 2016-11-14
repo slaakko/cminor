@@ -1302,7 +1302,7 @@ void LiteralGrammar::CreateRules()
                         new Cm::Parsing::AlternativeParser(
                             new Cm::Parsing::ActionParser("A1",
                                 new Cm::Parsing::PositiveParser(
-                                    new Cm::Parsing::CharSetParser("\\r\n", true))),
+                                    new Cm::Parsing::CharSetParser("\'\\r\n", true))),
                             new Cm::Parsing::ActionParser("A2",
                                 new Cm::Parsing::NonterminalParser("CharEscape", "CharEscape", 0)))),
                     new Cm::Parsing::ExpectationParser(

@@ -465,6 +465,29 @@ void BoundArrayElement::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundStringChar::BoundStringChar(Assembly& assembly_, TypeSymbol* charType_, std::unique_ptr<BoundExpression>&& str_, std::unique_ptr<BoundExpression>&& index_) :
+    BoundExpression(assembly_, charType_), str(std::move(str_)), index(std::move(index_))
+{
+}
+
+void BoundStringChar::GenLoad(Machine& machine, Function& function)
+{
+    str->GenLoad(machine, function);
+    index->GenLoad(machine, function);
+    std::unique_ptr<Instruction> loadStringCharInst = machine.CreateInst("loadstringchar");
+    function.AddInst(std::move(loadStringCharInst));
+}
+
+void BoundStringChar::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to bound string char");
+}
+
+void BoundStringChar::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundConversion::BoundConversion(Assembly& assembly_, std::unique_ptr<BoundExpression>&& sourceExpr_, FunctionSymbol* conversionFun_) :
     BoundExpression(assembly_, conversionFun_->ConversionTargetType()), sourceExpr(std::move(sourceExpr_)), conversionFun(conversionFun_)
 {

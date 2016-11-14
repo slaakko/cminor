@@ -169,6 +169,10 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
             throw Exception("symbol '" + ToUtf8(baseOrInterfaceSymbol->FullName()) + "' is not a class or interface type symbol", baseOrInterfaceNode->GetSpan(), baseOrInterfaceSymbol->GetSpan());
         }
     }
+    if (classTypeSymbol->FullName() == U"System.String")
+    {
+        int x = 0;
+    }
     int nm = classNode.Members().Count();
     for (int i = 0; i < nm; ++i)
     {
@@ -218,6 +222,10 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
         Assert(memberVariableType, "got no type");
         ValueType memberVariableValueType = memberVariableType->GetValueType();
         classTypeSymbol->GetObjectType()->AddField(memberVariableValueType);
+    }
+    if (classTypeSymbol->FullName() == U"System.String")
+    {
+        classTypeSymbol->GetObjectType()->AddField(ValueType::allocationHandle);
     }
     containerScope = prevContainerScope;
 }
@@ -279,6 +287,19 @@ void TypeBinderVisitor::Visit(StaticConstructorNode& staticConstructorNode)
     else
     {
         staticConstructorSymbol->SetSpecifiers(staticConstructorNode.GetSpecifiers());
+        if (staticConstructorSymbol->IsExternal())
+        {
+            if (staticConstructorNode.HasBody())
+            {
+                throw Exception("external function cannot have a body", staticConstructorNode.GetSpan());
+            }
+            utf32_string vmFunctionName = ToUtf32(staticConstructorNode.Attributes().GetAttribute("VmFunctionName"));
+            if (vmFunctionName.empty())
+            {
+                throw Exception("virtual machine function name attribute (VmFunctionName) not set for external function", staticConstructorNode.GetSpan());
+            }
+            staticConstructorSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
+        }
         staticConstructorSymbol->ComputeName();
     }
     if (staticConstructorNode.HasBody())
@@ -312,6 +333,19 @@ void TypeBinderVisitor::Visit(ConstructorNode& constructorNode)
     else
     {
         constructorSymbol->SetSpecifiers(constructorNode.GetSpecifiers());
+        if (constructorSymbol->IsExternal())
+        {
+            if (constructorNode.HasBody())
+            {
+                throw Exception("external function cannot have a body", constructorNode.GetSpan());
+            }
+            utf32_string vmFunctionName = ToUtf32(constructorNode.Attributes().GetAttribute("VmFunctionName"));
+            if (vmFunctionName.empty())
+            {
+                throw Exception("virtual machine function name attribute (VmFunctionName) not set for external function", constructorNode.GetSpan());
+            }
+            constructorSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
+        }
         int n = constructorNode.Parameters().Count();
         for (int i = 0; i < n; ++i)
         {

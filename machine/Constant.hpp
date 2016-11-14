@@ -70,10 +70,6 @@ public:
     ConstantId Install(StringPtr s);
     ConstantId GetIdFor(Constant constant);
     ConstantId GetIdFor(const utf32_string& s);
-    uint64_t GetStringLength(ConstantId stringConstantId) const 
-    { 
-        Assert(stringConstantId.Value() < stringLengths.size(), "invalid string constant id " + std::to_string(stringConstantId.Value())); return stringLengths[ConstantIndex(stringConstantId)];
-    }
     Constant GetConstant(ConstantId id) const { Assert(id.Value() < constants.size(), "invalid constant id " + std::to_string(id.Value())); return constants[ConstantIndex(id)]; }
     Constant GetEmptyStringConstant() const { return GetConstant(emptyStringConstantId); }
     ConstantId GetEmptyStringConstantId() const { return emptyStringConstantId; }
@@ -85,7 +81,6 @@ private:
     std::unordered_map<Constant, ConstantId, ConstantHash> constantIdMap;
     std::list<utf32_string> strings;
     std::unordered_map<StringPtr, ConstantId, StringPtrHash> stringIdMap;
-    std::vector<uint64_t> stringLengths;
     ConstantId NextFreeConstantId() { return int32_t(constants.size()); }
     int32_t ConstantIndex(ConstantId id) const { return id.Value(); }
 };

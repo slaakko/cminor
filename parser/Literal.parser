@@ -84,7 +84,7 @@ namespace cminor.parser
 
         CharLiteral(var utf32_char litValue) : Node*
             ::= token(  '\'' 
-                        (   ([^\\r\n]+){ utf32_string s = ToUtf32(std::string(matchBegin, matchEnd)); if (s.empty()) pass = false; else litValue = s[0]; } 
+                        (   ([^'\\r\n]+){ utf32_string s = ToUtf32(std::string(matchBegin, matchEnd)); if (s.empty()) pass = false; else litValue = s[0]; } 
                         |   CharEscape{ litValue = CharEscape; }
                         ) 
                         '\''!

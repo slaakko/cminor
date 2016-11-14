@@ -148,6 +148,18 @@ private:
     std::unique_ptr<BoundExpression> index;
 };
 
+class BoundStringChar : public BoundExpression
+{
+public:
+    BoundStringChar(Assembly& assembly_, TypeSymbol* charType_, std::unique_ptr<BoundExpression>&& str_, std::unique_ptr<BoundExpression>&& index_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    std::unique_ptr<BoundExpression> str;
+    std::unique_ptr<BoundExpression> index;
+};
+
 class BoundConversion : public BoundExpression
 {
 public:

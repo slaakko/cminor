@@ -1,6 +1,6 @@
 namespace System
 {
-    public class Array : Enumerable
+    public class Array
     {
         public Array(int length)
         {
@@ -9,10 +9,6 @@ namespace System
         public int Length
         {
             get { return length; }
-        }
-        public Enumerator GetEnumerator()
-        {
-            return new ArrayEnumerator(new object[1]);
         }
         private int length;
     }
@@ -26,6 +22,7 @@ namespace System
         }
         public bool AtEnd()
         {
+            if (elements == null) return true;
             return index >= elements.Length;
         }
         public object Current()

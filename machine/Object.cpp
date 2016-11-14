@@ -269,6 +269,17 @@ void ArrayElements::SetElement(IntegralValue elementValue, int32_t index)
     }
 }
 
+StringCharacters::StringCharacters(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, int32_t numChars_, uint64_t size_) : 
+    ManagedAllocation(arenaId_, memPtr_, size_), handle(handle_), numChars(numChars_)
+{
+}
+
+IntegralValue StringCharacters::GetChar(int32_t index) const
+{
+    MemPtr memPtr = GetMemPtr();
+    return IntegralValue(memPtr.StrValue()[index], ValueType::charType);
+}
+
 ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextReferenceValue(1)
 {
 }
@@ -351,14 +362,11 @@ void ManagedMemoryPool::SetField(ObjectReference reference, int32_t fieldIndex, 
     object.SetField(fieldValue, fieldIndex);
 }
 
-ObjectReference ManagedMemoryPool::CreateStringFromLiteral(const char32_t* strLit, uint64_t len)
+AllocationHandle ManagedMemoryPool::CreateStringCharsFromLiteral(const char32_t* strLit, uint32_t len)
 {
-    ObjectReference handle(nextReferenceValue++);
-    uint64_t stringSize = sizeof(char32_t) * (len + 1);
-    Type* type = TypeTable::Instance().GetType(U"System.String");
-    ObjectType* stringType = dynamic_cast<ObjectType*>(type);
-    Assert(stringType, "string type expected");
-    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new Object(handle, ArenaId::notGCMem, MemPtr(strLit), stringType, stringSize))));
+    AllocationHandle handle(nextReferenceValue++);
+    uint64_t stringSize = static_cast<uint64_t>(sizeof(char32_t)) * len;
+    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, ArenaId::notGCMem, MemPtr(strLit), len, stringSize))));
     if (!pairItBool.second)
     {
         throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
@@ -366,28 +374,87 @@ ObjectReference ManagedMemoryPool::CreateStringFromLiteral(const char32_t* strLi
     return handle;
 }
 
-int32_t ManagedMemoryPool::GetStringLength(ObjectReference str)
+std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCharArray(Thread& thread, ObjectReference charArray)
 {
-    Object& s = GetObject(str);
-    Assert(s.GetType() == TypeTable::Instance().GetType(U"System.String"), "string type expected");
-    uint64_t len = s.Size() / sizeof(char32_t) - 1;
-    return static_cast<int32_t>(len);
+    Object& charArrayObject = GetObject(charArray);
+    IntegralValue charElementsValue = charArrayObject.GetField(2);
+    Assert(charElementsValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
+    AllocationHandle charElementsHandle(charElementsValue.Value());
+    auto it = allocations.find(charElementsHandle);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        ArrayElements* charElements = dynamic_cast<ArrayElements*>(allocation);
+        Assert(charElements, "array elements expected");
+        int32_t numChars = charElements->NumElements();
+        MemPtr characters = charElements->GetMemPtr();
+        AllocationHandle handle(nextReferenceValue++);
+        uint64_t stringSize = numChars * ValueSize(ValueType::charType);
+        std::pair<ArenaId, MemPtr> arenaMemPtr = machine.AllocateMemory(thread, stringSize);
+        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, arenaMemPtr.first, arenaMemPtr.second, numChars, stringSize))));
+        if (!pairItBool.second)
+        {
+            throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+        }
+        MemPtr stringMem = arenaMemPtr.second;
+        std::memcpy(stringMem.Value(), characters.Value(), stringSize);
+        return std::make_pair(handle, numChars);
+    }
+    else
+    {
+        throw std::runtime_error("array element allocation with handle " + std::to_string(charElementsHandle.Value()) + " not found");
+    }
+}
+
+IntegralValue ManagedMemoryPool::GetStringChar(ObjectReference str, int32_t index)
+{
+    if (str.IsNull())
+    {
+        throw std::runtime_error("cannot index null string");
+    }
+    Object& o = GetObject(str);
+    IntegralValue charsHandleValue = o.GetField(2);
+    Assert(charsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
+    AllocationHandle handle(charsHandleValue.Value());
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        StringCharacters* chars = dynamic_cast<StringCharacters*>(allocation);
+        Assert(chars, "string characters expected");
+        return chars->GetChar(index);
+    }
+    else
+    {
+        throw std::runtime_error("string characters allocation with handle " + std::to_string(handle.Value()) + " not found");
+    }
 }
 
 void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference arr, Type* elementType, int32_t length)
 {
-    if (length <= 0)
+    if (length < 0)
     {
         throw std::runtime_error("invalid array length");
     }
     Object& a = GetObject(arr);
     AllocationHandle handle(nextReferenceValue++);
     uint64_t arraySize = ValueSize(elementType->GetValueType()) * uint64_t(length);
-    std::pair<ArenaId, MemPtr> arenaMemPtr = machine.AllocateMemory(thread, arraySize);
-    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, arenaMemPtr.first, arenaMemPtr.second, elementType, length, arraySize))));
-    if (!pairItBool.second)
+    if (arraySize > 0)
     {
-        throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+        std::pair<ArenaId, MemPtr> arenaMemPtr = machine.AllocateMemory(thread, arraySize);
+        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, arenaMemPtr.first, arenaMemPtr.second, elementType, length, arraySize))));
+        if (!pairItBool.second)
+        {
+            throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+        }
+    }
+    else
+    {
+        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, ArenaId::notGCMem, MemPtr(), elementType, length, arraySize))));
+        if (!pairItBool.second)
+        {
+            throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+        }
     }
     a.SetField(handle, 2);
 }
@@ -437,6 +504,20 @@ void ManagedMemoryPool::SetArrayElement(ObjectReference reference, int32_t index
     else
     {
         throw std::runtime_error("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
+    }
+}
+
+MemPtr ManagedMemoryPool::GetMemPtr(AllocationHandle handle) const
+{
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        return allocation->GetMemPtr();
+    }
+    else
+    {
+        throw std::runtime_error("allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
 }
 

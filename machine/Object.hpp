@@ -222,6 +222,18 @@ private:
     int32_t numElements;
 };
 
+class StringCharacters : public ManagedAllocation
+{
+public:
+    StringCharacters(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, int32_t numChars_, uint64_t size_);
+    AllocationHandle Handle() const { return handle; }
+    IntegralValue GetChar(int32_t index) const;
+    int32_t NumChars() const { return numChars; }
+private:
+    AllocationHandle handle;
+    int32_t numChars;
+};
+
 class ManagedMemoryPool
 {
 public:
@@ -232,13 +244,15 @@ public:
     Object& GetObject(ObjectReference reference);
     IntegralValue GetField(ObjectReference reference, int32_t fieldIndex);
     void SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue);
-    ObjectReference CreateStringFromLiteral(const char32_t* strLit, uint64_t len);
-    int32_t GetStringLength(ObjectReference str);
+    AllocationHandle CreateStringCharsFromLiteral(const char32_t* strLit, uint32_t len);
+    std::pair<AllocationHandle, int32_t> CreateStringCharsFromCharArray(Thread& thread, ObjectReference charArray);
+    IntegralValue GetStringChar(ObjectReference str, int32_t index);
     void AllocateArrayElements(Thread& thread, ObjectReference arr, Type* elementType, int32_t length);
     IntegralValue GetArrayElement(ObjectReference reference, int32_t index);
     void SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue);
     void ResetObjectsLiveFlag();
     void MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena);
+    MemPtr GetMemPtr(AllocationHandle handle) const;
 private:
     Machine& machine;
     std::unordered_map<AllocationHandle, std::unique_ptr<ManagedAllocation>, AllocationHandleHash> allocations;

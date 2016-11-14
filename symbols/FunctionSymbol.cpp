@@ -329,7 +329,7 @@ void FunctionSymbol::CreateMachineFunction()
     int32_t numParameters = int32_t(parameters.size());
     machineFunction->SetNumParameters(numParameters);
     machineFunction->AddInst(GetAssembly()->GetMachine().CreateInst("receive"));
-    if (IsExternal())
+    if (IsExternal() && !IsDerived())
     {
         Assert(vmFunctionName.Value().AsStringLiteral() != nullptr, "vm function name not set");
         std::unique_ptr<Instruction> vmCallInst = GetAssembly()->GetMachine().CreateInst("callvm");
@@ -423,7 +423,7 @@ void ConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     }
     if ((specifiers & Specifiers::external_) != Specifiers::none)
     {
-        throw Exception("constructor constructor cannot be external", GetSpan());
+        SetExternal();
     }
 }
 
@@ -540,6 +540,16 @@ void ConstructorSymbol::CreateMachineFunction()
         MachineFunction()->AddInst(std::move(upCast));
         std::vector<GenObject*> objects;
         containingClass->BaseClass()->DefaultConstructorSymbol()->GenerateCall(GetAssembly()->GetMachine(), *GetAssembly(), *MachineFunction(), objects, 1);
+    }
+    if (IsExternal())
+    {
+        Assert(VmFunctionName().Value().AsStringLiteral() != nullptr, "vm function name not set");
+        std::unique_ptr<Instruction> vmCallInst = GetAssembly()->GetMachine().CreateInst("callvm");
+        ConstantPool& constantPool = GetAssembly()->GetConstantPool();
+        ConstantId vmFunctionNameId = constantPool.GetIdFor(VmFunctionName());
+        Assert(vmFunctionNameId != noConstantId, "got no constant id");
+        vmCallInst->SetIndex(int32_t(vmFunctionNameId.Value()));
+        MachineFunction()->AddInst(std::move(vmCallInst));
     }
 }
 

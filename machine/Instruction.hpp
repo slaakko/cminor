@@ -687,11 +687,11 @@ public:
     void Execute(Frame& frame) override;
 };
 
-class LengthStringInst : public Instruction
+class LoadStringCharInst : public Instruction
 {
 public:
-    LengthStringInst();
-    Instruction* Clone() const override { return new LengthStringInst(*this); }
+    LoadStringCharInst();
+    Instruction* Clone() const override { return new LoadStringCharInst(*this); }
     void Execute(Frame& frame) override;
 };
 
@@ -732,6 +732,22 @@ class DownCastInst : public TypeInstruction
 public:
     DownCastInst();
     Instruction* Clone() const override { return new DownCastInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class EqualObjectNullInst : public Instruction
+{
+public:
+    EqualObjectNullInst();
+    Instruction* Clone() const override { return new EqualObjectNullInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class EqualNullObjectInst : public Instruction
+{
+public:
+    EqualNullObjectInst();
+    Instruction* Clone() const override { return new EqualNullObjectInst(*this); }
     void Execute(Frame& frame) override;
 };
 

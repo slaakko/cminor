@@ -1070,25 +1070,33 @@ void StrLitToStringInst::Execute(Frame& frame)
 {
     IntegralValue value = frame.OpStack().Pop();
     Assert(value.GetType() == ValueType::stringLiteral, "string literal expected");
-    ConstantId stringConstantId = frame.GetConstantPool().GetIdFor(Constant(value));
-    Assert(stringConstantId != noConstantId, "id for string constant not found");
     const char32_t* strLit = value.AsStringLiteral();
-    uint64_t len = frame.GetConstantPool().GetStringLength(stringConstantId);
-    AllocationHandle handle = frame.GetManagedMemoryPool().CreateStringFromLiteral(strLit, len);
-    frame.OpStack().Push(handle);
+    uint32_t len = static_cast<uint32_t>(StringLen(strLit));
+    Type* type = TypeTable::Instance().GetType(StringPtr(U"System.String"));
+    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+    Assert(objectType, "object type expected");
+    ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
+    Object& o = frame.GetManagedMemoryPool().GetObject(objectReference);
+    AllocationHandle charsHandle = frame.GetManagedMemoryPool().CreateStringCharsFromLiteral(strLit, len);
+    ClassData* classData = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String"));
+    o.SetField(IntegralValue(classData), 0);
+    o.SetField(IntegralValue(static_cast<int32_t>(len), ValueType::intType), 1);
+    o.SetField(charsHandle, 2);
+    frame.OpStack().Push(objectReference);
 }
 
-LengthStringInst::LengthStringInst() : Instruction("lens")
+LoadStringCharInst::LoadStringCharInst() : Instruction("loadstringchar")
 {
 }
 
-void LengthStringInst::Execute(Frame& frame)
+void LoadStringCharInst::Execute(Frame& frame)
 {
-    IntegralValue value = frame.OpStack().Pop();
-    Assert(value.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference str(value.Value());
-    int32_t len = frame.GetManagedMemoryPool().GetStringLength(str);
-    frame.OpStack().Push(IntegralValue(len, ValueType::intType));
+    IntegralValue index = frame.OpStack().Pop();
+    Assert(index.GetType() == ValueType::intType, "int expected");
+    IntegralValue str = frame.OpStack().Pop();
+    Assert(str.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference strReference(str.Value());
+    frame.OpStack().Push(frame.GetManagedMemoryPool().GetStringChar(strReference, index.AsInt()));
 }
 
 DupInst::DupInst() : Instruction("dup")
@@ -1175,6 +1183,34 @@ void DownCastInst::Execute(Frame& frame)
         castedObject.SetType(objectType);
         frame.OpStack().Push(casted);
     }
+}
+
+EqualObjectNullInst::EqualObjectNullInst() : Instruction("equalonull")
+{
+}
+
+void EqualObjectNullInst::Execute(Frame& frame)
+{
+    IntegralValue rightValue = frame.OpStack().Pop();
+    IntegralValue leftValue = frame.OpStack().Pop();
+    Assert(leftValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference left(leftValue.Value());
+    bool result = left.IsNull();
+    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
+}
+
+EqualNullObjectInst::EqualNullObjectInst() : Instruction("equalnullo")
+{
+}
+
+void EqualNullObjectInst::Execute(Frame& frame)
+{
+    IntegralValue rightValue = frame.OpStack().Pop();
+    IntegralValue leftValue = frame.OpStack().Pop();
+    Assert(rightValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference right(rightValue.Value());
+    bool result = right.IsNull();
+    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
 }
 
 AllocateArrayElementsInst::AllocateArrayElementsInst() : TypeInstruction("allocelems")

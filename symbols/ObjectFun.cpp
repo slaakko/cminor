@@ -114,6 +114,36 @@ void ObjectNullAssignment::GenerateCall(Machine& machine, Assembly& assembly, Fu
     target->GenStore(machine, function);
 }
 
+ObjectNullEqual::ObjectNullEqual(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
+{
+}
+
+void ObjectNullEqual::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
+{
+    std::unique_ptr<Instruction> inst = machine.CreateInst("equalonull");
+    Assert(objects.size() == 2, "null equality comparison needs two objects");
+    GenObject* left = objects[0];
+    left->GenLoad(machine, function);
+    GenObject* right = objects[1];
+    right->GenLoad(machine, function);
+    function.AddInst(std::move(inst));
+}
+
+NullObjectEqual::NullObjectEqual(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
+{
+}
+
+void NullObjectEqual::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
+{
+    std::unique_ptr<Instruction> inst = machine.CreateInst("equalnullo");
+    Assert(objects.size() == 2, "null equality comparison needs two objects");
+    GenObject* left = objects[0];
+    left->GenLoad(machine, function);
+    GenObject* right = objects[1];
+    right->GenLoad(machine, function);
+    function.AddInst(std::move(inst));
+}
+
 NullToObjectConversion::NullToObjectConversion(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
 {
     SetConversionFun();
@@ -210,6 +240,46 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
     returnFun->AddSymbol(std::unique_ptr<Symbol>(valueParam));
     returnFun->ComputeName();
     classOrInterfaceType->AddSymbol(std::unique_ptr<FunctionSymbol>(returnFun));
+
+    assembly.GetSymbolTable().BeginNamespace(StringPtr(U"System"), Span());
+    Constant opEqualGroupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"operator==")));
+
+    ObjectNullEqual* objectNullEqual = new ObjectNullEqual(Span(), constantPool.GetEmptyStringConstant());
+    objectNullEqual->SetAssembly(&assembly);
+    objectNullEqual->SetGroupNameConstant(opEqualGroupName);
+    objectNullEqual->SetType(classOrInterfaceType);
+    TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"System.Boolean");
+    objectNullEqual->SetReturnType(boolType);
+    ParameterSymbol* thisParam6 = new ParameterSymbol(Span(), thisParamName);
+    thisParam6->SetAssembly(&assembly);
+    thisParam6->SetType(classOrInterfaceType);
+    ParameterSymbol* thatParam6 = new ParameterSymbol(Span(), thatParamName);
+    thatParam6->SetAssembly(&assembly);
+    thatParam6->SetType(nullRefType);
+    objectNullEqual->AddSymbol(std::unique_ptr<Symbol>(thisParam6));
+    objectNullEqual->AddSymbol(std::unique_ptr<Symbol>(thatParam6));
+    objectNullEqual->ComputeName();
+
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<Symbol>(objectNullEqual));
+
+    NullObjectEqual* nullObjectEqual = new NullObjectEqual(Span(), constantPool.GetEmptyStringConstant());
+    nullObjectEqual->SetAssembly(&assembly);
+    nullObjectEqual->SetGroupNameConstant(opEqualGroupName);
+    nullObjectEqual->SetType(classOrInterfaceType);
+    nullObjectEqual->SetReturnType(boolType);
+    ParameterSymbol* thisParam7 = new ParameterSymbol(Span(), thisParamName);
+    thisParam7->SetAssembly(&assembly);
+    thisParam7->SetType(nullRefType);
+    ParameterSymbol* thatParam7 = new ParameterSymbol(Span(), thatParamName);
+    thatParam7->SetAssembly(&assembly);
+    thatParam7->SetType(classOrInterfaceType);
+    nullObjectEqual->AddSymbol(std::unique_ptr<Symbol>(thisParam7));
+    nullObjectEqual->AddSymbol(std::unique_ptr<Symbol>(thatParam7));
+    nullObjectEqual->ComputeName();
+
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<Symbol>(nullObjectEqual));
+
+    assembly.GetSymbolTable().EndNamespace();
 
     if (classOrInterfaceType->FullName() == U"System.Object")
     {

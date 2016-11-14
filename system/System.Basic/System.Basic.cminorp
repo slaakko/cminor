@@ -4,5 +4,6 @@ source <Algorithm.cminor>;
 source <Array.cminor>;
 source <BoxedTypes.cminor>;
 source <Enumerator.cminor>;
+source <List.cminor>;
 source <Object.cminor>;
 source <String.cminor>;

@@ -46,7 +46,7 @@ enum class SymbolType : uint8_t
     parameterSymbol, localVariableSymbol, memberVariableSymbol, propertySymbol, propertyGetterSymbol, propertySetterSymbol, indexerSymbol, indexerGetterSymbol, indexerSetterSymbol, 
     indexerGroupSymbol, constantSymbol, namespaceSymbol, declarationBlock, typeParameterSymbol, boundTypeParameterSymbol, classTemplateSpecializationSymbol,
     basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, objectDefaultInit, objectCopyInit, objectNullInit, 
-    objectAssignment, objectNullAssignment, nullToObjectConversion, classTypeConversion, classToInterfaceConversion,
+    objectAssignment, objectNullAssignment, objectNullEqual, nullObjectEqual, nullToObjectConversion, classTypeConversion, classToInterfaceConversion,
     maxSymbol
 };
 

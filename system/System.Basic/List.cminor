@@ -1,0 +1,99 @@
+using System;
+
+namespace System.Collections
+{
+    public class List<T>
+    {
+        public List()
+        {
+            this.items = null;
+            this.count = 0;
+        }
+        public List(int capacity)
+        {
+            if (capacity < 0)
+            {
+                // throw ArgumentOutOfRangeException
+            }
+            else 
+            {
+                this.items = new T[capacity];
+            }
+            this.count = 0;
+        }
+        public void Add(T item)
+        {
+            int n = 0;
+            if (items != null)
+            {
+                n = items.Length;
+            }
+            if (count >= n)
+            {
+                n = 2 * n;
+                if (n < 4)
+                {
+                    n = 4;
+                }
+                T[] newItems = new T[n];
+                for (int i = 0; i < count; ++i)
+                {
+                    newItems[i] = items[i];
+                }
+                items = newItems;
+            }
+            items[count] = item;
+            ++count;
+        }
+        public bool Remove(T item)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                if (items[i] == item)
+                {
+                    RemoveAt(i);
+                    return true;
+                }
+            }
+            return false;
+        }
+        public void RemoveAt(int index)
+        {
+            int n = count - 1;
+            for (int i = index; i < n; ++i)
+            {
+                items[i] = items[i + 1];
+            }
+            --count;
+        }
+        public void Clear()
+        {
+            items = null;
+            count = 0;
+        }
+        public T[] ToArray()
+        {
+            T[] arr = new T[count];
+            for (int i = 0; i < count; ++i)
+            {
+                arr[i] = items[i];
+            }
+            return arr;
+        }
+        public T this[int index]
+        {
+            get { return items[index]; }
+            set { items[index] = value; }
+        }
+        public int Count
+        {
+            get { return count; }
+        }
+        public int Capacity
+        {
+            get { if (items == null) return 0; else return items.Length; }
+        }
+        private T[] items;
+        private int count;
+    }
+}

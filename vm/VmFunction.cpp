@@ -33,10 +33,10 @@ void VmSystemObjectToString::Execute(Frame& frame)
     Assert(classDataValue.GetType() == ValueType::classDataPtr, "class data pointer expected");
     ClassData* classData = classDataValue.AsClassDataPtr();
     StringPtr name = classData->Type()->Name();
+    StrLitToStringInst strLit2StringInst;
     const char32_t* nameLiteral = name.Value();
-    uint64_t len = StringLen(nameLiteral);
-    AllocationHandle stringReference = frame.GetManagedMemoryPool().CreateStringFromLiteral(nameLiteral, len);
-    frame.OpStack().Push(stringReference);
+    frame.OpStack().Push(IntegralValue(nameLiteral));
+    strLit2StringInst.Execute(frame);
 }
 
 class VmSystemObjectEqual : public VmFunction
@@ -127,27 +127,34 @@ void VmSystemObjectLess::Execute(Frame& frame)
     frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
 }
 
-class VmSystemStringLength : public VmFunction
+class VmSystemStringConstructorCharArray : public VmFunction
 {
 public:
-    VmSystemStringLength(ConstantPool& constantPool);
+    VmSystemStringConstructorCharArray(ConstantPool& constantPool);
     void Execute(Frame& frame) override;
 };
 
-VmSystemStringLength::VmSystemStringLength(ConstantPool& constantPool)
+VmSystemStringConstructorCharArray::VmSystemStringConstructorCharArray(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.String.Length"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"System.String.Constructor.CharArray"));
     SetName(name);
     VmFunctionTable::Instance().RegisterVmFunction(this);
 }
 
-void VmSystemStringLength::Execute(Frame& frame)
+void VmSystemStringConstructorCharArray::Execute(Frame& frame)
 {
-    IntegralValue value = frame.Local(0).GetValue();
-    Assert(value.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference stringReference(value.Value()); 
-    int32_t len = frame.GetManagedMemoryPool().GetStringLength(stringReference);
-    frame.OpStack().Push(IntegralValue(len, ValueType::intType));
+    IntegralValue stringValue = frame.Local(0).GetValue();
+    Assert(stringValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference stringRef(stringValue.Value());
+    IntegralValue charArrayValue = frame.Local(1).GetValue();
+    Assert(charArrayValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference charArrayRef(charArrayValue.Value());
+    std::pair<AllocationHandle, int32_t> stringCharactersHandleStringSLengthPair = frame.GetManagedMemoryPool().CreateStringCharsFromCharArray(frame.GetThread(), charArrayRef);
+    AllocationHandle stringCharactersHandle = stringCharactersHandleStringSLengthPair.first;
+    int32_t stringLength = stringCharactersHandleStringSLengthPair.second;
+    Object& str = frame.GetManagedMemoryPool().GetObject(stringRef);
+    str.SetField(IntegralValue(stringLength, ValueType::intType), 1);
+    str.SetField(IntegralValue(stringCharactersHandle.Value(), ValueType::allocationHandle), 2);
 }
 
 class VmFunctionPool
@@ -182,8 +189,8 @@ void VmFunctionPool::Done()
 void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
 {
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectToString(constantPool)));
-    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemStringLength(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectEqual(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemStringConstructorCharArray(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool) 
@@ -196,6 +203,5 @@ void DoneVmFunctions()
 {
     VmFunctionPool::Done();
 }
-
 
 } } // namespace cminor::vm

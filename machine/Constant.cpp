@@ -43,7 +43,6 @@ ConstantPool::ConstantPool() : emptyStringConstantId()
     emptyStringConstantId = NextFreeConstantId();
     constants.push_back(emptyStringConstant);
     stringIdMap[StringPtr(u.c_str())] = emptyStringConstantId;
-    stringLengths.push_back(0);
 }
 
 ConstantId ConstantPool::GetIdFor(Constant constant)
@@ -121,7 +120,6 @@ ConstantId ConstantPool::Install(Constant constant)
             constants.push_back(myConstant);
             constantIdMap[constant] = id;
             stringIdMap[StringPtr(u.c_str())] = id;
-            stringLengths.push_back(u.length());
             return id;
         }
     }
@@ -161,7 +159,6 @@ void ConstantPool::Read(Reader& reader)
             stringIdMap[StringPtr(u.c_str())] = id;
             constant.SetValue(IntegralValue(u.c_str()));
             constantIdMap[constant] = id;
-            stringLengths.push_back(u.length());
         }
         else
         {

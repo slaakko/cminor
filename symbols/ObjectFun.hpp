@@ -52,6 +52,22 @@ public:
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
+class ObjectNullEqual : public BasicTypeFun
+{
+public:
+    ObjectNullEqual(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::objectNullEqual; }
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
+};
+
+class NullObjectEqual : public BasicTypeFun
+{
+public:
+    NullObjectEqual(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::nullObjectEqual; }
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
+};
+
 class NullToObjectConversion : public BasicTypeFun
 {
 public:

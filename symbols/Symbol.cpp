@@ -25,8 +25,12 @@ const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
 {
     "boolTypeSymbol", "charTypeSymbol", "voidTypeSymbol", "sbyteTypeSymbol", "byteTypeSymbol", "shortTypeSymbol", "ushortTypeSymbol", "intTypeSymbol", "uintTypeSymbol", "longTypeSymbol", 
     "ulongTypeSymbol", "floatTypeSymbol", "doubleTypeSymbol", "nullReferenceTypeSymbol", 
-    "classTypeSymbol", "stringTypeSymbol", "functionSymbol", "functionGroupSymbol", "parameterSymbol", "localVariableSymbol", "memberVariableSymbol", "constantSymbol", "namespaceSymbol",
-    "declarationBlock", "basicTypeDefaultConstructor", "basicTypeInitConstructor", "basicTypeAssignment", "basicTypeReturn", "basicTypeConversion", "basicTypeUnaryOp", "basicTypBinaryOp"
+    "classTypeSymbol", "arrayTypeSymbol", "interfaceTypeSymbol", "functionSymbol", "staticConstructorSymbol", "constructorSymbol", "arraySizeConstructorSymbol", "memberFunctionSymbol", 
+    "functionGroupSymbol", "parameterSymbol", "localVariableSymbol", "memberVariableSymbol", "propertySymbol", "propertyGetterSymbol", "propertySetterSymbol", "indexerSymbol", 
+    "indexerGetterSymbol", "indexerSetterSymbol", "indexerGroupSymbol", "constantSymbol", "namespaceSymbol",
+    "declarationBlock", "typeParameterSymbol", "boundTypeParameterSymbol", "classTemplateSpecializationSymbol", "basicTypeDefaultInit", "basicTypeCopyInit", "basicTypeAssignment", 
+    "basicTypeReturn", "basicTypeConversion", "basicTypeUnaryOp", "basicTypBinaryOp", "objectDefaultInit", "objectCopyInit", "objectNullInit", "objectAssignment", "objectNullAssignment",
+    "objectNullEqual", "nullObjectEqual", "nullToObjectConversion", "classTypeConversion", "classToInterfaceConversion"
 };
 
 std::string SymbolTypeStr(SymbolType symbolType)
@@ -1964,6 +1968,7 @@ void ClassTemplateSpecializationSymbol::ReadGlobalNs()
     Assert(globalNsPos != -1, "global ns pos not valid");
     Assembly* nodeAssembly = AssemblyTable::Instance().GetAssembly(assemblyId);
     AstReader reader(nodeAssembly->FilePath());
+    reader.SetConstantPool(&nodeAssembly->GetConstantPool());
     reader.Skip(globalNsPos);
     Node* node = reader.GetNode();
     NamespaceNode* ns = dynamic_cast<NamespaceNode*>(node);

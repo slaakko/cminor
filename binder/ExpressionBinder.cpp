@@ -795,92 +795,117 @@ void ExpressionBinder::Visit(IndexingNode& indexingNode)
     }
     else if (ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(subjectType))
     {
-        Symbol* symbol = classTypeSymbol->GetContainerScope()->Lookup(StringPtr(U"@indexers"));
-        if (symbol)
+        if (classTypeSymbol->FullName() == U"System.String")
         {
-            IndexerGroupSymbol* indexerGroupSymbol = dynamic_cast<IndexerGroupSymbol*>(symbol);
-            Assert(indexerGroupSymbol, "indexer group symbol expected");
-            std::vector<IndexerSymbol*> matchedIndexers;
-            std::vector<FunctionSymbol*> conversions;
-            for (IndexerSymbol* indexer : indexerGroupSymbol->Indexers())
+            if (lvalue)
             {
-                TypeSymbol* indexType = indexer->GetIndexType();
-                if (indexType != index->GetType())
-                {
-                    FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(index->GetType(), indexType);
-                    if (conversionFun)
-                    {
-                        matchedIndexers.push_back(indexer);
-                        conversions.push_back(conversionFun);
-                    }
-                }
-                else
-                {
-                    matchedIndexers.push_back(indexer);
-                    conversions.push_back(nullptr);
-                }
+                throw Exception("string indexer is read-only", span);
             }
-            if (matchedIndexers.empty())
+            TypeSymbol* intType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int32");
+            if (index->GetType() != intType)
             {
-                throw Exception("indexer resolution failed: no implicit conversion exists for index type '" + ToUtf8(index->GetType()->FullName()) + "'. " +
-                    std::to_string(indexerGroupSymbol->Indexers().size()) + " indexers examined.", indexingNode.GetSpan());
-            }
-            else if (matchedIndexers.size() > 1)
-            {
-                throw Exception("indexer resolution failed: more than one possible indexer exists for index type '" + ToUtf8(index->GetType()->FullName()) + "'. " +
-                    std::to_string(indexerGroupSymbol->Indexers().size()) + " indexers examined.", indexingNode.GetSpan());
-            }
-            else
-            {
-                IndexerSymbol* indexerSymbol = matchedIndexers[0];
-                if (!lvalue)
-                {
-                    if (!indexerSymbol->Getter())
-                    {
-                        throw Exception("indexer '" + ToUtf8(indexerSymbol->FullName() + U"[" + indexerSymbol->GetIndexType()->FullName()) + "]' is write-only", span, indexerSymbol->GetSpan());
-                    }
-                    else
-                    {
-                        if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(indexerSymbol->ContainingClass()))
-                        {
-                            if (!indexerSymbol->Getter()->IsInstantiated())
-                            {
-                                indexerSymbol->Getter()->SetInstantiationRequested();
-                                boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
-                            }
-                        }
-                    }
-                }
-                else 
-                {
-                    if (!indexerSymbol->Setter())
-                    {
-                        throw Exception("indexer '" + ToUtf8(indexerSymbol->FullName() + U"[" + indexerSymbol->GetIndexType()->FullName()) + "]' is read-only", span, indexerSymbol->GetSpan());
-                    }
-                    else
-                    {
-                        if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(indexerSymbol->ContainingClass()))
-                        {
-                            if (!indexerSymbol->Setter()->IsInstantiated())
-                            {
-                                indexerSymbol->Setter()->SetInstantiationRequested();
-                                boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
-                            }
-                        }
-                    }
-                }
-                FunctionSymbol* conversionFun = conversions[0];
+                FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(index->GetType(), intType);
                 if (conversionFun)
                 {
                     index = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(index), conversionFun);
                 }
-                expression.reset(new BoundIndexer(boundCompileUnit.GetAssembly(), indexerSymbol->GetValueType(), indexerSymbol, std::unique_ptr<BoundExpression>(subject), 
-                    std::unique_ptr<BoundExpression>(index)));
+                else
+                {
+                    throw Exception("no implicit conversion from '" + ToUtf8(index->GetType()->FullName()) + "' to '" + ToUtf8(intType->FullName()) + " exists for string index", indexingNode.Index()->GetSpan());
+                }
             }
+            TypeSymbol* charType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Char");
+            expression.reset(new BoundStringChar(boundCompileUnit.GetAssembly(), charType, std::unique_ptr<BoundExpression>(subject), std::unique_ptr<BoundExpression>(index)));
         }
         else
         {
-            throw Exception("class '" + ToUtf8(classTypeSymbol->FullName()) + "' does not contain any indexers", indexingNode.GetSpan());
+            Symbol* symbol = classTypeSymbol->GetContainerScope()->Lookup(StringPtr(U"@indexers"));
+            if (symbol)
+            {
+                IndexerGroupSymbol* indexerGroupSymbol = dynamic_cast<IndexerGroupSymbol*>(symbol);
+                Assert(indexerGroupSymbol, "indexer group symbol expected");
+                std::vector<IndexerSymbol*> matchedIndexers;
+                std::vector<FunctionSymbol*> conversions;
+                for (IndexerSymbol* indexer : indexerGroupSymbol->Indexers())
+                {
+                    TypeSymbol* indexType = indexer->GetIndexType();
+                    if (indexType != index->GetType())
+                    {
+                        FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(index->GetType(), indexType);
+                        if (conversionFun)
+                        {
+                            matchedIndexers.push_back(indexer);
+                            conversions.push_back(conversionFun);
+                        }
+                    }
+                    else
+                    {
+                        matchedIndexers.push_back(indexer);
+                        conversions.push_back(nullptr);
+                    }
+                }
+                if (matchedIndexers.empty())
+                {
+                    throw Exception("indexer resolution failed: no implicit conversion exists for index type '" + ToUtf8(index->GetType()->FullName()) + "'. " +
+                        std::to_string(indexerGroupSymbol->Indexers().size()) + " indexers examined.", indexingNode.GetSpan());
+                }
+                else if (matchedIndexers.size() > 1)
+                {
+                    throw Exception("indexer resolution failed: more than one possible indexer exists for index type '" + ToUtf8(index->GetType()->FullName()) + "'. " +
+                        std::to_string(indexerGroupSymbol->Indexers().size()) + " indexers examined.", indexingNode.GetSpan());
+                }
+                else
+                {
+                    IndexerSymbol* indexerSymbol = matchedIndexers[0];
+                    if (!lvalue)
+                    {
+                        if (!indexerSymbol->Getter())
+                        {
+                            throw Exception("indexer '" + ToUtf8(indexerSymbol->FullName() + U"[" + indexerSymbol->GetIndexType()->FullName()) + "]' is write-only", span, indexerSymbol->GetSpan());
+                        }
+                        else
+                        {
+                            if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(indexerSymbol->ContainingClass()))
+                            {
+                                if (!indexerSymbol->Getter()->IsInstantiated())
+                                {
+                                    indexerSymbol->Getter()->SetInstantiationRequested();
+                                    boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (!indexerSymbol->Setter())
+                        {
+                            throw Exception("indexer '" + ToUtf8(indexerSymbol->FullName() + U"[" + indexerSymbol->GetIndexType()->FullName()) + "]' is read-only", span, indexerSymbol->GetSpan());
+                        }
+                        else
+                        {
+                            if (ClassTemplateSpecializationSymbol* classTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(indexerSymbol->ContainingClass()))
+                            {
+                                if (!indexerSymbol->Setter()->IsInstantiated())
+                                {
+                                    indexerSymbol->Setter()->SetInstantiationRequested();
+                                    boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
+                                }
+                            }
+                        }
+                    }
+                    FunctionSymbol* conversionFun = conversions[0];
+                    if (conversionFun)
+                    {
+                        index = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(index), conversionFun);
+                    }
+                    expression.reset(new BoundIndexer(boundCompileUnit.GetAssembly(), indexerSymbol->GetValueType(), indexerSymbol, std::unique_ptr<BoundExpression>(subject),
+                        std::unique_ptr<BoundExpression>(index)));
+                }
+            }
+            else
+            {
+                throw Exception("class '" + ToUtf8(classTypeSymbol->FullName()) + "' does not contain any indexers", indexingNode.GetSpan());
+            }
         }
     }
     else

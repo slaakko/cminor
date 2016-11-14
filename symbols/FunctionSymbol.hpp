@@ -81,7 +81,9 @@ public:
     virtual void CreateMachineFunction();
     void EmplaceType(TypeSymbol* type, int index) override;
     void SetVmFunctionName(StringPtr vmFunctionName_);
+    Constant VmFunctionName() const { return vmFunctionName; }
     FunctionSymbolFlags GetFlags() const { return flags; }
+    virtual bool IsDerived() const { return false; }
 private:
     Constant groupName;
     Constant vmFunctionName;
@@ -101,6 +103,7 @@ public:
     void SetSpecifiers(Specifiers specifiers);
     utf32_string FullParsingName() const override;
     utf32_string FriendlyName() const override;
+    bool IsDerived() const override { return true; }
 };
 
 enum class ConstructorSymbolFlags : uint8_t
@@ -138,6 +141,7 @@ public:
     void AddTo(ClassTypeSymbol* classTypeSymbol) override;
     void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol) override;
     void Merge(const ConstructorSymbol& that);
+    bool IsDerived() const override { return true; }
 private:
     ConstructorSymbolFlags flags;
     bool GetFlag(ConstructorSymbolFlags flag) const { return (flags & flag) != ConstructorSymbolFlags::none; }
