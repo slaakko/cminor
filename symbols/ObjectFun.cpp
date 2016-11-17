@@ -554,6 +554,12 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
 
         assembly.GetSymbolTable().EndNamespace();
     }
+    else if (classOrInterfaceType->FullName() == U"System.String")
+    {
+        ClassTypeSymbol* stringTypeSymbol = dynamic_cast<ClassTypeSymbol*>(classOrInterfaceType);
+        Assert(stringTypeSymbol, "System.String expected");
+        CreateStringLiteralToStringConversion(assembly, stringTypeSymbol);
+    }
 }
 
 } } // namespace cminor::symbols

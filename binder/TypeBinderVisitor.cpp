@@ -6,8 +6,10 @@
 #include <cminor/binder/TypeBinderVisitor.hpp>
 #include <cminor/binder/BoundCompileUnit.hpp>
 #include <cminor/binder/TypeResolver.hpp>
+#include <cminor/binder/Evaluator.hpp>
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/symbols/FunctionSymbol.hpp>
+#include <cminor/symbols/ConstantSymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/IndexerSymbol.hpp>
@@ -15,7 +17,7 @@
 
 namespace cminor { namespace binder {
 
-TypeBinderVisitor::TypeBinderVisitor(BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), containerScope(nullptr), instantiateRequested(false)
+TypeBinderVisitor::TypeBinderVisitor(BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), containerScope(nullptr), instantiateRequested(false), enumType(nullptr)
 {
 }
 
@@ -98,6 +100,55 @@ void TypeBinderVisitor::Visit(FunctionNode& functionNode)
         }
     }
     containerScope = prevContainerScope;
+}
+
+void TypeBinderVisitor::Visit(ConstantNode& constantNode)
+{
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(constantNode);
+    ConstantSymbol* constantSymbol = dynamic_cast<ConstantSymbol*>(symbol);
+    Assert(constantSymbol, "constant symbol expected");
+    constantSymbol->SetSpecifiers(constantNode.GetSpecifiers());
+    TypeSymbol* type = ResolveType(boundCompileUnit, containerScope, constantNode.TypeExpr());
+    constantSymbol->SetType(type);
+    Value* value = Evaluate(GetValueKindFor(type->GetSymbolType(), constantNode.GetSpan()), false, containerScope, boundCompileUnit, constantNode.Value());
+    constantSymbol->SetValue(value);
+}
+
+void TypeBinderVisitor::Visit(EnumTypeNode& enumTypeNode)
+{
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(enumTypeNode);
+    EnumTypeSymbol* enumTypeSymbol = dynamic_cast<EnumTypeSymbol*>(symbol);
+    EnumTypeSymbol* prevEnumType = enumType;
+    enumType = enumTypeSymbol;
+    Assert(enumTypeSymbol, "enum type symbol expected");
+    enumTypeSymbol->SetSpecifiers(enumTypeNode.GetSpecifiers());
+    TypeSymbol* underlyingType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int32");
+    if (enumTypeNode.GetUnderlyingType())
+    {
+        underlyingType = ResolveType(boundCompileUnit, containerScope, enumTypeNode.GetUnderlyingType());
+    }
+    enumTypeSymbol->SetUnderlyingType(underlyingType);
+    ContainerScope* prevContainerScope = containerScope;
+    containerScope = enumTypeSymbol->GetContainerScope();
+    int n = enumTypeNode.Constants().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        EnumConstantNode* enumConstantNode = enumTypeNode.Constants()[i];
+        enumConstantNode->Accept(*this);
+    }
+    containerScope = prevContainerScope;
+    enumType = prevEnumType;
+}
+
+void TypeBinderVisitor::Visit(EnumConstantNode& enumConstantNode)
+{
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(enumConstantNode);
+    EnumConstantSymbol* enumConstantSymbol = dynamic_cast<EnumConstantSymbol*>(symbol);
+    Assert(enumConstantSymbol, "enum constant expected");
+    enumConstantSymbol->SetEvaluating();
+    Value* value = Evaluate(GetValueKindFor(enumType->GetUnderlyingType()->GetSymbolType(), enumConstantNode.GetSpan()), false, containerScope, boundCompileUnit, enumConstantNode.GetValue());
+    enumConstantSymbol->SetValue(value);
+    enumConstantSymbol->ResetEvaluating();
 }
 
 void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& classNode)

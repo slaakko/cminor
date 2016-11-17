@@ -430,6 +430,95 @@ IntegralValue ManagedMemoryPool::GetStringChar(ObjectReference str, int32_t inde
     }
 }
 
+std::string ManagedMemoryPool::GetUtf8String(ObjectReference str)
+{
+    if (str.IsNull())
+    {
+        throw std::runtime_error("cannot index null string");
+    }
+    Object& o = GetObject(str);
+    IntegralValue charsHandleValue = o.GetField(2);
+    Assert(charsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
+    AllocationHandle handle(charsHandleValue.Value());
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        StringCharacters* chars = dynamic_cast<StringCharacters*>(allocation);
+        Assert(chars, "string characters expected");
+        utf32_string s;
+        int32_t n = chars->NumChars();
+        for (int32_t i = 0; i < n; ++i)
+        {
+            s.append(1, chars->GetChar(i).AsChar());
+        }
+        return ToUtf8(s);
+    }
+    else
+    {
+        throw std::runtime_error("string characters allocation with handle " + std::to_string(handle.Value()) + " not found");
+    }
+}
+
+std::vector<uint8_t> ManagedMemoryPool::GetBytes(ObjectReference arr)
+{
+    std::vector<uint8_t> bytes;
+    if (arr.IsNull())
+    {
+        throw std::runtime_error("cannot get bytes of null array");
+    }
+    Object& a = GetObject(arr);
+    IntegralValue elementsHandleValue = a.GetField(2);
+    Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
+    AllocationHandle handle(elementsHandleValue.Value());
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
+        Assert(elements, "array elements expected");
+        Assert(elements->GetElementType() == TypeTable::Instance().GetType(StringPtr(U"System.UInt8")), "byte array expected");
+        int32_t n = elements->NumElements();
+        for (int32_t i = 0; i < n; ++i)
+        {
+            bytes.push_back(elements->GetElement(i).AsByte());
+        }
+        return bytes;
+    }
+    else
+    {
+        throw std::runtime_error("array elements allocation with handle " + std::to_string(handle.Value()) + " not found");
+    }
+}
+
+void ManagedMemoryPool::SetBytes(ObjectReference arr, const std::vector<uint8_t>& bytes, int32_t count)
+{
+    if (arr.IsNull())
+    {
+        throw std::runtime_error("cannot get bytes of null array");
+    }
+    Object& a = GetObject(arr);
+    IntegralValue elementsHandleValue = a.GetField(2);
+    Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
+    AllocationHandle handle(elementsHandleValue.Value());
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
+        Assert(elements, "array elements expected");
+        Assert(elements->GetElementType() == TypeTable::Instance().GetType(StringPtr(U"System.UInt8")), "byte array expected");
+        for (int32_t i = 0; i < count; ++i)
+        {
+            elements->SetElement(IntegralValue(bytes[i], ValueType::byteType), i);
+        }
+    }
+    else
+    {
+        throw std::runtime_error("array elements allocation with handle " + std::to_string(handle.Value()) + " not found");
+    }
+}
+
 void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference arr, Type* elementType, int32_t length)
 {
     if (length < 0)
@@ -500,6 +589,30 @@ void ManagedMemoryPool::SetArrayElement(ObjectReference reference, int32_t index
         ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
         Assert(elements, "array elements expected");
         elements->SetElement(elementValue, index);
+    }
+    else
+    {
+        throw std::runtime_error("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
+    }
+}
+
+int32_t ManagedMemoryPool::GetNumArrayElements(ObjectReference arr)
+{
+    if (arr.IsNull())
+    {
+        throw std::runtime_error("cannot get number of elements of null array");
+    }
+    Object& a = GetObject(arr);
+    IntegralValue elementsHandleValue = a.GetField(2);
+    Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
+    AllocationHandle handle(elementsHandleValue.Value());
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
+        Assert(elements, "array elements expected");
+        return elements->NumElements();
     }
     else
     {

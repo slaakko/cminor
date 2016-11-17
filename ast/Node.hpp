@@ -29,6 +29,7 @@ enum class NodeType : uint8_t
     baseInitializerNode, thisInitializerNode, labelNode, thisNode, baseNode, templateIdNode, templateParameterNode,
     compoundStatementNode, returnStatementNode, ifStatementNode, whileStatementNode, doStatementNode, forStatementNode, breakStatementNode, continueStatementNode, 
     constructionStatementNode, assignmentStatementNode, expressionStatementNode, emptyStatementNode, incrementStatementNode, decrementStatementNode,
+    enumTypeNode, enumConstantNode, constantNode,
     maxNode
 };
 
@@ -61,6 +62,7 @@ public:
     virtual void SetSetter(CompoundStatementNode* setter);
     virtual bool IsBreakEnclosingStatementNode() const { return false; }
     virtual bool IsContinueEnclosingStatementNode() const { return false; }
+    virtual bool IsUnsignedTypeNode() const { return false; }
     uint32_t SymbolId() const { return symbolId; }
     void SetSymbolId(uint32_t symbolId_) { symbolId = symbolId_; }
 private:

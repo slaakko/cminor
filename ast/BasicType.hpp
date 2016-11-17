@@ -37,6 +37,7 @@ public:
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
     std::string ToString() const override { return "System.UInt8"; }
+    bool IsUnsignedTypeNode() const override { return true; }
 };
 
 class ShortNode : public Node
@@ -57,6 +58,7 @@ public:
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
     std::string ToString() const override { return "System.UInt16"; }
+    bool IsUnsignedTypeNode() const override { return true; }
 };
 
 class IntNode : public Node
@@ -77,6 +79,7 @@ public:
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
     std::string ToString() const override { return "System.UInt32"; }
+    bool IsUnsignedTypeNode() const override { return true; }
 };
 
 class LongNode : public Node
@@ -97,6 +100,7 @@ public:
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
     std::string ToString() const override { return "System.UInt64"; }
+    bool IsUnsignedTypeNode() const override { return true; }
 };
 
 class FloatNode : public Node

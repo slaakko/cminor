@@ -7,6 +7,7 @@
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Type.hpp>
+#include <cminor/vm/File.hpp>
 
 namespace cminor { namespace vm {
 
@@ -157,6 +158,215 @@ void VmSystemStringConstructorCharArray::Execute(Frame& frame)
     str.SetField(IntegralValue(stringCharactersHandle.Value(), ValueType::allocationHandle), 2);
 }
 
+class VmSystemIOOpenFile : public VmFunction
+{
+public:
+    VmSystemIOOpenFile(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIOOpenFile::VmSystemIOOpenFile(ConstantPool& constantPool) 
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.OpenFile"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemIOOpenFile::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue filePathValue = frame.Local(0).GetValue();
+        Assert(filePathValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference filePathStr(filePathValue.Value());
+        std::string filePath = frame.GetManagedMemoryPool().GetUtf8String(filePathStr);
+        IntegralValue modeValue = frame.Local(1).GetValue();
+        Assert(modeValue.GetType() == ValueType::byteType, "byte expected");
+        FileMode mode = static_cast<FileMode>(modeValue.AsByte());
+        IntegralValue accessValue = frame.Local(2).GetValue();
+        Assert(accessValue.GetType() == ValueType::byteType, "byte expected");
+        FileAccess access = static_cast<FileAccess>(accessValue.AsByte());
+        int32_t fileHandle = OpenFile(filePath, mode, access);
+        frame.OpStack().Push(IntegralValue(fileHandle, ValueType::intType));
+    }
+    catch (const FileError& fileError)
+    {
+        // todo
+        int x = 0;
+    }
+}
+
+class VmSystemIOCloseFile : public VmFunction
+{
+public:
+    VmSystemIOCloseFile(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIOCloseFile::VmSystemIOCloseFile(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.CloseFile"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemIOCloseFile::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue fileHandleValue = frame.Local(0).GetValue();
+        Assert(fileHandleValue.GetType() == ValueType::intType, "int expected");
+        int32_t fileHandle = fileHandleValue.AsInt();
+        CloseFile(fileHandle);
+    }
+    catch (const FileError& fileError)
+    {
+        // todo
+        int x = 0;
+    }
+}
+
+class VmSystemIOWriteByteToFile : public VmFunction
+{
+public:
+    VmSystemIOWriteByteToFile(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIOWriteByteToFile::VmSystemIOWriteByteToFile(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.WriteByteToFile"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemIOWriteByteToFile::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue fileHandleValue = frame.Local(0).GetValue();
+        Assert(fileHandleValue.GetType() == ValueType::intType, "int expected");
+        int32_t fileHandle = fileHandleValue.AsInt();
+        IntegralValue byteValue = frame.Local(1).GetValue();
+        Assert(byteValue.GetType() == ValueType::byteType, "byte expected");
+        uint8_t value = byteValue.AsByte();
+        WriteByteToFile(fileHandle, value);
+    }
+    catch (const FileError& fileError)
+    {
+        // todo
+        int x = 0;
+    }
+}
+
+class VmSystemIOWriteFile : public VmFunction
+{
+public:
+    VmSystemIOWriteFile(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIOWriteFile::VmSystemIOWriteFile(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.WriteFile"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemIOWriteFile::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue fileHandleValue = frame.Local(0).GetValue();
+        Assert(fileHandleValue.GetType() == ValueType::intType, "int expected");
+        int32_t fileHandle = fileHandleValue.AsInt();
+        IntegralValue bufferValue = frame.Local(1).GetValue();
+        Assert(bufferValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference buffer(bufferValue.Value());
+        std::vector<uint8_t> bytes = frame.GetManagedMemoryPool().GetBytes(buffer);
+        IntegralValue countValue = frame.Local(2).GetValue();
+        Assert(countValue.GetType() == ValueType::intType, "int expected");
+        int32_t count = countValue.AsInt();
+        WriteFile(fileHandle, &bytes[0], count);
+    }
+    catch (const FileError& fileError)
+    {
+        // todo
+        int x = 0;
+    }
+}
+
+class VmSystemIOReadByteFromFile : public VmFunction
+{
+public:
+    VmSystemIOReadByteFromFile(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIOReadByteFromFile::VmSystemIOReadByteFromFile(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.ReadByteFromFile"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemIOReadByteFromFile::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue fileHandleValue = frame.Local(0).GetValue();
+        Assert(fileHandleValue.GetType() == ValueType::intType, "int expected");
+        int32_t fileHandle = fileHandleValue.AsInt();
+        int32_t value = ReadByteFromFile(fileHandle);
+        frame.OpStack().Push(IntegralValue(value, ValueType::intType));
+    }
+    catch (const FileError& fileError)
+    {
+        // todo
+        int x = 0;
+    }
+}
+
+class VmSystemIOReadFile : public VmFunction
+{
+public:
+    VmSystemIOReadFile(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIOReadFile::VmSystemIOReadFile(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.ReadFile"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemIOReadFile::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue fileHandleValue = frame.Local(0).GetValue();
+        Assert(fileHandleValue.GetType() == ValueType::intType, "int expected");
+        int32_t fileHandle = fileHandleValue.AsInt();
+        IntegralValue bufferValue = frame.Local(1).GetValue();
+        Assert(bufferValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference buffer(bufferValue.Value());
+        std::vector<uint8_t> bytes;
+        bytes.resize(frame.GetManagedMemoryPool().GetNumArrayElements(buffer));
+        int32_t result = ReadFile(fileHandle, &bytes[0], int32_t(bytes.size()));
+        if (result > 0)
+        {
+            frame.GetManagedMemoryPool().SetBytes(buffer, bytes, result);
+        }
+        frame.OpStack().Push(IntegralValue(result, ValueType::intType));
+    }
+    catch (const FileError& fileError)
+    {
+        // todo
+        int x = 0;
+    }
+}
+
 class VmFunctionPool
 {
 public:
@@ -191,6 +401,10 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectToString(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectEqual(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemStringConstructorCharArray(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOOpenFile(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOCloseFile(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOWriteByteToFile(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOWriteFile(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool) 

@@ -9,11 +9,13 @@
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/symbols/Symbol.hpp>
+#include <cminor/symbols/Value.hpp>
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/vm/VmFunction.hpp>
+#include <cminor/vm/File.hpp>
 #include <Cm.Util/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
@@ -37,13 +39,17 @@ struct InitDone
         NodeInit();
         VmFunctionTable::Init();
         InitSymbol();
+        ValueInit();
         InitAssembly();
         InitVmFunctions(vmFunctionNamePool);
+        FileInit();
     }
     ~InitDone()
     {
+        FileDone();
         DoneVmFunctions();
         DoneAssembly();
+        ValueDone();
         DoneSymbol();
         VmFunctionTable::Done();
         NodeDone();

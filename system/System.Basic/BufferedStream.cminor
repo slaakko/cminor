@@ -1,0 +1,92 @@
+using System;
+
+namespace System.IO
+{
+    public class BufferedStream : Stream
+    {
+        public BufferedStream(Stream stream) : this(stream, 4096)
+        {
+        }
+        public BufferedStream(Stream stream, int bufferSize)
+        {
+            this.stream = stream;
+            this.buf = new byte[bufferSize];
+            this.pos = buf.Length;
+            this.bytesAvailable = 0;
+            this.end = 0;
+        }
+        public void Close()
+        {
+            Flush();
+            stream.Close();
+        }
+        public override void WriteByte(byte value)
+        {
+            if (end >= buf.Length)
+            {
+                Flush();
+            }
+            buf[end] = value;
+            ++end;
+        }
+        public override void Write(byte[] buffer, int count)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                WriteByte(buffer[i])
+            }
+        }
+        public override int ReadByte()
+        {
+            Flush();
+            if (bytesAvailable == 0)
+            {
+                FillBuf();
+                if (bytesAvailable == 0)
+                {
+                    return -1;
+                }
+            }
+            byte value = buf[pos];
+            ++pos;
+            --bytesAvailable;
+            return value;
+        }
+        public override int Read(byte[] buffer)
+        {
+            Flush();
+            if (bytesAvailable == 0)
+            {
+                FillBuf();
+            }
+            int bytesRead = 0;
+            int n = Min(bytesAvailable, buffer.Length);
+            for (int i = 0; i < n; ++i)
+            {
+                buffer[i] = buf[pos];
+                ++pos;
+                ++bytesRead;
+                --bytesAvailable;
+            }
+            return bytesRead;
+        }
+        public override void Flush()
+        {
+            if (end != 0)
+            {
+                stream.Write(buf, end);
+                end = 0;
+            }
+        }
+        public void FillBuf()
+        {
+            bytesAvailable = stream.Read(buf);
+            pos = 0;
+        }
+        private Stream stream;
+        private byte[] buf;
+        private int pos;
+        private int bytesAvailable;
+        private int end;
+    }
+}

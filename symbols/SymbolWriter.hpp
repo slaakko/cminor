@@ -6,6 +6,7 @@
 #ifndef CMINOR_SYMBOLS_SYMBOL_WRITER_INCLUDED
 #define CMINOR_SYMBOLS_SYMBOL_WRITER_INCLUDED
 #include <cminor/symbols/Symbol.hpp>
+#include <cminor/symbols/Value.hpp>
 #include <cminor/ast/AstWriter.hpp>
 
 namespace cminor { namespace symbols {
@@ -23,6 +24,7 @@ public:
     Assembly* GetAssembly() const { Assert(assembly, "assembly not set"); return assembly; }
     void SetAssembly(Assembly* assembly_) { assembly = assembly_; }
     void Put(Symbol* symbol);
+    void Put(Value* value);
     AstWriter& AsAstWriter() { return *this; }
 private:
     Assembly* assembly;

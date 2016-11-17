@@ -1,0 +1,31 @@
+using System;
+
+namespace System.IO
+{
+    public class StreamWriter : Closable
+    {
+        public StreamWriter(Stream stream)
+        {
+            this.encoder = new Utf8Encoder(stream);
+        }
+        public void Close()
+        {
+            stream.Close();
+        }
+        public void Write(String s)
+        {
+            encoder.Encode(s);
+        }
+        public void WriteLine(String s)
+        {
+            Write(s);
+            WriteLine();
+        }
+        pbulic void WriteLine()
+        {
+            Write("\n");
+        }
+        private Stream stream;
+        private Utf8Encoder encoder;
+    }
+}

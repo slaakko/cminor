@@ -13,7 +13,7 @@
 
 namespace cminor { namespace symbols {
 
-void CreateBasicTypeStringFun(Assembly& assembly, ClassTypeSymbol* stringType)
+void CreateStringLiteralToStringConversion(Assembly& assembly, ClassTypeSymbol* stringType)
 {
     ConstantPool& constantPool = assembly.GetConstantPool();
     BasicTypeConversion* strLit2String = new BasicTypeConversion(Span(), constantPool.GetEmptyStringConstant());
@@ -26,16 +26,6 @@ void CreateBasicTypeStringFun(Assembly& assembly, ClassTypeSymbol* stringType)
     strLit2String->SetTargetType(stringType);
     strLit2String->SetConversionInstructionName("slit2s");
     stringType->AddSymbol(std::unique_ptr<FunctionSymbol>(strLit2String));
-}
-
-void CreateStringFunctions(Assembly& assembly)
-{
-    TypeSymbol* stype = assembly.GetSymbolTable().GetType(U"System.String");
-    ClassTypeSymbol* stringType = dynamic_cast<ClassTypeSymbol*>(stype);
-    TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"System.Boolean");
-    CreateBasicTypeObjectFun(assembly, stringType);
-    CreateBasicTypeStringFun(assembly, stringType);
-    CreateDefaultConstructor(assembly, stringType);
 }
 
 } } // namespace cminor::symbols

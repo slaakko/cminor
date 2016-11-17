@@ -9,6 +9,8 @@
 [cpp]#include <cminor/parser/Function.hpp>
 [cpp]#include <cminor/parser/Class.hpp>
 [cpp]#include <cminor/parser/Interface.hpp>
+[cpp]#include <cminor/parser/Enumeration.hpp>
+[cpp]#include <cminor/parser/Constant.hpp>
 
 namespace cminor.parser
 {
@@ -22,6 +24,8 @@ namespace cminor.parser
         using FunctionGrammar.Function;
         using ClassGrammar.Class;
         using InterfaceGrammar.Interface;
+        using EnumerationGrammar.EnumType;
+        using ConstantGrammar.Constant;
         skip spaces_and_comments;
 
         CompileUnit(ParsingContext* ctx) : CompileUnitNode*
@@ -60,6 +64,8 @@ namespace cminor.parser
             |   FunctionDefinition(ctx){ value = FunctionDefinition; }
             |   ClassDefinition(ctx){ value = ClassDefinition; }
             |   InterfaceDefinition(ctx){ value = InterfaceDefinition; }
+            |   EnumTypeDefinition(ctx){ value = EnumTypeDefinition; }
+            |   ConstantDefinition(ctx){ value = ConstantDefinition; }
             ;
 
         NamespaceDefinition(ParsingContext* ctx, NamespaceNode* ns) : NamespaceNode*
@@ -76,6 +82,14 @@ namespace cminor.parser
 
         InterfaceDefinition(ParsingContext* ctx) : InterfaceNode*
             ::= Interface(ctx){ value = Interface; }
+            ;
+
+        EnumTypeDefinition(ParsingContext* ctx) : EnumTypeNode*
+            ::= EnumType(ctx){ value = EnumType; }
+            ;
+
+        ConstantDefinition(ParsingContext* ctx) : ConstantNode*
+            ::= Constant(ctx){ value = Constant; }
             ;
     }
 }

@@ -1,0 +1,16 @@
+using System;
+
+namespace System.IO
+{
+    public abstract class Stream
+    {
+        public abstract void WriteByte(byte value);
+        public abstract void Write(byte[] buffer, int count);
+        public abstract int ReadByte();
+        public abstract int Read(byte[] buffer);
+        public virtual void Flush()
+        {
+        }
+        public abstract void Close();
+    }
+}

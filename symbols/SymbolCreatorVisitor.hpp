@@ -39,6 +39,8 @@ public:
     void Visit(DoStatementNode& doStatementNode) override;
     void Visit(ForStatementNode& forStatementNode) override;
     void Visit(ConstructionStatementNode& constructionStatementNode) override;
+    void Visit(EnumTypeNode& enumTypeNode) override;
+    void Visit(ConstantNode& constantNode) override;
 private:
     Assembly& assembly;
     SymbolTable& symbolTable;

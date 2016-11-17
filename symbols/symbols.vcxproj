@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="Assembly.hpp" />
     <ClInclude Include="BasicTypeFun.hpp" />
+    <ClInclude Include="EnumSymbol.hpp" />
     <ClInclude Include="MappingSymbolVisitor.hpp" />
     <ClInclude Include="ConstantSymbol.hpp" />
     <ClInclude Include="FunctionSymbol.hpp" />
@@ -35,11 +36,13 @@
     <ClInclude Include="Symbol.hpp" />
     <ClInclude Include="SymbolTable.hpp" />
     <ClInclude Include="SymbolWriter.hpp" />
+    <ClInclude Include="Value.hpp" />
     <ClInclude Include="VariableSymbol.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Assembly.cpp" />
     <ClCompile Include="BasicTypeFun.cpp" />
+    <ClCompile Include="EnumSymbol.cpp" />
     <ClCompile Include="MappingSymbolVisitor.cpp" />
     <ClCompile Include="ConstantSymbol.cpp" />
     <ClCompile Include="FunctionSymbol.cpp" />
@@ -54,6 +57,7 @@
     <ClCompile Include="Symbol.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
     <ClCompile Include="SymbolWriter.cpp" />
+    <ClCompile Include="Value.cpp" />
     <ClCompile Include="VariableSymbol.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

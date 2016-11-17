@@ -30,7 +30,7 @@ const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
     "indexerGetterSymbol", "indexerSetterSymbol", "indexerGroupSymbol", "constantSymbol", "namespaceSymbol",
     "declarationBlock", "typeParameterSymbol", "boundTypeParameterSymbol", "classTemplateSpecializationSymbol", "basicTypeDefaultInit", "basicTypeCopyInit", "basicTypeAssignment", 
     "basicTypeReturn", "basicTypeConversion", "basicTypeUnaryOp", "basicTypBinaryOp", "objectDefaultInit", "objectCopyInit", "objectNullInit", "objectAssignment", "objectNullAssignment",
-    "objectNullEqual", "nullObjectEqual", "nullToObjectConversion", "classTypeConversion", "classToInterfaceConversion"
+    "objectNullEqual", "nullObjectEqual", "nullToObjectConversion", "classTypeConversion", "classToInterfaceConversion", "enumTypeSymbol", "enumConstantSymbol"
 };
 
 std::string SymbolTypeStr(SymbolType symbolType)
@@ -61,6 +61,10 @@ std::string SymbolFlagStr(SymbolFlags flags)
 }
 
 const uint32_t firstFreeSymbolId = noSymbolId + 1;
+
+SymbolEvaluator::~SymbolEvaluator()
+{
+}
 
 Symbol::Symbol(const Span& span_, Constant name_) : span(span_), name(name_), flags(SymbolFlags::none), parent(nullptr), assembly(nullptr), id(noSymbolId)
 {
@@ -420,6 +424,11 @@ void Symbol::Merge(const Symbol& that)
     {
         SetInstantiated();
     }
+}
+
+void Symbol::Evaluate(SymbolEvaluator* evaluator, const Span& span)
+{
+    throw Exception("cannot evaluate statically", span, GetSpan());
 }
 
 Scope::~Scope()
@@ -978,6 +987,11 @@ IndexerGroupSymbol* ContainerSymbol::MakeIndexerGroupSymbol(const Span& span)
         Assert(false, "indexer group symbol expected");
         return nullptr;
     }
+}
+
+void ContainerSymbol::Evaluate(SymbolEvaluator* evaluator, const Span& span)
+{
+    evaluator->EvaluateContainerSymbol(this);
 }
 
 NamespaceSymbol::NamespaceSymbol(const Span& span_, Constant name_) : ContainerSymbol(span_, name_)

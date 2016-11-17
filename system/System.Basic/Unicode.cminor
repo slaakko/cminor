@@ -1,0 +1,106 @@
+using System;
+
+namespace System.Unicode
+{
+    public class Utf8Encoder
+    {
+        public Utf8Encoder(Stream stream)
+        {
+            this.stream = stream;
+        }
+        public void Encode(String s)
+        {
+            int n = s.Length;
+            for (int i = 0; i < n; ++i)
+            {
+                char c = s[i];
+                uint value = cast<uint>(c);
+                if (value < 0x80u)
+                {
+                    Put(cast<byte>(value & 0x7Fu));
+                }
+                else if (value < 0x800u)
+                {
+                    byte b1 = 0x80u;
+                    for (byte i = 0u; i < 6u; ++i)
+                    {
+                        b1 = b1 | (cast<byte>(value & 1u) << i);
+                        value = value >> 1u;
+                    }
+                    byte b0 = 0xC0u;
+                    for (byte i = 0u; i < 5u; ++i)
+                    {
+                        b0 = b0 | (cast<byte>(value & 1u) << i);
+                        value = value >> 1u;
+                    }
+                    Put(b0);
+                    Put(b1);
+                }
+                else if (value < 0x10000u)
+                {
+                    byte b2 = 0x80u;
+                    for (byte i = 0u; i < 6u; ++i)
+                    {
+                        b2 = b2 | (cast<byte>(value & 1u) << i);
+                        value = value >> 1u;
+                    }
+                    byte b1 = 0x80u;
+                    for (byte i = 0u; i < 6u; ++i)
+                    {
+                        b1 = b1 | (cast<byte>(value & 1u) << i);
+                        value = value >> 1u;
+                    }
+                    byte b0 = 0xE0u;
+                    for (byte i = 0u; i < 4u; ++i)
+                    {
+                        b0 = b0 | (cast<byte>(value & 1u) << i);
+                        value = value >> 1u;
+                    }
+                    Put(b0);
+                    Put(b1);
+                    Put(b2);
+                }
+                else if (value < 0x110000u)
+                {
+                    byte b3 = 0x80u;
+                    for (byte i = 0u; i < 6u; ++i)
+                    {
+                        b3 = b3 | (cast<byte>(value & 1u) << i);
+                        value = value >> 1u;
+                    }
+                    byte b2 = 0x80u;
+                    for (byte i = 0u; i < 6u; ++i)
+                    {
+                        b2 = b2 | (cast<byte>(value & 1u) << i);
+                        value = value >> 1u;
+                    }
+                    byte b1 = 0x80u;
+                    for (byte i = 0u; i < 6u; ++i)
+                    {
+                        b1 = b1 | (cast<byte>(value & 1u) << i);
+                        value = value >> 1u;
+                    }
+                    byte b0 = 0xF0u;
+                    for (byte i = 0u; i < 3u; ++i)
+                    {
+                        b0 = b0 | (cast<byte>(value & 1u) << i);
+                        value = value >> 1u;
+                    }
+                    Put(b0);
+                    Put(b1);
+                    Put(b2);
+                    Put(b3);
+                }
+                else
+                {
+                    // throw Exception("could not encode");
+                }
+            }
+            private void Put(byte x)
+            {
+                stream.WriteByte(x);
+            }
+        }
+        private Stream stream;
+    }
+}

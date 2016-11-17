@@ -247,9 +247,13 @@ public:
     AllocationHandle CreateStringCharsFromLiteral(const char32_t* strLit, uint32_t len);
     std::pair<AllocationHandle, int32_t> CreateStringCharsFromCharArray(Thread& thread, ObjectReference charArray);
     IntegralValue GetStringChar(ObjectReference str, int32_t index);
+    std::string GetUtf8String(ObjectReference str);
+    std::vector<uint8_t> GetBytes(ObjectReference arr);
+    void SetBytes(ObjectReference arr, const std::vector<uint8_t>& bytes, int32_t count);
     void AllocateArrayElements(Thread& thread, ObjectReference arr, Type* elementType, int32_t length);
     IntegralValue GetArrayElement(ObjectReference reference, int32_t index);
     void SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue);
+    int32_t GetNumArrayElements(ObjectReference arr);
     void ResetObjectsLiveFlag();
     void MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena);
     MemPtr GetMemPtr(AllocationHandle handle) const;

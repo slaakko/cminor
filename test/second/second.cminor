@@ -1,10 +1,8 @@
 using System;
 
+public const int foo = 0; 
+
 void main()
 {
-    object x = new object();
-    if (x != null) 
-    {
-        int y = 0;
-    }
+    int x = foo;
 }

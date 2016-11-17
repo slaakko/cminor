@@ -8,6 +8,7 @@
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/IndexerSymbol.hpp>
+#include <cminor/symbols/EnumSymbol.hpp>
 #include <cminor/symbols/ConstantSymbol.hpp>
 #include <cminor/symbols/BasicTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
@@ -520,6 +521,48 @@ void SymbolTable::BeginIndexerSetter(IndexerNode& indexerNode)
 void SymbolTable::EndIndexerSetter()
 {
     EndContainer();
+}
+
+void SymbolTable::BeginEnumType(EnumTypeNode& enumTypeNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(enumTypeNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    EnumTypeSymbol* enumTypeSymbol = new EnumTypeSymbol(enumTypeNode.GetSpan(), nameConstant);
+    enumTypeSymbol->SetAssembly(assembly);
+    MapNode(enumTypeNode, enumTypeSymbol);
+    ContainerScope* containerScope = container->GetContainerScope();
+    ContainerScope* enumTypeScope = enumTypeSymbol->GetContainerScope();
+    enumTypeScope->SetParent(containerScope);
+    container->AddSymbol(std::unique_ptr<Symbol>(enumTypeSymbol));
+    BeginContainer(enumTypeSymbol);
+}
+
+void SymbolTable::EndEnumType()
+{
+    EndContainer();
+}
+
+void SymbolTable::AddEnumConstant(EnumConstantNode& enumConstantNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(enumConstantNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    EnumConstantSymbol* enumConstantSymbol = new EnumConstantSymbol(enumConstantNode.GetSpan(), nameConstant);
+    enumConstantSymbol->SetAssembly(assembly);
+    container->AddSymbol(std::unique_ptr<Symbol>(enumConstantSymbol));
+    MapNode(enumConstantNode, enumConstantSymbol);
+}
+
+void SymbolTable::AddConstant(ConstantNode& constantNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(constantNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    ConstantSymbol* constantSymbol = new ConstantSymbol(constantNode.GetSpan(), nameConstant);
+    constantSymbol->SetAssembly(assembly);
+    container->AddSymbol(std::unique_ptr<Symbol>(constantSymbol));
+    MapNode(constantNode, constantSymbol);
 }
 
 void SymbolTable::Write(SymbolWriter& writer)

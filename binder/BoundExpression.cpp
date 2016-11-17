@@ -66,7 +66,7 @@ BoundConstant::BoundConstant(Assembly& assembly_, TypeSymbol* type_, ConstantSym
 void BoundConstant::GenLoad(Machine& machine, Function& function)
 {
     std::unique_ptr<Instruction> loadConstantInst;
-    ConstantId constantId = GetType()->GetAssembly()->GetConstantPool().GetIdFor(constantSymbol->Value());
+    ConstantId constantId = constantSymbol->GetAssembly()->GetConstantPool().GetIdFor(constantSymbol->GetConstant());
     if (constantId != noConstantId)
     {
         if (constantId.Value() < 256)

@@ -1,0 +1,98 @@
+using System;
+
+namespace System.IO
+{
+    public const int stdin = 0;
+    public const int stdout = 1;
+    public const int stderr = 2;
+
+    public enum FileMode : byte
+    {
+        append, create, open
+    }
+
+    public enum FileAccess : byte
+    {
+        read, readWrite, write
+    }
+
+    public class FileStream : Stream, Closable
+    {
+        public FileStream(int fileHandle, FileAccess access)
+        {
+            this.mode = DefaultMode(access);
+            this.access = access;
+            this.fileHandle = fileHandle;
+        }
+        public FileStream(String filePath, FileMode mode) : this(filePath, mode, DefaultAccess(mode))
+        {
+        }
+        public FileStream(String filePath, FileMode mode, FileAccess access)
+        {
+            this.filePath = filePath;
+            this.mode = mode;
+            this.access = access;
+            this.fileHandle = OpenFile(filePath, mode, access);
+        }
+        public bool IsOpen() 
+        {
+            return fileHandle != -1;
+        }
+        public override void Close()
+        {
+            if (fileHandle != -1)
+            {
+                CloseFile(fileHandle);
+                fileHandle = -1;
+            }
+        }
+        public override void WriteByte(byte value)
+        {
+            WriteByteToFile(fileHandle, value);
+        }
+        public override void Write(byte[] buffer, int count)
+        {
+            WriteFile(fileHandle, buffer, count);
+        }
+        public override int ReadByte()
+        {
+            return ReadByteFromFile(filehandle);
+        }
+        public override int Read(byte[] buffer)
+        {
+            return ReadFile(fileHandle, buffer);
+        }
+        private FileAccess DefaultAccess(FileMode mode)
+        {
+            if (mode == FileMode.append || mode == FileMode.create) return FileAccess.write;
+            return FileAccess.read;
+        }
+        private FileMode DefaultMode(FileAccess access)
+        {
+            if (access == FileAccess.read || access == FileAccess.readWrite) return FileMode.open;
+            return FileMode.create;
+        }
+        private String filePath;
+        private FileMode mode;
+        private FileAccess access;
+        private int fileHandle;
+    }
+
+    [VmFunctionName=System.IO.OpenFile]
+    internal extern int OpenFile(string filePath, FileMode mode, FileAccess access);
+
+    [VmFunctionName=System.IO.CloseFile]
+    internal extern void CloseFile(int fileHandle);
+
+    [VmFunctionName=System.IO.WriteByteToFile]
+    internal extern void WriteByteToFile(int fileHandle, byte value);
+
+    [VmFunctionName=System.IO.WriteFile]
+    internal extern void WriteFile(int fileHandle, byte[] buffer, int count);
+
+    [VmFunctionName=System.IO.ReadByteFromFile]
+    internal extern int ReadByteFromFile(int fileHandle);
+
+    [VmFunctionName=System.IO.ReadFile]
+    internal extern int ReadFile(int fileHandle, byte[] buffer);
+}

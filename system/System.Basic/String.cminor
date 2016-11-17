@@ -18,7 +18,6 @@ namespace System
         private int length;
     }
 
-    
     public bool operator==(String left, String right)
     {
         int leftLength = 0;

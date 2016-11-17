@@ -1,0 +1,12 @@
+using System;
+
+namespace System.IO
+{
+    public static class File
+    {
+        public static StreamWriter CreateText(String filePath)
+        {
+            return new StreamWriter(new BufferedStream(new FileStream(filePath, FileMode.create, FileAccess.write)));
+        }
+    }
+}

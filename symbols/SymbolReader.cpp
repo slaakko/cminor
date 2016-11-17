@@ -30,6 +30,14 @@ Symbol* SymbolReader::GetSymbol()
     return symbol;
 }
 
+Value* SymbolReader::GetValue()
+{
+    ValueKind kind = static_cast<ValueKind>(GetByte());
+    Value* value = ValueFactory::Instance().CreateValue(kind);
+    value->Read(*this);
+    return value;
+}
+
 void SymbolReader::EmplaceTypeRequest(Symbol* forSymbol, ConstantId typeNameId, int index)
 {
     typeRequests.push_back(TypeRequest(forSymbol, typeNameId, index));

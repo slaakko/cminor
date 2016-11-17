@@ -41,10 +41,23 @@ namespace cminor.parser
         Indexer(ParsingContext* ctx, var std::unique_ptr<Node> indexer): Node*;
         GetterOrSetter(ParsingContext* ctx, Node* subject);
     }
-    grammar IdentifierGrammar
+    grammar ConstantGrammar
     {
-        Identifier: IdentifierNode*;
-        QualifiedId: IdentifierNode*;
+        Constant(ParsingContext* ctx): ConstantNode*;
+    }
+    grammar SolutionGrammar
+    {
+        Solution: Solution*;
+        Declaration: SolutionDeclaration*;
+        SolutionProjectDeclaration: SolutionDeclaration*;
+        FilePath: std::string;
+    }
+    grammar InterfaceGrammar
+    {
+        Interface(ParsingContext* ctx): InterfaceNode*;
+        InterfaceContent(ParsingContext* ctx, InterfaceNode* intf);
+        InterfaceMemFun(ParsingContext* ctx, var std::unique_ptr<MemberFunctionNode> memFun): Node*;
+        InterfaceFunctionGroupId: FunctionGroupIdNode*;
     }
     grammar LiteralGrammar
     {
@@ -70,23 +83,10 @@ namespace cminor.parser
         OctalDigitSequence: uint64_t;
         Sign;
     }
-    grammar KeywordGrammar
+    grammar IdentifierGrammar
     {
-        Keyword;
-    }
-    grammar SolutionGrammar
-    {
-        Solution: Solution*;
-        Declaration: SolutionDeclaration*;
-        SolutionProjectDeclaration: SolutionDeclaration*;
-        FilePath: std::string;
-    }
-    grammar InterfaceGrammar
-    {
-        Interface(ParsingContext* ctx): InterfaceNode*;
-        InterfaceContent(ParsingContext* ctx, InterfaceNode* intf);
-        InterfaceMemFun(ParsingContext* ctx, var std::unique_ptr<MemberFunctionNode> memFun): Node*;
-        InterfaceFunctionGroupId: FunctionGroupIdNode*;
+        Identifier: IdentifierNode*;
+        QualifiedId: IdentifierNode*;
     }
     grammar CompileUnitGrammar
     {
@@ -102,6 +102,15 @@ namespace cminor.parser
         FunctionDefinition(ParsingContext* ctx): FunctionNode*;
         ClassDefinition(ParsingContext* ctx): ClassNode*;
         InterfaceDefinition(ParsingContext* ctx): InterfaceNode*;
+        EnumTypeDefinition(ParsingContext* ctx): EnumTypeNode*;
+        ConstantDefinition(ParsingContext* ctx): ConstantNode*;
+    }
+    grammar EnumerationGrammar
+    {
+        EnumType(ParsingContext* ctx): EnumTypeNode*;
+        UnderlyingType(ParsingContext* ctx): Node*;
+        EnumConstants(ParsingContext* ctx, EnumTypeNode* enumType);
+        EnumConstant(ParsingContext* ctx, EnumTypeNode* enumType, var Span s): EnumConstantNode*;
     }
     grammar FunctionGrammar
     {
@@ -112,6 +121,10 @@ namespace cminor.parser
         NameValuePair(AttributeMap* attributeMap);
         Name: std::string;
         Value: std::string;
+    }
+    grammar KeywordGrammar
+    {
+        Keyword;
     }
     grammar TypeExprGrammar
     {

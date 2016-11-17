@@ -29,5 +29,10 @@ void SymbolWriter::Put(Symbol* symbol)
     symbol->Write(*this);
 }
 
+void SymbolWriter::Put(Value* value)
+{
+    Writer::Put(uint8_t(value->GetValueKind()));
+    value->Write(*this);
+}
 
 } } // namespace cminor::symbols

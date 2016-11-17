@@ -14,6 +14,7 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
+#include <cminor/symbols/Value.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/FileRegistry.hpp>
@@ -39,6 +40,7 @@ struct InitDone
         TypeInit();
         NodeInit();
         InitSymbol();
+        ValueInit();
         InitAssembly();
         Cm::Parsing::Init();
     }
@@ -46,6 +48,7 @@ struct InitDone
     {
         Cm::Parsing::Done();
         DoneAssembly();
+        ValueDone();
         DoneSymbol();
         NodeDone();
         TypeDone();

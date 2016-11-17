@@ -6,7 +6,7 @@
 #ifndef CMINOR_BINDER_TYPE_BINDER_VISITOR_INCLUDED
 #define CMINOR_BINDER_TYPE_BINDER_VISITOR_INCLUDED
 #include <cminor/ast/Visitor.hpp>
-#include <cminor/symbols/Symbol.hpp>
+#include <cminor/symbols/EnumSymbol.hpp>
 
 namespace cminor { namespace binder {
 
@@ -20,6 +20,7 @@ class TypeBinderVisitor : public Visitor
 public:
     TypeBinderVisitor(BoundCompileUnit& boundCompileUnit_);
     void SetInstantiateRequested() { instantiateRequested = true; }
+    void SetContainerScope(ContainerScope* containerScope_) { containerScope = containerScope_; }
     void Visit(CompileUnitNode& compileUnitNode) override;
     void Visit(NamespaceNode& namespaceNode) override;
     void Visit(NamespaceImportNode& namespaceImportNode) override;
@@ -33,6 +34,9 @@ public:
     void Visit(PropertyNode& propertyNode) override;
     void Visit(IndexerNode& indexerNode) override;
     void Visit(FunctionNode& functionNode) override;
+    void Visit(ConstantNode& constantNode) override;
+    void Visit(EnumTypeNode& enumTypeNode) override;
+    void Visit(EnumConstantNode& enumConstantNode) override;
     void Visit(CompoundStatementNode& compoundStatementNode) override;
     void Visit(IfStatementNode& ifStatementNode) override;
     void Visit(WhileStatementNode& whileStatementNode) override;
@@ -44,6 +48,7 @@ private:
     ContainerScope* containerScope;
     std::vector<Node*> usingNodes;
     bool instantiateRequested;
+    EnumTypeSymbol* enumType;
     void BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& classNode);
     void BindInterface(InterfaceTypeSymbol* interfaceTypeSymbol, InterfaceNode& interfaceNode);
 };

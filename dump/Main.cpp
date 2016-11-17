@@ -12,6 +12,7 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
+#include <cminor/symbols/Value.hpp>
 #include <Cm.Util/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
@@ -31,11 +32,13 @@ struct InitDone
         TypeInit();
         NodeInit();
         InitSymbol();
+        ValueInit();
         InitAssembly();
     }
     ~InitDone()
     {
         DoneAssembly();
+        ValueDone();
         DoneSymbol();
         NodeDone();
         TypeDone();

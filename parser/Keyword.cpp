@@ -39,10 +39,12 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("cast");
     keywords0.push_back("char");
     keywords0.push_back("class");
+    keywords0.push_back("const");
     keywords0.push_back("continue");
     keywords0.push_back("do");
     keywords0.push_back("double");
     keywords0.push_back("else");
+    keywords0.push_back("enum");
     keywords0.push_back("false");
     keywords0.push_back("float");
     keywords0.push_back("for");

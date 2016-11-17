@@ -6,6 +6,7 @@
 #ifndef CMINOR_SYMBOLS_SYMBOL_READER_INCLUDED
 #define CMINOR_SYMBOLS_SYMBOL_READER_INCLUDED
 #include <cminor/symbols/Symbol.hpp>
+#include <cminor/symbols/Value.hpp>
 #include <cminor/ast/AstReader.hpp>
 
 namespace cminor { namespace symbols {
@@ -30,6 +31,7 @@ public:
     Assembly* GetAssembly() const { Assert(assembly, "assembly not set"); return assembly; }
     void SetAssembly(Assembly* assembly_) { assembly = assembly_; }
     Symbol* GetSymbol();
+    Value* GetValue();
     void AddLocalVariable(LocalVariableSymbol* localVariable) { localVariables.push_back(localVariable); }
     std::vector<LocalVariableSymbol*> GetLocalVariables() { return std::move(localVariables); }
     void ResetLocalVariables() { localVariables = std::vector<LocalVariableSymbol*>(); }

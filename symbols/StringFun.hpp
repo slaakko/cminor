@@ -9,7 +9,7 @@
 
 namespace cminor { namespace symbols {
 
-void CreateStringFunctions(Assembly& assembly);
+void CreateStringLiteralToStringConversion(Assembly& assembly, ClassTypeSymbol* stringType);
 
 } } // namespace cminor::symbols
 

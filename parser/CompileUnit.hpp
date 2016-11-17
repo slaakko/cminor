@@ -1,5 +1,5 @@
-#ifndef CompileUnit_hpp_20574
-#define CompileUnit_hpp_20574
+#ifndef CompileUnit_hpp_24706
+#define CompileUnit_hpp_24706
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -31,8 +31,10 @@ private:
     class FunctionDefinitionRule;
     class ClassDefinitionRule;
     class InterfaceDefinitionRule;
+    class EnumTypeDefinitionRule;
+    class ConstantDefinitionRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // CompileUnit_hpp_20574
+#endif // CompileUnit_hpp_24706

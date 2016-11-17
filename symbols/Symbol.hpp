@@ -37,6 +37,8 @@ class MemberFunctionSymbol;
 class ClassTemplateSpecializationSymbol;
 class PropertySymbol;
 class IndexerSymbol;
+class ConstantSymbol;
+class EnumConstantSymbol;
 
 enum class SymbolType : uint8_t
 {
@@ -46,7 +48,7 @@ enum class SymbolType : uint8_t
     parameterSymbol, localVariableSymbol, memberVariableSymbol, propertySymbol, propertyGetterSymbol, propertySetterSymbol, indexerSymbol, indexerGetterSymbol, indexerSetterSymbol, 
     indexerGroupSymbol, constantSymbol, namespaceSymbol, declarationBlock, typeParameterSymbol, boundTypeParameterSymbol, classTemplateSpecializationSymbol,
     basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, objectDefaultInit, objectCopyInit, objectNullInit, 
-    objectAssignment, objectNullAssignment, objectNullEqual, nullObjectEqual, nullToObjectConversion, classTypeConversion, classToInterfaceConversion,
+    objectAssignment, objectNullAssignment, objectNullEqual, nullObjectEqual, nullToObjectConversion, classTypeConversion, classToInterfaceConversion, enumTypeSymbol, enumConstantSymbol,
     maxSymbol
 };
 
@@ -91,6 +93,15 @@ inline SymbolFlags operator&(SymbolFlags left, SymbolFlags right)
 std::string SymbolFlagStr(SymbolFlags flags);
 
 extern const uint32_t firstFreeSymbolId;
+
+class SymbolEvaluator
+{
+public:
+    virtual ~SymbolEvaluator();
+    virtual void EvaluateContainerSymbol(ContainerSymbol* containerSymbol) = 0;
+    virtual void EvaluateConstantSymbol(ConstantSymbol* constantSymbol) = 0;
+    virtual void EvaluateEnumConstantSymbol(EnumConstantSymbol* enumConstantSymbol) = 0;
+};
 
 class Symbol
 {
@@ -156,6 +167,7 @@ public:
     virtual void AddTo(ClassTypeSymbol* classTypeSymbol);
     virtual void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol);
     void Merge(const Symbol& that);
+    virtual void Evaluate(SymbolEvaluator* evaluator, const Span& span);
 private:
     Span span;
     Constant name;
@@ -247,6 +259,7 @@ public:
     void Clear();
     FunctionGroupSymbol* MakeFunctionGroupSymbol(StringPtr groupName, const Span& span);
     IndexerGroupSymbol* MakeIndexerGroupSymbol(const Span& span);
+    void Evaluate(SymbolEvaluator* evaluator, const Span& span) override;
 private:
     ContainerScope containerScope;
     std::vector<std::unique_ptr<Symbol>> symbols;

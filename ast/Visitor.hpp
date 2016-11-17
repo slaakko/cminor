@@ -109,6 +109,10 @@ class EmptyStatementNode;
 class IncrementStatementNode;
 class DecrementStatementNode;
 
+class EnumTypeNode;
+class EnumConstantNode;
+class ConstantNode;
+
 class Visitor
 {
 public:
@@ -213,6 +217,10 @@ public:
     virtual void Visit(EmptyStatementNode& emptyStatementNode) {}
     virtual void Visit(IncrementStatementNode& incrementStatementNode) {}
     virtual void Visit(DecrementStatementNode& decrementStatementNode) {}
+
+    virtual void Visit(EnumTypeNode& enumTypeNode) {}
+    virtual void Visit(EnumConstantNode& enumConstantNode) {}
+    virtual void Visit(ConstantNode& constantNode) {}
 };
 
 } } // namespace cminor::ast

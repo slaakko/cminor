@@ -165,10 +165,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="File.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="VmFunction.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="File.hpp" />
     <ClInclude Include="VmFunction.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

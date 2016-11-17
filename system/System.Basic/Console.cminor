@@ -1,0 +1,21 @@
+using System.IO;
+
+namespace System
+{
+    public static class Console
+    {
+        static Console()
+        {
+            streamWriter = new StreamWriter(new FileStream(stdout));
+        }
+        public static void Write(String s)
+        {
+            streamWriter.Write(s);
+        }
+        public static void WriteLine(String s)
+        {
+            streamWriter.WriteLine(s);
+        }
+        private static StreamWriter streamWriter;
+    }
+}

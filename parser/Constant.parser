@@ -1,0 +1,28 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Constant.hpp>
+[hpp]#include <cminor/parser/ParsingContext.hpp>
+[cpp]#include <cminor/parser/Specifier.hpp>
+[cpp]#include <cminor/parser/Identifier.hpp>
+[cpp]#include <cminor/parser/TypeExpr.hpp>
+[cpp]#include <cminor/parser/Expression.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar ConstantGrammar
+    {
+        using SpecifierGrammar.Specifiers;
+        using TypeExprGrammar.TypeExpr;
+        using IdentifierGrammar.Identifier;
+        using ExpressionGrammar.Expression;
+
+        Constant(ParsingContext* ctx) : ConstantNode*
+            ::= (Specifiers keyword("const") TypeExpr(ctx)! Identifier! '='! Expression(ctx)! ';'!){ value = new ConstantNode(span, Specifiers, TypeExpr, Identifier, Expression); }
+            ;
+    }
+}

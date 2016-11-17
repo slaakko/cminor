@@ -13,6 +13,8 @@
 [cpp]#include <cminor/parser/Parameter.hpp>
 [cpp]#include <cminor/parser/Function.hpp>
 [cpp]#include <cminor/parser/Template.hpp>
+[cpp]#include <cminor/parser/Enumeration.hpp>
+[cpp]#include <cminor/parser/Constant.hpp>
 
 namespace cminor.parser
 {
@@ -30,6 +32,8 @@ namespace cminor.parser
         using FunctionGrammar.FunctionGroupId;
         using FunctionGrammar.Attributes;
         using TemplateGrammar.TemplateParameterList;
+        using EnumerationGrammar.EnumType;
+        using ConstantGrammar.Constant;
         using stdlib.identifier;
 
         Class(ParsingContext* ctx) : ClassNode*
@@ -61,6 +65,8 @@ namespace cminor.parser
             |   Property(ctx){ value = Property; }
             |   Indexer(ctx){ value = Indexer; }
             |   Class(ctx){ value = Class; }
+            |   EnumType(ctx){ value = EnumType; }
+            |   Constant(ctx){ value = Constant; }
             ;
 
         StaticConstructor(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<IdentifierNode> id) : StaticConstructorNode*
@@ -118,6 +124,5 @@ namespace cminor.parser
             ::= keyword("get") CompoundStatement(ctx):getter{ subject->SetGetter(getter); }
             |   keyword("set") CompoundStatement(ctx):setter{ subject->SetSetter(setter); }
             ;
-
     }
 }

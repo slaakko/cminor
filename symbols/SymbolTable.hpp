@@ -8,6 +8,8 @@
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/ast/Expression.hpp>
 #include <cminor/ast/Interface.hpp>
+#include <cminor/ast/Constant.hpp>
+#include <cminor/ast/Enumeration.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -55,6 +57,10 @@ public:
     void EndIndexerGetter();
     void BeginIndexerSetter(IndexerNode& indexerNode);
     void EndIndexerSetter();
+    void BeginEnumType(EnumTypeNode& enumTypeNode);
+    void EndEnumType();
+    void AddEnumConstant(EnumConstantNode& enumConstantNode);
+    void AddConstant(ConstantNode& constantNode);
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader);
     void Import(SymbolTable& symbolTable);

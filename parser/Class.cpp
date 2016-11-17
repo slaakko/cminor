@@ -16,6 +16,8 @@
 #include <cminor/parser/Parameter.hpp>
 #include <cminor/parser/Function.hpp>
 #include <cminor/parser/Template.hpp>
+#include <cminor/parser/Enumeration.hpp>
+#include <cminor/parser/Constant.hpp>
 
 namespace cminor { namespace parser {
 
@@ -408,6 +410,10 @@ public:
         a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A5Action));
         Cm::Parsing::ActionParser* a6ActionParser = GetAction("A6");
         a6ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A6Action));
+        Cm::Parsing::ActionParser* a7ActionParser = GetAction("A7");
+        a7ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A7Action));
+        Cm::Parsing::ActionParser* a8ActionParser = GetAction("A8");
+        a8ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A8Action));
         Cm::Parsing::NonterminalParser* staticConstructorNonterminalParser = GetNonterminal("StaticConstructor");
         staticConstructorNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreStaticConstructor));
         staticConstructorNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostStaticConstructor));
@@ -429,6 +435,12 @@ public:
         Cm::Parsing::NonterminalParser* classNonterminalParser = GetNonterminal("Class");
         classNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreClass));
         classNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostClass));
+        Cm::Parsing::NonterminalParser* enumTypeNonterminalParser = GetNonterminal("EnumType");
+        enumTypeNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreEnumType));
+        enumTypeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostEnumType));
+        Cm::Parsing::NonterminalParser* constantNonterminalParser = GetNonterminal("Constant");
+        constantNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreConstant));
+        constantNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostConstant));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -457,6 +469,14 @@ public:
     void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = context.fromClass;
+    }
+    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromEnumType;
+    }
+    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromConstant;
     }
     void PreStaticConstructor(Cm::Parsing::ObjectStack& stack)
     {
@@ -552,10 +572,36 @@ public:
             stack.pop();
         }
     }
+    void PreEnumType(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostEnumType(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromEnumType_value = std::move(stack.top());
+            context.fromEnumType = *static_cast<Cm::Parsing::ValueObject<EnumTypeNode*>*>(fromEnumType_value.get());
+            stack.pop();
+        }
+    }
+    void PreConstant(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostConstant(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromConstant_value = std::move(stack.top());
+            context.fromConstant = *static_cast<Cm::Parsing::ValueObject<ConstantNode*>*>(fromConstant_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): ctx(), classNode(), value(), fromStaticConstructor(), fromConstructor(), fromMemberFunction(), fromMemberVariable(), fromProperty(), fromIndexer(), fromClass() {}
+        Context(): ctx(), classNode(), value(), fromStaticConstructor(), fromConstructor(), fromMemberFunction(), fromMemberVariable(), fromProperty(), fromIndexer(), fromClass(), fromEnumType(), fromConstant() {}
         ParsingContext* ctx;
         ClassNode* classNode;
         Node* value;
@@ -566,6 +612,8 @@ private:
         Node* fromProperty;
         Node* fromIndexer;
         ClassNode* fromClass;
+        EnumTypeNode* fromEnumType;
+        ConstantNode* fromConstant;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -1456,40 +1504,40 @@ private:
 void ClassGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.ParameterGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.SpecifierGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::ParameterGrammar::Create(pd);
+        grammar0 = cminor::parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.SpecifierGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.EnumerationGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::SpecifierGrammar::Create(pd);
+        grammar1 = cminor::parser::EnumerationGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar2)
     {
-        grammar2 = cminor::parser::ExpressionGrammar::Create(pd);
+        grammar2 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TemplateGrammar");
     if (!grammar3)
     {
-        grammar3 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar3 = cminor::parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
     if (!grammar4)
     {
-        grammar4 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar4 = cminor::parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parser.FunctionGrammar");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar5)
     {
-        grammar5 = cminor::parser::FunctionGrammar::Create(pd);
+        grammar5 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
     Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("cminor.parser.StatementGrammar");
@@ -1498,32 +1546,46 @@ void ClassGrammar::GetReferencedGrammars()
         grammar6 = cminor::parser::StatementGrammar::Create(pd);
     }
     AddGrammarReference(grammar6);
-    Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("cminor.parser.TemplateGrammar");
+    Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("cminor.parser.ParameterGrammar");
     if (!grammar7)
     {
-        grammar7 = cminor::parser::TemplateGrammar::Create(pd);
+        grammar7 = cminor::parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar7);
-    Cm::Parsing::Grammar* grammar8 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar8 = pd->GetGrammar("cminor.parser.FunctionGrammar");
     if (!grammar8)
     {
-        grammar8 = Cm::Parsing::stdlib::Create(pd);
+        grammar8 = cminor::parser::FunctionGrammar::Create(pd);
     }
     AddGrammarReference(grammar8);
+    Cm::Parsing::Grammar* grammar9 = pd->GetGrammar("cminor.parser.ConstantGrammar");
+    if (!grammar9)
+    {
+        grammar9 = cminor::parser::ConstantGrammar::Create(pd);
+    }
+    AddGrammarReference(grammar9);
+    Cm::Parsing::Grammar* grammar10 = pd->GetGrammar("Cm.Parsing.stdlib");
+    if (!grammar10)
+    {
+        grammar10 = Cm::Parsing::stdlib::Create(pd);
+    }
+    AddGrammarReference(grammar10);
 }
 
 void ClassGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-    AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new Cm::Parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+    AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
     AddRuleLink(new Cm::Parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Attributes", this, "FunctionGrammar.Attributes"));
     AddRuleLink(new Cm::Parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
+    AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRule(new ClassRule("Class", GetScope(),
         new Cm::Parsing::SequenceParser(
@@ -1570,20 +1632,26 @@ void ClassGrammar::CreateRules()
                     new Cm::Parsing::AlternativeParser(
                         new Cm::Parsing::AlternativeParser(
                             new Cm::Parsing::AlternativeParser(
-                                new Cm::Parsing::ActionParser("A0",
-                                    new Cm::Parsing::NonterminalParser("StaticConstructor", "StaticConstructor", 2)),
-                                new Cm::Parsing::ActionParser("A1",
-                                    new Cm::Parsing::NonterminalParser("Constructor", "Constructor", 2))),
-                            new Cm::Parsing::ActionParser("A2",
-                                new Cm::Parsing::NonterminalParser("MemberFunction", "MemberFunction", 2))),
-                        new Cm::Parsing::ActionParser("A3",
-                            new Cm::Parsing::NonterminalParser("MemberVariable", "MemberVariable", 1))),
-                    new Cm::Parsing::ActionParser("A4",
-                        new Cm::Parsing::NonterminalParser("Property", "Property", 1))),
-                new Cm::Parsing::ActionParser("A5",
-                    new Cm::Parsing::NonterminalParser("Indexer", "Indexer", 1))),
-            new Cm::Parsing::ActionParser("A6",
-                new Cm::Parsing::NonterminalParser("Class", "Class", 1)))));
+                                new Cm::Parsing::AlternativeParser(
+                                    new Cm::Parsing::AlternativeParser(
+                                        new Cm::Parsing::ActionParser("A0",
+                                            new Cm::Parsing::NonterminalParser("StaticConstructor", "StaticConstructor", 2)),
+                                        new Cm::Parsing::ActionParser("A1",
+                                            new Cm::Parsing::NonterminalParser("Constructor", "Constructor", 2))),
+                                    new Cm::Parsing::ActionParser("A2",
+                                        new Cm::Parsing::NonterminalParser("MemberFunction", "MemberFunction", 2))),
+                                new Cm::Parsing::ActionParser("A3",
+                                    new Cm::Parsing::NonterminalParser("MemberVariable", "MemberVariable", 1))),
+                            new Cm::Parsing::ActionParser("A4",
+                                new Cm::Parsing::NonterminalParser("Property", "Property", 1))),
+                        new Cm::Parsing::ActionParser("A5",
+                            new Cm::Parsing::NonterminalParser("Indexer", "Indexer", 1))),
+                    new Cm::Parsing::ActionParser("A6",
+                        new Cm::Parsing::NonterminalParser("Class", "Class", 1))),
+                new Cm::Parsing::ActionParser("A7",
+                    new Cm::Parsing::NonterminalParser("EnumType", "EnumType", 1))),
+            new Cm::Parsing::ActionParser("A8",
+                new Cm::Parsing::NonterminalParser("Constant", "Constant", 1)))));
     AddRule(new StaticConstructorRule("StaticConstructor", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",

@@ -15,6 +15,8 @@
 #include <cminor/ast/Interface.hpp>
 #include <cminor/ast/Statement.hpp>
 #include <cminor/ast/CompileUnit.hpp>
+#include <cminor/ast/Enumeration.hpp>
+#include <cminor/ast/Constant.hpp>
 
 namespace cminor { namespace ast {
 
@@ -29,7 +31,8 @@ const char* nodeTypeStr[] =
     "indexingNode", "invokeNode", "castNode", "classNode", "interfaceNode", "newNode", "memberVariableNode", "propertyNode", "indexerNode", "staticConstructorNode", "constructorNode", "memberFunctionNode",
     "baseInitializerNode", "thisInitializerNode", "labelNode", "thisNode", "baseNode", "templateIdNode", "templateParameterNode",
     "compoundStatementNode", "returnStatementNode", "ifStatementNode", "whileStatementNode", "doStatementNode", "forStatementNode", "breakStatementNode", "continueStatementNode",
-    "constructionStatementNode", "assignmentStatementNode", "expressionStatementNode", "emptyStatementNode", "incrementStatementNode", "decrementStatementNode"
+    "constructionStatementNode", "assignmentStatementNode", "expressionStatementNode", "emptyStatementNode", "incrementStatementNode", "decrementStatementNode", "enumTypeNode", "enumConstantNode",
+    "constantNode"
 };
 
 std::string NodeTypeStr(NodeType nodeType)
@@ -313,6 +316,9 @@ void NodeInit()
     NodeFactory::Instance().Register(NodeType::emptyStatementNode, new ConcreteNodeCreator<EmptyStatementNode>());
     NodeFactory::Instance().Register(NodeType::incrementStatementNode, new ConcreteNodeCreator<IncrementStatementNode>());
     NodeFactory::Instance().Register(NodeType::decrementStatementNode, new ConcreteNodeCreator<DecrementStatementNode>());
+    NodeFactory::Instance().Register(NodeType::enumTypeNode, new ConcreteNodeCreator<EnumTypeNode>());
+    NodeFactory::Instance().Register(NodeType::enumConstantNode, new ConcreteNodeCreator<EnumConstantNode>());
+    NodeFactory::Instance().Register(NodeType::constantNode, new ConcreteNodeCreator<ConstantNode>());
 }
 
 void NodeDone()

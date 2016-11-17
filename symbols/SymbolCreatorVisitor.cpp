@@ -10,6 +10,7 @@
 #include <cminor/ast/Statement.hpp>
 #include <cminor/ast/Class.hpp>
 #include <cminor/ast/Interface.hpp>
+#include <cminor/ast/Enumeration.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -228,6 +229,23 @@ void SymbolCreatorVisitor::Visit(ForStatementNode& forStatementNode)
 void SymbolCreatorVisitor::Visit(ConstructionStatementNode& constructionStatementNode)
 {
     symbolTable.AddLocalVariable(constructionStatementNode);
+}
+
+void SymbolCreatorVisitor::Visit(EnumTypeNode& enumTypeNode)
+{
+    symbolTable.BeginEnumType(enumTypeNode);
+    int n = enumTypeNode.Constants().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        EnumConstantNode* enumConstant = enumTypeNode.Constants()[i];
+        symbolTable.AddEnumConstant(*enumConstant);
+    }
+    symbolTable.EndEnumType();
+}
+
+void SymbolCreatorVisitor::Visit(ConstantNode& constantNode)
+{
+    symbolTable.AddConstant(constantNode);
 }
 
 } } // namespace cminor::symbols
