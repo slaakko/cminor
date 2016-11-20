@@ -17,6 +17,10 @@ public:
     virtual ~Emitter();
     virtual void SetFirstInstIndex(int32_t index) = 0;
     virtual int32_t FistInstIndex() const = 0;
+    virtual bool CreatePCRange() const = 0;
+    virtual bool SetPCRangeEnd() const = 0;
+    virtual void DoCreatePCRange(int32_t start) = 0;
+    virtual void DoSetPCRangeEnd(int32_t end) = 0;
 };
 
 class Function

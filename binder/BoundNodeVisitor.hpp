@@ -25,6 +25,7 @@ class BoundExpressionStatement;
 class BoundEmptyStatement;
 class BoundLiteral;
 class BoundConstant;
+class BoundEnumConstant;
 class BoundLocalVariable;
 class BoundMemberVariable;
 class BoundProperty;
@@ -59,6 +60,7 @@ public:
     virtual void Visit(BoundEmptyStatement& boundEmptyStatement) {}
     virtual void Visit(BoundLiteral& boundLiteral) {}
     virtual void Visit(BoundConstant& boundConstant) {}
+    virtual void Visit(BoundEnumConstant& boundEnumConstant) {}
     virtual void Visit(BoundLocalVariable& boundLocalVariable) {}
     virtual void Visit(BoundMemberVariable& boundMemberVariable) {}
     virtual void Visit(BoundProperty& boundProperty) {}

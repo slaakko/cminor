@@ -8,6 +8,7 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
+#include <cminor/symbols/EnumTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
 #include <cminor/machine/Machine.hpp>
 
@@ -1056,7 +1057,7 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
                 classTypeConversions.push_back(std::move(conversion));
                 return conversionFun;
             }
-            else 
+            else
             {
                 int distance = 0;
                 if (targetClassType->HasBaseClass(sourceClassType, distance))
@@ -1101,6 +1102,46 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
                     return conversionFun;
                 }
             }
+        }
+    }
+    else if (EnumTypeSymbol* sourceEnumType = dynamic_cast<EnumTypeSymbol*>(sourceType))
+    {
+        ConstantPool& constantPool = assembly.GetConstantPool();
+        Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
+        TypeSymbol* underlyingType = sourceEnumType->GetUnderlyingType();
+        if (targetType == underlyingType)
+        {
+            std::unique_ptr<EnumTypeConversionFun> enum2underlyingType(new EnumTypeConversionFun(Span(), constantPool.GetConstant(constantPool.Install(U"enum2underlyingType"))));
+            enum2underlyingType->SetAssembly(&assembly);
+            enum2underlyingType->SetGroupNameConstant(groupName);
+            enum2underlyingType->SetConversionType(ConversionType::implicit_);
+            enum2underlyingType->SetConversionDistance(1);
+            enum2underlyingType->SetSourceType(sourceEnumType);
+            enum2underlyingType->SetTargetType(underlyingType);
+            FunctionSymbol* conversionFun = enum2underlyingType.get();
+            conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
+            enumTypeConversions.push_back(std::move(enum2underlyingType));
+            return conversionFun;
+        }
+    }
+    else if (EnumTypeSymbol* targetEnumType = dynamic_cast<EnumTypeSymbol*>(targetType))
+    {
+        ConstantPool& constantPool = assembly.GetConstantPool();
+        Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
+        TypeSymbol* underlyingType = targetEnumType->GetUnderlyingType();
+        if (sourceType == underlyingType)
+        {
+            std::unique_ptr<EnumTypeConversionFun> underlyingType2enum(new EnumTypeConversionFun(Span(), constantPool.GetConstant(constantPool.Install(U"underlyingType2enum"))));
+            underlyingType2enum->SetAssembly(&assembly);
+            underlyingType2enum->SetGroupNameConstant(groupName);
+            underlyingType2enum->SetConversionType(ConversionType::explicit_);
+            underlyingType2enum->SetConversionDistance(999);
+            underlyingType2enum->SetSourceType(underlyingType);
+            underlyingType2enum->SetTargetType(targetEnumType);
+            FunctionSymbol* conversionFun = underlyingType2enum.get();
+            conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
+            enumTypeConversions.push_back(std::move(underlyingType2enum));
+            return conversionFun;
         }
     }
     return nullptr;

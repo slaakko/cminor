@@ -30,7 +30,8 @@ const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
     "indexerGetterSymbol", "indexerSetterSymbol", "indexerGroupSymbol", "constantSymbol", "namespaceSymbol",
     "declarationBlock", "typeParameterSymbol", "boundTypeParameterSymbol", "classTemplateSpecializationSymbol", "basicTypeDefaultInit", "basicTypeCopyInit", "basicTypeAssignment", 
     "basicTypeReturn", "basicTypeConversion", "basicTypeUnaryOp", "basicTypBinaryOp", "objectDefaultInit", "objectCopyInit", "objectNullInit", "objectAssignment", "objectNullAssignment",
-    "objectNullEqual", "nullObjectEqual", "nullToObjectConversion", "classTypeConversion", "classToInterfaceConversion", "enumTypeSymbol", "enumConstantSymbol"
+    "objectNullEqual", "nullObjectEqual", "nullToObjectConversion", "classTypeConversion", "classToInterfaceConversion", "enumTypeSymbol", "enumConstantSymbol", "enumTypeDefaultInit", 
+    "enumTypeConversion"
 };
 
 std::string SymbolTypeStr(SymbolType symbolType)

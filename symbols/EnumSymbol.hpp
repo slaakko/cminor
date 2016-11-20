@@ -42,9 +42,11 @@ public:
     void SetEvaluating() { evaluating = true; }
     void ResetEvaluating() { evaluating = false; }
     void Evaluate(SymbolEvaluator* evaluator, const Span& span);
+    Constant GetConstant() const { return constant; }
 private:
     std::unique_ptr<Value> value;
     bool evaluating;
+    Constant constant;
 };
 
 } } // namespace cminor::symbols

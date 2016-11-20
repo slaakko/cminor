@@ -10,6 +10,7 @@
 #include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/symbols/EnumSymbol.hpp>
 #include <cminor/symbols/ConstantSymbol.hpp>
+#include <cminor/symbols/EnumTypeFun.hpp>
 #include <cminor/symbols/BasicTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
 #include <cminor/symbols/StringFun.hpp>
@@ -983,6 +984,10 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::objectNullInit, new ConcreteSymbolCreator<ObjectNullInit>());
     SymbolFactory::Instance().Register(SymbolType::objectAssignment, new ConcreteSymbolCreator<ObjectAssignment>());
     SymbolFactory::Instance().Register(SymbolType::objectNullAssignment, new ConcreteSymbolCreator<ObjectNullAssignment>());
+    SymbolFactory::Instance().Register(SymbolType::enumTypeSymbol, new ConcreteSymbolCreator<EnumTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::enumConstantSymbol, new ConcreteSymbolCreator<EnumConstantSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::enumTypeDefaultInit, new ConcreteSymbolCreator<EnumTypeDefaultInit>());
+    SymbolFactory::Instance().Register(SymbolType::enumTypeConversion, new ConcreteSymbolCreator<EnumTypeConversionFun>());
 }
 
 void DoneSymbol()

@@ -22,6 +22,7 @@
     <ClInclude Include="Assembly.hpp" />
     <ClInclude Include="BasicTypeFun.hpp" />
     <ClInclude Include="EnumSymbol.hpp" />
+    <ClInclude Include="EnumTypeFun.hpp" />
     <ClInclude Include="MappingSymbolVisitor.hpp" />
     <ClInclude Include="ConstantSymbol.hpp" />
     <ClInclude Include="FunctionSymbol.hpp" />
@@ -43,6 +44,7 @@
     <ClCompile Include="Assembly.cpp" />
     <ClCompile Include="BasicTypeFun.cpp" />
     <ClCompile Include="EnumSymbol.cpp" />
+    <ClCompile Include="EnumTypeFun.cpp" />
     <ClCompile Include="MappingSymbolVisitor.cpp" />
     <ClCompile Include="ConstantSymbol.cpp" />
     <ClCompile Include="FunctionSymbol.cpp" />

@@ -42,7 +42,6 @@ void EnumTypeSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("enumerated types cannot be inline", GetSpan());
     }
-
 }
 
 void EnumTypeSymbol::Write(SymbolWriter& writer)
@@ -94,17 +93,27 @@ EnumConstantSymbol::EnumConstantSymbol(const Span& span_, Constant name_) : Symb
 
 void EnumConstantSymbol::Write(SymbolWriter& writer)
 {
-    value->Write(writer);
+    Symbol::Write(writer);
+    writer.Put(value.get());
+    ConstantId id = GetAssembly()->GetConstantPool().GetIdFor(constant);
+    Assert(id != noConstantId, "got no id for constant");
+    id.Write(writer);
 }
 
 void EnumConstantSymbol::Read(SymbolReader& reader)
 {
-    value->Read(reader);
+    Symbol::Read(reader);
+    value.reset(reader.GetValue());
+    ConstantId id;
+    id.Read(reader);
+    constant = GetAssembly()->GetConstantPool().GetConstant(id);
 }
 
 void EnumConstantSymbol::SetValue(Value* value_)
 {
     value.reset(value_);
+    constant.SetValue(value->GetIntegralValue());
+    GetAssembly()->GetConstantPool().Install(constant);
 }
 
 void EnumConstantSymbol::Evaluate(SymbolEvaluator* evaluator, const Span& span)

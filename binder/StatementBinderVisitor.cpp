@@ -661,6 +661,7 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
     std::vector<FunctionScopeLookup> functionScopeLookups;
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, localVariableSymbol->GetType()->ClassInterfaceOrNsScope()));
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
+    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
     int n = constructionStatementNode.Arguments().Count();
     for (int i = 0; i < n; ++i)
     {

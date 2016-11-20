@@ -35,6 +35,7 @@ public:
     void Visit(BoundEmptyStatement& boundEmptyStatement) override;
     void Visit(BoundLiteral& boundLiteral) override;
     void Visit(BoundConstant& boundConstant) override;
+    void Visit(BoundEnumConstant& boundEnumConstant) override;
     void Visit(BoundLocalVariable& boundLocalVariable) override;
     void Visit(BoundMemberVariable& boundMemberVariable) override;
     void Visit(BoundProperty& boundProperty) override;
@@ -43,6 +44,10 @@ public:
     void Visit(BoundFunctionCall& boundFunctionCall) override;
     void SetFirstInstIndex(int32_t index) override;
     int32_t FistInstIndex() const override;
+    bool CreatePCRange() const override;
+    bool SetPCRangeEnd() const override;
+    void DoCreatePCRange(int32_t start) override;
+    void DoSetPCRangeEnd(int32_t end) override;
 private:
     Machine& machine;
     Function* function;
@@ -56,6 +61,8 @@ private:
     BoundStatement* breakTarget;
     BoundStatement* continueTarget;
     bool genJumpingBoolCode;
+    bool createPCRange;
+    bool setPCRangeEnd;
     void GenJumpingBoolCode();
     void Backpatch(std::vector<Instruction*>& set, int32_t target);
     void Merge(std::vector<Instruction*>& fromSet, std::vector<Instruction*>& toSet);
@@ -64,7 +71,7 @@ private:
 
 EmitterVisitor::EmitterVisitor(Machine& machine_) : 
     machine(machine_), function(nullptr), firstInstIndex(endOfFunction), nextSet(nullptr), trueSet(nullptr), falseSet(nullptr), breakSet(nullptr), continueSet(nullptr), 
-    breakTarget(nullptr), continueTarget(nullptr), genJumpingBoolCode(false)
+    breakTarget(nullptr), continueTarget(nullptr), genJumpingBoolCode(false), createPCRange(false), setPCRangeEnd(false)
 {
 }
 
@@ -114,6 +121,24 @@ void EmitterVisitor::SetFirstInstIndex(int32_t index)
 int32_t EmitterVisitor::FistInstIndex() const
 {
     return firstInstIndex;
+}
+
+bool EmitterVisitor::CreatePCRange() const
+{
+    return createPCRange;
+}
+bool EmitterVisitor::SetPCRangeEnd() const
+{
+    return setPCRangeEnd;
+}
+
+void EmitterVisitor::DoCreatePCRange(int32_t start)
+{
+    // todo
+}
+void EmitterVisitor::DoSetPCRangeEnd(int32_t end)
+{
+    // todo
 }
 
 void EmitterVisitor::GenJumpingBoolCode()
@@ -444,6 +469,12 @@ void EmitterVisitor::Visit(BoundLiteral& boundLiteral)
 void EmitterVisitor::Visit(BoundConstant& boundConstant)
 {
     boundConstant.GenLoad(machine, *function);
+    GenJumpingBoolCode();
+}
+
+void EmitterVisitor::Visit(BoundEnumConstant& boundEnumConstant)
+{
+    boundEnumConstant.GenLoad(machine, *function);
     GenJumpingBoolCode();
 }
 

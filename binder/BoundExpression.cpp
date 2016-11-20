@@ -6,6 +6,7 @@
 #include <cminor/binder/BoundExpression.hpp>
 #include <cminor/binder/BoundNodeVisitor.hpp>
 #include <cminor/symbols/FunctionSymbol.hpp>
+#include <cminor/symbols/EnumSymbol.hpp>
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Machine.hpp>
@@ -66,7 +67,7 @@ BoundConstant::BoundConstant(Assembly& assembly_, TypeSymbol* type_, ConstantSym
 void BoundConstant::GenLoad(Machine& machine, Function& function)
 {
     std::unique_ptr<Instruction> loadConstantInst;
-    ConstantId constantId = constantSymbol->GetAssembly()->GetConstantPool().GetIdFor(constantSymbol->GetConstant());
+    ConstantId constantId = GetAssembly().GetConstantPool().GetIdFor(constantSymbol->GetConstant());
     if (constantId != noConstantId)
     {
         if (constantId.Value() < 256)
@@ -98,6 +99,49 @@ void BoundConstant::GenStore(Machine& machine, Function& function)
 }
 
 void BoundConstant::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundEnumConstant::BoundEnumConstant(Assembly& assembly_, TypeSymbol* type_, EnumConstantSymbol* enumConstantSymbol_) : BoundExpression(assembly_, type_), enumConstantSymbol(enumConstantSymbol_)
+{
+}
+
+void BoundEnumConstant::GenLoad(Machine& machine, Function& function)
+{
+    std::unique_ptr<Instruction> loadConstantInst;
+    ConstantId constantId = GetAssembly().GetConstantPool().GetIdFor(enumConstantSymbol->GetConstant());
+    if (constantId != noConstantId)
+    {
+        if (constantId.Value() < 256)
+        {
+            loadConstantInst = std::move(machine.CreateInst("loadconstant.b"));
+            loadConstantInst->SetIndex(static_cast<uint8_t>(constantId.Value()));
+        }
+        else if (constantId.Value() < 65536)
+        {
+            loadConstantInst = std::move(machine.CreateInst("loadconstant.s"));
+            loadConstantInst->SetIndex(static_cast<uint16_t>(constantId.Value()));
+        }
+        else
+        {
+            loadConstantInst = std::move(machine.CreateInst("loadconstant"));
+            loadConstantInst->SetIndex(int32_t(constantId.Value()));
+        }
+        function.AddInst(std::move(loadConstantInst));
+    }
+    else
+    {
+        throw std::runtime_error("id for constant not found");
+    }
+}
+
+void BoundEnumConstant::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to enum constant");
+}
+
+void BoundEnumConstant::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
 }

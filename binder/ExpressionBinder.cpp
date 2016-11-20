@@ -12,6 +12,7 @@
 #include <cminor/binder/TypeResolver.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/IndexerSymbol.hpp>
+#include <cminor/symbols/EnumSymbol.hpp>
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
@@ -624,6 +625,23 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
             expression.reset(new BoundConstant(boundCompileUnit.GetAssembly(), constantSymbol->GetType(), constantSymbol));
             break;
         }
+        case SymbolType::enumTypeSymbol:
+        {
+            EnumTypeSymbol* enumTypeSymbol = static_cast<EnumTypeSymbol*>(symbol);
+            CheckAccess(boundFunction->GetFunctionSymbol(), enumTypeSymbol);
+            expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), enumTypeSymbol));
+            break;
+        }
+        case SymbolType::enumConstantSymbol:
+        {
+            EnumConstantSymbol* enumConstantSymbol = static_cast<EnumConstantSymbol*>(symbol);
+            Symbol* parent = enumConstantSymbol->Parent();
+            EnumTypeSymbol* enumType = dynamic_cast<EnumTypeSymbol*>(parent);
+            Assert(enumType, "enum type expected");
+            Assert(enumType->GetUnderlyingType(), "underlying type expected");
+            expression.reset(new BoundEnumConstant(boundCompileUnit.GetAssembly(), enumType, enumConstantSymbol));
+            break;
+        }
         case SymbolType::namespaceSymbol:
         {
             NamespaceSymbol* ns = static_cast<NamespaceSymbol*>(symbol);
@@ -759,6 +777,20 @@ void ExpressionBinder::Visit(DotNode& dotNode)
             else
             {
                 throw Exception("symbol '" + dotNode.MemberStr() + "' not found from interface '" + ToUtf8(interfaceType->FullName()) + "'", dotNode.MemberId()->GetSpan());
+            }
+        }
+        else if (EnumTypeSymbol* enumType = dynamic_cast<EnumTypeSymbol*>(type))
+        {
+            ContainerScope* scope = enumType->GetContainerScope();
+            utf32_string str = ToUtf32(dotNode.MemberStr());
+            Symbol* symbol = scope->Lookup(StringPtr(str.c_str()));
+            if (symbol)
+            {
+                BindSymbol(symbol);
+            }
+            else
+            {
+                throw Exception("symbol '" + dotNode.MemberStr() + "' not found from enumerated type '" + ToUtf8(enumType->FullName()) + "'", dotNode.MemberId()->GetSpan());
             }
         }
         else

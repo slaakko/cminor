@@ -1,8 +1,13 @@
 using System;
 
-public const int foo = 0; 
+public enum Foo : byte
+{
+    none = 0u, 
+    alpha = 1u << 0u,
+    beta = 1u << 1u
+}
 
 void main()
 {
-    int x = foo;
+    Foo foo = cast<Foo>(Foo.alpha | Foo.beta);
 }

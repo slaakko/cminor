@@ -76,9 +76,18 @@ void Function::AddInst(std::unique_ptr<Instruction>&& inst)
     if (emitter)
     {
         int32_t firstInstIndex = emitter->FistInstIndex();
+        int32_t instructionIndex = int32_t(instructions.size());
         if (firstInstIndex == endOfFunction)
         {
-            emitter->SetFirstInstIndex(int32_t(instructions.size()));
+            emitter->SetFirstInstIndex(instructionIndex);
+        }
+        if (emitter->CreatePCRange())
+        {
+            emitter->DoCreatePCRange(instructionIndex);
+        }
+        if (emitter->SetPCRangeEnd())
+        {
+            emitter->DoSetPCRangeEnd(instructionIndex);
         }
     }
     instructions.push_back(std::move(inst));

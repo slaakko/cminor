@@ -120,6 +120,8 @@ private:
     std::string typeName;
 };
 
+void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type);
+void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type, bool noDefaultInit);
 void InitBasicTypeFun(Assembly& assembly);
 
 } } // namespace cminor::symbols

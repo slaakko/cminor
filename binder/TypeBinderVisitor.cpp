@@ -13,6 +13,7 @@
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/IndexerSymbol.hpp>
+#include <cminor/symbols/EnumTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
 
 namespace cminor { namespace binder {
@@ -107,6 +108,8 @@ void TypeBinderVisitor::Visit(ConstantNode& constantNode)
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(constantNode);
     ConstantSymbol* constantSymbol = dynamic_cast<ConstantSymbol*>(symbol);
     Assert(constantSymbol, "constant symbol expected");
+    if (constantSymbol->IsBound()) return;
+    constantSymbol->SetBound();
     constantSymbol->SetSpecifiers(constantNode.GetSpecifiers());
     TypeSymbol* type = ResolveType(boundCompileUnit, containerScope, constantNode.TypeExpr());
     constantSymbol->SetType(type);
@@ -118,9 +121,11 @@ void TypeBinderVisitor::Visit(EnumTypeNode& enumTypeNode)
 {
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(enumTypeNode);
     EnumTypeSymbol* enumTypeSymbol = dynamic_cast<EnumTypeSymbol*>(symbol);
+    Assert(enumTypeSymbol, "enum type symbol expected");
+    if (enumTypeSymbol->IsBound()) return;
+    enumTypeSymbol->SetBound();
     EnumTypeSymbol* prevEnumType = enumType;
     enumType = enumTypeSymbol;
-    Assert(enumTypeSymbol, "enum type symbol expected");
     enumTypeSymbol->SetSpecifiers(enumTypeNode.GetSpecifiers());
     TypeSymbol* underlyingType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int32");
     if (enumTypeNode.GetUnderlyingType())
@@ -136,6 +141,7 @@ void TypeBinderVisitor::Visit(EnumTypeNode& enumTypeNode)
         EnumConstantNode* enumConstantNode = enumTypeNode.Constants()[i];
         enumConstantNode->Accept(*this);
     }
+    CreateEnumFun(boundCompileUnit.GetAssembly(), enumTypeSymbol);
     containerScope = prevContainerScope;
     enumType = prevEnumType;
 }

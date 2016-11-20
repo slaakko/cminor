@@ -293,6 +293,7 @@ private:
     std::vector<std::unique_ptr<FunctionSymbol>> nullConversions;
     std::vector<std::unique_ptr<ClassTypeConversion>> classTypeConversions;
     std::vector<std::unique_ptr<ClassToInterfaceConversion>> interfaceTypeConversions;
+    std::vector<std::unique_ptr<FunctionSymbol>> enumTypeConversions;
 };
 
 } } // namespace cminor::symbols

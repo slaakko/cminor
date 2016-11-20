@@ -69,6 +69,17 @@ private:
     ConstantSymbol* constantSymbol;
 };
 
+class BoundEnumConstant : public BoundExpression
+{
+public:
+    BoundEnumConstant(Assembly& assembly_, TypeSymbol* type_, EnumConstantSymbol* enumConstantSymbol_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    EnumConstantSymbol* enumConstantSymbol;
+};
+
 class BoundLocalVariable : public BoundExpression
 {
 public:

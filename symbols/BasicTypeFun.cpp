@@ -319,19 +319,30 @@ void CreateBasicTypeComparisonFun(Assembly& assembly, TypeSymbol* type, TypeSymb
 
 void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type)
 {
-    assembly.GetSymbolTable().BeginNamespace(StringPtr(U"System"), Span());
+    CreateBasicTypeBasicFun(assembly, type, false);
+}
+
+void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type, bool noDefaultInit)
+{
+    if (!noDefaultInit)
+    {
+        assembly.GetSymbolTable().BeginNamespace(StringPtr(U"System"), Span());
+    }
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
     Constant thatParamName = constantPool.GetConstant(constantPool.Install(U"that"));
-    ParameterSymbol* thisParam1 = new ParameterSymbol(Span(), thisParamName);
-    thisParam1->SetAssembly(&assembly);
-    thisParam1->SetType(type);
-    BasicTypeDefaultInit* defaultInit = new BasicTypeDefaultInit(Span(), constantPool.GetEmptyStringConstant());
-    defaultInit->SetAssembly(&assembly);
-    defaultInit->SetType(type);
-    defaultInit->AddSymbol(std::unique_ptr<Symbol>(thisParam1));
-    defaultInit->ComputeName();
-    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(defaultInit));
+    if (!noDefaultInit)
+    {
+        ParameterSymbol* thisParam1 = new ParameterSymbol(Span(), thisParamName);
+        thisParam1->SetAssembly(&assembly);
+        thisParam1->SetType(type);
+        BasicTypeDefaultInit* defaultInit = new BasicTypeDefaultInit(Span(), constantPool.GetEmptyStringConstant());
+        defaultInit->SetAssembly(&assembly);
+        defaultInit->SetType(type);
+        defaultInit->AddSymbol(std::unique_ptr<Symbol>(thisParam1));
+        defaultInit->ComputeName();
+        assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(defaultInit));
+    }
 
     ParameterSymbol* thisParam2 = new ParameterSymbol(Span(), thisParamName);
     thisParam2->SetAssembly(&assembly);
@@ -372,7 +383,10 @@ void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type)
     returnFun->AddSymbol(std::unique_ptr<Symbol>(valueParam));
     returnFun->ComputeName();
     assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(returnFun));
-    assembly.GetSymbolTable().EndNamespace();
+    if (!noDefaultInit)
+    {
+        assembly.GetSymbolTable().EndNamespace();
+    }
 }
 
 void CreateBasicTypeBoolFun(Assembly& assembly, TypeSymbol* boolType)
