@@ -59,6 +59,9 @@ void ConstantSymbol::Write(SymbolWriter& writer)
     ConstantId typeId = constantPool.GetIdFor(typeName);
     typeId.Write(writer);
     writer.Put(value.get());
+    ConstantId id = GetAssembly()->GetConstantPool().GetIdFor(constant);
+    Assert(id != noConstantId, "got no id for constant");
+    id.Write(writer);
 }
 
 void ConstantSymbol::Read(SymbolReader& reader)
@@ -68,6 +71,9 @@ void ConstantSymbol::Read(SymbolReader& reader)
     typeId.Read(reader);
     reader.EmplaceTypeRequest(this, typeId, 0);
     value.reset(reader.GetValue());
+    ConstantId id;
+    id.Read(reader);
+    constant = GetAssembly()->GetConstantPool().GetConstant(id);
 }
 
 void ConstantSymbol::EmplaceType(TypeSymbol* type, int index)

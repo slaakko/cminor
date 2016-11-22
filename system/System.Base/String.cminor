@@ -57,8 +57,7 @@ namespace System
         }
         else
         {
-            // throw ArgumentOutOfRangeException("invalid array size");
-            return null;
+            throw new ArgumentOutOfRangeException("invalid array size");
         }
     }
 }

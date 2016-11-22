@@ -187,25 +187,28 @@ void SymbolTable::BeginMemberFunction(MemberFunctionNode& memberFunctionNode)
     functionScope->SetParent(containerScope);
     BeginContainer(function);
     declarationBlockId = 0;
-    Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
-    ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), thisParamName);
-    thisParam->SetAssembly(assembly);
-    TypeSymbol* thisParamType = nullptr;
-    if (currentClass)
+    if ((memberFunctionNode.GetSpecifiers() & Specifiers::static_) == Specifiers::none)
     {
-        thisParamType = currentClass;
+        Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+        ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), thisParamName);
+        thisParam->SetAssembly(assembly);
+        TypeSymbol* thisParamType = nullptr;
+        if (currentClass)
+        {
+            thisParamType = currentClass;
+        }
+        else if (currentInterface)
+        {
+            thisParamType = currentInterface;
+        }
+        else
+        {
+            Assert(false, "class or interface expected");
+        }
+        thisParam->SetType(thisParamType);
+        thisParam->SetBound();
+        function->AddSymbol(std::unique_ptr<Symbol>(thisParam));
     }
-    else if (currentInterface)
-    {
-        thisParamType = currentInterface;
-    }
-    else
-    {
-        Assert(false, "class or interface expected");
-    }
-    thisParam->SetType(thisParamType);
-    thisParam->SetBound();
-    function->AddSymbol(std::unique_ptr<Symbol>(thisParam));
 }
 
 void SymbolTable::EndMemberFunction()
@@ -385,13 +388,20 @@ void SymbolTable::BeginPropertyGetter(PropertyNode& propertyNode)
     container->AddSymbol(std::unique_ptr<Symbol>(getter));
     BeginContainer(getter);
     declarationBlockId = 0;
-    Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
-    ParameterSymbol* thisParam = new ParameterSymbol(propertyNode.GetSpan(), thisParamName);
-    thisParam->SetAssembly(assembly);
-    TypeSymbol* thisParamType = currentClass;
-    thisParam->SetType(thisParamType);
-    thisParam->SetBound();
-    getter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+    if ((propertyNode.GetSpecifiers() & Specifiers::static_) == Specifiers::none)
+    {
+        Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+        ParameterSymbol* thisParam = new ParameterSymbol(propertyNode.GetSpan(), thisParamName);
+        thisParam->SetAssembly(assembly);
+        TypeSymbol* thisParamType = currentClass;
+        thisParam->SetType(thisParamType);
+        thisParam->SetBound();
+        getter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+    }
+    else
+    {
+        getter->SetStatic();
+    }
 }
 
 void SymbolTable::EndPropertyGetter()
@@ -413,13 +423,20 @@ void SymbolTable::BeginPropertySetter(PropertyNode& propertyNode)
     setterScope->SetParent(containerScope);
     container->AddSymbol(std::unique_ptr<Symbol>(setter));
     BeginContainer(setter);
-    Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
-    ParameterSymbol* thisParam = new ParameterSymbol(propertyNode.GetSpan(), thisParamName);
-    thisParam->SetAssembly(assembly);
-    TypeSymbol* thisParamType = currentClass;
-    thisParam->SetType(thisParamType);
-    thisParam->SetBound();
-    setter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+    if ((propertyNode.GetSpecifiers() & Specifiers::static_) == Specifiers::none)
+    {
+        Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+        ParameterSymbol* thisParam = new ParameterSymbol(propertyNode.GetSpan(), thisParamName);
+        thisParam->SetAssembly(assembly);
+        TypeSymbol* thisParamType = currentClass;
+        thisParam->SetType(thisParamType);
+        thisParam->SetBound();
+        setter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+    }
+    else
+    {
+        setter->SetStatic();
+    }
     declarationBlockId = 0;
     Constant valueConstantName = constantPool.GetConstant(constantPool.Install(U"value"));
     ParameterSymbol* valueParam = new ParameterSymbol(propertyNode.GetSpan(), valueConstantName);
@@ -467,13 +484,20 @@ void SymbolTable::BeginIndexerGetter(IndexerNode& indexerNode)
     container->AddSymbol(std::unique_ptr<Symbol>(getter));
     BeginContainer(getter);
     declarationBlockId = 0;
-    Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
-    ParameterSymbol* thisParam = new ParameterSymbol(indexerNode.GetSpan(), thisParamName);
-    thisParam->SetAssembly(assembly);
-    TypeSymbol* thisParamType = currentClass;
-    thisParam->SetType(thisParamType);
-    thisParam->SetBound();
-    getter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+    if ((indexerNode.GetSpecifiers() & Specifiers::static_) == Specifiers::none)
+    {
+        Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+        ParameterSymbol* thisParam = new ParameterSymbol(indexerNode.GetSpan(), thisParamName);
+        thisParam->SetAssembly(assembly);
+        TypeSymbol* thisParamType = currentClass;
+        thisParam->SetType(thisParamType);
+        thisParam->SetBound();
+        getter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+    }
+    else
+    {
+        getter->SetStatic();
+    }
     utf32_string indexParamName = ToUtf32(indexerNode.Id()->Str());
     Constant indexParamNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(indexParamName.c_str())));
     ParameterSymbol* indexParam = new ParameterSymbol(indexerNode.Id()->GetSpan(), indexParamNameConstant);
@@ -500,13 +524,20 @@ void SymbolTable::BeginIndexerSetter(IndexerNode& indexerNode)
     setterScope->SetParent(containerScope);
     container->AddSymbol(std::unique_ptr<Symbol>(setter));
     BeginContainer(setter);
-    Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
-    ParameterSymbol* thisParam = new ParameterSymbol(indexerNode.GetSpan(), thisParamName);
-    thisParam->SetAssembly(assembly);
-    TypeSymbol* thisParamType = currentClass;
-    thisParam->SetType(thisParamType);
-    thisParam->SetBound();
-    setter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+    if ((indexerNode.GetSpecifiers() & Specifiers::static_) == Specifiers::none)
+    {
+        Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+        ParameterSymbol* thisParam = new ParameterSymbol(indexerNode.GetSpan(), thisParamName);
+        thisParam->SetAssembly(assembly);
+        TypeSymbol* thisParamType = currentClass;
+        thisParam->SetType(thisParamType);
+        thisParam->SetBound();
+        setter->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+    }
+    else
+    {
+        setter->SetStatic();
+    }
     declarationBlockId = 0;
     utf32_string indexParamName = ToUtf32(indexerNode.Id()->Str());
     Constant indexParamNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(indexParamName.c_str())));

@@ -1,4 +1,5 @@
 using System;
+using System.Unicode;
 
 namespace System.IO
 {
@@ -6,6 +7,10 @@ namespace System.IO
     {
         public StreamWriter(Stream stream)
         {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("provided stream is null");
+            }
             this.encoder = new Utf8Encoder(stream);
         }
         public void Close()
@@ -14,6 +19,10 @@ namespace System.IO
         }
         public void Write(String s)
         {
+            if (s == null)
+            {
+                throw new ArgumentNullException("provided string is null");
+            }
             encoder.Encode(s);
         }
         public void WriteLine(String s)
@@ -21,7 +30,7 @@ namespace System.IO
             Write(s);
             WriteLine();
         }
-        pbulic void WriteLine()
+        public void WriteLine()
         {
             Write("\n");
         }

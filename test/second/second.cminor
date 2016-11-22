@@ -1,13 +1,11 @@
 using System;
-
-public enum Foo : byte
-{
-    none = 0u, 
-    alpha = 1u << 0u,
-    beta = 1u << 1u
-}
+using System.IO;
+using System.Unicode;
 
 void main()
 {
-    Foo foo = cast<Foo>(Foo.alpha | Foo.beta);
+    Stream stream = new FileStream(stdout, FileAccess.write);
+    Utf8Encoder encoder = new Utf8Encoder(stream);
+    string s = "Hello, World!\n";
+    encoder.Encode(s);
 }

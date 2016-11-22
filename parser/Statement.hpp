@@ -1,5 +1,5 @@
-#ifndef Statement_hpp_1946
-#define Statement_hpp_1946
+#ifndef Statement_hpp_21366
+#define Statement_hpp_21366
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -43,8 +43,12 @@ private:
     class DecrementStatementRule;
     class ExpressionStatementRule;
     class EmptyStatementRule;
+    class ThrowStatementRule;
+    class TryStatementRule;
+    class CatchRule;
+    class FinallyRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // Statement_hpp_1946
+#endif // Statement_hpp_21366

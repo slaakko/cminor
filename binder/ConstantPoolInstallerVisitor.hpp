@@ -79,6 +79,12 @@ public:
     void Visit(ExpressionStatementNode& expressionStatementNode) override;
     void Visit(IncrementStatementNode& incrementStatementNode) override;
     void Visit(DecrementStatementNode& decrementStatementNode) override;
+    void Visit(ThrowStatementNode& throwStatementNode) override;
+    void Visit(CatchNode& catchNode) override;
+    void Visit(TryStatementNode& tryStatementNode) override;
+    void Visit(EnumTypeNode& enumTypeNode) override;
+    void Visit(EnumConstantNode& enumConstantNode) override;
+    void Visit(ConstantNode& constantNode) override;
 private:
     ConstantPool& constantPool;
 };

@@ -615,4 +615,202 @@ void DecrementStatementNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+ThrowStatementNode::ThrowStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+ThrowStatementNode::ThrowStatementNode(const Span& span_, Node* expression_) : StatementNode(span_), expression(expression_)
+{
+    if (expression)
+    {
+        expression->SetParent(this);
+    }
+}
+
+Node* ThrowStatementNode::Clone(CloneContext& cloneContext) const
+{
+    Node* clonedExpression = nullptr;
+    if (expression)
+    {
+        clonedExpression = expression->Clone(cloneContext);
+    }
+    return new ThrowStatementNode(GetSpan(), clonedExpression);
+}
+
+void ThrowStatementNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    bool hasExpression = expression != nullptr;
+    writer.AsMachineWriter().Put(hasExpression);
+    if (hasExpression)
+    {
+        writer.Put(expression.get());
+    }
+}
+
+void ThrowStatementNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    bool hasExpression = reader.GetBool();
+    if (hasExpression)
+    {
+        expression.reset(reader.GetNode());
+        expression->SetParent(this);
+    }
+}
+
+void ThrowStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+CatchNode::CatchNode(const Span& span_) : Node(span_)
+{
+}
+
+CatchNode::CatchNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_, CompoundStatementNode* catchBlock_) : Node(span_), typeExpr(typeExpr_), id(id_), catchBlock(catchBlock_)
+{
+    if (typeExpr)
+    {
+        typeExpr->SetParent(this);
+    }
+    if (id)
+    {
+        id->SetParent(this);
+    }
+    catchBlock->SetParent(this);
+}
+
+CatchNode::CatchNode(const Span& span_, CompoundStatementNode* catchBlock_) : Node(span_), catchBlock(catchBlock_)
+{
+}
+
+Node* CatchNode::Clone(CloneContext& cloneContext) const
+{
+    Node* clonedTypeExpr = nullptr;
+    if (typeExpr)
+    {
+        clonedTypeExpr = typeExpr->Clone(cloneContext);
+    }
+    IdentifierNode* clonedId = nullptr;
+    if (id)
+    {
+        clonedId = static_cast<IdentifierNode*>(id->Clone(cloneContext));
+    }
+    CatchNode* clone = new CatchNode(GetSpan(), clonedTypeExpr, clonedId, static_cast<CompoundStatementNode*>(catchBlock->Clone(cloneContext)));
+    return clone;
+}
+
+void CatchNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    bool hasTypeExpr = typeExpr != nullptr;
+    writer.AsMachineWriter().Put(hasTypeExpr);
+    if (hasTypeExpr)
+    {
+        writer.Put(typeExpr.get());
+    }
+    bool hasId = id != nullptr;
+    writer.AsMachineWriter().Put(hasId);
+    if (hasId)
+    {
+        writer.Put(id.get());
+    }
+    writer.Put(catchBlock.get());
+}
+
+void CatchNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    bool hasTypeExpr = reader.GetBool();
+    if (hasTypeExpr)
+    {
+        typeExpr.reset(reader.GetNode());
+        typeExpr->SetParent(this);
+    }
+    bool hasId = reader.GetBool();
+    if (hasId)
+    {
+        id.reset(reader.GetIdentifierNode());
+        id->SetParent(this);
+    }
+    catchBlock.reset(reader.GetCompoundStatementNode());
+    catchBlock->SetParent(this);
+}
+
+void CatchNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+TryStatementNode::TryStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+TryStatementNode::TryStatementNode(const Span& span_, CompoundStatementNode* tryBlock_) : StatementNode(span_), tryBlock(tryBlock_)
+{
+    tryBlock->SetParent(this);
+}
+
+Node* TryStatementNode::Clone(CloneContext& cloneContext) const
+{
+    TryStatementNode* clone = new TryStatementNode(GetSpan(), static_cast<CompoundStatementNode*>(tryBlock->Clone(cloneContext)));
+    int n = catches.Count();
+    for (int i = 0; i < n; ++i)
+    {
+        CatchNode* catch_ = catches[i];
+        clone->AddCatch(static_cast<CatchNode*>(catch_->Clone(cloneContext)));
+    }
+    if (finallyBlock)
+    {
+        clone->SetFinally(static_cast<CompoundStatementNode*>(finallyBlock->Clone(cloneContext)));
+    }
+    return clone;
+}
+
+void TryStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(tryBlock.get());
+    catches.Write(writer);
+    bool hasFinallyBlock = finallyBlock != nullptr;
+    writer.AsMachineWriter().Put(hasFinallyBlock);
+    if (hasFinallyBlock)
+    {
+        writer.Put(finallyBlock.get());
+    }
+}
+
+void TryStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    tryBlock.reset(reader.GetCompoundStatementNode());
+    tryBlock->SetParent(this);
+    catches.Read(reader);
+    catches.SetParent(this);
+    bool hasFinallyBlock = reader.GetBool();
+    if (hasFinallyBlock)
+    {
+        finallyBlock.reset(reader.GetCompoundStatementNode());
+        finallyBlock->SetParent(this);
+    }
+}
+
+void TryStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+void TryStatementNode::AddCatch(CatchNode* catch_)
+{
+    catch_->SetParent(this);
+    catches.Add(catch_);
+}
+
+void TryStatementNode::SetFinally(CompoundStatementNode* finallyBlock_)
+{
+    finallyBlock.reset(finallyBlock_);
+    finallyBlock->SetParent(this);
+}
+
 } } // namespace cminor::ast

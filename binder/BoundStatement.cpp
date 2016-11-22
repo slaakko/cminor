@@ -158,4 +158,35 @@ void BoundEmptyStatement::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundThrowStatement::BoundThrowStatement(Assembly& assembly_) : BoundStatement(assembly_)
+{
+}
+
+BoundThrowStatement::BoundThrowStatement(Assembly& assembly_, std::unique_ptr<BoundExpression>&& expression_) : BoundStatement(assembly_), expression(std::move(expression_))
+{
+}
+
+void BoundThrowStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundStaticInitStatement::BoundStaticInitStatement(Assembly& assembly_, Constant classNameConstant_) : BoundStatement(assembly_), classNameConstant(classNameConstant_)
+{
+}
+
+void BoundStaticInitStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundDoneStaticInitStatement::BoundDoneStaticInitStatement(Assembly& assembly_, Constant classNameConstant_) : BoundStatement(assembly_), classNameConstant(classNameConstant_)
+{
+}
+
+void BoundDoneStaticInitStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 } } // namespace cminor::binder

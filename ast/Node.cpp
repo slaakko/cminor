@@ -316,6 +316,9 @@ void NodeInit()
     NodeFactory::Instance().Register(NodeType::emptyStatementNode, new ConcreteNodeCreator<EmptyStatementNode>());
     NodeFactory::Instance().Register(NodeType::incrementStatementNode, new ConcreteNodeCreator<IncrementStatementNode>());
     NodeFactory::Instance().Register(NodeType::decrementStatementNode, new ConcreteNodeCreator<DecrementStatementNode>());
+    NodeFactory::Instance().Register(NodeType::throwStatementNode, new ConcreteNodeCreator<ThrowStatementNode>());
+    NodeFactory::Instance().Register(NodeType::tryStatementNode, new ConcreteNodeCreator<TryStatementNode>());
+    NodeFactory::Instance().Register(NodeType::catchNode, new ConcreteNodeCreator<CatchNode>());
     NodeFactory::Instance().Register(NodeType::enumTypeNode, new ConcreteNodeCreator<EnumTypeNode>());
     NodeFactory::Instance().Register(NodeType::enumConstantNode, new ConcreteNodeCreator<EnumConstantNode>());
     NodeFactory::Instance().Register(NodeType::constantNode, new ConcreteNodeCreator<ConstantNode>());

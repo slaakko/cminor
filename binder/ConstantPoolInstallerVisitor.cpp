@@ -11,8 +11,10 @@
 #include <cminor/ast/Statement.hpp>
 #include <cminor/ast/Namespace.hpp>
 #include <cminor/ast/Class.hpp>
+#include <cminor/ast/Constant.hpp>
 #include <cminor/ast/Interface.hpp>
 #include <cminor/ast/Expression.hpp>
+#include <cminor/ast/Enumeration.hpp>
 
 namespace cminor { namespace binder {
 
@@ -532,6 +534,70 @@ void ConstantPoolInstallerVisitor::Visit(IncrementStatementNode& incrementStatem
 void ConstantPoolInstallerVisitor::Visit(DecrementStatementNode& decrementStatementNode)
 {
     decrementStatementNode.Expression()->Accept(*this);
+}
+
+void ConstantPoolInstallerVisitor::Visit(ThrowStatementNode& throwStatementNode)
+{
+    if (throwStatementNode.Expression())
+    {
+        throwStatementNode.Expression()->Accept(*this);
+    }
+}
+
+void ConstantPoolInstallerVisitor::Visit(CatchNode& catchNode)
+{
+    if (catchNode.TypeExpr())
+    {
+        catchNode.TypeExpr()->Accept(*this);
+    }
+    if (catchNode.Id())
+    {
+        catchNode.Id()->Accept(*this);
+    }
+    catchNode.CatchBlock()->Accept(*this);
+}
+
+void ConstantPoolInstallerVisitor::Visit(TryStatementNode& tryStatementNode)
+{
+    tryStatementNode.TryBlock()->Accept(*this);
+    int n = tryStatementNode.Catches().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        CatchNode* catchNode = tryStatementNode.Catches()[i];
+        catchNode->Accept(*this);
+    }
+    if (tryStatementNode.FinallyBlock())
+    {
+        tryStatementNode.FinallyBlock()->Accept(*this);
+    }
+}
+
+void ConstantPoolInstallerVisitor::Visit(EnumTypeNode& enumTypeNode)
+{
+    enumTypeNode.Id()->Accept(*this);
+    if (enumTypeNode.GetUnderlyingType())
+    {
+        enumTypeNode.GetUnderlyingType()->Accept(*this);
+    }
+    int n = enumTypeNode.Constants().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        EnumConstantNode* enumConstant = enumTypeNode.Constants()[i];
+        enumConstant->Accept(*this);
+    }
+}
+
+void ConstantPoolInstallerVisitor::Visit(EnumConstantNode& enumConstantNode)
+{
+    enumConstantNode.Id()->Accept(*this);
+    enumConstantNode.GetValue()->Accept(*this);
+}
+
+void ConstantPoolInstallerVisitor::Visit(ConstantNode& constantNode) 
+{
+    constantNode.TypeExpr()->Accept(*this);
+    constantNode.Id()->Accept(*this);
+    constantNode.Value()->Accept(*this);
 }
 
 } } // namespace cminor::binder

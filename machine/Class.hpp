@@ -6,6 +6,7 @@
 #ifndef CMINOR_MACHINE_CLASS_INCLUDED
 #define CMINOR_MACHINE_CLASS_INCLUDED
 #include <cminor/machine/Function.hpp>
+#include <mutex>
 
 namespace cminor { namespace machine {
 
@@ -26,6 +27,35 @@ private:
     std::vector<Constant> methods;
 };
 
+class StaticClassData
+{
+public:
+    StaticClassData();
+    void Write(Writer& writer);
+    void Read(Reader& reader);
+    bool Initialized() const { return initialized; }
+    bool Initializing() const { return initializing; }
+    void SetInitializing() { initializing = true; }
+    void ResetInitializing() { initializing = false; }
+    void SetInitialized() { initialized = true; }
+    void Lock() { initMtx.lock(); }
+    void Unlock() { initMtx.unlock(); }
+    void SetStaticConstructorName(Constant staticConstructorName_);
+    Constant StaticConstructorName() const { return staticConstructorName; }
+    Layout& StaticLayout() { return staticLayout; }
+    const Layout& StaticLayout() const { return staticLayout; }
+    void AllocateStaticData();
+    void SetStaticField(IntegralValue fieldValue, int32_t index);
+    IntegralValue GetStaticField(int32_t index) const;
+private:
+    std::atomic_bool initialized;
+    std::atomic_bool initializing;
+    std::recursive_mutex initMtx;
+    Constant staticConstructorName;
+    Layout staticLayout;
+    MemPtr staticData;
+};
+
 class ClassData
 {
 public:
@@ -37,10 +67,13 @@ public:
     MethodTable& Vmt() { return vmt; }
     MethodTable& Imt(int32_t index);
     void AllocImts(int32_t numInterfaces);
+    void CreateStaticClassData();
+    StaticClassData* GetStaticClassData() const { return staticClassData.get(); }
 private:
     ObjectType* type;
     MethodTable vmt;
     std::vector<MethodTable> imts;
+    std::unique_ptr<StaticClassData> staticClassData;
 };
 
 class ClassDataTable

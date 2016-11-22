@@ -33,6 +33,7 @@ class InterfaceTypeSymbol;
 class SymbolTable;
 class MemberVariableSymbol;
 class ConstructorSymbol;
+class StaticConstructorSymbol;
 class MemberFunctionSymbol;
 class ClassTemplateSpecializationSymbol;
 class PropertySymbol;
@@ -506,6 +507,7 @@ public:
     void Add(MemberVariableSymbol* memberVariableSymbol);
     void Add(MemberFunctionSymbol* memberFunctionSymbol);
     void Add(ConstructorSymbol* constructorSymbol);
+    void Add(StaticConstructorSymbol* staticConstructorSymbol);
     void Add(TypeParameterSymbol* typeParameterSymbol);
     void Add(PropertySymbol* propertySymbol);
     void Add(IndexerSymbol* indexerSymbol);
@@ -523,6 +525,8 @@ public:
     const std::vector<MemberVariableSymbol*>& StaticMemberVariables() const { return staticMemberVariables; }
     const std::vector<MemberFunctionSymbol*>& MemberFunctions() const { return memberFunctions; }
     const std::vector<ConstructorSymbol*>& Constructors() const { return constructors; }
+    StaticConstructorSymbol* GetStaticConstructor() const { return staticConstructorSymbol; }
+    bool NeedsStaticInitialization() const;
     const std::vector<PropertySymbol*>& Properties() const { return properties; }
     const std::vector<IndexerSymbol*>& Indexers() const { return indexers; }
     ConstructorSymbol* DefaultConstructorSymbol() const { return defaultConstructorSymbol; }
@@ -558,6 +562,7 @@ private:
     std::vector<MemberFunctionSymbol*> memberFunctions;
     std::vector<ConstructorSymbol*> constructors;
     ConstructorSymbol* defaultConstructorSymbol;
+    StaticConstructorSymbol* staticConstructorSymbol;
     std::vector<TypeParameterSymbol*> typeParameters;
     std::vector<PropertySymbol*> properties;
     std::vector<IndexerSymbol*> indexers;

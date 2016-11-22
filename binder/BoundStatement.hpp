@@ -153,6 +153,37 @@ public:
     void Accept(BoundNodeVisitor& visitor) override;
 };
 
+class BoundThrowStatement : public BoundStatement
+{
+public:
+    BoundThrowStatement(Assembly& assembly_);
+    BoundThrowStatement(Assembly& assembly_, std::unique_ptr<BoundExpression>&& expression_);
+    BoundExpression* Expression() const { return expression.get(); }
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    std::unique_ptr<BoundExpression> expression;
+};
+
+class BoundStaticInitStatement : public BoundStatement
+{
+public:
+    BoundStaticInitStatement(Assembly& assembly_, Constant classNameConstant_);
+    void Accept(BoundNodeVisitor& visitor) override;
+    Constant ClassNameConstant() const { return classNameConstant; }
+private:
+    Constant classNameConstant;
+};
+
+class BoundDoneStaticInitStatement : public BoundStatement
+{
+public:
+    BoundDoneStaticInitStatement(Assembly& assembly_, Constant classNameConstant_);
+    void Accept(BoundNodeVisitor& visitor) override;
+    Constant ClassNameConstant() const { return classNameConstant; }
+private:
+    Constant classNameConstant;
+};
+
 } } // namespace cminor::binder
 
 #endif // CMINOR_BINDER_BOUND_STATEMENT_INCLUDED

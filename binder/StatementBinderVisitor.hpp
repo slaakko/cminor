@@ -28,6 +28,7 @@ public:
     void Visit(NamespaceNode& namespaceNode) override;
     void Visit(ClassNode& classNode) override;
     void Visit(ConstructorNode& constructorNode) override;
+    void Visit(StaticConstructorNode& staticConstructorNode) override;
     void Visit(BaseInitializerNode& baseInitializerNode) override;
     void Visit(ThisInitializerNode& thisInitializerNode) override;
     void Visit(MemberFunctionNode& memberFunctionNode) override;
@@ -48,6 +49,7 @@ public:
     void Visit(EmptyStatementNode& emptyStatementNode) override;
     void Visit(IncrementStatementNode& incrementStatementNode) override;
     void Visit(DecrementStatementNode& decrementStatementNode) override;
+    void Visit(ThrowStatementNode& throwStatementNode) override;
 private:
     BoundCompileUnit& boundCompileUnit;
     ContainerScope* containerScope;
@@ -57,6 +59,7 @@ private:
     std::unique_ptr<BoundStatement> statement;
     bool doNotInstantiate;
     bool instantiateRequested;
+    bool insideCatch;
 };
 
 } } // namespace cminor::binder

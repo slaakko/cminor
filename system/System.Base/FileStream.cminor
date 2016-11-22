@@ -29,6 +29,10 @@ namespace System.IO
         }
         public FileStream(String filePath, FileMode mode, FileAccess access)
         {
+            if (filePath == null)
+            {
+                throw new ArgumentNullException("provided file path is null");
+            }
             this.filePath = filePath;
             this.mode = mode;
             this.access = access;
@@ -52,14 +56,26 @@ namespace System.IO
         }
         public override void Write(byte[] buffer, int count)
         {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("provided buffer is null");
+            }
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException("invalid count");
+            }
             WriteFile(fileHandle, buffer, count);
         }
         public override int ReadByte()
         {
-            return ReadByteFromFile(filehandle);
+            return ReadByteFromFile(fileHandle);
         }
         public override int Read(byte[] buffer)
         {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("provided buffer is null");
+            }
             return ReadFile(fileHandle, buffer);
         }
         private FileAccess DefaultAccess(FileMode mode)

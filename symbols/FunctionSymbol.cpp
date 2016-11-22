@@ -10,6 +10,7 @@
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/EnumTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
+#include <cminor/symbols/StringFun.hpp>
 #include <cminor/machine/Machine.hpp>
 
 namespace cminor { namespace symbols {
@@ -381,7 +382,7 @@ void StaticConstructorSymbol::SetSpecifiers(Specifiers specifiers)
 
 utf32_string StaticConstructorSymbol::FullParsingName() const
 {
-    utf32_string fullParsingName;
+    utf32_string fullParsingName = U"static ";
     utf32_string parentFullName = Parent()->FullName();
     fullParsingName.append(parentFullName);
     if (!parentFullName.empty())
@@ -396,6 +397,11 @@ utf32_string StaticConstructorSymbol::FullParsingName() const
 utf32_string StaticConstructorSymbol::FriendlyName() const
 {
     return FullParsingName();
+}
+
+void StaticConstructorSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
+{
+    classTypeSymbol->Add(this);
 }
 
 ConstructorSymbol::ConstructorSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), flags(ConstructorSymbolFlags::none)
@@ -515,6 +521,19 @@ void ConstructorSymbol::GenerateCall(Machine& machine, Assembly& assembly, Funct
 void ConstructorSymbol::CreateMachineFunction()
 {
     FunctionSymbol::CreateMachineFunction();
+    Symbol* parent = Parent();
+    ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
+    Assert(classTypeSymbol, "class type symbol expected");
+    if (classTypeSymbol->NeedsStaticInitialization())
+    {
+        std::unique_ptr<Instruction> inst = GetAssembly()->GetMachine().CreateInst("staticinit");
+        StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
+        ConstantPool& constantPool = GetAssembly()->GetConstantPool();
+        utf32_string fullClassName = classTypeSymbol->FullName();
+        Constant classFullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
+        staticInitInst->SetTypeName(classFullNameConstant);
+        MachineFunction()->AddInst(std::move(inst));
+    }
     std::unique_ptr<Instruction> loadLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.0");
     MachineFunction()->AddInst(std::move(loadLocal));
     std::unique_ptr<Instruction> inst = GetAssembly()->GetMachine().CreateInst("setclassdata");
@@ -777,12 +796,24 @@ void MemberFunctionSymbol::SetSpecifiers(Specifiers specifiers)
 {
     Specifiers accessSpecifiers = specifiers & Specifiers::access_;
     SetAccess(accessSpecifiers);
+    if ((specifiers & Specifiers::static_) != Specifiers::none)
+    {
+        SetStatic();
+    }
     if ((specifiers & Specifiers::virtual_) != Specifiers::none)
     {
+        if (IsStatic())
+        {
+            throw Exception("member function cannot be at the same time virtual and static", GetSpan());
+        }
         SetVirtual();
     }
     if ((specifiers & Specifiers::override_) != Specifiers::none)
     {
+        if (IsStatic())
+        {
+            throw Exception("member function cannot be at the same time virtual and override", GetSpan());
+        }
         if (IsVirtual())
         {
             throw Exception("member function cannot be at the same time virtual and override", GetSpan());
@@ -791,6 +822,10 @@ void MemberFunctionSymbol::SetSpecifiers(Specifiers specifiers)
     }
     if ((specifiers & Specifiers::abstract_) != Specifiers::none)
     {
+        if (IsStatic())
+        {
+            throw Exception("member function cannot be at the same time virtual and abstract", GetSpan());
+        }
         if (IsVirtual())
         {
             throw Exception("member function cannot be at the same time virtual and abstract", GetSpan());
@@ -1017,7 +1052,16 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
     {
         return it->second;
     }
-    if (NullReferenceTypeSymbol* nullReferenceTypeSymbol = dynamic_cast<NullReferenceTypeSymbol*>(sourceType))
+    TypeSymbol* stringType = assembly.GetSymbolTable().GetType(U"System.String");
+    if (sourceType == stringType && targetType == stringType)
+    {
+        ClassTypeSymbol* stringClassType = dynamic_cast<ClassTypeSymbol*>(stringType);
+        BasicTypeConversion* strlitToString = CreateStringLiteralToStringConversion(assembly, stringClassType);
+        conversionMap[std::make_pair(sourceType, targetType)] = strlitToString;
+        stringConversions.push_back(std::unique_ptr<FunctionSymbol>(strlitToString));
+        return strlitToString;
+    }
+    else if (NullReferenceTypeSymbol* nullReferenceTypeSymbol = dynamic_cast<NullReferenceTypeSymbol*>(sourceType))
     {
         if (ClassTypeSymbol* targetClassType = dynamic_cast<ClassTypeSymbol*>(targetType))
         {

@@ -37,6 +37,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("break");
     keywords0.push_back("byte");
     keywords0.push_back("cast");
+    keywords0.push_back("catch");
     keywords0.push_back("char");
     keywords0.push_back("class");
     keywords0.push_back("const");
@@ -46,6 +47,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("else");
     keywords0.push_back("enum");
     keywords0.push_back("false");
+    keywords0.push_back("finally");
     keywords0.push_back("float");
     keywords0.push_back("for");
     keywords0.push_back("if");
@@ -69,7 +71,9 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("static");
     keywords0.push_back("string");
     keywords0.push_back("this");
+    keywords0.push_back("throw");
     keywords0.push_back("true");
+    keywords0.push_back("try");
     keywords0.push_back("uint");
     keywords0.push_back("ulong");
     keywords0.push_back("ushort");

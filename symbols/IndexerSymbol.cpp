@@ -74,7 +74,7 @@ void IndexerSymbol::SetSpecifiers(Specifiers specifiers)
     SetAccess(accessSpecifiers);
     if ((specifiers & Specifiers::static_) != Specifiers::none)
     {
-        throw Exception("indexers cannot be static", GetSpan());
+        SetStatic();
     }
     if ((specifiers & Specifiers::external_) != Specifiers::none)
     {

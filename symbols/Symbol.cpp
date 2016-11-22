@@ -1202,7 +1202,7 @@ void TypeParameterSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), baseClass(nullptr), objectType(new ObjectType()), classData(new ClassData(objectType.get())), 
-    flags(), defaultConstructorSymbol(nullptr), level(0), priority(0), key(0), cid(0), assemblyId(-1), classNodePos(-1)
+    flags(), defaultConstructorSymbol(nullptr), level(0), priority(0), key(0), cid(0), assemblyId(-1), classNodePos(-1), staticConstructorSymbol(nullptr)
 {
 }
 
@@ -1373,6 +1373,11 @@ void ClassTypeSymbol::Add(ConstructorSymbol* constructorSymbol)
     }
 }
 
+void ClassTypeSymbol::Add(StaticConstructorSymbol* staticConstructorSymbol)
+{
+    this->staticConstructorSymbol = staticConstructorSymbol;
+}
+
 void ClassTypeSymbol::Add(TypeParameterSymbol* typeParameterSymbol)
 {
     typeParameters.push_back(typeParameterSymbol);
@@ -1394,6 +1399,13 @@ void ClassTypeSymbol::AddImplementedInterface(InterfaceTypeSymbol* interfaceType
     {
         implementedInterfaces.push_back(interfaceTypeSymbol);
     }
+}
+
+bool ClassTypeSymbol::NeedsStaticInitialization() const
+{
+    if (staticConstructorSymbol) return true;
+    if (!staticMemberVariables.empty()) return true;
+    return false;
 }
 
 void ClassTypeSymbol::CloneUsingNodes(const std::vector<Node*>& usingNodes_)

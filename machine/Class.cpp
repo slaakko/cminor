@@ -73,6 +73,103 @@ void MethodTable::Read(Reader& reader)
     }
 }
 
+StaticClassData::StaticClassData() : initialized(false), initializing(false), initMtx(), staticConstructorName(), staticData()
+{
+}
+
+void StaticClassData::Write(Writer& writer)
+{
+    bool hasStaticConstructorName = staticConstructorName.Value().AsStringLiteral() != nullptr;
+    writer.Put(hasStaticConstructorName);
+    if (hasStaticConstructorName)
+    {
+        ConstantId staticConstructorNameId = writer.GetConstantPool()->GetIdFor(staticConstructorName);
+        Assert(staticConstructorNameId != noConstantId, "got no id for constant");
+        staticConstructorNameId.Write(writer);
+    }
+    staticLayout.Write(writer);
+}
+
+void StaticClassData::Read(Reader& reader)
+{
+    bool hasStaticConstructorName = reader.GetBool();
+    if (hasStaticConstructorName)
+    {
+        ConstantId staticConstructorNameId;
+        staticConstructorNameId.Read(reader);
+        staticConstructorName = reader.GetConstantPool()->GetConstant(staticConstructorNameId);
+    }
+    staticLayout.Read(reader);
+}
+
+void StaticClassData::SetStaticConstructorName(Constant staticConstructorName_)
+{
+    staticConstructorName = staticConstructorName_;
+}
+
+void StaticClassData::AllocateStaticData()
+{
+    size_t size = staticLayout.Size();
+    staticData = new uint8_t[size];
+    std::memset(staticData.Value(), 0, size);
+}
+
+void StaticClassData::SetStaticField(IntegralValue fieldValue, int32_t index)
+{
+    Field& field = staticLayout.GetField(index);
+    MemPtr fieldPtr = staticData + field.Offset();
+    switch (field.GetType())
+    {
+        case ValueType::boolType: *static_cast<bool*>(fieldPtr.Value()) = fieldValue.AsBool(); break;
+        case ValueType::sbyteType: *static_cast<int8_t*>(fieldPtr.Value()) = fieldValue.AsSByte(); break;
+        case ValueType::byteType: *static_cast<uint8_t*>(fieldPtr.Value()) = fieldValue.AsByte(); break;
+        case ValueType::shortType: *static_cast<int16_t*>(fieldPtr.Value()) = fieldValue.AsShort(); break;
+        case ValueType::ushortType: *static_cast<uint16_t*>(fieldPtr.Value()) = fieldValue.AsUShort(); break;
+        case ValueType::intType: *static_cast<int32_t*>(fieldPtr.Value()) = fieldValue.AsInt(); break;
+        case ValueType::uintType: *static_cast<uint32_t*>(fieldPtr.Value()) = fieldValue.AsUInt(); break;
+        case ValueType::longType: *static_cast<int64_t*>(fieldPtr.Value()) = fieldValue.AsLong(); break;
+        case ValueType::ulongType: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.AsULong(); break;
+        case ValueType::floatType: *static_cast<float*>(fieldPtr.Value()) = fieldValue.AsFloat(); break;
+        case ValueType::doubleType: *static_cast<double*>(fieldPtr.Value()) = fieldValue.AsDouble(); break;
+        case ValueType::charType: *static_cast<char32_t*>(fieldPtr.Value()) = fieldValue.AsChar(); break;
+        case ValueType::memPtr: *static_cast<uint8_t**>(fieldPtr.Value()) = fieldValue.AsMemPtr(); break;
+        case ValueType::classDataPtr: *static_cast<ClassData**>(fieldPtr.Value()) = fieldValue.AsClassDataPtr(); break;
+        case ValueType::typePtr: *static_cast<Type**>(fieldPtr.Value()) = fieldValue.AsTypePtr(); break;
+        case ValueType::stringLiteral: *static_cast<const char32_t**>(fieldPtr.Value()) = fieldValue.AsStringLiteral(); break;
+        case ValueType::allocationHandle: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
+        case ValueType::objectReference: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
+        default: throw std::runtime_error("invalid field type " + std::to_string(int(field.GetType())));
+    }
+}
+
+IntegralValue StaticClassData::GetStaticField(int32_t index) const
+{
+    Field& field = staticLayout.GetField(index);
+    MemPtr fieldPtr = staticData + field.Offset();
+    switch (field.GetType())
+    {
+        case ValueType::boolType: return IntegralValue(*static_cast<bool*>(fieldPtr.Value()), field.GetType());
+        case ValueType::sbyteType: return IntegralValue(*static_cast<int8_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::byteType: return IntegralValue(*static_cast<uint8_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::shortType: return IntegralValue(*static_cast<int16_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::ushortType: return IntegralValue(*static_cast<uint16_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::intType: return IntegralValue(*static_cast<int32_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::uintType: return IntegralValue(*static_cast<uint32_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::longType: return IntegralValue(*static_cast<int64_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::ulongType: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::floatType: return IntegralValue(static_cast<uint64_t>(*static_cast<float*>(fieldPtr.Value())), field.GetType());
+        case ValueType::doubleType: return IntegralValue(static_cast<uint64_t>(*static_cast<double*>(fieldPtr.Value())), field.GetType());
+        case ValueType::charType: return IntegralValue(*static_cast<char32_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::memPtr: return IntegralValue(static_cast<uint8_t*>(fieldPtr.Value()));
+        case ValueType::classDataPtr: return IntegralValue(*static_cast<ClassData**>(fieldPtr.Value()));
+        case ValueType::typePtr: return IntegralValue(*static_cast<ObjectType**>(fieldPtr.Value()));
+        case ValueType::stringLiteral: return IntegralValue(static_cast<const char32_t*>(fieldPtr.Value()));
+        case ValueType::allocationHandle: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::objectReference: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
+        default: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
+    }
+}
+
 ClassData::ClassData(ObjectType* type_) : type(type_)
 {
 }
@@ -86,6 +183,12 @@ void ClassData::Write(Writer& writer)
     {
         imts[i].Write(writer);
     }
+    bool hasStaticClassData = staticClassData != nullptr;
+    writer.Put(hasStaticClassData);
+    if (hasStaticClassData)
+    {
+        staticClassData->Write(writer);
+    }
 }
 
 void ClassData::Read(Reader& reader)
@@ -96,6 +199,12 @@ void ClassData::Read(Reader& reader)
     for (uint32_t i = 0; i < n; ++i)
     {
         imts[i].Read(reader);
+    }
+    bool hasStaticClassData = reader.GetBool();
+    if (hasStaticClassData)
+    {
+        CreateStaticClassData();
+        staticClassData->Read(reader);
     }
 }
 
@@ -108,6 +217,11 @@ MethodTable& ClassData::Imt(int32_t index)
 void ClassData::AllocImts(int32_t numInterfaces)
 {
     imts.resize(numInterfaces);
+}
+
+void ClassData::CreateStaticClassData()
+{
+    staticClassData.reset(new StaticClassData());
 }
 
 std::unique_ptr<ClassDataTable> ClassDataTable::instance;

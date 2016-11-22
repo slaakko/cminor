@@ -108,6 +108,9 @@ class ExpressionStatementNode;
 class EmptyStatementNode;
 class IncrementStatementNode;
 class DecrementStatementNode;
+class ThrowStatementNode;
+class CatchNode;
+class TryStatementNode;
 
 class EnumTypeNode;
 class EnumConstantNode;
@@ -217,6 +220,9 @@ public:
     virtual void Visit(EmptyStatementNode& emptyStatementNode) {}
     virtual void Visit(IncrementStatementNode& incrementStatementNode) {}
     virtual void Visit(DecrementStatementNode& decrementStatementNode) {}
+    virtual void Visit(ThrowStatementNode& throwStatementNode) {}
+    virtual void Visit(CatchNode& catchNode) {}
+    virtual void Visit(TryStatementNode& tryStatementNode) {}
 
     virtual void Visit(EnumTypeNode& enumTypeNode) {}
     virtual void Visit(EnumConstantNode& enumConstantNode) {}

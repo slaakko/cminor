@@ -28,8 +28,8 @@ enum class NodeType : uint8_t
     indexingNode, invokeNode, castNode, classNode, interfaceNode, newNode, memberVariableNode, propertyNode, indexerNode, staticConstructorNode, constructorNode, memberFunctionNode,
     baseInitializerNode, thisInitializerNode, labelNode, thisNode, baseNode, templateIdNode, templateParameterNode,
     compoundStatementNode, returnStatementNode, ifStatementNode, whileStatementNode, doStatementNode, forStatementNode, breakStatementNode, continueStatementNode, 
-    constructionStatementNode, assignmentStatementNode, expressionStatementNode, emptyStatementNode, incrementStatementNode, decrementStatementNode,
-    enumTypeNode, enumConstantNode, constantNode,
+    constructionStatementNode, assignmentStatementNode, expressionStatementNode, emptyStatementNode, incrementStatementNode, decrementStatementNode, throwStatementNode, tryStatementNode, 
+    catchNode, enumTypeNode, enumConstantNode, constantNode,
     maxNode
 };
 

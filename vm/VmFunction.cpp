@@ -8,6 +8,7 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Type.hpp>
 #include <cminor/vm/File.hpp>
+#include <boost/filesystem.hpp>
 
 namespace cminor { namespace vm {
 
@@ -367,6 +368,30 @@ void VmSystemIOReadFile::Execute(Frame& frame)
     }
 }
 
+class VmSystemIOFileExists : public VmFunction
+{
+public:
+    VmSystemIOFileExists(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIOFileExists::VmSystemIOFileExists(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.File.Exists"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemIOFileExists::Execute(Frame& frame)
+{
+    IntegralValue filePathValue = frame.Local(0).GetValue();
+    Assert(filePathValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference filePathStr(filePathValue.Value());
+    std::string filePath = frame.GetManagedMemoryPool().GetUtf8String(filePathStr);
+    bool exists = boost::filesystem::exists(filePath);
+    frame.OpStack().Push(IntegralValue(exists, ValueType::boolType));
+}
+
 class VmFunctionPool
 {
 public:
@@ -405,6 +430,9 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOCloseFile(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOWriteByteToFile(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOWriteFile(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOReadByteFromFile(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOReadFile(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOFileExists(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool) 

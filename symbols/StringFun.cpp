@@ -13,7 +13,7 @@
 
 namespace cminor { namespace symbols {
 
-void CreateStringLiteralToStringConversion(Assembly& assembly, ClassTypeSymbol* stringType)
+BasicTypeConversion* CreateStringLiteralToStringConversion(Assembly& assembly, ClassTypeSymbol* stringType)
 {
     ConstantPool& constantPool = assembly.GetConstantPool();
     BasicTypeConversion* strLit2String = new BasicTypeConversion(Span(), constantPool.GetEmptyStringConstant());
@@ -25,7 +25,7 @@ void CreateStringLiteralToStringConversion(Assembly& assembly, ClassTypeSymbol* 
     strLit2String->SetSourceType(stringType);
     strLit2String->SetTargetType(stringType);
     strLit2String->SetConversionInstructionName("slit2s");
-    stringType->AddSymbol(std::unique_ptr<FunctionSymbol>(strLit2String));
+    return strLit2String;
 }
 
 } } // namespace cminor::symbols

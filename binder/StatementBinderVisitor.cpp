@@ -91,6 +91,7 @@ void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, CompoundStatementN
     if (!returnType || dynamic_cast<VoidTypeSymbol*>(returnType)) return;
     if (functionSymbol->IsExternal()) return;
     if (dynamic_cast<ClassTemplateSpecializationSymbol*>(functionSymbol->ContainingClass()) != nullptr && !bodyNode) return;
+    if (functionSymbol->IsAbstract()) return;
     CompoundStatementNode* body = bodyNode;
     int n = body->Statements().Count();
     for (int i = 0; i < n; ++i)
@@ -102,7 +103,8 @@ void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, CompoundStatementN
 }
 
 StatementBinderVisitor::StatementBinderVisitor(BoundCompileUnit& boundCompileUnit_) : 
-    boundCompileUnit(boundCompileUnit_), containerScope(nullptr), boundClass(nullptr), function(nullptr), compoundStatement(nullptr), doNotInstantiate(false), instantiateRequested(false)
+    boundCompileUnit(boundCompileUnit_), containerScope(nullptr), boundClass(nullptr), function(nullptr), compoundStatement(nullptr), doNotInstantiate(false), instantiateRequested(false), 
+    insideCatch(false)
 {
 }
 
@@ -164,6 +166,7 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
     ContainerScope* prevContainerScope = containerScope;
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(constructorNode);
     ConstructorSymbol* constructorSymbol = dynamic_cast<ConstructorSymbol*>(symbol);
+    Assert(constructorSymbol, "constructor symbol expected");
     if (instantiateRequested)
     {
         if (!constructorSymbol->IsInstantiated() && constructorSymbol->IsInstantiationRequested())
@@ -206,6 +209,56 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
             BoundExpressionStatement* baseConstructorCallStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(baseConstructorCall));
             compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(baseConstructorCallStatement));
         }
+        Symbol* parent = constructorSymbol->Parent();
+        ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
+        Assert(classTypeSymbol, "class type symbol expected");
+        if (classTypeSymbol->NeedsStaticInitialization())
+        {
+            ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
+            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            Constant classNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(classTypeFullName.c_str())));
+            compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(new BoundStaticInitStatement(boundCompileUnit.GetAssembly(), classNameConstant)));
+        }
+    }
+    compoundStatement = prevCompoundStatement;
+    if (!doNotInstantiate)
+    {
+        boundClass->AddMember(std::move(boundFunction));
+    }
+    containerScope = prevContainerScope;
+    function = prevFunction;
+}
+
+void StatementBinderVisitor::Visit(StaticConstructorNode& staticConstructorNode)
+{
+    ContainerScope* prevContainerScope = containerScope;
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(staticConstructorNode);
+    StaticConstructorSymbol* staticConstructorSymbol = dynamic_cast<StaticConstructorSymbol*>(symbol);
+    Assert(staticConstructorSymbol, "static constructor symbol expected");
+    containerScope = symbol->GetContainerScope();
+    std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(staticConstructorSymbol));
+    BoundFunction* prevFunction = function;
+    function = boundFunction.get();
+    BoundCompoundStatement* prevCompoundStatement = compoundStatement;
+    if (staticConstructorNode.HasBody())
+    {
+        ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
+        staticConstructorNode.Body()->Accept(*this);
+        compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
+        Assert(compoundStatement, "compound statement expected");
+        Symbol* parent = staticConstructorSymbol->Parent();
+        ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
+        Assert(classTypeSymbol, "class type symbol expected");
+        if (classTypeSymbol->BaseClass() && classTypeSymbol->BaseClass()->NeedsStaticInitialization())
+        {
+            utf32_string baseClassFullName = classTypeSymbol->BaseClass()->FullName();
+            Constant baseClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(baseClassFullName.c_str())));
+            compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(new BoundStaticInitStatement(boundCompileUnit.GetAssembly(), baseClassNameConstant)));
+        }
+        utf32_string classTypeFullName = classTypeSymbol->FullName();
+        Constant classNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(classTypeFullName.c_str())));
+        compoundStatement->AddStatement(std::unique_ptr<BoundStatement>(new BoundDoneStaticInitStatement(boundCompileUnit.GetAssembly(), classNameConstant)));
+        function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
     }
     compoundStatement = prevCompoundStatement;
     if (!doNotInstantiate)
@@ -292,6 +345,19 @@ void StatementBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         memberFunctionNode.Body()->Accept(*this);
         BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
         Assert(compoundStatement, "compound statement expected");
+        if (memberFunctionSymbol->IsStatic())
+        {
+            Symbol* parent = memberFunctionSymbol->Parent();
+            ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
+            Assert(classTypeSymbol, "class type symbol expected");
+            if (classTypeSymbol->NeedsStaticInitialization())
+            {
+                ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
+                utf32_string classTypeFullName = classTypeSymbol->FullName();
+                Constant classNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(classTypeFullName.c_str())));
+                compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(new BoundStaticInitStatement(boundCompileUnit.GetAssembly(), classNameConstant)));
+            }
+        }
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
     }
     CheckFunctionReturnPaths(memberFunctionSymbol, memberFunctionNode);
@@ -735,6 +801,44 @@ void StatementBinderVisitor::Visit(DecrementStatementNode& decrementStatementNod
         AssignmentStatementNode assignmentStatement(decrementStatementNode.GetSpan(), decrementStatementNode.Expression()->Clone(cloneContext),
             new SubNode(decrementStatementNode.GetSpan(), decrementStatementNode.Expression()->Clone(cloneContext), new SByteLiteralNode(decrementStatementNode.GetSpan(), 1)));
         assignmentStatement.Accept(*this);
+    }
+}
+
+void StatementBinderVisitor::Visit(ThrowStatementNode& throwStatementNode)
+{
+    if (throwStatementNode.Expression())
+    {
+        std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, throwStatementNode.Expression());
+        TypeSymbol* exceptionType = expression->GetType();
+        if (ClassTypeSymbol* exceptionClassType = dynamic_cast<ClassTypeSymbol*>(exceptionType))
+        {
+            TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Exception");
+            ClassTypeSymbol* classType = dynamic_cast<ClassTypeSymbol*>(type);
+            Assert(classType, "class type symbol expected");
+            if (exceptionClassType == classType || exceptionClassType->HasBaseClass(classType))
+            {
+                statement.reset(new BoundThrowStatement(boundCompileUnit.GetAssembly(), std::move(expression)));
+            }
+            else
+            {
+                throw Exception("exception type must be a class type derived from System.Exception class", throwStatementNode.GetSpan());
+            }
+        }
+        else
+        {
+            throw Exception("exception type must be a class type derived from System.Exception class", throwStatementNode.GetSpan());
+        }
+    }
+    else
+    {
+        if (insideCatch)
+        {
+            statement.reset(new BoundThrowStatement(boundCompileUnit.GetAssembly()));
+        }
+        else
+        {
+            throw Exception("exception can be rethrown only from inside a catch clause", throwStatementNode.GetSpan());
+        }
     }
 }
 

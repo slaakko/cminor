@@ -190,7 +190,6 @@ public:
     Object(ObjectReference reference_, ArenaId arenaId_, MemPtr memPtr_, ObjectType* type_, uint64_t size_);
     ObjectReference Reference() const { return reference; }
     ObjectType* GetType() const { return type; }
-    void SetType(ObjectType* type_) { type = type_; }
     IntegralValue GetField(int index) const;
     void SetField(IntegralValue fieldValue, int index);
     int32_t FieldCount() const;

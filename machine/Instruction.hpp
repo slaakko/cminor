@@ -735,6 +735,64 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class ThrowInst : public Instruction
+{
+public:
+    ThrowInst();
+    Instruction* Clone() const override { return new ThrowInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class RethrowInst : public Instruction
+{
+public:
+    RethrowInst();
+    Instruction* Clone() const override { return new RethrowInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StaticInitInst : public TypeInstruction
+{
+public:
+    StaticInitInst();
+    Instruction* Clone() const override { return new StaticInitInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class DoneStaticInitInst : public TypeInstruction
+{
+public:
+    DoneStaticInitInst();
+    Instruction* Clone() const override { return new DoneStaticInitInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class LoadStaticFieldInst : public TypeInstruction
+{
+public:
+    LoadStaticFieldInst();
+    Instruction* Clone() const override { return new LoadStaticFieldInst(*this); }
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Execute(Frame& frame) override;
+    void SetIndex(int32_t index_) override;
+private:
+    int32_t index;
+};
+
+class StoreStaticFieldInst : public TypeInstruction
+{
+public:
+    StoreStaticFieldInst();
+    Instruction* Clone() const override { return new StoreStaticFieldInst(*this); }
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Execute(Frame& frame) override;
+    void SetIndex(int32_t index_) override;
+private:
+    int32_t index;
+};
+
 class EqualObjectNullInst : public Instruction
 {
 public:

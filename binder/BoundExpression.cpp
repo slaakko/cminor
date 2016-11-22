@@ -62,6 +62,7 @@ void BoundLiteral::Accept(BoundNodeVisitor& visitor)
 
 BoundConstant::BoundConstant(Assembly& assembly_, TypeSymbol* type_, ConstantSymbol* constantSymbol_) : BoundExpression(assembly_, type_), constantSymbol(constantSymbol_)
 {
+    GetAssembly().GetConstantPool().Install(constantSymbol->GetConstant());
 }
 
 void BoundConstant::GenLoad(Machine& machine, Function& function)
@@ -105,6 +106,7 @@ void BoundConstant::Accept(BoundNodeVisitor& visitor)
 
 BoundEnumConstant::BoundEnumConstant(Assembly& assembly_, TypeSymbol* type_, EnumConstantSymbol* enumConstantSymbol_) : BoundExpression(assembly_, type_), enumConstantSymbol(enumConstantSymbol_)
 {
+    GetAssembly().GetConstantPool().Install(enumConstantSymbol->GetConstant());
 }
 
 void BoundEnumConstant::GenLoad(Machine& machine, Function& function)
@@ -236,7 +238,7 @@ void BoundLocalVariable::Accept(BoundNodeVisitor& visitor)
 }
 
 BoundMemberVariable::BoundMemberVariable(Assembly& assembly_, TypeSymbol* type_, MemberVariableSymbol* memberVariableSymbol_) : 
-    BoundExpression(assembly_, type_), memberVariableSymbol(memberVariableSymbol_)
+    BoundExpression(assembly_, type_), memberVariableSymbol(memberVariableSymbol_), staticInitNeeded(false)
 {
 }
 
@@ -251,31 +253,54 @@ void BoundMemberVariable::GenLoad(Machine& machine, Function& function)
     int32_t index = memberVariableSymbol->Index();
     if (index != -1)
     {
-        classObject->GenLoad(machine, function);
-        switch (index)
+        if (memberVariableSymbol->IsStatic())
         {
-            case 0:  loadFieldInst = std::move(machine.CreateInst("loadfield.0")); break;
-            case 1:  loadFieldInst = std::move(machine.CreateInst("loadfield.1")); break;
-            case 2:  loadFieldInst = std::move(machine.CreateInst("loadfield.2")); break;
-            case 3:  loadFieldInst = std::move(machine.CreateInst("loadfield.3")); break;
-            default:
+            ConstantPool& constantPool = GetAssembly().GetConstantPool();
+            Symbol* parent = memberVariableSymbol->Parent();
+            ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
+            Assert(classTypeSymbol, "class type symbol expected");
+            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
+            if (staticInitNeeded)
             {
-                if (index < 256)
+                std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
+                StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
+                staticInitInst->SetTypeName(fullClassNameConstant);
+                function.AddInst(std::move(inst));
+            }
+            loadFieldInst = std::move(machine.CreateInst("loadstaticfield"));
+            loadFieldInst->SetIndex(index);
+            LoadStaticFieldInst* loadStaticField = dynamic_cast<LoadStaticFieldInst*>(loadFieldInst.get());
+            loadStaticField->SetTypeName(fullClassNameConstant);
+        }
+        else
+        {
+            classObject->GenLoad(machine, function);
+            switch (index)
+            {
+                case 0:  loadFieldInst = std::move(machine.CreateInst("loadfield.0")); break;
+                case 1:  loadFieldInst = std::move(machine.CreateInst("loadfield.1")); break;
+                case 2:  loadFieldInst = std::move(machine.CreateInst("loadfield.2")); break;
+                case 3:  loadFieldInst = std::move(machine.CreateInst("loadfield.3")); break;
+                default:
                 {
-                    loadFieldInst = std::move(machine.CreateInst("loadfield.b"));
-                    loadFieldInst->SetIndex(static_cast<uint8_t>(index));
+                    if (index < 256)
+                    {
+                        loadFieldInst = std::move(machine.CreateInst("loadfield.b"));
+                        loadFieldInst->SetIndex(static_cast<uint8_t>(index));
+                    }
+                    else if (index < 65536)
+                    {
+                        loadFieldInst = std::move(machine.CreateInst("loadfield.s"));
+                        loadFieldInst->SetIndex(static_cast<uint16_t>(index));
+                    }
+                    else
+                    {
+                        loadFieldInst = std::move(machine.CreateInst("loadfield"));
+                        loadFieldInst->SetIndex(index);
+                    }
+                    break;
                 }
-                else if (index < 65536)
-                {
-                    loadFieldInst = std::move(machine.CreateInst("loadfield.s"));
-                    loadFieldInst->SetIndex(static_cast<uint16_t>(index));
-                }
-                else
-                {
-                    loadFieldInst = std::move(machine.CreateInst("loadfield"));
-                    loadFieldInst->SetIndex(index);
-                }
-                break;
             }
         }
         function.AddInst(std::move(loadFieldInst));
@@ -292,31 +317,54 @@ void BoundMemberVariable::GenStore(Machine& machine, Function& function)
     std::unique_ptr<Instruction> storeFieldlInst;
     if (index != -1)
     {
-        classObject->GenLoad(machine, function);
-        switch (index)
+        if (memberVariableSymbol->IsStatic())
         {
-            case 0:  storeFieldlInst = std::move(machine.CreateInst("storefield.0")); break;
-            case 1:  storeFieldlInst = std::move(machine.CreateInst("storefield.1")); break;
-            case 2:  storeFieldlInst = std::move(machine.CreateInst("storefield.2")); break;
-            case 3:  storeFieldlInst = std::move(machine.CreateInst("storefield.3")); break;
-            default:
+            ConstantPool& constantPool = GetAssembly().GetConstantPool();
+            Symbol* parent = memberVariableSymbol->Parent();
+            ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
+            Assert(classTypeSymbol, "class type symbol expected");
+            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
+            if (staticInitNeeded)
             {
-                if (index < 256)
+                std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
+                StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
+                staticInitInst->SetTypeName(fullClassNameConstant);
+                function.AddInst(std::move(inst));
+            }
+            storeFieldlInst = std::move(machine.CreateInst("storestaticfield"));
+            storeFieldlInst->SetIndex(index);
+            StoreStaticFieldInst* storeStaticField = dynamic_cast<StoreStaticFieldInst*>(storeFieldlInst.get());
+            storeStaticField->SetTypeName(fullClassNameConstant);
+        }
+        else
+        {
+            classObject->GenLoad(machine, function);
+            switch (index)
+            {
+                case 0:  storeFieldlInst = std::move(machine.CreateInst("storefield.0")); break;
+                case 1:  storeFieldlInst = std::move(machine.CreateInst("storefield.1")); break;
+                case 2:  storeFieldlInst = std::move(machine.CreateInst("storefield.2")); break;
+                case 3:  storeFieldlInst = std::move(machine.CreateInst("storefield.3")); break;
+                default:
                 {
-                    storeFieldlInst = std::move(machine.CreateInst("storefield.b"));
-                    storeFieldlInst->SetIndex(static_cast<uint8_t>(index));
+                    if (index < 256)
+                    {
+                        storeFieldlInst = std::move(machine.CreateInst("storefield.b"));
+                        storeFieldlInst->SetIndex(static_cast<uint8_t>(index));
+                    }
+                    else if (index < 65536)
+                    {
+                        storeFieldlInst = std::move(machine.CreateInst("storefield.s"));
+                        storeFieldlInst->SetIndex(static_cast<uint16_t>(index));
+                    }
+                    else
+                    {
+                        storeFieldlInst = std::move(machine.CreateInst("storefield"));
+                        storeFieldlInst->SetIndex(index);
+                    }
+                    break;
                 }
-                else if (index < 65536)
-                {
-                    storeFieldlInst = std::move(machine.CreateInst("storefield.s"));
-                    storeFieldlInst->SetIndex(static_cast<uint16_t>(index));
-                }
-                else
-                {
-                    storeFieldlInst = std::move(machine.CreateInst("storefield"));
-                    storeFieldlInst->SetIndex(index);
-                }
-                break;
             }
         }
         function.AddInst(std::move(storeFieldlInst));
@@ -332,7 +380,7 @@ void BoundMemberVariable::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundProperty::BoundProperty(Assembly& assembly_, TypeSymbol* type_, PropertySymbol* propertySymbol_) : BoundExpression(assembly_, type_), propertySymbol(propertySymbol_)
+BoundProperty::BoundProperty(Assembly& assembly_, TypeSymbol* type_, PropertySymbol* propertySymbol_) : BoundExpression(assembly_, type_), propertySymbol(propertySymbol_), staticInitNeeded(false)
 {
 }
 
@@ -343,7 +391,26 @@ void BoundProperty::SetClassObject(std::unique_ptr<BoundExpression>&& classObjec
 
 void BoundProperty::GenLoad(Machine& machine, Function& function)
 {
-    classObject->GenLoad(machine, function);
+    if (classObject)
+    {
+        classObject->GenLoad(machine, function);
+    }
+    if (propertySymbol->IsStatic())
+    {
+        if (staticInitNeeded)
+        {
+            ConstantPool& constantPool = GetAssembly().GetConstantPool();
+            Symbol* parent = propertySymbol->Parent();
+            ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
+            Assert(classTypeSymbol, "class type symbol expected");
+            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
+            std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
+            StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
+            staticInitInst->SetTypeName(fullClassNameConstant);
+            function.AddInst(std::move(inst));
+        }
+    }
     std::vector<GenObject*> emptyObjects;
     Assert(propertySymbol->Getter(), "property has no getter");
     propertySymbol->Getter()->GenerateCall(machine, GetAssembly(), function, emptyObjects, 0);
@@ -351,7 +418,26 @@ void BoundProperty::GenLoad(Machine& machine, Function& function)
 
 void BoundProperty::GenStore(Machine& machine, Function& function)
 {
-    classObject->GenLoad(machine, function);
+    if (classObject)
+    {
+        classObject->GenLoad(machine, function);
+    }
+    if (propertySymbol->IsStatic())
+    {
+        if (staticInitNeeded)
+        {
+            ConstantPool& constantPool = GetAssembly().GetConstantPool();
+            Symbol* parent = propertySymbol->Parent();
+            ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
+            Assert(classTypeSymbol, "class type symbol expected");
+            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
+            std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
+            StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
+            staticInitInst->SetTypeName(fullClassNameConstant);
+            function.AddInst(std::move(inst));
+        }
+    }
     std::unique_ptr<Instruction> swapInst = machine.CreateInst("swap");
     function.AddInst(std::move(swapInst));
     std::vector<GenObject*> emptyObjects;
@@ -365,13 +451,32 @@ void BoundProperty::Accept(BoundNodeVisitor& visitor)
 }
 
 BoundIndexer::BoundIndexer(Assembly& assembly_, TypeSymbol* type_, IndexerSymbol* indexerSymbol_, std::unique_ptr<BoundExpression>&& classObject_, std::unique_ptr<BoundExpression>&& index_) : 
-    BoundExpression(assembly_, type_), indexerSymbol(indexerSymbol_), classObject(std::move(classObject_)), index(std::move(index_))
+    BoundExpression(assembly_, type_), indexerSymbol(indexerSymbol_), classObject(std::move(classObject_)), index(std::move(index_)), staticInitNeeded(false)
 {
 }
 
 void BoundIndexer::GenLoad(Machine& machine, Function& function)
 {
-    classObject->GenLoad(machine, function);
+    if (!indexerSymbol->IsStatic())
+    {
+        classObject->GenLoad(machine, function);
+    }
+    else
+    {
+        if (staticInitNeeded)
+        {
+            ConstantPool& constantPool = GetAssembly().GetConstantPool();
+            Symbol* parent = indexerSymbol->Parent();
+            ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
+            Assert(classTypeSymbol, "class type symbol expected");
+            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
+            std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
+            StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
+            staticInitInst->SetTypeName(fullClassNameConstant);
+            function.AddInst(std::move(inst));
+        }
+    }
     index->GenLoad(machine, function);
     std::vector<GenObject*> emptyObjects;
     Assert(indexerSymbol->Getter(), "indexer has no getter");
@@ -380,7 +485,26 @@ void BoundIndexer::GenLoad(Machine& machine, Function& function)
 
 void BoundIndexer::GenStore(Machine& machine, Function& function)
 {
-    classObject->GenLoad(machine, function);
+    if (!indexerSymbol->IsStatic())
+    {
+        classObject->GenLoad(machine, function);
+    }
+    else 
+    {
+        if (staticInitNeeded)
+        {
+            ConstantPool& constantPool = GetAssembly().GetConstantPool();
+            Symbol* parent = indexerSymbol->Parent();
+            ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
+            Assert(classTypeSymbol, "class type symbol expected");
+            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
+            std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
+            StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
+            staticInitInst->SetTypeName(fullClassNameConstant);
+            function.AddInst(std::move(inst));
+        }
+    }
     index->GenLoad(machine, function);
     std::unique_ptr<Instruction> rotateInst = machine.CreateInst("rotate");
     function.AddInst(std::move(rotateInst));

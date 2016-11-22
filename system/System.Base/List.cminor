@@ -13,7 +13,7 @@ namespace System.Collections
         {
             if (capacity < 0)
             {
-                // throw ArgumentOutOfRangeException
+                throw new ArgumentOutOfRangeException("invalid capacity");
             }
             else 
             {

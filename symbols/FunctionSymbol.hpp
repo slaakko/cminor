@@ -54,6 +54,7 @@ public:
     bool IsInline() const { return GetFlag(FunctionSymbolFlags::inline_); }
     void SetExternal() { SetFlag(FunctionSymbolFlags::external_); }
     bool IsExternal() const { return GetFlag(FunctionSymbolFlags::external_); }
+    virtual bool IsAbstract() const { return false; }
     StringPtr GroupName() const { return StringPtr(groupName.Value().AsStringLiteral()); }
     void SetGroupNameConstant(Constant groupName_) { groupName = groupName_; }
     virtual void ComputeName();
@@ -104,6 +105,11 @@ public:
     utf32_string FullParsingName() const override;
     utf32_string FriendlyName() const override;
     bool IsDerived() const override { return true; }
+    void AddTo(ClassTypeSymbol* classTypeSymbol) override;
+    void SetFullNameConstant(Constant fullNameConstant_) { fullNameConstant = fullNameConstant_; }
+    Constant GetFullNameConstant() const { return fullNameConstant; }
+private:
+    Constant fullNameConstant;
 };
 
 enum class ConstructorSymbolFlags : uint8_t
@@ -190,7 +196,7 @@ public:
     utf32_string FriendlyName() const override;
     bool IsVirtual() const { return GetFlag(MemberFunctionSymbolFlags::virtual_); }
     void SetVirtual() { SetFlag(MemberFunctionSymbolFlags::virtual_); }
-    bool IsAbstract() const { return GetFlag(MemberFunctionSymbolFlags::abstract_); }
+    bool IsAbstract() const override { return GetFlag(MemberFunctionSymbolFlags::abstract_); }
     void SetAbstract() { SetFlag(MemberFunctionSymbolFlags::abstract_); }
     bool IsOverride() const { return GetFlag(MemberFunctionSymbolFlags::override_); }
     void SetOverride() { SetFlag(MemberFunctionSymbolFlags::override_); }
@@ -294,6 +300,7 @@ private:
     std::vector<std::unique_ptr<ClassTypeConversion>> classTypeConversions;
     std::vector<std::unique_ptr<ClassToInterfaceConversion>> interfaceTypeConversions;
     std::vector<std::unique_ptr<FunctionSymbol>> enumTypeConversions;
+    std::vector<std::unique_ptr<FunctionSymbol>> stringConversions;
 };
 
 } } // namespace cminor::symbols

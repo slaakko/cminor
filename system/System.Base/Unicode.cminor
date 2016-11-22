@@ -1,15 +1,31 @@
 using System;
+using System.IO;
 
 namespace System.Unicode
 {
+    public class EncodingException : Exception
+    {
+        public EncodingException(string message) : base(message)
+        {
+        }
+    }
+
     public class Utf8Encoder
     {
         public Utf8Encoder(Stream stream)
         {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("provided stream is null");
+            }
             this.stream = stream;
         }
         public void Encode(String s)
         {
+            if (s == null)
+            {
+                throw new ArgumentNullException("provided string is null");
+            }
             int n = s.Length;
             for (int i = 0; i < n; ++i)
             {
@@ -93,13 +109,13 @@ namespace System.Unicode
                 }
                 else
                 {
-                    // throw Exception("could not encode");
+                    throw new EncodingException("could not encode: invalid Unicode code point");
                 }
             }
-            private void Put(byte x)
-            {
-                stream.WriteByte(x);
-            }
+        }
+        private void Put(byte x)
+        {
+            stream.WriteByte(x);
         }
         private Stream stream;
     }

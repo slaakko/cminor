@@ -1145,8 +1145,6 @@ void UpCastInst::Execute(Frame& frame)
         ObjectType* objectType = dynamic_cast<ObjectType*>(type);
         Assert(objectType, "object type expected");
         ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(objectReference);
-        Object& castedObject = frame.GetManagedMemoryPool().GetObject(casted);
-        castedObject.SetType(objectType);
         frame.OpStack().Push(casted);
     }
 }
@@ -1179,10 +1177,152 @@ void DownCastInst::Execute(Frame& frame)
             throw std::runtime_error("invalid cast");
         }
         ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(objectReference);
-        Object& castedObject = frame.GetManagedMemoryPool().GetObject(casted);
-        castedObject.SetType(objectType);
         frame.OpStack().Push(casted);
     }
+}
+
+ThrowInst::ThrowInst() : Instruction("throw")
+{
+}
+
+void ThrowInst::Execute(Frame& frame)
+{
+    IntegralValue exceptionValue = frame.OpStack().Pop();
+    Assert(exceptionValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference exception(exceptionValue.Value());
+    throw std::runtime_error("exception"); // todo
+}
+
+RethrowInst::RethrowInst() : Instruction("rethrow")
+{
+}
+
+void RethrowInst::Execute(Frame& frame)
+{
+    throw std::runtime_error("exception"); // todo
+}
+
+StaticInitInst::StaticInitInst() : TypeInstruction("staticinit")
+{
+}
+
+void StaticInitInst::Execute(Frame& frame)
+{
+    Type* type = GetType();
+    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+    Assert(objectType, "object type expected");
+    ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+    StaticClassData* staticClassData = classData->GetStaticClassData();
+    Assert(staticClassData, "class has no static data");
+    if (staticClassData->Initialized()) return;
+    staticClassData->Lock();
+    if (!staticClassData->Initialized() && !staticClassData->Initializing())
+    {
+        staticClassData->SetInitializing();
+        staticClassData->AllocateStaticData();
+        StringPtr staticConstructorName = staticClassData->StaticConstructorName().Value().AsStringLiteral();
+        if (staticConstructorName.Value())
+        {
+            Function* staticConstructor = FunctionTable::Instance().GetFunction(staticConstructorName);
+            frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *staticConstructor));
+        }
+        else
+        {
+            staticClassData->ResetInitializing();
+            staticClassData->SetInitialized();
+            staticClassData->Unlock();
+        }
+    }
+    else
+    {
+        staticClassData->Unlock();
+    }
+}
+
+DoneStaticInitInst::DoneStaticInitInst() : TypeInstruction("donestaticinit")
+{
+}
+
+void DoneStaticInitInst::Execute(Frame& frame)
+{
+    Type* type = GetType();
+    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+    Assert(objectType, "object type expected");
+    ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+    StaticClassData* staticClassData = classData->GetStaticClassData();
+    Assert(staticClassData, "class has no static data");
+    staticClassData->ResetInitializing();
+    staticClassData->SetInitialized();
+    staticClassData->Unlock();
+}
+
+LoadStaticFieldInst::LoadStaticFieldInst() : TypeInstruction("loadstaticfield"), index(-1)
+{
+}
+
+void LoadStaticFieldInst::SetIndex(int32_t index_)
+{
+    index = index_;
+}
+
+void LoadStaticFieldInst::Encode(Writer& writer)
+{
+    TypeInstruction::Encode(writer);
+    writer.Put(index);
+}
+
+Instruction* LoadStaticFieldInst::Decode(Reader& reader)
+{
+    TypeInstruction::Decode(reader);
+    index = reader.GetInt();
+    return this;
+}
+
+void LoadStaticFieldInst::Execute(Frame& frame)
+{
+    Type* type = GetType();
+    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+    Assert(objectType, "object type expected");
+    ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+    StaticClassData* staticData = classData->GetStaticClassData();
+    Assert(staticData, "class has no static data");
+    Assert(index != -1, "index not set");
+    frame.OpStack().Push(staticData->GetStaticField(index));
+}
+
+StoreStaticFieldInst::StoreStaticFieldInst() : TypeInstruction("storestaticfield"), index(-1)
+{
+}
+
+void StoreStaticFieldInst::SetIndex(int32_t index_)
+{
+    index = index_;
+}
+
+void StoreStaticFieldInst::Encode(Writer& writer)
+{
+    TypeInstruction::Encode(writer);
+    writer.Put(index);
+}
+
+Instruction* StoreStaticFieldInst::Decode(Reader& reader)
+{
+    TypeInstruction::Decode(reader);
+    index = reader.GetInt();
+    return this;
+}
+
+void StoreStaticFieldInst::Execute(Frame& frame)
+{
+    IntegralValue fieldValue = frame.OpStack().Pop();
+    Type* type = GetType();
+    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+    Assert(objectType, "object type expected");
+    ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+    StaticClassData* staticData = classData->GetStaticClassData();
+    Assert(staticData, "class has no static data");
+    Assert(index != -1, "index not set");
+    staticData->SetStaticField(fieldValue, index);
 }
 
 EqualObjectNullInst::EqualObjectNullInst() : Instruction("equalonull")

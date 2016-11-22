@@ -558,7 +558,8 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
     {
         ClassTypeSymbol* stringTypeSymbol = dynamic_cast<ClassTypeSymbol*>(classOrInterfaceType);
         Assert(stringTypeSymbol, "System.String expected");
-        CreateStringLiteralToStringConversion(assembly, stringTypeSymbol);
+        BasicTypeConversion* stringConversion = CreateStringLiteralToStringConversion(assembly, stringTypeSymbol);
+        stringTypeSymbol->AddSymbol(std::unique_ptr<FunctionSymbol>(stringConversion));
     }
 }
 

@@ -178,6 +178,10 @@ namespace cminor.parser
         DecrementStatement(ParsingContext* ctx): StatementNode*;
         ExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): StatementNode*;
         EmptyStatement(ParsingContext* ctx): StatementNode*;
+        ThrowStatement(ParsingContext* ctx): StatementNode*;
+        TryStatement(ParsingContext* ctx): TryStatementNode*;
+        Catch(ParsingContext* ctx): CatchNode*;
+        Finally(ParsingContext* ctx): CompoundStatementNode*;
     }
     grammar TemplateGrammar
     {

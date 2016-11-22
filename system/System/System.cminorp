@@ -1,2 +1,2 @@
 project System;
-reference <../System.Basic/System.Basic.cminorp>;
+reference <../System.Base/System.Base.cminorp>;

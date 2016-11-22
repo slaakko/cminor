@@ -1,0 +1,18 @@
+using System;
+
+namespace System.IO
+{
+    public static class File
+    {
+        public static StreamWriter CreateText(String filePath)
+        {
+            return new StreamWriter(new BufferedStream(new FileStream(filePath, FileMode.create, FileAccess.write)));
+        }
+        public static StreamReader OpenRead(String filePath)
+        {
+            return new StreamReader(new BufferedStream(new FileStream(filePath, FileMode.open, FileAccess.read)));
+        }
+        [VmFunctionName=System.IO.File.Exists]
+        extern public static bool Exists(String filePath);
+    }
+}

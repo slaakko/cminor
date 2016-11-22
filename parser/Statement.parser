@@ -32,6 +32,8 @@ namespace cminor.parser
             |   AssignmentStatement(ctx){ value = AssignmentStatement; }
             |   ConstructionStatement(ctx){ value = ConstructionStatement; }
             |   EmptyStatement(ctx){ value = EmptyStatement; }
+            |   ThrowStatement(ctx){ value = ThrowStatement; }
+            |   TryStatement(ctx){ value = TryStatement; }
             ;
 
         LabelId : std::string
@@ -152,6 +154,24 @@ namespace cminor.parser
 
         EmptyStatement(ParsingContext* ctx) : StatementNode*
             ::= ';'{ value = new EmptyStatementNode(span); } 
+            ;
+
+        ThrowStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("throw") Expression(ctx)? ';'!){ value = new ThrowStatementNode(span, Expression); }
+            ;
+
+        TryStatement(ParsingContext* ctx) : TryStatementNode*
+            ::= keyword("try") CompoundStatement(ctx):tryBlock{ value = new TryStatementNode(span, tryBlock); } 
+                ((Catch(ctx){ value->AddCatch(Catch); })+ (Finally(ctx){ value->SetFinally(Finally); })? | Finally(ctx):fin{ value->SetFinally(fin); })
+            ;
+
+        Catch(ParsingContext* ctx) : CatchNode*
+            ::= (keyword("catch") '('! TypeExpr(ctx)! Identifier! ')'! CompoundStatement(ctx):catchBlock1){ value = new CatchNode(span, TypeExpr, Identifier, catchBlock1); }
+            |   (keyword("catch") CompoundStatement(ctx):catchBlock2){ value = new CatchNode(span, catchBlock2); }
+            ;
+
+        Finally(ParsingContext* ctx) : CompoundStatementNode*
+            ::= (keyword("finally") CompoundStatement(ctx)){ value = new CompoundStatementNode(span); }
             ;
     }
 }

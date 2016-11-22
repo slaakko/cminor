@@ -33,6 +33,9 @@ public:
     void Visit(BoundAssignmentStatement& boundAssignmentStatement) override;
     void Visit(BoundExpressionStatement& boundExpressionStatement) override;
     void Visit(BoundEmptyStatement& boundEmptyStatement) override;
+    void Visit(BoundThrowStatement& boundThrowStatement) override;
+    void Visit(BoundStaticInitStatement& boundStaticInitStatement) override;
+    void Visit(BoundDoneStaticInitStatement& boundDoneStaticInitStatement) override;
     void Visit(BoundLiteral& boundLiteral) override;
     void Visit(BoundConstant& boundConstant) override;
     void Visit(BoundEnumConstant& boundEnumConstant) override;
@@ -42,6 +45,7 @@ public:
     void Visit(BoundParameter& boundParameter) override;
     void Visit(BoundConversion& boundConversion) override;
     void Visit(BoundFunctionCall& boundFunctionCall) override;
+    void Visit(BoundNewExpression& boundNewExpression) override;
     void SetFirstInstIndex(int32_t index) override;
     int32_t FistInstIndex() const override;
     bool CreatePCRange() const override;
@@ -460,6 +464,39 @@ void EmitterVisitor::Visit(BoundEmptyStatement& boundEmptyStatement)
     function->AddInst(std::move(nop));
 }
 
+void EmitterVisitor::Visit(BoundThrowStatement& boundThrowStatement)
+{
+    if (boundThrowStatement.Expression())
+    {
+        boundThrowStatement.Expression()->Accept(*this);
+        std::unique_ptr<Instruction> throwInst = machine.CreateInst("throw");
+        function->AddInst(std::move(throwInst));
+    }
+    else
+    {
+        std::unique_ptr<Instruction> rethrowInst = machine.CreateInst("rethrow");
+        function->AddInst(std::move(rethrowInst));
+    }
+}
+
+void EmitterVisitor::Visit(BoundStaticInitStatement& boundStaticInitStatement)
+{
+    std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
+    StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
+    Assert(staticInitInst, "static init instruction expected");
+    staticInitInst->SetTypeName(boundStaticInitStatement.ClassNameConstant());
+    function->AddInst(std::move(inst));
+}
+
+void EmitterVisitor::Visit(BoundDoneStaticInitStatement& boundDoneStaticInitStatement)
+{
+    std::unique_ptr<Instruction> inst = machine.CreateInst("donestaticinit");
+    DoneStaticInitInst* doneStaticInitInst = dynamic_cast<DoneStaticInitInst*>(inst.get());
+    Assert(doneStaticInitInst, "done static init instruction expected");
+    doneStaticInitInst->SetTypeName(boundDoneStaticInitStatement.ClassNameConstant());
+    function->AddInst(std::move(inst));
+}
+
 void EmitterVisitor::Visit(BoundLiteral& boundLiteral)
 {
     boundLiteral.GenLoad(machine, *function);
@@ -511,6 +548,12 @@ void EmitterVisitor::Visit(BoundConversion& boundConversion)
 void EmitterVisitor::Visit(BoundFunctionCall& boundFunctionCall)
 {
     boundFunctionCall.GenLoad(machine, *function);
+    GenJumpingBoolCode();
+}
+
+void EmitterVisitor::Visit(BoundNewExpression& boundNewExpression)
+{
+    boundNewExpression.GenLoad(machine, *function);
     GenJumpingBoolCode();
 }
 

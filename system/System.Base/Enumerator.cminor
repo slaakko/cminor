@@ -3,7 +3,7 @@ namespace System
     public interface Enumerator
     {
         bool AtEnd();
-        object Current();
+        object GetCurrent();
         void MoveNext();
     }
 

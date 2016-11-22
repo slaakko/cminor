@@ -2,13 +2,21 @@ using System;
 
 namespace System.IO
 {
-    public class BufferedStream : Stream
+    public class BufferedStream : Stream, Closable
     {
         public BufferedStream(Stream stream) : this(stream, 4096)
         {
         }
         public BufferedStream(Stream stream, int bufferSize)
         {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("provided stream is null");
+            }
+            if (bufferSize <= 0)
+            {
+                throw new ArgumentOutOfRangeException("invalid bufferSize");
+            }
             this.stream = stream;
             this.buf = new byte[bufferSize];
             this.pos = buf.Length;
@@ -31,6 +39,14 @@ namespace System.IO
         }
         public override void Write(byte[] buffer, int count)
         {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("buffer is null");
+            }
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException("invalid count");
+            }
             for (int i = 0; i < count; ++i)
             {
                 WriteByte(buffer[i])
@@ -54,6 +70,10 @@ namespace System.IO
         }
         public override int Read(byte[] buffer)
         {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("buffer is null");
+            }
             Flush();
             if (bytesAvailable == 0)
             {

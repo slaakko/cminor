@@ -266,6 +266,63 @@ private:
     std::unique_ptr<Node> expression;
 };
 
+class ThrowStatementNode : public StatementNode
+{
+public:
+    ThrowStatementNode(const Span& span_);
+    ThrowStatementNode(const Span& span_, Node* expression_);
+    NodeType GetNodeType() const override { return NodeType::throwStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
+    void Accept(Visitor& visitor) override;
+    Node* Expression() const { return expression.get(); }
+    bool IsFunctionTerminatingNode() const override { return true; }
+private:
+    std::unique_ptr<Node> expression;
+};
+
+class CatchNode : public Node
+{
+public:
+    CatchNode(const Span& span_);
+    CatchNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_, CompoundStatementNode* catchBlock_);
+    CatchNode(const Span& span_, CompoundStatementNode* catchBlock_);
+    NodeType GetNodeType() const override { return NodeType::catchNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
+    void Accept(Visitor& visitor) override;
+    Node* TypeExpr() const { return typeExpr.get(); }
+    IdentifierNode* Id() const { return id.get(); }
+    CompoundStatementNode* CatchBlock() const { return catchBlock.get(); }
+private:
+    std::unique_ptr<Node> typeExpr;
+    std::unique_ptr<IdentifierNode> id;
+    std::unique_ptr<CompoundStatementNode> catchBlock;
+};
+
+class TryStatementNode : public StatementNode
+{
+public:
+    TryStatementNode(const Span& span_);
+    TryStatementNode(const Span& span_, CompoundStatementNode* tryBlock_);
+    NodeType GetNodeType() const override { return NodeType::tryStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
+    void Accept(Visitor& visitor) override;
+    CompoundStatementNode* TryBlock() const { return tryBlock.get(); }
+    const NodeList<CatchNode>& Catches() const { return catches; }
+    CompoundStatementNode* FinallyBlock() const { return finallyBlock.get(); }
+    void AddCatch(CatchNode* catch_);
+    void SetFinally(CompoundStatementNode* finallyBlock_);
+private:
+    std::unique_ptr<CompoundStatementNode> tryBlock;
+    NodeList<CatchNode> catches;
+    std::unique_ptr<CompoundStatementNode> finallyBlock;
+};
+
 } } // namespace cminor::ast
 
 #endif // CMINOR_AST_STATEMENT_INCLUDED

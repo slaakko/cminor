@@ -101,9 +101,12 @@ public:
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
     bool IsLvalueExpression() const override { return true; }
+    MemberVariableSymbol* GetMemberVariableSymbol() const { return memberVariableSymbol; }
+    void SetStaticInitNeeded() { staticInitNeeded = true; }
 private:
     std::unique_ptr<BoundExpression> classObject;
     MemberVariableSymbol* memberVariableSymbol;
+    bool staticInitNeeded;
 };
 
 class BoundProperty : public BoundExpression
@@ -115,9 +118,12 @@ public:
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
     bool IsLvalueExpression() const override { return true; }
+    PropertySymbol* GetPropertySymbol() const { return propertySymbol; }
+    void SetStaticInitNeeded() { staticInitNeeded = true; }
 private:
     std::unique_ptr<BoundExpression> classObject;
     PropertySymbol* propertySymbol;
+    bool staticInitNeeded;
 };
 
 class BoundIndexer : public BoundExpression
@@ -128,10 +134,12 @@ public:
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
     bool IsLvalueExpression() const override { return true; }
+    void SetStaticInitNeeded() { staticInitNeeded = true; }
 private:
     std::unique_ptr<BoundExpression> classObject;
     std::unique_ptr<BoundExpression> index;
     IndexerSymbol* indexerSymbol;
+    bool staticInitNeeded;
 };
 
 class BoundParameter : public BoundExpression

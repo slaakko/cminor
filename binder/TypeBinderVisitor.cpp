@@ -280,6 +280,26 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
         ValueType memberVariableValueType = memberVariableType->GetValueType();
         classTypeSymbol->GetObjectType()->AddField(memberVariableValueType);
     }
+    int nsmv = int(classTypeSymbol->StaticMemberVariables().size());
+    if (nsmv > 0)
+    {
+        ClassData* classData = classTypeSymbol->GetClassData();
+        if (!classData->GetStaticClassData())
+        {
+            classData->CreateStaticClassData();
+        }
+        StaticClassData* staticClassData = classData->GetStaticClassData();
+        Layout& staticLayout = staticClassData->StaticLayout();
+        for (int i = 0; i < nsmv; ++i)
+        {
+            MemberVariableSymbol* staticMemberVariableSymbol = classTypeSymbol->StaticMemberVariables()[i];
+            staticMemberVariableSymbol->SetIndex(staticLayout.FieldCount());
+            TypeSymbol* staticMemberVariableType = staticMemberVariableSymbol->GetType();
+            Assert(staticMemberVariableType, "got no type");
+            ValueType memberVariableValueType = staticMemberVariableType->GetValueType();
+            staticLayout.AddField(memberVariableValueType);
+        }
+    }
     if (classTypeSymbol->FullName() == U"System.String")
     {
         classTypeSymbol->GetObjectType()->AddField(ValueType::allocationHandle);
@@ -359,6 +379,20 @@ void TypeBinderVisitor::Visit(StaticConstructorNode& staticConstructorNode)
         }
         staticConstructorSymbol->ComputeName();
     }
+    Symbol* parent = staticConstructorSymbol->Parent();
+    ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
+    Assert(classTypeSymbol, "class type symbol expected");
+    ClassData* classData = classTypeSymbol->GetClassData();
+    if (!classData->GetStaticClassData())
+    {
+        classData->CreateStaticClassData();
+    }
+    StaticClassData* staticClassData = classData->GetStaticClassData();
+    utf32_string fullName = staticConstructorSymbol->FullName();
+    ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
+    Constant fullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
+    staticConstructorSymbol->SetFullNameConstant(fullNameConstant);
+    staticClassData->SetStaticConstructorName(fullNameConstant);
     if (staticConstructorNode.HasBody())
     {
         staticConstructorNode.Body()->Accept(*this);
@@ -419,6 +453,11 @@ void TypeBinderVisitor::Visit(ConstructorNode& constructorNode)
             constructorSymbol->SetBound();
         }
     }
+    Symbol* parent = constructorSymbol->Parent();
+    if (parent->IsStatic())
+    {
+        throw Exception("static class cannot contain instance constructors", constructorSymbol->GetSpan(), parent->GetSpan());
+    }
     if (constructorNode.HasBody())
     {
         constructorNode.Body()->Accept(*this);
@@ -477,6 +516,11 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         memberFunctionSymbol->SetReturnType(returnType);
         memberFunctionSymbol->ComputeName();
     }
+    Symbol* parent = memberFunctionSymbol->Parent();
+    if (parent->IsStatic() && !memberFunctionSymbol->IsStatic())
+    {
+        throw Exception("static class cannot contain nonstatic member functions", memberFunctionSymbol->GetSpan(), parent->GetSpan());
+    }
     if (memberFunctionNode.HasBody())
     {
         memberFunctionNode.Body()->Accept(*this);
@@ -498,6 +542,11 @@ void TypeBinderVisitor::Visit(MemberVariableNode& memberVariableNode)
     MemberVariableSymbol* memberVariableSymbol = dynamic_cast<MemberVariableSymbol*>(symbol);
     Assert(memberVariableSymbol, "member variable symbol expected");
     memberVariableSymbol->SetSpecifiers(memberVariableNode.GetSpecifiers());
+    Symbol* parent = memberVariableSymbol->Parent();
+    if (parent->IsStatic() && !memberVariableSymbol->IsStatic())
+    {
+        throw Exception("static class cannot contain instance variables", memberVariableSymbol->GetSpan(), parent->GetSpan());
+    }
     TypeSymbol* memberVariableType = ResolveType(boundCompileUnit, containerScope, memberVariableNode.TypeExpr());
     memberVariableSymbol->SetType(memberVariableType);
 }
@@ -508,6 +557,11 @@ void TypeBinderVisitor::Visit(PropertyNode& propertyNode)
     PropertySymbol* propertySymbol = dynamic_cast<PropertySymbol*>(symbol);
     Assert(propertySymbol, "property symbol expected");
     propertySymbol->SetSpecifiers(propertyNode.GetSpecifiers());
+    Symbol* parent = propertySymbol->Parent();
+    if (parent->IsStatic() && !propertySymbol->IsStatic())
+    {
+        throw Exception("static class cannot contain instance properties", propertySymbol->GetSpan(), parent->GetSpan());
+    }
     ContainerScope* prevContainerScope = containerScope;
     containerScope = propertySymbol->GetContainerScope();
     TypeSymbol* propertyType = ResolveType(boundCompileUnit, containerScope, propertyNode.TypeExpr());
@@ -570,6 +624,11 @@ void TypeBinderVisitor::Visit(IndexerNode& indexerNode)
     ContainerScope* prevContainerScope = containerScope;
     containerScope = indexerSymbol->GetContainerScope();
     indexerSymbol->SetSpecifiers(indexerNode.GetSpecifiers());
+    Symbol* parent = indexerSymbol->Parent();
+    if (parent->IsStatic() && !indexerSymbol->IsStatic())
+    {
+        throw Exception("static class cannot contain instance indexers", indexerSymbol->GetSpan(), parent->GetSpan());
+    }
     TypeSymbol* indexerValueType = ResolveType(boundCompileUnit, containerScope, indexerNode.ValueTypeExpr());
     indexerSymbol->SetValueType(indexerValueType);
     TypeSymbol* indexerIndexType = ResolveType(boundCompileUnit, containerScope, indexerNode.IndexTypeExpr());
@@ -596,9 +655,18 @@ void TypeBinderVisitor::Visit(IndexerNode& indexerNode)
         getter->SetReturnType(indexerValueType);
         prevContainerScope = containerScope;
         containerScope = getter->GetContainerScope();
-        Assert(getter->Parameters().size() > 1, "more than one parameter expected");
-        ParameterSymbol* indexParam = getter->Parameters()[1];
-        indexParam->SetType(indexerIndexType);
+        if (!indexerSymbol->IsStatic())
+        {
+            Assert(getter->Parameters().size() > 1, "more than one parameter expected");
+            ParameterSymbol* indexParam = getter->Parameters()[1];
+            indexParam->SetType(indexerIndexType);
+        }
+        else
+        {
+            Assert(getter->Parameters().size() > 0, "more than zero parameters expected");
+            ParameterSymbol* indexParam = getter->Parameters()[0];
+            indexParam->SetType(indexerIndexType);
+        }
         indexerNode.Getter()->Accept(*this);
         containerScope = prevContainerScope;
     }
@@ -621,9 +689,18 @@ void TypeBinderVisitor::Visit(IndexerNode& indexerNode)
         ParameterSymbol* value = dynamic_cast<ParameterSymbol*>(valueSymbol);
         Assert(value, "parameter symbol expected");
         value->SetType(indexerValueType);
-        Assert(setter->Parameters().size() > 1, "more than one parameter expected");
-        ParameterSymbol* indexParam = setter->Parameters()[1];
-        indexParam->SetType(indexerIndexType);
+        if (!indexerSymbol->IsStatic())
+        {
+            Assert(setter->Parameters().size() > 1, "more than one parameter expected");
+            ParameterSymbol* indexParam = setter->Parameters()[1];
+            indexParam->SetType(indexerIndexType);
+        }
+        else
+        {
+            Assert(setter->Parameters().size() > 0, "more than zero parameters expected");
+            ParameterSymbol* indexParam = setter->Parameters()[0];
+            indexParam->SetType(indexerIndexType);
+        }
         indexerNode.Setter()->Accept(*this);
         containerScope = prevContainerScope;
     }

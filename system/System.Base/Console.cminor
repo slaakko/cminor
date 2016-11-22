@@ -1,0 +1,40 @@
+using System.IO;
+
+namespace System
+{
+    public static class Console
+    {
+        static Console()
+        {
+            inStream = new StreamReader(new FileStream(stdin));
+            outStream = new StreamWriter(new FileStream(stdout));
+            errStream = new StreamWriter(new FileStream(stderr));
+        }
+        public static void Write(String s)
+        {
+            outStream.Write(s);
+        }
+        public static void WriteLine(String s)
+        {
+            outStream.WriteLine(s);
+        }
+        public static StreamReader In
+        {
+            get { return inStream; }
+            set { inStream = value; }
+        }
+        public static StreamWriter Out
+        {
+            get { return outStream; }
+            set { outStream = value; }
+        }
+        public static StreamWriter Error
+        {
+            get { return errStream; }
+            set { errStream = value; }
+        }
+        private static StreamReader inStream;
+        private static StreamWriter outStream;
+        private static StreamWriter errStream;
+    }
+}

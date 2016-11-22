@@ -23,6 +23,9 @@ class BoundConstructionStatement;
 class BoundAssignmentStatement;
 class BoundExpressionStatement;
 class BoundEmptyStatement;
+class BoundThrowStatement;
+class BoundStaticInitStatement;
+class BoundDoneStaticInitStatement;
 class BoundLiteral;
 class BoundConstant;
 class BoundEnumConstant;
@@ -58,6 +61,9 @@ public:
     virtual void Visit(BoundAssignmentStatement& boundAssignmentStatement) {}
     virtual void Visit(BoundExpressionStatement& boundExpressionStatement) {}
     virtual void Visit(BoundEmptyStatement& boundEmptyStatement) {}
+    virtual void Visit(BoundThrowStatement& boundThrowStatement) {}
+    virtual void Visit(BoundStaticInitStatement& boundStaticInitStatement) {}
+    virtual void Visit(BoundDoneStaticInitStatement& boundDoneStaticInitStatement) {}
     virtual void Visit(BoundLiteral& boundLiteral) {}
     virtual void Visit(BoundConstant& boundConstant) {}
     virtual void Visit(BoundEnumConstant& boundEnumConstant) {}

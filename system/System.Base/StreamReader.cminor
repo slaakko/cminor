@@ -1,0 +1,21 @@
+using System;
+
+namespace System.IO
+{
+    public class StreamReader : Closable
+    {
+        public StreamReader(Stream stream)
+        {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("provided stream is null");
+            }
+            this.stream = stream;
+        }
+        public void Close()
+        {
+            stream.Close();
+        }
+        private Stream stream;
+    }
+}

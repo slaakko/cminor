@@ -542,6 +542,13 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
             expression.reset(new BoundFunctionGroupExpression(boundCompileUnit.GetAssembly(), functionGroupSymbol));
             break;
         }
+        case SymbolType::classTypeSymbol:
+        {
+            ClassTypeSymbol* classTypeSymbol = static_cast<ClassTypeSymbol*>(symbol);
+            CheckAccess(boundFunction->GetFunctionSymbol(), classTypeSymbol);
+            expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), classTypeSymbol));
+            break;
+        }
         case SymbolType::parameterSymbol:
         {
             ParameterSymbol* parameterSymbol = static_cast<ParameterSymbol*>(symbol);
@@ -561,10 +568,32 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
             MemberVariableSymbol* memberVariableSymbol = static_cast<MemberVariableSymbol*>(symbol);
             CheckAccess(boundFunction->GetFunctionSymbol(), memberVariableSymbol);
             BoundMemberVariable* bmv = new BoundMemberVariable(boundCompileUnit.GetAssembly(), memberVariableSymbol->GetType(), memberVariableSymbol);
-            ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->GetThisParam();
-            if (thisParam)
+            if (memberVariableSymbol->IsStatic())
             {
-                bmv->SetClassObject(std::unique_ptr<BoundExpression>(new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam)));
+                bool accessFromOwnScope = false;
+                Symbol* s = boundFunction->GetFunctionSymbol();
+                ClassTypeSymbol* c = s->ContainingClass();
+                if (c)
+                {
+                    ClassTypeSymbol* cp = memberVariableSymbol->ContainingClass();
+                    Assert(cp, "class type symbol expected");
+                    if (cp == c)
+                    {
+                        accessFromOwnScope = true;
+                    }
+                }
+                if (!accessFromOwnScope)
+                {
+                    bmv->SetStaticInitNeeded();
+                }
+            }
+            else
+            {
+                ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->GetThisParam();
+                if (thisParam)
+                {
+                    bmv->SetClassObject(std::unique_ptr<BoundExpression>(new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam)));
+                }
             }
             expression.reset(bmv);
             break;
@@ -610,10 +639,32 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
                 }
             }
             BoundProperty* bp = new BoundProperty(boundCompileUnit.GetAssembly(), propertySymbol->GetType(), propertySymbol);
-            ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->GetThisParam();
-            if (thisParam)
+            if (propertySymbol->IsStatic())
             {
-                bp->SetClassObject(std::unique_ptr<BoundExpression>(new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam)));
+                bool accessFromOwnScope = false;
+                Symbol* s = boundFunction->GetFunctionSymbol();
+                ClassTypeSymbol* c = s->ContainingClass();
+                if (c)
+                {
+                    ClassTypeSymbol* cp = propertySymbol->ContainingClass();
+                    Assert(cp, "class type symbol expected");
+                    if (cp == c) 
+                    {
+                        accessFromOwnScope = true;
+                    }
+                }
+                if (!accessFromOwnScope)
+                {
+                    bp->SetStaticInitNeeded();
+                }
+            }
+            else
+            {
+                ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->GetThisParam();
+                if (thisParam)
+                {
+                    bp->SetClassObject(std::unique_ptr<BoundExpression>(new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam)));
+                }
             }
             expression.reset(bp);
             break;
@@ -726,25 +777,31 @@ void ExpressionBinder::Visit(DotNode& dotNode)
                 }
                 else if (BoundMemberVariable* bmv = dynamic_cast<BoundMemberVariable*>(expression.get()))
                 {
-                    Symbol* parent = symbol->Parent();
-                    ClassTypeSymbol* owner = dynamic_cast<ClassTypeSymbol*>(parent);
-                    Assert(owner, "class type symbol expected");
-                    if (classType->HasBaseClass(owner))
+                    if (!bmv->GetMemberVariableSymbol()->IsStatic())
                     {
-                        classObject = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(classObject), boundCompileUnit.GetConversion(classType, owner));
+                        Symbol* parent = symbol->Parent();
+                        ClassTypeSymbol* owner = dynamic_cast<ClassTypeSymbol*>(parent);
+                        Assert(owner, "class type symbol expected");
+                        if (classType->HasBaseClass(owner))
+                        {
+                            classObject = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(classObject), boundCompileUnit.GetConversion(classType, owner));
+                        }
+                        bmv->SetClassObject(std::unique_ptr<BoundExpression>(classObject));
                     }
-                    bmv->SetClassObject(std::unique_ptr<BoundExpression>(classObject));
                 }
                 else if (BoundProperty* bp = dynamic_cast<BoundProperty*>(expression.get()))
                 {
-                    Symbol* parent = symbol->Parent();
-                    ClassTypeSymbol* owner = dynamic_cast<ClassTypeSymbol*>(parent);
-                    Assert(owner, "class type symbol expected");
-                    if (classType->HasBaseClass(owner))
+                    if (!bp->GetPropertySymbol()->IsStatic())
                     {
-                        classObject = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(classObject), boundCompileUnit.GetConversion(classType, owner));
+                        Symbol* parent = symbol->Parent();
+                        ClassTypeSymbol* owner = dynamic_cast<ClassTypeSymbol*>(parent);
+                        Assert(owner, "class type symbol expected");
+                        if (classType->HasBaseClass(owner))
+                        {
+                            classObject = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(classObject), boundCompileUnit.GetConversion(classType, owner));
+                        }
+                        bp->SetClassObject(std::unique_ptr<BoundExpression>(classObject));
                     }
-                    bp->SetClassObject(std::unique_ptr<BoundExpression>(classObject));
                 }
                 else
                 {
@@ -930,8 +987,28 @@ void ExpressionBinder::Visit(IndexingNode& indexingNode)
                     {
                         index = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(index), conversionFun);
                     }
-                    expression.reset(new BoundIndexer(boundCompileUnit.GetAssembly(), indexerSymbol->GetValueType(), indexerSymbol, std::unique_ptr<BoundExpression>(subject),
-                        std::unique_ptr<BoundExpression>(index)));
+                    BoundIndexer* bi = new BoundIndexer(boundCompileUnit.GetAssembly(), indexerSymbol->GetValueType(), indexerSymbol, std::unique_ptr<BoundExpression>(subject),
+                        std::unique_ptr<BoundExpression>(index));
+                    if (indexerSymbol->IsStatic())
+                    {
+                        bool accessFromOwnScope = false;
+                        Symbol* s = boundFunction->GetFunctionSymbol();
+                        ClassTypeSymbol* c = s->ContainingClass();
+                        if (c)
+                        {
+                            ClassTypeSymbol* cp = indexerSymbol->ContainingClass();
+                            Assert(cp, "class type symbol expected");
+                            if (cp == c)
+                            {
+                                accessFromOwnScope = true;
+                            }
+                        }
+                        if (!accessFromOwnScope)
+                        {
+                            bi->SetStaticInitNeeded();
+                        }
+                    }
+                    expression.reset(bi);
                 }
             }
             else
@@ -998,22 +1075,26 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
         }
         else
         {
-            throw *exception;
+            arguments.erase(arguments.begin());
+            functionCall = std::move(ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan()));
         }
     }
     CheckAccess(boundFunction->GetFunctionSymbol(), functionCall->GetFunctionSymbol());
     if (MemberFunctionSymbol* memFun = dynamic_cast<MemberFunctionSymbol*>(functionCall->GetFunctionSymbol()))
     {
-        Assert(!functionCall->Arguments().empty(), "nonempty argument list expected");
-        if (InterfaceTypeSymbol* interfaceType = dynamic_cast<InterfaceTypeSymbol*>(functionCall->Arguments()[0]->GetType()))
+        if (!memFun->IsStatic())
         {
-            functionCall->SetFunctionCallType(FunctionCallType::interfaceCall);
-        }
-        else if (memFun->IsVirtualAbstractOrOverride())
-        {
-            if (!functionCall->Arguments()[0]->GetFlag(BoundExpressionFlags::argIsThisOrBase))
+            Assert(!functionCall->Arguments().empty(), "nonempty argument list expected");
+            if (InterfaceTypeSymbol* interfaceType = dynamic_cast<InterfaceTypeSymbol*>(functionCall->Arguments()[0]->GetType()))
             {
-                functionCall->SetFunctionCallType(FunctionCallType::virtualCall);
+                functionCall->SetFunctionCallType(FunctionCallType::interfaceCall);
+            }
+            else if (memFun->IsVirtualAbstractOrOverride())
+            {
+                if (!functionCall->Arguments()[0]->GetFlag(BoundExpressionFlags::argIsThisOrBase))
+                {
+                    functionCall->SetFunctionCallType(FunctionCallType::virtualCall);
+                }
             }
         }
     }

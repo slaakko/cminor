@@ -22,6 +22,7 @@ public:
     void EmplaceType(TypeSymbol* typeSymbol, int index) override;
     TypeSymbol* GetUnderlyingType() const { return underlyingType; }
     void SetUnderlyingType(TypeSymbol* underlyingType_);
+    ValueType GetValueType() const override { return underlyingType->GetValueType(); }
     Type* GetMachineType() const override;
 private:
     TypeSymbol* underlyingType;
