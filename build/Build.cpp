@@ -121,8 +121,10 @@ BoundCompoundStatement* CreateBodyForArrayGetEnumeratorMemberFunctionSymbol(Boun
     NewNode* newNode = new NewNode(span, arrayEnumeratorTemplateId);
     newNode->AddArgument(new ThisNode(span));
     bodyNode.AddStatement(new ReturnStatementNode(span, newNode));
+    boundCompileUnit.GetAssembly().GetSymbolTable().BeginContainer(arrayType);
     SymbolCreatorVisitor symbolCreatorVisitor(boundCompileUnit.GetAssembly());
     bodyNode.Accept(symbolCreatorVisitor);
+    boundCompileUnit.GetAssembly().GetSymbolTable().EndContainer();
     TypeBinderVisitor typeBinder(boundCompileUnit);
     typeBinder.SetContainerScope(getEnumeratorMemberFunctionSymbol->GetContainerScope());
     bodyNode.Accept(typeBinder);
@@ -140,6 +142,8 @@ void GenerateCodeForCreatedArrays(Assembly& assembly, std::unordered_set<ClassTe
     BoundCompileUnit synthesizedCompileUnit(assembly, nullptr);
     for (ArrayTypeSymbol* arrayType : assembly.GetSymbolTable().CreatedArrays())
     {
+        arrayType->InitVmt();
+        arrayType->InitImts();
         for (ConstructorSymbol* ctor : arrayType->Constructors())
         {
             std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(ctor));

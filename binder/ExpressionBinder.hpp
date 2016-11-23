@@ -14,10 +14,13 @@ using namespace cminor::ast;
 
 class BoundCompileUnit;
 class BoundFunction;
+class StatementBinderVisitor;
 
-std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node);
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, 
+    StatementBinderVisitor& statementBinder);
 
-std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue);
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue, 
+    StatementBinderVisitor& statementBinder);
 
 } } // namespace cminor::binder
 

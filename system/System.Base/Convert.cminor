@@ -1,0 +1,141 @@
+using System.Text;
+
+namespace System
+{
+    internal class UnsignedConversion<T>
+    {
+        public string ToString(T x)
+        {
+            StringBuilder s = new StringBuilder();
+            do
+            {
+                s.Append(cast<char>(cast<byte>('0') + cast<byte>(x % 10u)));
+                x = x / 10u;
+            }
+            while (x != 0u);
+            s.Reverse();
+            return s.ToString();
+        }
+    }
+
+    internal class SignedConversion<T, U>
+    {
+        public string ToString(T x)
+        {
+            U u = 0u;
+            bool neg = x < 0;
+            if (neg)
+            {
+                u = -cast<U>(x);
+            }
+            else
+            {
+                u = cast<U>(x);
+            }
+            StringBuilder s = new StringBuilder();
+            do
+            {
+                s.Append(cast<char>(cast<byte>('0') + cast<byte>(u % 10u)));
+                u = u / 10u;
+            }
+            while (u != 0u);
+            if (neg)
+            {
+                s.Append('-');
+            }
+            s.Reverse();
+            return s.ToString();
+        }
+    }
+
+    public string ToString(sbyte x)
+    {
+        return new SignedConversion<sbyte, byte>().ToString(x);
+    }
+
+    public string ToString(byte x)
+    {
+        return new UnsignedConversion<byte>().ToString(x);
+    }
+
+    public string ToString(short x)
+    {
+        return new SignedConversion<short, ushort>().ToString(x);
+    }
+
+    public string ToString(ushort x)
+    {
+        return new UnsignedConversion<ushort>().ToString(x);
+    }
+
+    public string ToString(int x)
+    {
+        return new SignedConversion<int, uint>().ToString(x);
+    }
+
+    public string ToString(uint x)
+    {
+        return new UnsignedConversion<uint>().ToString(x);
+    }
+
+    public string ToString(long x)
+    {
+        return new SignedConversion<long, ulong>().ToString(x);
+    }
+
+    public string ToString(ulong x)
+    {
+        return new UnsignedConversion<ulong>().ToString(x);
+    }
+
+    public string ToString(float x)
+    {
+        return ToString(cast<double>(x));
+    }
+
+    public string ToString(double x)
+    {
+        return ToString(x, 15);
+    }
+
+    public string ToString(double x, int maxNumDecimals)
+    {
+        return ToString(x, 0, maxNumDecimals);
+    }
+
+    public string ToString(double x, int minNumDecimals, int maxNumDecimals)
+    {
+        StringBuilder s = new StringBuilder();
+        if (x < 0)
+        {
+            x = -x;
+            s.Append('-');
+        }
+        int w = cast<int>(x);
+        s.Append(ToString(w));
+        double d = x - w;
+        if (d > 0 || minNumDecimals > 0)
+        {
+            s.Append('.');
+            for (int i = 0; (d > 0 || i < minNumDecimals) && i < maxNumDecimals; ++i)
+            {
+                d = 10 * d;
+                int digit = cast<int>(d) % 10;
+                s.Append(cast<char>(cast<int>('0') + digit));
+                d = d - cast<int>(d);
+            }
+        }
+        return s.ToString();
+    }
+
+    public string ToString(char x)
+    {
+        return new string(x, 1);
+    }
+
+    public string ToString(bool x)
+    {
+        if (x) return "true";
+        return "false";
+    }
+}

@@ -269,6 +269,8 @@ void EmitterVisitor::Visit(BoundIfStatement& boundIfStatement)
         prevFirstInstIndex = firstInstIndex;
         firstInstIndex = endOfFunction;
         boundIfStatement.ElseS()->Accept(*this);
+        int32_t elseTarget = firstInstIndex;
+        Backpatch(false_, elseTarget);
         firstInstIndex = prevFirstInstIndex;
     }
     else

@@ -287,7 +287,7 @@ void StatementBinderVisitor::Visit(BaseInitializerNode& baseInitializerNode)
     int n = baseInitializerNode.Arguments().Count();
     for (int i = 0; i < n; ++i)
     {
-        arguments.push_back(BindExpression(boundCompileUnit, function, containerScope, baseInitializerNode.Arguments()[i]));
+        arguments.push_back(BindExpression(boundCompileUnit, function, containerScope, baseInitializerNode.Arguments()[i], *this));
     }
     std::vector<FunctionScopeLookup> functionScopeLookups;
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, boundClass->GetClassTypeSymbol()->BaseClass()->ClassOrNsScope()));
@@ -306,7 +306,7 @@ void StatementBinderVisitor::Visit(ThisInitializerNode& thisInitializerNode)
     int n = thisInitializerNode.Arguments().Count();
     for (int i = 0; i < n; ++i)
     {
-        arguments.push_back(BindExpression(boundCompileUnit, function, containerScope, thisInitializerNode.Arguments()[i]));
+        arguments.push_back(BindExpression(boundCompileUnit, function, containerScope, thisInitializerNode.Arguments()[i], *this));
     }
     std::vector<FunctionScopeLookup> functionScopeLookups;
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, boundClass->GetClassTypeSymbol()->BaseClass()->ClassOrNsScope()));
@@ -576,7 +576,7 @@ void StatementBinderVisitor::Visit(ReturnStatementNode& returnStatementNode)
             functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, returnType->ClassInterfaceOrNsScope()));
             functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
             std::unique_ptr<BoundFunctionCall> returnFunctionCall = ResolveOverload(boundCompileUnit, U"@return", functionScopeLookups, returnTypeArgs, returnStatementNode.GetSpan());
-            std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, returnStatementNode.Expression());
+            std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, returnStatementNode.Expression(), *this);
             std::vector<std::unique_ptr<BoundExpression>> returnValueArguments;
             returnValueArguments.push_back(std::move(expression));
             FunctionMatch functionMatch(returnFunctionCall->GetFunctionSymbol());
@@ -628,7 +628,7 @@ void StatementBinderVisitor::Visit(ReturnStatementNode& returnStatementNode)
 
 void StatementBinderVisitor::Visit(IfStatementNode& ifStatementNode)
 {
-    std::unique_ptr<BoundExpression> condition = BindExpression(boundCompileUnit, function, containerScope, ifStatementNode.Condition());
+    std::unique_ptr<BoundExpression> condition = BindExpression(boundCompileUnit, function, containerScope, ifStatementNode.Condition(), *this);
     if (!dynamic_cast<BoolTypeSymbol*>(condition->GetType()))
     {
         throw Exception("condition of if statement must be Boolean expression", ifStatementNode.Condition()->GetSpan());
@@ -646,7 +646,7 @@ void StatementBinderVisitor::Visit(IfStatementNode& ifStatementNode)
 
 void StatementBinderVisitor::Visit(WhileStatementNode& whileStatementNode)
 {
-    std::unique_ptr<BoundExpression> condition = BindExpression(boundCompileUnit, function, containerScope, whileStatementNode.Condition());
+    std::unique_ptr<BoundExpression> condition = BindExpression(boundCompileUnit, function, containerScope, whileStatementNode.Condition(), *this);
     if (!dynamic_cast<BoolTypeSymbol*>(condition->GetType()))
     {
         throw Exception("condition of while statement must be Boolean expression", whileStatementNode.Condition()->GetSpan());
@@ -657,7 +657,7 @@ void StatementBinderVisitor::Visit(WhileStatementNode& whileStatementNode)
 
 void StatementBinderVisitor::Visit(DoStatementNode& doStatementNode)
 {
-    std::unique_ptr<BoundExpression> condition = BindExpression(boundCompileUnit, function, containerScope, doStatementNode.Condition());
+    std::unique_ptr<BoundExpression> condition = BindExpression(boundCompileUnit, function, containerScope, doStatementNode.Condition(), *this);
     if (!dynamic_cast<BoolTypeSymbol*>(condition->GetType()))
     {
         throw Exception("condition of do statement must be Boolean expression", doStatementNode.Condition()->GetSpan());
@@ -674,11 +674,11 @@ void StatementBinderVisitor::Visit(ForStatementNode& forStatementNode)
     if (!forStatementNode.Condition())
     {
         BooleanLiteralNode trueNode(forStatementNode.GetSpan(), true);
-        condition = BindExpression(boundCompileUnit, function, containerScope, &trueNode);
+        condition = BindExpression(boundCompileUnit, function, containerScope, &trueNode, *this);
     }
     else
     {
-        condition = BindExpression(boundCompileUnit, function, containerScope, forStatementNode.Condition());
+        condition = BindExpression(boundCompileUnit, function, containerScope, forStatementNode.Condition(), *this);
     }
     forStatementNode.InitS()->Accept(*this);
     BoundStatement* initS = statement.release();
@@ -734,7 +734,7 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
     for (int i = 0; i < n; ++i)
     {
         Node* argumentNode = constructionStatementNode.Arguments()[i];
-        std::unique_ptr<BoundExpression> argument = BindExpression(boundCompileUnit, function, containerScope, argumentNode);
+        std::unique_ptr<BoundExpression> argument = BindExpression(boundCompileUnit, function, containerScope, argumentNode, *this);
         arguments.push_back(std::move(argument));
     }
     std::unique_ptr<BoundFunctionCall> constructorCall = ResolveOverload(boundCompileUnit, U"@init", functionScopeLookups, arguments, constructionStatementNode.GetSpan());
@@ -744,9 +744,9 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
 
 void StatementBinderVisitor::Visit(AssignmentStatementNode& assignmentStatementNode)
 {
-    std::unique_ptr<BoundExpression> target = BindExpression(boundCompileUnit, function, containerScope, assignmentStatementNode.TargetExpr(), true);
+    std::unique_ptr<BoundExpression> target = BindExpression(boundCompileUnit, function, containerScope, assignmentStatementNode.TargetExpr(), true, *this);
     TypeSymbol* targetType = target->GetType();
-    std::unique_ptr<BoundExpression> source = BindExpression(boundCompileUnit, function, containerScope, assignmentStatementNode.SourceExpr());
+    std::unique_ptr<BoundExpression> source = BindExpression(boundCompileUnit, function, containerScope, assignmentStatementNode.SourceExpr(), *this);
     std::vector<std::unique_ptr<BoundExpression>> arguments;
     arguments.push_back(std::move(target));
     arguments.push_back(std::move(source));
@@ -759,7 +759,7 @@ void StatementBinderVisitor::Visit(AssignmentStatementNode& assignmentStatementN
 
 void StatementBinderVisitor::Visit(ExpressionStatementNode& expressionStatementNode)
 {
-    std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, expressionStatementNode.Expression());
+    std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, expressionStatementNode.Expression(), *this);
     statement.reset(new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::move(expression)));
 }
 
@@ -770,7 +770,7 @@ void StatementBinderVisitor::Visit(EmptyStatementNode& emptyStatementNode)
 
 void StatementBinderVisitor::Visit(IncrementStatementNode& incrementStatementNode)
 {
-    std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, incrementStatementNode.Expression());
+    std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, incrementStatementNode.Expression(), *this);
     if (expression->GetType()->IsUnsignedType())
     {
         CloneContext cloneContext;
@@ -789,7 +789,7 @@ void StatementBinderVisitor::Visit(IncrementStatementNode& incrementStatementNod
 
 void StatementBinderVisitor::Visit(DecrementStatementNode& decrementStatementNode)
 {
-    std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, decrementStatementNode.Expression());
+    std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, decrementStatementNode.Expression(), *this);
     if (expression->GetType()->IsUnsignedType())
     {
         CloneContext cloneContext;
@@ -843,7 +843,7 @@ void StatementBinderVisitor::Visit(ThrowStatementNode& throwStatementNode)
 {
     if (throwStatementNode.Expression())
     {
-        std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, throwStatementNode.Expression());
+        std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, throwStatementNode.Expression(), *this);
         TypeSymbol* exceptionType = expression->GetType();
         if (ClassTypeSymbol* exceptionClassType = dynamic_cast<ClassTypeSymbol*>(exceptionType))
         {

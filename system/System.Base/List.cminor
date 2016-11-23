@@ -1,6 +1,6 @@
 using System;
 
-namespace System.Collections
+namespace System.Collections.Generic
 {
     public class List<T> : Enumerable
     {
@@ -80,6 +80,23 @@ namespace System.Collections
             }
             return arr;
         }
+        public void Reverse()
+        {
+            int i = 0;
+            int j = count - 1;
+            while (i < j)
+            {
+                T temp = items[i];
+                items[i] = items[j];
+                items[j] = temp;
+                ++i;
+                --j;
+            }
+        }
+        public Enumerator GetEnumerator()
+        {
+            return new ListEnumerator<T>(this);
+        }
         public T this[int index]
         {
             get { return items[index]; }
@@ -92,10 +109,6 @@ namespace System.Collections
         public int Capacity
         {
             get { if (items == null) return 0; else return items.Length; }
-        }
-        public Enumerator GetEnumerator()
-        {
-            return new ListEnumerator<T>(this);
         }
         private T[] items;
         private int count;

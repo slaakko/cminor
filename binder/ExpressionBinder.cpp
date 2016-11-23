@@ -9,20 +9,24 @@
 #include <cminor/binder/OverloadResolution.hpp>
 #include <cminor/binder/Access.hpp>
 #include <cminor/binder/BoundFunction.hpp>
+#include <cminor/binder/TypeBinderVisitor.hpp>
 #include <cminor/binder/TypeResolver.hpp>
+#include <cminor/binder/StatementBinderVisitor.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/symbols/EnumSymbol.hpp>
+#include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
+#include <cminor/ast/BasicType.hpp>
 
 namespace cminor { namespace binder {
 
 class ExpressionBinder : public Visitor
 {
 public:
-    ExpressionBinder(BoundCompileUnit& boundCompileUnit_, BoundFunction* boundFunction_, ContainerScope* containerScope_, const Span& span_, bool lvalue);
+    ExpressionBinder(BoundCompileUnit& boundCompileUnit_, BoundFunction* boundFunction_, ContainerScope* containerScope_, const Span& span_, bool lvalue, StatementBinderVisitor& statementBinder_);
     std::unique_ptr<BoundExpression> GetExpression() { return std::move(expression); }
 
     void Visit(BoolNode& boolNode) override;
@@ -93,6 +97,7 @@ private:
     ContainerScope* containerScope;
     bool lvalue;
     Span span;
+    StatementBinderVisitor& statementBinder;
     std::unique_ptr<BoundExpression> expression;
     void BindSymbol(Symbol* symbol);
     void BindUnaryOp(UnaryNode& unaryNode, StringPtr groupName);
@@ -101,8 +106,9 @@ private:
     void BindBinaryOp(BoundExpression* left, BoundExpression* right, Node& node, StringPtr groupName);
 };
 
-ExpressionBinder::ExpressionBinder(BoundCompileUnit& boundCompileUnit_, BoundFunction* boundFunction_, ContainerScope* containerScope_, const Span& span_, bool lvalue_) :
-    boundCompileUnit(boundCompileUnit_), boundFunction(boundFunction_), containerScope(containerScope_), span(span_), lvalue(lvalue_)
+ExpressionBinder::ExpressionBinder(BoundCompileUnit& boundCompileUnit_, BoundFunction* boundFunction_, ContainerScope* containerScope_, const Span& span_, bool lvalue_, 
+    StatementBinderVisitor& statementBinder_) :
+    boundCompileUnit(boundCompileUnit_), boundFunction(boundFunction_), containerScope(containerScope_), span(span_), lvalue(lvalue_), statementBinder(statementBinder_)
 {
 }
 
@@ -852,7 +858,20 @@ void ExpressionBinder::Visit(DotNode& dotNode)
         }
         else
         {
-            throw Exception("expression '" + dotNode.Child()->ToString() + "' must denote a namespace, class type, interface type or enumerated type object", dotNode.Child()->GetSpan());
+            const Span& span = dotNode.GetSpan();
+            if (type->HasBoxedType())
+            {
+                NewNode* newNode = new NewNode(span, new IdentifierNode(span, type->GetBoxedTypeName()));
+                CloneContext cloneContext;
+                newNode->AddArgument(dotNode.Child()->Clone(cloneContext));
+                DotNode objectDot(span, newNode, dotNode.MemberId()->Clone(cloneContext));
+                objectDot.Accept(*this);
+            }
+            else
+            {
+                throw Exception("expression '" + dotNode.Child()->ToString() + "' must denote a namespace, class type, interface type, enumerated type or boxable value type object", 
+                    dotNode.Child()->GetSpan());
+             }
         }
     }
     containerScope = prevContainerScope;
@@ -1214,14 +1233,15 @@ void ExpressionBinder::Visit(BaseNode& baseNode)
     }
 }
 
-std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node)
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, StatementBinderVisitor& statementBinder)
 {
-    return BindExpression(boundCompileUnit, boundFunction, containerScope, node, false);
+    return BindExpression(boundCompileUnit, boundFunction, containerScope, node, false, statementBinder);
 }
 
-std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue)
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue, 
+    StatementBinderVisitor& statementBinder)
 {
-    ExpressionBinder expressionBinder(boundCompileUnit, boundFunction, containerScope, node->GetSpan(), lvalue);
+    ExpressionBinder expressionBinder(boundCompileUnit, boundFunction, containerScope, node->GetSpan(), lvalue, statementBinder);
     node->Accept(expressionBinder);
     std::unique_ptr<BoundExpression> expression = expressionBinder.GetExpression();
     if (!expression->IsComplete())

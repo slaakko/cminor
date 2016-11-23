@@ -2,13 +2,8 @@ using System;
 
 void main()
 {
-    byte[] arr = new byte[3];
-    for (int i = 0; i < arr.Length; ++i)
+    for (int i = 0; i < 100; ++i)
     {
-        arr[i] = cast<byte>(i);
-    }
-    foreach (byte b in arr)
-    {
-        byte x = b;
+        Console.WriteLine(i);
     }
 }

@@ -206,6 +206,11 @@ void Object::MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReference
     }
 }
 
+void Object::Set(ManagedMemoryPool* pool)
+{
+    pool->Set(this);
+}
+
 ArrayElements::ArrayElements(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, Type* elementType_, int32_t numElements_, uint64_t size_) :
     ManagedAllocation(arenaId_, memPtr_, size_), handle(handle_), elementType(elementType_), numElements(numElements_)
 {
@@ -269,6 +274,11 @@ void ArrayElements::SetElement(IntegralValue elementValue, int32_t index)
     }
 }
 
+void ArrayElements::Set(ManagedMemoryPool* pool)
+{
+    pool->Set(this);
+}
+
 StringCharacters::StringCharacters(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, int32_t numChars_, uint64_t size_) : 
     ManagedAllocation(arenaId_, memPtr_, size_), handle(handle_), numChars(numChars_)
 {
@@ -280,7 +290,12 @@ IntegralValue StringCharacters::GetChar(int32_t index) const
     return IntegralValue(memPtr.StrValue()[index], ValueType::charType);
 }
 
-ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextReferenceValue(1)
+void StringCharacters::Set(ManagedMemoryPool* pool)
+{
+    pool->Set(this);
+}
+
+ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextReferenceValue(1), object(nullptr), arrayElements(nullptr), stringCharacters(nullptr)
 {
 }
 
@@ -335,7 +350,8 @@ Object& ManagedMemoryPool::GetObject(ObjectReference reference)
     if (it != allocations.cend())
     {
         ManagedAllocation* allocation = it->second.get();
-        Object* object = dynamic_cast<Object*>(allocation);
+        object = nullptr;
+        allocation->Set(this);
         Assert(object, "object expected");
         return *object;
     }

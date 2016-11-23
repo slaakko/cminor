@@ -832,6 +832,7 @@ TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* eleme
         arrayTypeSymbol->SetAssembly(assembly);
         arrayTypeSymbol->SetPublic();
         globalNs.AddSymbol(std::unique_ptr<Symbol>(arrayTypeSymbol));
+        BeginContainer(arrayTypeSymbol);
         TypeSymbol* systemArrayType = GetType(U"System.Array");
         ClassTypeSymbol* systemArrayClassType = dynamic_cast<ClassTypeSymbol*>(systemArrayType);
         Assert(systemArrayClassType, "class type symbol expected");
@@ -850,8 +851,10 @@ TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* eleme
         ObjectType* baseClassObjectType = arrayTypeSymbol->BaseClass()->GetObjectType();
         arrayTypeSymbol->GetObjectType()->AddFields(baseClassObjectType->Fields());
         arrayTypeSymbol->GetObjectType()->AddField(ValueType::allocationHandle);
+        EndContainer();
         CreateBasicTypeObjectFun(*assembly, arrayTypeSymbol);
         CreateArraySizeConstructor(*assembly, arrayTypeSymbol);
+        BeginContainer(arrayTypeSymbol);
         TypeSymbol* enumeratorInterface = GetType(U"System.Enumerator");
         Constant getEnumeratorName = constantPool.GetConstant(constantPool.Install(U"GetEnumerator"));
         ArrayGetEnumeratorMemberFunctionSymbol* getEnumerator = new ArrayGetEnumeratorMemberFunctionSymbol(arrayNode.GetSpan(), getEnumeratorName);
@@ -865,8 +868,7 @@ TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* eleme
         getEnumerator->SetGroupNameConstant(getEnumeratorName);
         getEnumerator->SetReturnType(enumeratorInterface);
         arrayTypeSymbol->AddSymbol(std::unique_ptr<Symbol>(getEnumerator));
-        arrayTypeSymbol->InitVmt();
-        arrayTypeSymbol->InitImts();
+        EndContainer();
         createdArrays.push_back(arrayTypeSymbol);
         return arrayTypeSymbol;
     }

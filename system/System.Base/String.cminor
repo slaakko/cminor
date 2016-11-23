@@ -1,6 +1,6 @@
 namespace System
 {
-    public class String
+    public class String : Enumerable
     {
         [VmFunctionName=System.String.Constructor.CharArray]
         public extern String(char[] chars);
@@ -10,6 +10,10 @@ namespace System
         public override string ToString()
         {
             return this;
+        }
+        public Enumerator GetEnumerator()
+        {
+            return new StringEnumerator(this);
         }
         public int Length
         {   
@@ -59,5 +63,29 @@ namespace System
         {
             throw new ArgumentOutOfRangeException("invalid array size");
         }
+    }
+
+    internal class StringEnumerator : Enumerator
+    {
+        public StringEnumerator(String s)
+        {
+            this.s = s;
+            this.index = 0;
+        }
+        public bool AtEnd() 
+        {
+            if (s == null) return true;
+            return index >= s.Length;
+        }
+        public object GetCurrent()
+        {
+            return s[index];
+        }
+        public void MoveNext()
+        {
+            ++index;
+        }
+        private string s;
+        private int index;
     }
 }

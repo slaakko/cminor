@@ -18,9 +18,11 @@ public:
     void SetBody(std::unique_ptr<BoundCompoundStatement>&& body_);
     BoundCompoundStatement* Body() const { return body.get(); }
     void Accept(BoundNodeVisitor& visitor) override;
+    std::string NextTempVarName();
 private:
     FunctionSymbol* functionSymbol;
     std::unique_ptr<BoundCompoundStatement> body;
+    int nextTempVarNumber;
 };
 
 } } // namespace cminor::binder

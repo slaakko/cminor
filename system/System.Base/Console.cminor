@@ -6,17 +6,113 @@ namespace System
     {
         static Console()
         {
-            inStream = new StreamReader(new FileStream(stdin));
-            outStream = new StreamWriter(new FileStream(stdout));
-            errStream = new StreamWriter(new FileStream(stderr));
+            inStream = new StreamReader(new FileStream(stdin, FileAccess.read));
+            outStream = new StreamWriter(new FileStream(stdout, FileAccess.write));
+            errStream = new StreamWriter(new FileStream(stderr, FileAccess.write));
         }
-        public static void Write(String s)
+        public static void Write(string s)
         {
             outStream.Write(s);
         }
-        public static void WriteLine(String s)
+        public static void WriteLine(string s)
         {
             outStream.WriteLine(s);
+        }
+        public static void Write(char c)
+        {
+            outStream.Write(c);
+        }
+        public static void WriteLine(char c)
+        {
+            outStream.WriteLine(c);
+        }
+        public static void Write(bool x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(bool x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(sbyte x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(sbyte x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(byte x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(byte x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(short x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(short x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(ushort x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(ushort x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(int x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(int x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(uint x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(uint x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(long x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(long x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(ulong x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(ulong x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(float x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(float x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(double x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(double x)
+        {
+            outStream.WriteLine(x);
         }
         public static StreamReader In
         {

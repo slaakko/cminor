@@ -9,7 +9,7 @@
 
 namespace cminor { namespace binder {
 
-BoundFunction::BoundFunction(FunctionSymbol* functionSymbol_) : BoundNode(*functionSymbol_->GetAssembly()), functionSymbol(functionSymbol_)
+BoundFunction::BoundFunction(FunctionSymbol* functionSymbol_) : BoundNode(*functionSymbol_->GetAssembly()), functionSymbol(functionSymbol_), nextTempVarNumber(0)
 {
 }
 
@@ -21,6 +21,11 @@ void BoundFunction::SetBody(std::unique_ptr<BoundCompoundStatement>&& body_)
 void BoundFunction::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+std::string BoundFunction::NextTempVarName()
+{
+    return "@" + std::to_string(nextTempVarNumber++);
 }
 
 } } // namespace cminor::binder

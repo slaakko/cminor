@@ -2,61 +2,157 @@ namespace System
 {
     public class BoxedInt8
     {
+        public BoxedInt8(sbyte value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public sbyte value;
     }
 
     public class BoxedUInt8
     {
+        public BoxedUInt8(byte value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public byte value;
     }
 
     public class BoxedInt16
     {
+        public BoxedInt16(short value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public short value;
     }
 
     public class BoxedUInt16
     {
+        public BoxedUInt16(ushort value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public ushort value;
     }
 
     public class BoxedInt32
     {
+        public BoxedInt32(int value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public int value;
     }
 
     public class BoxedUInt32
     {
+        public BoxedUInt32(uint value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public uint value;
     }
 
     public class BoxedInt64
     {
+        public BoxedInt64(long value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public long value;
     }
 
     public class BoxedUInt64
     {
+        public BoxedUInt64(ulong value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public ulong value;
     }
 
     public class BoxedFloat
     {
+        public BoxedFloat(float value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public float value;
     }
 
     public class BoxedDouble
     {
+        public BoxedDouble(double value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public double value;
     }
 
     public class BoxedChar
     {
+        public BoxedChar(char value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public char value;
     }
 
     public class BoxedBoolean
     {
+        public BoxedBoolean(bool value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return System.ToString(value);
+        }
         public bool value;
     }
 }

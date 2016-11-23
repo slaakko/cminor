@@ -1,0 +1,89 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text
+{
+    public class StringBuilder
+    {
+        public StringBuilder()
+        {
+            this.chars = new List<char>();
+        }
+        public StringBuilder(int capacity)
+        {
+            this.chars = new List<char>(capacity);
+        }
+        public void Append(string s)
+        {
+            foreach (char c in s)
+            {
+                chars.Add(c);
+            }
+        }
+        public void Append(char c)
+        {
+            chars.Add(c);
+        }
+        public void Append(bool x)
+        {
+            Append(x.ToString());
+        }
+        public void Append(sbyte x)
+        {
+            Append(x.ToString());
+        }
+        public void Append(byte x)
+        {
+            Append(x.ToString());
+        }
+        public void Append(short x)
+        {
+            Append(x.ToString());
+        }
+        public void Append(ushort x)
+        {
+            Append(x.ToString());
+        }
+        public void Append(int x)
+        {
+            Append(x.ToString());
+        }
+        public void Append(uint x)
+        {
+            Append(x.ToString());
+        }
+        public void Append(long x)
+        {
+            Append(x.ToString());
+        }
+        public void Append(ulong x)
+        {
+            Append(x.ToString());
+        }
+        public void Append(float x)
+        {
+            Append(x.ToString());
+        }
+        public void Append(double x)
+        {
+            Append(x.ToString());
+        }
+        public void Reverse()
+        {
+            chars.Reverse();
+        }
+        public override string ToString() 
+        {
+            return new string(chars.ToArray());
+        } 
+        public int Length
+        {
+            get { return chars.Count; }
+        }
+        public int Capacity
+        {
+            get { return chars.Capacity; }
+        }
+        private List<char> chars;
+    }
+}

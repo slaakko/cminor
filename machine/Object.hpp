@@ -178,6 +178,7 @@ public:
     void SetMemPtr(MemPtr newMemPtr) { memPtr = newMemPtr; }
     uint64_t Size() const { return size; }
     void SetSize(uint64_t size_) { size = size_; }
+    virtual void Set(ManagedMemoryPool* pool) = 0;
 private:
     ArenaId arenaId;
     MemPtr memPtr;
@@ -197,6 +198,7 @@ public:
     void SetLive() { SetFlag(ObjectFlags::live); }
     void ResetLive() { ResetFlag(ObjectFlags::live); }
     void MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ManagedMemoryPool& managedMemoryPool);
+    void Set(ManagedMemoryPool* pool) override;
 private:
     ObjectReference reference;
     ObjectType* type;
@@ -215,6 +217,7 @@ public:
     IntegralValue GetElement(int32_t index) const;
     void SetElement(IntegralValue elementValue, int32_t index);
     int32_t NumElements() const { return numElements; }
+    void Set(ManagedMemoryPool* pool) override;
 private:
     AllocationHandle handle;
     Type* elementType;
@@ -228,6 +231,7 @@ public:
     AllocationHandle Handle() const { return handle; }
     IntegralValue GetChar(int32_t index) const;
     int32_t NumChars() const { return numChars; }
+    void Set(ManagedMemoryPool* pool) override;
 private:
     AllocationHandle handle;
     int32_t numChars;
@@ -256,8 +260,14 @@ public:
     void ResetObjectsLiveFlag();
     void MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena);
     MemPtr GetMemPtr(AllocationHandle handle) const;
+    void Set(Object* object_) { object = object_; }
+    void Set(ArrayElements* arrayElements_) { arrayElements = arrayElements_; }
+    void Set(StringCharacters* stringCharacters_) { stringCharacters = stringCharacters_;  }
 private:
     Machine& machine;
+    Object* object;
+    ArrayElements* arrayElements;
+    StringCharacters* stringCharacters;
     std::unordered_map<AllocationHandle, std::unique_ptr<ManagedAllocation>, AllocationHandleHash> allocations;
     std::atomic_uint64_t nextReferenceValue;
 };
