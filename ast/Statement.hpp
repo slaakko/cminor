@@ -266,6 +266,27 @@ private:
     std::unique_ptr<Node> expression;
 };
 
+class ForEachStatementNode : public StatementNode
+{
+public:
+    ForEachStatementNode(const Span& span_);
+    ForEachStatementNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_, Node* container_, CompoundStatementNode* action_);
+    NodeType GetNodeType() const override { return NodeType::forEachStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
+    void Accept(Visitor& visitor) override;
+    Node* TypeExpr() const { return typeExpr.get(); }
+    IdentifierNode* Id() const { return id.get(); }
+    Node* Container() const { return container.get(); }
+    CompoundStatementNode* Action() const { return action.get(); }
+private:
+    std::unique_ptr<Node> typeExpr;
+    std::unique_ptr<IdentifierNode> id;
+    std::unique_ptr<Node> container;
+    std::unique_ptr<CompoundStatementNode> action;
+};
+
 class ThrowStatementNode : public StatementNode
 {
 public:

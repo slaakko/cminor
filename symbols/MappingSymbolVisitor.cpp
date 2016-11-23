@@ -15,8 +15,13 @@
 
 namespace cminor { namespace symbols {
 
-MappingSymbolVisitor::MappingSymbolVisitor(Assembly& targetAssembly_, Assembly& sourceAssembly_) : targetAssembly(targetAssembly_), sourceAssembly(sourceAssembly_)
+MappingSymbolVisitor::MappingSymbolVisitor(Assembly& targetAssembly_, Assembly& sourceAssembly_) : targetAssembly(targetAssembly_), sourceAssembly(sourceAssembly_), implementedInterfaces(nullptr)
 {
+}
+
+void MappingSymbolVisitor::SetImplementedInterfaces(std::vector<InterfaceTypeSymbol*>* implementedInterfaces_)
+{
+    implementedInterfaces = implementedInterfaces_;
 }
 
 void MappingSymbolVisitor::Visit(NamespaceNode& namespaceNode)
@@ -159,6 +164,21 @@ void MappingSymbolVisitor::Visit(MemberFunctionNode& memberFunctionNode)
     {
         ParameterNode* parameterNode = memberFunctionNode.Parameters()[i];
         parameterNode->Accept(*this);
+    }
+    if (memberFunctionSymbol->IsVirtualAbstractOrOverride() && !memberFunctionSymbol->IsInstantiated())
+    {
+        memberFunctionSymbol->SetInstantiationRequested();
+    }
+    else if (implementedInterfaces && !memberFunctionSymbol->IsInstantiated())
+    {
+        for (InterfaceTypeSymbol* intf : *implementedInterfaces)
+        {
+            if (memberFunctionSymbol->ImplementsInterfaceMemFun(intf))
+            {
+                memberFunctionSymbol->SetInstantiationRequested();
+                break;
+            }
+        }
     }
     if (memberFunctionSymbol->IsInstantiationRequested())
     {

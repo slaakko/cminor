@@ -615,6 +615,52 @@ void DecrementStatementNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+ForEachStatementNode::ForEachStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+ForEachStatementNode::ForEachStatementNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_, Node* container_, CompoundStatementNode* action_) : 
+    StatementNode(span_), typeExpr(typeExpr_), id(id_), container(container_), action(action_)
+{
+    typeExpr->SetParent(this);
+    id->SetParent(this);
+    container->SetParent(this);
+    action->SetParent(this);
+}
+
+Node* ForEachStatementNode::Clone(CloneContext& cloneContext) const
+{
+    return new ForEachStatementNode(GetSpan(), typeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)), container->Clone(cloneContext), 
+        static_cast<CompoundStatementNode*>(action->Clone(cloneContext)));
+}
+
+void ForEachStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(typeExpr.get());
+    writer.Put(id.get());
+    writer.Put(container.get());
+    writer.Put(action.get());
+}
+
+void ForEachStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    typeExpr.reset(reader.GetNode());
+    typeExpr->SetParent(this);
+    id.reset(reader.GetIdentifierNode());
+    id->SetParent(this);
+    container.reset(reader.GetNode());
+    container->SetParent(this);
+    action.reset(reader.GetCompoundStatementNode());
+    action->SetParent(this);
+}
+
+void ForEachStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 ThrowStatementNode::ThrowStatementNode(const Span& span_) : StatementNode(span_)
 {
 }

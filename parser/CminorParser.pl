@@ -167,6 +167,7 @@ namespace cminor.parser
         ForStatement(ParsingContext* ctx): StatementNode*;
         ForInitStatement(ParsingContext* ctx): StatementNode*;
         ForLoopExpressionStatement(ParsingContext* ctx): StatementNode*;
+        ForEachStatement(ParsingContext* ctx): StatementNode*;
         BreakStatement(ParsingContext* ctx): StatementNode*;
         ContinueStatement(ParsingContext* ctx): StatementNode*;
         AssignmentExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr): StatementNode*;

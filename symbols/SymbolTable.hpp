@@ -78,7 +78,7 @@ public:
     void AddConversion(FunctionSymbol* conversionFun);
     const ConversionTable& GetConversionTable() const { return conversionTable; }
     TypeSymbol* CreateArrayType(ArrayNode& arrayNode, TypeSymbol* elementType);
-    const std::vector<ClassTypeSymbol*>& CreatedClasses() const { return createdClasses; }
+    const std::vector<ArrayTypeSymbol*>& CreatedArrays() const { return createdArrays; }
     ClassTemplateSpecializationSymbol* MakeClassTemplateSpecialization(ClassTypeSymbol* primaryClassTemplate, const std::vector<TypeSymbol*>& typeArguments, const Span& span);
     bool AddTypes() const { return !doNotAddTypes; }
     void MergeClassTemplateSpecializations();
@@ -100,7 +100,7 @@ private:
     int declarationBlockId;
     bool doNotAddTypes;
     bool doNotAddClassTemplateSpecializations;
-    std::vector<ClassTypeSymbol*> createdClasses;
+    std::vector<ArrayTypeSymbol*> createdArrays;
     std::unordered_map<ClassTemplateSpecializationKey, ClassTemplateSpecializationSymbol*, ClassTemplateSpecializationKeyHash> classTemplateSpecializationMap;
     uint32_t nextSymbolId;
     std::unordered_map<uint32_t, Symbol*> idSymbolMap;

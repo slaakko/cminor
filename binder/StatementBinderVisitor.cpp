@@ -12,8 +12,10 @@
 #include <cminor/binder/OverloadResolution.hpp>
 #include <cminor/binder/Access.hpp>
 #include <cminor/binder/ConstantPoolInstallerVisitor.hpp>
+#include <cminor/binder/TypeBinderVisitor.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/IndexerSymbol.hpp>
+#include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
@@ -802,6 +804,39 @@ void StatementBinderVisitor::Visit(DecrementStatementNode& decrementStatementNod
             new SubNode(decrementStatementNode.GetSpan(), decrementStatementNode.Expression()->Clone(cloneContext), new SByteLiteralNode(decrementStatementNode.GetSpan(), 1)));
         assignmentStatement.Accept(*this);
     }
+}
+
+void StatementBinderVisitor::Visit(ForEachStatementNode& forEachStatementNode)
+{
+    const Span& span = forEachStatementNode.GetSpan();
+    CompoundStatementNode forEachBlock(span);
+    ConstructionStatementNode* constructEnumerable = new ConstructionStatementNode(span, new IdentifierNode(span, "System.Enumerable"), new IdentifierNode(span, "@enumerable"));
+    CloneContext cloneContext;
+    constructEnumerable->AddArgument(forEachStatementNode.Container()->Clone(cloneContext));
+    forEachBlock.AddStatement(constructEnumerable);
+    ConstructionStatementNode* constructEnumerator = new ConstructionStatementNode(span, new IdentifierNode(span, "System.Enumerator"), new IdentifierNode(span, "@enumerator"));
+    constructEnumerator->AddArgument(new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerable"), new IdentifierNode(span, "GetEnumerator"))));
+    forEachBlock.AddStatement(constructEnumerator);
+    CompoundStatementNode* loopBody = new CompoundStatementNode(span);
+    ConstructionStatementNode* constructLoopVar = new ConstructionStatementNode(span, 
+        forEachStatementNode.TypeExpr()->Clone(cloneContext), 
+        static_cast<IdentifierNode*>(forEachStatementNode.Id()->Clone(cloneContext)));
+    constructLoopVar->AddArgument(new CastNode(span, forEachStatementNode.TypeExpr()->Clone(cloneContext),
+        new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "GetCurrent")))));
+    loopBody->AddStatement(constructLoopVar);
+    loopBody->AddStatement(static_cast<StatementNode*>(forEachStatementNode.Action()->Clone(cloneContext)));
+    ExpressionStatementNode* moveNext = new ExpressionStatementNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "MoveNext"))));
+    loopBody->AddStatement(moveNext);
+    WhileStatementNode* whileNotEnd = new WhileStatementNode(span, new NotNode(span, 
+        new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "AtEnd")))), loopBody);
+    forEachBlock.AddStatement(whileNotEnd);
+    boundCompileUnit.GetAssembly().GetSymbolTable().BeginContainer(containerScope->Container());
+    SymbolCreatorVisitor symbolCreatorVisitor(boundCompileUnit.GetAssembly());
+    forEachBlock.Accept(symbolCreatorVisitor);
+    boundCompileUnit.GetAssembly().GetSymbolTable().EndContainer();
+    TypeBinderVisitor typeBinderVisitor(boundCompileUnit);
+    forEachBlock.Accept(typeBinderVisitor);
+    forEachBlock.Accept(*this);
 }
 
 void StatementBinderVisitor::Visit(ThrowStatementNode& throwStatementNode)

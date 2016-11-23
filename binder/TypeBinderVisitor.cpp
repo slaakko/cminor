@@ -163,12 +163,15 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
     classTypeSymbol->SetBound();
     if (instantiateRequested)
     {
+        ContainerScope* prevContainerScope = containerScope;
+        containerScope = classTypeSymbol->GetContainerScope();
         int nm = classNode.Members().Count();
         for (int i = 0; i < nm; ++i)
         {
             Node* member = classNode.Members()[i];
             member->Accept(*this);
         }
+        containerScope = prevContainerScope;
         return;
     }
     if (classTypeSymbol->IsClassTemplate())

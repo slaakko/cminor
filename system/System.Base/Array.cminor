@@ -13,27 +13,27 @@ namespace System
         private int length;
     }
 
-    public class ArrayEnumerator : Enumerator
+    public class ArrayEnumerator<T> : Enumerator
     {
-        public ArrayEnumerator(object[] elements)
+        public ArrayEnumerator(T[] items)
         {
-            this.elements = elements;
+            this.items = items;
             this.index = 0;
         }
         public bool AtEnd()
         {
-            if (elements == null) return true;
-            return index >= elements.Length;
+            if (items == null) return true;
+            return index >= items.Length;
         }
         public object GetCurrent()
         {
-            return elements[index];
+            return items[index];
         }
         public void MoveNext()
         {
             ++index;
         }
-        private object[] elements;
+        private T[] items;
         private int index;
     }
 }

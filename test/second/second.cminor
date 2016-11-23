@@ -1,11 +1,14 @@
 using System;
-using System.IO;
-using System.Unicode;
 
 void main()
 {
-    Stream stream = new FileStream(stdout, FileAccess.write);
-    Utf8Encoder encoder = new Utf8Encoder(stream);
-    string s = "Hello, World!\n";
-    encoder.Encode(s);
+    byte[] arr = new byte[3];
+    for (int i = 0; i < arr.Length; ++i)
+    {
+        arr[i] = cast<byte>(i);
+    }
+    foreach (byte b in arr)
+    {
+        byte x = b;
+    }
 }

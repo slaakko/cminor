@@ -111,23 +111,57 @@ void CopyAssemblyFile(const std::string& from, const std::string& to, std::unord
     }
 }
 
-void GenerateCodeForCreatedClasses(Assembly& assembly)
+BoundCompoundStatement* CreateBodyForArrayGetEnumeratorMemberFunctionSymbol(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ArrayTypeSymbol* arrayType,
+    ArrayGetEnumeratorMemberFunctionSymbol* getEnumeratorMemberFunctionSymbol)
+{
+    const Span& span = getEnumeratorMemberFunctionSymbol->GetSpan();
+    CompoundStatementNode bodyNode(span);
+    TemplateIdNode* arrayEnumeratorTemplateId = new TemplateIdNode(span, new IdentifierNode(span, "System.ArrayEnumerator"));
+    arrayEnumeratorTemplateId->AddTemplateArgument(new IdentifierNode(span, ToUtf8(arrayType->ElementType()->FullName())));
+    NewNode* newNode = new NewNode(span, arrayEnumeratorTemplateId);
+    newNode->AddArgument(new ThisNode(span));
+    bodyNode.AddStatement(new ReturnStatementNode(span, newNode));
+    SymbolCreatorVisitor symbolCreatorVisitor(boundCompileUnit.GetAssembly());
+    bodyNode.Accept(symbolCreatorVisitor);
+    TypeBinderVisitor typeBinder(boundCompileUnit);
+    typeBinder.SetContainerScope(getEnumeratorMemberFunctionSymbol->GetContainerScope());
+    bodyNode.Accept(typeBinder);
+    StatementBinderVisitor statementBinder(boundCompileUnit);
+    statementBinder.SetBoundFunction(boundFunction);
+    bodyNode.Accept(statementBinder);
+    BoundStatement* statement = statementBinder.ReleaseStatement();
+    BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement);
+    Assert(compoundStatement, "compound statement expected");
+    return compoundStatement;
+}
+
+void GenerateCodeForCreatedArrays(Assembly& assembly, std::unordered_set<ClassTemplateSpecializationSymbol*>& classTemplateSpecializations)
 {
     BoundCompileUnit synthesizedCompileUnit(assembly, nullptr);
-    for (ClassTypeSymbol* classType : assembly.GetSymbolTable().CreatedClasses())
+    for (ArrayTypeSymbol* arrayType : assembly.GetSymbolTable().CreatedArrays())
     {
-        for (ConstructorSymbol* ctor : classType->Constructors())
+        for (ConstructorSymbol* ctor : arrayType->Constructors())
         {
             std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(ctor));
             synthesizedCompileUnit.AddBoundNode(std::move(boundFunction));
         }
-        for (MemberFunctionSymbol* memFun : classType->MemberFunctions())
+        for (MemberFunctionSymbol* memFun : arrayType->MemberFunctions())
         {
             std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(memFun));
+            if (ArrayGetEnumeratorMemberFunctionSymbol* getEnumeratorMemFun = dynamic_cast<ArrayGetEnumeratorMemberFunctionSymbol*>(memFun))
+            {
+                boundFunction->SetBody(std::unique_ptr<BoundCompoundStatement>(CreateBodyForArrayGetEnumeratorMemberFunctionSymbol(synthesizedCompileUnit, boundFunction.get(), arrayType, 
+                    getEnumeratorMemFun)));
+            }
             synthesizedCompileUnit.AddBoundNode(std::move(boundFunction));
         }
     }
     GenerateCode(synthesizedCompileUnit, assembly.GetMachine());
+    const std::unordered_set<ClassTemplateSpecializationSymbol*>& specializations = synthesizedCompileUnit.GetClassTemplateRepository().ClassTemplateSpecializations();
+    for (ClassTemplateSpecializationSymbol* specialization : specializations)
+    {
+        classTemplateSpecializations.insert(specialization);
+    }
 }
 
 void GenerateCodeForClassTemplateSpecializations(Assembly& assembly, std::unordered_set<ClassTemplateSpecializationSymbol*>&& classTemplateSpecializations)
@@ -145,6 +179,7 @@ void GenerateCodeForClassTemplateSpecializations(Assembly& assembly, std::unorde
             }
             NamespaceNode* globalNs = specialization->GlobalNs();
             MappingSymbolVisitor mappingSymbolVisitor(assembly, *specialization->GetAssembly());
+            mappingSymbolVisitor.SetImplementedInterfaces(&specialization->ImplementedInterfaces());
             globalNs->Accept(mappingSymbolVisitor);
             specialization->ResetFlag(SymbolFlags::bound);
             TypeBinderVisitor typeBinderVisitor(synthesizedCompileUnit);
@@ -215,7 +250,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
         }
         boundCompileUnit.reset();
     }
-    GenerateCodeForCreatedClasses(assembly);
+    GenerateCodeForCreatedArrays(assembly, classTemplateSpecializations);
     GenerateCodeForClassTemplateSpecializations(assembly, std::move(classTemplateSpecializations));
     boost::filesystem::path obp(assembly.FilePath());
     obp.remove_filename();

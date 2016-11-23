@@ -918,6 +918,19 @@ void MemberFunctionSymbol::Merge(const MemberFunctionSymbol& that)
     Symbol::Merge(that);
 }
 
+bool MemberFunctionSymbol::ImplementsInterfaceMemFun(InterfaceTypeSymbol* intf)
+{
+    for (MemberFunctionSymbol* intfMemFun : intf->MemberFunctions())
+    {
+        if (Implements(this, intfMemFun)) return true;
+    }
+    return false;
+}
+
+ArrayGetEnumeratorMemberFunctionSymbol::ArrayGetEnumeratorMemberFunctionSymbol(const Span& span_, Constant name_) : MemberFunctionSymbol(span_, name_)
+{
+}
+
 ClassTypeConversion::ClassTypeConversion(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
 {
     SetConversionFun();

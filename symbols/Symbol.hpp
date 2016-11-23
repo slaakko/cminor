@@ -516,6 +516,7 @@ public:
     ClassTypeSymbol* BaseClass() const { return baseClass; }
     void SetBaseClass(ClassTypeSymbol* baseClass_) { baseClass = baseClass_; }
     const std::vector<InterfaceTypeSymbol*>& ImplementedInterfaces() const { return implementedInterfaces; }
+    std::vector<InterfaceTypeSymbol*>& ImplementedInterfaces() { return implementedInterfaces; }
     void AddImplementedInterface(InterfaceTypeSymbol* interfaceTypeSymbol);
     void SetObjectType(ObjectType* objectType_) { objectType.reset(objectType_); }
     ObjectType* GetObjectType() const { return objectType.get(); }
@@ -617,6 +618,8 @@ private:
     std::unique_ptr<ObjectType> objectType; 
     std::vector<MemberFunctionSymbol*> memberFunctions;
 };
+
+bool Implements(MemberFunctionSymbol* classMemFun, MemberFunctionSymbol* interfaceMemFun);
 
 struct ClassTemplateSpecializationKey
 {

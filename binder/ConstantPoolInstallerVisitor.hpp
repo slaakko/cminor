@@ -79,6 +79,7 @@ public:
     void Visit(ExpressionStatementNode& expressionStatementNode) override;
     void Visit(IncrementStatementNode& incrementStatementNode) override;
     void Visit(DecrementStatementNode& decrementStatementNode) override;
+    void Visit(ForEachStatementNode& forEachStatementNode) override;
     void Visit(ThrowStatementNode& throwStatementNode) override;
     void Visit(CatchNode& catchNode) override;
     void Visit(TryStatementNode& tryStatementNode) override;

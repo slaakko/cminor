@@ -536,6 +536,14 @@ void ConstantPoolInstallerVisitor::Visit(DecrementStatementNode& decrementStatem
     decrementStatementNode.Expression()->Accept(*this);
 }
 
+void ConstantPoolInstallerVisitor::Visit(ForEachStatementNode& forEachStatementNode)
+{
+    forEachStatementNode.TypeExpr()->Accept(*this);
+    forEachStatementNode.Id()->Accept(*this);
+    forEachStatementNode.Container()->Accept(*this);
+    forEachStatementNode.Action()->Accept(*this);
+}
+
 void ConstantPoolInstallerVisitor::Visit(ThrowStatementNode& throwStatementNode)
 {
     if (throwStatementNode.Expression())

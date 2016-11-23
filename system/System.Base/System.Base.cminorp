@@ -1,4 +1,4 @@
-project System.Basic;
+project System.Base;
 reference <../System.Core/System.Core.cminorp>;
 source <Algorithm.cminor>;
 source <Array.cminor>;
@@ -10,7 +10,5 @@ source <FileStream.cminor>;
 source <List.cminor>;
 source <Object.cminor>;
 source <Stream.cminor>;
-source <StreamReader.cminor>;
-source <StreamWriter.cminor>;
 source <String.cminor>;
 source <Unicode.cminor>;

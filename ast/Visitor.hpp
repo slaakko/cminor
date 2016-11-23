@@ -108,6 +108,7 @@ class ExpressionStatementNode;
 class EmptyStatementNode;
 class IncrementStatementNode;
 class DecrementStatementNode;
+class ForEachStatementNode;
 class ThrowStatementNode;
 class CatchNode;
 class TryStatementNode;
@@ -220,6 +221,7 @@ public:
     virtual void Visit(EmptyStatementNode& emptyStatementNode) {}
     virtual void Visit(IncrementStatementNode& incrementStatementNode) {}
     virtual void Visit(DecrementStatementNode& decrementStatementNode) {}
+    virtual void Visit(ForEachStatementNode& forEachStatementNode) {}
     virtual void Visit(ThrowStatementNode& throwStatementNode) {}
     virtual void Visit(CatchNode& catchNode) {}
     virtual void Visit(TryStatementNode& tryStatementNode) {}

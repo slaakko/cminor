@@ -55,6 +55,7 @@ namespace cminor.parser
             |   WhileStatement(ctx){ value = WhileStatement; }
             |   DoStatement(ctx){ value = DoStatement; }
             |   ForStatement(ctx){ value = ForStatement; }
+            |   ForEachStatement(ctx){ value = ForEachStatement; }
             |   BreakStatement(ctx){ value = BreakStatement; }
             |   ContinueStatement(ctx){ value = ContinueStatement; }
             ;
@@ -100,6 +101,13 @@ namespace cminor.parser
             |   DecrementExpressionStatement(ctx){ value = DecrementExpressionStatement; }
             |   AssignmentExpressionStatement(ctx){ value = AssignmentExpressionStatement; }
             |   empty{ value = new EmptyStatementNode(span); }
+            ;
+
+        ForEachStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("foreach") '('! TypeExpr(ctx)! Identifier! keyword("in")! Expression(ctx)! ')'! CompoundStatement(ctx))
+            { 
+                value = new ForEachStatementNode(span, TypeExpr, Identifier, Expression, CompoundStatement); 
+            }
             ;
 
         BreakStatement(ParsingContext* ctx) : StatementNode*

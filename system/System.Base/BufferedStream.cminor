@@ -23,7 +23,7 @@ namespace System.IO
             this.bytesAvailable = 0;
             this.end = 0;
         }
-        public void Close()
+        public override void Close()
         {
             Flush();
             stream.Close();
@@ -49,7 +49,7 @@ namespace System.IO
             }
             for (int i = 0; i < count; ++i)
             {
-                WriteByte(buffer[i])
+                WriteByte(buffer[i]);
             }
         }
         public override int ReadByte()

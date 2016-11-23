@@ -2,7 +2,7 @@ using System;
 
 namespace System.Collections
 {
-    public class List<T>
+    public class List<T> : Enumerable
     {
         public List()
         {
@@ -93,7 +93,34 @@ namespace System.Collections
         {
             get { if (items == null) return 0; else return items.Length; }
         }
+        public Enumerator GetEnumerator()
+        {
+            return new ListEnumerator<T>(this);
+        }
         private T[] items;
         private int count;
+    }
+
+    internal class ListEnumerator<T> : Enumerator
+    {
+        public ListEnumerator(List<T> list)
+        {
+            this.list = list;
+            this.index = 0;
+        }
+        public bool AtEnd()
+        {
+            return index >= list.Count;
+        }
+        public object GetCurrent()
+        {
+            return list[index];
+        }
+        public void MoveNext()
+        {
+            ++index;
+        }
+        private List<T> list;
+        private int index;
     }
 }

@@ -24,6 +24,7 @@ public:
     StatementBinderVisitor(BoundCompileUnit& boundCompileUnit_);
     void SetDoNotInstantiate() { doNotInstantiate = true; }
     void SetInstantiateRequested() { instantiateRequested = true; }
+    void SetBoundFunction(BoundFunction* boundFunction) { function = boundFunction; }
     void Visit(CompileUnitNode& compileUnitNode) override;
     void Visit(NamespaceNode& namespaceNode) override;
     void Visit(ClassNode& classNode) override;
@@ -49,7 +50,9 @@ public:
     void Visit(EmptyStatementNode& emptyStatementNode) override;
     void Visit(IncrementStatementNode& incrementStatementNode) override;
     void Visit(DecrementStatementNode& decrementStatementNode) override;
+    void Visit(ForEachStatementNode& forEachStatementNode) override;
     void Visit(ThrowStatementNode& throwStatementNode) override;
+    BoundStatement* ReleaseStatement() { return statement.release(); }
 private:
     BoundCompileUnit& boundCompileUnit;
     ContainerScope* containerScope;

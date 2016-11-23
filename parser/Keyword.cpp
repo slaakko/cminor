@@ -50,7 +50,9 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("finally");
     keywords0.push_back("float");
     keywords0.push_back("for");
+    keywords0.push_back("foreach");
     keywords0.push_back("if");
+    keywords0.push_back("in");
     keywords0.push_back("inline");
     keywords0.push_back("int");
     keywords0.push_back("interface");

@@ -698,6 +698,7 @@ TypeSymbol* SymbolTable::GetType(const utf32_string& typeFullName) const
 void SymbolTable::AddType(TypeSymbol* type)
 {
     if (doNotAddTypes) return;
+    if (dynamic_cast<TypeParameterSymbol*>(type)) return;
     utf32_string typeFullName = type->FullName();
     ConstantPool& constantPool = assembly->GetConstantPool();
     ConstantId id = constantPool.GetIdFor(typeFullName);
@@ -825,7 +826,8 @@ TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* eleme
     }
     else
     {
-        Constant arrayNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(arrayName.c_str())));
+        ConstantPool& constantPool = assembly->GetConstantPool();
+        Constant arrayNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(arrayName.c_str())));
         ArrayTypeSymbol* arrayTypeSymbol = new ArrayTypeSymbol(arrayNode.GetSpan(), arrayNameConstant);
         arrayTypeSymbol->SetAssembly(assembly);
         arrayTypeSymbol->SetPublic();
@@ -834,10 +836,13 @@ TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* eleme
         ClassTypeSymbol* systemArrayClassType = dynamic_cast<ClassTypeSymbol*>(systemArrayType);
         Assert(systemArrayClassType, "class type symbol expected");
         arrayTypeSymbol->SetBaseClass(systemArrayClassType);
+        TypeSymbol* enumerableType = GetType(U"System.Enumerable");
+        InterfaceTypeSymbol* enumerableInterface = dynamic_cast<InterfaceTypeSymbol*>(enumerableType);
+        Assert(enumerableInterface, "interface type expected");
+        arrayTypeSymbol->AddImplementedInterface(enumerableInterface);
         arrayTypeSymbol->SetElementType(elementType);
         utf32_string fullElementName = elementType->FullName();
         assembly->GetConstantPool().Install(StringPtr(fullElementName.c_str()));
-        ConstantPool& constantPool = assembly->GetConstantPool();
         utf32_string fullName = arrayTypeSymbol->FullName();
         Constant fullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
         arrayTypeSymbol->GetObjectType()->SetNameConstant(fullNameConstant);
@@ -847,8 +852,22 @@ TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* eleme
         arrayTypeSymbol->GetObjectType()->AddField(ValueType::allocationHandle);
         CreateBasicTypeObjectFun(*assembly, arrayTypeSymbol);
         CreateArraySizeConstructor(*assembly, arrayTypeSymbol);
+        TypeSymbol* enumeratorInterface = GetType(U"System.Enumerator");
+        Constant getEnumeratorName = constantPool.GetConstant(constantPool.Install(U"GetEnumerator"));
+        ArrayGetEnumeratorMemberFunctionSymbol* getEnumerator = new ArrayGetEnumeratorMemberFunctionSymbol(arrayNode.GetSpan(), getEnumeratorName);
+        getEnumerator->SetAssembly(assembly);
+        getEnumerator->SetPublic();
+        Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
+        ParameterSymbol* thisParam = new ParameterSymbol(arrayNode.GetSpan(), thisParamName);
+        thisParam->SetAssembly(assembly);
+        thisParam->SetType(arrayTypeSymbol);
+        getEnumerator->AddSymbol(std::unique_ptr<Symbol>(thisParam));
+        getEnumerator->SetGroupNameConstant(getEnumeratorName);
+        getEnumerator->SetReturnType(enumeratorInterface);
+        arrayTypeSymbol->AddSymbol(std::unique_ptr<Symbol>(getEnumerator));
         arrayTypeSymbol->InitVmt();
-        createdClasses.push_back(arrayTypeSymbol);
+        arrayTypeSymbol->InitImts();
+        createdArrays.push_back(arrayTypeSymbol);
         return arrayTypeSymbol;
     }
 }

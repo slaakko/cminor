@@ -14,7 +14,7 @@ namespace cminor.parser
                 [
                     "bool", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "char", "string", "void", "object",
                     "true", "false", "null", "operator", "namespace", "public", "protected", "private", "internal", "static", "virtual", "override", "abstract", "inline", 
-                    "return", "if", "else", "while", "do", "for", "break", "continue", "using", "cast", "class", "interface", "new", "this", "base", "enum", "const", 
+                    "return", "if", "else", "while", "do", "for", "foreach", "in", "break", "continue", "using", "cast", "class", "interface", "new", "this", "base", "enum", "const", 
                     "throw", "try", "catch", "finally"
                 ])
             ;

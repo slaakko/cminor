@@ -31,8 +31,8 @@ const char* nodeTypeStr[] =
     "indexingNode", "invokeNode", "castNode", "classNode", "interfaceNode", "newNode", "memberVariableNode", "propertyNode", "indexerNode", "staticConstructorNode", "constructorNode", "memberFunctionNode",
     "baseInitializerNode", "thisInitializerNode", "labelNode", "thisNode", "baseNode", "templateIdNode", "templateParameterNode",
     "compoundStatementNode", "returnStatementNode", "ifStatementNode", "whileStatementNode", "doStatementNode", "forStatementNode", "breakStatementNode", "continueStatementNode",
-    "constructionStatementNode", "assignmentStatementNode", "expressionStatementNode", "emptyStatementNode", "incrementStatementNode", "decrementStatementNode", "enumTypeNode", "enumConstantNode",
-    "constantNode"
+    "constructionStatementNode", "assignmentStatementNode", "expressionStatementNode", "emptyStatementNode", "incrementStatementNode", "decrementStatementNode", "forEachStatementNode", 
+    "throwStatementNode", "tryStatementNode", "catchNode", "enumTypeNode", "enumConstantNode", "constantNode"
 };
 
 std::string NodeTypeStr(NodeType nodeType)
@@ -316,6 +316,7 @@ void NodeInit()
     NodeFactory::Instance().Register(NodeType::emptyStatementNode, new ConcreteNodeCreator<EmptyStatementNode>());
     NodeFactory::Instance().Register(NodeType::incrementStatementNode, new ConcreteNodeCreator<IncrementStatementNode>());
     NodeFactory::Instance().Register(NodeType::decrementStatementNode, new ConcreteNodeCreator<DecrementStatementNode>());
+    NodeFactory::Instance().Register(NodeType::forEachStatementNode, new ConcreteNodeCreator<ForEachStatementNode>());
     NodeFactory::Instance().Register(NodeType::throwStatementNode, new ConcreteNodeCreator<ThrowStatementNode>());
     NodeFactory::Instance().Register(NodeType::tryStatementNode, new ConcreteNodeCreator<TryStatementNode>());
     NodeFactory::Instance().Register(NodeType::catchNode, new ConcreteNodeCreator<CatchNode>());

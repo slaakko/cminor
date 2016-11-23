@@ -177,7 +177,7 @@ void TypeResolverVisitor::Visit(IdentifierNode& identifierNode)
     }
     else
     {
-        throw Exception("type symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());;
+        throw Exception("type symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
     }
 }
 

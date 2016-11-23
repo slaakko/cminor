@@ -14,6 +14,7 @@ class MappingSymbolVisitor : public Visitor
 {
 public:
     MappingSymbolVisitor(Assembly& targetAssembly_, Assembly& sourceAssembly_);
+    void SetImplementedInterfaces(std::vector<InterfaceTypeSymbol*>* implementedInterfaces_);
     void Visit(NamespaceNode& namespaceNode) override;
     void Visit(ClassNode& classNode) override;
     void Visit(FunctionNode& functionNode) override;
@@ -33,6 +34,7 @@ public:
 private:
     Assembly& targetAssembly;
     Assembly& sourceAssembly;
+    std::vector<InterfaceTypeSymbol*>* implementedInterfaces;
 };
 
 } } // namespace cminor::symbols

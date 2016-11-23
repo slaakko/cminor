@@ -50,7 +50,7 @@ CminorSystemAssemblyNameCollection::CminorSystemAssemblyNameCollection()
 {
     systemAssemblyNames.push_back(U"System");
     systemAssemblyNames.push_back(U"System.Core");
-    systemAssemblyNames.push_back(U"System.Basic");
+    systemAssemblyNames.push_back(U"System.Base");
     systemAssemblyNames.push_back(U"System.Collections");
     for (const utf32_string& systemAssemblyName : systemAssemblyNames)
     {

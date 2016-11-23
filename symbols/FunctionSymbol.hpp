@@ -211,12 +211,19 @@ public:
     void AddTo(ClassTypeSymbol* classTypeSymbol) override;
     void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol) override;
     void Merge(const MemberFunctionSymbol& that);
+    bool ImplementsInterfaceMemFun(InterfaceTypeSymbol* intf);
 private:
     uint32_t vmtIndex;
     uint32_t imtIndex;
     MemberFunctionSymbolFlags flags;
     bool GetFlag(MemberFunctionSymbolFlags flag) const { return (flags & flag) != MemberFunctionSymbolFlags::none; }
     void SetFlag(MemberFunctionSymbolFlags flag) { flags = flags | flag; }
+};
+
+class ArrayGetEnumeratorMemberFunctionSymbol : public MemberFunctionSymbol
+{
+public:
+    ArrayGetEnumeratorMemberFunctionSymbol(const Span& span_, Constant name_);
 };
 
 class ClassTypeConversion : public FunctionSymbol
