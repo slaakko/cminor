@@ -320,7 +320,12 @@ void FunctionSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant callNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(callName.c_str())));
     callInst->SetFunctionCallName(callNameConstant);
+    int firstInstIndex = function.GetEmitter()->FistInstIndex();
+    function.GetEmitter()->SetFirstInstIndex(endOfFunction);
     function.AddInst(std::move(inst));
+    int callInstIndex = function.GetEmitter()->FistInstIndex();
+    function.GetEmitter()->SetFirstInstIndex(firstInstIndex);;
+    function.GetEmitter()->BackpatchConDis(callInstIndex);
 }
 
 void FunctionSymbol::CreateMachineFunction()

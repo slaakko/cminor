@@ -10,6 +10,14 @@ namespace cminor { namespace machine {
 
 class Machine;
 class Function;
+class GenObject;
+
+class GenVisitor
+{
+public:
+    virtual ~GenVisitor();
+    virtual void Visit(GenObject& object) = 0;
+};
 
 class GenObject
 {

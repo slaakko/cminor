@@ -80,8 +80,13 @@ void BasicTypeCopyInit::GenerateCall(Machine& machine, Assembly& assembly, Funct
     Assert(objects.size() == 2, "copy init needs two objects");
     GenObject* source = objects[1];
     source->GenLoad(machine, function);
+    int firstInstIndex = function.GetEmitter()->FistInstIndex();
+    function.GetEmitter()->SetFirstInstIndex(endOfFunction);
     GenObject* target = objects[0];
     target->GenStore(machine, function);
+    int storeInstIndex = function.GetEmitter()->FistInstIndex();
+    function.GetEmitter()->SetFirstInstIndex(firstInstIndex);;
+    function.GetEmitter()->BackpatchConDis(storeInstIndex);
 }
 
 BasicTypeAssignment::BasicTypeAssignment(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
@@ -101,8 +106,13 @@ void BasicTypeAssignment::GenerateCall(Machine& machine, Assembly& assembly, Fun
     Assert(objects.size() == 2, "assignment needs two objects");
     GenObject* source = objects[1];
     source->GenLoad(machine, function);
+    int firstInstIndex = function.GetEmitter()->FistInstIndex();
+    function.GetEmitter()->SetFirstInstIndex(endOfFunction);
     GenObject* target = objects[0];
     target->GenStore(machine, function);
+    int storeInstIndex = function.GetEmitter()->FistInstIndex();
+    function.GetEmitter()->SetFirstInstIndex(firstInstIndex);;
+    function.GetEmitter()->BackpatchConDis(storeInstIndex);
 }
 
 BasicTypeReturn::BasicTypeReturn(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)

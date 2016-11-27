@@ -17,7 +17,7 @@ using namespace cminor::symbols;
 class EmitterVisitor : public BoundNodeVisitor, public Emitter
 {
 public:
-    EmitterVisitor(Machine& machine_);
+    EmitterVisitor(Machine& machine_, BoundCompileUnit& boundCompileUnit_);
     void Visit(BoundCompileUnit& boundCompileUnit) override;
     void Visit(BoundClass& boundClass) override;
     void Visit(BoundFunction& boundFunction) override;
@@ -51,6 +51,10 @@ public:
     void Visit(BoundConversion& boundConversion) override;
     void Visit(BoundFunctionCall& boundFunctionCall) override;
     void Visit(BoundNewExpression& boundNewExpression) override;
+    void Visit(BoundConjunction& boundConjunction) override;
+    void Visit(BoundDisjunction& boundDisjunction) override;
+    void Visit(GenObject& genObject) override;
+    void BackpatchConDis(int32_t target) override;
     void SetFirstInstIndex(int32_t index) override;
     int32_t FistInstIndex() const override;
     bool CreatePCRange() const override;
@@ -59,6 +63,7 @@ public:
     void DoSetPCRangeEnd(int32_t end) override;
 private:
     Machine& machine;
+    BoundCompileUnit& boundCompileUnit;
     Function* function;
     int32_t firstInstIndex;
     std::vector<Instruction*>* nextSet;
@@ -66,6 +71,7 @@ private:
     std::vector<Instruction*>* falseSet;
     std::vector<Instruction*>* breakSet;
     std::vector<Instruction*>* continueSet;
+    std::vector<Instruction*>* conDisSet;
     std::vector<BoundCompoundStatement*> blockStack;
     BoundStatement* breakTarget;
     BoundStatement* continueTarget;
@@ -82,8 +88,9 @@ private:
     void ExitBlocks(BoundCompoundStatement* targetBlock);
 };
 
-EmitterVisitor::EmitterVisitor(Machine& machine_) : 
-    machine(machine_), function(nullptr), firstInstIndex(endOfFunction), nextSet(nullptr), trueSet(nullptr), falseSet(nullptr), breakSet(nullptr), continueSet(nullptr), 
+EmitterVisitor::EmitterVisitor(Machine& machine_, BoundCompileUnit& boundCompileUnit_) : 
+    machine(machine_), boundCompileUnit(boundCompileUnit_), function(nullptr), firstInstIndex(endOfFunction), 
+    nextSet(nullptr), trueSet(nullptr), falseSet(nullptr), breakSet(nullptr), continueSet(nullptr), conDisSet(nullptr),
     breakTarget(nullptr), continueTarget(nullptr), caseTargets(nullptr), defaultTarget(-1), genJumpingBoolCode(false), createPCRange(false), setPCRangeEnd(false), 
     gotoCaseJumps(nullptr), gotoDefaultJumps(nullptr)
 {
@@ -95,6 +102,12 @@ void EmitterVisitor::Backpatch(std::vector<Instruction*>& set, int32_t target)
     {
         inst->SetTarget(target);
     }
+}
+
+void EmitterVisitor::BackpatchConDis(int32_t target)
+{
+    Backpatch(*conDisSet, target);
+    conDisSet->clear();
 }
 
 void EmitterVisitor::Merge(std::vector<Instruction*>& fromSet, std::vector<Instruction*>& toSet)
@@ -242,6 +255,9 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
 
 void EmitterVisitor::Visit(BoundReturnStatement& boundReturnStatement)
 {
+    std::vector<Instruction*>* prevConDisSet = conDisSet;
+    std::vector<Instruction*> conDis;
+    conDisSet = &conDis;
     BoundFunctionCall* returnFunctionCall = boundReturnStatement.ReturnFunctionCall();
     if (returnFunctionCall)
     {
@@ -250,7 +266,13 @@ void EmitterVisitor::Visit(BoundReturnStatement& boundReturnStatement)
     ExitBlocks(nullptr);
     std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
     inst->SetTarget(endOfFunction);
+    int32_t prevFirstInstIndex = firstInstIndex;
+    firstInstIndex = endOfFunction;
     function->AddInst(std::move(inst));
+    int32_t jumpInstIndex = firstInstIndex;
+    firstInstIndex = prevFirstInstIndex;
+    BackpatchConDis(jumpInstIndex);
+    conDisSet = prevConDisSet;
 }
 
 void EmitterVisitor::Visit(BoundIfStatement& boundIfStatement)
@@ -577,6 +599,7 @@ void EmitterVisitor::Visit(BoundDefaultStatement& boundDefaultStatement)
 
 void EmitterVisitor::Visit(BoundGotoCaseStatement& boundGotoCaseStatement)
 {
+    ExitBlocks(breakTarget->Block());
     std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
     Instruction* gotoCaseJump = jump.get();
     function->AddInst(std::move(jump));
@@ -585,6 +608,7 @@ void EmitterVisitor::Visit(BoundGotoCaseStatement& boundGotoCaseStatement)
 
 void EmitterVisitor::Visit(BoundGotoDefaultStatement& boundGotoDefaultStatement)
 {
+    ExitBlocks(breakTarget->Block());
     std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
     Instruction* gotoDefaultJump = jump.get();
     function->AddInst(std::move(jump));
@@ -613,17 +637,29 @@ void EmitterVisitor::Visit(BoundContinueStatement& boundContinueStatement)
 
 void EmitterVisitor::Visit(BoundConstructionStatement& boundConstructionStatement)
 {
+    std::vector<Instruction*>* prevConDisSet = conDisSet;
+    std::vector<Instruction*> conDis;
+    conDisSet = &conDis;
     boundConstructionStatement.ConstructorCall()->Accept(*this);
+    conDisSet = prevConDisSet;
 }
 
 void EmitterVisitor::Visit(BoundAssignmentStatement& boundAssignmentStatement)
 {
+    std::vector<Instruction*>* prevStoreSet = conDisSet;
+    std::vector<Instruction*> conDis;
+    conDisSet = &conDis;
     boundAssignmentStatement.AssignmentCall()->Accept(*this);
+    conDisSet = prevStoreSet;
 }
 
 void EmitterVisitor::Visit(BoundExpressionStatement& boundExpressionStatement)
 {
+    std::vector<Instruction*>* prevConDisSet = conDisSet;
+    std::vector<Instruction*> conDis;
+    conDisSet = &conDis;
     boundExpressionStatement.Expression()->Accept(*this);
+    conDisSet = prevConDisSet;
 }
 
 void EmitterVisitor::Visit(BoundEmptyStatement& boundEmptyStatement)
@@ -725,9 +761,204 @@ void EmitterVisitor::Visit(BoundNewExpression& boundNewExpression)
     GenJumpingBoolCode();
 }
 
+void EmitterVisitor::Visit(BoundConjunction& boundConjunction)
+{
+    bool prevGenJumpingBoolCode = genJumpingBoolCode;
+    if (genJumpingBoolCode)
+    {
+        std::vector<Instruction*>* prevTrueSet = trueSet;
+        std::vector<Instruction*>* prevFalseSet = falseSet;
+        std::vector<Instruction*> leftTrue;
+        std::vector<Instruction*> leftFalse;
+        trueSet = &leftTrue;
+        falseSet = &leftFalse;
+        genJumpingBoolCode = true;
+        boundConjunction.Left()->Accept(*this);
+        trueSet = prevTrueSet;
+        falseSet = prevFalseSet;
+        prevTrueSet = trueSet; 
+        prevFalseSet = falseSet;
+        std::vector<Instruction*> rightTrue;
+        std::vector<Instruction*> rightFalse;
+        trueSet = &rightTrue;
+        falseSet = &rightFalse;
+        int32_t prevFirstInstIndex = firstInstIndex;
+        firstInstIndex = endOfFunction;
+        genJumpingBoolCode = true;
+        boundConjunction.Right()->Accept(*this);
+        int32_t rightTarget = firstInstIndex;
+        firstInstIndex = prevFirstInstIndex;
+        Backpatch(leftTrue, rightTarget);
+        trueSet = prevTrueSet;
+        falseSet = prevFalseSet;
+        Assert(trueSet, "true set not set");
+        Assert(falseSet, "false set not set");
+        Merge(rightTrue, *trueSet);
+        Merge(leftFalse, *falseSet);
+        Merge(rightFalse, *falseSet);
+    }
+    else
+    {
+        std::vector<Instruction*>* prevTrueSet = trueSet;
+        std::vector<Instruction*>* prevFalseSet = falseSet;
+        std::vector<Instruction*> leftTrue;
+        std::vector<Instruction*> leftFalse;
+        trueSet = &leftTrue;
+        falseSet = &leftFalse;
+        genJumpingBoolCode = true;
+        boundConjunction.Left()->Accept(*this);
+        trueSet = prevTrueSet;
+        falseSet = prevFalseSet;
+        prevTrueSet = trueSet;
+        prevFalseSet = falseSet;
+        std::vector<Instruction*> rightTrue;
+        std::vector<Instruction*> rightFalse;
+        trueSet = &rightTrue;
+        falseSet = &rightFalse;
+        int32_t prevFirstInstIndex = firstInstIndex;
+        firstInstIndex = endOfFunction;
+        genJumpingBoolCode = true;
+        boundConjunction.Right()->Accept(*this);
+        int32_t rightTarget = firstInstIndex;
+        firstInstIndex = prevFirstInstIndex;
+        Backpatch(leftTrue, rightTarget);
+        trueSet = prevTrueSet;
+        falseSet = prevFalseSet;
+        ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
+        Constant trueConstant(IntegralValue(uint64_t(true), ValueType::boolType));
+        constantPool.Install(trueConstant);
+        TypeSymbol* boolType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Boolean");
+        BoundLiteral trueLit(boundCompileUnit.GetAssembly(), boolType, trueConstant);
+        genJumpingBoolCode = false;
+        prevFirstInstIndex = firstInstIndex;
+        firstInstIndex = endOfFunction;
+        trueLit.Accept(*this);
+        int32_t trueTarget = firstInstIndex;
+        firstInstIndex = prevFirstInstIndex;
+        Backpatch(rightTrue, trueTarget);
+        std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
+        Assert(conDisSet, "ConDis set not set");
+        conDisSet->push_back(inst.get());
+        function->AddInst(std::move(inst));
+        Constant falseConstant(IntegralValue(uint64_t(false), ValueType::boolType));
+        constantPool.Install(falseConstant);
+        BoundLiteral falseLit(boundCompileUnit.GetAssembly(), boolType, falseConstant);
+        genJumpingBoolCode = false;
+        prevFirstInstIndex = firstInstIndex;
+        firstInstIndex = endOfFunction;
+        falseLit.Accept(*this);
+        int32_t falseTarget = firstInstIndex;
+        firstInstIndex = prevFirstInstIndex;
+        Backpatch(leftFalse, falseTarget);
+        Backpatch(rightFalse, falseTarget);
+    }
+    genJumpingBoolCode = prevGenJumpingBoolCode;
+}
+
+void EmitterVisitor::Visit(BoundDisjunction& boundDisjunction)
+{
+    bool prevGenJumpingBoolCode = genJumpingBoolCode;
+    if (genJumpingBoolCode)
+    {
+        std::vector<Instruction*>* prevTrueSet = trueSet;
+        std::vector<Instruction*>* prevFalseSet = falseSet;
+        std::vector<Instruction*> leftTrue;
+        std::vector<Instruction*> leftFalse;
+        trueSet = &leftTrue;
+        falseSet = &leftFalse;
+        genJumpingBoolCode = true;
+        boundDisjunction.Left()->Accept(*this);
+        trueSet = prevTrueSet;
+        falseSet = prevFalseSet;
+        prevTrueSet = trueSet;
+        prevFalseSet = falseSet;
+        std::vector<Instruction*> rightTrue;
+        std::vector<Instruction*> rightFalse;
+        trueSet = &rightTrue;
+        falseSet = &rightFalse;
+        int32_t prevFirstInstIndex = firstInstIndex;
+        firstInstIndex = endOfFunction;
+        genJumpingBoolCode = true;
+        boundDisjunction.Right()->Accept(*this);
+        int32_t rightTarget = firstInstIndex;
+        firstInstIndex = prevFirstInstIndex;
+        Backpatch(leftFalse, rightTarget);
+        trueSet = prevTrueSet;
+        falseSet = prevFalseSet;
+        Assert(trueSet, "true set not set");
+        Assert(falseSet, "false set not set");
+        Merge(leftTrue, *trueSet);
+        Merge(rightTrue, *trueSet);
+        Merge(rightFalse, *falseSet);
+    }
+    else
+    {
+        std::vector<Instruction*>* prevTrueSet = trueSet;
+        std::vector<Instruction*>* prevFalseSet = falseSet;
+        std::vector<Instruction*> leftTrue;
+        std::vector<Instruction*> leftFalse;
+        trueSet = &leftTrue;
+        falseSet = &leftFalse;
+        genJumpingBoolCode = true;
+        boundDisjunction.Left()->Accept(*this);
+        trueSet = prevTrueSet;
+        falseSet = prevFalseSet;
+        prevTrueSet = trueSet;
+        prevFalseSet = falseSet;
+        std::vector<Instruction*> rightTrue;
+        std::vector<Instruction*> rightFalse;
+        trueSet = &rightTrue;
+        falseSet = &rightFalse;
+        int32_t prevFirstInstIndex = firstInstIndex;
+        firstInstIndex = endOfFunction;
+        genJumpingBoolCode = true;
+        boundDisjunction.Right()->Accept(*this);
+        int32_t rightTarget = firstInstIndex;
+        firstInstIndex = prevFirstInstIndex;
+        Backpatch(leftFalse, rightTarget);
+        trueSet = prevTrueSet;
+        falseSet = prevFalseSet;
+        ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
+        Constant trueConstant(IntegralValue(uint64_t(true), ValueType::boolType));
+        constantPool.Install(trueConstant);
+        TypeSymbol* boolType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Boolean");
+        BoundLiteral trueLit(boundCompileUnit.GetAssembly(), boolType, trueConstant);
+        genJumpingBoolCode = false;
+        prevFirstInstIndex = firstInstIndex;
+        firstInstIndex = endOfFunction;
+        trueLit.Accept(*this);
+        int32_t trueTarget = firstInstIndex;
+        firstInstIndex = prevFirstInstIndex;
+        Backpatch(rightTrue, trueTarget);
+        Backpatch(leftTrue, trueTarget);
+        std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
+        Assert(conDisSet, "ConDis set not set");
+        conDisSet->push_back(inst.get());
+        function->AddInst(std::move(inst));
+        Constant falseConstant(IntegralValue(uint64_t(false), ValueType::boolType));
+        constantPool.Install(falseConstant);
+        BoundLiteral falseLit(boundCompileUnit.GetAssembly(), boolType, falseConstant);
+        genJumpingBoolCode = false;
+        prevFirstInstIndex = firstInstIndex;
+        firstInstIndex = endOfFunction;
+        falseLit.Accept(*this);
+        int32_t falseTarget = firstInstIndex;
+        firstInstIndex = prevFirstInstIndex;
+        Backpatch(rightFalse, falseTarget);
+    }
+    genJumpingBoolCode = prevGenJumpingBoolCode;
+}
+
+void EmitterVisitor::Visit(GenObject& genObject)
+{
+    BoundExpression* expr = dynamic_cast<BoundExpression*>(&genObject);
+    Assert(expr, "bound expression expected");
+    expr->Accept(*this);
+}
+
 void GenerateCode(BoundCompileUnit& boundCompileUnit, Machine& machine)
 {
-    EmitterVisitor emitterVisitor(machine);
+    EmitterVisitor emitterVisitor(machine, boundCompileUnit);
     boundCompileUnit.Accept(emitterVisitor);
 }
 

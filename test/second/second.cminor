@@ -1,13 +1,14 @@
 using System;
 
+bool Foo()
+{
+    bool left = true;
+    bool right = true;
+    return left && right;
+}
+
 void main()
 {
-    int state = 145;
-    switch (state)
-    {
-        case 0: Console.WriteLine(0); break;
-        case 100: Console.WriteLine(100); break;
-        default: Console.WriteLine(state); break;
-    }
-    Console.WriteLine("next");
+    bool x = Foo();
+    Console.WriteLine(x);
 }

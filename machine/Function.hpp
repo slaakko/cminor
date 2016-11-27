@@ -11,6 +11,8 @@
 
 namespace cminor { namespace machine {
 
+class GenObject;
+
 class Emitter
 {
 public:
@@ -21,6 +23,8 @@ public:
     virtual bool SetPCRangeEnd() const = 0;
     virtual void DoCreatePCRange(int32_t start) = 0;
     virtual void DoSetPCRangeEnd(int32_t end) = 0;
+    virtual void Visit(GenObject& genObject) = 0;
+    virtual void BackpatchConDis(int32_t target) = 0;
 };
 
 class Function

@@ -864,7 +864,7 @@ BoundConjunction::BoundConjunction(Assembly& assembly_, BoundExpression* left_, 
 
 void BoundConjunction::GenLoad(Machine& machine, Function& function)
 {
-    throw std::runtime_error("cannot load bound conjunction");
+    function.GetEmitter()->Visit(*this);
 }
 
 void BoundConjunction::GenStore(Machine& machine, Function& function)
@@ -883,7 +883,7 @@ BoundDisjunction::BoundDisjunction(Assembly& assembly_, BoundExpression* left_, 
 
 void BoundDisjunction::GenLoad(Machine& machine, Function& function)
 {
-    throw std::runtime_error("cannot load bound disjunction");
+    function.GetEmitter()->Visit(*this);
 }
 
 void BoundDisjunction::GenStore(Machine& machine, Function& function)

@@ -7,6 +7,10 @@
 
 namespace cminor { namespace machine {
 
+GenVisitor::~GenVisitor()
+{
+}
+
 GenObject::~GenObject()
 {
 }
