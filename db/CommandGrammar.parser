@@ -1,0 +1,21 @@
+// =================================
+// Copyright (c) 2016 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/db/Command.hpp>
+
+namespace cminor.db
+{
+    grammar CommandGrammar
+    {
+        Command : Command*
+            ::= ("start"){ value = new StartCommand(); }
+            |   ("help" | "h"){ value = new HelpCommand(); }
+            |   ("exit" | "e"){ value = new ExitCommand(); }
+            |   ("quit" | "q"){ value = new ExitCommand(); }
+            |   ("step" | "s"){ value = new StepCommand(); }
+            |   ("next" | "n"){ value = new NextCommand(); }
+            ;
+    }
+}
