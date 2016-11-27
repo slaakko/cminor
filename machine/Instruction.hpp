@@ -28,6 +28,7 @@ public:
     Instruction(const std::string& name_);
     Instruction(const std::string& name_, const std::string& groupName_, const std::string& typeName_);
     Instruction(const Instruction&) = default;
+    virtual void Clear();
     virtual ~Instruction();
     virtual Instruction* Clone() const = 0;
     virtual void Encode(Writer& writer);
@@ -203,6 +204,7 @@ class IndexParamInst : public Instruction
 public:
     IndexParamInst(const std::string& name_);
     IndexParamInst(const IndexParamInst&) = default;
+    void Clear() override;
     void SetIndex(int32_t index_) override { index = index_; }
     int32_t Index() const { return index; }
     void Encode(Writer& writer) override;
@@ -217,6 +219,7 @@ class ByteParamInst : public Instruction
 public:
     ByteParamInst(const std::string& name_);
     ByteParamInst(const ByteParamInst&) = default;
+    void Clear() override;
     void SetIndex(uint8_t index_) override { index = index_; }
     uint8_t Index() const { return index; }
     void Encode(Writer& writer) override;
@@ -231,6 +234,7 @@ class UShortParamInst : public Instruction
 public:
     UShortParamInst(const std::string& name_);
     UShortParamInst(const UShortParamInst&) = default;
+    void Clear() override;
     void SetIndex(uint16_t index_) override { index = index_; }
     uint16_t Index() const { return index; }
     void Encode(Writer& writer) override;
@@ -576,10 +580,63 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class ContinuousSwitchInst : public Instruction
+{
+public:
+    ContinuousSwitchInst();
+    ContinuousSwitchInst(const ContinuousSwitchInst& that) = default;
+    void Clear() override;
+    Instruction* Clone() const override { return new ContinuousSwitchInst(*this); };
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Execute(Frame& frame) override;
+    void SetBegin(IntegralValue begin_) { begin = begin_; }
+    void SetEnd(IntegralValue end_) { end = end_; }
+    void AddTarget(int32_t target);
+    void SetTarget(int index, int32_t target);
+    void SetDefaultTarget(int32_t defaultTarget_) { defaultTarget = defaultTarget_; }
+    void AddNextTargetIndex(int nextTargetIndex);
+    void SetTarget(int32_t target) override;
+private:
+    IntegralValue begin;
+    IntegralValue end;
+    std::vector<int32_t> targets;
+    int32_t defaultTarget;
+    std::vector<int> nextTargetIndices;
+};
+
+struct IntegralValueLess
+{
+    bool operator()(const std::pair<IntegralValue, int32_t>& left, const std::pair<IntegralValue, int32_t>& right) const
+    {
+        return left.first.Value() < right.first.Value();
+    }
+};
+
+class BinarySearchSwitchInst : public Instruction
+{
+public:
+    BinarySearchSwitchInst();
+    BinarySearchSwitchInst(const BinarySearchSwitchInst& that) = default;
+    void Clear() override;
+    Instruction* Clone() const override { return new BinarySearchSwitchInst(*this); };
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Execute(Frame& frame) override;
+    void SetTargets(const std::vector<std::pair<IntegralValue, int32_t>>& targets_);
+    void SetTarget(int32_t target) override;
+    void SetDefaultTarget(int32_t defaultTarget_) { defaultTarget = defaultTarget_; }
+private:
+    std::vector<std::pair<IntegralValue, int32_t>> targets;
+    int32_t defaultTarget;
+};
+
 class CallInst : public Instruction
 {
 public:
     CallInst();
+    CallInst(const CallInst& that) = default;
+    void Clear() override;
     Instruction* Clone() const override { return new CallInst(*this); }
     void SetFunctionCallName(Constant functionCallName);
     StringPtr GetFunctionCallName() const;
@@ -596,6 +653,8 @@ class VirtualCallInst : public Instruction
 {
 public:
     VirtualCallInst();
+    VirtualCallInst(const VirtualCallInst& that) = default;
+    void Clear() override;
     void SetNumArgs(uint32_t numArgs_) { numArgs = numArgs_; }
     void SetVmtIndex(uint32_t vmtIndex_) { vmtIndex = vmtIndex_; }
     Instruction* Clone() const override { return new VirtualCallInst(*this); }
@@ -612,6 +671,8 @@ class InterfaceCallInst : public Instruction
 {
 public:
     InterfaceCallInst();
+    InterfaceCallInst(const InterfaceCallInst& that) = default;
+    void Clear() override;
     Instruction* Clone() const override { return new InterfaceCallInst(*this); }
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
@@ -636,6 +697,8 @@ class SetClassDataInst : public Instruction
 {
 public:
     SetClassDataInst();
+    SetClassDataInst(const SetClassDataInst& that) = default;
+    void Clear() override;
     Instruction* Clone() const override { return new SetClassDataInst(*this); }
     void SetClassName(Constant fullClassName);
     StringPtr GetClassName() const;
@@ -652,6 +715,8 @@ class TypeInstruction : public Instruction
 {
 public:
     TypeInstruction(const std::string& name_);
+    TypeInstruction(const TypeInstruction& that) = default;
+    void Clear() override;
     void SetTypeName(Constant fullTypeName);
     StringPtr GetTypeName() const;
     void SetType(Type* typePtr);
@@ -771,6 +836,8 @@ class LoadStaticFieldInst : public TypeInstruction
 {
 public:
     LoadStaticFieldInst();
+    LoadStaticFieldInst(const LoadStaticFieldInst& that) = default;
+    void Clear() override;
     Instruction* Clone() const override { return new LoadStaticFieldInst(*this); }
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
@@ -784,6 +851,8 @@ class StoreStaticFieldInst : public TypeInstruction
 {
 public:
     StoreStaticFieldInst();
+    StoreStaticFieldInst(const StoreStaticFieldInst& that) = default;
+    void Clear() override;
     Instruction* Clone() const override { return new StoreStaticFieldInst(*this); }
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;

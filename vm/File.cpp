@@ -161,6 +161,7 @@ int32_t FileTable::OpenFile(const std::string& filePath, FileMode mode, FileAcce
 
 void FileTable::CloseFile(int32_t fileHandle)
 {
+    if (fileHandle == 0 || fileHandle == 1 || fileHandle == 2) return;
     auto it = files.find(fileHandle);
     if (it != files.cend())
     {

@@ -9,7 +9,6 @@ source <Console.cminor>;
 source <Convert.cminor>;
 source <Enumerator.cminor>;
 source <Exception.cminor>;
-source <File.cminor>;
 source <FileStream.cminor>;
 source <List.cminor>;
 source <Object.cminor>;

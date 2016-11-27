@@ -226,6 +226,40 @@ void SymbolCreatorVisitor::Visit(ForStatementNode& forStatementNode)
     symbolTable.EndDeclarationBlock();
 }
 
+void SymbolCreatorVisitor::Visit(SwitchStatementNode& switchStatementNode)
+{
+    int n = switchStatementNode.Cases().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        CaseStatementNode* caseStatementNode = switchStatementNode.Cases()[i];
+        caseStatementNode->Accept(*this);
+    }
+    if (switchStatementNode.Default())
+    {
+        switchStatementNode.Default()->Accept(*this);
+    }
+}
+
+void SymbolCreatorVisitor::Visit(CaseStatementNode& caseStatementNode)
+{
+    int n = caseStatementNode.Statements().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        StatementNode* statementNode = caseStatementNode.Statements()[i];
+        statementNode->Accept(*this);
+    }
+}
+
+void SymbolCreatorVisitor::Visit(DefaultStatementNode& defaultStatementNode)
+{
+    int n = defaultStatementNode.Statements().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        StatementNode* statementNode = defaultStatementNode.Statements()[i];
+        statementNode->Accept(*this);
+    }
+}
+
 void SymbolCreatorVisitor::Visit(ConstructionStatementNode& constructionStatementNode)
 {
     symbolTable.AddLocalVariable(constructionStatementNode);

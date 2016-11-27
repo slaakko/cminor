@@ -93,6 +93,11 @@ void Function::AddInst(std::unique_ptr<Instruction>&& inst)
     instructions.push_back(std::move(inst));
 }
 
+void Function::SetInst(int32_t index, std::unique_ptr<Instruction>&& inst)
+{
+    instructions[index] = std::move(inst);
+}
+
 void Function::Dump(CodeFormatter& formatter)
 {
     formatter.WriteLine(ToUtf8(callName.Value().AsStringLiteral()) + " [" + ToUtf8(friendlyName.Value().AsStringLiteral()) + "]");

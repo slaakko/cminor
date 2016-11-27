@@ -751,6 +751,40 @@ void TypeBinderVisitor::Visit(ForStatementNode& forStatementNode)
     containerScope = prevContainerScope;
 }
 
+void TypeBinderVisitor::Visit(SwitchStatementNode& switchStatementNode)
+{
+    int n = switchStatementNode.Cases().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        CaseStatementNode* caseStatement = switchStatementNode.Cases()[i];
+        caseStatement->Accept(*this);
+    }
+    if (switchStatementNode.Default())
+    {
+        switchStatementNode.Default()->Accept(*this);
+    }
+}
+
+void TypeBinderVisitor::Visit(CaseStatementNode& caseStatementNode)
+{
+    int n = caseStatementNode.Statements().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        StatementNode* statementNode = caseStatementNode.Statements()[i];
+        statementNode->Accept(*this);
+    }
+}
+
+void TypeBinderVisitor::Visit(DefaultStatementNode& defaultStatementNode)
+{
+    int n = defaultStatementNode.Statements().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        StatementNode* statementNode = defaultStatementNode.Statements()[i];
+        statementNode->Accept(*this);
+    }
+}
+
 void TypeBinderVisitor::Visit(ConstructionStatementNode& constructionStatementNode)
 {
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(constructionStatementNode);

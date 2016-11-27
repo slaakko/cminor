@@ -661,6 +661,262 @@ void ForEachStatementNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+SwitchStatementNode::SwitchStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+SwitchStatementNode::SwitchStatementNode(const Span& span_, Node* condition_) : StatementNode(span_), condition(condition_)
+{
+    condition->SetParent(this);
+}
+
+Node* SwitchStatementNode::Clone(CloneContext& cloneContext) const
+{
+    SwitchStatementNode* clone = new SwitchStatementNode(GetSpan(), condition->Clone(cloneContext));
+    int n = cases.Count();
+    for (int i = 0; i < n; ++i)
+    {
+        CaseStatementNode* caseS = cases[i];
+        clone->AddCase(static_cast<CaseStatementNode*>(caseS->Clone(cloneContext)));
+    }
+    if (defaultS)
+    {
+        clone->SetDefault(static_cast<DefaultStatementNode*>(defaultS->Clone(cloneContext)));
+    }
+    return clone;
+}
+
+void SwitchStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(condition.get());
+    cases.Write(writer);
+    if (defaultS)
+    {
+        writer.AsMachineWriter().Put(true);
+        writer.Put(defaultS.get());
+    }
+    else
+    {
+        writer.AsMachineWriter().Put(false);
+    }
+}
+
+void SwitchStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    condition.reset(reader.GetNode());
+    condition->SetParent(this);
+    cases.Read(reader);
+    cases.SetParent(this);
+    bool hasDefault = reader.GetBool();
+    if (hasDefault)
+    {
+        defaultS.reset(dynamic_cast<DefaultStatementNode*>(reader.GetNode()));
+        Assert(defaultS, "default statement node expected");
+        defaultS->SetParent(this);
+    }
+}
+
+void SwitchStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+void SwitchStatementNode::AddCase(CaseStatementNode* caseS)
+{
+    caseS->SetParent(this);
+    cases.Add(caseS);
+}
+
+const NodeList<CaseStatementNode>& SwitchStatementNode::Cases() const
+{
+    return cases;
+}
+
+void SwitchStatementNode::SetDefault(DefaultStatementNode* defaultS_)
+{
+    if (defaultS)
+    {
+        throw Exception("already has a default statement", defaultS->GetSpan(), defaultS_->GetSpan());
+    }
+    defaultS.reset(defaultS_);
+    defaultS->SetParent(this);
+}
+
+DefaultStatementNode* SwitchStatementNode::Default() const
+{ 
+    return defaultS.get(); 
+}
+
+CaseStatementNode::CaseStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+
+Node* CaseStatementNode::Clone(CloneContext& cloneContext) const
+{
+    CaseStatementNode* clone = new CaseStatementNode(GetSpan());
+    int n = caseExprs.Count();
+    for (int i = 0; i < n; ++i)
+    {
+        Node* caseExpr = caseExprs[i];
+        clone->AddCaseExpr(caseExpr->Clone(cloneContext));
+    }
+    int m = statements.Count();
+    for (int i = 0; i < m; ++i)
+    {
+        StatementNode* statement = statements[i];
+        clone->AddStatement(static_cast<StatementNode*>(statement->Clone(cloneContext)));
+    }
+    return clone;
+}
+
+void CaseStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    caseExprs.Write(writer);
+    statements.Write(writer);
+}
+
+void CaseStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    caseExprs.Read(reader);
+    caseExprs.SetParent(this);
+    statements.Read(reader);
+    statements.SetParent(this);
+}
+
+void CaseStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+void CaseStatementNode::AddCaseExpr(Node* caseExpr)
+{
+    caseExpr->SetParent(this);
+    caseExprs.Add(caseExpr);
+}
+
+void CaseStatementNode::AddStatement(StatementNode* statement)
+{
+    statement->SetParent(this);
+    statements.Add(statement);
+}
+
+const NodeList<Node>& CaseStatementNode::CaseExprs() const
+{ 
+    return caseExprs; 
+}
+
+const NodeList<StatementNode>& CaseStatementNode::Statements() const
+{ 
+    return statements; 
+}
+
+DefaultStatementNode::DefaultStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+Node* DefaultStatementNode::Clone(CloneContext& cloneContext) const
+{
+    DefaultStatementNode* clone = new DefaultStatementNode(GetSpan());
+    int n = statements.Count();
+    for (int i = 0; i < n; ++i)
+    {
+        StatementNode* statement = statements[i];
+        clone->AddStatement(static_cast<StatementNode*>(statement->Clone(cloneContext)));
+    }
+    return clone;
+}
+
+void DefaultStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    statements.Write(writer);
+}
+
+void DefaultStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    statements.Read(reader);
+    statements.SetParent(this);
+}
+
+void DefaultStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+void DefaultStatementNode::AddStatement(StatementNode* statement)
+{
+    statement->SetParent(this);
+    statements.Add(statement);
+}
+
+const NodeList<StatementNode>& DefaultStatementNode::Statements() const
+{ 
+    return statements; 
+}
+
+GotoCaseStatementNode::GotoCaseStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+GotoCaseStatementNode::GotoCaseStatementNode(const Span& span_, Node* caseExpr_) : StatementNode(span_), caseExpr(caseExpr_)
+{
+    caseExpr->SetParent(this);
+}
+
+Node* GotoCaseStatementNode::Clone(CloneContext& cloneContext) const
+{
+    GotoCaseStatementNode* clone = new GotoCaseStatementNode(GetSpan(), caseExpr->Clone(cloneContext));
+    return clone;
+}
+
+void GotoCaseStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(caseExpr.get());
+}
+
+void GotoCaseStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    caseExpr.reset(reader.GetNode());
+    caseExpr->SetParent(this);
+}
+
+void GotoCaseStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+GotoDefaultStatementNode::GotoDefaultStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+Node* GotoDefaultStatementNode::Clone(CloneContext& cloneContext) const
+{
+    return new GotoDefaultStatementNode(GetSpan());
+}
+
+void GotoDefaultStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+}
+
+void GotoDefaultStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+}
+
+void GotoDefaultStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 ThrowStatementNode::ThrowStatementNode(const Span& span_) : StatementNode(span_)
 {
 }

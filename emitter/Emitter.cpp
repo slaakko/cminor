@@ -27,6 +27,11 @@ public:
     void Visit(BoundWhileStatement& boundWhileStatement) override;
     void Visit(BoundDoStatement& boundDoStatement) override;
     void Visit(BoundForStatement& boundForStatement) override;
+    void Visit(BoundSwitchStatement& boundSwitchStatement) override;
+    void Visit(BoundCaseStatement& boundCaseStatement) override;
+    void Visit(BoundDefaultStatement& boundDefaultStatement) override;
+    void Visit(BoundGotoCaseStatement& boundGotoCaseStatement) override;
+    void Visit(BoundGotoDefaultStatement& boundGotoDefaultStatement) override;
     void Visit(BoundBreakStatement& boundBreakStatement) override;
     void Visit(BoundContinueStatement& boundContinueStatement) override;
     void Visit(BoundConstructionStatement& boundConstructionStatement) override;
@@ -64,6 +69,10 @@ private:
     std::vector<BoundCompoundStatement*> blockStack;
     BoundStatement* breakTarget;
     BoundStatement* continueTarget;
+    std::vector<std::pair<IntegralValue, int32_t>>* caseTargets;
+    int32_t defaultTarget;
+    std::unordered_map<IntegralValue, Instruction*, IntegralValueHash>* gotoCaseJumps;
+    std::vector<Instruction*>* gotoDefaultJumps;
     bool genJumpingBoolCode;
     bool createPCRange;
     bool setPCRangeEnd;
@@ -75,7 +84,8 @@ private:
 
 EmitterVisitor::EmitterVisitor(Machine& machine_) : 
     machine(machine_), function(nullptr), firstInstIndex(endOfFunction), nextSet(nullptr), trueSet(nullptr), falseSet(nullptr), breakSet(nullptr), continueSet(nullptr), 
-    breakTarget(nullptr), continueTarget(nullptr), genJumpingBoolCode(false), createPCRange(false), setPCRangeEnd(false)
+    breakTarget(nullptr), continueTarget(nullptr), caseTargets(nullptr), defaultTarget(-1), genJumpingBoolCode(false), createPCRange(false), setPCRangeEnd(false), 
+    gotoCaseJumps(nullptr), gotoDefaultJumps(nullptr)
 {
 }
 
@@ -423,6 +433,162 @@ void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
     continueSet = prevContinueSet;
     breakTarget = prevBreakTarget;
     continueTarget = prevContinueTarget;
+}
+
+void EmitterVisitor::Visit(BoundSwitchStatement& boundSwitchStatement)
+{
+    BoundStatement* prevBreakTarget = breakTarget;
+    breakTarget = &boundSwitchStatement;
+    std::vector<Instruction*>* prevBreakSet = breakSet;
+    std::vector<Instruction*> break_;
+    breakSet = &break_;
+    boundSwitchStatement.Condition()->Accept(*this);
+    std::unique_ptr<Instruction> inst = machine.CreateInst("cswitch");
+    ContinuousSwitchInst* switchInst = dynamic_cast<ContinuousSwitchInst*>(inst.get());
+    int instIndex = function->NumInsts();
+    function->AddInst(std::move(inst));
+    std::vector<std::pair<IntegralValue, int32_t>>* prevCaseTargets = caseTargets;
+    std::vector<std::pair<IntegralValue, int32_t>> caseTargets_;
+    std::unordered_map<IntegralValue, Instruction*, IntegralValueHash>* prevGotoCaseJumps = gotoCaseJumps;
+    std::unordered_map<IntegralValue, Instruction*, IntegralValueHash> gotoCaseJumps_;
+    std::vector<Instruction*>* prevGotoDefaultJumps = gotoDefaultJumps;
+    std::vector<Instruction*> gotoDefaultJumps_;
+    gotoDefaultJumps = &gotoDefaultJumps_;
+    gotoCaseJumps = &gotoCaseJumps_;
+    caseTargets = &caseTargets_;
+    for (const std::unique_ptr<BoundCaseStatement>& caseStatement : boundSwitchStatement.CaseStatements())
+    {
+        caseStatement->Accept(*this);
+    }
+    int32_t prevDefaultTarget = defaultTarget;
+    defaultTarget = -1;
+    if (boundSwitchStatement.DefaultStatement())
+    {
+        boundSwitchStatement.DefaultStatement()->Accept(*this);
+        switchInst->SetDefaultTarget(defaultTarget);
+        Backpatch(gotoDefaultJumps_, defaultTarget);
+    }
+    for (const std::pair<IntegralValue, Instruction*>& gotoCaseJump : gotoCaseJumps_)
+    {
+        IntegralValue value = gotoCaseJump.first;
+        bool found = false;
+        for (const std::pair<IntegralValue, int32_t>& case_ : caseTargets_)
+        {
+            if (case_.first == value)
+            {
+                gotoCaseJump.second->SetTarget(case_.second);
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            throw std::runtime_error("goto case target not found");
+        }
+    }
+    for (Instruction* gotoDefaultJump : gotoDefaultJumps_)
+    {
+        if (defaultTarget == -1)
+        {
+            throw std::runtime_error("default target not found");
+        }
+        gotoDefaultJump->SetTarget(defaultTarget);
+    }
+    gotoCaseJumps = prevGotoCaseJumps;
+    gotoDefaultJumps = prevGotoDefaultJumps;
+    bool instReplaced = false;
+    BinarySearchSwitchInst* binSearchSwitchInst = nullptr;
+    if (!caseTargets_.empty())
+    {
+        std::sort(caseTargets_.begin(), caseTargets_.end(), IntegralValueLess());
+        IntegralValue begin = caseTargets_.front().first;
+        IntegralValue end = caseTargets_.back().first;
+        switchInst->SetBegin(begin);
+        switchInst->SetEnd(end);
+        uint64_t n = end.Value() - begin.Value() + 1;
+        if (n <= 64)
+        {
+            std::unordered_set<int> indexSet;
+            for (uint64_t i = 0; i < n; ++i)
+            {
+                switchInst->AddTarget(defaultTarget);
+                indexSet.insert(int(i));
+            }
+            for (const std::pair<IntegralValue, int32_t>& p : caseTargets_)
+            {
+                uint64_t index = p.first.Value() - begin.Value();
+                switchInst->SetTarget(int(index), p.second);
+                indexSet.erase(int(index));
+            }
+            if (defaultTarget == -1)
+            {
+                for (int index : indexSet)
+                {
+                    switchInst->AddNextTargetIndex(index);
+                }
+            }
+        }
+        else
+        {
+            inst = std::move(machine.CreateInst("bswitch"));
+            binSearchSwitchInst = dynamic_cast<BinarySearchSwitchInst*>(inst.get());
+            binSearchSwitchInst->SetTargets(caseTargets_);
+            binSearchSwitchInst->SetDefaultTarget(defaultTarget);
+            function->SetInst(instIndex, std::move(inst));
+            instReplaced = true;
+        }
+    }
+    if (instReplaced)
+    {
+        nextSet->push_back(binSearchSwitchInst);
+    }
+    else
+    {
+        nextSet->push_back(switchInst);
+    }
+    defaultTarget = prevDefaultTarget;
+    caseTargets = prevCaseTargets;
+    Merge(break_, *nextSet);
+    breakSet = prevBreakSet;
+    breakTarget = prevBreakTarget;
+}
+
+void EmitterVisitor::Visit(BoundCaseStatement& boundCaseStatement)
+{
+    int32_t prevFirstInstIndex = firstInstIndex;
+    firstInstIndex = endOfFunction;
+    boundCaseStatement.CompoundStatement()->Accept(*this);
+    int32_t caseTarget = firstInstIndex;
+    firstInstIndex = prevFirstInstIndex;
+    for (IntegralValue caseValue : boundCaseStatement.CaseValues())
+    {
+        caseTargets->push_back(std::make_pair(caseValue, caseTarget));
+    }
+}
+
+void EmitterVisitor::Visit(BoundDefaultStatement& boundDefaultStatement)
+{
+    int32_t prevFirstInstIndex = firstInstIndex;
+    firstInstIndex = endOfFunction;
+    boundDefaultStatement.CompoundStatement()->Accept(*this);
+    defaultTarget = firstInstIndex;
+    firstInstIndex = prevFirstInstIndex;
+}
+
+void EmitterVisitor::Visit(BoundGotoCaseStatement& boundGotoCaseStatement)
+{
+    std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
+    Instruction* gotoCaseJump = jump.get();
+    function->AddInst(std::move(jump));
+    gotoCaseJumps->insert(std::make_pair(boundGotoCaseStatement.CaseValue(), gotoCaseJump));
+}
+
+void EmitterVisitor::Visit(BoundGotoDefaultStatement& boundGotoDefaultStatement)
+{
+    std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
+    Instruction* gotoDefaultJump = jump.get();
+    function->AddInst(std::move(jump));
+    gotoDefaultJumps->push_back(gotoDefaultJump);
 }
 
 void EmitterVisitor::Visit(BoundBreakStatement& boundBreakStatement)

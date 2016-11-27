@@ -27,6 +27,10 @@ Instruction::~Instruction()
 {
 }
 
+void Instruction::Clear()
+{
+}
+
 void Instruction::Encode(Writer& writer)
 {
     if (parent)
@@ -187,6 +191,11 @@ IndexParamInst::IndexParamInst(const std::string& name_) : Instruction(name_, ""
 {
 }
 
+void IndexParamInst::Clear()
+{
+    index = -1;
+}
+
 void IndexParamInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
@@ -208,6 +217,11 @@ void IndexParamInst::Dump(CodeFormatter& formatter)
 
 ByteParamInst::ByteParamInst(const std::string& name_) : Instruction(name_, "", ""), index(0)
 {
+}
+
+void ByteParamInst::Clear()
+{
+    index = 0;
 }
 
 void ByteParamInst::Encode(Writer& writer)
@@ -237,6 +251,11 @@ void UShortParamInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
     writer.Put(index);
+}
+
+void UShortParamInst::Clear()
+{
+    index = 0;
 }
 
 Instruction* UShortParamInst::Decode(Reader& reader)
@@ -743,8 +762,165 @@ void ExitBlockInst::Execute(Frame& frame)
 {
 }
 
+ContinuousSwitchInst::ContinuousSwitchInst() : Instruction("cswitch"), begin(), end(), defaultTarget(-1)
+{
+}
+
+void ContinuousSwitchInst::Clear()
+{
+    begin = IntegralValue();
+    end = IntegralValue();
+    targets.clear();
+    defaultTarget = -1;
+    nextTargetIndices.clear();
+}
+
+void ContinuousSwitchInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    begin.Write(writer);
+    end.Write(writer);
+    uint32_t numTargets = uint32_t(targets.size());
+    writer.PutEncodedUInt(numTargets);
+    for (int32_t target : targets)
+    {
+        writer.Put(target);
+    }
+    writer.Put(defaultTarget);
+}
+
+Instruction* ContinuousSwitchInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    begin.Read(reader);
+    end.Read(reader);
+    uint32_t numTargets = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < numTargets; ++i)
+    {
+        int32_t target = reader.GetInt();
+        targets.push_back(target);
+    }
+    defaultTarget = reader.GetInt();
+    return this;
+}
+
+void ContinuousSwitchInst::AddTarget(int32_t target)
+{
+    targets.push_back(target);
+}
+
+void ContinuousSwitchInst::SetTarget(int index, int32_t target)
+{
+    Assert(index >= 0 && index < targets.size(), "invalid switch target index");
+    targets[index] = target;
+}
+
+void ContinuousSwitchInst::AddNextTargetIndex(int nextTargetIndex)
+{
+    nextTargetIndices.push_back(nextTargetIndex);
+}
+
+void ContinuousSwitchInst::SetTarget(int32_t target)
+{
+    for (int nextTargetIndex : nextTargetIndices)
+    {
+        targets[nextTargetIndex] = target;
+    }
+    if (defaultTarget == -1)
+    {
+        defaultTarget = target;
+    }
+}
+
+void ContinuousSwitchInst::Execute(Frame& frame)
+{
+    IntegralValue cond = frame.OpStack().Pop();
+    if (cond.Value() < begin.Value() || cond.Value() > end.Value())
+    {
+        frame.SetPC(defaultTarget);
+    }
+    else
+    {
+        uint64_t index = cond.Value() - begin.Value();
+        Assert(index >= 0 && index < targets.size(), "invalid switch index");
+        frame.SetPC(targets[index]);
+    }
+}
+
+BinarySearchSwitchInst::BinarySearchSwitchInst() : Instruction("bswitch"), targets(), defaultTarget(-1)
+{
+}
+
+void BinarySearchSwitchInst::Clear()
+{
+    targets.clear();
+    defaultTarget = -1;
+}
+
+void BinarySearchSwitchInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    uint32_t n = uint32_t(targets.size());
+    writer.PutEncodedUInt(n);
+    for (const std::pair<IntegralValue, int32_t>& p : targets)
+    {
+        IntegralValue value = p.first;
+        value.Write(writer);
+        writer.Put(p.second);
+    }
+    writer.Put(defaultTarget);
+}
+
+Instruction* BinarySearchSwitchInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    uint32_t n = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        IntegralValue value;
+        value.Read(reader);
+        int32_t target = reader.GetInt();
+        targets.push_back(std::make_pair(value, target));
+    }
+    defaultTarget = reader.GetInt();
+    return this;
+}
+
+void BinarySearchSwitchInst::Execute(Frame& frame)
+{
+    IntegralValue cond = frame.OpStack().Pop();
+    std::pair<IntegralValue, int32_t> x(cond, -1);
+    const auto& it = std::lower_bound(targets.cbegin(), targets.cend(), x, IntegralValueLess());
+    if (it != targets.cend() && it->first.Value() == cond.Value())
+    {
+        frame.SetPC(it->second);
+    }
+    else
+    {
+        frame.SetPC(defaultTarget);
+    }
+}
+
+void BinarySearchSwitchInst::SetTargets(const std::vector<std::pair<IntegralValue, int32_t>>& targets_)
+{
+    targets = targets_;
+}
+
+void BinarySearchSwitchInst::SetTarget(int32_t target)
+{
+    if (defaultTarget == -1)
+    {
+        defaultTarget = target;
+    }
+}
+
 CallInst::CallInst() : Instruction("call")
 {
+}
+
+void CallInst::Clear()
+{
+    function = Constant();
 }
 
 void CallInst::SetFunctionCallName(Constant functionCallName)
@@ -800,6 +976,12 @@ VirtualCallInst::VirtualCallInst() : Instruction("callv"), numArgs(0), vmtIndex(
 {
 }
 
+void VirtualCallInst::Clear()
+{
+    numArgs = 0;
+    vmtIndex = -1;
+}
+
 void VirtualCallInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
@@ -851,6 +1033,12 @@ void VirtualCallInst::Dump(CodeFormatter& formatter)
 
 InterfaceCallInst::InterfaceCallInst() : Instruction("calli"), numArgs(0), imtIndex(-1)
 {
+}
+
+void InterfaceCallInst::Clear()
+{
+    numArgs = 0;
+    imtIndex = -1;
 }
 
 void InterfaceCallInst::Encode(Writer& writer)
@@ -926,6 +1114,11 @@ SetClassDataInst::SetClassDataInst() : Instruction("setclassdata")
 {
 }
 
+void SetClassDataInst::Clear()
+{
+    classData = Constant();
+}
+
 void SetClassDataInst::SetClassName(Constant fullClassName)
 {
     Assert(fullClassName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
@@ -986,6 +1179,11 @@ void SetClassDataInst::Dump(CodeFormatter& formatter)
 
 TypeInstruction::TypeInstruction(const std::string& name_) : Instruction(name_)
 {
+}
+
+void TypeInstruction::Clear()
+{
+    type = Constant();
 }
 
 void TypeInstruction::SetTypeName(Constant fullTypeName)
@@ -1260,6 +1458,12 @@ LoadStaticFieldInst::LoadStaticFieldInst() : TypeInstruction("loadstaticfield"),
 {
 }
 
+void LoadStaticFieldInst::Clear()
+{
+    TypeInstruction::Clear();
+    index = -1;
+}
+
 void LoadStaticFieldInst::SetIndex(int32_t index_)
 {
     index = index_;
@@ -1292,6 +1496,12 @@ void LoadStaticFieldInst::Execute(Frame& frame)
 
 StoreStaticFieldInst::StoreStaticFieldInst() : TypeInstruction("storestaticfield"), index(-1)
 {
+}
+
+void StoreStaticFieldInst::Clear()
+{
+    TypeInstruction::Clear();
+    index = -1;
 }
 
 void StoreStaticFieldInst::SetIndex(int32_t index_)

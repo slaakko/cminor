@@ -36,12 +36,14 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("bool");
     keywords0.push_back("break");
     keywords0.push_back("byte");
+    keywords0.push_back("case");
     keywords0.push_back("cast");
     keywords0.push_back("catch");
     keywords0.push_back("char");
     keywords0.push_back("class");
     keywords0.push_back("const");
     keywords0.push_back("continue");
+    keywords0.push_back("default");
     keywords0.push_back("do");
     keywords0.push_back("double");
     keywords0.push_back("else");
@@ -51,6 +53,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("float");
     keywords0.push_back("for");
     keywords0.push_back("foreach");
+    keywords0.push_back("goto");
     keywords0.push_back("if");
     keywords0.push_back("in");
     keywords0.push_back("inline");
@@ -72,6 +75,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("short");
     keywords0.push_back("static");
     keywords0.push_back("string");
+    keywords0.push_back("switch");
     keywords0.push_back("this");
     keywords0.push_back("throw");
     keywords0.push_back("true");

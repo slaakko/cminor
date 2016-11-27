@@ -109,6 +109,11 @@ class EmptyStatementNode;
 class IncrementStatementNode;
 class DecrementStatementNode;
 class ForEachStatementNode;
+class SwitchStatementNode;
+class CaseStatementNode;
+class DefaultStatementNode;
+class GotoCaseStatementNode;
+class GotoDefaultStatementNode;
 class ThrowStatementNode;
 class CatchNode;
 class TryStatementNode;
@@ -222,6 +227,11 @@ public:
     virtual void Visit(IncrementStatementNode& incrementStatementNode) {}
     virtual void Visit(DecrementStatementNode& decrementStatementNode) {}
     virtual void Visit(ForEachStatementNode& forEachStatementNode) {}
+    virtual void Visit(SwitchStatementNode& switchStatementNode) {}
+    virtual void Visit(CaseStatementNode& caseStatementNode) {}
+    virtual void Visit(DefaultStatementNode& defaultStatementNode) {}
+    virtual void Visit(GotoCaseStatementNode& gotoCaseStatementNode) {}
+    virtual void Visit(GotoDefaultStatementNode& gotoDefaultStatementNode) {}
     virtual void Visit(ThrowStatementNode& throwStatementNode) {}
     virtual void Visit(CatchNode& catchNode) {}
     virtual void Visit(TryStatementNode& tryStatementNode) {}

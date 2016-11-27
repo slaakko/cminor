@@ -102,6 +102,67 @@ private:
     std::unique_ptr<BoundStatement> actionS;
 };
 
+class BoundCaseStatement;
+class BoundDefaultStatement;
+
+class BoundSwitchStatement : public BoundStatement
+{
+public:
+    BoundSwitchStatement(Assembly& assembly_, std::unique_ptr<BoundExpression>&& condition_);
+    BoundExpression* Condition() const { return condition.get(); }
+    void Accept(BoundNodeVisitor& visitor) override;
+    void AddCaseStatement(std::unique_ptr<BoundCaseStatement>&& caseStatement);
+    const std::vector<std::unique_ptr<BoundCaseStatement>>& CaseStatements() const { return caseStatements; }
+    void SetDefaultStatement(std::unique_ptr<BoundDefaultStatement>&& defaultStatement_);
+    BoundDefaultStatement* DefaultStatement() const { return defaultStatement.get(); }
+private:
+    std::unique_ptr<BoundExpression> condition;
+    std::vector<std::unique_ptr<BoundCaseStatement>> caseStatements;
+    std::unique_ptr<BoundDefaultStatement> defaultStatement;
+};
+
+class BoundCaseStatement : public BoundStatement
+{
+public:
+    BoundCaseStatement(Assembly& assembly_);
+    void AddCaseValue(IntegralValue caseValue);
+    void AddStatement(std::unique_ptr<BoundStatement>&& statement);
+    const std::vector<IntegralValue>& CaseValues() const { return caseValues; }
+    BoundCompoundStatement* CompoundStatement() const { return const_cast<BoundCompoundStatement*>(&compoundStatement); }
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    std::vector<IntegralValue> caseValues;
+    BoundCompoundStatement compoundStatement;
+};
+
+class BoundDefaultStatement : public BoundStatement
+{
+public:
+    BoundDefaultStatement(Assembly& assembly_);
+    void AddStatement(std::unique_ptr<BoundStatement>&& statement);
+    BoundCompoundStatement* CompoundStatement() const { return const_cast<BoundCompoundStatement*>(&compoundStatement); }
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    BoundCompoundStatement compoundStatement;
+};
+
+class BoundGotoCaseStatement : public BoundStatement
+{
+public:
+    BoundGotoCaseStatement(Assembly& assembly_, IntegralValue caseValue_);
+    void Accept(BoundNodeVisitor& visitor) override;
+    IntegralValue CaseValue() const { return caseValue; }
+private:
+    IntegralValue caseValue;
+};
+
+class BoundGotoDefaultStatement : public BoundStatement
+{
+public:
+    BoundGotoDefaultStatement(Assembly& assembly_);
+    void Accept(BoundNodeVisitor& visitor) override;
+};
+
 class BoundBreakStatement : public BoundStatement
 {
 public:

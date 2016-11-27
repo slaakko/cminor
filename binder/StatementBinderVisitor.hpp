@@ -51,6 +51,11 @@ public:
     void Visit(IncrementStatementNode& incrementStatementNode) override;
     void Visit(DecrementStatementNode& decrementStatementNode) override;
     void Visit(ForEachStatementNode& forEachStatementNode) override;
+    void Visit(SwitchStatementNode& switchStatementNode) override;
+    void Visit(CaseStatementNode& caseStatementNode) override;
+    void Visit(DefaultStatementNode& defaultStatementNode) override;
+    void Visit(GotoCaseStatementNode& gotoCaseStatementNode) override;
+    void Visit(GotoDefaultStatementNode& gotoDefaultStatementNode) override;
     void Visit(ThrowStatementNode& throwStatementNode) override;
     BoundStatement* ReleaseStatement() { return statement.release(); }
 private:
@@ -63,6 +68,10 @@ private:
     bool doNotInstantiate;
     bool instantiateRequested;
     bool insideCatch;
+    TypeSymbol* switchConditionType;
+    std::unordered_map<IntegralValue, CaseStatementNode*, IntegralValueHash>* caseValueMap;
+    std::vector<std::pair<GotoCaseStatementNode*, IntegralValue>>* gotoCaseStatements;
+    std::vector<GotoDefaultStatementNode*>* gotoDefaultStatements;
 };
 
 } } // namespace cminor::binder

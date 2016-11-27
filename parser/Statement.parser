@@ -58,6 +58,9 @@ namespace cminor.parser
             |   ForEachStatement(ctx){ value = ForEachStatement; }
             |   BreakStatement(ctx){ value = BreakStatement; }
             |   ContinueStatement(ctx){ value = ContinueStatement; }
+            |   SwitchStatement(ctx){ value = SwitchStatement; }
+            |   GotoCaseStatement(ctx){ value = GotoCaseStatement; }
+            |   GotoDefaultStatement(ctx){ value = GotoDefaultStatement; }
             ;
 
         CompoundStatement(ParsingContext* ctx) : CompoundStatementNode*
@@ -116,6 +119,29 @@ namespace cminor.parser
 
         ContinueStatement(ParsingContext* ctx) : StatementNode*
             ::= (keyword("continue") ';'!){ value = new ContinueStatementNode(span); }
+            ;
+
+        SwitchStatement(ParsingContext* ctx) : SwitchStatementNode*
+            ::= (keyword("switch") '('! Expression(ctx)! ')'!){ value = new SwitchStatementNode(span, Expression); }
+                '{'! (CaseStatement(ctx){ value->AddCase(CaseStatement); } | DefaultStatement(ctx){ value->SetDefault(DefaultStatement); })* '}'!
+            ;
+
+        CaseStatement(ParsingContext* ctx, var std::unique_ptr<CaseStatementNode> caseS) : CaseStatementNode*
+            ::= ((empty{ caseS.reset(new CaseStatementNode(span)); } (keyword("case") Expression(ctx){ caseS->AddCaseExpr(Expression); } ':'!)+){ caseS->GetSpan().SetEnd(span.End()); }
+                (Statement(ctx){ caseS->AddStatement(Statement); })*){ value = caseS.release(); }
+            ;
+
+        DefaultStatement(ParsingContext* ctx) : DefaultStatementNode*
+            ::= (keyword("default") ':'!){ value = new DefaultStatementNode(span); }
+                (Statement(ctx){ value->AddStatement(Statement); })*
+            ;
+
+        GotoCaseStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("goto") keyword("case") Expression(ctx)! ';'!){ value = new GotoCaseStatementNode(span, Expression); }
+            ;
+
+        GotoDefaultStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("goto") keyword("default") ';'!){ value = new GotoDefaultStatementNode(span); }
             ;
 
         AssignmentExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr) : StatementNode*

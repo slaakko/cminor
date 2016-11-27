@@ -38,6 +38,9 @@ public:
     void Visit(WhileStatementNode& whileStatementNode) override;
     void Visit(DoStatementNode& doStatementNode) override;
     void Visit(ForStatementNode& forStatementNode) override;
+    void Visit(SwitchStatementNode& switchStatementNode) override;
+    void Visit(CaseStatementNode& caseStatementNode) override;
+    void Visit(DefaultStatementNode& defaultStatementNode) override;
     void Visit(ConstructionStatementNode& constructionStatementNode) override;
     void Visit(EnumTypeNode& enumTypeNode) override;
     void Visit(ConstantNode& constantNode) override;

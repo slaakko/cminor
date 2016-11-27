@@ -300,6 +300,7 @@ public:
     virtual bool IsReopenedClassTemplateSpecialization() const { return false; }
     virtual bool HasBoxedType() const { return false; }
     virtual std::string GetBoxedTypeName() const { return std::string(); }
+    virtual bool IsSwitchConditionType() const { return false; }
 };
 
 class BasicTypeSymbol : public TypeSymbol
@@ -313,6 +314,7 @@ public:
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
     bool HasBoxedType() const override { return true; }
+    bool IsSwitchConditionType() const override { return true; }
 private:
     std::unique_ptr<BasicType> machineType;
 };
@@ -344,6 +346,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::voidTypeSymbol; }
     std::string TypeString() const override { return "void type"; }
     bool HasBoxedType() const override { return false; }
+    bool IsSwitchConditionType() const override { return false; }
 };
 
 class SByteTypeSymbol : public BasicTypeSymbol
@@ -438,6 +441,7 @@ public:
     std::string TypeString() const override { return "float type"; }
     ValueType GetValueType() const override { return ValueType::floatType; }
     std::string GetBoxedTypeName() const override { return "System.BoxedFloat"; }
+    bool IsSwitchConditionType() const override { return false; }
 };
 
 class DoubleTypeSymbol : public BasicTypeSymbol
@@ -448,6 +452,7 @@ public:
     std::string TypeString() const override { return "double type"; }
     ValueType GetValueType() const override { return ValueType::doubleType; }
     std::string GetBoxedTypeName() const override { return "System.BoxedDouble"; }
+    bool IsSwitchConditionType() const override { return false; }
 };
 
 class NullReferenceTypeSymbol : public BasicTypeSymbol
@@ -457,6 +462,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::nullReferenceTypeSymbol; }
     std::string TypeString() const override { return "null reference type"; }
     bool HasBoxedType() const override { return false; }
+    bool IsSwitchConditionType() const override { return false; }
 };
 
 class TypeParameterSymbol : public TypeSymbol

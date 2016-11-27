@@ -104,6 +104,80 @@ void BoundForStatement::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundSwitchStatement::BoundSwitchStatement(Assembly& assembly_, std::unique_ptr<BoundExpression>&& condition_) : BoundStatement(assembly_), condition(std::move(condition_))
+{
+}
+
+void BoundSwitchStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+void BoundSwitchStatement::AddCaseStatement(std::unique_ptr<BoundCaseStatement>&& caseStatement)
+{
+    caseStatement->SetParent(this);
+    caseStatements.push_back(std::move(caseStatement));
+}
+
+void BoundSwitchStatement::SetDefaultStatement(std::unique_ptr<BoundDefaultStatement>&& defaultStatement_)
+{
+    defaultStatement = std::move(defaultStatement_);
+    defaultStatement->SetParent(this);
+}
+
+BoundCaseStatement::BoundCaseStatement(Assembly& assembly_) : BoundStatement(assembly_), compoundStatement(assembly_)
+{
+    compoundStatement.SetParent(this);
+}
+
+void BoundCaseStatement::AddCaseValue(IntegralValue caseValue)
+{
+    caseValues.push_back(caseValue);
+}
+
+void BoundCaseStatement::AddStatement(std::unique_ptr<BoundStatement>&& statement)
+{
+    compoundStatement.AddStatement(std::move(statement));
+}
+
+void BoundCaseStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundDefaultStatement::BoundDefaultStatement(Assembly& assembly_) : BoundStatement(assembly_), compoundStatement(assembly_)
+{
+    compoundStatement.SetParent(this);
+}
+
+void BoundDefaultStatement::AddStatement(std::unique_ptr<BoundStatement>&& statement)
+{
+    compoundStatement.AddStatement(std::move(statement));
+}
+
+void BoundDefaultStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundGotoCaseStatement::BoundGotoCaseStatement(Assembly& assembly_, IntegralValue caseValue_) : BoundStatement(assembly_), caseValue(caseValue_)
+{
+}
+
+void BoundGotoCaseStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundGotoDefaultStatement::BoundGotoDefaultStatement(Assembly& assembly_) : BoundStatement(assembly_)
+{
+}
+
+void BoundGotoDefaultStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundBreakStatement::BoundBreakStatement(Assembly& assembly_) : BoundStatement(assembly_)
 {
 }

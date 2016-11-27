@@ -264,38 +264,40 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     rootInst.SetInst(0xC2, new InterfaceCallInst());
     rootInst.SetInst(0xC3, new EnterBlockInst());
     rootInst.SetInst(0xC4, new ExitBlockInst());
+    rootInst.SetInst(0xC5, new ContinuousSwitchInst());
+    rootInst.SetInst(0xC6, new BinarySearchSwitchInst());
 
     // stack manipulation:
     // -------------------
 
-    rootInst.SetInst(0xC5, new DupInst());
-    rootInst.SetInst(0xC6, new SwapInst());
-    rootInst.SetInst(0xC7, new RotateInst());
+    rootInst.SetInst(0xC7, new DupInst());
+    rootInst.SetInst(0xC8, new SwapInst());
+    rootInst.SetInst(0xC9, new RotateInst());
 
 
     // objects:
     // --------
 
-    rootInst.SetInst(0xC8, new LoadDefaultValueInst<ValueType::objectReference>("defo", "object"));
-    rootInst.SetInst(0xC9, new EqualObjectNullInst());
-    rootInst.SetInst(0xCA, new EqualNullObjectInst());
-    rootInst.SetInst(0xCB, new CreateObjectInst());
-    rootInst.SetInst(0xCC, new CopyObjectInst());
-    rootInst.SetInst(0xCD, new SetClassDataInst());
-    rootInst.SetInst(0xCE, new UpCastInst());
-    rootInst.SetInst(0xCF, new DownCastInst());
-    rootInst.SetInst(0xD0, new ThrowInst());
-    rootInst.SetInst(0xD1, new RethrowInst());
-    rootInst.SetInst(0xD2, new StaticInitInst());
-    rootInst.SetInst(0xD3, new DoneStaticInitInst());
-    rootInst.SetInst(0xD4, new LoadStaticFieldInst());
-    rootInst.SetInst(0xD5, new StoreStaticFieldInst());
+    rootInst.SetInst(0xCA, new LoadDefaultValueInst<ValueType::objectReference>("defo", "object"));
+    rootInst.SetInst(0xCB, new EqualObjectNullInst());
+    rootInst.SetInst(0xCC, new EqualNullObjectInst());
+    rootInst.SetInst(0xCD, new CreateObjectInst());
+    rootInst.SetInst(0xCE, new CopyObjectInst());
+    rootInst.SetInst(0xCF, new SetClassDataInst());
+    rootInst.SetInst(0xD0, new UpCastInst());
+    rootInst.SetInst(0xD1, new DownCastInst());
+    rootInst.SetInst(0xD2, new ThrowInst());
+    rootInst.SetInst(0xD3, new RethrowInst());
+    rootInst.SetInst(0xD4, new StaticInitInst());
+    rootInst.SetInst(0xD5, new DoneStaticInitInst());
+    rootInst.SetInst(0xD6, new LoadStaticFieldInst());
+    rootInst.SetInst(0xD7, new StoreStaticFieldInst());
 
     // strings:
     // --------
 
-    rootInst.SetInst(0xD6, new StrLitToStringInst());
-    rootInst.SetInst(0xD7, new LoadStringCharInst());
+    rootInst.SetInst(0xD8, new StrLitToStringInst());
+    rootInst.SetInst(0xD9, new LoadStringCharInst());
 
     // arrays:
     // -------
@@ -540,7 +542,9 @@ std::unique_ptr<Instruction> Machine::CreateInst(const std::string& instName) co
     if (it != instructionMap.cend())
     {
         Instruction* inst = it->second;
-        return std::unique_ptr<Instruction>(inst->Clone());
+        std::unique_ptr<Instruction> copy(inst->Clone());
+        copy->Clear();
+        return copy;
     }
     throw std::runtime_error("instruction '" + instName + "' not found");
 }

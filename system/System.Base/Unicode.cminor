@@ -10,6 +10,13 @@ namespace System.Unicode
         }
     }
 
+    public class DecodingException : Exception
+    {
+        public DecodingException(string message) : base(message)
+        {
+        }
+    }
+
     public class Utf8Encoder
     {
         public Utf8Encoder(Stream stream)
@@ -116,6 +123,169 @@ namespace System.Unicode
         private void Put(byte x)
         {
             stream.WriteByte(x);
+        }
+        private Stream stream;
+    }
+
+    public class Utf8Decoder
+    {
+        public Utf8Decoder(Stream stream)
+        {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("provided stream is null");
+            }
+            this.stream = stream;
+        }
+        public uint Decode()
+        {
+            int x = Get(true);
+            if (x == -1) 
+            {
+                return cast<uint>(-1);
+            }
+            byte b = cast<byte>(x);
+            if ((b & 0x80u) == 0u)
+            {
+                return cast<uint>(b);
+            }
+            else if ((b & 0xE0u) == 0xC0u)
+            {
+                uint result = 0u;
+                byte b1 = cast<byte>(Get(false));
+                if ((b1 & 0xC0u) != 0x80u)
+                {
+                    throw new DecodingException("could not decode: invalid byte sequence");
+                }
+                byte shift = 0u;
+                for (byte i = 0u; i < 6u; ++i)
+                {
+                    byte bit = b1 & 1u;
+                    b1 = b1 >> 1u;
+                    result = result | cast<uint>(bit) << shift;
+                    ++shift;
+                }
+                byte b0 = b;
+                for (byte i = 0u; i < 5u; ++i)
+                {
+                    byte bit = b0 & 1u;
+                    b0 = b0 >> 1u;
+                    result = result | cast<uint>(bit) << shift;
+                    ++shift;
+                }
+                return result;
+            }
+            else if ((b & 0xF0u) == 0xE0u)
+            {
+                uint result = 0u;
+                byte b1 = cast<byte>(Get(false));
+                byte b2 = cast<byte>(Get(false));
+                if ((b2 & 0xC0u) != 0x80u)
+                {
+                    throw new DecodingException("could not decode: invalid byte sequence");
+                }
+                byte shift = 0u;
+                for (byte i = 0u; i < 6u; ++i)
+                {
+                    byte bit = b2 & 1u;
+                    b2 = b2 >> 1u;
+                    result = result | cast<uint>(bit) << shift;
+                    ++shift;
+                }
+                if ((b1 & 0xC0u) != 0x80u)
+                {
+                    throw new DecodingException("could not decode: invalid byte sequence");
+                }
+                for (byte i = 0u; i < 6u; ++i)
+                {
+                    byte bit = b1 & 1u;
+                    b1 = b1 >> 1u;
+                    result = result | cast<uint>(bit) << shift;
+                    ++shift;
+                }
+                byte b0 = b;
+                for (byte i = 0u; i < 4u; ++i)
+                {
+                    byte bit = b0 & 1u;
+                    b0 = b0 >> 1u;
+                    result = result | cast<uint>(bit) << shift;
+                    ++shift;
+                }
+                return result;
+            }
+            else if ((b & 0xF8u) == 0xF0u)
+            {
+                uint result = 0u;
+                byte b1 = cast<byte>(Get(false));
+                byte b2 = cast<byte>(Get(false));
+                byte b3 = cast<byte>(Get(false));
+                if ((b3 & 0xC0u) != 0x80u)
+                {
+                    throw new DecodingException("could not decode: invalid byte sequence");
+                }
+                byte shift = 0u;
+                for (byte i = 0u; i < 6u; ++i)
+                {
+                    byte bit = b3 & 1u;
+                    b3 = b3 >> 1u;
+                    result = result | cast<uint>(bit) << shift;
+                    ++shift;
+                }
+                if ((b2 & 0xC0u) != 0x80u)
+                {
+                    throw new DecodingException("could not decode: invalid byte sequence");
+                }
+                for (byte i = 0u; i < 6u; ++i)
+                {
+                    byte bit = b2 & 1u;
+                    b2 = b2 >> 1u;
+                    result = result | cast<uint>(bit) << shift;
+                    ++shift;
+                }
+                if ((b1 & 0xC0u) != 0x80u)
+                {
+                    throw new DecodingException("could not decode: invalid byte sequence");
+                }
+                for (byte i = 0u; i < 6u; ++i)
+                {
+                    byte bit = b1 & 1u;
+                    b1 = b1 >> 1u;
+                    result = result | cast<uint>(bit) << shift;
+                    ++shift;
+                }
+                byte b0 = b;
+                for (byte i = 0u; i < 3u; ++i)
+                {
+                    byte bit = b0 & 1u;
+                    b0 = b0 >> 1u;
+                    result = result | cast<uint>(bit) << shift;
+                    ++shift;
+                }
+                return result;
+            }
+            else
+            {
+                throw new DecodingException("could not decode: invalid byte sequence");
+            }
+        }
+        private int Get(bool acceptEof)
+        {
+            int x = stream.ReadByte();
+            if (x == -1)
+            {
+                if (acceptEof)
+                {
+                    return -1;
+                }
+                else
+                {
+                    throw new DecodingException("could not decode: unexpected end of file");
+                }
+            }
+            else
+            {
+                return x;
+            }
         }
         private Stream stream;
     }

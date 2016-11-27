@@ -2,8 +2,12 @@ using System;
 
 void main()
 {
-    for (int i = 0; i < 100; ++i)
+    int state = 145;
+    switch (state)
     {
-        Console.WriteLine(i);
+        case 0: Console.WriteLine(0); break;
+        case 100: Console.WriteLine(100); break;
+        default: Console.WriteLine(state); break;
     }
+    Console.WriteLine("next");
 }

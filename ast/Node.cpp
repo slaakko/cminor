@@ -32,7 +32,8 @@ const char* nodeTypeStr[] =
     "baseInitializerNode", "thisInitializerNode", "labelNode", "thisNode", "baseNode", "templateIdNode", "templateParameterNode",
     "compoundStatementNode", "returnStatementNode", "ifStatementNode", "whileStatementNode", "doStatementNode", "forStatementNode", "breakStatementNode", "continueStatementNode",
     "constructionStatementNode", "assignmentStatementNode", "expressionStatementNode", "emptyStatementNode", "incrementStatementNode", "decrementStatementNode", "forEachStatementNode", 
-    "throwStatementNode", "tryStatementNode", "catchNode", "enumTypeNode", "enumConstantNode", "constantNode"
+    "switchStatementNode", "caseStatementNode", "defaultStatementNode", "gotoCaseStatementNode", "gotoDefaultStatementNode", "throwStatementNode", "tryStatementNode", "catchNode", 
+    "enumTypeNode", "enumConstantNode", "constantNode"
 };
 
 std::string NodeTypeStr(NodeType nodeType)

@@ -42,6 +42,7 @@ public:
     int NumInsts() const { return int(instructions.size()); }
     Instruction* GetInst(int index) const { return instructions[index].get(); }
     void AddInst(std::unique_ptr<Instruction>&& inst);
+    void SetInst(int32_t index, std::unique_ptr<Instruction>&& inst);
     void Dump(CodeFormatter& formatter);
     bool IsMain() const { return isMain; }
     void SetMain() { isMain = true; }

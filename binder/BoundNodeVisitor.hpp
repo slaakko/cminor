@@ -17,6 +17,11 @@ class BoundIfStatement;
 class BoundWhileStatement;
 class BoundDoStatement;
 class BoundForStatement;
+class BoundSwitchStatement;
+class BoundCaseStatement;
+class BoundDefaultStatement;
+class BoundGotoCaseStatement;
+class BoundGotoDefaultStatement;
 class BoundBreakStatement;
 class BoundContinueStatement;
 class BoundConstructionStatement;
@@ -55,6 +60,11 @@ public:
     virtual void Visit(BoundWhileStatement& boundWhileStatement) {}
     virtual void Visit(BoundDoStatement& boundDoStatement) {}
     virtual void Visit(BoundForStatement& boundForStatement) {}
+    virtual void Visit(BoundSwitchStatement& boundSwitchStatement) {}
+    virtual void Visit(BoundCaseStatement& boundCaseStatement) {}
+    virtual void Visit(BoundGotoCaseStatement& boundGotoCaseStatement) {}
+    virtual void Visit(BoundGotoDefaultStatement& boundGotoDefaultStatement) {}
+    virtual void Visit(BoundDefaultStatement& boundDefaultStatement) {}
     virtual void Visit(BoundBreakStatement& boundBreakStatement) {}
     virtual void Visit(BoundContinueStatement& boundContinueStatement) {}
     virtual void Visit(BoundConstructionStatement& boundConstructionStatement) {}
