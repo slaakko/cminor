@@ -120,6 +120,39 @@ void Function::Dump(CodeFormatter& formatter)
     formatter.WriteLine("}");
 }
 
+void Function::Dump(CodeFormatter& formatter, int32_t pc)
+{
+    if (pc == 0)
+    {
+        formatter.WriteLine(ToUtf8(callName.Value().AsStringLiteral()) + " [" + ToUtf8(friendlyName.Value().AsStringLiteral()) + "]");
+        formatter.WriteLine("{");
+        formatter.IncIndent();
+    }
+    else
+    {
+        formatter.IncIndent();
+    }
+    int32_t start = std::max(0, pc - 4);
+    int32_t end = std::min(NumInsts(), pc + 4);
+    for (int32_t i = start; i < end; ++i)
+    {
+        std::string pcInd = " ";
+        if (i == pc)
+        {
+            pcInd = "*";
+        }
+        Instruction* inst = instructions[i].get();
+        std::string instructionNumber = std::to_string(i);
+        while (instructionNumber.length() < 4)
+        {
+            instructionNumber.append(1, ' ');
+        }
+        formatter.Write(instructionNumber + pcInd + " ");
+        inst->Dump(formatter);
+        formatter.WriteLine();
+    }
+}
+
 std::unique_ptr<FunctionTable> FunctionTable::instance;
 
 void FunctionTable::Init()

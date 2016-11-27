@@ -3,17 +3,17 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_VM_FUNCTION_INCLUDED
-#define CMINOR_VM_FUNCTION_INCLUDED
+#ifndef CMINOR_VMLIB_VMFUNCTION_INCLUDED
+#define CMINOR_VMLIB_VMFUNCTION_INCLUDED
 #include <cminor/machine/Constant.hpp>
 
-namespace cminor { namespace vm {
+namespace cminor { namespace vmlib {
 
 using namespace cminor::machine;
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool);
 void DoneVmFunctions();
 
-} } // namespace cminor::vm
+} } // namespace cminor::vmlib
 
-#endif // CMINOR_VM_FUNCTION_INCLUDED
+#endif // CMINOR_VMLIB_VMFUNCTION_INCLUDED

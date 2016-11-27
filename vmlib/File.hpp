@@ -3,13 +3,13 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_VM_FILE_INCLUDED
-#define CMINOR_VM_FILE_INCLUDED
+#ifndef CMINOR_VMLIB_FILE_INCLUDED
+#define CMINOR_VMLIB_FILE_INCLUDED
 #include <string>
 #include <stdint.h>
 #include <stdexcept>
 
-namespace cminor { namespace vm {
+namespace cminor { namespace vmlib {
 
 class FileError : public std::runtime_error
 {
@@ -36,6 +36,7 @@ int32_t ReadFile(int32_t fileHandle, uint8_t* buffer, int32_t bufferSize);
 void FileInit();
 void FileDone();
 
-} } // namespace cminor::vm
+} } // namespace cminor::vmlib
 
-#endif // CMINOR_VM_FILE_INCLUDED
+#endif // CMINOR_VMLIB_FILE_INCLUDED
+

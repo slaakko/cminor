@@ -3,13 +3,13 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/vm/File.hpp>
+#include <cminor/vmlib/File.hpp>
 #include <cminor/machine/Error.hpp>
 #include <stdio.h>
 #include <unordered_map>
 #include <memory>
 
-namespace cminor { namespace vm {
+namespace cminor { namespace vmlib {
 
 FileError::FileError(const std::string& errorMessage) : std::runtime_error(errorMessage)
 {
@@ -19,9 +19,9 @@ std::string FileModeStr(FileMode mode)
 {
     switch (mode)
     {
-        case FileMode::append: return "append";
-        case FileMode::create: return "create";
-        case FileMode::open: return "open";
+    case FileMode::append: return "append";
+    case FileMode::create: return "create";
+    case FileMode::open: return "open";
     }
     return std::string();
 }
@@ -30,9 +30,9 @@ std::string FileAccessStr(FileAccess access)
 {
     switch (access)
     {
-        case FileAccess::read: return "read";
-        case FileAccess::readWrite: return "read/write";
-        case FileAccess::write: return "write";
+    case FileAccess::read: return "read";
+    case FileAccess::readWrite: return "read/write";
+    case FileAccess::write: return "write";
     }
     return std::string();
 }
@@ -271,4 +271,4 @@ void FileDone()
     FileTable::Done();
 }
 
-} } // namespace cminor::vm
+} } // namespace cminor::vmlib

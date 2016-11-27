@@ -3,14 +3,14 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/vm/VmFunction.hpp>
+#include <cminor/vmlib/VmFunction.hpp>
+#include <cminor/vmlib/File.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Type.hpp>
-#include <cminor/vm/File.hpp>
 #include <boost/filesystem.hpp>
 
-namespace cminor { namespace vm {
+namespace cminor { namespace vmlib {
 
 class VmSystemObjectToString : public VmFunction
 {
@@ -166,7 +166,7 @@ public:
     void Execute(Frame& frame) override;
 };
 
-VmSystemIOOpenFile::VmSystemIOOpenFile(ConstantPool& constantPool) 
+VmSystemIOOpenFile::VmSystemIOOpenFile(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.OpenFile"));
     SetName(name);
@@ -435,7 +435,7 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOFileExists(constantPool)));
 }
 
-void InitVmFunctions(ConstantPool& vmFunctionNamePool) 
+void InitVmFunctions(ConstantPool& vmFunctionNamePool)
 {
     VmFunctionPool::Init();
     VmFunctionPool::Instance().CreateVmFunctions(vmFunctionNamePool);
@@ -446,4 +446,4 @@ void DoneVmFunctions()
     VmFunctionPool::Done();
 }
 
-} } // namespace cminor::vm
+} } // namespace cminor::vmlib

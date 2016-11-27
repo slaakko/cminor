@@ -514,6 +514,18 @@ Machine::~Machine()
     }
 }
 
+void Machine::Start()
+{
+    threads.clear();
+    Function* mainFun = FunctionTable::Instance().GetMain();
+    if (!mainFun)
+    {
+        throw std::runtime_error("no main function set");
+    }
+    //RunGarbageCollector();
+    threads.push_back(std::unique_ptr<Thread>(new Thread(*this, *mainFun)));
+}
+
 void Machine::Run()
 {
     Function* mainFun = FunctionTable::Instance().GetMain();

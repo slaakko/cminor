@@ -48,6 +48,7 @@ public:
     void AddInst(std::unique_ptr<Instruction>&& inst);
     void SetInst(int32_t index, std::unique_ptr<Instruction>&& inst);
     void Dump(CodeFormatter& formatter);
+    void Dump(CodeFormatter& formatter, int32_t pc);
     bool IsMain() const { return isMain; }
     void SetMain() { isMain = true; }
     void SetEmitter(Emitter* emitter_) { emitter = emitter_; }

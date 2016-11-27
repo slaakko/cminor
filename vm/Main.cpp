@@ -14,8 +14,8 @@
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/ast/Project.hpp>
-#include <cminor/vm/VmFunction.hpp>
-#include <cminor/vm/File.hpp>
+#include <cminor/vmlib/VmFunction.hpp>
+#include <cminor/vmlib/File.hpp>
 #include <Cm.Util/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
@@ -25,7 +25,7 @@
 using namespace cminor::machine;
 using namespace cminor::symbols;
 using namespace cminor::ast;
-using namespace cminor::vm;
+using namespace cminor::vmlib;
 using namespace Cm::Util;
 
 struct InitDone

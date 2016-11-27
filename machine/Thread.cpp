@@ -61,6 +61,78 @@ void Thread::Run()
     pausedCond.notify_one();
 }
 
+void Thread::RunDebug()
+{
+    Assert(!frames.empty(), "thread got no frame");
+    while (true)
+    {
+        CheckPause();
+        Frame* frame = &frames.back();
+        std::pair<int32_t, int32_t> point = std::make_pair(frame->Id(), frame->PC());
+        if (breakPoints.find(point) != breakPoints.cend())
+        {
+            return;
+        }
+        Instruction* inst = frame->GetNextInst();
+        while (!inst)
+        {
+            Assert(!frames.empty(), "thread got no frame");
+            frames.pop_back();
+            if (!frames.empty())
+            {
+                frame = &frames.back();
+                std::pair<int32_t, int32_t> point = std::make_pair(frame->Id(), frame->PC());
+                if (breakPoints.find(point) != breakPoints.cend())
+                {
+                    return;
+                }
+                inst = frame->GetNextInst();
+            }
+            else
+            {
+                return;
+            }
+        }
+        inst->Execute(*frame);
+        IncInstructionCount();
+    }
+}
+
+void Thread::Step()
+{
+    Frame* frame = &frames.back();
+    Instruction* inst = frame->GetNextInst();
+    while (!inst)
+    {
+        if (frames.empty())
+        {
+            return;
+        }
+        frames.pop_back();
+        if (!frames.empty())
+        {
+            frame = &frames.back();
+            inst = frame->GetNextInst();
+        }
+        else
+        {
+            return;
+        }
+    }
+    inst->Execute(*frame);
+}
+
+void Thread::Next()
+{
+    Frame* frame = &frames.back();
+    int32_t frameId = frame->Id();
+    int32_t nextPc = frame->PC() + 1;
+    std::pair<int32_t, int32_t> bp = std::make_pair(frameId, nextPc);
+    breakPoints.insert(bp);
+    RunDebug();
+    breakPoints.erase(bp);
+}
+
 void Thread::PauseUntilGarbageCollected()
 {
     {
