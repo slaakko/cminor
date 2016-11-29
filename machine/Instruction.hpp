@@ -47,6 +47,7 @@ public:
     virtual bool IsRoot() const { return false; }
     virtual void GetOpCodes(std::string& opCodes);
     virtual void SetTarget(int32_t target);
+    virtual bool IsJumpingInst() const { return false; }
 private:
     uint8_t opCode;
     std::string name;
@@ -542,6 +543,7 @@ public:
     void SetTarget(int32_t target) override;
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
+    bool IsJumpingInst() const override { return true; }
 };
 
 class JumpTrueInst : public IndexParamInst
@@ -552,6 +554,7 @@ public:
     void SetTarget(int32_t target) override;
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
+    bool IsJumpingInst() const override { return true; }
 };
 
 class JumpFalseInst : public IndexParamInst
@@ -562,6 +565,7 @@ public:
     void SetTarget(int32_t target) override;
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
+    bool IsJumpingInst() const override { return true; }
 };
 
 class EnterBlockInst : public Instruction
@@ -597,6 +601,7 @@ public:
     void SetDefaultTarget(int32_t defaultTarget_) { defaultTarget = defaultTarget_; }
     void AddNextTargetIndex(int nextTargetIndex);
     void SetTarget(int32_t target) override;
+    bool IsJumpingInst() const override { return true; }
 private:
     IntegralValue begin;
     IntegralValue end;
@@ -626,6 +631,7 @@ public:
     void SetTargets(const std::vector<std::pair<IntegralValue, int32_t>>& targets_);
     void SetTarget(int32_t target) override;
     void SetDefaultTarget(int32_t defaultTarget_) { defaultTarget = defaultTarget_; }
+    bool IsJumpingInst() const override { return true; }
 private:
     std::vector<std::pair<IntegralValue, int32_t>> targets;
     int32_t defaultTarget;
@@ -814,6 +820,35 @@ public:
     RethrowInst();
     Instruction* Clone() const override { return new RethrowInst(*this); }
     void Execute(Frame& frame) override;
+};
+
+class EndCatchInst : public Instruction
+{
+public:
+    EndCatchInst();
+    Instruction* Clone() const override { return new EndCatchInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class EndFinallyInst : public Instruction
+{
+public:
+    EndFinallyInst();
+    Instruction* Clone() const override { return new EndFinallyInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class ExceptionBlock;
+
+class NextInst : public Instruction
+{
+public:
+    NextInst();
+    Instruction* Clone() const override { return new NextInst(*this); }
+    void SetTarget(int32_t target) override;
+    void SetExceptionBlock(ExceptionBlock* exceptionBlock_) { exceptionBlock = exceptionBlock_; }
+private:
+    ExceptionBlock* exceptionBlock;
 };
 
 class StaticInitInst : public TypeInstruction

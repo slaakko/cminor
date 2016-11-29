@@ -47,6 +47,24 @@ public:
     void Execute(Shell& shell) override;
 };
 
+class LocalCommand : public Command
+{
+public:
+    LocalCommand(int index_);
+    void Execute(Shell& shell) override;
+private:
+    int index;
+};
+
+class StackCommand : public Command
+{
+public:
+    StackCommand(int index_);
+    void Execute(Shell& shell) override;
+private:
+    int index;
+};
+
 } } // namespace cminor::db
 
 #endif // CMINOR_DB_COMMAND_INCLUDED

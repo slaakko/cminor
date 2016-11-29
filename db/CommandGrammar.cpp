@@ -103,6 +103,14 @@ public:
         a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A4Action));
         Cm::Parsing::ActionParser* a5ActionParser = GetAction("A5");
         a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A5Action));
+        Cm::Parsing::ActionParser* a6ActionParser = GetAction("A6");
+        a6ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A6Action));
+        Cm::Parsing::ActionParser* a7ActionParser = GetAction("A7");
+        a7ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A7Action));
+        Cm::Parsing::NonterminalParser* lnNonterminalParser = GetNonterminal("ln");
+        lnNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<CommandRule>(this, &CommandRule::Postln));
+        Cm::Parsing::NonterminalParser* snNonterminalParser = GetNonterminal("sn");
+        snNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<CommandRule>(this, &CommandRule::Postsn));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -128,11 +136,39 @@ public:
     {
         context.value = new NextCommand;
     }
+    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new LocalCommand(context.fromln);
+    }
+    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new StackCommand(context.fromsn);
+    }
+    void Postln(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromln_value = std::move(stack.top());
+            context.fromln = *static_cast<Cm::Parsing::ValueObject<int>*>(fromln_value.get());
+            stack.pop();
+        }
+    }
+    void Postsn(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromsn_value = std::move(stack.top());
+            context.fromsn = *static_cast<Cm::Parsing::ValueObject<int>*>(fromsn_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): value() {}
+        Context(): value(), fromln(), fromsn() {}
         Command* value;
+        int fromln;
+        int fromsn;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -140,38 +176,64 @@ private:
 
 void CommandGrammar::GetReferencedGrammars()
 {
+    Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    if (!grammar0)
+    {
+        grammar0 = Cm::Parsing::stdlib::Create(pd);
+    }
+    AddGrammarReference(grammar0);
 }
 
 void CommandGrammar::CreateRules()
 {
+    AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
     AddRule(new CommandRule("Command", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(
                 new Cm::Parsing::AlternativeParser(
                     new Cm::Parsing::AlternativeParser(
                         new Cm::Parsing::AlternativeParser(
-                            new Cm::Parsing::ActionParser("A0",
-                                new Cm::Parsing::StringParser("start")),
-                            new Cm::Parsing::ActionParser("A1",
-                                new Cm::Parsing::AlternativeParser(
-                                    new Cm::Parsing::StringParser("help"),
-                                    new Cm::Parsing::StringParser("h")))),
-                        new Cm::Parsing::ActionParser("A2",
                             new Cm::Parsing::AlternativeParser(
-                                new Cm::Parsing::StringParser("exit"),
-                                new Cm::Parsing::StringParser("e")))),
-                    new Cm::Parsing::ActionParser("A3",
+                                new Cm::Parsing::AlternativeParser(
+                                    new Cm::Parsing::ActionParser("A0",
+                                        new Cm::Parsing::StringParser("start")),
+                                    new Cm::Parsing::ActionParser("A1",
+                                        new Cm::Parsing::AlternativeParser(
+                                            new Cm::Parsing::StringParser("help"),
+                                            new Cm::Parsing::StringParser("h")))),
+                                new Cm::Parsing::ActionParser("A2",
+                                    new Cm::Parsing::AlternativeParser(
+                                        new Cm::Parsing::StringParser("exit"),
+                                        new Cm::Parsing::StringParser("e")))),
+                            new Cm::Parsing::ActionParser("A3",
+                                new Cm::Parsing::AlternativeParser(
+                                    new Cm::Parsing::StringParser("quit"),
+                                    new Cm::Parsing::StringParser("q")))),
+                        new Cm::Parsing::ActionParser("A4",
+                            new Cm::Parsing::AlternativeParser(
+                                new Cm::Parsing::StringParser("step"),
+                                new Cm::Parsing::StringParser("s")))),
+                    new Cm::Parsing::ActionParser("A5",
                         new Cm::Parsing::AlternativeParser(
-                            new Cm::Parsing::StringParser("quit"),
-                            new Cm::Parsing::StringParser("q")))),
-                new Cm::Parsing::ActionParser("A4",
+                            new Cm::Parsing::StringParser("next"),
+                            new Cm::Parsing::StringParser("n")))),
+                new Cm::Parsing::ActionParser("A6",
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::AlternativeParser(
+                            new Cm::Parsing::StringParser("local"),
+                            new Cm::Parsing::StringParser("l")),
+                        new Cm::Parsing::NonterminalParser("ln", "int", 0)))),
+            new Cm::Parsing::ActionParser("A7",
+                new Cm::Parsing::SequenceParser(
                     new Cm::Parsing::AlternativeParser(
-                        new Cm::Parsing::StringParser("step"),
-                        new Cm::Parsing::StringParser("s")))),
-            new Cm::Parsing::ActionParser("A5",
-                new Cm::Parsing::AlternativeParser(
-                    new Cm::Parsing::StringParser("next"),
-                    new Cm::Parsing::StringParser("n"))))));
+                        new Cm::Parsing::StringParser("stack"),
+                        new Cm::Parsing::StringParser("k")),
+                    new Cm::Parsing::NonterminalParser("sn", "int", 0))))));
+    AddRule(new Cm::Parsing::Rule("Spaces", GetScope(),
+        new Cm::Parsing::PositiveParser(
+            new Cm::Parsing::CharSetParser(" \t"))));
+    SetSkipRuleName("Spaces");
 }
 
 } } // namespace cminor.db

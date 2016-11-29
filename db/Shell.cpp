@@ -65,6 +65,64 @@ void Shell::Next()
     machine.MainThread().Next();
 }
 
+void Shell::Local(int index)
+{
+    Frame& frame = machine.MainThread().Frames().back();
+    if (index < 0)
+    {
+        throw std::runtime_error("invalid local index");
+    }
+    else if (index >= int32_t(frame.Fun().NumLocals()))
+    {
+        throw std::runtime_error("function has only " + std::to_string(frame.Fun().NumLocals()) + " locals");
+    }
+    IntegralValue value = frame.Local(index).GetValue();
+    Print(value);
+}
+
+void Shell::Stack(int index)
+{
+    Frame& frame = machine.MainThread().Frames().back();
+    int32_t n = int32_t(frame.OpStack().Values().size());
+    if (index < 0)
+    {
+        throw std::runtime_error("invalid operand index");
+    }
+    else if (index >= n)
+    {
+        throw std::runtime_error("stack has only " + std::to_string(n) + " operands");
+    }
+    IntegralValue value = frame.OpStack().GetValue(index + 1);
+    Print(value);
+}
+
+void Shell::Print(IntegralValue value)
+{
+    switch (value.GetType())
+    {
+        case ValueType::stringLiteral:
+        {
+            std::cout << "string literal \"" + ToUtf8(value.AsStringLiteral()) + "\"" << std::endl;
+            break;
+        }
+        case ValueType::boolType:
+        {
+            std::string s = "true";
+            if (!value.AsBool())
+            {
+                s = "false";
+            }
+            std::cout << ValueTypeStr(value.GetType()) << " " << s << std::endl;
+            break;
+        }
+        default:
+        {
+            std::cout << ValueTypeStr(value.GetType()) << " " << value.AsULong() << std::endl;
+            break;
+        }
+    }
+}
+
 void Shell::Exit()
 {
     exit = true;

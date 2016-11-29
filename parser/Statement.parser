@@ -205,7 +205,7 @@ namespace cminor.parser
             ;
 
         Finally(ParsingContext* ctx) : CompoundStatementNode*
-            ::= (keyword("finally") CompoundStatement(ctx)){ value = new CompoundStatementNode(span); }
+            ::= (keyword("finally") CompoundStatement(ctx)){ value = CompoundStatement; }
             ;
     }
 }

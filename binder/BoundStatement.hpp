@@ -225,6 +225,39 @@ private:
     std::unique_ptr<BoundExpression> expression;
 };
 
+class BoundCatchStatement;
+
+class BoundTryStatement : public BoundStatement
+{
+public:
+    BoundTryStatement(Assembly& assembly_);
+    void SetTryBlock(std::unique_ptr<BoundCompoundStatement>&& tryBlock_);
+    BoundCompoundStatement* TryBlock() const { return tryBlock.get(); }
+    void AddCatchStatement(std::unique_ptr<BoundCatchStatement>&& catchStatement);
+    const std::vector<std::unique_ptr<BoundCatchStatement>>& Catches() const { return catches; }
+    void SetFinallyBlock(std::unique_ptr<BoundCompoundStatement>&& finallyBlock_);
+    BoundCompoundStatement* FinallyBlock() const { return finallyBlock.get(); }
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    std::unique_ptr<BoundCompoundStatement> tryBlock;
+    std::vector<std::unique_ptr<BoundCatchStatement>> catches;
+    std::unique_ptr<BoundCompoundStatement> finallyBlock;
+};
+
+class BoundCatchStatement : public BoundStatement
+{
+public:
+    BoundCatchStatement(Assembly& assembly_);
+    void SetCatchBlock(std::unique_ptr<BoundCompoundStatement>&& catchBlock_);
+    BoundCompoundStatement* CatchBlock() const { return catchBlock.get(); }
+    void Accept(BoundNodeVisitor& visitor) override;
+    void SetExceptionVar(LocalVariableSymbol* exceptionVar_) { exceptionVar = exceptionVar_; }
+    LocalVariableSymbol* ExceptionVar() const { return exceptionVar; }
+private:
+    std::unique_ptr<BoundCompoundStatement> catchBlock;
+    LocalVariableSymbol* exceptionVar;
+};
+
 class BoundStaticInitStatement : public BoundStatement
 {
 public:

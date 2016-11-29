@@ -41,9 +41,10 @@ public:
     void EndInterface();
     void AddParameter(ParameterNode& parameterNode);
     void AddTemplateParameter(TemplateParameterNode& templateParameterNode);
-    void BeginDeclarationBlock(StatementNode& statementNode);
+    void BeginDeclarationBlock(Node& node);
     void EndDeclarationBlock();
     void AddLocalVariable(ConstructionStatementNode& constructionStatementNode);
+    void AddLocalVariable(IdentifierNode& idNode);
     void AddMemberVariable(MemberVariableNode& memberVariableNode);
     void BeginProperty(PropertyNode& propertyNode);
     void EndProperty();

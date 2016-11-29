@@ -1388,7 +1388,7 @@ void ThrowInst::Execute(Frame& frame)
     IntegralValue exceptionValue = frame.OpStack().Pop();
     Assert(exceptionValue.GetType() == ValueType::objectReference, "object reference expected");
     ObjectReference exception(exceptionValue.Value());
-    throw std::runtime_error("exception"); // todo
+    frame.GetThread().HandleException(exception);
 }
 
 RethrowInst::RethrowInst() : Instruction("rethrow")
@@ -1398,6 +1398,33 @@ RethrowInst::RethrowInst() : Instruction("rethrow")
 void RethrowInst::Execute(Frame& frame)
 {
     throw std::runtime_error("exception"); // todo
+}
+
+EndCatchInst::EndCatchInst() : Instruction("endcatch")
+{
+}
+
+void EndCatchInst::Execute(Frame& frame)
+{
+    frame.GetThread().EndCatch();
+}
+
+EndFinallyInst::EndFinallyInst() : Instruction("endfinally")
+{
+}
+
+void EndFinallyInst::Execute(Frame& frame)
+{
+    frame.GetThread().EndFinally();
+}
+
+NextInst::NextInst() : Instruction("next"), exceptionBlock(nullptr)
+{
+}
+
+void NextInst::SetTarget(int32_t target)
+{
+    exceptionBlock->SetNextTarget(target);
 }
 
 StaticInitInst::StaticInitInst() : TypeInstruction("staticinit")

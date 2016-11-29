@@ -9,6 +9,9 @@ namespace cminor.db
 {
     grammar CommandGrammar
     {
+        using stdlib.int;
+        skip Spaces;
+
         Command : Command*
             ::= ("start"){ value = new StartCommand(); }
             |   ("help" | "h"){ value = new HelpCommand(); }
@@ -16,6 +19,12 @@ namespace cminor.db
             |   ("quit" | "q"){ value = new ExitCommand(); }
             |   ("step" | "s"){ value = new StepCommand(); }
             |   ("next" | "n"){ value = new NextCommand(); }
+            |   (("local" | "l") int:ln){ value = new LocalCommand(ln); }
+            |   (("stack" | "k") int:sn){ value = new StackCommand(sn); }
+            ;
+
+        Spaces
+            ::= [ \t]+
             ;
     }
 }

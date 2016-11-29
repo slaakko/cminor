@@ -537,6 +537,7 @@ void Link(const std::vector<CallInst*>& callInstructions, const std::vector<Type
         classType->LinkImts();
     }
     AssignClassTypeIds(classTypes);
+    FunctionTable::Instance().ResolveExceptionVarTypes();
 }
 
 void AssemblyTable::Init()

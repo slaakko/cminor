@@ -1,14 +1,22 @@
 using System;
 
-bool Foo()
+public void foo()
 {
-    bool left = true;
-    bool right = true;
-    return left && right;
+    throw new Exception("foo");
 }
 
 void main()
 {
-    bool x = Foo();
-    Console.WriteLine(x);
+    try
+    {
+        foo();
+    }    
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+    }
+    finally
+    {
+        Console.WriteLine("finally");
+    }
 }

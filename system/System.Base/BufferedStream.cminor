@@ -98,7 +98,11 @@ namespace System.IO
                 end = 0;
             }
         }
-        public void FillBuf()
+        public Stream BaseStream
+        {
+            get { return stream; }
+        }
+        private void FillBuf()
         {
             bytesAvailable = stream.Read(buf);
             pos = 0;

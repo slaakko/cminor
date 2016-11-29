@@ -245,6 +245,48 @@ void BoundThrowStatement::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundTryStatement::BoundTryStatement(Assembly& assembly_) : BoundStatement(assembly_)
+{
+}
+
+void BoundTryStatement::SetTryBlock(std::unique_ptr<BoundCompoundStatement>&& tryBlock_)
+{
+    tryBlock = std::move(tryBlock_);
+    tryBlock->SetParent(this);
+}
+
+void BoundTryStatement::AddCatchStatement(std::unique_ptr<BoundCatchStatement>&& catchStatement)
+{
+    catchStatement->SetParent(this);
+    catches.push_back(std::move(catchStatement));
+}
+
+void BoundTryStatement::SetFinallyBlock(std::unique_ptr<BoundCompoundStatement>&& finallyBlock_)
+{
+    finallyBlock = std::move(finallyBlock_);
+    finallyBlock->SetParent(this);
+}
+
+void BoundTryStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundCatchStatement::BoundCatchStatement(Assembly& assembly_) : BoundStatement(assembly_), exceptionVar(nullptr)
+{
+}
+
+void BoundCatchStatement::SetCatchBlock(std::unique_ptr<BoundCompoundStatement>&& catchBlock_)
+{
+    catchBlock = std::move(catchBlock_);
+    catchBlock->SetParent(this);
+}
+
+void BoundCatchStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 BoundStaticInitStatement::BoundStaticInitStatement(Assembly& assembly_, Constant classNameConstant_) : BoundStatement(assembly_), classNameConstant(classNameConstant_)
 {
 }

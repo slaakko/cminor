@@ -20,6 +20,9 @@ public:
     void Exit();
     void Step();
     void Next();
+    void Local(int index);
+    void Stack(int index);
+    void Print(IntegralValue value);
 private:
     Machine& machine;
     bool exit;

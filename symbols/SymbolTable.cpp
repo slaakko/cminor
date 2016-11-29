@@ -307,18 +307,18 @@ void SymbolTable::AddTemplateParameter(TemplateParameterNode& templateParameterN
     MapNode(templateParameterNode, typeParameter);
 }
 
-void SymbolTable::BeginDeclarationBlock(StatementNode& statementNode)
+void SymbolTable::BeginDeclarationBlock(Node& node)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
     utf32_string name = U"@locals" + ToUtf32(std::to_string(declarationBlockId++));
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
-    DeclarationBlock* declarationBlock = new DeclarationBlock(statementNode.GetSpan(), nameConstant);
+    DeclarationBlock* declarationBlock = new DeclarationBlock(node.GetSpan(), nameConstant);
     declarationBlock->SetAssembly(assembly);
     ContainerScope* declarationBlockScope = declarationBlock->GetContainerScope();
     ContainerScope* containerScope = container->GetContainerScope();
     declarationBlockScope->SetParent(containerScope);
     container->AddSymbol(std::unique_ptr<Symbol>(declarationBlock));
-    MapNode(statementNode, declarationBlock);
+    MapNode(node, declarationBlock);
     BeginContainer(declarationBlock);
 }
 
@@ -336,6 +336,17 @@ void SymbolTable::AddLocalVariable(ConstructionStatementNode& constructionStatem
     localVariableSymbol->SetAssembly(assembly);
     container->AddSymbol(std::unique_ptr<Symbol>(localVariableSymbol));
     MapNode(constructionStatementNode, localVariableSymbol);
+}
+
+void SymbolTable::AddLocalVariable(IdentifierNode& idNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(idNode.Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    LocalVariableSymbol* localVariableSymbol = new LocalVariableSymbol(idNode.GetSpan(), nameConstant);
+    localVariableSymbol->SetAssembly(assembly);
+    container->AddSymbol(std::unique_ptr<Symbol>(localVariableSymbol));
+    MapNode(idNode, localVariableSymbol);
 }
 
 void SymbolTable::AddMemberVariable(MemberVariableNode& memberVariableNode)

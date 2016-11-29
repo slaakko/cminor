@@ -794,4 +794,49 @@ void TypeBinderVisitor::Visit(ConstructionStatementNode& constructionStatementNo
     localVariableSymbol->SetType(type);
 }
 
+void TypeBinderVisitor::Visit(TryStatementNode& tryStatementNode)
+{
+    tryStatementNode.TryBlock()->Accept(*this);
+    int n = tryStatementNode.Catches().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        CatchNode* catchNode = tryStatementNode.Catches()[i];
+        catchNode->Accept(*this);
+    }
+    if (tryStatementNode.FinallyBlock())
+    {
+        tryStatementNode.FinallyBlock()->Accept(*this);
+    }
+}
+
+void TypeBinderVisitor::Visit(CatchNode& catchNode)
+{
+    ContainerScope* prevContainerScope = containerScope;
+    containerScope = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(catchNode)->GetContainerScope();
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*catchNode.Id());
+    LocalVariableSymbol* exceptionVar = dynamic_cast<LocalVariableSymbol*>(symbol);
+    Assert(exceptionVar, "local variable symbol expected");
+    TypeSymbol* exceptionVarType = ResolveType(boundCompileUnit, containerScope, catchNode.TypeExpr());
+    if (ClassTypeSymbol* exceptionVarClassType = dynamic_cast<ClassTypeSymbol*>(exceptionVarType))
+    {
+        TypeSymbol* systemExceptionType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Exception");
+        ClassTypeSymbol* systemExceptionClassType = dynamic_cast<ClassTypeSymbol*>(systemExceptionType);
+        Assert(systemExceptionClassType, "class type symbol expected");
+        if (exceptionVarClassType == systemExceptionClassType || exceptionVarClassType->HasBaseClass(systemExceptionClassType))
+        {
+            exceptionVar->SetType(exceptionVarClassType);
+        }
+        else
+        {
+            throw Exception("exception variable must of class type equal to System.Exception class or derived from it", catchNode.TypeExpr()->GetSpan());
+        }
+    }
+    else
+    {
+        throw Exception("exception variable must of class type equal to System.Exception class or derived from it", catchNode.TypeExpr()->GetSpan());
+    }
+    catchNode.CatchBlock()->Accept(*this);
+    containerScope = prevContainerScope;
+}
+
 } } // namespace cminor::binder

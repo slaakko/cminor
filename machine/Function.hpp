@@ -27,6 +27,70 @@ public:
     virtual void BackpatchConDis(int32_t target) = 0;
 };
 
+class PCRange
+{
+public:
+    PCRange();
+    void SetStart(int32_t start_) { start = start_; }
+    void SetEnd(int32_t end_) { end = end_; }
+    bool InRange(int32_t pc) const { return pc >= start && pc <= end; }
+    void Write(Writer& writer);
+    void Read(Reader& reader);
+private:
+    int32_t start;
+    int32_t end;
+};
+
+class CatchBlock
+{
+public:
+    CatchBlock();
+    void Write(Writer& writer);
+    void Read(Reader& reader);
+    void SetExceptionVarClassTypeFullName(Constant exceptionVarClassTypeFullName_) { exceptionVarClassTypeFullName = exceptionVarClassTypeFullName_; }
+    ObjectType* GetExceptionVarType() const { return exceptionVarType; }
+    void ResolveExceptionVarType();
+    void SetExceptionVarIndex(uint32_t exceptionVarIndex_) { exceptionVarIndex = exceptionVarIndex_; }
+    uint32_t GetExceptionVarIndex() const { return exceptionVarIndex; }
+    void SetCatchBlockStart(int32_t catchBlockStart_) { catchBlockStart = catchBlockStart_; }
+    int32_t CatchBlockStart() const { return catchBlockStart; }
+private:
+    Constant exceptionVarClassTypeFullName;
+    ObjectType* exceptionVarType;
+    uint32_t exceptionVarIndex;
+    int32_t catchBlockStart;
+};
+
+class ExceptionBlock
+{
+public:
+    ExceptionBlock(int id_);
+    int Id() const { return id; }
+    bool HasParent() const { return parentId != -1; }
+    void SetParentId(int parentId_) { parentId = parentId_; }
+    int ParentId() const { return parentId; }
+    void Write(Writer& writer);
+    void Read(Reader& reader);
+    bool Match(int32_t pc) const;
+    void AddPCRange(const PCRange& pcRange);
+    PCRange& GetLastPCRange() { Assert(!pcRanges.empty(), "pc ranges empty"); return pcRanges.back(); }
+    void AddCatchBlock(std::unique_ptr<CatchBlock>&& catchBlock);
+    const std::vector<std::unique_ptr<CatchBlock>>& CatchBlocks() const { return catchBlocks; }
+    void ResolveExceptionVarTypes();
+    void SetFinallyStart(int32_t finallyStart_) { finallyStart = finallyStart_; }
+    bool HasFinally() const { return finallyStart != -1; }
+    int32_t FinallyStart() const { return finallyStart; }
+    void SetNextTarget(int32_t nextTarget_) { nextTarget = nextTarget_; }
+    int32_t NextTarget() const { return nextTarget; }
+private:
+    int id;
+    int parentId;
+    std::vector<PCRange> pcRanges;
+    std::vector<std::unique_ptr<CatchBlock>> catchBlocks;
+    int32_t finallyStart;
+    int32_t nextTarget;
+};
+
 class Function
 {
 public:
@@ -53,6 +117,11 @@ public:
     void SetMain() { isMain = true; }
     void SetEmitter(Emitter* emitter_) { emitter = emitter_; }
     Emitter* GetEmitter() const { return emitter; }
+    int GetNextExeptionBlockId() const { return int(exceptionBlocks.size()); }
+    void AddExceptionBlock(std::unique_ptr<ExceptionBlock>&& exceptionBlock);
+    ExceptionBlock* GetExceptionBlock(int id) const;
+    ExceptionBlock* FindExceptionBlock(int32_t pc) const;
+    void ResolveExceptionVarTypes();
 private:
     Constant callName;
     Constant friendlyName;
@@ -62,6 +131,7 @@ private:
     uint32_t numLocals;
     uint32_t numParameters;
     bool isMain;
+    std::vector<std::unique_ptr<ExceptionBlock>> exceptionBlocks;
     Emitter* emitter;
 };
 
@@ -75,6 +145,7 @@ public:
     void AddFunction(Function* fun);
     Function* GetFunction(StringPtr functionCallName) const;
     Function* GetMain() const { return main; }
+    void ResolveExceptionVarTypes();
 private:
     static std::unique_ptr<FunctionTable> instance;
     std::unordered_map<StringPtr, Function*, StringPtrHash> functionMap;

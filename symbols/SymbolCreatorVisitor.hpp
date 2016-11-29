@@ -42,6 +42,8 @@ public:
     void Visit(CaseStatementNode& caseStatementNode) override;
     void Visit(DefaultStatementNode& defaultStatementNode) override;
     void Visit(ConstructionStatementNode& constructionStatementNode) override;
+    void Visit(TryStatementNode& tryStatementNode) override;
+    void Visit(CatchNode& catchNode) override;
     void Visit(EnumTypeNode& enumTypeNode) override;
     void Visit(ConstantNode& constantNode) override;
 private:

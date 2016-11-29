@@ -39,6 +39,8 @@ public:
     void Visit(BoundExpressionStatement& boundExpressionStatement) override;
     void Visit(BoundEmptyStatement& boundEmptyStatement) override;
     void Visit(BoundThrowStatement& boundThrowStatement) override;
+    void Visit(BoundTryStatement& boundTryStatement) override;
+    void Visit(BoundCatchStatement& boundCatchStatement) override;
     void Visit(BoundStaticInitStatement& boundStaticInitStatement) override;
     void Visit(BoundDoneStaticInitStatement& boundDoneStaticInitStatement) override;
     void Visit(BoundLiteral& boundLiteral) override;
@@ -76,23 +78,26 @@ private:
     BoundStatement* breakTarget;
     BoundStatement* continueTarget;
     std::vector<std::pair<IntegralValue, int32_t>>* caseTargets;
-    int32_t defaultTarget;
     std::unordered_map<IntegralValue, Instruction*, IntegralValueHash>* gotoCaseJumps;
     std::vector<Instruction*>* gotoDefaultJumps;
+    int32_t defaultTarget;
     bool genJumpingBoolCode;
     bool createPCRange;
     bool setPCRangeEnd;
+    ExceptionBlock* currentExceptionBlock;
+    std::vector<std::unique_ptr<Instruction>> nextInsts;
     void GenJumpingBoolCode();
     void Backpatch(std::vector<Instruction*>& set, int32_t target);
     void Merge(std::vector<Instruction*>& fromSet, std::vector<Instruction*>& toSet);
     void ExitBlocks(BoundCompoundStatement* targetBlock);
+    void AddNextInst(std::unique_ptr<Instruction>&& nextInst);
 };
 
 EmitterVisitor::EmitterVisitor(Machine& machine_, BoundCompileUnit& boundCompileUnit_) : 
     machine(machine_), boundCompileUnit(boundCompileUnit_), function(nullptr), firstInstIndex(endOfFunction), 
     nextSet(nullptr), trueSet(nullptr), falseSet(nullptr), breakSet(nullptr), continueSet(nullptr), conDisSet(nullptr),
-    breakTarget(nullptr), continueTarget(nullptr), caseTargets(nullptr), defaultTarget(-1), genJumpingBoolCode(false), createPCRange(false), setPCRangeEnd(false), 
-    gotoCaseJumps(nullptr), gotoDefaultJumps(nullptr)
+    breakTarget(nullptr), continueTarget(nullptr), caseTargets(nullptr), gotoCaseJumps(nullptr), gotoDefaultJumps(nullptr), defaultTarget(-1), 
+    genJumpingBoolCode(false), createPCRange(false), setPCRangeEnd(false), currentExceptionBlock(nullptr)
 {
 }
 
@@ -106,8 +111,11 @@ void EmitterVisitor::Backpatch(std::vector<Instruction*>& set, int32_t target)
 
 void EmitterVisitor::BackpatchConDis(int32_t target)
 {
-    Backpatch(*conDisSet, target);
-    conDisSet->clear();
+    if (conDisSet)
+    {
+        Backpatch(*conDisSet, target);
+        conDisSet->clear();
+    }
 }
 
 void EmitterVisitor::Merge(std::vector<Instruction*>& fromSet, std::vector<Instruction*>& toSet)
@@ -140,6 +148,11 @@ void EmitterVisitor::ExitBlocks(BoundCompoundStatement* targetBlock)
     }
 }
 
+void EmitterVisitor::AddNextInst(std::unique_ptr<Instruction>&& nextInst)
+{
+    nextInsts.push_back(std::move(nextInst));
+}
+
 void EmitterVisitor::SetFirstInstIndex(int32_t index)
 {
     firstInstIndex = index;
@@ -161,11 +174,16 @@ bool EmitterVisitor::SetPCRangeEnd() const
 
 void EmitterVisitor::DoCreatePCRange(int32_t start)
 {
-    // todo
+    PCRange pcRange;
+    pcRange.SetStart(start);
+    currentExceptionBlock->AddPCRange(pcRange);
+    createPCRange = false;
 }
+
 void EmitterVisitor::DoSetPCRangeEnd(int32_t end)
 {
-    // todo
+    PCRange& pcRange = currentExceptionBlock->GetLastPCRange();
+    pcRange.SetEnd(end);
 }
 
 void EmitterVisitor::GenJumpingBoolCode()
@@ -681,6 +699,73 @@ void EmitterVisitor::Visit(BoundThrowStatement& boundThrowStatement)
         std::unique_ptr<Instruction> rethrowInst = machine.CreateInst("rethrow");
         function->AddInst(std::move(rethrowInst));
     }
+}
+
+void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
+{
+    bool prevCreatePCRange = createPCRange;
+    bool prevSetPCRangeEnd = setPCRangeEnd;
+    createPCRange = true;
+    setPCRangeEnd = true;
+    std::unique_ptr<ExceptionBlock> exceptionBlock(new ExceptionBlock(function->GetNextExeptionBlockId()));
+    ExceptionBlock* parentExceptionBlock = currentExceptionBlock;
+    if (parentExceptionBlock)
+    {
+        exceptionBlock->SetParentId(parentExceptionBlock->Id());
+    }
+    currentExceptionBlock = exceptionBlock.get();
+    function->AddExceptionBlock(std::move(exceptionBlock));
+    boundTryStatement.TryBlock()->Accept(*this);
+    if (boundTryStatement.FinallyBlock())
+    {
+        int32_t prevFirstInstIndex = firstInstIndex;
+        firstInstIndex = endOfFunction;
+        boundTryStatement.FinallyBlock()->Accept(*this);
+        int32_t finallyBlockStart = firstInstIndex;
+        firstInstIndex = prevFirstInstIndex;
+        currentExceptionBlock->SetFinallyStart(finallyBlockStart);
+        std::unique_ptr<Instruction> inst = machine.CreateInst("endfinally");
+        function->AddInst(std::move(inst));
+    }
+    std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
+    nextSet->push_back(inst.get());
+    function->AddInst(std::move(inst));
+    std::unique_ptr<Instruction> nextInst = machine.CreateInst("next");
+    NextInst* nxtInst = dynamic_cast<NextInst*>(nextInst.get());
+    nxtInst->SetExceptionBlock(currentExceptionBlock);
+    nextSet->push_back(nextInst.get());
+    AddNextInst(std::move(nextInst));
+    setPCRangeEnd = prevSetPCRangeEnd;
+    createPCRange = prevCreatePCRange;
+    int n = int(boundTryStatement.Catches().size());
+    for (int i = 0; i < n; ++i)
+    {
+        const std::unique_ptr<BoundCatchStatement>& catchStatement = boundTryStatement.Catches()[i];
+        catchStatement->Accept(*this);
+    }
+    currentExceptionBlock = parentExceptionBlock;
+    // todo parent create pc range
+}
+
+void EmitterVisitor::Visit(BoundCatchStatement& boundCatchStatement)
+{
+    std::unique_ptr<CatchBlock> catchBlock(new CatchBlock());
+    LocalVariableSymbol* exceptionVar = boundCatchStatement.ExceptionVar();
+    TypeSymbol* exceptionVarType = exceptionVar->GetType();
+    ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
+    utf32_string fullClassName = exceptionVarType->FullName();
+    Constant exceptionVarClassTypeFullName = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
+    catchBlock->SetExceptionVarClassTypeFullName(exceptionVarClassTypeFullName);
+    catchBlock->SetExceptionVarIndex(exceptionVar->Index());
+    int32_t prevFirstInstIndex = firstInstIndex;
+    firstInstIndex = endOfFunction;
+    boundCatchStatement.CatchBlock()->Accept(*this);
+    int32_t catchBlockStart = firstInstIndex;
+    firstInstIndex = prevFirstInstIndex;
+    catchBlock->SetCatchBlockStart(catchBlockStart);
+    std::unique_ptr<Instruction> inst = machine.CreateInst("endcatch");
+    function->AddInst(std::move(inst));
+    currentExceptionBlock->AddCatchBlock(std::move(catchBlock));
 }
 
 void EmitterVisitor::Visit(BoundStaticInitStatement& boundStaticInitStatement)

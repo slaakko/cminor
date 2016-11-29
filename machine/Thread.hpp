@@ -15,6 +15,7 @@ namespace cminor { namespace machine {
 
 class Machine;
 class Function;
+class ExceptionBlock;
 
 struct IntPairHash
 {
@@ -43,6 +44,9 @@ public:
     void WaitPaused();
     void Sleep();
     bool Sleeping();
+    void HandleException(ObjectReference exception_);
+    void EndCatch();
+    void EndFinally();
 private:
     Machine& machine;
     Function& fun;
@@ -55,7 +59,13 @@ private:
     std::atomic_bool sleeping;
     std::condition_variable pausedCond;
     std::unordered_set<std::pair<int32_t, int32_t>, IntPairHash> breakPoints;
+    bool handlingException;
+    ObjectReference exception;
+    ExceptionBlock* currentExceptionBlock;
+    ObjectType* exceptionObjectType;
     void RunToEnd();
+    void FindExceptionBlock(Frame* frame);
+    bool DispatchToHandlerOrFinally(Frame* frame);
 };
 
 } } // namespace cminor::machine

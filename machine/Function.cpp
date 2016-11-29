@@ -13,6 +13,124 @@ Emitter::~Emitter()
 {
 }
 
+PCRange::PCRange() : start(-1), end(-1)
+{
+}
+
+void PCRange::Write(Writer& writer)
+{
+    writer.Put(start);
+    writer.Put(end);
+}
+
+void PCRange::Read(Reader& reader)
+{
+    start = reader.GetInt();
+    end = reader.GetInt();
+}
+
+CatchBlock::CatchBlock() : exceptionVarClassTypeFullName(), exceptionVarType(nullptr), exceptionVarIndex(-1), catchBlockStart(-1)
+{
+}
+
+void CatchBlock::Write(Writer& writer)
+{
+    ConstantId fullNameId = writer.GetConstantPool()->GetIdFor(exceptionVarClassTypeFullName);
+    Assert(fullNameId != noConstantId, "got no id");
+    fullNameId.Write(writer);
+    writer.PutEncodedUInt(exceptionVarIndex);
+    writer.Put(catchBlockStart);
+}
+
+void CatchBlock::Read(Reader& reader)
+{
+    ConstantId fullNameId;
+    fullNameId.Read(reader);
+    exceptionVarClassTypeFullName = reader.GetConstantPool()->GetConstant(fullNameId);
+    exceptionVarIndex = reader.GetEncodedUInt();
+    catchBlockStart = reader.GetInt();
+}
+
+void CatchBlock::ResolveExceptionVarType()
+{
+    ClassData* classData = ClassDataTable::Instance().GetClassData(exceptionVarClassTypeFullName.Value().AsStringLiteral());
+    exceptionVarType = classData->Type();
+}
+
+ExceptionBlock::ExceptionBlock(int id_) : id(id_), parentId(-1), finallyStart(-1), nextTarget(-1)
+{
+}
+
+void ExceptionBlock::Write(Writer& writer)
+{
+    writer.Put(id);
+    writer.Put(parentId);
+    uint32_t n = uint32_t(pcRanges.size());
+    writer.PutEncodedUInt(n);
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        PCRange& pcRange = pcRanges[i];
+        pcRange.Write(writer);
+    }
+    uint32_t nc = uint32_t(catchBlocks.size());
+    writer.PutEncodedUInt(nc);
+    for (const std::unique_ptr<CatchBlock>& catchBlock : catchBlocks)
+    {
+        catchBlock->Write(writer);
+    }
+    writer.Put(finallyStart);
+    writer.Put(nextTarget);
+}
+
+void ExceptionBlock::Read(Reader& reader)
+{
+    id = reader.GetInt();
+    parentId = reader.GetInt();
+    uint32_t n = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        PCRange pcRange;
+        pcRange.Read(reader);
+        pcRanges.push_back(pcRange);
+    }
+    uint32_t nc = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < nc; ++i)
+    {
+        std::unique_ptr<CatchBlock> catchBlock(new CatchBlock());
+        catchBlock->Read(reader);
+        catchBlocks.push_back(std::move(catchBlock));
+    }
+    finallyStart = reader.GetInt();
+    nextTarget = reader.GetInt();
+}
+
+bool ExceptionBlock::Match(int32_t pc) const
+{
+    for (const PCRange& pcRange : pcRanges)
+    {
+        if (pcRange.InRange(pc)) return true;
+    }
+    return false;
+}
+
+void ExceptionBlock::AddPCRange(const PCRange& pcRange)
+{
+    pcRanges.push_back(pcRange);
+}
+
+void ExceptionBlock::AddCatchBlock(std::unique_ptr<CatchBlock>&& catchBlock)
+{
+    catchBlocks.push_back(std::move(catchBlock));
+}
+
+void ExceptionBlock::ResolveExceptionVarTypes()
+{
+    for (const std::unique_ptr<CatchBlock>& catchBlock : catchBlocks)
+    {
+        catchBlock->ResolveExceptionVarType();
+    }
+}
+
 Function::Function() : callName(), friendlyName(), id(-1), numLocals(0), numParameters(0), constantPool(nullptr), isMain(false), emitter(nullptr)
 {
 }
@@ -40,6 +158,12 @@ void Function::Write(Writer& writer)
     }
     writer.PutEncodedUInt(numLocals);
     writer.PutEncodedUInt(numParameters);
+    uint32_t ne = uint32_t(exceptionBlocks.size());
+    writer.PutEncodedUInt(ne);
+    for (const std::unique_ptr<ExceptionBlock>& exceptionBlock : exceptionBlocks)
+    {
+        exceptionBlock->Write(writer);
+    }
 }
 
 void Function::Read(Reader& reader)
@@ -59,6 +183,13 @@ void Function::Read(Reader& reader)
     }
     numLocals = reader.GetEncodedUInt();
     numParameters = reader.GetEncodedUInt();
+    uint32_t ne = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < ne; ++i)
+    {
+        std::unique_ptr<ExceptionBlock> exceptionBlock(new ExceptionBlock(int(exceptionBlocks.size())));
+        exceptionBlock->Read(reader);
+        exceptionBlocks.push_back(std::move(exceptionBlock));
+    }
 }
 
 void Function::SetNumLocals(uint32_t numLocals_)
@@ -153,6 +284,37 @@ void Function::Dump(CodeFormatter& formatter, int32_t pc)
     }
 }
 
+void Function::AddExceptionBlock(std::unique_ptr<ExceptionBlock>&& exceptionBlock)
+{
+    exceptionBlocks.push_back(std::move(exceptionBlock));
+}
+
+ExceptionBlock* Function::GetExceptionBlock(int id) const
+{
+    if (id >= 0 && id < int(exceptionBlocks.size()))
+    {
+        return exceptionBlocks[id].get();
+    }
+    return nullptr;
+}
+
+ExceptionBlock* Function::FindExceptionBlock(int32_t pc) const
+{
+    for (const std::unique_ptr<ExceptionBlock>& exceptionBlock : exceptionBlocks)
+    {
+        if (exceptionBlock->Match(pc)) return exceptionBlock.get();
+    }
+    return nullptr;
+}
+
+void Function::ResolveExceptionVarTypes()
+{
+    for (const std::unique_ptr<ExceptionBlock>& exceptionBlock : exceptionBlocks)
+    {
+        exceptionBlock->ResolveExceptionVarTypes();
+    }
+}
+
 std::unique_ptr<FunctionTable> FunctionTable::instance;
 
 void FunctionTable::Init()
@@ -204,6 +366,14 @@ Function* FunctionTable::GetFunction(StringPtr functionCallName) const
     else
     {
         throw std::runtime_error("function '" + ToUtf8(functionCallName.Value()) + "' not found from function table");
+    }
+}
+
+void FunctionTable::ResolveExceptionVarTypes()
+{
+    for (const auto& p : functionMap)
+    {
+        p.second->ResolveExceptionVarTypes();
     }
 }
 

@@ -16,11 +16,13 @@ Command::~Command()
 void HelpCommand::Execute(Shell& shell)
 {
     std::cout <<
-        "start  : start debugging\n" <<
-        "e(xit) : stop debugging\n" <<
-        "q(uit) : stop debugging\n" << 
-        "s(tep) : single step\n" << 
-        "n(ext) : step over\n" <<
+        "start       : start debugging\n" <<
+        "e(xit)      : stop debugging\n" <<
+        "q(uit)      : stop debugging\n" << 
+        "s(tep)      : single step\n" << 
+        "n(ext)      : step over\n" <<
+        "l(ocal) <n> : print value of local <n>\n" <<
+        "(stac)k <n> : print value of operand <n> in stack (0 is top)\n" <<
         std::endl;
 }
 
@@ -42,6 +44,24 @@ void StepCommand::Execute(Shell& shell)
 void NextCommand::Execute(Shell& shell)
 {
     shell.Next();
+}
+
+LocalCommand::LocalCommand(int index_) : index(index_)
+{
+}
+
+void LocalCommand::Execute(Shell& shell)
+{
+    shell.Local(index);
+}
+
+StackCommand::StackCommand(int index_) : index(index_)
+{
+}
+
+void StackCommand::Execute(Shell& shell)
+{
+    shell.Stack(index);
 }
 
 } } // namespace cminor::db

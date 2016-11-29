@@ -1082,4 +1082,47 @@ void StatementBinderVisitor::Visit(ThrowStatementNode& throwStatementNode)
     }
 }
 
+void StatementBinderVisitor::Visit(TryStatementNode& tryStatementNode)
+{
+    std::unique_ptr<BoundTryStatement> tryStatement(new BoundTryStatement(boundCompileUnit.GetAssembly()));
+    tryStatementNode.TryBlock()->Accept(*this);
+    BoundCompoundStatement* tryBlock = dynamic_cast<BoundCompoundStatement*>(statement.release());
+    Assert(tryBlock, "bound compound statement expected");
+    tryStatement->SetTryBlock(std::unique_ptr<BoundCompoundStatement>(tryBlock));
+    int n = tryStatementNode.Catches().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        CatchNode* catchNode = tryStatementNode.Catches()[i];
+        catchNode->Accept(*this);
+        BoundCatchStatement* catchStatement = dynamic_cast<BoundCatchStatement*>(statement.release());
+        Assert(catchStatement, "bound catch statement expected");
+        tryStatement->AddCatchStatement(std::unique_ptr<BoundCatchStatement>(catchStatement));
+    }
+    if (tryStatementNode.FinallyBlock())
+    {
+        tryStatementNode.FinallyBlock()->Accept(*this);
+        BoundCompoundStatement* finallyBlock = dynamic_cast<BoundCompoundStatement*>(statement.release());
+        Assert(finallyBlock, "bound compound statement expected");
+        tryStatement->SetFinallyBlock(std::unique_ptr<BoundCompoundStatement>(finallyBlock));
+    }
+    statement = std::move(tryStatement);
+}
+
+void StatementBinderVisitor::Visit(CatchNode& catchNode)
+{
+    bool prevInsideCatch = insideCatch;
+    insideCatch = true;
+    std::unique_ptr<BoundCatchStatement> catchStatement(new BoundCatchStatement(boundCompileUnit.GetAssembly()));
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*catchNode.Id());
+    LocalVariableSymbol* exceptionVar = dynamic_cast<LocalVariableSymbol*>(symbol);
+    Assert(exceptionVar, "local variable symbol expected");
+    catchStatement->SetExceptionVar(exceptionVar);
+    catchNode.CatchBlock()->Accept(*this);
+    BoundCompoundStatement* catchBlock = dynamic_cast<BoundCompoundStatement*>(statement.release());
+    Assert(catchBlock, "bound compound statement expected");
+    catchStatement->SetCatchBlock(std::unique_ptr<BoundCompoundStatement>(catchBlock));
+    statement = std::move(catchStatement);
+    insideCatch = prevInsideCatch;
+}
+
 } } // namespace cminor::binder

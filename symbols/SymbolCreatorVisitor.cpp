@@ -265,6 +265,29 @@ void SymbolCreatorVisitor::Visit(ConstructionStatementNode& constructionStatemen
     symbolTable.AddLocalVariable(constructionStatementNode);
 }
 
+void SymbolCreatorVisitor::Visit(TryStatementNode& tryStatementNode)
+{
+    tryStatementNode.TryBlock()->Accept(*this);
+    int n = tryStatementNode.Catches().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        CatchNode* catchNode = tryStatementNode.Catches()[i];
+        catchNode->Accept(*this);
+    }
+    if (tryStatementNode.FinallyBlock())
+    {
+        tryStatementNode.FinallyBlock()->Accept(*this);
+    }
+}
+
+void SymbolCreatorVisitor::Visit(CatchNode& catchNode)
+{
+    symbolTable.BeginDeclarationBlock(catchNode);
+    symbolTable.AddLocalVariable(*catchNode.Id());
+    catchNode.CatchBlock()->Accept(*this);
+    symbolTable.EndDeclarationBlock();
+}
+
 void SymbolCreatorVisitor::Visit(EnumTypeNode& enumTypeNode)
 {
     symbolTable.BeginEnumType(enumTypeNode);

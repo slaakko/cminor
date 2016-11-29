@@ -11,6 +11,7 @@ namespace System.IO
             {
                 throw new ArgumentNullException("provided stream is null");
             }
+            this.stream = stream;
             this.encoder = new Utf8Encoder(stream);
         }
         public void Close()
