@@ -11,7 +11,7 @@ namespace cminor { namespace machine {
 
 Thread::Thread(Machine& machine_, Function& fun_) : 
     machine(machine_), fun(fun_), instructionCount(0), checkWantToCollectGarbageCount(100), paused(), sleeping(), pausedCond(), handlingException(false), currentExceptionBlock(nullptr), 
-    exceptionObjectType(nullptr)
+    exceptionObjectType(nullptr), exitBlockNext(-1)
 {
     frames.push_back(Frame(machine, *this, fun));
 }
@@ -214,9 +214,19 @@ void Thread::EndCatch()
 
 void Thread::EndFinally()
 {
-    if (!handlingException) return;
     Assert(!frames.empty(), "got no frame");
     Frame* frame = &frames.back();
+    if (exitBlockNext != -1)
+    {
+        int32_t next = exitBlockNext;
+        PopExitBlock();
+        frame->SetPC(next);
+        return;
+    }
+    if (!handlingException)
+    {
+        return;
+    }
     while (currentExceptionBlock->HasParent())
     {
         ExceptionBlock* exceptionBlock = frame->Fun().GetExceptionBlock(currentExceptionBlock->ParentId());
@@ -297,6 +307,18 @@ bool Thread::DispatchToHandlerOrFinally(Frame* frame)
         return true;
     }
     return false;
+}
+
+void Thread::PushExitBlock(int32_t exitBlockNext_)
+{
+    exitBlockStack.push(exitBlockNext);
+    exitBlockNext = exitBlockNext_;
+}
+
+void Thread::PopExitBlock()
+{
+    exitBlockNext = exitBlockStack.top();
+    exitBlockStack.pop();
 }
 
 } } // namespace cminor::machine

@@ -580,8 +580,15 @@ class ExitBlockInst : public Instruction
 {
 public:
     ExitBlockInst();
+    void Clear() override;
     Instruction* Clone() const override { return new ExitBlockInst(*this); };
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
+    void SetExceptionBlockId(int32_t exceptionBlockId_) { exceptionBlockId = exceptionBlockId_; }
+private:
+    int32_t exceptionBlockId;
 };
 
 class ContinuousSwitchInst : public Instruction
@@ -844,6 +851,7 @@ class NextInst : public Instruction
 {
 public:
     NextInst();
+    void Clear() override;
     Instruction* Clone() const override { return new NextInst(*this); }
     void SetTarget(int32_t target) override;
     void SetExceptionBlock(ExceptionBlock* exceptionBlock_) { exceptionBlock = exceptionBlock_; }

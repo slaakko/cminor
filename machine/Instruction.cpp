@@ -754,12 +754,50 @@ void EnterBlockInst::Execute(Frame& frame)
 {
 }
 
-ExitBlockInst::ExitBlockInst() : Instruction("exitblock")
+ExitBlockInst::ExitBlockInst() : Instruction("exitblock"), exceptionBlockId(-1)
 {
+}
+
+void ExitBlockInst::Clear()
+{
+    exceptionBlockId = -1;
+}
+
+void ExitBlockInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(exceptionBlockId);
+}
+
+Instruction* ExitBlockInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    exceptionBlockId = reader.GetInt();
+    return this;
 }
 
 void ExitBlockInst::Execute(Frame& frame)
 {
+    if (exceptionBlockId != -1)
+    {
+        ExceptionBlock* exceptionBlock = frame.Fun().GetExceptionBlock(exceptionBlockId);
+        Assert(exceptionBlock, "exception block not found");
+        if (exceptionBlock->HasFinally())
+        {
+            frame.GetThread().PushExitBlock(frame.PC() + 1);
+            frame.SetPC(exceptionBlock->FinallyStart());
+        }
+    }
+}
+
+void ExitBlockInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    if (exceptionBlockId != -1)
+    {
+        formatter.Write(" ");
+        formatter.Write(std::to_string(exceptionBlockId));
+    }
 }
 
 ContinuousSwitchInst::ContinuousSwitchInst() : Instruction("cswitch"), begin(), end(), defaultTarget(-1)
@@ -1420,6 +1458,11 @@ void EndFinallyInst::Execute(Frame& frame)
 
 NextInst::NextInst() : Instruction("next"), exceptionBlock(nullptr)
 {
+}
+
+void NextInst::Clear()
+{
+    exceptionBlock = nullptr;
 }
 
 void NextInst::SetTarget(int32_t target)

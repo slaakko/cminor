@@ -57,6 +57,7 @@ public:
     void Visit(BoundDisjunction& boundDisjunction) override;
     void Visit(GenObject& genObject) override;
     void BackpatchConDis(int32_t target) override;
+    bool HasNonemptyConDisSet() const override;
     void SetFirstInstIndex(int32_t index) override;
     int32_t FistInstIndex() const override;
     bool CreatePCRange() const override;
@@ -109,6 +110,11 @@ void EmitterVisitor::Backpatch(std::vector<Instruction*>& set, int32_t target)
     }
 }
 
+bool EmitterVisitor::HasNonemptyConDisSet() const
+{
+    return conDisSet && !conDisSet->empty();
+}
+
 void EmitterVisitor::BackpatchConDis(int32_t target)
 {
     if (conDisSet)
@@ -135,6 +141,13 @@ void EmitterVisitor::ExitBlocks(BoundCompoundStatement* targetBlock)
     while (block && block != targetBlock)
     {
         std::unique_ptr<Instruction> exitBlockInst = machine.CreateInst("exitblock");
+        int32_t exceptionBlockId = block->ExceptionBlockId();
+        if (exceptionBlockId != -1)
+        {
+            ExitBlockInst* exit = dynamic_cast<ExitBlockInst*>(exitBlockInst.get());
+            Assert(exit, "exit block instruction expected");
+            exit->SetExceptionBlockId(exceptionBlockId);
+        }
         function->AddInst(std::move(exitBlockInst));
         --n;
         if (n > 0)

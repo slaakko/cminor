@@ -47,6 +47,8 @@ public:
     void HandleException(ObjectReference exception_);
     void EndCatch();
     void EndFinally();
+    void PushExitBlock(int32_t exitBlockNext_);
+    void PopExitBlock();
 private:
     Machine& machine;
     Function& fun;
@@ -63,6 +65,8 @@ private:
     ObjectReference exception;
     ExceptionBlock* currentExceptionBlock;
     ObjectType* exceptionObjectType;
+    int32_t exitBlockNext;
+    std::stack<int32_t> exitBlockStack;
     void RunToEnd();
     void FindExceptionBlock(Frame* frame);
     bool DispatchToHandlerOrFinally(Frame* frame);

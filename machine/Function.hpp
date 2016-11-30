@@ -25,6 +25,7 @@ public:
     virtual void DoSetPCRangeEnd(int32_t end) = 0;
     virtual void Visit(GenObject& genObject) = 0;
     virtual void BackpatchConDis(int32_t target) = 0;
+    virtual bool HasNonemptyConDisSet() const = 0;
 };
 
 class PCRange
