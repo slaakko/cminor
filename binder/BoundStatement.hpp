@@ -33,8 +33,11 @@ public:
     void InsertFront(std::unique_ptr<BoundStatement>&& statement);
     void AddStatement(std::unique_ptr<BoundStatement>&& statement);
     void Accept(BoundNodeVisitor& visitor) override;
+    int32_t ExceptionBlockId() const { return exceptionBlockId; }
+    void SetExceptionBlockId(int32_t exceptionBlockId_) { exceptionBlockId = exceptionBlockId_; }
 private:
     std::vector<std::unique_ptr<BoundStatement>> statements;
+    int32_t exceptionBlockId;
 };
 
 class BoundReturnStatement : public BoundStatement

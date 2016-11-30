@@ -24,7 +24,7 @@ BoundCompoundStatement* BoundStatement::Block() const
     }
 }
 
-BoundCompoundStatement::BoundCompoundStatement(Assembly& assembly_) : BoundStatement(assembly_)
+BoundCompoundStatement::BoundCompoundStatement(Assembly& assembly_) : BoundStatement(assembly_), exceptionBlockId(-1)
 {
 }
 

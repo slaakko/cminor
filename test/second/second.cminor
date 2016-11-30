@@ -15,8 +15,4 @@ void main()
     {
         Console.Error.WriteLine(ex.Message);
     }
-    finally
-    {
-        Console.WriteLine("finally");
-    }
 }

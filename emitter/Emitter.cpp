@@ -715,6 +715,7 @@ void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
     }
     currentExceptionBlock = exceptionBlock.get();
     function->AddExceptionBlock(std::move(exceptionBlock));
+    boundTryStatement.TryBlock()->SetExceptionBlockId(currentExceptionBlock->Id());
     boundTryStatement.TryBlock()->Accept(*this);
     if (boundTryStatement.FinallyBlock())
     {
