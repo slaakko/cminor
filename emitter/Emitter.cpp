@@ -765,7 +765,11 @@ void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
         catchStatement->Accept(*this);
     }
     currentExceptionBlock = parentExceptionBlock;
-    // todo parent create pc range
+    if (parentExceptionBlock)
+    {
+        createPCRange = true;
+        setPCRangeEnd = true;
+    }
 }
 
 void EmitterVisitor::Visit(BoundCatchStatement& boundCatchStatement)
