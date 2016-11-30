@@ -297,12 +297,19 @@ void EmitterVisitor::Visit(BoundReturnStatement& boundReturnStatement)
     ExitBlocks(nullptr);
     std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
     inst->SetTarget(endOfFunction);
-    int32_t prevFirstInstIndex = firstInstIndex;
-    firstInstIndex = endOfFunction;
-    function->AddInst(std::move(inst));
-    int32_t jumpInstIndex = firstInstIndex;
-    firstInstIndex = prevFirstInstIndex;
-    BackpatchConDis(jumpInstIndex);
+    if (HasNonemptyConDisSet())
+    {
+        int32_t prevFirstInstIndex = firstInstIndex;
+        firstInstIndex = endOfFunction;
+        function->AddInst(std::move(inst));
+        int32_t jumpInstIndex = firstInstIndex;
+        firstInstIndex = prevFirstInstIndex;
+        BackpatchConDis(jumpInstIndex);
+    }
+    else
+    {
+        function->AddInst(std::move(inst));
+    }
     conDisSet = prevConDisSet;
 }
 
