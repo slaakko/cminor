@@ -1,5 +1,5 @@
-#ifndef Statement_hpp_23654
-#define Statement_hpp_23654
+#ifndef Statement_hpp_29850
+#define Statement_hpp_29850
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -43,6 +43,7 @@ private:
     class AssignmentExpressionStatementRule;
     class AssignmentStatementRule;
     class ConstructionStatementRule;
+    class ConstructionStatementExpressionRule;
     class IncrementExpressionStatementRule;
     class IncrementStatementRule;
     class DecrementExpressionStatementRule;
@@ -53,8 +54,9 @@ private:
     class TryStatementRule;
     class CatchRule;
     class FinallyRule;
+    class UsingStatementRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // Statement_hpp_23654
+#endif // Statement_hpp_29850

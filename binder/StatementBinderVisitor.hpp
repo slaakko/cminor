@@ -59,6 +59,7 @@ public:
     void Visit(ThrowStatementNode& throwStatementNode) override;
     void Visit(TryStatementNode& tryStatementNode) override;
     void Visit(CatchNode& catchNode) override;
+    void Visit(UsingStatementNode& usingStatementNode) override;
     BoundStatement* ReleaseStatement() { return statement.release(); }
 private:
     BoundCompileUnit& boundCompileUnit;

@@ -1125,4 +1125,30 @@ void StatementBinderVisitor::Visit(CatchNode& catchNode)
     insideCatch = prevInsideCatch;
 }
 
+void StatementBinderVisitor::Visit(UsingStatementNode& usingStatementNode)
+{
+    const Span& span = usingStatementNode.GetSpan();
+    CompoundStatementNode usingBlock(span);
+    CloneContext cloneContext;
+    usingBlock.AddStatement(static_cast<StatementNode*>(usingStatementNode.ConstructionStatement()->Clone(cloneContext)));
+    CompoundStatementNode* tryBlock = new CompoundStatementNode(span);
+    tryBlock->AddStatement(static_cast<StatementNode*>(usingStatementNode.Statement()->Clone(cloneContext)));
+    CompoundStatementNode* finallyBlock = new CompoundStatementNode(span);
+    ConstructionStatementNode* constructClosable = new ConstructionStatementNode(span, new IdentifierNode(span, "System.Closable"), new IdentifierNode(span, "@closable"));
+    constructClosable->AddArgument(usingStatementNode.ConstructionStatement()->Id()->Clone(cloneContext));
+    finallyBlock->AddStatement(constructClosable);
+    ExpressionStatementNode* closeClosableStatement = new ExpressionStatementNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@closable"), new IdentifierNode(span, "Close"))));
+    finallyBlock->AddStatement(closeClosableStatement);
+    TryStatementNode* tryStatementNode = new TryStatementNode(span, tryBlock);
+    tryStatementNode->SetFinally(finallyBlock);
+    usingBlock.AddStatement(tryStatementNode);
+    boundCompileUnit.GetAssembly().GetSymbolTable().BeginContainer(containerScope->Container());
+    SymbolCreatorVisitor symbolCreatorVisitor(boundCompileUnit.GetAssembly());
+    usingBlock.Accept(symbolCreatorVisitor);
+    boundCompileUnit.GetAssembly().GetSymbolTable().EndContainer();
+    TypeBinderVisitor typeBinderVisitor(boundCompileUnit);
+    usingBlock.Accept(typeBinderVisitor);
+    usingBlock.Accept(*this);
+}
+
 } } // namespace cminor::binder

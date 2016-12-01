@@ -1115,4 +1115,42 @@ void TryStatementNode::SetFinally(CompoundStatementNode* finallyBlock_)
     finallyBlock->SetParent(this);
 }
 
+UsingStatementNode::UsingStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+UsingStatementNode::UsingStatementNode(const Span& span_, ConstructionStatementNode* constructionStatement_, StatementNode* statement_) :
+    StatementNode(span_), constructionStatement(constructionStatement_), statement(statement_)
+{
+    constructionStatement->SetParent(this);
+    statement->SetParent(this);
+}
+
+Node* UsingStatementNode::Clone(CloneContext& cloneContext) const
+{
+    return new UsingStatementNode(GetSpan(), static_cast<ConstructionStatementNode*>(constructionStatement->Clone(cloneContext)),
+        static_cast<StatementNode*>(statement->Clone(cloneContext)));
+}
+
+void UsingStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(constructionStatement.get());
+    writer.Put(statement.get());
+}
+
+void UsingStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    constructionStatement.reset(reader.GetConstructionStatementNode());
+    constructionStatement->SetParent(this);
+    statement.reset(reader.GetStatementNode());
+    statement->SetParent(this);
+}
+
+void UsingStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 } } // namespace cminor::ast

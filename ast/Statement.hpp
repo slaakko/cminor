@@ -440,6 +440,23 @@ private:
     std::unique_ptr<CompoundStatementNode> finallyBlock;
 };
 
+class UsingStatementNode : public StatementNode
+{
+public:
+    UsingStatementNode(const Span& span_);
+    UsingStatementNode(const Span& span_, ConstructionStatementNode* constructionStatement_, StatementNode* statement_);
+    NodeType GetNodeType() const override { return NodeType::usingStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
+    void Accept(Visitor& visitor) override;
+    ConstructionStatementNode* ConstructionStatement() const { return constructionStatement.get(); }
+    StatementNode* Statement() const { return statement.get(); }
+private:
+    std::unique_ptr<ConstructionStatementNode> constructionStatement;
+    std::unique_ptr<StatementNode> statement;
+};
+
 } } // namespace cminor::ast
 
 #endif // CMINOR_AST_STATEMENT_INCLUDED

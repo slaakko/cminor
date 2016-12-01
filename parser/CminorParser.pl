@@ -177,7 +177,8 @@ namespace cminor.parser
         GotoDefaultStatement(ParsingContext* ctx): StatementNode*;
         AssignmentExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr): StatementNode*;
         AssignmentStatement(ParsingContext* ctx): StatementNode*;
-        ConstructionStatement(ParsingContext* ctx): StatementNode*;
+        ConstructionStatement(ParsingContext* ctx): ConstructionStatementNode*;
+        ConstructionStatementExpression(ParsingContext* ctx): ConstructionStatementNode*;
         IncrementExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): StatementNode*;
         IncrementStatement(ParsingContext* ctx): StatementNode*;
         DecrementExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): StatementNode*;
@@ -188,6 +189,7 @@ namespace cminor.parser
         TryStatement(ParsingContext* ctx): TryStatementNode*;
         Catch(ParsingContext* ctx): CatchNode*;
         Finally(ParsingContext* ctx): CompoundStatementNode*;
+        UsingStatement(ParsingContext* ctx): StatementNode*;
     }
     grammar TemplateGrammar
     {

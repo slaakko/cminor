@@ -45,6 +45,14 @@ CompoundStatementNode* AstReader::GetCompoundStatementNode()
     return compoundStatementNode;
 }
 
+ConstructionStatementNode* AstReader::GetConstructionStatementNode()
+{
+    Node* node = GetNode();
+    ConstructionStatementNode* constructionStatementNode = dynamic_cast<ConstructionStatementNode*>(node);
+    Assert(constructionStatementNode, "construction statement node expected");
+    return constructionStatementNode;
+}
+
 FunctionGroupIdNode* AstReader::GetFunctionGroupIdNode()
 {
     Node* node = GetNode();

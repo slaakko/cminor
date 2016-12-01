@@ -34,6 +34,7 @@ namespace cminor.parser
             |   EmptyStatement(ctx){ value = EmptyStatement; }
             |   ThrowStatement(ctx){ value = ThrowStatement; }
             |   TryStatement(ctx){ value = TryStatement; }
+            |   UsingStatement(ctx){ value = UsingStatement; }
             ;
 
         LabelId : std::string
@@ -155,9 +156,14 @@ namespace cminor.parser
             ::= (AssignmentExpressionStatement(ctx) ';'!){ value = AssignmentExpressionStatement; value->GetSpan().SetEnd(span.End()); }
             ;
 
-        ConstructionStatement(ParsingContext* ctx) : StatementNode*
+        ConstructionStatement(ParsingContext* ctx) : ConstructionStatementNode*
             ::= TypeExpr(ctx) Identifier!{ value = new ConstructionStatementNode(span, TypeExpr, Identifier); }
                 ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value->AddArgument(Expression); })? ';'!{ value->GetSpan().SetEnd(span.End()); }
+            ;
+
+        ConstructionStatementExpression(ParsingContext* ctx) : ConstructionStatementNode*
+            ::= (TypeExpr(ctx) Identifier!{ value = new ConstructionStatementNode(span, TypeExpr, Identifier); }
+                ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value->AddArgument(Expression); })?){ value->GetSpan().SetEnd(span.End()); }
             ;
 
         IncrementExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr) : StatementNode*
@@ -206,6 +212,10 @@ namespace cminor.parser
 
         Finally(ParsingContext* ctx) : CompoundStatementNode*
             ::= (keyword("finally") CompoundStatement(ctx)){ value = CompoundStatement; }
+            ;
+
+        UsingStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("using") '('! ConstructionStatementExpression(ctx)! ')'! Statement(ctx)!){ value = new UsingStatementNode(span, ConstructionStatementExpression, Statement); }
             ;
     }
 }

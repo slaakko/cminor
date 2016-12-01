@@ -15,6 +15,7 @@ using namespace cminor::machine;
 
 class IdentifierNode;
 class CompoundStatementNode;
+class ConstructionStatementNode;
 class FunctionGroupIdNode;
 class StatementNode;
 
@@ -26,6 +27,7 @@ public:
     Node* GetNode();
     IdentifierNode* GetIdentifierNode();
     CompoundStatementNode* GetCompoundStatementNode();
+    ConstructionStatementNode* GetConstructionStatementNode();
     FunctionGroupIdNode* GetFunctionGroupIdNode();
     StatementNode* GetStatementNode();
     Specifiers GetSpecifiers();

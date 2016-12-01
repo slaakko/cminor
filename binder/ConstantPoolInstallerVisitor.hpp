@@ -83,6 +83,7 @@ public:
     void Visit(ThrowStatementNode& throwStatementNode) override;
     void Visit(CatchNode& catchNode) override;
     void Visit(TryStatementNode& tryStatementNode) override;
+    void Visit(UsingStatementNode& usingStatementNode) override;
     void Visit(EnumTypeNode& enumTypeNode) override;
     void Visit(EnumConstantNode& enumConstantNode) override;
     void Visit(ConstantNode& constantNode) override;
