@@ -24,6 +24,7 @@ class BoundGotoCaseStatement;
 class BoundGotoDefaultStatement;
 class BoundBreakStatement;
 class BoundContinueStatement;
+class BoundGotoStatement;
 class BoundConstructionStatement;
 class BoundAssignmentStatement;
 class BoundExpressionStatement;
@@ -69,6 +70,7 @@ public:
     virtual void Visit(BoundDefaultStatement& boundDefaultStatement) {}
     virtual void Visit(BoundBreakStatement& boundBreakStatement) {}
     virtual void Visit(BoundContinueStatement& boundContinueStatement) {}
+    virtual void Visit(BoundGotoStatement& boundGotoStatement) {}
     virtual void Visit(BoundConstructionStatement& boundConstructionStatement) {}
     virtual void Visit(BoundAssignmentStatement& boundAssignmentStatement) {}
     virtual void Visit(BoundExpressionStatement& boundExpressionStatement) {}

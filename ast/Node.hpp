@@ -27,7 +27,7 @@ enum class NodeType : uint8_t
     shiftLeftNode, shiftRightNode, addNode, subNode, mulNode, divNode, remNode, notNode, unaryPlusNode, unaryMinusNode, complementNode, isNode, asNode, dotNode, arrayNode,
     indexingNode, invokeNode, castNode, classNode, interfaceNode, newNode, memberVariableNode, propertyNode, indexerNode, staticConstructorNode, constructorNode, memberFunctionNode,
     baseInitializerNode, thisInitializerNode, labelNode, thisNode, baseNode, templateIdNode, templateParameterNode,
-    compoundStatementNode, returnStatementNode, ifStatementNode, whileStatementNode, doStatementNode, forStatementNode, breakStatementNode, continueStatementNode, 
+    compoundStatementNode, returnStatementNode, ifStatementNode, whileStatementNode, doStatementNode, forStatementNode, breakStatementNode, continueStatementNode, gotoStatementNode,
     constructionStatementNode, assignmentStatementNode, expressionStatementNode, emptyStatementNode, incrementStatementNode, decrementStatementNode, forEachStatementNode, 
     switchStatementNode, caseStatementNode, defaultStatementNode, gotoCaseStatementNode, gotoDefaultStatementNode, throwStatementNode, tryStatementNode, catchNode, usingStatementNode,
     enumTypeNode, enumConstantNode, constantNode,

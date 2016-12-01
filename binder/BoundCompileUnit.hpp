@@ -29,6 +29,8 @@ public:
     void Accept(BoundNodeVisitor& visitor) override;
     FunctionSymbol* GetConversion(TypeSymbol* sourceType, TypeSymbol* targetType);
     ClassTemplateRepository& GetClassTemplateRepository() { return classTemplateRepository; }
+    void SetHasGotos() { hasGotos = true; }
+    bool HasGotos() const { return hasGotos; }
 private:
     Assembly& assembly;
     CompileUnitNode* compileUnitNode;
@@ -37,6 +39,7 @@ private:
     ConversionTable conversionTable;
     ClassTemplateRepository classTemplateRepository;
     std::vector<std::unique_ptr<Node>> nodes;
+    bool hasGotos;
 };
 
 } } // namespace cminor::binder

@@ -34,6 +34,7 @@ public:
     void Visit(BoundGotoDefaultStatement& boundGotoDefaultStatement) override;
     void Visit(BoundBreakStatement& boundBreakStatement) override;
     void Visit(BoundContinueStatement& boundContinueStatement) override;
+    void Visit(BoundGotoStatement& boundGotoStatement) override;
     void Visit(BoundConstructionStatement& boundConstructionStatement) override;
     void Visit(BoundAssignmentStatement& boundAssignmentStatement) override;
     void Visit(BoundExpressionStatement& boundExpressionStatement) override;
@@ -249,7 +250,9 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
 {
     blockStack.push_back(&boundCompoundStatement);
     std::unique_ptr<Instruction> enterBlockInst = machine.CreateInst("enterblock");
+    firstInstIndex = endOfFunction;
     function->AddInst(std::move(enterBlockInst));
+    boundCompoundStatement.SetFirstInstIndex(firstInstIndex);
     int n = int(boundCompoundStatement.Statements().size());
     std::vector<Instruction*> prevNext;
     for (int i = 0; i < n; ++i)
@@ -262,6 +265,7 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
         firstInstIndex = endOfFunction;
         boundStatement->Accept(*this);
         int32_t statementTarget = firstInstIndex;
+        boundStatement->SetFirstInstIndex(statementTarget);
         firstInstIndex = prevFirstInstIndex;
         if (statementTarget != endOfFunction)
         {
@@ -329,6 +333,7 @@ void EmitterVisitor::Visit(BoundIfStatement& boundIfStatement)
     firstInstIndex = endOfFunction;
     boundIfStatement.ThenS()->Accept(*this);
     int32_t thenTarget = firstInstIndex;
+    boundIfStatement.ThenS()->SetFirstInstIndex(thenTarget);
     firstInstIndex = prevFirstInstIndex;
     Backpatch(true_, thenTarget);
     if (boundIfStatement.ElseS())
@@ -340,6 +345,7 @@ void EmitterVisitor::Visit(BoundIfStatement& boundIfStatement)
         firstInstIndex = endOfFunction;
         boundIfStatement.ElseS()->Accept(*this);
         int32_t elseTarget = firstInstIndex;
+        boundIfStatement.ElseS()->SetFirstInstIndex(elseTarget);
         Backpatch(false_, elseTarget);
         firstInstIndex = prevFirstInstIndex;
     }
@@ -381,6 +387,7 @@ void EmitterVisitor::Visit(BoundWhileStatement& boundWhileStatement)
     prevFirstInstIndex = firstInstIndex;
     firstInstIndex = endOfFunction;
     boundWhileStatement.Statement()->Accept(*this);
+    boundWhileStatement.Statement()->SetFirstInstIndex(firstInstIndex);
     Backpatch(true_, firstInstIndex);
     firstInstIndex = prevFirstInstIndex;
     std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
@@ -418,6 +425,7 @@ void EmitterVisitor::Visit(BoundDoStatement& boundDoStatement)
     firstInstIndex = endOfFunction;
     boundDoStatement.Statement()->Accept(*this);
     int32_t statementTarget = firstInstIndex;
+    boundDoStatement.Statement()->SetFirstInstIndex(statementTarget);
     firstInstIndex = prevFirstInstIndex;
     trueSet = &true_;
     falseSet = &false_;
@@ -456,14 +464,18 @@ void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
     std::vector<Instruction*> false_;
     std::vector<Instruction*> break_;
     std::vector<Instruction*> continue_;
+    int32_t prevFirstInstIndex = firstInstIndex;
+    firstInstIndex = endOfFunction;
     boundForStatement.InitS()->Accept(*this);
+    boundForStatement.InitS()->SetFirstInstIndex(firstInstIndex);
+    firstInstIndex = prevFirstInstIndex;
     trueSet = &true_;
     falseSet = &false_;
     breakSet = &break_;
     continueSet = &continue_;
     bool prevGenJumpingBoolCode = genJumpingBoolCode;
     genJumpingBoolCode = true;
-    int32_t prevFirstInstIndex = firstInstIndex;
+    prevFirstInstIndex = firstInstIndex;
     firstInstIndex = endOfFunction;
     boundForStatement.Condition()->Accept(*this);
     int32_t conditionTarget = firstInstIndex;
@@ -473,12 +485,14 @@ void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
     firstInstIndex = endOfFunction;
     boundForStatement.ActionS()->Accept(*this);
     int32_t actionTarget = firstInstIndex;
+    boundForStatement.ActionS()->SetFirstInstIndex(actionTarget);
     firstInstIndex = prevFirstInstIndex;
     Backpatch(true_, actionTarget);
     prevFirstInstIndex = firstInstIndex;
     firstInstIndex = endOfFunction;
     boundForStatement.LoopS()->Accept(*this);
     int32_t loopTarget = firstInstIndex;
+    boundForStatement.LoopS()->SetFirstInstIndex(loopTarget);
     firstInstIndex = prevFirstInstIndex;
     Backpatch(continue_, loopTarget);
     std::unique_ptr<Instruction> jumpToCond = machine.CreateInst("jump");
@@ -619,6 +633,7 @@ void EmitterVisitor::Visit(BoundCaseStatement& boundCaseStatement)
     firstInstIndex = endOfFunction;
     boundCaseStatement.CompoundStatement()->Accept(*this);
     int32_t caseTarget = firstInstIndex;
+    boundCaseStatement.SetFirstInstIndex(caseTarget);
     firstInstIndex = prevFirstInstIndex;
     for (IntegralValue caseValue : boundCaseStatement.CaseValues())
     {
@@ -632,6 +647,7 @@ void EmitterVisitor::Visit(BoundDefaultStatement& boundDefaultStatement)
     firstInstIndex = endOfFunction;
     boundDefaultStatement.CompoundStatement()->Accept(*this);
     defaultTarget = firstInstIndex;
+    boundDefaultStatement.SetFirstInstIndex(defaultTarget);
     firstInstIndex = prevFirstInstIndex;
 }
 
@@ -665,11 +681,27 @@ void EmitterVisitor::Visit(BoundBreakStatement& boundBreakStatement)
 
 void EmitterVisitor::Visit(BoundContinueStatement& boundContinueStatement)
 {
-    Assert(continueSet, "containue set not set");
+    Assert(continueSet, "continue set not set");
     BoundCompoundStatement* targetBlock = continueTarget->Parent()->Block();
     ExitBlocks(targetBlock);
     std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
     continueSet->push_back(jump.get());
+    function->AddInst(std::move(jump));
+}
+
+void EmitterVisitor::Visit(BoundGotoStatement& boundGotoStatement)
+{
+    BoundCompoundStatement* targetBlock = boundGotoStatement.TargetBlock();
+    ExitBlocks(targetBlock);
+    std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
+    if (boundGotoStatement.TargetStatement()->FirstInstIndex() != -1)
+    {
+        jump->SetTarget(boundGotoStatement.TargetStatement()->FirstInstIndex());
+    }
+    else
+    {
+        boundGotoStatement.TargetStatement()->AddJumpToThis(jump.get());
+    }
     function->AddInst(std::move(jump));
 }
 

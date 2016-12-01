@@ -21,8 +21,19 @@ public:
     void SetParent(BoundStatement* parent_) { parent = parent_; }
     BoundStatement* Parent() const { return parent; }
     BoundCompoundStatement* Block() const;
+    void SetLabel(const std::string& label_);
+    const std::string& Label() const { return label; }
+    void SetSpan(const Span& span_);
+    const Span& GetSpan() const { return span; }
+    int32_t FirstInstIndex() const { return firstInstIndex; }
+    void SetFirstInstIndex(int32_t firstInstIndex_);
+    void AddJumpToThis(Instruction* instruction);
 private:
     BoundStatement* parent;
+    std::string label;
+    Span span;
+    int32_t firstInstIndex;
+    std::vector<Instruction*> jumpsToThis;
 };
 
 class BoundCompoundStatement : public BoundStatement
@@ -178,6 +189,22 @@ class BoundContinueStatement : public BoundStatement
 public:
     BoundContinueStatement(Assembly& assembly_);
     void Accept(BoundNodeVisitor& visitor) override;
+};
+
+class BoundGotoStatement : public BoundStatement
+{
+public:
+    BoundGotoStatement(Assembly& assembly_, const std::string& target_);
+    void Accept(BoundNodeVisitor& visitor) override;
+    const std::string& Target() const { return target; }
+    void SetTargetStatement(BoundStatement* targetStatement_) { targetStatement = targetStatement_; }
+    BoundStatement* TargetStatement() const { return targetStatement; }
+    void SetTargetBlock(BoundCompoundStatement* targetBlock_) { targetBlock = targetBlock_; }
+    BoundCompoundStatement* TargetBlock() const { return targetBlock; }
+private:
+    std::string target;
+    BoundStatement* targetStatement;
+    BoundCompoundStatement* targetBlock;
 };
 
 class BoundConstructionStatement : public BoundStatement

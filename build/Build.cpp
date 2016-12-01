@@ -11,6 +11,7 @@
 #include <cminor/binder/StatementBinderVisitor.hpp>
 #include <cminor/binder/BoundCompileUnit.hpp>
 #include <cminor/binder/BoundFunction.hpp>
+#include <cminor/binder/ControlFlowAnalyzer.hpp>
 #include <cminor/emitter/Emitter.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/Assembly.hpp>
@@ -246,6 +247,10 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     for (std::unique_ptr<BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
     {
         BindStatements(*boundCompileUnit);
+        if (boundCompileUnit->HasGotos())
+        {
+            AnalyzeControlFlow(*boundCompileUnit);
+        }
         GenerateCode(*boundCompileUnit, machine);
         const std::unordered_set<ClassTemplateSpecializationSymbol*>& specializations = boundCompileUnit->GetClassTemplateRepository().ClassTemplateSpecializations();
         for (ClassTemplateSpecializationSymbol* specialization : specializations)

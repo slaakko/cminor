@@ -170,6 +170,7 @@ namespace cminor.parser
         ForEachStatement(ParsingContext* ctx): StatementNode*;
         BreakStatement(ParsingContext* ctx): StatementNode*;
         ContinueStatement(ParsingContext* ctx): StatementNode*;
+        GotoStatement(ParsingContext* ctx): StatementNode*;
         SwitchStatement(ParsingContext* ctx): SwitchStatementNode*;
         CaseStatement(ParsingContext* ctx, var std::unique_ptr<CaseStatementNode> caseS): CaseStatementNode*;
         DefaultStatement(ParsingContext* ctx): DefaultStatementNode*;

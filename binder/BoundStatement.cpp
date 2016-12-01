@@ -8,8 +8,32 @@
 
 namespace cminor { namespace binder {
 
-BoundStatement::BoundStatement(Assembly& assembly_) : BoundNode(assembly_), parent(nullptr)
+BoundStatement::BoundStatement(Assembly& assembly_) : BoundNode(assembly_), parent(nullptr), firstInstIndex(-1)
 {
+}
+
+void BoundStatement::SetLabel(const std::string& label_) 
+{
+    label = label_;
+}
+
+void BoundStatement::SetSpan(const Span& span_)
+{
+    span = span_;
+}
+
+void BoundStatement::SetFirstInstIndex(int32_t firstInstIndex_)
+{
+    firstInstIndex = firstInstIndex_;
+    for (Instruction* jumpToThis : jumpsToThis)
+    {
+        jumpToThis->SetTarget(firstInstIndex);
+    }
+}
+
+void BoundStatement::AddJumpToThis(Instruction* instruction)
+{
+    jumpsToThis.push_back(instruction);
 }
 
 BoundCompoundStatement* BoundStatement::Block() const
@@ -192,6 +216,15 @@ BoundContinueStatement::BoundContinueStatement(Assembly& assembly_) : BoundState
 }
 
 void BoundContinueStatement::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundGotoStatement::BoundGotoStatement(Assembly& assembly_, const std::string& target_) : BoundStatement(assembly_), target(target_), targetStatement(nullptr), targetBlock(nullptr)
+{
+}
+
+void BoundGotoStatement::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
 }

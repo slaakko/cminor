@@ -553,15 +553,25 @@ void StatementBinderVisitor::Visit(CompoundStatementNode& compoundStatementNode)
     ContainerScope* prevContainerScope = containerScope;
     containerScope = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(compoundStatementNode)->GetContainerScope();
     std::unique_ptr<BoundCompoundStatement> boundCompoundStatement(new BoundCompoundStatement(boundCompileUnit.GetAssembly()));
+    boundCompoundStatement->SetSpan(compoundStatementNode.GetSpan());
     int n = compoundStatementNode.Statements().Count();
     for (int i = 0; i < n; ++i)
     {
         StatementNode* statementNode = compoundStatementNode.Statements()[i];
         statementNode->Accept(*this);
+        statement->SetSpan(statementNode->GetSpan());
+        if (statementNode->Label())
+        {
+            statement->SetLabel(statementNode->Label()->Label());
+        }
         boundCompoundStatement->AddStatement(std::unique_ptr<BoundStatement>(statement.release()));
     }
     containerScope = prevContainerScope;
     statement.reset(boundCompoundStatement.release());
+    if (compoundStatementNode.Label())
+    {
+        statement->SetLabel(compoundStatementNode.Label()->Label());
+    }
 }
 
 void StatementBinderVisitor::Visit(ReturnStatementNode& returnStatementNode)
@@ -637,11 +647,21 @@ void StatementBinderVisitor::Visit(IfStatementNode& ifStatementNode)
     }
     ifStatementNode.ThenS()->Accept(*this);
     BoundStatement* thenS = statement.release();
+    thenS->SetSpan(ifStatementNode.ThenS()->GetSpan());
+    if (ifStatementNode.ThenS()->Label())
+    {
+        thenS->SetLabel(ifStatementNode.ThenS()->Label()->Label());
+    }
     BoundStatement* elseS = nullptr;
     if (ifStatementNode.ElseS())
     {
         ifStatementNode.ElseS()->Accept(*this);
         elseS = statement.release();
+        elseS->SetSpan(ifStatementNode.ElseS()->GetSpan());
+        if (ifStatementNode.ElseS()->Label())
+        {
+            elseS->SetLabel(ifStatementNode.ElseS()->Label()->Label());
+        }
     }
     statement.reset(new BoundIfStatement(boundCompileUnit.GetAssembly(), std::move(condition), std::unique_ptr<BoundStatement>(thenS), std::unique_ptr<BoundStatement>(elseS)));
 }
@@ -654,6 +674,11 @@ void StatementBinderVisitor::Visit(WhileStatementNode& whileStatementNode)
         throw Exception("condition of while statement must be Boolean expression", whileStatementNode.Condition()->GetSpan());
     }
     whileStatementNode.Statement()->Accept(*this);
+    statement->SetSpan(whileStatementNode.Statement()->GetSpan());
+    if (whileStatementNode.Statement()->Label())
+    {
+        statement->SetLabel(whileStatementNode.Statement()->Label()->Label());
+    }
     statement.reset(new BoundWhileStatement(boundCompileUnit.GetAssembly(), std::move(condition), std::unique_ptr<BoundStatement>(statement.release())));
 }
 
@@ -665,6 +690,11 @@ void StatementBinderVisitor::Visit(DoStatementNode& doStatementNode)
         throw Exception("condition of do statement must be Boolean expression", doStatementNode.Condition()->GetSpan());
     }
     doStatementNode.Statement()->Accept(*this);
+    statement->SetSpan(doStatementNode.Statement()->GetSpan());
+    if (doStatementNode.Statement()->Label())
+    {
+        statement->SetLabel(doStatementNode.Statement()->Label()->Label());
+    }
     statement.reset(new BoundDoStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundStatement>(statement.release()), std::move(condition)));
 }
 
@@ -684,10 +714,25 @@ void StatementBinderVisitor::Visit(ForStatementNode& forStatementNode)
     }
     forStatementNode.InitS()->Accept(*this);
     BoundStatement* initS = statement.release();
+    initS->SetSpan(forStatementNode.InitS()->GetSpan());
+    if (forStatementNode.InitS()->Label())
+    {
+        initS->SetLabel(forStatementNode.InitS()->Label()->Label());
+    }
     forStatementNode.LoopS()->Accept(*this);
     BoundStatement* loopS = statement.release();
+    loopS->SetSpan(forStatementNode.LoopS()->GetSpan());
+    if (forStatementNode.LoopS()->Label())
+    {
+        loopS->SetLabel(forStatementNode.LoopS()->Label()->Label());
+    }
     forStatementNode.ActionS()->Accept(*this);
     BoundStatement* actionS = statement.release();
+    actionS->SetSpan(forStatementNode.ActionS()->GetSpan());
+    if (forStatementNode.ActionS()->Label())
+    {
+        actionS->SetLabel(forStatementNode.ActionS()->Label()->Label());
+    }
     containerScope = prevContainerScope;
     statement.reset(new BoundForStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundStatement>(initS), std::move(condition), std::unique_ptr<BoundStatement>(loopS),
         std::unique_ptr<BoundStatement>(actionS)));
@@ -719,6 +764,14 @@ void StatementBinderVisitor::Visit(ContinueStatementNode& continueStatementNode)
         throw Exception("continue statement must be enclosed in while, do, for or foreach statement", continueStatementNode.GetSpan());
     }
     statement.reset(new BoundContinueStatement(boundCompileUnit.GetAssembly()));
+}
+
+void StatementBinderVisitor::Visit(GotoStatementNode& gotoStatementNode)
+{
+    function->SetHasGotos();
+    boundCompileUnit.SetHasGotos();
+    BoundGotoStatement* boundGotoStatement = new BoundGotoStatement(boundCompileUnit.GetAssembly(), gotoStatementNode.Target());
+    statement.reset(boundGotoStatement);
 }
 
 void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatementNode)
@@ -812,6 +865,10 @@ void StatementBinderVisitor::Visit(ForEachStatementNode& forEachStatementNode)
 {
     const Span& span = forEachStatementNode.GetSpan();
     CompoundStatementNode forEachBlock(span);
+    if (forEachStatementNode.Label())
+    {
+        forEachBlock.SetLabelNode(new LabelNode(span, forEachStatementNode.Label()->Label()));
+    }
     ConstructionStatementNode* constructEnumerable = new ConstructionStatementNode(span, new IdentifierNode(span, "System.Enumerable"), new IdentifierNode(span, "@enumerable"));
     CloneContext cloneContext;
     constructEnumerable->AddArgument(forEachStatementNode.Container()->Clone(cloneContext));
@@ -866,6 +923,11 @@ void StatementBinderVisitor::Visit(SwitchStatementNode& switchStatementNode)
             caseS->Accept(*this);
             BoundCaseStatement* bcs = dynamic_cast<BoundCaseStatement*>(statement.release());
             Assert(bcs, "bound case statement expected");
+            bcs->SetSpan(caseS->GetSpan());
+            if (caseS->Label())
+            {
+                bcs->SetLabel(caseS->Label()->Label());
+            }
             switchStatement->AddCaseStatement(std::unique_ptr<BoundCaseStatement>(bcs));
         }
         if (switchStatementNode.Default())
@@ -873,6 +935,11 @@ void StatementBinderVisitor::Visit(SwitchStatementNode& switchStatementNode)
             switchStatementNode.Default()->Accept(*this);
             BoundDefaultStatement* bds = dynamic_cast<BoundDefaultStatement*>(statement.release());
             Assert(bds, "bound default statement expected");
+            bds->SetSpan(switchStatementNode.Default()->GetSpan());
+            if (switchStatementNode.Default()->Label())
+            {
+                bds->SetLabel(switchStatementNode.Default()->Label()->Label());
+            }
             switchStatement->SetDefaultStatement(std::unique_ptr<BoundDefaultStatement>(bds));
         }
         statement.reset(switchStatement.release());
@@ -967,6 +1034,11 @@ void StatementBinderVisitor::Visit(CaseStatementNode& caseStatementNode)
             terminated = true;
         }
         statementNode->Accept(*this);
+        statement->SetSpan(statementNode->GetSpan());
+        if (statementNode->Label())
+        {
+            statement->SetLabel(statementNode->Label()->Label());
+        }
         caseStatement->AddStatement(std::move(statement));
     }
     if (!terminated)
@@ -1003,6 +1075,11 @@ void StatementBinderVisitor::Visit(DefaultStatementNode& defaultStatementNode)
             terminated = true;
         }
         statementNode->Accept(*this);
+        statement->SetSpan(statementNode->GetSpan());
+        if (statementNode->Label())
+        {
+            statement->SetLabel(statementNode->Label()->Label());
+        }
         defaultStatement->AddStatement(std::move(statement));
     }
     if (!terminated)
@@ -1129,6 +1206,10 @@ void StatementBinderVisitor::Visit(UsingStatementNode& usingStatementNode)
 {
     const Span& span = usingStatementNode.GetSpan();
     CompoundStatementNode usingBlock(span);
+    if (usingStatementNode.Label())
+    {
+        usingBlock.SetLabelNode(new LabelNode(span, usingStatementNode.Label()->Label()));
+    }
     CloneContext cloneContext;
     usingBlock.AddStatement(static_cast<StatementNode*>(usingStatementNode.ConstructionStatement()->Clone(cloneContext)));
     CompoundStatementNode* tryBlock = new CompoundStatementNode(span);

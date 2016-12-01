@@ -19,10 +19,13 @@ public:
     BoundCompoundStatement* Body() const { return body.get(); }
     void Accept(BoundNodeVisitor& visitor) override;
     std::string NextTempVarName();
+    void SetHasGotos() { hasGotos = true; }
+    bool HasGotos() const { return hasGotos; }
 private:
     FunctionSymbol* functionSymbol;
     std::unique_ptr<BoundCompoundStatement> body;
     int nextTempVarNumber;
+    bool hasGotos;
 };
 
 } } // namespace cminor::binder

@@ -1,5 +1,5 @@
-#ifndef Statement_hpp_29850
-#define Statement_hpp_29850
+#ifndef Statement_hpp_12015
+#define Statement_hpp_12015
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -35,6 +35,7 @@ private:
     class ForEachStatementRule;
     class BreakStatementRule;
     class ContinueStatementRule;
+    class GotoStatementRule;
     class SwitchStatementRule;
     class CaseStatementRule;
     class DefaultStatementRule;
@@ -59,4 +60,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Statement_hpp_29850
+#endif // Statement_hpp_12015

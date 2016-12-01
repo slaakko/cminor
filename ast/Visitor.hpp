@@ -102,6 +102,7 @@ class DoStatementNode;
 class ForStatementNode;
 class BreakStatementNode;
 class ContinueStatementNode;
+class GotoStatementNode;
 class ConstructionStatementNode;
 class AssignmentStatementNode;
 class ExpressionStatementNode;
@@ -221,6 +222,7 @@ public:
     virtual void Visit(ForStatementNode& forStatementNode) {}
     virtual void Visit(BreakStatementNode& breakStatementNode) {}
     virtual void Visit(ContinueStatementNode& continueStatementNode) {}
+    virtual void Visit(GotoStatementNode& gotoStatementNode) {}
     virtual void Visit(ConstructionStatementNode& constructionStatementNode) {}
     virtual void Visit(AssignmentStatementNode& assignmentStatementNode) {}
     virtual void Visit(ExpressionStatementNode& expressionStatementNode) {}

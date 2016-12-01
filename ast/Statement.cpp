@@ -498,6 +498,36 @@ void ContinueStatementNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+GotoStatementNode::GotoStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+GotoStatementNode::GotoStatementNode(const Span& span_, const std::string& target_) : StatementNode(span_), target(target_)
+{
+}
+
+Node* GotoStatementNode::Clone(CloneContext& cloneContext) const
+{
+    return new GotoStatementNode(GetSpan(), target);
+}
+
+void GotoStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.AsMachineWriter().Put(target);
+}
+
+void GotoStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    target = reader.GetUtf8String();
+}
+
+void GotoStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 ExpressionStatementNode::ExpressionStatementNode(const Span& span_) : StatementNode(span_)
 {
 }

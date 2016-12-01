@@ -183,6 +183,21 @@ public:
     bool IsDefaultTerminatingNode() const override { return true; }
 };
 
+class GotoStatementNode : public StatementNode
+{
+public:
+    GotoStatementNode(const Span& span_);
+    GotoStatementNode(const Span& span_, const std::string& target_);
+    NodeType GetNodeType() const override { return NodeType::gotoStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
+    void Accept(Visitor& visitor) override;
+    const std::string& Target() const { return target; }
+private:
+    std::string target;
+};
+
 class ConstructionStatementNode : public StatementNode
 {
 public:

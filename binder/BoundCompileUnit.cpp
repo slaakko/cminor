@@ -9,7 +9,7 @@
 namespace cminor { namespace binder {
 
 BoundCompileUnit::BoundCompileUnit(Assembly& assembly_, CompileUnitNode* compileUnitNode_) : 
-    BoundNode(assembly_), assembly(assembly_), compileUnitNode(compileUnitNode_), conversionTable(assembly_), classTemplateRepository(*this)
+    BoundNode(assembly_), assembly(assembly_), compileUnitNode(compileUnitNode_), conversionTable(assembly_), classTemplateRepository(*this), hasGotos(false)
 {
     conversionTable.SetConversionMap(assembly.GetSymbolTable().GetConversionTable().ConversionMap());
 }

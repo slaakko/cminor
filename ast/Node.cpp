@@ -30,7 +30,7 @@ const char* nodeTypeStr[] =
     "shiftLeftNode", "shiftRightNode", "addNode", "subNode", "mulNode", "divNode", "remNode", "notNode", "unaryPlusNode", "unaryMinusNode", "complementNode", "isNode", "asNode", "dotNode", "arrayNode",
     "indexingNode", "invokeNode", "castNode", "classNode", "interfaceNode", "newNode", "memberVariableNode", "propertyNode", "indexerNode", "staticConstructorNode", "constructorNode", "memberFunctionNode",
     "baseInitializerNode", "thisInitializerNode", "labelNode", "thisNode", "baseNode", "templateIdNode", "templateParameterNode",
-    "compoundStatementNode", "returnStatementNode", "ifStatementNode", "whileStatementNode", "doStatementNode", "forStatementNode", "breakStatementNode", "continueStatementNode",
+    "compoundStatementNode", "returnStatementNode", "ifStatementNode", "whileStatementNode", "doStatementNode", "forStatementNode", "breakStatementNode", "continueStatementNode", "gotoStatementNode",
     "constructionStatementNode", "assignmentStatementNode", "expressionStatementNode", "emptyStatementNode", "incrementStatementNode", "decrementStatementNode", "forEachStatementNode", 
     "switchStatementNode", "caseStatementNode", "defaultStatementNode", "gotoCaseStatementNode", "gotoDefaultStatementNode", "throwStatementNode", "tryStatementNode", "catchNode", "usingStatementNode",
     "enumTypeNode", "enumConstantNode", "constantNode"
@@ -311,6 +311,7 @@ void NodeInit()
     NodeFactory::Instance().Register(NodeType::forStatementNode, new ConcreteNodeCreator<ForStatementNode>());
     NodeFactory::Instance().Register(NodeType::breakStatementNode, new ConcreteNodeCreator<BreakStatementNode>());
     NodeFactory::Instance().Register(NodeType::continueStatementNode, new ConcreteNodeCreator<ContinueStatementNode>());
+    NodeFactory::Instance().Register(NodeType::gotoStatementNode, new ConcreteNodeCreator<GotoStatementNode>());
     NodeFactory::Instance().Register(NodeType::constructionStatementNode, new ConcreteNodeCreator<ConstructionStatementNode>());
     NodeFactory::Instance().Register(NodeType::assignmentStatementNode, new ConcreteNodeCreator<AssignmentStatementNode>());
     NodeFactory::Instance().Register(NodeType::expressionStatementNode, new ConcreteNodeCreator<ExpressionStatementNode>());
@@ -321,6 +322,7 @@ void NodeInit()
     NodeFactory::Instance().Register(NodeType::throwStatementNode, new ConcreteNodeCreator<ThrowStatementNode>());
     NodeFactory::Instance().Register(NodeType::tryStatementNode, new ConcreteNodeCreator<TryStatementNode>());
     NodeFactory::Instance().Register(NodeType::catchNode, new ConcreteNodeCreator<CatchNode>());
+    NodeFactory::Instance().Register(NodeType::usingStatementNode, new ConcreteNodeCreator<UsingStatementNode>());
     NodeFactory::Instance().Register(NodeType::enumTypeNode, new ConcreteNodeCreator<EnumTypeNode>());
     NodeFactory::Instance().Register(NodeType::enumConstantNode, new ConcreteNodeCreator<EnumConstantNode>());
     NodeFactory::Instance().Register(NodeType::constantNode, new ConcreteNodeCreator<ConstantNode>());

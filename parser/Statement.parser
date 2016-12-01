@@ -59,6 +59,7 @@ namespace cminor.parser
             |   ForEachStatement(ctx){ value = ForEachStatement; }
             |   BreakStatement(ctx){ value = BreakStatement; }
             |   ContinueStatement(ctx){ value = ContinueStatement; }
+            |   GotoStatement(ctx){ value = GotoStatement; }
             |   SwitchStatement(ctx){ value = SwitchStatement; }
             |   GotoCaseStatement(ctx){ value = GotoCaseStatement; }
             |   GotoDefaultStatement(ctx){ value = GotoDefaultStatement; }
@@ -120,6 +121,10 @@ namespace cminor.parser
 
         ContinueStatement(ParsingContext* ctx) : StatementNode*
             ::= (keyword("continue") ';'!){ value = new ContinueStatementNode(span); }
+            ;
+
+        GotoStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("goto") Identifier ';'!){ value = new GotoStatementNode(span, Identifier->Str()); }
             ;
 
         SwitchStatement(ParsingContext* ctx) : SwitchStatementNode*
