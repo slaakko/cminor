@@ -292,7 +292,7 @@ bool Thread::DispatchToHandlerOrFinally(Frame* frame)
     {
         CatchBlock* catchBlock = currentExceptionBlock->CatchBlocks()[i].get();
         ObjectType* catchedType = catchBlock->GetExceptionVarType();
-        if (catchedType->Id() % exceptionObjectType->Id() == 0)
+        if (exceptionObjectType->Id() % catchedType->Id() == 0)
         {
             int32_t exceptionVarIndex = catchBlock->GetExceptionVarIndex();
             Assert(exceptionVarIndex != -1, "invalid exception variable index");

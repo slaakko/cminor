@@ -13,60 +13,62 @@ namespace System.Text
         {
             this.chars = new List<char>(capacity);
         }
-        public void Append(string s)
+        public StringBuilder Append(string s)
         {
             foreach (char c in s)
             {
                 chars.Add(c);
             }
+            return this;
         }
-        public void Append(char c)
+        public StringBuilder Append(char c)
         {
             chars.Add(c);
+            return this;
         }
-        public void Append(bool x)
+        public StringBuilder Append(bool x)
         {
-            Append(x.ToString());
+            return Append(x.ToString());
         }
-        public void Append(sbyte x)
+        public StringBuilder Append(sbyte x)
         {
-            Append(x.ToString());
+            return Append(x.ToString());
         }
-        public void Append(byte x)
+        public StringBuilder Append(byte x)
         {
-            Append(x.ToString());
+            return Append(x.ToString());
         }
-        public void Append(short x)
+        public StringBuilder Append(short x)
         {
-            Append(x.ToString());
+            return Append(x.ToString());
         }
-        public void Append(ushort x)
+        public StringBuilder Append(ushort x)
         {
-            Append(x.ToString());
+            return Append(x.ToString());
         }
-        public void Append(int x)
+        public StringBuilder Append(int x)
         {
-            Append(x.ToString());
+            return Append(x.ToString());
         }
-        public void Append(uint x)
+        public StringBuilder Append(uint x)
         {
-            Append(x.ToString());
+            return Append(x.ToString());
         }
-        public void Append(long x)
+        public StringBuilder Append(long x)
         {
-            Append(x.ToString());
+            return Append(x.ToString());
         }
-        public void Append(ulong x)
+        public StringBuilder Append(ulong x)
         {
-            Append(x.ToString());
+            return Append(x.ToString());
         }
-        public void Append(float x)
+        public StringBuilder Append(float x)
         {
-            Append(x.ToString());
+            return Append(x.ToString());
         }
-        public void Append(double x)
+        public StringBuilder Append(double x)
         {
-            Append(x.ToString());
+            return Append(x.ToString());
         }
         public void Reverse()
         {

@@ -1,6 +1,19 @@
 using System;
 using System.IO;
 
+void foo()
+{
+    throw new NullReferenceException("foo");
+}
+
 void main()
 {
+    try
+    {
+        foo();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.ToString());
+    }
 }
