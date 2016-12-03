@@ -49,6 +49,7 @@ public:
     void EndFinally();
     void PushExitBlock(int32_t exitBlockNext_);
     void PopExitBlock();
+    utf32_string GetStackTrace() const;
 private:
     Machine& machine;
     Function& fun;

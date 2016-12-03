@@ -85,6 +85,7 @@ void BasicTypeCopyInit::GenerateCall(Machine& machine, Assembly& assembly, Funct
     function.GetEmitter()->AddIndexRequest(&startStore);
     target->GenStore(machine, function);
     function.GetEmitter()->BackpatchConDisSet(startStore.Index());
+    function.MapPCToSourceLine(startStore.Index(), function.GetEmitter()->CurrentSourceLine());
 }
 
 BasicTypeAssignment::BasicTypeAssignment(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
@@ -109,6 +110,7 @@ void BasicTypeAssignment::GenerateCall(Machine& machine, Assembly& assembly, Fun
     function.GetEmitter()->AddIndexRequest(&startStore);
     target->GenStore(machine, function);
     function.GetEmitter()->BackpatchConDisSet(startStore.Index());
+    function.MapPCToSourceLine(startStore.Index(), function.GetEmitter()->CurrentSourceLine());
 }
 
 BasicTypeReturn::BasicTypeReturn(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
@@ -125,9 +127,12 @@ void BasicTypeReturn::ComputeName()
 
 void BasicTypeReturn::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
+    InstIndexRequest startLoad;
+    function.GetEmitter()->AddIndexRequest(&startLoad);
     Assert(objects.size() == 1, "return needs one object");
     GenObject* value = objects[0];
     value->GenLoad(machine, function);
+    function.MapPCToSourceLine(startLoad.Index(), function.GetEmitter()->CurrentSourceLine());
 }
 
 BasicTypeConversion::BasicTypeConversion(const Span& span_, Constant name_) : 

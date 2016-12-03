@@ -11,12 +11,13 @@ namespace cminor { namespace machine {
 
 Frame::Frame(Machine& machine_, Thread& thread_, Function& fun_) :
     machine(machine_), id(machine.GetNextFrameId()), thread(thread_), fun(fun_), managedMemoryPool(machine.GetManagedMemoryPool()), constantPool(fun.GetConstantPool()), opStack(thread.OpStack()), 
-    locals(fun.NumLocals()), pc(0)
+    locals(fun.NumLocals()), pc(0), prevPC(0)
 {
 }
 
 Instruction* Frame::GetNextInst()
 {
+    prevPC = pc;
     if (pc == fun.NumInsts())
     {
         return nullptr;

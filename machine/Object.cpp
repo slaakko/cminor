@@ -422,6 +422,31 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
     }
 }
 
+ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_string& s)
+{
+    Type* type = TypeTable::Instance().GetType(StringPtr(U"System.String"));
+    ObjectType* stringType = dynamic_cast<ObjectType*>(type);
+    Assert(stringType, "object type expected");
+    ObjectReference str = CreateObject(thread, stringType);
+    int32_t numChars = int32_t(s.length());
+    AllocationHandle handle(nextReferenceValue++);
+    uint64_t stringSize = numChars * ValueSize(ValueType::charType);
+    std::pair<ArenaId, MemPtr> arenaMemPtr = machine.AllocateMemory(thread, stringSize);
+    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, arenaMemPtr.first, arenaMemPtr.second, numChars, stringSize))));
+    if (!pairItBool.second)
+    {
+        throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+    }
+    MemPtr stringMem = arenaMemPtr.second;
+    std::memcpy(stringMem.Value(), s.c_str(), stringSize);
+    Object& strObject = GetObject(str);
+    ClassData* classDataPtr = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String"));
+    strObject.SetField(IntegralValue(classDataPtr), 0);
+    strObject.SetField(IntegralValue(numChars, ValueType::intType), 1);
+    strObject.SetField(handle, 2);
+    return str;
+}
+
 IntegralValue ManagedMemoryPool::GetStringChar(ObjectReference str, int32_t index)
 {
     if (str.IsNull())

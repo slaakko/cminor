@@ -249,6 +249,7 @@ public:
     void SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue);
     AllocationHandle CreateStringCharsFromLiteral(const char32_t* strLit, uint32_t len);
     std::pair<AllocationHandle, int32_t> CreateStringCharsFromCharArray(Thread& thread, ObjectReference charArray);
+    ObjectReference CreateString(Thread& thread, const utf32_string& s);
     IntegralValue GetStringChar(ObjectReference str, int32_t index);
     std::string GetUtf8String(ObjectReference str);
     std::vector<uint8_t> GetBytes(ObjectReference arr);

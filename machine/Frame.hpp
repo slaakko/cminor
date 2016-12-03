@@ -33,6 +33,7 @@ public:
     Instruction* GetNextInst();
     int32_t PC() const { return pc; }
     void SetPC(int32_t pc_);
+    int32_t PrevPC() const { return prevPC; }
 private:
     Machine& machine;
     int32_t id;
@@ -43,6 +44,7 @@ private:
     OperandStack& opStack;
     LocalVariableVector locals;
     int32_t pc;
+    int32_t prevPC;
 };
 
 } } // namespace cminor::machine

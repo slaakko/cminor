@@ -324,6 +324,7 @@ void FunctionSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function
     function.GetEmitter()->AddIndexRequest(&startFunctionCall);
     function.AddInst(std::move(inst));
     function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
+    function.MapPCToSourceLine(startFunctionCall.Index(), function.GetEmitter()->CurrentSourceLine());
 }
 
 void FunctionSymbol::CreateMachineFunction()
@@ -527,6 +528,7 @@ void ConstructorSymbol::GenerateCall(Machine& machine, Assembly& assembly, Funct
     if (function.GetEmitter())
     {
         function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
+        function.MapPCToSourceLine(startFunctionCall.Index(), function.GetEmitter()->CurrentSourceLine());
     }
 }
 
@@ -900,6 +902,7 @@ void MemberFunctionSymbol::GenerateVirtualCall(Machine& machine, Assembly& assem
     function.GetEmitter()->AddIndexRequest(&startFunctionCall);
     function.AddInst(std::move(inst));
     function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
+    function.MapPCToSourceLine(startFunctionCall.Index(), function.GetEmitter()->CurrentSourceLine());
 }
 
 void MemberFunctionSymbol::GenerateInterfaceCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
@@ -919,6 +922,7 @@ void MemberFunctionSymbol::GenerateInterfaceCall(Machine& machine, Assembly& ass
     function.GetEmitter()->AddIndexRequest(&startFunctionCall);
     function.AddInst(std::move(inst));
     function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
+    function.MapPCToSourceLine(startFunctionCall.Index(), function.GetEmitter()->CurrentSourceLine());
 }
 
 void MemberFunctionSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)

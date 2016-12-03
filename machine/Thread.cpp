@@ -321,4 +321,35 @@ void Thread::PopExitBlock()
     exitBlockStack.pop();
 }
 
+utf32_string Thread::GetStackTrace() const
+{
+    utf32_string stackTrace;
+    int n = int(frames.size());
+    bool first = true;
+    for (int i = n - 1; i >= 0; --i)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            stackTrace.append(1, U'\n');
+        }
+        Frame& frame = const_cast<Frame&>(frames[i]);
+        utf32_string fun = U"at ";
+        fun.append(frame.Fun().FriendlyName().Value().AsStringLiteral());
+        if (frame.Fun().HasSourceFilePath())
+        {
+            uint32_t line = frame.Fun().GetSourceLine(frame.PrevPC());
+            if (line != -1)
+            {
+                fun.append(U" [").append(frame.Fun().SourceFilePath().Value().AsStringLiteral()).append(1, U':').append(ToUtf32(std::to_string(line))).append(1, U']');
+            }
+        }
+        stackTrace.append(fun);
+    }
+    return stackTrace;
+}
+
 } } // namespace cminor::machine

@@ -26,6 +26,7 @@ private:
 class Emitter
 {
 public:
+    Emitter();
     virtual ~Emitter();
     virtual bool CreatePCRange() const = 0;
     virtual bool SetPCRangeEnd() const = 0;
@@ -35,8 +36,11 @@ public:
     void AddIndexRequest(InstIndexRequest* request);
     void SatisfyIndexRequests(int32_t index);
     virtual void BackpatchConDisSet(int32_t index) = 0;
+    int32_t CurrentSourceLine() const { return currentSourceLine; }
+    void SetCurrentSourceLine(int32_t currentSourceLine_) { currentSourceLine = currentSourceLine_; }
 private:
     std::vector<InstIndexRequest*> instRequests;
+    int32_t currentSourceLine;
 };
 
 class PCRange
@@ -112,6 +116,7 @@ public:
     Constant FriendlyName() const { return friendlyName; }
     Constant SourceFilePath() const { return sourceFilePath; }
     void SetSourceFilePath(Constant sourceFilePath_) { sourceFilePath = sourceFilePath_; }
+    bool HasSourceFilePath() const;
     uint32_t Id() const { return id; }
     ConstantPool& GetConstantPool() { Assert(constantPool, "constant pool not set"); return *constantPool; }
     void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
@@ -136,6 +141,8 @@ public:
     ExceptionBlock* GetExceptionBlock(int id) const;
     ExceptionBlock* FindExceptionBlock(int32_t pc) const;
     void ResolveExceptionVarTypes();
+    void MapPCToSourceLine(uint32_t pc, uint32_t sourceLine);
+    uint32_t GetSourceLine(uint32_t pc) const;
 private:
     Constant callName;
     Constant friendlyName;
@@ -147,6 +154,7 @@ private:
     uint32_t numParameters;
     bool isMain;
     std::vector<std::unique_ptr<ExceptionBlock>> exceptionBlocks;
+    std::unordered_map<uint32_t, uint32_t> pcSoureLineMap;
     Emitter* emitter;
 };
 

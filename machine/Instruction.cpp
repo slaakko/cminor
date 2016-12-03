@@ -1435,6 +1435,10 @@ void ThrowInst::Execute(Frame& frame)
     IntegralValue exceptionValue = frame.OpStack().Pop();
     Assert(exceptionValue.GetType() == ValueType::objectReference, "object reference expected");
     ObjectReference exception(exceptionValue.Value());
+    Object& exceptionObject = frame.GetManagedMemoryPool().GetObject(exception);
+    utf32_string stackTraceStr = frame.GetThread().GetStackTrace();
+    ObjectReference stackTrace = frame.GetManagedMemoryPool().CreateString(frame.GetThread(), stackTraceStr);
+    exceptionObject.SetField(stackTrace, 2);
     frame.GetThread().HandleException(exception);
 }
 

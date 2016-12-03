@@ -13,6 +13,10 @@ InstIndexRequest::InstIndexRequest() : index(-1)
 {
 }
 
+Emitter::Emitter() : currentSourceLine(-1)
+{
+}
+
 Emitter::~Emitter()
 {
 }
@@ -158,6 +162,11 @@ Function::Function(Constant callName_, Constant friendlyName_, uint32_t id_, Con
 {
 }
 
+bool Function::HasSourceFilePath() const
+{
+    return sourceFilePath.Value().AsStringLiteral() != nullptr;
+}
+
 void Function::Write(Writer& writer)
 {
     ConstantId callNameId = constantPool->GetIdFor(callName);
@@ -189,6 +198,13 @@ void Function::Write(Writer& writer)
     for (const std::unique_ptr<ExceptionBlock>& exceptionBlock : exceptionBlocks)
     {
         exceptionBlock->Write(writer);
+    }
+    uint32_t npc = uint32_t(pcSoureLineMap.size());
+    writer.PutEncodedUInt(npc);
+    for (const std::pair<uint32_t, uint32_t>& p : pcSoureLineMap)
+    {
+        writer.PutEncodedUInt(p.first);
+        writer.PutEncodedUInt(p.second);
     }
 }
 
@@ -223,6 +239,13 @@ void Function::Read(Reader& reader)
         std::unique_ptr<ExceptionBlock> exceptionBlock(new ExceptionBlock(int(exceptionBlocks.size())));
         exceptionBlock->Read(reader);
         exceptionBlocks.push_back(std::move(exceptionBlock));
+    }
+    uint32_t npc = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < npc; ++i)
+    {
+        uint32_t pc = reader.GetEncodedUInt();
+        uint32_t sourceLine = reader.GetEncodedUInt();
+        MapPCToSourceLine(pc, sourceLine);
     }
 }
 
@@ -343,6 +366,22 @@ void Function::ResolveExceptionVarTypes()
     {
         exceptionBlock->ResolveExceptionVarTypes();
     }
+}
+
+void Function::MapPCToSourceLine(uint32_t pc, uint32_t sourceLine)
+{
+    if (pc == -1 || sourceLine == -1) return;
+    pcSoureLineMap[pc] = sourceLine;
+}
+
+uint32_t Function::GetSourceLine(uint32_t pc) const
+{
+    auto it = pcSoureLineMap.find(pc);
+    if (it != pcSoureLineMap.cend())
+    {
+        return it->second;
+    }
+    return -1;
 }
 
 std::unique_ptr<FunctionTable> FunctionTable::instance;
