@@ -320,12 +320,10 @@ void FunctionSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant callNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(callName.c_str())));
     callInst->SetFunctionCallName(callNameConstant);
-    int firstInstIndex = function.GetEmitter()->FistInstIndex();
-    function.GetEmitter()->SetFirstInstIndex(endOfFunction);
+    InstIndexRequest startFunctionCall;
+    function.GetEmitter()->AddIndexRequest(&startFunctionCall);
     function.AddInst(std::move(inst));
-    int callInstIndex = function.GetEmitter()->FistInstIndex();
-    function.GetEmitter()->SetFirstInstIndex(firstInstIndex);;
-    function.GetEmitter()->BackpatchConDis(callInstIndex);
+    function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
 }
 
 void FunctionSymbol::CreateMachineFunction()
@@ -520,7 +518,16 @@ void ConstructorSymbol::GenerateCall(Machine& machine, Assembly& assembly, Funct
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant callNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(callName.c_str())));
     callInstruction->SetFunctionCallName(callNameConstant);
+    InstIndexRequest startFunctionCall;
+    if (function.GetEmitter())
+    {
+        function.GetEmitter()->AddIndexRequest(&startFunctionCall);
+    }
     function.AddInst(std::move(callInst));
+    if (function.GetEmitter())
+    {
+        function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
+    }
 }
 
 void ConstructorSymbol::CreateMachineFunction()
@@ -889,7 +896,10 @@ void MemberFunctionSymbol::GenerateVirtualCall(Machine& machine, Assembly& assem
     Assert(vcall, "virtual call instruction expected");
     vcall->SetNumArgs(n);
     vcall->SetVmtIndex(vmtIndex);
+    InstIndexRequest startFunctionCall;
+    function.GetEmitter()->AddIndexRequest(&startFunctionCall);
     function.AddInst(std::move(inst));
+    function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
 }
 
 void MemberFunctionSymbol::GenerateInterfaceCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
@@ -905,7 +915,10 @@ void MemberFunctionSymbol::GenerateInterfaceCall(Machine& machine, Assembly& ass
     Assert(icall, "interface call instruction expected");
     icall->SetNumArgs(n);
     icall->SetImtIndex(imtIndex);
+    InstIndexRequest startFunctionCall;
+    function.GetEmitter()->AddIndexRequest(&startFunctionCall);
     function.AddInst(std::move(inst));
+    function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
 }
 
 void MemberFunctionSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)

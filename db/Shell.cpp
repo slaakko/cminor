@@ -43,6 +43,10 @@ void Shell::Run()
             std::getline(std::cin, line);
             std::unique_ptr<Command> command(commandGrammar->Parse(line.c_str(), line.c_str() + line.length(), 0, ""));
             command->Execute(*this);
+            if (!dynamic_cast<PrevCommand*>(command.get()))
+            {
+                prevCommand.reset(command.release());
+            }
             if (exit)
             {
                 break;
@@ -126,6 +130,18 @@ void Shell::Print(IntegralValue value)
 void Shell::Exit()
 {
     exit = true;
+}
+
+void Shell::RepeatLastCommand()
+{
+    if (prevCommand)
+    {
+        prevCommand->Execute(*this);
+    }
+    else
+    {
+        throw std::runtime_error("no previous command to execute");
+    }
 }
 
 } } // namespace cminor::db

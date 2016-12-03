@@ -9,8 +9,26 @@
 
 namespace cminor { namespace machine {
 
+InstIndexRequest::InstIndexRequest() : index(-1)
+{
+}
+
 Emitter::~Emitter()
 {
+}
+
+void Emitter::AddIndexRequest(InstIndexRequest* request)
+{
+    instRequests.push_back(request);
+}
+
+void Emitter::SatisfyIndexRequests(int32_t index)
+{
+    for (InstIndexRequest* request : instRequests)
+    {
+        request->SetIndex(index);
+    }
+    instRequests.clear();
 }
 
 PCRange::PCRange() : start(-1), end(-1)
@@ -131,12 +149,12 @@ void ExceptionBlock::ResolveExceptionVarTypes()
     }
 }
 
-Function::Function() : callName(), friendlyName(), id(-1), numLocals(0), numParameters(0), constantPool(nullptr), isMain(false), emitter(nullptr)
+Function::Function() : callName(), friendlyName(), sourceFilePath(), id(-1), numLocals(0), numParameters(0), constantPool(nullptr), isMain(false), emitter(nullptr)
 {
 }
 
 Function::Function(Constant callName_, Constant friendlyName_, uint32_t id_, ConstantPool* constantPool_) : 
-    callName(callName_), friendlyName(friendlyName_), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false), emitter(nullptr)
+    callName(callName_), friendlyName(friendlyName_), sourceFilePath(), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false), emitter(nullptr)
 {
 }
 
@@ -148,6 +166,14 @@ void Function::Write(Writer& writer)
     ConstantId friendlyNameId = constantPool->GetIdFor(friendlyName);
     Assert(friendlyNameId != noConstantId, "got no constant id");
     friendlyNameId.Write(writer);
+    bool hasSourceFilePath = sourceFilePath.Value().AsStringLiteral() != nullptr;
+    writer.Put(hasSourceFilePath);
+    if (hasSourceFilePath)
+    {
+        ConstantId sourceFilePathId = constantPool->GetIdFor(sourceFilePath);
+        Assert(sourceFilePathId != noConstantId, "got no constant id");
+        sourceFilePathId.Write(writer);
+    }
     writer.PutEncodedUInt(id);
     uint32_t n = static_cast<uint32_t>(instructions.size());
     writer.PutEncodedUInt(n);
@@ -175,6 +201,14 @@ void Function::Read(Reader& reader)
     ConstantId friendlyNameId;
     friendlyNameId.Read(reader);
     friendlyName = constantPool->GetConstant(friendlyNameId);
+    bool hasSourceFilePath = reader.GetBool();
+    if (hasSourceFilePath)
+    {
+        ConstantId sourceFilePathId;
+        sourceFilePathId.Read(reader);
+        sourceFilePath = constantPool->GetConstant(sourceFilePathId);
+    }
+    ConstantId 
     id = reader.GetEncodedUInt();
     uint32_t n = reader.GetEncodedUInt();
     for (uint32_t i = 0; i < n; ++i)
@@ -206,12 +240,7 @@ void Function::AddInst(std::unique_ptr<Instruction>&& inst)
 {
     if (emitter)
     {
-        int32_t firstInstIndex = emitter->FistInstIndex();
         int32_t instructionIndex = int32_t(instructions.size());
-        if (firstInstIndex == endOfFunction)
-        {
-            emitter->SetFirstInstIndex(instructionIndex);
-        }
         if (emitter->CreatePCRange())
         {
             emitter->DoCreatePCRange(instructionIndex);
@@ -220,6 +249,7 @@ void Function::AddInst(std::unique_ptr<Instruction>&& inst)
         {
             emitter->DoSetPCRangeEnd(instructionIndex);
         }
+        emitter->SatisfyIndexRequests(instructionIndex);
     }
     instructions.push_back(std::move(inst));
 }

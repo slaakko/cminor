@@ -797,6 +797,14 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class PopInst : public Instruction
+{
+public:
+    PopInst();
+    Instruction* Clone() const override { return new PopInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class UpCastInst : public TypeInstruction
 {
 public:

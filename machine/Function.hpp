@@ -13,19 +13,30 @@ namespace cminor { namespace machine {
 
 class GenObject;
 
+class InstIndexRequest
+{
+public:
+    InstIndexRequest();
+    void SetIndex(int32_t index_) { index = index_; }
+    int32_t Index() const { return index; }
+private:
+    int32_t index;
+};
+
 class Emitter
 {
 public:
     virtual ~Emitter();
-    virtual void SetFirstInstIndex(int32_t index) = 0;
-    virtual int32_t FistInstIndex() const = 0;
     virtual bool CreatePCRange() const = 0;
     virtual bool SetPCRangeEnd() const = 0;
     virtual void DoCreatePCRange(int32_t start) = 0;
     virtual void DoSetPCRangeEnd(int32_t end) = 0;
     virtual void Visit(GenObject& genObject) = 0;
-    virtual void BackpatchConDis(int32_t target) = 0;
-    virtual bool HasNonemptyConDisSet() const = 0;
+    void AddIndexRequest(InstIndexRequest* request);
+    void SatisfyIndexRequests(int32_t index);
+    virtual void BackpatchConDisSet(int32_t index) = 0;
+private:
+    std::vector<InstIndexRequest*> instRequests;
 };
 
 class PCRange
@@ -99,6 +110,8 @@ public:
     Function(Constant callName_, Constant friendlyName_, uint32_t id_, ConstantPool* constantPool_);
     Constant CallName() const { return callName; }
     Constant FriendlyName() const { return friendlyName; }
+    Constant SourceFilePath() const { return sourceFilePath; }
+    void SetSourceFilePath(Constant sourceFilePath_) { sourceFilePath = sourceFilePath_; }
     uint32_t Id() const { return id; }
     ConstantPool& GetConstantPool() { Assert(constantPool, "constant pool not set"); return *constantPool; }
     void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
@@ -126,6 +139,7 @@ public:
 private:
     Constant callName;
     Constant friendlyName;
+    Constant sourceFilePath;
     uint32_t id;
     ConstantPool* constantPool;
     std::vector<std::unique_ptr<Instruction>> instructions;

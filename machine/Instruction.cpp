@@ -1362,6 +1362,15 @@ void RotateInst::Execute(Frame& frame)
     frame.OpStack().Rotate();
 }
 
+PopInst::PopInst() : Instruction("pop")
+{
+}
+
+void PopInst::Execute(Frame& frame)
+{
+    frame.OpStack().Pop();
+}
+
 UpCastInst::UpCastInst() : TypeInstruction("upcast")
 {
 }

@@ -41,6 +41,7 @@ public:
     bool GetFlag(BoundExpressionFlags flag) const { return (flags & flag) != BoundExpressionFlags::none;  }
     virtual bool IsComplete() const { return true; }
     virtual bool IsLvalueExpression() const { return false; }
+    virtual bool ReturnsValue() const { return false; }
 private:
     TypeSymbol* type;
     BoundExpressionFlags flags;
@@ -261,6 +262,7 @@ public:
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
     void SetFunctionCallType(FunctionCallType callType_) { callType = callType_; }
+    bool ReturnsValue() const override { return functionSymbol->ReturnType() && !functionSymbol->ReturnType()->IsVoidType(); }
 private:
     FunctionSymbol* functionSymbol;
     std::vector<std::unique_ptr<BoundExpression>> arguments;

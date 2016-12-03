@@ -23,6 +23,7 @@ void HelpCommand::Execute(Shell& shell)
         "n(ext)      : step over\n" <<
         "l(ocal) <n> : print value of local <n>\n" <<
         "(stac)k <n> : print value of operand <n> in stack (0 is top)\n" <<
+        "ENTER       : repeat last command\n" <<
         std::endl;
 }
 
@@ -62,6 +63,11 @@ StackCommand::StackCommand(int index_) : index(index_)
 void StackCommand::Execute(Shell& shell)
 {
     shell.Stack(index);
+}
+
+void PrevCommand::Execute(Shell& shell)
+{
+    shell.RepeatLastCommand();
 }
 
 } } // namespace cminor::db

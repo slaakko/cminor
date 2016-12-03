@@ -24,6 +24,10 @@ namespace System
         {
             StringBuilder s = new StringBuilder();
             s.Append(base.ToString()).Append(": ").Append(message);
+            if (stackTrace != "")
+            {
+                s.Append(":\n").Append(stackTrace);
+            }
             return s.ToString();
         }
         private string message;

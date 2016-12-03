@@ -273,34 +273,35 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     rootInst.SetInst(0xC7, new DupInst());
     rootInst.SetInst(0xC8, new SwapInst());
     rootInst.SetInst(0xC9, new RotateInst());
+    rootInst.SetInst(0xCA, new PopInst());
 
 
     // objects:
     // --------
 
-    rootInst.SetInst(0xCA, new LoadDefaultValueInst<ValueType::objectReference>("defo", "object"));
-    rootInst.SetInst(0xCB, new EqualObjectNullInst());
-    rootInst.SetInst(0xCC, new EqualNullObjectInst());
-    rootInst.SetInst(0xCD, new CreateObjectInst());
-    rootInst.SetInst(0xCE, new CopyObjectInst());
-    rootInst.SetInst(0xCF, new SetClassDataInst());
-    rootInst.SetInst(0xD0, new UpCastInst());
-    rootInst.SetInst(0xD1, new DownCastInst());
-    rootInst.SetInst(0xD2, new ThrowInst());
-    rootInst.SetInst(0xD3, new RethrowInst());
-    rootInst.SetInst(0xD4, new EndCatchInst());
-    rootInst.SetInst(0xD5, new EndFinallyInst());
-    rootInst.SetInst(0xD6, new NextInst());
-    rootInst.SetInst(0xD7, new StaticInitInst());
-    rootInst.SetInst(0xD8, new DoneStaticInitInst());
-    rootInst.SetInst(0xD9, new LoadStaticFieldInst());
-    rootInst.SetInst(0xDA, new StoreStaticFieldInst());
+    rootInst.SetInst(0xCB, new LoadDefaultValueInst<ValueType::objectReference>("defo", "object"));
+    rootInst.SetInst(0xCC, new EqualObjectNullInst());
+    rootInst.SetInst(0xCD, new EqualNullObjectInst());
+    rootInst.SetInst(0xCE, new CreateObjectInst());
+    rootInst.SetInst(0xCF, new CopyObjectInst());
+    rootInst.SetInst(0xD0, new SetClassDataInst());
+    rootInst.SetInst(0xD1, new UpCastInst());
+    rootInst.SetInst(0xD2, new DownCastInst());
+    rootInst.SetInst(0xD3, new ThrowInst());
+    rootInst.SetInst(0xD4, new RethrowInst());
+    rootInst.SetInst(0xD5, new EndCatchInst());
+    rootInst.SetInst(0xD6, new EndFinallyInst());
+    rootInst.SetInst(0xD7, new NextInst());
+    rootInst.SetInst(0xD8, new StaticInitInst());
+    rootInst.SetInst(0xD9, new DoneStaticInitInst());
+    rootInst.SetInst(0xDA, new LoadStaticFieldInst());
+    rootInst.SetInst(0xDB, new StoreStaticFieldInst());
 
     // strings:
     // --------
 
-    rootInst.SetInst(0xDB, new StrLitToStringInst());
-    rootInst.SetInst(0xDC, new LoadStringCharInst());
+    rootInst.SetInst(0xDC, new StrLitToStringInst());
+    rootInst.SetInst(0xDD, new LoadStringCharInst());
 
     // arrays:
     // -------

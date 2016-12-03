@@ -65,6 +65,12 @@ private:
     int index;
 };
 
+class PrevCommand : public Command
+{
+public:
+    void Execute(Shell& shell) override;
+};
+
 } } // namespace cminor::db
 
 #endif // CMINOR_DB_COMMAND_INCLUDED

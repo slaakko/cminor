@@ -21,6 +21,7 @@ namespace cminor.db
             |   ("next" | "n"){ value = new NextCommand(); }
             |   (("local" | "l") int:ln){ value = new LocalCommand(ln); }
             |   (("stack" | "k") int:sn){ value = new StackCommand(sn); }
+            |   empty{ value = new PrevCommand(); }
             ;
 
         Spaces

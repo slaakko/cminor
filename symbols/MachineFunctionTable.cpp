@@ -8,6 +8,7 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
+#include <cminor/machine/FileRegistry.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -19,6 +20,12 @@ Function* MachineFunctionTable::CreateFunction(FunctionSymbol* functionSymbol)
     utf32_string functionFriendlyName = functionSymbol->FriendlyName();
     Constant functionFriendlyNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(functionFriendlyName.c_str())));
     Function* function = new Function(functionCallNameConstant, functionFriendlyNameConstant, int32_t(machineFunctions.size()), &constantPool);
+    if (functionSymbol->GetSpan().Valid())
+    {
+        utf32_string sfp = ToUtf32(FileRegistry::Instance()->GetParsedFileName(functionSymbol->GetSpan().FileIndex()));
+        Constant sourceFilePath = constantPool.GetConstant(constantPool.Install(StringPtr(sfp.c_str())));
+        function->SetSourceFilePath(sourceFilePath);
+    }
     machineFunctions.push_back(std::unique_ptr<Function>(function));
     return function;
 }

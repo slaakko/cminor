@@ -301,6 +301,7 @@ public:
     virtual bool HasBoxedType() const { return false; }
     virtual std::string GetBoxedTypeName() const { return std::string(); }
     virtual bool IsSwitchConditionType() const { return false; }
+    virtual bool IsVoidType() const { return false; }
 };
 
 class BasicTypeSymbol : public TypeSymbol
@@ -347,6 +348,7 @@ public:
     std::string TypeString() const override { return "void type"; }
     bool HasBoxedType() const override { return false; }
     bool IsSwitchConditionType() const override { return false; }
+    bool IsVoidType() const override { return true; }
 };
 
 class SByteTypeSymbol : public BasicTypeSymbol
