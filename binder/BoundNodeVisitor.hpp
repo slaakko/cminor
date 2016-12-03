@@ -49,6 +49,8 @@ class BoundFunctionCall;
 class BoundNewExpression;
 class BoundConjunction;
 class BoundDisjunction;
+class BoundIsExpression;
+class BoundAsExpression;
 
 class BoundNodeVisitor
 {
@@ -95,6 +97,8 @@ public:
     virtual void Visit(BoundNewExpression& boundNewExpression) {}
     virtual void Visit(BoundConjunction& boundConjunction) {}
     virtual void Visit(BoundDisjunction& boundDisjunction) {}
+    virtual void Visit(BoundIsExpression& boundIsExpression) {}
+    virtual void Visit(BoundAsExpression& boundAsExpression) {}
 };
 
 } } // namespace cminor::binder

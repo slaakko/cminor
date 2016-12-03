@@ -984,6 +984,22 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class IsInst : public TypeInstruction
+{
+public:
+    IsInst();
+    Instruction* Clone() const override { return new IsInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class AsInst : public TypeInstruction
+{
+public:
+    AsInst();
+    Instruction* Clone() const override { return new AsInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 } } // namespace cminor::machine
 
 #endif // CMINOR_MACHINE_INSTRUCTION_INCLUDED

@@ -56,6 +56,8 @@ public:
     void Visit(BoundNewExpression& boundNewExpression) override;
     void Visit(BoundConjunction& boundConjunction) override;
     void Visit(BoundDisjunction& boundDisjunction) override;
+    void Visit(BoundIsExpression& boundIsExpression) override;
+    void Visit(BoundAsExpression& boundAsExpression) override;
     void Visit(GenObject& genObject) override;
     bool CreatePCRange() const override;
     bool SetPCRangeEnd() const override;
@@ -1061,6 +1063,18 @@ void EmitterVisitor::Visit(BoundDisjunction& boundDisjunction)
         Backpatch(rightFalse, falseTarget);
     }
     genJumpingBoolCode = prevGenJumpingBoolCode;
+}
+
+void EmitterVisitor::Visit(BoundIsExpression& boundIsExpression)
+{
+    boundIsExpression.GenLoad(machine, *function);
+    GenJumpingBoolCode();
+}
+
+void EmitterVisitor::Visit(BoundAsExpression& boundAsExpression)
+{
+    boundAsExpression.GenLoad(machine, *function);
+    GenJumpingBoolCode();
 }
 
 void EmitterVisitor::Visit(GenObject& genObject)

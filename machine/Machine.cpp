@@ -296,12 +296,14 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     rootInst.SetInst(0xD9, new DoneStaticInitInst());
     rootInst.SetInst(0xDA, new LoadStaticFieldInst());
     rootInst.SetInst(0xDB, new StoreStaticFieldInst());
+    rootInst.SetInst(0xDC, new IsInst());
+    rootInst.SetInst(0xDD, new AsInst());
 
     // strings:
     // --------
 
-    rootInst.SetInst(0xDC, new StrLitToStringInst());
-    rootInst.SetInst(0xDD, new LoadStringCharInst());
+    rootInst.SetInst(0xDE, new StrLitToStringInst());
+    rootInst.SetInst(0xDF, new LoadStringCharInst());
 
     // arrays:
     // -------

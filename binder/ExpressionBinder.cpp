@@ -91,6 +91,9 @@ public:
     void Visit(NewNode& newNode) override;
     void Visit(ThisNode& thisNode) override;
     void Visit(BaseNode& baseNode) override;
+
+    void Visit(IsNode& isNode) override;
+    void Visit(AsNode& asNode) override;
 private:
     BoundCompileUnit& boundCompileUnit;
     BoundFunction* boundFunction;
@@ -1228,6 +1231,36 @@ void ExpressionBinder::Visit(BaseNode& baseNode)
     else
     {
         throw Exception("class '" + ToUtf8(classType->FullName()) + "' does not have a base class", baseNode.GetSpan(), classType->GetSpan());
+    }
+}
+
+void ExpressionBinder::Visit(IsNode& isNode)
+{
+    isNode.Expr()->Accept(*this);
+    TypeSymbol* type = ResolveType(boundCompileUnit, containerScope, isNode.TargetTypeExpr());
+    if (ClassTypeSymbol* classType = dynamic_cast<ClassTypeSymbol*>(type))
+    {
+        BoundIsExpression* boundIsExpression = new BoundIsExpression(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(expression.release()), classType);
+        expression.reset(boundIsExpression);
+    }
+    else
+    {
+        throw Exception("target type or is expression must be a class type", isNode.TargetTypeExpr()->GetSpan());
+    }
+}
+
+void ExpressionBinder::Visit(AsNode& asNode)
+{
+    asNode.Expr()->Accept(*this);
+    TypeSymbol* type = ResolveType(boundCompileUnit, containerScope, asNode.TargetTypeExpr());
+    if (ClassTypeSymbol* classType = dynamic_cast<ClassTypeSymbol*>(type))
+    {
+        BoundAsExpression* boundAsExpression = new BoundAsExpression(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(expression.release()), classType);
+        expression.reset(boundAsExpression);
+    }
+    else
+    {
+        throw Exception("target type of as expression must be a class type", asNode.TargetTypeExpr()->GetSpan());
     }
 }
 

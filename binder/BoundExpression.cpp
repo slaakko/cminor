@@ -869,7 +869,7 @@ void BoundConjunction::GenLoad(Machine& machine, Function& function)
 
 void BoundConjunction::GenStore(Machine& machine, Function& function)
 {
-    throw std::runtime_error("cannot store bound conjunction");
+    throw std::runtime_error("cannot store to bound conjunction");
 }
 
 void BoundConjunction::Accept(BoundNodeVisitor& visitor)
@@ -888,10 +888,74 @@ void BoundDisjunction::GenLoad(Machine& machine, Function& function)
 
 void BoundDisjunction::GenStore(Machine& machine, Function& function)
 {
-    throw std::runtime_error("cannot store bound disjunction");
+    throw std::runtime_error("cannot store to bound disjunction");
 }
 
 void BoundDisjunction::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundIsExpression::BoundIsExpression(Assembly& assembly_, std::unique_ptr<BoundExpression>&& expr_, TypeSymbol* classType_) :
+    BoundExpression(assembly_, assembly_.GetSymbolTable().GetType(U"System.Boolean")), expr(std::move(expr_)), classType(classType_)
+{
+    ConstantPool& constantPool = GetAssembly().GetConstantPool();
+    utf32_string classTypeFullName = classType->FullName();
+    constantPool.Install(StringPtr(classTypeFullName.c_str()));
+}
+
+void BoundIsExpression::GenLoad(Machine& machine, Function& function)
+{
+    expr->GenLoad(machine, function);
+    std::unique_ptr<Instruction> inst = machine.CreateInst("is");
+    IsInst* isInst = dynamic_cast<IsInst*>(inst.get());
+    Assert(isInst, "is instruction expected");
+    ConstantPool& constantPool = GetAssembly().GetConstantPool();
+    utf32_string classTypeFullName = classType->FullName();
+    ConstantId classTypeId = constantPool.GetIdFor(classTypeFullName);
+    Constant classTypeNameConstant = constantPool.GetConstant(classTypeId);
+    isInst->SetTypeName(classTypeNameConstant);
+    function.AddInst(std::move(inst));
+}
+
+void BoundIsExpression::GenStore(Machine& machine, Function& function) 
+{
+    throw std::runtime_error("cannot store to bound is expression");
+}
+
+void BoundIsExpression::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundAsExpression::BoundAsExpression(Assembly& assembly_, std::unique_ptr<BoundExpression>&& expr_, TypeSymbol* classType_) :
+    BoundExpression(assembly_, classType_), expr(std::move(expr_)), classType(classType_)
+{
+    ConstantPool& constantPool = GetAssembly().GetConstantPool();
+    utf32_string classTypeFullName = classType->FullName();
+    constantPool.Install(StringPtr(classTypeFullName.c_str()));
+}
+
+void BoundAsExpression::GenLoad(Machine& machine, Function& function)
+{
+    expr->GenLoad(machine, function);
+    std::unique_ptr<Instruction> inst = machine.CreateInst("as");
+    AsInst* asInst = dynamic_cast<AsInst*>(inst.get());
+    Assert(asInst, "as instruction expected");
+    ConstantPool& constantPool = GetAssembly().GetConstantPool();
+    utf32_string classTypeFullName = classType->FullName();
+    ConstantId classTypeId = constantPool.GetIdFor(classTypeFullName);
+    Constant classTypeNameConstant = constantPool.GetConstant(classTypeId);
+    asInst->SetTypeName(classTypeNameConstant);
+    function.AddInst(std::move(inst));
+}
+
+void BoundAsExpression::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to bound as expression");
+}
+
+void BoundAsExpression::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
 }

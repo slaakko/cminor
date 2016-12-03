@@ -310,6 +310,34 @@ public:
     void Accept(BoundNodeVisitor& visitor) override;
 };
 
+class BoundIsExpression : public BoundExpression
+{
+public:
+    BoundIsExpression(Assembly& assembly_, std::unique_ptr<BoundExpression>&& expr_, TypeSymbol* classType_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+    BoundExpression* Expr() const { return expr.get(); }
+    TypeSymbol* ClassType() const { return classType; }
+private:
+    std::unique_ptr<BoundExpression> expr;
+    TypeSymbol* classType;
+};
+
+class BoundAsExpression : public BoundExpression
+{
+public:
+    BoundAsExpression(Assembly& assembly_, std::unique_ptr<BoundExpression>&& expr_, TypeSymbol* classType_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+    BoundExpression* Expr() const { return expr.get(); }
+    TypeSymbol* ClassType() const { return classType; }
+private:
+    std::unique_ptr<BoundExpression> expr;
+    TypeSymbol* classType;
+};
+
 } } // namespace cminor::binder
 
 #endif // CMINOR_BINDER_BOUND_EXPRESSION_INCLUDED

@@ -1661,4 +1661,67 @@ void AllocateArrayElementsInst::Execute(Frame& frame)
     frame.GetManagedMemoryPool().AllocateArrayElements(frame.GetThread(), arr, elementType, length.AsInt());
 }
 
+IsInst::IsInst() : TypeInstruction("is")
+{
+}
+
+void IsInst::Execute(Frame& frame)
+{
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference ob(value.Value());
+    if (ob.IsNull())
+    {
+        frame.OpStack().Push(IntegralValue(false, ValueType::boolType));
+    }
+    else
+    {
+        IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(ob, 0);
+        Assert(classDataField.GetType() == ValueType::classDataPtr, "class data pointer expected");
+        ClassData* classData = classDataField.AsClassDataPtr();
+        uint64_t sourceTypeId = classData->Type()->Id();
+        Type* type = GetType();
+        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+        Assert(objectType, "object type expected");
+        uint64_t targetId = objectType->Id();
+        bool result = sourceTypeId % targetId == 0;
+        frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
+    }
+}
+
+AsInst::AsInst() : TypeInstruction("as")
+{
+}
+
+void AsInst::Execute(Frame& frame)
+{
+    IntegralValue value = frame.OpStack().Pop();
+    Assert(value.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference ob(value.Value());
+    if (ob.IsNull())
+    {
+        frame.OpStack().Push(ObjectReference(0));
+    }
+    else
+    {
+        IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(ob, 0);
+        Assert(classDataField.GetType() == ValueType::classDataPtr, "class data pointer expected");
+        ClassData* classData = classDataField.AsClassDataPtr();
+        uint64_t sourceTypeId = classData->Type()->Id();
+        Type* type = GetType();
+        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+        Assert(objectType, "object type expected");
+        uint64_t targetId = objectType->Id();
+        bool result = sourceTypeId % targetId == 0;
+        if (result)
+        {
+            frame.OpStack().Push(ob);
+        }
+        else
+        {
+            frame.OpStack().Push(ObjectReference(0));
+        }
+    }
+}
+
 } } // namespace cminor::machine
