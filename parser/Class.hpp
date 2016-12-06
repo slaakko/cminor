@@ -1,22 +1,22 @@
 #ifndef Class_hpp_24706
 #define Class_hpp_24706
 
-#include <Cm.Parsing/Grammar.hpp>
-#include <Cm.Parsing/Keyword.hpp>
+#include <cminor/pl/Grammar.hpp>
+#include <cminor/pl/Keyword.hpp>
 #include <cminor/ast/Class.hpp>
 #include <cminor/parser/ParsingContext.hpp>
 
 namespace cminor { namespace parser {
 
 using namespace cminor::ast;
-class ClassGrammar : public Cm::Parsing::Grammar
+class ClassGrammar : public cminor::parsing::Grammar
 {
 public:
     static ClassGrammar* Create();
-    static ClassGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
+    static ClassGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
     ClassNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
 private:
-    ClassGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
+    ClassGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class ClassRule;

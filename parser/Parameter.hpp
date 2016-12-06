@@ -1,22 +1,22 @@
 #ifndef Parameter_hpp_18908
 #define Parameter_hpp_18908
 
-#include <Cm.Parsing/Grammar.hpp>
-#include <Cm.Parsing/Keyword.hpp>
+#include <cminor/pl/Grammar.hpp>
+#include <cminor/pl/Keyword.hpp>
 #include <cminor/ast/Parameter.hpp>
 #include <cminor/parser/ParsingContext.hpp>
 
 namespace cminor { namespace parser {
 
 using namespace cminor::ast;
-class ParameterGrammar : public Cm::Parsing::Grammar
+class ParameterGrammar : public cminor::parsing::Grammar
 {
 public:
     static ParameterGrammar* Create();
-    static ParameterGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
+    static ParameterGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
     void Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx, Node* owner);
 private:
-    ParameterGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
+    ParameterGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class ParameterListRule;

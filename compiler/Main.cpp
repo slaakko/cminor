@@ -12,8 +12,8 @@
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Util.hpp>
 #include <cminor/machine/Class.hpp>
-#include <Cm.Parsing/InitDone.hpp>
-#include <Cm.Util/Path.hpp>
+#include <cminor/pl/InitDone.hpp>
+#include <cminor/machine/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <stdexcept>
@@ -22,7 +22,7 @@
 using namespace cminor::build;
 using namespace cminor::symbols;
 using namespace cminor::machine;
-using namespace Cm::Util;
+using namespace cminor::machine;
 
 struct InitDone
 {
@@ -36,11 +36,11 @@ struct InitDone
         InitSymbol();
         ValueInit();
         InitAssembly();
-        Cm::Parsing::Init();
+        cminor::parsing::Init();
     }
     ~InitDone()
     {
-        Cm::Parsing::Done();
+        cminor::parsing::Done();
         DoneAssembly();
         ValueDone();
         DoneSymbol();

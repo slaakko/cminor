@@ -1,8 +1,8 @@
 #ifndef Expression_hpp_11374
 #define Expression_hpp_11374
 
-#include <Cm.Parsing/Grammar.hpp>
-#include <Cm.Parsing/Keyword.hpp>
+#include <cminor/pl/Grammar.hpp>
+#include <cminor/pl/Keyword.hpp>
 #include <cminor/ast/Expression.hpp>
 #include <cminor/parser/ParsingContext.hpp>
 #include <cminor/parser/TypeExpr.hpp>
@@ -10,14 +10,14 @@
 namespace cminor { namespace parser {
 
 using namespace cminor::ast;
-class ExpressionGrammar : public Cm::Parsing::Grammar
+class ExpressionGrammar : public cminor::parsing::Grammar
 {
 public:
     static ExpressionGrammar* Create();
-    static ExpressionGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
+    static ExpressionGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
     Node* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
 private:
-    ExpressionGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
+    ExpressionGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class ExpressionRule;

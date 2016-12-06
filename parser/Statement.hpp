@@ -1,22 +1,22 @@
 #ifndef Statement_hpp_12015
 #define Statement_hpp_12015
 
-#include <Cm.Parsing/Grammar.hpp>
-#include <Cm.Parsing/Keyword.hpp>
+#include <cminor/pl/Grammar.hpp>
+#include <cminor/pl/Keyword.hpp>
 #include <cminor/ast/Statement.hpp>
 #include <cminor/parser/ParsingContext.hpp>
 
 namespace cminor { namespace parser {
 
 using namespace cminor::ast;
-class StatementGrammar : public Cm::Parsing::Grammar
+class StatementGrammar : public cminor::parsing::Grammar
 {
 public:
     static StatementGrammar* Create();
-    static StatementGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
+    static StatementGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
     StatementNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
 private:
-    StatementGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
+    StatementGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class StatementRule;

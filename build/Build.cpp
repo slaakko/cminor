@@ -22,7 +22,7 @@
 #include <cminor/machine/MappedInputFile.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Class.hpp>
-#include <Cm.Util/Path.hpp>
+#include <cminor/machine/Path.hpp>
 #include <iostream>
 
 namespace cminor { namespace build {
@@ -33,7 +33,7 @@ using namespace cminor::symbols;
 using namespace cminor::binder;
 using namespace cminor::emitter;
 using namespace cminor::machine;
-using namespace Cm::Util;
+using namespace cminor::machine;
 
 CompileUnitGrammar* compileUnitGrammar = nullptr;
 

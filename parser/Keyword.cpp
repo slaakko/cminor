@@ -1,24 +1,24 @@
 #include "Keyword.hpp"
-#include <Cm.Parsing/Action.hpp>
-#include <Cm.Parsing/Rule.hpp>
-#include <Cm.Parsing/ParsingDomain.hpp>
-#include <Cm.Parsing/Primitive.hpp>
-#include <Cm.Parsing/Composite.hpp>
-#include <Cm.Parsing/Nonterminal.hpp>
-#include <Cm.Parsing/Exception.hpp>
-#include <Cm.Parsing/StdLib.hpp>
-#include <Cm.Parsing/XmlLog.hpp>
+#include <cminor/pl/Action.hpp>
+#include <cminor/pl/Rule.hpp>
+#include <cminor/pl/ParsingDomain.hpp>
+#include <cminor/pl/Primitive.hpp>
+#include <cminor/pl/Composite.hpp>
+#include <cminor/pl/Nonterminal.hpp>
+#include <cminor/pl/Exception.hpp>
+#include <cminor/pl/StdLib.hpp>
+#include <cminor/pl/XmlLog.hpp>
 
 namespace cminor { namespace parser {
 
-using namespace Cm::Parsing;
+using namespace cminor::parsing;
 
 KeywordGrammar* KeywordGrammar::Create()
 {
-    return Create(new Cm::Parsing::ParsingDomain());
+    return Create(new cminor::parsing::ParsingDomain());
 }
 
-KeywordGrammar* KeywordGrammar::Create(Cm::Parsing::ParsingDomain* parsingDomain)
+KeywordGrammar* KeywordGrammar::Create(cminor::parsing::ParsingDomain* parsingDomain)
 {
     RegisterParsingDomain(parsingDomain);
     KeywordGrammar* grammar(new KeywordGrammar(parsingDomain));
@@ -28,7 +28,7 @@ KeywordGrammar* KeywordGrammar::Create(Cm::Parsing::ParsingDomain* parsingDomain
     return grammar;
 }
 
-KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::Parsing::Grammar("KeywordGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
+KeywordGrammar::KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("KeywordGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
 {
     SetOwner(0);
     keywords0.push_back("abstract");
@@ -91,20 +91,20 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
 
 void KeywordGrammar::GetReferencedGrammars()
 {
-    Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::ParsingDomain* pd = GetParsingDomain();
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::stdlib::Create(pd);
+        grammar0 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
 }
 
 void KeywordGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
-    AddRule(new Cm::Parsing::Rule("Keyword", GetScope(),
-        new Cm::Parsing::KeywordListParser("identifier", keywords0)));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRule(new cminor::parsing::Rule("Keyword", GetScope(),
+        new cminor::parsing::KeywordListParser("identifier", keywords0)));
 }
 
 } } // namespace cminor.parser

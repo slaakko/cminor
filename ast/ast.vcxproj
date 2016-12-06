@@ -126,7 +126,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
     </ClCompile>
@@ -141,7 +141,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
     </ClCompile>
@@ -158,7 +158,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -176,7 +176,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>

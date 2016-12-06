@@ -6,7 +6,7 @@
 #include <cminor/machine/Error.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/MappedInputFile.hpp>
-#include <Cm.Parsing/Exception.hpp>
+#include <cminor/pl/Exception.hpp>
 
 namespace cminor {namespace machine {
 
@@ -35,7 +35,7 @@ std::string Expand(const std::string& errorMessage, const Span& span, const std:
             {
                 expandedMessage.append(" (file '" + fileName + "', line " + std::to_string(span.LineNumber()) + ")");
                 MappedInputFile file(fileName);
-                expandedMessage.append(":\n").append(Cm::Parsing::GetErrorLines(file.Begin(), file.End(), span));
+                expandedMessage.append(":\n").append(cminor::parsing::GetErrorLines(file.Begin(), file.End(), span));
             }
             for (const Span& referenceSpan : references)
             {
@@ -44,7 +44,7 @@ std::string Expand(const std::string& errorMessage, const Span& span, const std:
                 {
                     expandedMessage.append("\nsee reference to file '" + fileName + "', line " + std::to_string(referenceSpan.LineNumber()));
                     MappedInputFile file(fileName);
-                    expandedMessage.append(":\n").append(Cm::Parsing::GetErrorLines(file.Begin(), file.End(), referenceSpan));
+                    expandedMessage.append(":\n").append(cminor::parsing::GetErrorLines(file.Begin(), file.End(), referenceSpan));
                 }
             }
         }

@@ -1,19 +1,19 @@
 #ifndef Keyword_hpp_11385
 #define Keyword_hpp_11385
 
-#include <Cm.Parsing/Grammar.hpp>
-#include <Cm.Parsing/Keyword.hpp>
+#include <cminor/pl/Grammar.hpp>
+#include <cminor/pl/Keyword.hpp>
 
 namespace cminor { namespace parser {
 
-class KeywordGrammar : public Cm::Parsing::Grammar
+class KeywordGrammar : public cminor::parsing::Grammar
 {
 public:
     static KeywordGrammar* Create();
-    static KeywordGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
+    static KeywordGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
 private:
     std::vector<std::string> keywords0;
-    KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
+    KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
 };

@@ -1,21 +1,21 @@
 #ifndef ProjectFile_hpp_31032
 #define ProjectFile_hpp_31032
 
-#include <Cm.Parsing/Grammar.hpp>
-#include <Cm.Parsing/Keyword.hpp>
+#include <cminor/pl/Grammar.hpp>
+#include <cminor/pl/Keyword.hpp>
 #include <cminor/ast/Project.hpp>
 
 namespace cminor { namespace parser {
 
 using namespace cminor::ast;
-class ProjectGrammar : public Cm::Parsing::Grammar
+class ProjectGrammar : public cminor::parsing::Grammar
 {
 public:
     static ProjectGrammar* Create();
-    static ProjectGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
+    static ProjectGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
     Project* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, std::string config);
 private:
-    ProjectGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
+    ProjectGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class ProjectRule;

@@ -13,14 +13,14 @@
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/Value.hpp>
-#include <Cm.Util/Path.hpp>
+#include <cminor/machine/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
 
 using namespace cminor::machine;
 using namespace cminor::symbols;
 using namespace cminor::ast;
-using namespace Cm::Util;
+using namespace cminor::machine;
 
 struct InitDone
 {

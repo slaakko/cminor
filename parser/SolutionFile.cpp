@@ -1,24 +1,24 @@
 #include "SolutionFile.hpp"
-#include <Cm.Parsing/Action.hpp>
-#include <Cm.Parsing/Rule.hpp>
-#include <Cm.Parsing/ParsingDomain.hpp>
-#include <Cm.Parsing/Primitive.hpp>
-#include <Cm.Parsing/Composite.hpp>
-#include <Cm.Parsing/Nonterminal.hpp>
-#include <Cm.Parsing/Exception.hpp>
-#include <Cm.Parsing/StdLib.hpp>
-#include <Cm.Parsing/XmlLog.hpp>
+#include <cminor/pl/Action.hpp>
+#include <cminor/pl/Rule.hpp>
+#include <cminor/pl/ParsingDomain.hpp>
+#include <cminor/pl/Primitive.hpp>
+#include <cminor/pl/Composite.hpp>
+#include <cminor/pl/Nonterminal.hpp>
+#include <cminor/pl/Exception.hpp>
+#include <cminor/pl/StdLib.hpp>
+#include <cminor/pl/XmlLog.hpp>
 
 namespace cminor { namespace parser {
 
-using namespace Cm::Parsing;
+using namespace cminor::parsing;
 
 SolutionGrammar* SolutionGrammar::Create()
 {
-    return Create(new Cm::Parsing::ParsingDomain());
+    return Create(new cminor::parsing::ParsingDomain());
 }
 
-SolutionGrammar* SolutionGrammar::Create(Cm::Parsing::ParsingDomain* parsingDomain)
+SolutionGrammar* SolutionGrammar::Create(cminor::parsing::ParsingDomain* parsingDomain)
 {
     RegisterParsingDomain(parsingDomain);
     SolutionGrammar* grammar(new SolutionGrammar(parsingDomain));
@@ -28,24 +28,24 @@ SolutionGrammar* SolutionGrammar::Create(Cm::Parsing::ParsingDomain* parsingDoma
     return grammar;
 }
 
-SolutionGrammar::SolutionGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::Parsing::Grammar("SolutionGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
+SolutionGrammar::SolutionGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("SolutionGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
 {
     SetOwner(0);
 }
 
 Solution* SolutionGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName)
 {
-    Cm::Parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
-    std::unique_ptr<Cm::Parsing::XmlLog> xmlLog;
+    cminor::parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
+    std::unique_ptr<cminor::parsing::XmlLog> xmlLog;
     if (Log())
     {
-        xmlLog.reset(new Cm::Parsing::XmlLog(*Log(), MaxLogLineLength()));
+        xmlLog.reset(new cminor::parsing::XmlLog(*Log(), MaxLogLineLength()));
         scanner.SetLog(xmlLog.get());
         xmlLog->WriteBeginRule("parse");
     }
-    Cm::Parsing::ObjectStack stack;
-    Cm::Parsing::Match match = Cm::Parsing::Grammar::Parse(scanner, stack);
-    Cm::Parsing::Span stop = scanner.GetSpan();
+    cminor::parsing::ObjectStack stack;
+    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack);
+    cminor::parsing::Span stop = scanner.GetSpan();
     if (Log())
     {
         xmlLog->WriteEndRule("parse");
@@ -54,51 +54,51 @@ Solution* SolutionGrammar::Parse(const char* start, const char* end, int fileInd
     {
         if (StartRule())
         {
-            throw Cm::Parsing::ExpectationFailure(StartRule()->Info(), fileName, stop, start, end);
+            throw cminor::parsing::ExpectationFailure(StartRule()->Info(), fileName, stop, start, end);
         }
         else
         {
-            throw Cm::Parsing::ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+            throw cminor::parsing::ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
         }
     }
-    std::unique_ptr<Cm::Parsing::Object> value = std::move(stack.top());
-    Solution* result = *static_cast<Cm::Parsing::ValueObject<Solution*>*>(value.get());
+    std::unique_ptr<cminor::parsing::Object> value = std::move(stack.top());
+    Solution* result = *static_cast<cminor::parsing::ValueObject<Solution*>*>(value.get());
     stack.pop();
     return result;
 }
 
-class SolutionGrammar::SolutionRule : public Cm::Parsing::Rule
+class SolutionGrammar::SolutionRule : public cminor::parsing::Rule
 {
 public:
     SolutionRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         SetValueTypeName("Solution*");
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Solution*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Solution*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<SolutionRule>(this, &SolutionRule::A0Action));
-        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<SolutionRule>(this, &SolutionRule::A1Action));
-        Cm::Parsing::NonterminalParser* qualified_idNonterminalParser = GetNonterminal("qualified_id");
-        qualified_idNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<SolutionRule>(this, &SolutionRule::Postqualified_id));
-        Cm::Parsing::NonterminalParser* declarationNonterminalParser = GetNonterminal("Declaration");
-        declarationNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<SolutionRule>(this, &SolutionRule::PostDeclaration));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<SolutionRule>(this, &SolutionRule::A0Action));
+        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<SolutionRule>(this, &SolutionRule::A1Action));
+        cminor::parsing::NonterminalParser* qualified_idNonterminalParser = GetNonterminal("qualified_id");
+        qualified_idNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<SolutionRule>(this, &SolutionRule::Postqualified_id));
+        cminor::parsing::NonterminalParser* declarationNonterminalParser = GetNonterminal("Declaration");
+        declarationNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<SolutionRule>(this, &SolutionRule::PostDeclaration));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -108,21 +108,21 @@ public:
     {
         context.value->AddDeclaration(context.fromDeclaration);
     }
-    void Postqualified_id(Cm::Parsing::ObjectStack& stack, bool matched)
+    void Postqualified_id(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromqualified_id_value = std::move(stack.top());
-            context.fromqualified_id = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromqualified_id_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromqualified_id_value = std::move(stack.top());
+            context.fromqualified_id = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromqualified_id_value.get());
             stack.pop();
         }
     }
-    void PostDeclaration(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostDeclaration(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromDeclaration_value = std::move(stack.top());
-            context.fromDeclaration = *static_cast<Cm::Parsing::ValueObject<SolutionDeclaration*>*>(fromDeclaration_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromDeclaration_value = std::move(stack.top());
+            context.fromDeclaration = *static_cast<cminor::parsing::ValueObject<SolutionDeclaration*>*>(fromDeclaration_value.get());
             stack.pop();
         }
     }
@@ -138,45 +138,45 @@ private:
     Context context;
 };
 
-class SolutionGrammar::DeclarationRule : public Cm::Parsing::Rule
+class SolutionGrammar::DeclarationRule : public cminor::parsing::Rule
 {
 public:
     DeclarationRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         SetValueTypeName("SolutionDeclaration*");
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<SolutionDeclaration*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<SolutionDeclaration*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DeclarationRule>(this, &DeclarationRule::A0Action));
-        Cm::Parsing::NonterminalParser* solutionProjectDeclarationNonterminalParser = GetNonterminal("SolutionProjectDeclaration");
-        solutionProjectDeclarationNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DeclarationRule>(this, &DeclarationRule::PostSolutionProjectDeclaration));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<DeclarationRule>(this, &DeclarationRule::A0Action));
+        cminor::parsing::NonterminalParser* solutionProjectDeclarationNonterminalParser = GetNonterminal("SolutionProjectDeclaration");
+        solutionProjectDeclarationNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DeclarationRule>(this, &DeclarationRule::PostSolutionProjectDeclaration));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = context.fromSolutionProjectDeclaration;
     }
-    void PostSolutionProjectDeclaration(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostSolutionProjectDeclaration(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromSolutionProjectDeclaration_value = std::move(stack.top());
-            context.fromSolutionProjectDeclaration = *static_cast<Cm::Parsing::ValueObject<SolutionDeclaration*>*>(fromSolutionProjectDeclaration_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromSolutionProjectDeclaration_value = std::move(stack.top());
+            context.fromSolutionProjectDeclaration = *static_cast<cminor::parsing::ValueObject<SolutionDeclaration*>*>(fromSolutionProjectDeclaration_value.get());
             stack.pop();
         }
     }
@@ -191,45 +191,45 @@ private:
     Context context;
 };
 
-class SolutionGrammar::SolutionProjectDeclarationRule : public Cm::Parsing::Rule
+class SolutionGrammar::SolutionProjectDeclarationRule : public cminor::parsing::Rule
 {
 public:
     SolutionProjectDeclarationRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         SetValueTypeName("SolutionDeclaration*");
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<SolutionDeclaration*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<SolutionDeclaration*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<SolutionProjectDeclarationRule>(this, &SolutionProjectDeclarationRule::A0Action));
-        Cm::Parsing::NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
-        filePathNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<SolutionProjectDeclarationRule>(this, &SolutionProjectDeclarationRule::PostFilePath));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<SolutionProjectDeclarationRule>(this, &SolutionProjectDeclarationRule::A0Action));
+        cminor::parsing::NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
+        filePathNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<SolutionProjectDeclarationRule>(this, &SolutionProjectDeclarationRule::PostFilePath));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = new SolutionProjectDeclaration(context.fromFilePath);
     }
-    void PostFilePath(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostFilePath(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromFilePath_value = std::move(stack.top());
-            context.fromFilePath = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromFilePath_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromFilePath_value = std::move(stack.top());
+            context.fromFilePath = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromFilePath_value.get());
             stack.pop();
         }
     }
@@ -244,32 +244,32 @@ private:
     Context context;
 };
 
-class SolutionGrammar::FilePathRule : public Cm::Parsing::Rule
+class SolutionGrammar::FilePathRule : public cminor::parsing::Rule
 {
 public:
     FilePathRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         SetValueTypeName("std::string");
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<std::string>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<FilePathRule>(this, &FilePathRule::A0Action));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<FilePathRule>(this, &FilePathRule::A0Action));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -287,50 +287,50 @@ private:
 
 void SolutionGrammar::GetReferencedGrammars()
 {
-    Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::ParsingDomain* pd = GetParsingDomain();
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::stdlib::Create(pd);
+        grammar0 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
 }
 
 void SolutionGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
+    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRule(new SolutionRule("Solution", GetScope(),
-        new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::KeywordParser("solution"),
-                    new Cm::Parsing::NonterminalParser("qualified_id", "qualified_id", 0)),
-                new Cm::Parsing::ActionParser("A0",
-                    new Cm::Parsing::CharParser(';'))),
-            new Cm::Parsing::KleeneStarParser(
-                new Cm::Parsing::ActionParser("A1",
-                    new Cm::Parsing::NonterminalParser("Declaration", "Declaration", 0))))));
+        new cminor::parsing::SequenceParser(
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::KeywordParser("solution"),
+                    new cminor::parsing::NonterminalParser("qualified_id", "qualified_id", 0)),
+                new cminor::parsing::ActionParser("A0",
+                    new cminor::parsing::CharParser(';'))),
+            new cminor::parsing::KleeneStarParser(
+                new cminor::parsing::ActionParser("A1",
+                    new cminor::parsing::NonterminalParser("Declaration", "Declaration", 0))))));
     AddRule(new DeclarationRule("Declaration", GetScope(),
-        new Cm::Parsing::ActionParser("A0",
-            new Cm::Parsing::NonterminalParser("SolutionProjectDeclaration", "SolutionProjectDeclaration", 0))));
+        new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::NonterminalParser("SolutionProjectDeclaration", "SolutionProjectDeclaration", 0))));
     AddRule(new SolutionProjectDeclarationRule("SolutionProjectDeclaration", GetScope(),
-        new Cm::Parsing::ActionParser("A0",
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::KeywordParser("project"),
-                    new Cm::Parsing::NonterminalParser("FilePath", "FilePath", 0)),
-                new Cm::Parsing::CharParser(';')))));
+        new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::KeywordParser("project"),
+                    new cminor::parsing::NonterminalParser("FilePath", "FilePath", 0)),
+                new cminor::parsing::CharParser(';')))));
     AddRule(new FilePathRule("FilePath", GetScope(),
-        new Cm::Parsing::TokenParser(
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::CharParser('<'),
-                    new Cm::Parsing::ActionParser("A0",
-                        new Cm::Parsing::PositiveParser(
-                            new Cm::Parsing::CharSetParser(">", true)))),
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::CharParser('>'))))));
+        new cminor::parsing::TokenParser(
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::CharParser('<'),
+                    new cminor::parsing::ActionParser("A0",
+                        new cminor::parsing::PositiveParser(
+                            new cminor::parsing::CharSetParser(">", true)))),
+                new cminor::parsing::ExpectationParser(
+                    new cminor::parsing::CharParser('>'))))));
     SetSkipRuleName("spaces_and_comments");
 }
 

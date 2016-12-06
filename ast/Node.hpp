@@ -6,11 +6,11 @@
 #ifndef CMINOR_AST_NODE_INCLUDED
 #define CMINOR_AST_NODE_INCLUDED
 #include <cminor/ast/Clone.hpp>
-#include <Cm.Parsing/Scanner.hpp>
+#include <cminor/pl/Scanner.hpp>
 
 namespace cminor { namespace ast {
 
-using Cm::Parsing::Span;
+using cminor::parsing::Span;
 class ParameterNode;
 class TemplateParameterNode;
 class CompoundStatementNode;

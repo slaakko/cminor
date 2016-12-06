@@ -10,13 +10,13 @@
 #include <cminor/ast/Project.hpp>
 #include <cminor/machine/Class.hpp>
 #include <boost/filesystem.hpp>
-#include <Cm.Util/Path.hpp>
-#include <Cm.Util/Prime.hpp>
+#include <cminor/machine/Path.hpp>
+#include <cminor/machine/Prime.hpp>
 
 namespace cminor { namespace symbols {
 
 using namespace cminor::ast;
-using namespace Cm::Util;
+using namespace cminor::machine;
 
 const char* cminorAssemblyTag = "CMNA";
 
@@ -433,7 +433,7 @@ void AssignKeys(std::vector<ClassTypeSymbol*>& classesByPriority)
         if (level == 0)
         {
             cls->SetKey(key);
-            key = Cm::Util::NextPrime(key + 1);
+            key = cminor::machine::NextPrime(key + 1);
             maxLevelKey = key;
         }
         else
@@ -442,10 +442,10 @@ void AssignKeys(std::vector<ClassTypeSymbol*>& classesByPriority)
             {
                 bases.clear();
                 bases.insert(cls->BaseClass());
-                key = Cm::Util::NextPrime(maxLevelKey + 1);
+                key = cminor::machine::NextPrime(maxLevelKey + 1);
                 minLevelKey = key;
                 cls->SetKey(key);
-                key = Cm::Util::NextPrime(key + 1);
+                key = cminor::machine::NextPrime(key + 1);
                 maxLevelKey = key;
             }
             else
@@ -456,7 +456,7 @@ void AssignKeys(std::vector<ClassTypeSymbol*>& classesByPriority)
                 }
                 bases.insert(cls->BaseClass());
                 cls->SetKey(key);
-                key = Cm::Util::NextPrime(key + 1);
+                key = cminor::machine::NextPrime(key + 1);
                 if (key > maxLevelKey)
                 {
                     maxLevelKey = key;

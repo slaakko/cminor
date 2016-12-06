@@ -36,8 +36,11 @@
     <ClInclude Include="Object.hpp" />
     <ClInclude Include="OperandStack.hpp" />
     <ClInclude Include="OsInterface.hpp" />
+    <ClInclude Include="Path.hpp" />
+    <ClInclude Include="Prime.hpp" />
     <ClInclude Include="Reader.hpp" />
     <ClInclude Include="String.hpp" />
+    <ClInclude Include="TextUtils.hpp" />
     <ClInclude Include="Thread.hpp" />
     <ClInclude Include="Type.hpp" />
     <ClInclude Include="Unicode.hpp" />
@@ -61,7 +64,10 @@
     <ClCompile Include="MappedInputFile.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="OsInterface.cpp" />
+    <ClCompile Include="Path.cpp" />
+    <ClCompile Include="Prime.cpp" />
     <ClCompile Include="Reader.cpp" />
+    <ClCompile Include="TextUtils.cpp" />
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="Type.cpp" />
     <ClCompile Include="Unicode.cpp" />
@@ -127,7 +133,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -142,7 +148,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -159,7 +165,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -177,7 +183,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Programming\cmajorbin;../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>

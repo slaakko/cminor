@@ -16,7 +16,7 @@
 #include <cminor/ast/Project.hpp>
 #include <cminor/vmlib/VmFunction.hpp>
 #include <cminor/vmlib/File.hpp>
-#include <Cm.Util/Path.hpp>
+#include <cminor/machine/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
 #include <chrono>
@@ -26,7 +26,7 @@ using namespace cminor::machine;
 using namespace cminor::symbols;
 using namespace cminor::ast;
 using namespace cminor::vmlib;
-using namespace Cm::Util;
+using namespace cminor::machine;
 
 struct InitDone
 {

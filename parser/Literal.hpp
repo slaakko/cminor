@@ -1,21 +1,21 @@
 #ifndef Literal_hpp_31122
 #define Literal_hpp_31122
 
-#include <Cm.Parsing/Grammar.hpp>
-#include <Cm.Parsing/Keyword.hpp>
+#include <cminor/pl/Grammar.hpp>
+#include <cminor/pl/Keyword.hpp>
 #include <cminor/ast/Literal.hpp>
 
 namespace cminor { namespace parser {
 
 using namespace cminor::ast;
-class LiteralGrammar : public Cm::Parsing::Grammar
+class LiteralGrammar : public cminor::parsing::Grammar
 {
 public:
     static LiteralGrammar* Create();
-    static LiteralGrammar* Create(Cm::Parsing::ParsingDomain* parsingDomain);
+    static LiteralGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
     Node* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName);
 private:
-    LiteralGrammar(Cm::Parsing::ParsingDomain* parsingDomain_);
+    LiteralGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class LiteralRule;

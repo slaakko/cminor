@@ -1,0 +1,166 @@
+/*========================================================================
+    Copyright (c) 2011-2013 Seppo Laakko
+    http://sourceforge.net/projects/soulparsing/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+[hpp]#include <stdint.h>
+[cpp]#include <sstream>
+
+namespace cminor.parsing
+{
+    grammar stdlib
+    {
+        spaces                              ::= space+
+                                            ;
+
+        newline                             ::= "\r\n" | "\n" | "\r"
+                                            ;
+
+        comment                             ::= line_comment | block_comment
+                                            ;
+
+        line_comment                        ::= "//" [^\r\n]* newline
+                                            ;
+
+        block_comment                       ::= "/*" (string | char | (anychar - "*/"))* "*/"
+                                            ;
+
+        spaces_and_comments                 ::= (space | comment)+
+                                            ;
+
+        digit_sequence                      ::= token(digit+)
+                                            ;
+
+        sign                                ::= '+' | '-'
+                                            ;
+
+        int: int                            ::= token(sign? digit_sequence)
+                                            {
+                                                std::stringstream s;
+                                                s.str(std::string(matchBegin, matchEnd));
+                                                s >> value;
+                                            }
+                                            ;
+
+        uint: unsigned                      ::= digit_sequence
+                                            {
+                                                std::stringstream s;
+                                                s.str(std::string(matchBegin, matchEnd));
+                                                s >> value;
+                                            }
+                                            ;
+
+        long: int64_t                       ::= token(sign? digit_sequence)
+                                            {
+                                                std::stringstream s;
+                                                s.str(std::string(matchBegin, matchEnd));
+                                                s >> value;
+                                            }
+                                            ;
+
+        ulong: uint64_t                     ::= digit_sequence
+                                            {
+                                                std::stringstream s;
+                                                s.str(std::string(matchBegin, matchEnd));
+                                                s >> value;
+                                            }
+                                            ;
+
+        hex: uint64_t                       ::= token(hexdigit+)
+                                            {
+                                                std::stringstream s;
+                                                s.str(std::string(matchBegin, matchEnd));
+                                                s >> std::hex >> value;
+                                            }
+                                            ;
+
+        hex_literal: uint64_t               ::= token(("0x" | "0X") hex!){ value = hex; }
+                                            ;
+
+        real: double                        ::= token(sign? (fractional_real | exponent_real))
+                                            {
+                                                std::stringstream s;
+                                                s.str(std::string(matchBegin, matchEnd));
+                                                s >> value;
+                                            }
+                                            ;
+
+        ureal: double                       ::= (fractional_real | exponent_real)
+                                            {
+                                                std::stringstream s;
+                                                s.str(std::string(matchBegin, matchEnd));
+                                                s >> value;
+                                            }
+                                            ;
+
+        fractional_real                     ::= token(digit_sequence? '.' digit_sequence exponent_part?)
+                                            |   token(digit_sequence '.')
+                                            ;
+
+        exponent_real                       ::= token(digit_sequence exponent_part)
+                                            ;
+
+        exponent_part                       ::= token([eE] sign? digit_sequence)
+                                            ;
+
+        number: double                      ::= real:r{ value = r; } | int:i{ value = i; }
+                                            ;
+
+        bool: bool                          ::= keyword("true"){ value = true; } | keyword("false"){ value = false; }
+                                            ;
+
+        identifier: std::string             ::= token((letter | '_') (letter | digit | '_')*)
+                                            {
+                                                value = std::string(matchBegin, matchEnd);
+                                            }
+                                            ;
+
+        qualified_id: std::string           ::= token(identifier:first ('.' identifier:rest)*)
+                                            {
+                                                value = std::string(matchBegin, matchEnd);
+                                            }
+                                            ;
+
+        escape: char                        ::= token('\\'
+                                            (
+                                                [xX] hex:x{ value = char(x); }
+                                            |   [dD] uint:decimalEscape{ value = char(decimalEscape); }
+                                            |   [^dDxX]
+                                            {
+                                                char c = *matchBegin;
+                                                switch (c)
+                                                {
+                                                    case 'a': value = '\a'; break;
+                                                    case 'b': value = '\b'; break;
+                                                    case 'f': value = '\f'; break;
+                                                    case 'n': value = '\n'; break;
+                                                    case 'r': value = '\r'; break;
+                                                    case 't': value = '\t'; break;
+                                                    case 'v': value = '\v'; break;
+                                                    case '0': value = '\0'; break;
+                                                    default:  value = c; break;
+                                                }
+                                            }
+                                            )
+                                            )
+                                            ;
+
+        char: char                          ::= token('\''
+                                            (   [^\\\r\n]{ value = *matchBegin; }
+                                            |   escape{ value = escape; }
+                                            )   '\''!)
+                                            ;
+
+        string: std::string                 ::= token('"'
+                                                (
+                                                    ([^"\\\r\n]+){ value.append(std::string(matchBegin, matchEnd)); }
+                                                |   escape{ value.append(1, escape); }
+                                                )*
+                                            '"'!)
+                                            ;
+    }
+}

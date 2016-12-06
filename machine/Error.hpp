@@ -6,12 +6,12 @@
 #ifndef CMINOR_MACHINE_ERROR_INCLUDED
 #define CMINOR_MACHINE_ERROR_INCLUDED
 #include <cminor/machine/Unicode.hpp>
-#include <Cm.Parsing/Scanner.hpp>
+#include <cminor/pl/Scanner.hpp>
 #include <stdexcept>
 
 namespace cminor { namespace machine {
 
-using Cm::Parsing::Span;
+using cminor::parsing::Span;
 
 #ifdef NDEBUG
 

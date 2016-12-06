@@ -1,13 +1,13 @@
 #include "Class.hpp"
-#include <Cm.Parsing/Action.hpp>
-#include <Cm.Parsing/Rule.hpp>
-#include <Cm.Parsing/ParsingDomain.hpp>
-#include <Cm.Parsing/Primitive.hpp>
-#include <Cm.Parsing/Composite.hpp>
-#include <Cm.Parsing/Nonterminal.hpp>
-#include <Cm.Parsing/Exception.hpp>
-#include <Cm.Parsing/StdLib.hpp>
-#include <Cm.Parsing/XmlLog.hpp>
+#include <cminor/pl/Action.hpp>
+#include <cminor/pl/Rule.hpp>
+#include <cminor/pl/ParsingDomain.hpp>
+#include <cminor/pl/Primitive.hpp>
+#include <cminor/pl/Composite.hpp>
+#include <cminor/pl/Nonterminal.hpp>
+#include <cminor/pl/Exception.hpp>
+#include <cminor/pl/StdLib.hpp>
+#include <cminor/pl/XmlLog.hpp>
 #include <cminor/parser/Specifier.hpp>
 #include <cminor/parser/Identifier.hpp>
 #include <cminor/parser/TypeExpr.hpp>
@@ -21,14 +21,14 @@
 
 namespace cminor { namespace parser {
 
-using namespace Cm::Parsing;
+using namespace cminor::parsing;
 
 ClassGrammar* ClassGrammar::Create()
 {
-    return Create(new Cm::Parsing::ParsingDomain());
+    return Create(new cminor::parsing::ParsingDomain());
 }
 
-ClassGrammar* ClassGrammar::Create(Cm::Parsing::ParsingDomain* parsingDomain)
+ClassGrammar* ClassGrammar::Create(cminor::parsing::ParsingDomain* parsingDomain)
 {
     RegisterParsingDomain(parsingDomain);
     ClassGrammar* grammar(new ClassGrammar(parsingDomain));
@@ -38,25 +38,25 @@ ClassGrammar* ClassGrammar::Create(Cm::Parsing::ParsingDomain* parsingDomain)
     return grammar;
 }
 
-ClassGrammar::ClassGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::Parsing::Grammar("ClassGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
+ClassGrammar::ClassGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("ClassGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
 {
     SetOwner(0);
 }
 
 ClassNode* ClassGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx)
 {
-    Cm::Parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
-    std::unique_ptr<Cm::Parsing::XmlLog> xmlLog;
+    cminor::parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
+    std::unique_ptr<cminor::parsing::XmlLog> xmlLog;
     if (Log())
     {
-        xmlLog.reset(new Cm::Parsing::XmlLog(*Log(), MaxLogLineLength()));
+        xmlLog.reset(new cminor::parsing::XmlLog(*Log(), MaxLogLineLength()));
         scanner.SetLog(xmlLog.get());
         xmlLog->WriteBeginRule("parse");
     }
-    Cm::Parsing::ObjectStack stack;
-    stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<ParsingContext*>(ctx)));
-    Cm::Parsing::Match match = Cm::Parsing::Grammar::Parse(scanner, stack);
-    Cm::Parsing::Span stop = scanner.GetSpan();
+    cminor::parsing::ObjectStack stack;
+    stack.push(std::unique_ptr<cminor::parsing::Object>(new ValueObject<ParsingContext*>(ctx)));
+    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack);
+    cminor::parsing::Span stop = scanner.GetSpan();
     if (Log())
     {
         xmlLog->WriteEndRule("parse");
@@ -65,96 +65,96 @@ ClassNode* ClassGrammar::Parse(const char* start, const char* end, int fileIndex
     {
         if (StartRule())
         {
-            throw Cm::Parsing::ExpectationFailure(StartRule()->Info(), fileName, stop, start, end);
+            throw cminor::parsing::ExpectationFailure(StartRule()->Info(), fileName, stop, start, end);
         }
         else
         {
-            throw Cm::Parsing::ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+            throw cminor::parsing::ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
         }
     }
-    std::unique_ptr<Cm::Parsing::Object> value = std::move(stack.top());
-    ClassNode* result = *static_cast<Cm::Parsing::ValueObject<ClassNode*>*>(value.get());
+    std::unique_ptr<cminor::parsing::Object> value = std::move(stack.top());
+    ClassNode* result = *static_cast<cminor::parsing::ValueObject<ClassNode*>*>(value.get());
     stack.pop();
     return result;
 }
 
-class ClassGrammar::ClassRule : public Cm::Parsing::Rule
+class ClassGrammar::ClassRule : public cminor::parsing::Rule
 {
 public:
     ClassRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("ClassNode*");
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ClassNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ClassNode*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassRule>(this, &ClassRule::A0Action));
-        Cm::Parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
-        specifiersNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassRule>(this, &ClassRule::PostSpecifiers));
-        Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
-        identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassRule>(this, &ClassRule::PostIdentifier));
-        Cm::Parsing::NonterminalParser* templateParameterListNonterminalParser = GetNonterminal("TemplateParameterList");
-        templateParameterListNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreTemplateParameterList));
-        Cm::Parsing::NonterminalParser* inheritanceAndInterfacesNonterminalParser = GetNonterminal("InheritanceAndInterfaces");
-        inheritanceAndInterfacesNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreInheritanceAndInterfaces));
-        Cm::Parsing::NonterminalParser* classContentNonterminalParser = GetNonterminal("ClassContent");
-        classContentNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreClassContent));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ClassRule>(this, &ClassRule::A0Action));
+        cminor::parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
+        specifiersNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassRule>(this, &ClassRule::PostSpecifiers));
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassRule>(this, &ClassRule::PostIdentifier));
+        cminor::parsing::NonterminalParser* templateParameterListNonterminalParser = GetNonterminal("TemplateParameterList");
+        templateParameterListNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreTemplateParameterList));
+        cminor::parsing::NonterminalParser* inheritanceAndInterfacesNonterminalParser = GetNonterminal("InheritanceAndInterfaces");
+        inheritanceAndInterfacesNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreInheritanceAndInterfaces));
+        cminor::parsing::NonterminalParser* classContentNonterminalParser = GetNonterminal("ClassContent");
+        classContentNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreClassContent));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = new ClassNode(span, context.fromSpecifiers, context.fromIdentifier);
     }
-    void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostSpecifiers(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromSpecifiers_value = std::move(stack.top());
-            context.fromSpecifiers = *static_cast<Cm::Parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromSpecifiers_value = std::move(stack.top());
+            context.fromSpecifiers = *static_cast<cminor::parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
             stack.pop();
         }
     }
-    void PostIdentifier(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostIdentifier(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromIdentifier_value = std::move(stack.top());
-            context.fromIdentifier = *static_cast<Cm::Parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromIdentifier_value = std::move(stack.top());
+            context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
     }
-    void PreTemplateParameterList(Cm::Parsing::ObjectStack& stack)
+    void PreTemplateParameterList(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
     }
-    void PreInheritanceAndInterfaces(Cm::Parsing::ObjectStack& stack)
+    void PreInheritanceAndInterfaces(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ClassNode*>(context.value)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ClassNode*>(context.value)));
     }
-    void PreClassContent(Cm::Parsing::ObjectStack& stack)
+    void PreClassContent(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ClassNode*>(context.value)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ClassNode*>(context.value)));
     }
 private:
     struct Context
@@ -169,41 +169,41 @@ private:
     Context context;
 };
 
-class ClassGrammar::InheritanceAndInterfacesRule : public Cm::Parsing::Rule
+class ClassGrammar::InheritanceAndInterfacesRule : public cminor::parsing::Rule
 {
 public:
     InheritanceAndInterfacesRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("ClassNode*", "classNode"));
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> classNode_value = std::move(stack.top());
-        context.classNode = *static_cast<Cm::Parsing::ValueObject<ClassNode*>*>(classNode_value.get());
+        std::unique_ptr<cminor::parsing::Object> classNode_value = std::move(stack.top());
+        context.classNode = *static_cast<cminor::parsing::ValueObject<ClassNode*>*>(classNode_value.get());
         stack.pop();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InheritanceAndInterfacesRule>(this, &InheritanceAndInterfacesRule::A0Action));
-        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InheritanceAndInterfacesRule>(this, &InheritanceAndInterfacesRule::A1Action));
-        a1ActionParser->SetFailureAction(new Cm::Parsing::MemberFailureAction<InheritanceAndInterfacesRule>(this, &InheritanceAndInterfacesRule::A1ActionFail));
-        Cm::Parsing::NonterminalParser* baseClassOrInterfaceNonterminalParser = GetNonterminal("BaseClassOrInterface");
-        baseClassOrInterfaceNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<InheritanceAndInterfacesRule>(this, &InheritanceAndInterfacesRule::PreBaseClassOrInterface));
-        baseClassOrInterfaceNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<InheritanceAndInterfacesRule>(this, &InheritanceAndInterfacesRule::PostBaseClassOrInterface));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<InheritanceAndInterfacesRule>(this, &InheritanceAndInterfacesRule::A0Action));
+        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<InheritanceAndInterfacesRule>(this, &InheritanceAndInterfacesRule::A1Action));
+        a1ActionParser->SetFailureAction(new cminor::parsing::MemberFailureAction<InheritanceAndInterfacesRule>(this, &InheritanceAndInterfacesRule::A1ActionFail));
+        cminor::parsing::NonterminalParser* baseClassOrInterfaceNonterminalParser = GetNonterminal("BaseClassOrInterface");
+        baseClassOrInterfaceNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<InheritanceAndInterfacesRule>(this, &InheritanceAndInterfacesRule::PreBaseClassOrInterface));
+        baseClassOrInterfaceNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<InheritanceAndInterfacesRule>(this, &InheritanceAndInterfacesRule::PostBaseClassOrInterface));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -218,16 +218,16 @@ public:
     {
         context.ctx->EndParsingTypeExpr();
     }
-    void PreBaseClassOrInterface(Cm::Parsing::ObjectStack& stack)
+    void PreBaseClassOrInterface(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostBaseClassOrInterface(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostBaseClassOrInterface(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromBaseClassOrInterface_value = std::move(stack.top());
-            context.fromBaseClassOrInterface = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromBaseClassOrInterface_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromBaseClassOrInterface_value = std::move(stack.top());
+            context.fromBaseClassOrInterface = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromBaseClassOrInterface_value.get());
             stack.pop();
         }
     }
@@ -243,49 +243,49 @@ private:
     Context context;
 };
 
-class ClassGrammar::BaseClassOrInterfaceRule : public Cm::Parsing::Rule
+class ClassGrammar::BaseClassOrInterfaceRule : public cminor::parsing::Rule
 {
 public:
     BaseClassOrInterfaceRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("Node*");
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<BaseClassOrInterfaceRule>(this, &BaseClassOrInterfaceRule::A0Action));
-        Cm::Parsing::NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
-        qualifiedIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<BaseClassOrInterfaceRule>(this, &BaseClassOrInterfaceRule::PostQualifiedId));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BaseClassOrInterfaceRule>(this, &BaseClassOrInterfaceRule::A0Action));
+        cminor::parsing::NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
+        qualifiedIdNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<BaseClassOrInterfaceRule>(this, &BaseClassOrInterfaceRule::PostQualifiedId));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = context.fromQualifiedId;
     }
-    void PostQualifiedId(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostQualifiedId(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromQualifiedId_value = std::move(stack.top());
-            context.fromQualifiedId = *static_cast<Cm::Parsing::ValueObject<IdentifierNode*>*>(fromQualifiedId_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromQualifiedId_value = std::move(stack.top());
+            context.fromQualifiedId = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromQualifiedId_value.get());
             stack.pop();
         }
     }
@@ -301,54 +301,54 @@ private:
     Context context;
 };
 
-class ClassGrammar::ClassContentRule : public Cm::Parsing::Rule
+class ClassGrammar::ClassContentRule : public cminor::parsing::Rule
 {
 public:
     ClassContentRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("ClassNode*", "classNode"));
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> classNode_value = std::move(stack.top());
-        context.classNode = *static_cast<Cm::Parsing::ValueObject<ClassNode*>*>(classNode_value.get());
+        std::unique_ptr<cminor::parsing::Object> classNode_value = std::move(stack.top());
+        context.classNode = *static_cast<cminor::parsing::ValueObject<ClassNode*>*>(classNode_value.get());
         stack.pop();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassContentRule>(this, &ClassContentRule::A0Action));
-        Cm::Parsing::NonterminalParser* classMemberNonterminalParser = GetNonterminal("ClassMember");
-        classMemberNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassContentRule>(this, &ClassContentRule::PreClassMember));
-        classMemberNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassContentRule>(this, &ClassContentRule::PostClassMember));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ClassContentRule>(this, &ClassContentRule::A0Action));
+        cminor::parsing::NonterminalParser* classMemberNonterminalParser = GetNonterminal("ClassMember");
+        classMemberNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassContentRule>(this, &ClassContentRule::PreClassMember));
+        classMemberNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassContentRule>(this, &ClassContentRule::PostClassMember));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.classNode->AddMember(context.fromClassMember);
     }
-    void PreClassMember(Cm::Parsing::ObjectStack& stack)
+    void PreClassMember(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ClassNode*>(context.classNode)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ClassNode*>(context.classNode)));
     }
-    void PostClassMember(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostClassMember(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromClassMember_value = std::move(stack.top());
-            context.fromClassMember = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromClassMember_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromClassMember_value = std::move(stack.top());
+            context.fromClassMember = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromClassMember_value.get());
             stack.pop();
         }
     }
@@ -364,83 +364,83 @@ private:
     Context context;
 };
 
-class ClassGrammar::ClassMemberRule : public Cm::Parsing::Rule
+class ClassGrammar::ClassMemberRule : public cminor::parsing::Rule
 {
 public:
     ClassMemberRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("ClassNode*", "classNode"));
         SetValueTypeName("Node*");
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> classNode_value = std::move(stack.top());
-        context.classNode = *static_cast<Cm::Parsing::ValueObject<ClassNode*>*>(classNode_value.get());
+        std::unique_ptr<cminor::parsing::Object> classNode_value = std::move(stack.top());
+        context.classNode = *static_cast<cminor::parsing::ValueObject<ClassNode*>*>(classNode_value.get());
         stack.pop();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A0Action));
-        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A1Action));
-        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
-        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A2Action));
-        Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
-        a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A3Action));
-        Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
-        a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A4Action));
-        Cm::Parsing::ActionParser* a5ActionParser = GetAction("A5");
-        a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A5Action));
-        Cm::Parsing::ActionParser* a6ActionParser = GetAction("A6");
-        a6ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A6Action));
-        Cm::Parsing::ActionParser* a7ActionParser = GetAction("A7");
-        a7ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A7Action));
-        Cm::Parsing::ActionParser* a8ActionParser = GetAction("A8");
-        a8ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A8Action));
-        Cm::Parsing::NonterminalParser* staticConstructorNonterminalParser = GetNonterminal("StaticConstructor");
-        staticConstructorNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreStaticConstructor));
-        staticConstructorNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostStaticConstructor));
-        Cm::Parsing::NonterminalParser* constructorNonterminalParser = GetNonterminal("Constructor");
-        constructorNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreConstructor));
-        constructorNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostConstructor));
-        Cm::Parsing::NonterminalParser* memberFunctionNonterminalParser = GetNonterminal("MemberFunction");
-        memberFunctionNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreMemberFunction));
-        memberFunctionNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostMemberFunction));
-        Cm::Parsing::NonterminalParser* memberVariableNonterminalParser = GetNonterminal("MemberVariable");
-        memberVariableNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreMemberVariable));
-        memberVariableNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostMemberVariable));
-        Cm::Parsing::NonterminalParser* propertyNonterminalParser = GetNonterminal("Property");
-        propertyNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreProperty));
-        propertyNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostProperty));
-        Cm::Parsing::NonterminalParser* indexerNonterminalParser = GetNonterminal("Indexer");
-        indexerNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreIndexer));
-        indexerNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostIndexer));
-        Cm::Parsing::NonterminalParser* classNonterminalParser = GetNonterminal("Class");
-        classNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreClass));
-        classNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostClass));
-        Cm::Parsing::NonterminalParser* enumTypeNonterminalParser = GetNonterminal("EnumType");
-        enumTypeNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreEnumType));
-        enumTypeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostEnumType));
-        Cm::Parsing::NonterminalParser* constantNonterminalParser = GetNonterminal("Constant");
-        constantNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreConstant));
-        constantNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostConstant));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A0Action));
+        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A1Action));
+        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A2Action));
+        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A3Action));
+        cminor::parsing::ActionParser* a4ActionParser = GetAction("A4");
+        a4ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A4Action));
+        cminor::parsing::ActionParser* a5ActionParser = GetAction("A5");
+        a5ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A5Action));
+        cminor::parsing::ActionParser* a6ActionParser = GetAction("A6");
+        a6ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A6Action));
+        cminor::parsing::ActionParser* a7ActionParser = GetAction("A7");
+        a7ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A7Action));
+        cminor::parsing::ActionParser* a8ActionParser = GetAction("A8");
+        a8ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ClassMemberRule>(this, &ClassMemberRule::A8Action));
+        cminor::parsing::NonterminalParser* staticConstructorNonterminalParser = GetNonterminal("StaticConstructor");
+        staticConstructorNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreStaticConstructor));
+        staticConstructorNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostStaticConstructor));
+        cminor::parsing::NonterminalParser* constructorNonterminalParser = GetNonterminal("Constructor");
+        constructorNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreConstructor));
+        constructorNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostConstructor));
+        cminor::parsing::NonterminalParser* memberFunctionNonterminalParser = GetNonterminal("MemberFunction");
+        memberFunctionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreMemberFunction));
+        memberFunctionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostMemberFunction));
+        cminor::parsing::NonterminalParser* memberVariableNonterminalParser = GetNonterminal("MemberVariable");
+        memberVariableNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreMemberVariable));
+        memberVariableNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostMemberVariable));
+        cminor::parsing::NonterminalParser* propertyNonterminalParser = GetNonterminal("Property");
+        propertyNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreProperty));
+        propertyNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostProperty));
+        cminor::parsing::NonterminalParser* indexerNonterminalParser = GetNonterminal("Indexer");
+        indexerNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreIndexer));
+        indexerNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostIndexer));
+        cminor::parsing::NonterminalParser* classNonterminalParser = GetNonterminal("Class");
+        classNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreClass));
+        classNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostClass));
+        cminor::parsing::NonterminalParser* enumTypeNonterminalParser = GetNonterminal("EnumType");
+        enumTypeNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreEnumType));
+        enumTypeNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostEnumType));
+        cminor::parsing::NonterminalParser* constantNonterminalParser = GetNonterminal("Constant");
+        constantNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ClassMemberRule>(this, &ClassMemberRule::PreConstant));
+        constantNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ClassMemberRule>(this, &ClassMemberRule::PostConstant));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -478,123 +478,123 @@ public:
     {
         context.value = context.fromConstant;
     }
-    void PreStaticConstructor(Cm::Parsing::ObjectStack& stack)
+    void PreStaticConstructor(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ClassNode*>(context.classNode)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ClassNode*>(context.classNode)));
     }
-    void PostStaticConstructor(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostStaticConstructor(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromStaticConstructor_value = std::move(stack.top());
-            context.fromStaticConstructor = *static_cast<Cm::Parsing::ValueObject<StaticConstructorNode*>*>(fromStaticConstructor_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromStaticConstructor_value = std::move(stack.top());
+            context.fromStaticConstructor = *static_cast<cminor::parsing::ValueObject<StaticConstructorNode*>*>(fromStaticConstructor_value.get());
             stack.pop();
         }
     }
-    void PreConstructor(Cm::Parsing::ObjectStack& stack)
+    void PreConstructor(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ClassNode*>(context.classNode)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ClassNode*>(context.classNode)));
     }
-    void PostConstructor(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostConstructor(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromConstructor_value = std::move(stack.top());
-            context.fromConstructor = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromConstructor_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromConstructor_value = std::move(stack.top());
+            context.fromConstructor = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromConstructor_value.get());
             stack.pop();
         }
     }
-    void PreMemberFunction(Cm::Parsing::ObjectStack& stack)
+    void PreMemberFunction(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ClassNode*>(context.classNode)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ClassNode*>(context.classNode)));
     }
-    void PostMemberFunction(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostMemberFunction(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromMemberFunction_value = std::move(stack.top());
-            context.fromMemberFunction = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromMemberFunction_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromMemberFunction_value = std::move(stack.top());
+            context.fromMemberFunction = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromMemberFunction_value.get());
             stack.pop();
         }
     }
-    void PreMemberVariable(Cm::Parsing::ObjectStack& stack)
+    void PreMemberVariable(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostMemberVariable(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostMemberVariable(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromMemberVariable_value = std::move(stack.top());
-            context.fromMemberVariable = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromMemberVariable_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromMemberVariable_value = std::move(stack.top());
+            context.fromMemberVariable = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromMemberVariable_value.get());
             stack.pop();
         }
     }
-    void PreProperty(Cm::Parsing::ObjectStack& stack)
+    void PreProperty(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostProperty(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostProperty(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromProperty_value = std::move(stack.top());
-            context.fromProperty = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromProperty_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromProperty_value = std::move(stack.top());
+            context.fromProperty = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromProperty_value.get());
             stack.pop();
         }
     }
-    void PreIndexer(Cm::Parsing::ObjectStack& stack)
+    void PreIndexer(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostIndexer(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostIndexer(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromIndexer_value = std::move(stack.top());
-            context.fromIndexer = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromIndexer_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromIndexer_value = std::move(stack.top());
+            context.fromIndexer = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromIndexer_value.get());
             stack.pop();
         }
     }
-    void PreClass(Cm::Parsing::ObjectStack& stack)
+    void PreClass(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostClass(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostClass(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromClass_value = std::move(stack.top());
-            context.fromClass = *static_cast<Cm::Parsing::ValueObject<ClassNode*>*>(fromClass_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromClass_value = std::move(stack.top());
+            context.fromClass = *static_cast<cminor::parsing::ValueObject<ClassNode*>*>(fromClass_value.get());
             stack.pop();
         }
     }
-    void PreEnumType(Cm::Parsing::ObjectStack& stack)
+    void PreEnumType(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostEnumType(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostEnumType(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromEnumType_value = std::move(stack.top());
-            context.fromEnumType = *static_cast<Cm::Parsing::ValueObject<EnumTypeNode*>*>(fromEnumType_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromEnumType_value = std::move(stack.top());
+            context.fromEnumType = *static_cast<cminor::parsing::ValueObject<EnumTypeNode*>*>(fromEnumType_value.get());
             stack.pop();
         }
     }
-    void PreConstant(Cm::Parsing::ObjectStack& stack)
+    void PreConstant(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostConstant(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostConstant(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromConstant_value = std::move(stack.top());
-            context.fromConstant = *static_cast<Cm::Parsing::ValueObject<ConstantNode*>*>(fromConstant_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromConstant_value = std::move(stack.top());
+            context.fromConstant = *static_cast<cminor::parsing::ValueObject<ConstantNode*>*>(fromConstant_value.get());
             stack.pop();
         }
     }
@@ -619,11 +619,11 @@ private:
     Context context;
 };
 
-class ClassGrammar::StaticConstructorRule : public Cm::Parsing::Rule
+class ClassGrammar::StaticConstructorRule : public cminor::parsing::Rule
 {
 public:
     StaticConstructorRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("ClassNode*", "classNode"));
@@ -631,43 +631,43 @@ public:
         AddLocalVariable(AttrOrVariable("AttributeMap", "attributeMap"));
         AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "id"));
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> classNode_value = std::move(stack.top());
-        context.classNode = *static_cast<Cm::Parsing::ValueObject<ClassNode*>*>(classNode_value.get());
+        std::unique_ptr<cminor::parsing::Object> classNode_value = std::move(stack.top());
+        context.classNode = *static_cast<cminor::parsing::ValueObject<ClassNode*>*>(classNode_value.get());
         stack.pop();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<StaticConstructorNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StaticConstructorNode*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StaticConstructorRule>(this, &StaticConstructorRule::A0Action));
-        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StaticConstructorRule>(this, &StaticConstructorRule::A1Action));
-        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
-        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StaticConstructorRule>(this, &StaticConstructorRule::A2Action));
-        Cm::Parsing::NonterminalParser* attributesNonterminalParser = GetNonterminal("Attributes");
-        attributesNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<StaticConstructorRule>(this, &StaticConstructorRule::PreAttributes));
-        Cm::Parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
-        specifiersNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StaticConstructorRule>(this, &StaticConstructorRule::PostSpecifiers));
-        Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
-        identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StaticConstructorRule>(this, &StaticConstructorRule::PostIdentifier));
-        Cm::Parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal("CompoundStatement");
-        compoundStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<StaticConstructorRule>(this, &StaticConstructorRule::PreCompoundStatement));
-        compoundStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StaticConstructorRule>(this, &StaticConstructorRule::PostCompoundStatement));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StaticConstructorRule>(this, &StaticConstructorRule::A0Action));
+        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StaticConstructorRule>(this, &StaticConstructorRule::A1Action));
+        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StaticConstructorRule>(this, &StaticConstructorRule::A2Action));
+        cminor::parsing::NonterminalParser* attributesNonterminalParser = GetNonterminal("Attributes");
+        attributesNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StaticConstructorRule>(this, &StaticConstructorRule::PreAttributes));
+        cminor::parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
+        specifiersNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StaticConstructorRule>(this, &StaticConstructorRule::PostSpecifiers));
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StaticConstructorRule>(this, &StaticConstructorRule::PostIdentifier));
+        cminor::parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal("CompoundStatement");
+        compoundStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StaticConstructorRule>(this, &StaticConstructorRule::PreCompoundStatement));
+        compoundStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StaticConstructorRule>(this, &StaticConstructorRule::PostCompoundStatement));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -687,38 +687,38 @@ public:
     {
         context.value->SetBody(context.fromCompoundStatement);
     }
-    void PreAttributes(Cm::Parsing::ObjectStack& stack)
+    void PreAttributes(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<AttributeMap*>(&context.attributeMap)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<AttributeMap*>(&context.attributeMap)));
     }
-    void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostSpecifiers(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromSpecifiers_value = std::move(stack.top());
-            context.fromSpecifiers = *static_cast<Cm::Parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromSpecifiers_value = std::move(stack.top());
+            context.fromSpecifiers = *static_cast<cminor::parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
             stack.pop();
         }
     }
-    void PostIdentifier(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostIdentifier(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromIdentifier_value = std::move(stack.top());
-            context.fromIdentifier = *static_cast<Cm::Parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromIdentifier_value = std::move(stack.top());
+            context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
     }
-    void PreCompoundStatement(Cm::Parsing::ObjectStack& stack)
+    void PreCompoundStatement(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostCompoundStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostCompoundStatement(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromCompoundStatement_value = std::move(stack.top());
-            context.fromCompoundStatement = *static_cast<Cm::Parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromCompoundStatement_value = std::move(stack.top());
+            context.fromCompoundStatement = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
             stack.pop();
         }
     }
@@ -739,11 +739,11 @@ private:
     Context context;
 };
 
-class ClassGrammar::ConstructorRule : public Cm::Parsing::Rule
+class ClassGrammar::ConstructorRule : public cminor::parsing::Rule
 {
 public:
     ConstructorRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("ClassNode*", "classNode"));
@@ -752,52 +752,52 @@ public:
         AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "id"));
         AddLocalVariable(AttrOrVariable("std::unique_ptr<ConstructorNode>", "ctor"));
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> classNode_value = std::move(stack.top());
-        context.classNode = *static_cast<Cm::Parsing::ValueObject<ClassNode*>*>(classNode_value.get());
+        std::unique_ptr<cminor::parsing::Object> classNode_value = std::move(stack.top());
+        context.classNode = *static_cast<cminor::parsing::ValueObject<ClassNode*>*>(classNode_value.get());
         stack.pop();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A0Action));
-        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A1Action));
-        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
-        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A2Action));
-        Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
-        a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A3Action));
-        Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
-        a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A4Action));
-        Cm::Parsing::NonterminalParser* attributesNonterminalParser = GetNonterminal("Attributes");
-        attributesNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ConstructorRule>(this, &ConstructorRule::PreAttributes));
-        Cm::Parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
-        specifiersNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ConstructorRule>(this, &ConstructorRule::PostSpecifiers));
-        Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
-        identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ConstructorRule>(this, &ConstructorRule::PostIdentifier));
-        Cm::Parsing::NonterminalParser* parameterListNonterminalParser = GetNonterminal("ParameterList");
-        parameterListNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ConstructorRule>(this, &ConstructorRule::PreParameterList));
-        Cm::Parsing::NonterminalParser* initializerNonterminalParser = GetNonterminal("Initializer");
-        initializerNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ConstructorRule>(this, &ConstructorRule::PreInitializer));
-        initializerNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ConstructorRule>(this, &ConstructorRule::PostInitializer));
-        Cm::Parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal("CompoundStatement");
-        compoundStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ConstructorRule>(this, &ConstructorRule::PreCompoundStatement));
-        compoundStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ConstructorRule>(this, &ConstructorRule::PostCompoundStatement));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A0Action));
+        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A1Action));
+        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A2Action));
+        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A3Action));
+        cminor::parsing::ActionParser* a4ActionParser = GetAction("A4");
+        a4ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ConstructorRule>(this, &ConstructorRule::A4Action));
+        cminor::parsing::NonterminalParser* attributesNonterminalParser = GetNonterminal("Attributes");
+        attributesNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructorRule>(this, &ConstructorRule::PreAttributes));
+        cminor::parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
+        specifiersNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructorRule>(this, &ConstructorRule::PostSpecifiers));
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructorRule>(this, &ConstructorRule::PostIdentifier));
+        cminor::parsing::NonterminalParser* parameterListNonterminalParser = GetNonterminal("ParameterList");
+        parameterListNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructorRule>(this, &ConstructorRule::PreParameterList));
+        cminor::parsing::NonterminalParser* initializerNonterminalParser = GetNonterminal("Initializer");
+        initializerNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructorRule>(this, &ConstructorRule::PreInitializer));
+        initializerNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructorRule>(this, &ConstructorRule::PostInitializer));
+        cminor::parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal("CompoundStatement");
+        compoundStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructorRule>(this, &ConstructorRule::PreCompoundStatement));
+        compoundStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructorRule>(this, &ConstructorRule::PostCompoundStatement));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -824,56 +824,56 @@ public:
     {
         context.ctor->SetBody(context.fromCompoundStatement);
     }
-    void PreAttributes(Cm::Parsing::ObjectStack& stack)
+    void PreAttributes(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<AttributeMap*>(&context.attributeMap)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<AttributeMap*>(&context.attributeMap)));
     }
-    void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostSpecifiers(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromSpecifiers_value = std::move(stack.top());
-            context.fromSpecifiers = *static_cast<Cm::Parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromSpecifiers_value = std::move(stack.top());
+            context.fromSpecifiers = *static_cast<cminor::parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
             stack.pop();
         }
     }
-    void PostIdentifier(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostIdentifier(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromIdentifier_value = std::move(stack.top());
-            context.fromIdentifier = *static_cast<Cm::Parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromIdentifier_value = std::move(stack.top());
+            context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
     }
-    void PreParameterList(Cm::Parsing::ObjectStack& stack)
+    void PreParameterList(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.ctor.get())));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.ctor.get())));
     }
-    void PreInitializer(Cm::Parsing::ObjectStack& stack)
+    void PreInitializer(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostInitializer(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostInitializer(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromInitializer_value = std::move(stack.top());
-            context.fromInitializer = *static_cast<Cm::Parsing::ValueObject<InitializerNode*>*>(fromInitializer_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromInitializer_value = std::move(stack.top());
+            context.fromInitializer = *static_cast<cminor::parsing::ValueObject<InitializerNode*>*>(fromInitializer_value.get());
             stack.pop();
         }
     }
-    void PreCompoundStatement(Cm::Parsing::ObjectStack& stack)
+    void PreCompoundStatement(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostCompoundStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostCompoundStatement(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromCompoundStatement_value = std::move(stack.top());
-            context.fromCompoundStatement = *static_cast<Cm::Parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromCompoundStatement_value = std::move(stack.top());
+            context.fromCompoundStatement = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
             stack.pop();
         }
     }
@@ -896,42 +896,42 @@ private:
     Context context;
 };
 
-class ClassGrammar::InitializerRule : public Cm::Parsing::Rule
+class ClassGrammar::InitializerRule : public cminor::parsing::Rule
 {
 public:
     InitializerRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("InitializerNode*");
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<InitializerNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<InitializerNode*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InitializerRule>(this, &InitializerRule::A0Action));
-        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InitializerRule>(this, &InitializerRule::A1Action));
-        Cm::Parsing::NonterminalParser* thisArgsNonterminalParser = GetNonterminal("thisArgs");
-        thisArgsNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<InitializerRule>(this, &InitializerRule::PrethisArgs));
-        Cm::Parsing::NonterminalParser* baseArgsNonterminalParser = GetNonterminal("baseArgs");
-        baseArgsNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<InitializerRule>(this, &InitializerRule::PrebaseArgs));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<InitializerRule>(this, &InitializerRule::A0Action));
+        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<InitializerRule>(this, &InitializerRule::A1Action));
+        cminor::parsing::NonterminalParser* thisArgsNonterminalParser = GetNonterminal("thisArgs");
+        thisArgsNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<InitializerRule>(this, &InitializerRule::PrethisArgs));
+        cminor::parsing::NonterminalParser* baseArgsNonterminalParser = GetNonterminal("baseArgs");
+        baseArgsNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<InitializerRule>(this, &InitializerRule::PrebaseArgs));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -941,15 +941,15 @@ public:
     {
         context.value = new BaseInitializerNode(span);
     }
-    void PrethisArgs(Cm::Parsing::ObjectStack& stack)
+    void PrethisArgs(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
     }
-    void PrebaseArgs(Cm::Parsing::ObjectStack& stack)
+    void PrebaseArgs(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
     }
 private:
     struct Context
@@ -962,11 +962,11 @@ private:
     Context context;
 };
 
-class ClassGrammar::MemberFunctionRule : public Cm::Parsing::Rule
+class ClassGrammar::MemberFunctionRule : public cminor::parsing::Rule
 {
 public:
     MemberFunctionRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("ClassNode*", "classNode"));
@@ -975,49 +975,49 @@ public:
         AddLocalVariable(AttrOrVariable("std::unique_ptr<MemberFunctionNode>", "memFun"));
         AddLocalVariable(AttrOrVariable("std::unique_ptr<IdentifierNode>", "qid"));
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> classNode_value = std::move(stack.top());
-        context.classNode = *static_cast<Cm::Parsing::ValueObject<ClassNode*>*>(classNode_value.get());
+        std::unique_ptr<cminor::parsing::Object> classNode_value = std::move(stack.top());
+        context.classNode = *static_cast<cminor::parsing::ValueObject<ClassNode*>*>(classNode_value.get());
         stack.pop();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<MemberFunctionRule>(this, &MemberFunctionRule::A0Action));
-        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<MemberFunctionRule>(this, &MemberFunctionRule::A1Action));
-        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
-        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<MemberFunctionRule>(this, &MemberFunctionRule::A2Action));
-        Cm::Parsing::NonterminalParser* attributesNonterminalParser = GetNonterminal("Attributes");
-        attributesNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<MemberFunctionRule>(this, &MemberFunctionRule::PreAttributes));
-        Cm::Parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
-        specifiersNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<MemberFunctionRule>(this, &MemberFunctionRule::PostSpecifiers));
-        Cm::Parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
-        typeExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<MemberFunctionRule>(this, &MemberFunctionRule::PreTypeExpr));
-        typeExprNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<MemberFunctionRule>(this, &MemberFunctionRule::PostTypeExpr));
-        Cm::Parsing::NonterminalParser* functionGroupIdNonterminalParser = GetNonterminal("FunctionGroupId");
-        functionGroupIdNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<MemberFunctionRule>(this, &MemberFunctionRule::PreFunctionGroupId));
-        functionGroupIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<MemberFunctionRule>(this, &MemberFunctionRule::PostFunctionGroupId));
-        Cm::Parsing::NonterminalParser* parameterListNonterminalParser = GetNonterminal("ParameterList");
-        parameterListNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<MemberFunctionRule>(this, &MemberFunctionRule::PreParameterList));
-        Cm::Parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal("CompoundStatement");
-        compoundStatementNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<MemberFunctionRule>(this, &MemberFunctionRule::PreCompoundStatement));
-        compoundStatementNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<MemberFunctionRule>(this, &MemberFunctionRule::PostCompoundStatement));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<MemberFunctionRule>(this, &MemberFunctionRule::A0Action));
+        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<MemberFunctionRule>(this, &MemberFunctionRule::A1Action));
+        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<MemberFunctionRule>(this, &MemberFunctionRule::A2Action));
+        cminor::parsing::NonterminalParser* attributesNonterminalParser = GetNonterminal("Attributes");
+        attributesNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<MemberFunctionRule>(this, &MemberFunctionRule::PreAttributes));
+        cminor::parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
+        specifiersNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<MemberFunctionRule>(this, &MemberFunctionRule::PostSpecifiers));
+        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+        typeExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<MemberFunctionRule>(this, &MemberFunctionRule::PreTypeExpr));
+        typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<MemberFunctionRule>(this, &MemberFunctionRule::PostTypeExpr));
+        cminor::parsing::NonterminalParser* functionGroupIdNonterminalParser = GetNonterminal("FunctionGroupId");
+        functionGroupIdNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<MemberFunctionRule>(this, &MemberFunctionRule::PreFunctionGroupId));
+        functionGroupIdNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<MemberFunctionRule>(this, &MemberFunctionRule::PostFunctionGroupId));
+        cminor::parsing::NonterminalParser* parameterListNonterminalParser = GetNonterminal("ParameterList");
+        parameterListNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<MemberFunctionRule>(this, &MemberFunctionRule::PreParameterList));
+        cminor::parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal("CompoundStatement");
+        compoundStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<MemberFunctionRule>(this, &MemberFunctionRule::PreCompoundStatement));
+        compoundStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<MemberFunctionRule>(this, &MemberFunctionRule::PostCompoundStatement));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -1032,60 +1032,60 @@ public:
     {
         context.memFun->SetBody(context.fromCompoundStatement);
     }
-    void PreAttributes(Cm::Parsing::ObjectStack& stack)
+    void PreAttributes(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<AttributeMap*>(&context.attributeMap)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<AttributeMap*>(&context.attributeMap)));
     }
-    void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostSpecifiers(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromSpecifiers_value = std::move(stack.top());
-            context.fromSpecifiers = *static_cast<Cm::Parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromSpecifiers_value = std::move(stack.top());
+            context.fromSpecifiers = *static_cast<cminor::parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
             stack.pop();
         }
     }
-    void PreTypeExpr(Cm::Parsing::ObjectStack& stack)
+    void PreTypeExpr(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostTypeExpr(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostTypeExpr(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromTypeExpr_value = std::move(stack.top());
-            context.fromTypeExpr = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromTypeExpr_value = std::move(stack.top());
+            context.fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
             stack.pop();
         }
     }
-    void PreFunctionGroupId(Cm::Parsing::ObjectStack& stack)
+    void PreFunctionGroupId(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostFunctionGroupId(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostFunctionGroupId(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromFunctionGroupId_value = std::move(stack.top());
-            context.fromFunctionGroupId = *static_cast<Cm::Parsing::ValueObject<FunctionGroupIdNode*>*>(fromFunctionGroupId_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromFunctionGroupId_value = std::move(stack.top());
+            context.fromFunctionGroupId = *static_cast<cminor::parsing::ValueObject<FunctionGroupIdNode*>*>(fromFunctionGroupId_value.get());
             stack.pop();
         }
     }
-    void PreParameterList(Cm::Parsing::ObjectStack& stack)
+    void PreParameterList(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.memFun.get())));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.memFun.get())));
     }
-    void PreCompoundStatement(Cm::Parsing::ObjectStack& stack)
+    void PreCompoundStatement(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostCompoundStatement(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostCompoundStatement(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromCompoundStatement_value = std::move(stack.top());
-            context.fromCompoundStatement = *static_cast<Cm::Parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromCompoundStatement_value = std::move(stack.top());
+            context.fromCompoundStatement = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
             stack.pop();
         }
     }
@@ -1108,76 +1108,76 @@ private:
     Context context;
 };
 
-class ClassGrammar::MemberVariableRule : public Cm::Parsing::Rule
+class ClassGrammar::MemberVariableRule : public cminor::parsing::Rule
 {
 public:
     MemberVariableRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("Node*");
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<MemberVariableRule>(this, &MemberVariableRule::A0Action));
-        Cm::Parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
-        specifiersNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<MemberVariableRule>(this, &MemberVariableRule::PostSpecifiers));
-        Cm::Parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
-        typeExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<MemberVariableRule>(this, &MemberVariableRule::PreTypeExpr));
-        typeExprNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<MemberVariableRule>(this, &MemberVariableRule::PostTypeExpr));
-        Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
-        identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<MemberVariableRule>(this, &MemberVariableRule::PostIdentifier));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<MemberVariableRule>(this, &MemberVariableRule::A0Action));
+        cminor::parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
+        specifiersNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<MemberVariableRule>(this, &MemberVariableRule::PostSpecifiers));
+        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+        typeExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<MemberVariableRule>(this, &MemberVariableRule::PreTypeExpr));
+        typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<MemberVariableRule>(this, &MemberVariableRule::PostTypeExpr));
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<MemberVariableRule>(this, &MemberVariableRule::PostIdentifier));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = new MemberVariableNode(span, context.fromSpecifiers, context.fromTypeExpr, context.fromIdentifier);
     }
-    void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostSpecifiers(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromSpecifiers_value = std::move(stack.top());
-            context.fromSpecifiers = *static_cast<Cm::Parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromSpecifiers_value = std::move(stack.top());
+            context.fromSpecifiers = *static_cast<cminor::parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
             stack.pop();
         }
     }
-    void PreTypeExpr(Cm::Parsing::ObjectStack& stack)
+    void PreTypeExpr(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostTypeExpr(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostTypeExpr(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromTypeExpr_value = std::move(stack.top());
-            context.fromTypeExpr = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromTypeExpr_value = std::move(stack.top());
+            context.fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
             stack.pop();
         }
     }
-    void PostIdentifier(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostIdentifier(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromIdentifier_value = std::move(stack.top());
-            context.fromIdentifier = *static_cast<Cm::Parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromIdentifier_value = std::move(stack.top());
+            context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
     }
@@ -1195,48 +1195,48 @@ private:
     Context context;
 };
 
-class ClassGrammar::PropertyRule : public Cm::Parsing::Rule
+class ClassGrammar::PropertyRule : public cminor::parsing::Rule
 {
 public:
     PropertyRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("Node*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "property"));
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PropertyRule>(this, &PropertyRule::A0Action));
-        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PropertyRule>(this, &PropertyRule::A1Action));
-        Cm::Parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
-        specifiersNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PropertyRule>(this, &PropertyRule::PostSpecifiers));
-        Cm::Parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
-        typeExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PropertyRule>(this, &PropertyRule::PreTypeExpr));
-        typeExprNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PropertyRule>(this, &PropertyRule::PostTypeExpr));
-        Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
-        identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PropertyRule>(this, &PropertyRule::PostIdentifier));
-        Cm::Parsing::NonterminalParser* getterOrSetterNonterminalParser = GetNonterminal("GetterOrSetter");
-        getterOrSetterNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<PropertyRule>(this, &PropertyRule::PreGetterOrSetter));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PropertyRule>(this, &PropertyRule::A0Action));
+        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PropertyRule>(this, &PropertyRule::A1Action));
+        cminor::parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
+        specifiersNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PropertyRule>(this, &PropertyRule::PostSpecifiers));
+        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+        typeExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<PropertyRule>(this, &PropertyRule::PreTypeExpr));
+        typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PropertyRule>(this, &PropertyRule::PostTypeExpr));
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PropertyRule>(this, &PropertyRule::PostIdentifier));
+        cminor::parsing::NonterminalParser* getterOrSetterNonterminalParser = GetNonterminal("GetterOrSetter");
+        getterOrSetterNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<PropertyRule>(this, &PropertyRule::PreGetterOrSetter));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -1246,41 +1246,41 @@ public:
     {
         context.property.reset(new PropertyNode(span, context.fromSpecifiers, context.fromTypeExpr, context.fromIdentifier));
     }
-    void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostSpecifiers(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromSpecifiers_value = std::move(stack.top());
-            context.fromSpecifiers = *static_cast<Cm::Parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromSpecifiers_value = std::move(stack.top());
+            context.fromSpecifiers = *static_cast<cminor::parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
             stack.pop();
         }
     }
-    void PreTypeExpr(Cm::Parsing::ObjectStack& stack)
+    void PreTypeExpr(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostTypeExpr(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostTypeExpr(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromTypeExpr_value = std::move(stack.top());
-            context.fromTypeExpr = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromTypeExpr_value = std::move(stack.top());
+            context.fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
             stack.pop();
         }
     }
-    void PostIdentifier(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostIdentifier(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromIdentifier_value = std::move(stack.top());
-            context.fromIdentifier = *static_cast<Cm::Parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromIdentifier_value = std::move(stack.top());
+            context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
     }
-    void PreGetterOrSetter(Cm::Parsing::ObjectStack& stack)
+    void PreGetterOrSetter(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.property.get())));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.property.get())));
     }
 private:
     struct Context
@@ -1297,51 +1297,51 @@ private:
     Context context;
 };
 
-class ClassGrammar::IndexerRule : public Cm::Parsing::Rule
+class ClassGrammar::IndexerRule : public cminor::parsing::Rule
 {
 public:
     IndexerRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("Node*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "indexer"));
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
         }
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<IndexerRule>(this, &IndexerRule::A0Action));
-        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<IndexerRule>(this, &IndexerRule::A1Action));
-        Cm::Parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
-        specifiersNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IndexerRule>(this, &IndexerRule::PostSpecifiers));
-        Cm::Parsing::NonterminalParser* valueTypeNonterminalParser = GetNonterminal("valueType");
-        valueTypeNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<IndexerRule>(this, &IndexerRule::PrevalueType));
-        valueTypeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IndexerRule>(this, &IndexerRule::PostvalueType));
-        Cm::Parsing::NonterminalParser* indexTypeNonterminalParser = GetNonterminal("indexType");
-        indexTypeNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<IndexerRule>(this, &IndexerRule::PreindexType));
-        indexTypeNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IndexerRule>(this, &IndexerRule::PostindexType));
-        Cm::Parsing::NonterminalParser* indexNonterminalParser = GetNonterminal("index");
-        indexNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<IndexerRule>(this, &IndexerRule::Postindex));
-        Cm::Parsing::NonterminalParser* getterOrSetterNonterminalParser = GetNonterminal("GetterOrSetter");
-        getterOrSetterNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<IndexerRule>(this, &IndexerRule::PreGetterOrSetter));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IndexerRule>(this, &IndexerRule::A0Action));
+        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IndexerRule>(this, &IndexerRule::A1Action));
+        cminor::parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
+        specifiersNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IndexerRule>(this, &IndexerRule::PostSpecifiers));
+        cminor::parsing::NonterminalParser* valueTypeNonterminalParser = GetNonterminal("valueType");
+        valueTypeNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IndexerRule>(this, &IndexerRule::PrevalueType));
+        valueTypeNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IndexerRule>(this, &IndexerRule::PostvalueType));
+        cminor::parsing::NonterminalParser* indexTypeNonterminalParser = GetNonterminal("indexType");
+        indexTypeNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IndexerRule>(this, &IndexerRule::PreindexType));
+        indexTypeNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IndexerRule>(this, &IndexerRule::PostindexType));
+        cminor::parsing::NonterminalParser* indexNonterminalParser = GetNonterminal("index");
+        indexNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IndexerRule>(this, &IndexerRule::Postindex));
+        cminor::parsing::NonterminalParser* getterOrSetterNonterminalParser = GetNonterminal("GetterOrSetter");
+        getterOrSetterNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IndexerRule>(this, &IndexerRule::PreGetterOrSetter));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -1351,54 +1351,54 @@ public:
     {
         context.indexer.reset(new IndexerNode(span, context.fromSpecifiers, context.fromvalueType, context.fromindexType, context.fromindex));
     }
-    void PostSpecifiers(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostSpecifiers(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromSpecifiers_value = std::move(stack.top());
-            context.fromSpecifiers = *static_cast<Cm::Parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromSpecifiers_value = std::move(stack.top());
+            context.fromSpecifiers = *static_cast<cminor::parsing::ValueObject<Specifiers>*>(fromSpecifiers_value.get());
             stack.pop();
         }
     }
-    void PrevalueType(Cm::Parsing::ObjectStack& stack)
+    void PrevalueType(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostvalueType(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostvalueType(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromvalueType_value = std::move(stack.top());
-            context.fromvalueType = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromvalueType_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromvalueType_value = std::move(stack.top());
+            context.fromvalueType = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromvalueType_value.get());
             stack.pop();
         }
     }
-    void PreindexType(Cm::Parsing::ObjectStack& stack)
+    void PreindexType(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostindexType(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostindexType(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromindexType_value = std::move(stack.top());
-            context.fromindexType = *static_cast<Cm::Parsing::ValueObject<Node*>*>(fromindexType_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromindexType_value = std::move(stack.top());
+            context.fromindexType = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromindexType_value.get());
             stack.pop();
         }
     }
-    void Postindex(Cm::Parsing::ObjectStack& stack, bool matched)
+    void Postindex(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromindex_value = std::move(stack.top());
-            context.fromindex = *static_cast<Cm::Parsing::ValueObject<IdentifierNode*>*>(fromindex_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromindex_value = std::move(stack.top());
+            context.fromindex = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromindex_value.get());
             stack.pop();
         }
     }
-    void PreGetterOrSetter(Cm::Parsing::ObjectStack& stack)
+    void PreGetterOrSetter(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.indexer.get())));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.indexer.get())));
     }
 private:
     struct Context
@@ -1416,43 +1416,43 @@ private:
     Context context;
 };
 
-class ClassGrammar::GetterOrSetterRule : public Cm::Parsing::Rule
+class ClassGrammar::GetterOrSetterRule : public cminor::parsing::Rule
 {
 public:
     GetterOrSetterRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         AddInheritedAttribute(AttrOrVariable("Node*", "subject"));
     }
-    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
-        std::unique_ptr<Cm::Parsing::Object> subject_value = std::move(stack.top());
-        context.subject = *static_cast<Cm::Parsing::ValueObject<Node*>*>(subject_value.get());
+        std::unique_ptr<cminor::parsing::Object> subject_value = std::move(stack.top());
+        context.subject = *static_cast<cminor::parsing::ValueObject<Node*>*>(subject_value.get());
         stack.pop();
-        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
     {
         context = std::move(contextStack.top());
         contextStack.pop();
     }
     virtual void Link()
     {
-        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<GetterOrSetterRule>(this, &GetterOrSetterRule::A0Action));
-        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<GetterOrSetterRule>(this, &GetterOrSetterRule::A1Action));
-        Cm::Parsing::NonterminalParser* getterNonterminalParser = GetNonterminal("getter");
-        getterNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<GetterOrSetterRule>(this, &GetterOrSetterRule::Pregetter));
-        getterNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<GetterOrSetterRule>(this, &GetterOrSetterRule::Postgetter));
-        Cm::Parsing::NonterminalParser* setterNonterminalParser = GetNonterminal("setter");
-        setterNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<GetterOrSetterRule>(this, &GetterOrSetterRule::Presetter));
-        setterNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<GetterOrSetterRule>(this, &GetterOrSetterRule::Postsetter));
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<GetterOrSetterRule>(this, &GetterOrSetterRule::A0Action));
+        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<GetterOrSetterRule>(this, &GetterOrSetterRule::A1Action));
+        cminor::parsing::NonterminalParser* getterNonterminalParser = GetNonterminal("getter");
+        getterNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<GetterOrSetterRule>(this, &GetterOrSetterRule::Pregetter));
+        getterNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<GetterOrSetterRule>(this, &GetterOrSetterRule::Postgetter));
+        cminor::parsing::NonterminalParser* setterNonterminalParser = GetNonterminal("setter");
+        setterNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<GetterOrSetterRule>(this, &GetterOrSetterRule::Presetter));
+        setterNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<GetterOrSetterRule>(this, &GetterOrSetterRule::Postsetter));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -1462,29 +1462,29 @@ public:
     {
         context.subject->SetSetter(context.fromsetter);
     }
-    void Pregetter(Cm::Parsing::ObjectStack& stack)
+    void Pregetter(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void Postgetter(Cm::Parsing::ObjectStack& stack, bool matched)
+    void Postgetter(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromgetter_value = std::move(stack.top());
-            context.fromgetter = *static_cast<Cm::Parsing::ValueObject<CompoundStatementNode*>*>(fromgetter_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromgetter_value = std::move(stack.top());
+            context.fromgetter = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromgetter_value.get());
             stack.pop();
         }
     }
-    void Presetter(Cm::Parsing::ObjectStack& stack)
+    void Presetter(cminor::parsing::ObjectStack& stack)
     {
-        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void Postsetter(Cm::Parsing::ObjectStack& stack, bool matched)
+    void Postsetter(cminor::parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromsetter_value = std::move(stack.top());
-            context.fromsetter = *static_cast<Cm::Parsing::ValueObject<CompoundStatementNode*>*>(fromsetter_value.get());
+            std::unique_ptr<cminor::parsing::Object> fromsetter_value = std::move(stack.top());
+            context.fromsetter = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromsetter_value.get());
             stack.pop();
         }
     }
@@ -1503,299 +1503,299 @@ private:
 
 void ClassGrammar::GetReferencedGrammars()
 {
-    Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.SpecifierGrammar");
+    cminor::parsing::ParsingDomain* pd = GetParsingDomain();
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.SpecifierGrammar");
     if (!grammar0)
     {
         grammar0 = cminor::parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.EnumerationGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.EnumerationGrammar");
     if (!grammar1)
     {
         grammar1 = cminor::parser::EnumerationGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar2)
     {
         grammar2 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TemplateGrammar");
+    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TemplateGrammar");
     if (!grammar3)
     {
         grammar3 = cminor::parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
     if (!grammar4)
     {
         grammar4 = cminor::parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    cminor::parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar5)
     {
         grammar5 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
-    Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("cminor.parser.StatementGrammar");
+    cminor::parsing::Grammar* grammar6 = pd->GetGrammar("cminor.parser.StatementGrammar");
     if (!grammar6)
     {
         grammar6 = cminor::parser::StatementGrammar::Create(pd);
     }
     AddGrammarReference(grammar6);
-    Cm::Parsing::Grammar* grammar7 = pd->GetGrammar("cminor.parser.ParameterGrammar");
+    cminor::parsing::Grammar* grammar7 = pd->GetGrammar("cminor.parser.ParameterGrammar");
     if (!grammar7)
     {
         grammar7 = cminor::parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar7);
-    Cm::Parsing::Grammar* grammar8 = pd->GetGrammar("cminor.parser.FunctionGrammar");
+    cminor::parsing::Grammar* grammar8 = pd->GetGrammar("cminor.parser.FunctionGrammar");
     if (!grammar8)
     {
         grammar8 = cminor::parser::FunctionGrammar::Create(pd);
     }
     AddGrammarReference(grammar8);
-    Cm::Parsing::Grammar* grammar9 = pd->GetGrammar("cminor.parser.ConstantGrammar");
+    cminor::parsing::Grammar* grammar9 = pd->GetGrammar("cminor.parser.ConstantGrammar");
     if (!grammar9)
     {
         grammar9 = cminor::parser::ConstantGrammar::Create(pd);
     }
     AddGrammarReference(grammar9);
-    Cm::Parsing::Grammar* grammar10 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar10 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar10)
     {
-        grammar10 = Cm::Parsing::stdlib::Create(pd);
+        grammar10 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar10);
 }
 
 void ClassGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new Cm::Parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
-    AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Attributes", this, "FunctionGrammar.Attributes"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
-    AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
+    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new cminor::parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
+    AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new cminor::parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+    AddRuleLink(new cminor::parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+    AddRuleLink(new cminor::parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
+    AddRuleLink(new cminor::parsing::RuleLink("Attributes", this, "FunctionGrammar.Attributes"));
+    AddRuleLink(new cminor::parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
+    AddRuleLink(new cminor::parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
+    AddRuleLink(new cminor::parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRule(new ClassRule("Class", GetScope(),
-        new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::SequenceParser(
-                            new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::SequenceParser(
-                                    new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0),
-                                    new Cm::Parsing::KeywordParser("class")),
-                                new Cm::Parsing::ActionParser("A0",
-                                    new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
-                            new Cm::Parsing::OptionalParser(
-                                new Cm::Parsing::NonterminalParser("TemplateParameterList", "TemplateParameterList", 2))),
-                        new Cm::Parsing::OptionalParser(
-                            new Cm::Parsing::NonterminalParser("InheritanceAndInterfaces", "InheritanceAndInterfaces", 2))),
-                    new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::CharParser('{'))),
-                new Cm::Parsing::NonterminalParser("ClassContent", "ClassContent", 2)),
-            new Cm::Parsing::ExpectationParser(
-                new Cm::Parsing::CharParser('}')))));
+        new cminor::parsing::SequenceParser(
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::SequenceParser(
+                            new cminor::parsing::SequenceParser(
+                                new cminor::parsing::SequenceParser(
+                                    new cminor::parsing::NonterminalParser("Specifiers", "Specifiers", 0),
+                                    new cminor::parsing::KeywordParser("class")),
+                                new cminor::parsing::ActionParser("A0",
+                                    new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                            new cminor::parsing::OptionalParser(
+                                new cminor::parsing::NonterminalParser("TemplateParameterList", "TemplateParameterList", 2))),
+                        new cminor::parsing::OptionalParser(
+                            new cminor::parsing::NonterminalParser("InheritanceAndInterfaces", "InheritanceAndInterfaces", 2))),
+                    new cminor::parsing::ExpectationParser(
+                        new cminor::parsing::CharParser('{'))),
+                new cminor::parsing::NonterminalParser("ClassContent", "ClassContent", 2)),
+            new cminor::parsing::ExpectationParser(
+                new cminor::parsing::CharParser('}')))));
     AddRule(new InheritanceAndInterfacesRule("InheritanceAndInterfaces", GetScope(),
-        new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::CharParser(':'),
-            new Cm::Parsing::ListParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::ActionParser("A0",
-                        new Cm::Parsing::EmptyParser()),
-                    new Cm::Parsing::ActionParser("A1",
-                        new Cm::Parsing::NonterminalParser("BaseClassOrInterface", "BaseClassOrInterface", 1))),
-                new Cm::Parsing::CharParser(',')))));
+        new cminor::parsing::SequenceParser(
+            new cminor::parsing::CharParser(':'),
+            new cminor::parsing::ListParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::ActionParser("A0",
+                        new cminor::parsing::EmptyParser()),
+                    new cminor::parsing::ActionParser("A1",
+                        new cminor::parsing::NonterminalParser("BaseClassOrInterface", "BaseClassOrInterface", 1))),
+                new cminor::parsing::CharParser(',')))));
     AddRule(new BaseClassOrInterfaceRule("BaseClassOrInterface", GetScope(),
-        new Cm::Parsing::ActionParser("A0",
-            new Cm::Parsing::NonterminalParser("QualifiedId", "QualifiedId", 0))));
+        new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::NonterminalParser("QualifiedId", "QualifiedId", 0))));
     AddRule(new ClassContentRule("ClassContent", GetScope(),
-        new Cm::Parsing::KleeneStarParser(
-            new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::NonterminalParser("ClassMember", "ClassMember", 2)))));
+        new cminor::parsing::KleeneStarParser(
+            new cminor::parsing::ActionParser("A0",
+                new cminor::parsing::NonterminalParser("ClassMember", "ClassMember", 2)))));
     AddRule(new ClassMemberRule("ClassMember", GetScope(),
-        new Cm::Parsing::AlternativeParser(
-            new Cm::Parsing::AlternativeParser(
-                new Cm::Parsing::AlternativeParser(
-                    new Cm::Parsing::AlternativeParser(
-                        new Cm::Parsing::AlternativeParser(
-                            new Cm::Parsing::AlternativeParser(
-                                new Cm::Parsing::AlternativeParser(
-                                    new Cm::Parsing::AlternativeParser(
-                                        new Cm::Parsing::ActionParser("A0",
-                                            new Cm::Parsing::NonterminalParser("StaticConstructor", "StaticConstructor", 2)),
-                                        new Cm::Parsing::ActionParser("A1",
-                                            new Cm::Parsing::NonterminalParser("Constructor", "Constructor", 2))),
-                                    new Cm::Parsing::ActionParser("A2",
-                                        new Cm::Parsing::NonterminalParser("MemberFunction", "MemberFunction", 2))),
-                                new Cm::Parsing::ActionParser("A3",
-                                    new Cm::Parsing::NonterminalParser("MemberVariable", "MemberVariable", 1))),
-                            new Cm::Parsing::ActionParser("A4",
-                                new Cm::Parsing::NonterminalParser("Property", "Property", 1))),
-                        new Cm::Parsing::ActionParser("A5",
-                            new Cm::Parsing::NonterminalParser("Indexer", "Indexer", 1))),
-                    new Cm::Parsing::ActionParser("A6",
-                        new Cm::Parsing::NonterminalParser("Class", "Class", 1))),
-                new Cm::Parsing::ActionParser("A7",
-                    new Cm::Parsing::NonterminalParser("EnumType", "EnumType", 1))),
-            new Cm::Parsing::ActionParser("A8",
-                new Cm::Parsing::NonterminalParser("Constant", "Constant", 1)))));
+        new cminor::parsing::AlternativeParser(
+            new cminor::parsing::AlternativeParser(
+                new cminor::parsing::AlternativeParser(
+                    new cminor::parsing::AlternativeParser(
+                        new cminor::parsing::AlternativeParser(
+                            new cminor::parsing::AlternativeParser(
+                                new cminor::parsing::AlternativeParser(
+                                    new cminor::parsing::AlternativeParser(
+                                        new cminor::parsing::ActionParser("A0",
+                                            new cminor::parsing::NonterminalParser("StaticConstructor", "StaticConstructor", 2)),
+                                        new cminor::parsing::ActionParser("A1",
+                                            new cminor::parsing::NonterminalParser("Constructor", "Constructor", 2))),
+                                    new cminor::parsing::ActionParser("A2",
+                                        new cminor::parsing::NonterminalParser("MemberFunction", "MemberFunction", 2))),
+                                new cminor::parsing::ActionParser("A3",
+                                    new cminor::parsing::NonterminalParser("MemberVariable", "MemberVariable", 1))),
+                            new cminor::parsing::ActionParser("A4",
+                                new cminor::parsing::NonterminalParser("Property", "Property", 1))),
+                        new cminor::parsing::ActionParser("A5",
+                            new cminor::parsing::NonterminalParser("Indexer", "Indexer", 1))),
+                    new cminor::parsing::ActionParser("A6",
+                        new cminor::parsing::NonterminalParser("Class", "Class", 1))),
+                new cminor::parsing::ActionParser("A7",
+                    new cminor::parsing::NonterminalParser("EnumType", "EnumType", 1))),
+            new cminor::parsing::ActionParser("A8",
+                new cminor::parsing::NonterminalParser("Constant", "Constant", 1)))));
     AddRule(new StaticConstructorRule("StaticConstructor", GetScope(),
-        new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::SequenceParser(
-                            new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::OptionalParser(
-                                    new Cm::Parsing::NonterminalParser("Attributes", "Attributes", 1)),
-                                new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0)),
-                            new Cm::Parsing::ActionParser("A1",
-                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
-                        new Cm::Parsing::CharParser('(')),
-                    new Cm::Parsing::CharParser(')'))),
-            new Cm::Parsing::AlternativeParser(
-                new Cm::Parsing::ActionParser("A2",
-                    new Cm::Parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)),
-                new Cm::Parsing::CharParser(';')))));
+        new cminor::parsing::SequenceParser(
+            new cminor::parsing::ActionParser("A0",
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::SequenceParser(
+                            new cminor::parsing::SequenceParser(
+                                new cminor::parsing::OptionalParser(
+                                    new cminor::parsing::NonterminalParser("Attributes", "Attributes", 1)),
+                                new cminor::parsing::NonterminalParser("Specifiers", "Specifiers", 0)),
+                            new cminor::parsing::ActionParser("A1",
+                                new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                        new cminor::parsing::CharParser('(')),
+                    new cminor::parsing::CharParser(')'))),
+            new cminor::parsing::AlternativeParser(
+                new cminor::parsing::ActionParser("A2",
+                    new cminor::parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)),
+                new cminor::parsing::CharParser(';')))));
     AddRule(new ConstructorRule("Constructor", GetScope(),
-        new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::ActionParser("A0",
-                        new Cm::Parsing::SequenceParser(
-                            new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::OptionalParser(
-                                    new Cm::Parsing::NonterminalParser("Attributes", "Attributes", 1)),
-                                new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0)),
-                            new Cm::Parsing::ActionParser("A1",
-                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0)))),
-                    new Cm::Parsing::NonterminalParser("ParameterList", "ParameterList", 2)),
-                new Cm::Parsing::OptionalParser(
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::CharParser(':'),
-                        new Cm::Parsing::ActionParser("A2",
-                            new Cm::Parsing::NonterminalParser("Initializer", "Initializer", 1))))),
-            new Cm::Parsing::ActionParser("A3",
-                new Cm::Parsing::AlternativeParser(
-                    new Cm::Parsing::ActionParser("A4",
-                        new Cm::Parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)),
-                    new Cm::Parsing::CharParser(';'))))));
+        new cminor::parsing::SequenceParser(
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::ActionParser("A0",
+                        new cminor::parsing::SequenceParser(
+                            new cminor::parsing::SequenceParser(
+                                new cminor::parsing::OptionalParser(
+                                    new cminor::parsing::NonterminalParser("Attributes", "Attributes", 1)),
+                                new cminor::parsing::NonterminalParser("Specifiers", "Specifiers", 0)),
+                            new cminor::parsing::ActionParser("A1",
+                                new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0)))),
+                    new cminor::parsing::NonterminalParser("ParameterList", "ParameterList", 2)),
+                new cminor::parsing::OptionalParser(
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::CharParser(':'),
+                        new cminor::parsing::ActionParser("A2",
+                            new cminor::parsing::NonterminalParser("Initializer", "Initializer", 1))))),
+            new cminor::parsing::ActionParser("A3",
+                new cminor::parsing::AlternativeParser(
+                    new cminor::parsing::ActionParser("A4",
+                        new cminor::parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)),
+                    new cminor::parsing::CharParser(';'))))));
     AddRule(new InitializerRule("Initializer", GetScope(),
-        new Cm::Parsing::AlternativeParser(
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::ActionParser("A0",
-                            new Cm::Parsing::KeywordParser("this", "identifier")),
-                        new Cm::Parsing::ExpectationParser(
-                            new Cm::Parsing::CharParser('('))),
-                    new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::NonterminalParser("thisArgs", "ArgumentList", 2))),
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::CharParser(')'))),
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::ActionParser("A1",
-                            new Cm::Parsing::KeywordParser("base", "identifier")),
-                        new Cm::Parsing::ExpectationParser(
-                            new Cm::Parsing::CharParser('('))),
-                    new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::NonterminalParser("baseArgs", "ArgumentList", 2))),
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::CharParser(')'))))));
+        new cminor::parsing::AlternativeParser(
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::ActionParser("A0",
+                            new cminor::parsing::KeywordParser("this", "identifier")),
+                        new cminor::parsing::ExpectationParser(
+                            new cminor::parsing::CharParser('('))),
+                    new cminor::parsing::ExpectationParser(
+                        new cminor::parsing::NonterminalParser("thisArgs", "ArgumentList", 2))),
+                new cminor::parsing::ExpectationParser(
+                    new cminor::parsing::CharParser(')'))),
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::ActionParser("A1",
+                            new cminor::parsing::KeywordParser("base", "identifier")),
+                        new cminor::parsing::ExpectationParser(
+                            new cminor::parsing::CharParser('('))),
+                    new cminor::parsing::ExpectationParser(
+                        new cminor::parsing::NonterminalParser("baseArgs", "ArgumentList", 2))),
+                new cminor::parsing::ExpectationParser(
+                    new cminor::parsing::CharParser(')'))))));
     AddRule(new MemberFunctionRule("MemberFunction", GetScope(),
-        new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::ActionParser("A0",
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::SequenceParser(
-                            new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::OptionalParser(
-                                    new Cm::Parsing::NonterminalParser("Attributes", "Attributes", 1)),
-                                new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0)),
-                            new Cm::Parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)),
-                        new Cm::Parsing::NonterminalParser("FunctionGroupId", "FunctionGroupId", 1))),
-                new Cm::Parsing::NonterminalParser("ParameterList", "ParameterList", 2)),
-            new Cm::Parsing::ActionParser("A1",
-                new Cm::Parsing::AlternativeParser(
-                    new Cm::Parsing::ActionParser("A2",
-                        new Cm::Parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)),
-                    new Cm::Parsing::CharParser(';'))))));
+        new cminor::parsing::SequenceParser(
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::ActionParser("A0",
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::SequenceParser(
+                            new cminor::parsing::SequenceParser(
+                                new cminor::parsing::OptionalParser(
+                                    new cminor::parsing::NonterminalParser("Attributes", "Attributes", 1)),
+                                new cminor::parsing::NonterminalParser("Specifiers", "Specifiers", 0)),
+                            new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)),
+                        new cminor::parsing::NonterminalParser("FunctionGroupId", "FunctionGroupId", 1))),
+                new cminor::parsing::NonterminalParser("ParameterList", "ParameterList", 2)),
+            new cminor::parsing::ActionParser("A1",
+                new cminor::parsing::AlternativeParser(
+                    new cminor::parsing::ActionParser("A2",
+                        new cminor::parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)),
+                    new cminor::parsing::CharParser(';'))))));
     AddRule(new MemberVariableRule("MemberVariable", GetScope(),
-        new Cm::Parsing::ActionParser("A0",
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0),
-                        new Cm::Parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)),
-                    new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0)),
-                new Cm::Parsing::CharParser(';')))));
+        new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::NonterminalParser("Specifiers", "Specifiers", 0),
+                        new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)),
+                    new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0)),
+                new cminor::parsing::CharParser(';')))));
     AddRule(new PropertyRule("Property", GetScope(),
-        new Cm::Parsing::ActionParser("A0",
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::ActionParser("A1",
-                            new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::SequenceParser(
-                                    new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0),
-                                    new Cm::Parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)),
-                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))),
-                        new Cm::Parsing::CharParser('{')),
-                    new Cm::Parsing::PositiveParser(
-                        new Cm::Parsing::NonterminalParser("GetterOrSetter", "GetterOrSetter", 2))),
-                new Cm::Parsing::CharParser('}')))));
+        new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::ActionParser("A1",
+                            new cminor::parsing::SequenceParser(
+                                new cminor::parsing::SequenceParser(
+                                    new cminor::parsing::NonterminalParser("Specifiers", "Specifiers", 0),
+                                    new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)),
+                                new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                        new cminor::parsing::CharParser('{')),
+                    new cminor::parsing::PositiveParser(
+                        new cminor::parsing::NonterminalParser("GetterOrSetter", "GetterOrSetter", 2))),
+                new cminor::parsing::CharParser('}')))));
     AddRule(new IndexerRule("Indexer", GetScope(),
-        new Cm::Parsing::ActionParser("A0",
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::ActionParser("A1",
-                            new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::SequenceParser(
-                                    new Cm::Parsing::SequenceParser(
-                                        new Cm::Parsing::SequenceParser(
-                                            new Cm::Parsing::SequenceParser(
-                                                new Cm::Parsing::SequenceParser(
-                                                    new Cm::Parsing::NonterminalParser("Specifiers", "Specifiers", 0),
-                                                    new Cm::Parsing::NonterminalParser("valueType", "TypeExpr", 1)),
-                                                new Cm::Parsing::KeywordParser("this", "identifier")),
-                                            new Cm::Parsing::ExpectationParser(
-                                                new Cm::Parsing::CharParser('['))),
-                                        new Cm::Parsing::ExpectationParser(
-                                            new Cm::Parsing::NonterminalParser("indexType", "TypeExpr", 1))),
-                                    new Cm::Parsing::ExpectationParser(
-                                        new Cm::Parsing::NonterminalParser("index", "Identifier", 0))),
-                                new Cm::Parsing::ExpectationParser(
-                                    new Cm::Parsing::CharParser(']')))),
-                        new Cm::Parsing::CharParser('{')),
-                    new Cm::Parsing::PositiveParser(
-                        new Cm::Parsing::NonterminalParser("GetterOrSetter", "GetterOrSetter", 2))),
-                new Cm::Parsing::CharParser('}')))));
+        new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::ActionParser("A1",
+                            new cminor::parsing::SequenceParser(
+                                new cminor::parsing::SequenceParser(
+                                    new cminor::parsing::SequenceParser(
+                                        new cminor::parsing::SequenceParser(
+                                            new cminor::parsing::SequenceParser(
+                                                new cminor::parsing::SequenceParser(
+                                                    new cminor::parsing::NonterminalParser("Specifiers", "Specifiers", 0),
+                                                    new cminor::parsing::NonterminalParser("valueType", "TypeExpr", 1)),
+                                                new cminor::parsing::KeywordParser("this", "identifier")),
+                                            new cminor::parsing::ExpectationParser(
+                                                new cminor::parsing::CharParser('['))),
+                                        new cminor::parsing::ExpectationParser(
+                                            new cminor::parsing::NonterminalParser("indexType", "TypeExpr", 1))),
+                                    new cminor::parsing::ExpectationParser(
+                                        new cminor::parsing::NonterminalParser("index", "Identifier", 0))),
+                                new cminor::parsing::ExpectationParser(
+                                    new cminor::parsing::CharParser(']')))),
+                        new cminor::parsing::CharParser('{')),
+                    new cminor::parsing::PositiveParser(
+                        new cminor::parsing::NonterminalParser("GetterOrSetter", "GetterOrSetter", 2))),
+                new cminor::parsing::CharParser('}')))));
     AddRule(new GetterOrSetterRule("GetterOrSetter", GetScope(),
-        new Cm::Parsing::AlternativeParser(
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::KeywordParser("get"),
-                new Cm::Parsing::ActionParser("A0",
-                    new Cm::Parsing::NonterminalParser("getter", "CompoundStatement", 1))),
-            new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::KeywordParser("set"),
-                new Cm::Parsing::ActionParser("A1",
-                    new Cm::Parsing::NonterminalParser("setter", "CompoundStatement", 1))))));
+        new cminor::parsing::AlternativeParser(
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::KeywordParser("get"),
+                new cminor::parsing::ActionParser("A0",
+                    new cminor::parsing::NonterminalParser("getter", "CompoundStatement", 1))),
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::KeywordParser("set"),
+                new cminor::parsing::ActionParser("A1",
+                    new cminor::parsing::NonterminalParser("setter", "CompoundStatement", 1))))));
 }
 
 } } // namespace cminor.parser

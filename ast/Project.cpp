@@ -4,12 +4,12 @@
 // =================================
 
 #include <cminor/ast/Project.hpp>
-#include <Cm.Util/Path.hpp>
+#include <cminor/machine/Path.hpp>
 #include <algorithm>
 
 namespace cminor { namespace ast {
 
-using namespace Cm::Util;
+using namespace cminor::machine;
 
 ProjectDeclaration::~ProjectDeclaration()
 {

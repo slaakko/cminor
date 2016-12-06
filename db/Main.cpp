@@ -13,8 +13,8 @@
 #include <cminor/vmlib/VmFunction.hpp>
 #include <cminor/vmlib/File.hpp>
 #include <cminor/db/Shell.hpp>
-#include <Cm.Parsing/InitDone.hpp>
-#include <Cm.Util/Path.hpp>
+#include <cminor/pl/InitDone.hpp>
+#include <cminor/machine/Path.hpp>
 #include <boost/filesystem.hpp>
 
 using namespace cminor::machine;
@@ -22,7 +22,7 @@ using namespace cminor::symbols;
 using namespace cminor::ast;
 using namespace cminor::vmlib;
 using namespace cminor::db;
-using namespace Cm::Util;
+using namespace cminor::machine;
 
 struct InitDone
 {
@@ -39,11 +39,11 @@ struct InitDone
         InitAssembly();
         InitVmFunctions(vmFunctionNamePool);
         FileInit();
-        Cm::Parsing::Init();
+        cminor::parsing::Init();
     }
     ~InitDone()
     {
-        Cm::Parsing::Done();
+        cminor::parsing::Done();
         FileDone();
         DoneVmFunctions();
         DoneAssembly();
