@@ -1,25 +1,7 @@
 using System;
-using System.IO;
-using System.Text;
 
-class Alpha
-{
-}
-
-class Beta : Alpha
-{
-}
-
-void main()
-{
-    Alpha alpha = new Alpha();
-    Beta beta = alpha as Beta;
-    if (beta != null)
-    {
-        Console.WriteLine("yes");
-    }
-    else
-    {
-        Console.WriteLine("no");
-    }
+public void testsecond()
+{  
+    Alpha.Beta.Foo<int> f;
+    f.foo(1);
 }

@@ -109,7 +109,7 @@ void FunctionSymbol::Read(SymbolReader& reader)
         {
             machineFunction->SetMain();
         }
-        FunctionTable::Instance().AddFunction(machineFunction);
+        FunctionTable::Instance().AddFunction(machineFunction, reader.ReadingClassTemplateSpecialization());
     }
     std::vector<LocalVariableSymbol*> readLocalVariables = reader.GetLocalVariables();
     int n = int(readLocalVariables.size());

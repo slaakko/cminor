@@ -28,17 +28,28 @@ VmSystemObjectToString::VmSystemObjectToString(ConstantPool& constantPool)
 
 void VmSystemObjectToString::Execute(Frame& frame)
 {
-    IntegralValue value = frame.Local(0).GetValue();
-    Assert(value.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference reference(value.Value());
-    IntegralValue classDataValue = frame.GetManagedMemoryPool().GetField(reference, 0);
-    Assert(classDataValue.GetType() == ValueType::classDataPtr, "class data pointer expected");
-    ClassData* classData = classDataValue.AsClassDataPtr();
-    StringPtr name = classData->Type()->Name();
-    StrLitToStringInst strLit2StringInst;
-    const char32_t* nameLiteral = name.Value();
-    frame.OpStack().Push(IntegralValue(nameLiteral));
-    strLit2StringInst.Execute(frame);
+    try
+    {
+        IntegralValue value = frame.Local(0).GetValue();
+        Assert(value.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference reference(value.Value());
+        IntegralValue classDataValue = frame.GetManagedMemoryPool().GetField(reference, 0);
+        Assert(classDataValue.GetType() == ValueType::classDataPtr, "class data pointer expected");
+        ClassData* classData = classDataValue.AsClassDataPtr();
+        StringPtr name = classData->Type()->Name();
+        StrLitToStringInst strLit2StringInst;
+        const char32_t* nameLiteral = name.Value();
+        frame.OpStack().Push(IntegralValue(nameLiteral));
+        strLit2StringInst.Execute(frame);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 class VmSystemObjectEqual : public VmFunction
@@ -57,30 +68,41 @@ VmSystemObjectEqual::VmSystemObjectEqual(ConstantPool& constantPool)
 
 void VmSystemObjectEqual::Execute(Frame& frame)
 {
-    IntegralValue leftValue = frame.Local(0).GetValue();
-    Assert(leftValue.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference leftRef(leftValue.Value());
-    IntegralValue rightValue = frame.Local(1).GetValue();
-    Assert(rightValue.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference rightRef(rightValue.Value());
-    bool result = false;
-    if (leftRef.IsNull() && rightRef.IsNull())
+    try
     {
-        result = true;
+        IntegralValue leftValue = frame.Local(0).GetValue();
+        Assert(leftValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference leftRef(leftValue.Value());
+        IntegralValue rightValue = frame.Local(1).GetValue();
+        Assert(rightValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference rightRef(rightValue.Value());
+        bool result = false;
+        if (leftRef.IsNull() && rightRef.IsNull())
+        {
+            result = true;
+        }
+        else if (leftRef.IsNull() || rightRef.IsNull())
+        {
+            result = false;
+        }
+        else
+        {
+            Object& left = frame.GetManagedMemoryPool().GetObject(leftRef);
+            MemPtr leftMem = left.GetMemPtr();
+            Object& right = frame.GetManagedMemoryPool().GetObject(rightRef);
+            MemPtr rightMem = right.GetMemPtr();
+            result = leftMem == rightMem;
+        }
+        frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
     }
-    else if (leftRef.IsNull() || rightRef.IsNull())
+    catch (const NullReferenceException& ex)
     {
-        result = false;
+        ThrowNullReferenceException(ex, frame);
     }
-    else
+    catch (const SystemException& ex)
     {
-        Object& left = frame.GetManagedMemoryPool().GetObject(leftRef);
-        MemPtr leftMem = left.GetMemPtr();
-        Object& right = frame.GetManagedMemoryPool().GetObject(rightRef);
-        MemPtr rightMem = right.GetMemPtr();
-        result = leftMem == rightMem;
+        ThrowSystemException(ex, frame);
     }
-    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
 }
 
 class VmSystemObjectLess : public VmFunction
@@ -99,34 +121,45 @@ VmSystemObjectLess::VmSystemObjectLess(ConstantPool& constantPool)
 
 void VmSystemObjectLess::Execute(Frame& frame)
 {
-    IntegralValue leftValue = frame.Local(0).GetValue();
-    Assert(leftValue.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference leftRef(leftValue.Value());
-    IntegralValue rightValue = frame.Local(1).GetValue();
-    Assert(rightValue.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference rightRef(rightValue.Value());
-    bool result = false;
-    if (leftRef.IsNull() && rightRef.IsNull())
+    try
     {
-        result = false;
+        IntegralValue leftValue = frame.Local(0).GetValue();
+        Assert(leftValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference leftRef(leftValue.Value());
+        IntegralValue rightValue = frame.Local(1).GetValue();
+        Assert(rightValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference rightRef(rightValue.Value());
+        bool result = false;
+        if (leftRef.IsNull() && rightRef.IsNull())
+        {
+            result = false;
+        }
+        else if (leftRef.IsNull())
+        {
+            result = true;
+        }
+        else if (rightRef.IsNull())
+        {
+            result = false;
+        }
+        else
+        {
+            Object& left = frame.GetManagedMemoryPool().GetObject(leftRef);
+            MemPtr leftMem = left.GetMemPtr();
+            Object& right = frame.GetManagedMemoryPool().GetObject(rightRef);
+            MemPtr rightMem = right.GetMemPtr();
+            result = leftMem < rightMem;
+        }
+        frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
     }
-    else if (leftRef.IsNull())
+    catch (const NullReferenceException& ex)
     {
-        result = true;
+        ThrowNullReferenceException(ex, frame);
     }
-    else if (rightRef.IsNull())
+    catch (const SystemException& ex)
     {
-        result = false;
+        ThrowSystemException(ex, frame);
     }
-    else
-    {
-        Object& left = frame.GetManagedMemoryPool().GetObject(leftRef);
-        MemPtr leftMem = left.GetMemPtr();
-        Object& right = frame.GetManagedMemoryPool().GetObject(rightRef);
-        MemPtr rightMem = right.GetMemPtr();
-        result = leftMem < rightMem;
-    }
-    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
 }
 
 class VmSystemStringConstructorCharArray : public VmFunction
@@ -145,18 +178,29 @@ VmSystemStringConstructorCharArray::VmSystemStringConstructorCharArray(ConstantP
 
 void VmSystemStringConstructorCharArray::Execute(Frame& frame)
 {
-    IntegralValue stringValue = frame.Local(0).GetValue();
-    Assert(stringValue.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference stringRef(stringValue.Value());
-    IntegralValue charArrayValue = frame.Local(1).GetValue();
-    Assert(charArrayValue.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference charArrayRef(charArrayValue.Value());
-    std::pair<AllocationHandle, int32_t> stringCharactersHandleStringSLengthPair = frame.GetManagedMemoryPool().CreateStringCharsFromCharArray(frame.GetThread(), charArrayRef);
-    AllocationHandle stringCharactersHandle = stringCharactersHandleStringSLengthPair.first;
-    int32_t stringLength = stringCharactersHandleStringSLengthPair.second;
-    Object& str = frame.GetManagedMemoryPool().GetObject(stringRef);
-    str.SetField(IntegralValue(stringLength, ValueType::intType), 1);
-    str.SetField(IntegralValue(stringCharactersHandle.Value(), ValueType::allocationHandle), 2);
+    try
+    {
+        IntegralValue stringValue = frame.Local(0).GetValue();
+        Assert(stringValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference stringRef(stringValue.Value());
+        IntegralValue charArrayValue = frame.Local(1).GetValue();
+        Assert(charArrayValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference charArrayRef(charArrayValue.Value());
+        std::pair<AllocationHandle, int32_t> stringCharactersHandleStringSLengthPair = frame.GetManagedMemoryPool().CreateStringCharsFromCharArray(frame.GetThread(), charArrayRef);
+        AllocationHandle stringCharactersHandle = stringCharactersHandleStringSLengthPair.first;
+        int32_t stringLength = stringCharactersHandleStringSLengthPair.second;
+        Object& str = frame.GetManagedMemoryPool().GetObject(stringRef);
+        str.SetField(IntegralValue(stringLength, ValueType::intType), 1);
+        str.SetField(IntegralValue(stringCharactersHandle.Value(), ValueType::allocationHandle), 2);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 class VmSystemIOOpenFile : public VmFunction
@@ -190,10 +234,17 @@ void VmSystemIOOpenFile::Execute(Frame& frame)
         int32_t fileHandle = OpenFile(filePath, mode, access);
         frame.OpStack().Push(IntegralValue(fileHandle, ValueType::intType));
     }
-    catch (const FileError& fileError)
+    catch (const NullReferenceException& ex)
     {
-        // todo
-        int x = 0;
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const FileSystemError& ex)
+    {
+        ThrowFileSystemException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -220,10 +271,13 @@ void VmSystemIOCloseFile::Execute(Frame& frame)
         int32_t fileHandle = fileHandleValue.AsInt();
         CloseFile(fileHandle);
     }
-    catch (const FileError& fileError)
+    catch (const FileSystemError& ex)
     {
-        // todo
-        int x = 0;
+        ThrowFileSystemException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -253,10 +307,13 @@ void VmSystemIOWriteByteToFile::Execute(Frame& frame)
         uint8_t value = byteValue.AsByte();
         WriteByteToFile(fileHandle, value);
     }
-    catch (const FileError& fileError)
+    catch (const FileSystemError& ex)
     {
-        // todo
-        int x = 0;
+        ThrowFileSystemException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -290,10 +347,21 @@ void VmSystemIOWriteFile::Execute(Frame& frame)
         int32_t count = countValue.AsInt();
         WriteFile(fileHandle, &bytes[0], count);
     }
-    catch (const FileError& fileError)
+    catch (const NullReferenceException& ex)
     {
-        // todo
-        int x = 0;
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const IndexOutOfRangeException& ex)
+    {
+        ThrowIndexOutOfRangeException(ex, frame);
+    }
+    catch (const FileSystemError& ex)
+    {
+        ThrowFileSystemException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -321,10 +389,13 @@ void VmSystemIOReadByteFromFile::Execute(Frame& frame)
         int32_t value = ReadByteFromFile(fileHandle);
         frame.OpStack().Push(IntegralValue(value, ValueType::intType));
     }
-    catch (const FileError& fileError)
+    catch (const FileSystemError& ex)
     {
-        // todo
-        int x = 0;
+        ThrowFileSystemException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -361,10 +432,21 @@ void VmSystemIOReadFile::Execute(Frame& frame)
         }
         frame.OpStack().Push(IntegralValue(result, ValueType::intType));
     }
-    catch (const FileError& fileError)
+    catch (const NullReferenceException& ex)
     {
-        // todo
-        int x = 0;
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const IndexOutOfRangeException& ex)
+    {
+        ThrowIndexOutOfRangeException(ex, frame);
+    }
+    catch (const FileSystemError& ex)
+    {
+        ThrowFileSystemException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -384,12 +466,23 @@ VmSystemIOFileExists::VmSystemIOFileExists(ConstantPool& constantPool)
 
 void VmSystemIOFileExists::Execute(Frame& frame)
 {
-    IntegralValue filePathValue = frame.Local(0).GetValue();
-    Assert(filePathValue.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference filePathStr(filePathValue.Value());
-    std::string filePath = frame.GetManagedMemoryPool().GetUtf8String(filePathStr);
-    bool exists = boost::filesystem::exists(filePath);
-    frame.OpStack().Push(IntegralValue(exists, ValueType::boolType));
+    try
+    {
+        IntegralValue filePathValue = frame.Local(0).GetValue();
+        Assert(filePathValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference filePathStr(filePathValue.Value());
+        std::string filePath = frame.GetManagedMemoryPool().GetUtf8String(filePathStr);
+        bool exists = boost::filesystem::exists(filePath);
+        frame.OpStack().Push(IntegralValue(exists, ValueType::boolType));
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 class VmFunctionPool

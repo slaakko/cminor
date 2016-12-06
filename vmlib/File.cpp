@@ -11,10 +11,6 @@
 
 namespace cminor { namespace vmlib {
 
-FileError::FileError(const std::string& errorMessage) : std::runtime_error(errorMessage)
-{
-}
-
 std::string FileModeStr(FileMode mode)
 {
     switch (mode)
@@ -107,7 +103,7 @@ int32_t FileTable::OpenFile(const std::string& filePath, FileMode mode, FileAcce
     {
         if (access != FileAccess::write && access != FileAccess::read)
         {
-            throw FileError("invalid file access '" + FileAccessStr(access) + "' for file mode '" + FileModeStr(mode));
+            throw FileSystemError("invalid file access '" + FileAccessStr(access) + "' for file mode '" + FileModeStr(mode));
         }
         if (access == FileAccess::write)
         {
@@ -122,7 +118,7 @@ int32_t FileTable::OpenFile(const std::string& filePath, FileMode mode, FileAcce
     {
         if (access != FileAccess::readWrite && access != FileAccess::write)
         {
-            throw FileError("invalid file access '" + FileAccessStr(access) + "' for file mode '" + FileModeStr(mode));
+            throw FileSystemError("invalid file access '" + FileAccessStr(access) + "' for file mode '" + FileModeStr(mode));
         }
         if (access == FileAccess::write)
         {
@@ -146,12 +142,12 @@ int32_t FileTable::OpenFile(const std::string& filePath, FileMode mode, FileAcce
     }
     if (modeStr.empty())
     {
-        throw FileError("invalid file access '" + FileAccessStr(access) + "' for file mode '" + FileModeStr(mode));
+        throw FileSystemError("invalid file access '" + FileAccessStr(access) + "' for file mode '" + FileModeStr(mode));
     }
     FILE* file = fopen(filePath.c_str(), modeStr.c_str());
     if (!file)
     {
-        throw FileError("could not open '" + filePath + "': " + strerror(errno));
+        throw FileSystemError("could not open '" + filePath + "': " + strerror(errno));
     }
     int32_t fileHandle = nextFileHandle++;
     files[fileHandle] = file;
@@ -171,12 +167,12 @@ void FileTable::CloseFile(int32_t fileHandle)
         if (result != 0)
         {
             std::string filePath = filePaths[fileHandle];
-            throw FileError("could not close '" + filePath + "': " + strerror(errno));
+            throw FileSystemError("could not close '" + filePath + "': " + strerror(errno));
         }
     }
     else
     {
-        throw FileError("invalid file handle " + std::to_string(fileHandle));
+        throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
     }
 }
 
@@ -190,12 +186,12 @@ void FileTable::WriteFile(int32_t fileHandle, const uint8_t* buffer, int32_t cou
         if (result != count)
         {
             std::string filePath = filePaths[fileHandle];
-            throw FileError("could not write to '" + filePath + "': " + strerror(errno));
+            throw FileSystemError("could not write to '" + filePath + "': " + strerror(errno));
         }
     }
     else
     {
-        throw FileError("invalid file handle " + std::to_string(fileHandle));
+        throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
     }
 }
 
@@ -214,13 +210,13 @@ int32_t FileTable::ReadFile(int32_t fileHandle, uint8_t* buffer, int32_t bufferS
                 return result;
             }
             std::string filePath = filePaths[fileHandle];
-            throw FileError("could not read from '" + filePath + "': " + strerror(errno));
+            throw FileSystemError("could not read from '" + filePath + "': " + strerror(errno));
         }
         return result;
     }
     else
     {
-        throw FileError("invalid file handle " + std::to_string(fileHandle));
+        throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
     }
 }
 

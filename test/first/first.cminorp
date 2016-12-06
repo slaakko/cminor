@@ -1,2 +1,3 @@
 project first;
+target=library;
 source <first.cminor>;

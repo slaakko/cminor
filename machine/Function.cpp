@@ -400,13 +400,16 @@ FunctionTable::FunctionTable() : main(nullptr)
 {
 }
 
-void FunctionTable::AddFunction(Function* fun)
+void FunctionTable::AddFunction(Function* fun, bool memberOfClassTemplateSpecialization)
 {
     StringPtr functionCallName = fun->CallName().Value().AsStringLiteral();
     auto it = functionMap.find(functionCallName);
     if (it != functionMap.cend())
     {
-        throw std::runtime_error("function '" + ToUtf8(functionCallName.Value()) + "' already added to function table");
+        if (!memberOfClassTemplateSpecialization)
+        {
+            throw std::runtime_error("function '" + ToUtf8(functionCallName.Value()) + "' already added to function table");
+        }
     }
     else
     {

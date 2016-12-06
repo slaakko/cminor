@@ -1,14 +1,7 @@
 using System;
-using Alpha.Collections;
 
-namespace Beta
-{
-    public void bar()
-    {
-        List<int> x = new List<int>();
-        x.Add(1);
-        int n = x.Count;
-        int a = x[0];
-        x[0] = a;
-    }
+public void testthird()
+{  
+    Alpha.Beta.Foo<int> f;
+    f.foo(1);
 }

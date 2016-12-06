@@ -22,6 +22,13 @@ namespace cminor { namespace machine {
 class Machine;
 class Function;
 
+void ThrowSystemException(const SystemException& ex, Frame& frame);
+void ThrowNullReferenceException(const NullReferenceException& ex, Frame& frame);
+void ThrowIndexOutOfRangeException(const IndexOutOfRangeException& ex, Frame& frame); 
+void ThrowArgumentOutOfRangeException(const ArgumentOutOfRangeException& ex, Frame& frame);
+void ThrowInvalidCastException(const InvalidCastException& ex, Frame& frame);
+void ThrowFileSystemException(const FileSystemError& ex, Frame& frame);
+
 class Instruction
 {
 public:
@@ -937,15 +944,26 @@ public:
     Instruction* Clone() const override { return new BoxInst<valueType>(*this); }
     void Execute(Frame& frame)
     {
-        ObjectType* objectType = GetBoxedType(valueType);
-        ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
-        ClassData* classData = GetClassDataForBoxedType(valueType);
-        IntegralValue classDataValue(classData);
-        frame.GetManagedMemoryPool().SetField(objectReference, 0, classDataValue);
-        IntegralValue value = frame.OpStack().Pop();
-        Assert(value.GetType() == valueType, "value type mismatch");
-        frame.GetManagedMemoryPool().SetField(objectReference, 1, value);
-        frame.OpStack().Push(objectReference);
+        try
+        {
+            ObjectType* objectType = GetBoxedType(valueType);
+            ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
+            ClassData* classData = GetClassDataForBoxedType(valueType);
+            IntegralValue classDataValue(classData);
+            frame.GetManagedMemoryPool().SetField(objectReference, 0, classDataValue);
+            IntegralValue value = frame.OpStack().Pop();
+            Assert(value.GetType() == valueType, "value type mismatch");
+            frame.GetManagedMemoryPool().SetField(objectReference, 1, value);
+            frame.OpStack().Push(objectReference);
+        }
+        catch (const NullReferenceException& ex)
+        {
+            ThrowNullReferenceException(ex, frame);
+        }
+        catch (const SystemException& ex)
+        {
+            ThrowSystemException(ex, frame);
+        }
     }
 };
 
@@ -957,21 +975,32 @@ public:
     Instruction* Clone() const override { return new UnboxInst<valueType>(*this); }
     void Execute(Frame& frame)
     {
-        IntegralValue value = frame.OpStack().Pop();
-        Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
-        ObjectReference objectReference(value.Value());
-        if (objectReference.IsNull())
+        try
         {
-            throw std::runtime_error("tried to unbox null object reference");
-        }
-        else
-        {
-            IntegralValue value = frame.GetManagedMemoryPool().GetField(objectReference, 1);
-            if (value.GetType() != valueType)
+            IntegralValue value = frame.OpStack().Pop();
+            Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
+            ObjectReference objectReference(value.Value());
+            if (objectReference.IsNull())
             {
-                throw std::runtime_error("invalid unbox operation: value type does not match");
+                throw NullReferenceException("tried to unbox null object reference");
             }
-            frame.OpStack().Push(value);
+            else
+            {
+                IntegralValue value = frame.GetManagedMemoryPool().GetField(objectReference, 1);
+                if (value.GetType() != valueType)
+                {
+                    throw SystemException("invalid unbox operation: value type does not match");
+                }
+                frame.OpStack().Push(value);
+            }
+        }
+        catch (const NullReferenceException& ex)
+        {
+            ThrowNullReferenceException(ex, frame);
+        }
+        catch (const SystemException& ex)
+        {
+            ThrowSystemException(ex, frame);
         }
     }
 };

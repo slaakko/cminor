@@ -53,9 +53,9 @@ void IntegralValue::Write(Writer& writer)
         case ValueType::doubleType: writer.Put(AsDouble()); break;
         case ValueType::charType: writer.Put(AsChar()); break;
         case ValueType::stringLiteral: writer.Put(utf32_string(AsStringLiteral())); break;
-        case ValueType::allocationHandle: throw std::runtime_error("cannot write allocation handles"); writer.Put(AsULong()); break;
-        case ValueType::objectReference: if (value != 0) { throw std::runtime_error("cannot write nonnull object references"); } writer.Put(AsULong()); break;
-        default: throw std::runtime_error("invalid integral value type to write");
+        case ValueType::allocationHandle: throw SystemException("cannot write allocation handles"); writer.Put(AsULong()); break;
+        case ValueType::objectReference: if (value != 0) { throw SystemException("cannot write nonnull object references"); } writer.Put(AsULong()); break;
+        default: throw SystemException("invalid integral value type to write");
     }
 }
 
@@ -79,9 +79,9 @@ void IntegralValue::Read(Reader& reader)
 #pragma warning(default : 4244)
         case ValueType::charType: value = reader.GetChar(); break;
         case ValueType::stringLiteral: /* do not read yet */ break;
-        case ValueType::allocationHandle: throw std::runtime_error("read allocation handle");  break;
-        case ValueType::objectReference: value = reader.GetULong(); if (value != 0) throw std::runtime_error("read nonull object reference"); break;
-        default: throw std::runtime_error("invalid integral value type to read");
+        case ValueType::allocationHandle: throw SystemException("read allocation handle");  break;
+        case ValueType::objectReference: value = reader.GetULong(); if (value != 0) throw SystemException("read nonull object reference"); break;
+        default: throw SystemException("invalid integral value type to read");
     }
 }
 
@@ -177,7 +177,7 @@ void Object::SetField(IntegralValue fieldValue, int index)
         case ValueType::stringLiteral: *static_cast<const char32_t**>(fieldPtr.Value()) = fieldValue.AsStringLiteral(); break;
         case ValueType::allocationHandle: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
         case ValueType::objectReference: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
-        default: throw std::runtime_error("invalid field type " + std::to_string(int(field.GetType())));
+        default: throw SystemException("invalid field type " + std::to_string(int(field.GetType())));
     }
 }
 
@@ -218,7 +218,10 @@ ArrayElements::ArrayElements(AllocationHandle handle_, ArenaId arenaId_, MemPtr 
 
 IntegralValue ArrayElements::GetElement(int32_t index) const
 {
-    if (index < 0 || index >= numElements) throw std::runtime_error("array index out of bounds");
+    if (index < 0 || index >= numElements)
+    {
+        throw IndexOutOfRangeException("array index out of range");
+    }
     ValueType valueType = elementType->GetValueType();
     MemPtr elementPtr = ElementPtr(GetMemPtr(), valueType, index);
     switch (valueType)
@@ -247,7 +250,10 @@ IntegralValue ArrayElements::GetElement(int32_t index) const
 
 void ArrayElements::SetElement(IntegralValue elementValue, int32_t index)
 {
-    if (index < 0 || index >= numElements) throw std::runtime_error("array index out of bounds");
+    if (index < 0 || index >= numElements) 
+    {
+        throw IndexOutOfRangeException("array index out of range");
+    }
     ValueType valueType = elementType->GetValueType();
     MemPtr elementPtr = ElementPtr(GetMemPtr(), valueType, index);
     switch (valueType)
@@ -270,7 +276,7 @@ void ArrayElements::SetElement(IntegralValue elementValue, int32_t index)
         case ValueType::stringLiteral: *static_cast<const char32_t**>(elementPtr.Value()) = elementValue.AsStringLiteral(); break;
         case ValueType::allocationHandle: *static_cast<uint64_t*>(elementPtr.Value()) = elementValue.Value(); break;
         case ValueType::objectReference: *static_cast<uint64_t*>(elementPtr.Value()) = elementValue.Value(); break;
-        default: throw std::runtime_error("invalid element type " + std::to_string(int(valueType)));
+        default: throw SystemException("invalid element type " + std::to_string(int(valueType)));
     }
 }
 
@@ -306,7 +312,7 @@ ObjectReference ManagedMemoryPool::CreateObject(Thread& thread, ObjectType* type
     auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, arenaMemPtr.first, arenaMemPtr.second, type, type->ObjectSize()))));
     if (!pairItBool.second)
     {
-        throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
+        throw SystemException("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
     }
     return reference;
 }
@@ -322,7 +328,7 @@ ObjectReference ManagedMemoryPool::CopyObject(ObjectReference from)
     auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, object.GetArenaId(), object.GetMemPtr(), object.GetType(), object.Size()))));
     if (!pairItBool.second)
     {
-        throw std::runtime_error("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
+        throw SystemException("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
     }
     return reference;
 }
@@ -331,12 +337,12 @@ void ManagedMemoryPool::DestroyObject(ObjectReference reference)
 {
     if (reference.IsNull())
     {
-        throw std::runtime_error("cannot destroy null reference");
+        throw SystemException("cannot destroy null reference");
     }
     auto n = allocations.erase(reference);
     if (n != 1)
     {
-        throw std::runtime_error("could not erase: object with reference " + std::to_string(reference.Value()) + " not found");
+        throw SystemException("could not erase: object with reference " + std::to_string(reference.Value()) + " not found");
     }
 }
 
@@ -344,7 +350,7 @@ Object& ManagedMemoryPool::GetObject(ObjectReference reference)
 {
     if (reference.IsNull())
     {
-        throw std::runtime_error("cannot get null reference from managed memory pool");
+        throw NullReferenceException("object reference is null");
     }
     auto it = allocations.find(reference);
     if (it != allocations.cend())
@@ -355,14 +361,14 @@ Object& ManagedMemoryPool::GetObject(ObjectReference reference)
         Assert(object, "object expected");
         return *object;
     }
-    throw std::runtime_error("object with reference " + std::to_string(reference.Value()) + " not found");
+    throw SystemException("object with reference " + std::to_string(reference.Value()) + " not found");
 }
 
 IntegralValue ManagedMemoryPool::GetField(ObjectReference reference, int32_t fieldIndex)
 {
     if (reference.IsNull())
     {
-        throw std::runtime_error("cannot get field of null reference");
+        throw NullReferenceException("cannot get field of a null object reference");
     }
     Object& object = GetObject(reference);
     return object.GetField(fieldIndex);
@@ -372,7 +378,7 @@ void ManagedMemoryPool::SetField(ObjectReference reference, int32_t fieldIndex, 
 {
     if (reference.IsNull())
     {
-        throw std::runtime_error("cannot set field of null reference");
+        throw NullReferenceException("cannot set field of a null object reference");
     }
     Object& object = GetObject(reference);
     object.SetField(fieldValue, fieldIndex);
@@ -385,7 +391,7 @@ AllocationHandle ManagedMemoryPool::CreateStringCharsFromLiteral(const char32_t*
     auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, ArenaId::notGCMem, MemPtr(strLit), len, stringSize))));
     if (!pairItBool.second)
     {
-        throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+        throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
     }
     return handle;
 }
@@ -410,7 +416,7 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
         auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, arenaMemPtr.first, arenaMemPtr.second, numChars, stringSize))));
         if (!pairItBool.second)
         {
-            throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+            throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
         }
         MemPtr stringMem = arenaMemPtr.second;
         std::memcpy(stringMem.Value(), characters.Value(), stringSize);
@@ -418,7 +424,7 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
     }
     else
     {
-        throw std::runtime_error("array element allocation with handle " + std::to_string(charElementsHandle.Value()) + " not found");
+        throw SystemException("array element allocation with handle " + std::to_string(charElementsHandle.Value()) + " not found");
     }
 }
 
@@ -435,7 +441,7 @@ ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_stri
     auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, arenaMemPtr.first, arenaMemPtr.second, numChars, stringSize))));
     if (!pairItBool.second)
     {
-        throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+        throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
     }
     MemPtr stringMem = arenaMemPtr.second;
     std::memcpy(stringMem.Value(), s.c_str(), stringSize);
@@ -451,7 +457,7 @@ IntegralValue ManagedMemoryPool::GetStringChar(ObjectReference str, int32_t inde
 {
     if (str.IsNull())
     {
-        throw std::runtime_error("cannot index null string");
+        throw NullReferenceException("cannot index a null string");
     }
     Object& o = GetObject(str);
     IntegralValue charsHandleValue = o.GetField(2);
@@ -467,7 +473,7 @@ IntegralValue ManagedMemoryPool::GetStringChar(ObjectReference str, int32_t inde
     }
     else
     {
-        throw std::runtime_error("string characters allocation with handle " + std::to_string(handle.Value()) + " not found");
+        throw SystemException("string characters allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
 }
 
@@ -475,7 +481,7 @@ std::string ManagedMemoryPool::GetUtf8String(ObjectReference str)
 {
     if (str.IsNull())
     {
-        throw std::runtime_error("cannot index null string");
+        throw NullReferenceException("cannot get value of a null string");
     }
     Object& o = GetObject(str);
     IntegralValue charsHandleValue = o.GetField(2);
@@ -497,7 +503,7 @@ std::string ManagedMemoryPool::GetUtf8String(ObjectReference str)
     }
     else
     {
-        throw std::runtime_error("string characters allocation with handle " + std::to_string(handle.Value()) + " not found");
+        throw SystemException("string characters allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
 }
 
@@ -506,7 +512,7 @@ std::vector<uint8_t> ManagedMemoryPool::GetBytes(ObjectReference arr)
     std::vector<uint8_t> bytes;
     if (arr.IsNull())
     {
-        throw std::runtime_error("cannot get bytes of null array");
+        throw NullReferenceException("cannot get value of a null array");
     }
     Object& a = GetObject(arr);
     IntegralValue elementsHandleValue = a.GetField(2);
@@ -528,7 +534,7 @@ std::vector<uint8_t> ManagedMemoryPool::GetBytes(ObjectReference arr)
     }
     else
     {
-        throw std::runtime_error("array elements allocation with handle " + std::to_string(handle.Value()) + " not found");
+        throw SystemException("array elements allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
 }
 
@@ -536,7 +542,7 @@ void ManagedMemoryPool::SetBytes(ObjectReference arr, const std::vector<uint8_t>
 {
     if (arr.IsNull())
     {
-        throw std::runtime_error("cannot get bytes of null array");
+        throw NullReferenceException("cannot set value of a null array");
     }
     Object& a = GetObject(arr);
     IntegralValue elementsHandleValue = a.GetField(2);
@@ -556,7 +562,7 @@ void ManagedMemoryPool::SetBytes(ObjectReference arr, const std::vector<uint8_t>
     }
     else
     {
-        throw std::runtime_error("array elements allocation with handle " + std::to_string(handle.Value()) + " not found");
+        throw SystemException("array elements allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
 }
 
@@ -564,7 +570,7 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
 {
     if (length < 0)
     {
-        throw std::runtime_error("invalid array length");
+        throw ArgumentOutOfRangeException("invalid array length");
     }
     Object& a = GetObject(arr);
     AllocationHandle handle(nextReferenceValue++);
@@ -575,7 +581,7 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
         auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, arenaMemPtr.first, arenaMemPtr.second, elementType, length, arraySize))));
         if (!pairItBool.second)
         {
-            throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+            throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
         }
     }
     else
@@ -583,7 +589,7 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
         auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, ArenaId::notGCMem, MemPtr(), elementType, length, arraySize))));
         if (!pairItBool.second)
         {
-            throw std::runtime_error("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+            throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
         }
     }
     a.SetField(handle, 2);
@@ -593,7 +599,7 @@ IntegralValue ManagedMemoryPool::GetArrayElement(ObjectReference reference, int3
 {
     if (reference.IsNull())
     { 
-        throw std::runtime_error("cannot get element of null array");
+        throw NullReferenceException("cannot get item of a null array");
     }
     Object& arr = GetObject(reference);
     IntegralValue elementsHandleValue = arr.GetField(2);
@@ -609,7 +615,7 @@ IntegralValue ManagedMemoryPool::GetArrayElement(ObjectReference reference, int3
     }
     else
     {
-        throw std::runtime_error("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
+        throw SystemException("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
 }
 
@@ -617,7 +623,7 @@ void ManagedMemoryPool::SetArrayElement(ObjectReference reference, int32_t index
 {
     if (reference.IsNull())
     {
-        throw std::runtime_error("cannot set element of null array");
+        throw NullReferenceException("cannot set item of a null array");
     }
     Object& arr = GetObject(reference);
     IntegralValue elementsHandleValue = arr.GetField(2);
@@ -633,7 +639,7 @@ void ManagedMemoryPool::SetArrayElement(ObjectReference reference, int32_t index
     }
     else
     {
-        throw std::runtime_error("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
+        throw SystemException("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
 }
 
@@ -641,7 +647,7 @@ int32_t ManagedMemoryPool::GetNumArrayElements(ObjectReference arr)
 {
     if (arr.IsNull())
     {
-        throw std::runtime_error("cannot get number of elements of null array");
+        throw NullReferenceException("cannot get number of items of a null array");
     }
     Object& a = GetObject(arr);
     IntegralValue elementsHandleValue = a.GetField(2);
@@ -657,7 +663,7 @@ int32_t ManagedMemoryPool::GetNumArrayElements(ObjectReference arr)
     }
     else
     {
-        throw std::runtime_error("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
+        throw SystemException("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
 }
 
@@ -671,7 +677,7 @@ MemPtr ManagedMemoryPool::GetMemPtr(AllocationHandle handle) const
     }
     else
     {
-        throw std::runtime_error("allocation with handle " + std::to_string(handle.Value()) + " not found");
+        throw SystemException("allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
 }
 

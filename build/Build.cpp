@@ -232,15 +232,17 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     std::vector<TypeInstruction*> typeInstructions;
     std::vector<SetClassDataInst*> setClassDataInstructions;
     std::vector<ClassTypeSymbol*> classTypes;
+    std::unordered_set<utf32_string> classTemplateSpecializationNames;
     std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(project->AssemblyFilePath()).remove_filename().generic_string());
     std::unordered_set<std::string> importSet;
     assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions,
-        classTypes);
+        classTypes, classTemplateSpecializationNames);
     assembly.ImportSymbolTables();
     callInstructions.clear();
     typeInstructions.clear();
     setClassDataInstructions.clear();
     classTypes.clear();
+    classTemplateSpecializationNames.clear();
     BuildSymbolTable(assembly, compileUnits);
     std::vector<std::unique_ptr<BoundCompileUnit>> boundCompileUnits = BindTypes(assembly, compileUnits);
     std::unordered_set<ClassTemplateSpecializationSymbol*> classTemplateSpecializations;

@@ -122,7 +122,9 @@ int main(int argc, const char** argv)
         std::vector<ClassTypeSymbol*> classTypes;
         std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(assemblyFilePath).remove_filename().generic_string());
         std::unordered_set<std::string> importSet;
-        assembly.Read(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypes);
+        std::unordered_set<utf32_string> classTemplateSpecializationNames;
+        assembly.Read(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypes, 
+            classTemplateSpecializationNames);
         Link(callInstructions, typeInstructions, setClassDataInstructions, classTypes);
         assembly.GetSymbolTable().MergeClassTemplateSpecializations();
         callInstructions.clear();

@@ -49,14 +49,27 @@ public:
     void AddClassTemplateSpecialization(ClassTemplateSpecializationSymbol* classTemplateSpecialization);
     const std::vector<ClassTemplateSpecializationSymbol*>& ClassTemplateSpecializations() const { return classTemplateSpecializations; }
     void ClearClassTemplateSpecializations() { classTemplateSpecializations.clear(); }
+    void BeginNamespace(StringPtr ns);
+    void EndNamespace();
+    void BeginReadingClassTemplateSpecialization();
+    void EndReadingClassTemplateSpecialization();
+    bool ReadingClassTemplateSpecialization() const { return readingClassTemplateSpecialization; }
+    void SetClassTemplateSpecializationNames(std::unordered_set<utf32_string>* classTemplateSpecializationNames_) { classTemplateSpecializationNames = classTemplateSpecializationNames_;  }
+    utf32_string MakeFullClassTemplateSpecializationName(const utf32_string& classTemplateSpecializationName);
+    bool FoundInClassTemplateSpecializationNames(const utf32_string& fullClassTemplateSpecializationName) const;
+    void AddToClassTemplateSpecializationNames(const utf32_string& fullClassTemplateSpecializationName);
 private:
     Assembly* assembly;
     std::vector<LocalVariableSymbol*> localVariables;
     std::vector<TypeSymbol*> types;
     std::vector<TypeRequest> typeRequests;
     std::vector<ClassTypeSymbol*> classTypeSymbols;
+    std::unordered_set<utf32_string>* classTemplateSpecializationNames;
     std::vector<FunctionSymbol*> conversions;
     std::vector<ClassTemplateSpecializationSymbol*> classTemplateSpecializations;
+    bool readingClassTemplateSpecialization;
+    std::stack<bool> readingClassTemplateSpecializationStack;
+    std::vector<utf32_string> currentNamespaceComponents;
 };
 
 } } // namespace cminor::symbols

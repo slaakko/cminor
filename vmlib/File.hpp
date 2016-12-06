@@ -5,17 +5,14 @@
 
 #ifndef CMINOR_VMLIB_FILE_INCLUDED
 #define CMINOR_VMLIB_FILE_INCLUDED
+#include <cminor/machine/Error.hpp>
 #include <string>
 #include <stdint.h>
 #include <stdexcept>
 
 namespace cminor { namespace vmlib {
 
-class FileError : public std::runtime_error
-{
-public:
-    FileError(const std::string& errorMessage);
-};
+using namespace cminor::machine;
 
 enum class FileMode : uint8_t
 {

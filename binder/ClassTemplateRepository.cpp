@@ -89,6 +89,7 @@ void ClassTemplateRepository::BindClassTemplateSpecialization(ClassTemplateSpeci
         TypeParameterSymbol* typeParameterSymbol = primaryClassTemplate->TypeParameters()[i];
         BoundTypeParameterSymbol* boundTypeParameterSymbol = new BoundTypeParameterSymbol(typeParameterSymbol->GetSpan(), typeParameterSymbol->NameConstant());
         boundTypeParameterSymbol->SetAssembly(classTemplateSpecialization->GetAssembly());
+        boundTypeParameterSymbol->GetAssembly()->GetConstantPool().Install(boundTypeParameterSymbol->NameConstant());
         boundTypeParameterSymbol->SetType(classTemplateSpecialization->TypeArgument(i));
         classTemplateSpecialization->AddSymbol(std::unique_ptr<Symbol>(boundTypeParameterSymbol));
     }

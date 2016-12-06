@@ -1,0 +1,4 @@
+project third;
+target=program;
+reference <../third/third.cminorp>;
+source <fourth.cminor>;

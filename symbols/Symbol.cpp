@@ -885,6 +885,10 @@ void ContainerSymbol::Write(SymbolWriter& writer)
 void ContainerSymbol::Read(SymbolReader& reader)
 {
     Symbol::Read(reader);
+    if (GetSymbolType() == SymbolType::namespaceSymbol)
+    {
+        reader.BeginNamespace(Name());
+    }
     uint32_t n = reader.GetEncodedUInt();
     for (uint32_t i = 0; i < n; ++i)
     {
@@ -904,6 +908,10 @@ void ContainerSymbol::Read(SymbolReader& reader)
                 reader.AddConversionFun(functionSymbol);
             }
         }
+    }
+    if (GetSymbolType() == SymbolType::namespaceSymbol)
+    {
+        reader.EndNamespace();
     }
 }
 
@@ -1259,6 +1267,19 @@ void ClassTypeSymbol::Write(SymbolWriter& writer)
 void ClassTypeSymbol::Read(SymbolReader& reader)
 {
     TypeSymbol::Read(reader);
+    if (GetSymbolType() == SymbolType::classTemplateSpecializationSymbol)
+    {
+        utf32_string fullClassTemplateSpecializationName = reader.MakeFullClassTemplateSpecializationName(Name().Value());
+        if (reader.FoundInClassTemplateSpecializationNames(fullClassTemplateSpecializationName))
+        {
+            ClassTemplateSpecializationSymbol* cts = static_cast<ClassTemplateSpecializationSymbol*>(this);
+            cts->SetReopened();
+        }
+        else
+        {
+            reader.AddToClassTemplateSpecializationNames(fullClassTemplateSpecializationName);
+        }
+    }
     if (IsReopenedClassTemplateSpecialization())
     {
         return;
@@ -1814,6 +1835,7 @@ void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)
 
 void ClassTemplateSpecializationSymbol::Read(SymbolReader& reader)
 {
+    reader.BeginReadingClassTemplateSpecialization();
     flags = ClassTemplateSpecializationSymbolFlags(reader.GetByte());
     ClassTypeSymbol::Read(reader);
     if (IsReopened())
@@ -1839,6 +1861,7 @@ void ClassTemplateSpecializationSymbol::Read(SymbolReader& reader)
     globalNsPos = reader.Pos();
     reader.Skip(globalNsSize);
     SetBound();
+    reader.EndReadingClassTemplateSpecialization();
 }
 
 void ClassTemplateSpecializationSymbol::EmplaceType(TypeSymbol* type, int index)

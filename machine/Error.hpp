@@ -19,7 +19,7 @@ using Cm::Parsing::Span;
 
 #else
 
-#define Assert(expression, message) if (!(expression)) throw std::runtime_error((message))
+#define Assert(expression, message) if (!(expression)) throw std::runtime_error(std::string("assertion failed: ") + message)
 
 #endif
 
@@ -40,6 +40,54 @@ private:
     std::string message;
     Span defined;
     std::vector<Span> references;
+};
+
+class MachineException : public std::runtime_error
+{
+public:
+    MachineException(const std::string& message_);
+};
+
+class SystemException : public MachineException
+{
+public:
+    SystemException(const std::string& message_);
+};
+
+class NullReferenceException : public SystemException
+{
+public:
+    NullReferenceException(const std::string& message_);
+};
+
+class IndexOutOfRangeException : public SystemException
+{
+public:
+    IndexOutOfRangeException(const std::string& message_);
+};
+
+class ArgumentException : public SystemException
+{
+public:
+    ArgumentException(const std::string& message_);
+};
+
+class ArgumentOutOfRangeException : public ArgumentException
+{
+public:
+    ArgumentOutOfRangeException(const std::string& message_);
+};
+
+class InvalidCastException : public SystemException
+{
+public:
+    InvalidCastException(const std::string& message_);
+};
+
+class FileSystemError : public SystemException
+{
+public:
+    FileSystemError(const std::string& errorMessage);
 };
 
 } } // namespace cminor::machine

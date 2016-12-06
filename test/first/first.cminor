@@ -1,3 +1,12 @@
-void main()
+namespace Alpha.Beta
 {
+    public class Foo<T>
+    {
+        public void foo(T x)
+        {
+        }
+        public void bar()
+        {
+        }
+    }
 }

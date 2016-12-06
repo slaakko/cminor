@@ -75,4 +75,18 @@ namespace System
         {
         }
     }
+
+    public class InvalidCastException : SystemException
+    {
+        public InvalidCastException(string message) : base(message)
+        {
+        }
+    }
+
+    public class FileSystemException : SystemException
+    {
+        public FileSystemException(string message) : base(message)
+        {
+        }
+    }
 }

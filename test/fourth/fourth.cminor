@@ -1,0 +1,7 @@
+using System;
+
+void test()
+{  
+    testsecond();
+    testthird();
+}

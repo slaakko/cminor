@@ -52,8 +52,9 @@ void Shell::Run()
                 break;
             }
         }
-        catch (const std::exception&)
+        catch (const std::exception& ex)
         {
+            std::cout << ex.what() << std::endl;
             std::cout << "unknown command, try help" << std::endl;
         }
     }

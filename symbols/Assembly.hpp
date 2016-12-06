@@ -42,7 +42,7 @@ public:
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
         std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
-        std::vector<ClassTypeSymbol*>& classTypeSymbols);
+        std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames);
     const std::string& FilePath() const { return filePath; }
     StringPtr Name() const { return StringPtr(name.Value().AsStringLiteral()); }
     ConstantPool& GetConstantPool() { return constantPool; }
@@ -50,11 +50,12 @@ public:
     SymbolTable& GetSymbolTable() { return symbolTable; }
     bool IsSystemAssembly() const;
     void ImportAssemblies(LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions,
-        std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols);
+        std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, 
+        std::unordered_set<utf32_string>& classTemplateSpecializationNames);
     void ImportAssemblies(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, 
         std::unordered_set<std::string>& importSet,
         std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
-        std::vector<ClassTypeSymbol*>& classTypeSymbols);
+        std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames);
     void ImportSymbolTables();
     void Dump(CodeFormatter& formatter);
     const std::vector<std::unique_ptr<Assembly>>& ReferencedAssemblies() const { return referencedAssemblies; }
@@ -73,7 +74,7 @@ private:
     std::unordered_map<std::pair<std::string, uint32_t>, uint32_t, SymbolIdHash> symbolIdMapping;
     void Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, const std::string& currentAssemblyDir,
         std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
-        std::vector<ClassTypeSymbol*>& classTypeSymbols);
+        std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames);
     void WriteSymbolIdMapping(SymbolWriter& writer);
     void ReadSymbolIdMapping(SymbolReader& reader);
 };

@@ -66,4 +66,36 @@ Exception::Exception(const std::string& message_, const Span& defined_, const st
 {
 }
 
+MachineException::MachineException(const std::string& message_) : std::runtime_error(message_)
+{
+}
+
+SystemException::SystemException(const std::string& message_) : MachineException(message_)
+{
+}
+
+NullReferenceException::NullReferenceException(const std::string& message_) : SystemException(message_)
+{
+}
+
+IndexOutOfRangeException::IndexOutOfRangeException(const std::string& message_) : SystemException(message_)
+{
+}
+
+ArgumentException::ArgumentException(const std::string& message_) : SystemException(message_)
+{
+}
+
+ArgumentOutOfRangeException::ArgumentOutOfRangeException(const std::string& message_) : ArgumentException(message_)
+{
+}
+
+InvalidCastException::InvalidCastException(const std::string& message_) : SystemException(message_)
+{
+}
+
+FileSystemError::FileSystemError(const std::string& errorMessage) : SystemException(errorMessage)
+{
+}
+
 } } // namespace cminor::machine

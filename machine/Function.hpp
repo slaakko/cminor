@@ -165,7 +165,7 @@ public:
     static void Done();
     FunctionTable();
     static FunctionTable& Instance() { Assert(instance, "function table not initialized"); return *instance; }
-    void AddFunction(Function* fun);
+    void AddFunction(Function* fun, bool memberOfClassTemplateSpecialization);
     Function* GetFunction(StringPtr functionCallName) const;
     Function* GetMain() const { return main; }
     void ResolveExceptionVarTypes();

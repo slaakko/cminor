@@ -403,11 +403,22 @@ LoadFieldInst::LoadFieldInst() : IndexParamInst("loadfield")
 
 void LoadFieldInst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, Index());
-    frame.OpStack().Push(fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, Index());
+        frame.OpStack().Push(fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 LoadField0Inst::LoadField0Inst() : Instruction("loadfield.0")
@@ -416,11 +427,22 @@ LoadField0Inst::LoadField0Inst() : Instruction("loadfield.0")
 
 void LoadField0Inst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 0);
-    frame.OpStack().Push(fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 0);
+        frame.OpStack().Push(fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 LoadField1Inst::LoadField1Inst() : Instruction("loadfield.1")
@@ -429,11 +451,22 @@ LoadField1Inst::LoadField1Inst() : Instruction("loadfield.1")
 
 void LoadField1Inst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 1);
-    frame.OpStack().Push(fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 1);
+        frame.OpStack().Push(fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 LoadField2Inst::LoadField2Inst() : Instruction("loadfield.2")
@@ -442,11 +475,22 @@ LoadField2Inst::LoadField2Inst() : Instruction("loadfield.2")
 
 void LoadField2Inst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 2);
-    frame.OpStack().Push(fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 2);
+        frame.OpStack().Push(fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 LoadField3Inst::LoadField3Inst() : Instruction("loadfield.3")
@@ -455,11 +499,22 @@ LoadField3Inst::LoadField3Inst() : Instruction("loadfield.3")
 
 void LoadField3Inst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 3);
-    frame.OpStack().Push(fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, 3);
+        frame.OpStack().Push(fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 LoadFieldBInst::LoadFieldBInst() : ByteParamInst("loadfield.b")
@@ -468,11 +523,22 @@ LoadFieldBInst::LoadFieldBInst() : ByteParamInst("loadfield.b")
 
 void LoadFieldBInst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, Index());
-    frame.OpStack().Push(fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, Index());
+        frame.OpStack().Push(fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 LoadFieldSInst::LoadFieldSInst() : UShortParamInst("loadfield.s")
@@ -481,11 +547,22 @@ LoadFieldSInst::LoadFieldSInst() : UShortParamInst("loadfield.s")
 
 void LoadFieldSInst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, Index());
-    frame.OpStack().Push(fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.GetManagedMemoryPool().GetField(reference, Index());
+        frame.OpStack().Push(fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 StoreFieldInst::StoreFieldInst() : IndexParamInst("storefield")
@@ -494,11 +571,22 @@ StoreFieldInst::StoreFieldInst() : IndexParamInst("storefield")
 
 void StoreFieldInst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.OpStack().Pop();
-    frame.GetManagedMemoryPool().SetField(reference, Index(), fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.OpStack().Pop();
+        frame.GetManagedMemoryPool().SetField(reference, Index(), fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 StoreField0Inst::StoreField0Inst() : Instruction("storefield.0")
@@ -507,11 +595,22 @@ StoreField0Inst::StoreField0Inst() : Instruction("storefield.0")
 
 void StoreField0Inst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.OpStack().Pop();
-    frame.GetManagedMemoryPool().SetField(reference, 0, fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.OpStack().Pop();
+        frame.GetManagedMemoryPool().SetField(reference, 0, fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 StoreField1Inst::StoreField1Inst() : Instruction("storefield.1")
@@ -520,11 +619,22 @@ StoreField1Inst::StoreField1Inst() : Instruction("storefield.1")
 
 void StoreField1Inst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.OpStack().Pop();
-    frame.GetManagedMemoryPool().SetField(reference, 1, fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.OpStack().Pop();
+        frame.GetManagedMemoryPool().SetField(reference, 1, fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 StoreField2Inst::StoreField2Inst() : Instruction("storefield.2")
@@ -533,11 +643,22 @@ StoreField2Inst::StoreField2Inst() : Instruction("storefield.2")
 
 void StoreField2Inst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.OpStack().Pop();
-    frame.GetManagedMemoryPool().SetField(reference, 2, fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.OpStack().Pop();
+        frame.GetManagedMemoryPool().SetField(reference, 2, fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 StoreField3Inst::StoreField3Inst() : Instruction("storefield.3")
@@ -546,11 +667,22 @@ StoreField3Inst::StoreField3Inst() : Instruction("storefield.3")
 
 void StoreField3Inst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.OpStack().Pop();
-    frame.GetManagedMemoryPool().SetField(reference, 3, fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.OpStack().Pop();
+        frame.GetManagedMemoryPool().SetField(reference, 3, fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 StoreFieldBInst::StoreFieldBInst() : ByteParamInst("storefield.b")
@@ -559,11 +691,22 @@ StoreFieldBInst::StoreFieldBInst() : ByteParamInst("storefield.b")
 
 void StoreFieldBInst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.OpStack().Pop();
-    frame.GetManagedMemoryPool().SetField(reference, Index(), fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.OpStack().Pop();
+        frame.GetManagedMemoryPool().SetField(reference, Index(), fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 StoreFieldSInst::StoreFieldSInst() : UShortParamInst("storefield.s")
@@ -572,11 +715,22 @@ StoreFieldSInst::StoreFieldSInst() : UShortParamInst("storefield.s")
 
 void StoreFieldSInst::Execute(Frame& frame)
 {
-    IntegralValue operand = frame.OpStack().Pop();
-    Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference reference = ObjectReference(operand.Value());
-    IntegralValue fieldValue = frame.OpStack().Pop();
-    frame.GetManagedMemoryPool().SetField(reference, Index(), fieldValue);
+    try
+    {
+        IntegralValue operand = frame.OpStack().Pop();
+        Assert(operand.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference reference = ObjectReference(operand.Value());
+        IntegralValue fieldValue = frame.OpStack().Pop();
+        frame.GetManagedMemoryPool().SetField(reference, Index(), fieldValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 LoadElemInst::LoadElemInst() : Instruction("loadarrayelem")
@@ -585,12 +739,27 @@ LoadElemInst::LoadElemInst() : Instruction("loadarrayelem")
 
 void LoadElemInst::Execute(Frame& frame)
 {
-    IntegralValue index = frame.OpStack().Pop();
-    Assert(index.GetType() == ValueType::intType, "int expected");
-    IntegralValue arr = frame.OpStack().Pop();
-    Assert(arr.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference arrayReference(arr.Value());
-    frame.OpStack().Push(frame.GetManagedMemoryPool().GetArrayElement(arrayReference, index.AsInt()));
+    try
+    {
+        IntegralValue index = frame.OpStack().Pop();
+        Assert(index.GetType() == ValueType::intType, "int expected");
+        IntegralValue arr = frame.OpStack().Pop();
+        Assert(arr.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference arrayReference(arr.Value());
+        frame.OpStack().Push(frame.GetManagedMemoryPool().GetArrayElement(arrayReference, index.AsInt()));
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const IndexOutOfRangeException& ex)
+    {
+        ThrowIndexOutOfRangeException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 StoreElemInst::StoreElemInst() : Instruction("storearrayelem")
@@ -599,13 +768,28 @@ StoreElemInst::StoreElemInst() : Instruction("storearrayelem")
 
 void StoreElemInst::Execute(Frame& frame)
 {
-    IntegralValue index = frame.OpStack().Pop();
-    Assert(index.GetType() == ValueType::intType, "int expected");
-    IntegralValue arr = frame.OpStack().Pop();
-    Assert(arr.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference arrayReference(arr.Value());
-    IntegralValue elementValue = frame.OpStack().Pop();
-    frame.GetManagedMemoryPool().SetArrayElement(arrayReference, index.AsInt(), elementValue);
+    try
+    {
+        IntegralValue index = frame.OpStack().Pop();
+        Assert(index.GetType() == ValueType::intType, "int expected");
+        IntegralValue arr = frame.OpStack().Pop();
+        Assert(arr.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference arrayReference(arr.Value());
+        IntegralValue elementValue = frame.OpStack().Pop();
+        frame.GetManagedMemoryPool().SetArrayElement(arrayReference, index.AsInt(), elementValue);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const IndexOutOfRangeException& ex)
+    {
+        ThrowIndexOutOfRangeException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 LoadConstantInst::LoadConstantInst() : IndexParamInst("loadconstant")
@@ -1039,27 +1223,38 @@ Instruction* VirtualCallInst::Decode(Reader& reader)
 
 void VirtualCallInst::Execute(Frame& frame)
 {
-    IntegralValue receiverValue = frame.OpStack().GetValue(numArgs);
-    Assert(receiverValue.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference receiver(receiverValue.Value());
-    IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(receiver, 0);
-    Assert(classDataField.GetType() == ValueType::classDataPtr, "class data field expected");
-    ClassData* classData = classDataField.AsClassDataPtr();
-    if (classData)
+    try
     {
-        Function* method = classData->Vmt().GetMethod(vmtIndex);
-        if (method)
+        IntegralValue receiverValue = frame.OpStack().GetValue(numArgs);
+        Assert(receiverValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference receiver(receiverValue.Value());
+        IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(receiver, 0);
+        Assert(classDataField.GetType() == ValueType::classDataPtr, "class data field expected");
+        ClassData* classData = classDataField.AsClassDataPtr();
+        if (classData)
         {
-            frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *method));
+            Function* method = classData->Vmt().GetMethod(vmtIndex);
+            if (method)
+            {
+                frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *method));
+            }
+            else
+            {
+                throw SystemException("tried to call an abstract method");
+            }
         }
         else
         {
-            throw std::runtime_error("tried to call an abstract method");
+            throw SystemException("class data field not set");
         }
     }
-    else
+    catch (const NullReferenceException& ex)
     {
-        throw std::runtime_error("class data field not set");
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -1098,34 +1293,45 @@ Instruction* InterfaceCallInst::Decode(Reader& reader)
 
 void InterfaceCallInst::Execute(Frame& frame)
 {
-    IntegralValue interfaceObjectValue = frame.OpStack().GetValue(numArgs);
-    Assert(interfaceObjectValue.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference interfaceObject(interfaceObjectValue.Value());
-    IntegralValue receiverField = frame.GetManagedMemoryPool().GetField(interfaceObject, 0);
-    Assert(receiverField.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference receiver(receiverField.Value());
-    IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(receiver, 0);
-    Assert(classDataField.GetType() == ValueType::classDataPtr, "class data field expected");
-    ClassData* classData = classDataField.AsClassDataPtr();
-    if (classData)
+    try
     {
-        IntegralValue itabIndex = frame.GetManagedMemoryPool().GetField(interfaceObject, 1);
-        Assert(itabIndex.GetType() == ValueType::intType, "int expected");
-        MethodTable& imt = classData->Imt(itabIndex.AsInt());
-        Function* method = imt.GetMethod(imtIndex);
-        if (method)
+        IntegralValue interfaceObjectValue = frame.OpStack().GetValue(numArgs);
+        Assert(interfaceObjectValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference interfaceObject(interfaceObjectValue.Value());
+        IntegralValue receiverField = frame.GetManagedMemoryPool().GetField(interfaceObject, 0);
+        Assert(receiverField.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference receiver(receiverField.Value());
+        IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(receiver, 0);
+        Assert(classDataField.GetType() == ValueType::classDataPtr, "class data field expected");
+        ClassData* classData = classDataField.AsClassDataPtr();
+        if (classData)
         {
-            frame.OpStack().SetValue(numArgs, receiver);
-            frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *method));
+            IntegralValue itabIndex = frame.GetManagedMemoryPool().GetField(interfaceObject, 1);
+            Assert(itabIndex.GetType() == ValueType::intType, "int expected");
+            MethodTable& imt = classData->Imt(itabIndex.AsInt());
+            Function* method = imt.GetMethod(imtIndex);
+            if (method)
+            {
+                frame.OpStack().SetValue(numArgs, receiver);
+                frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *method));
+            }
+            else
+            {
+                throw SystemException("interface method has no implementation");
+            }
         }
         else
         {
-            throw std::runtime_error("interface method has no implementation");
+            throw SystemException("class data field not set");
         }
     }
-    else
+    catch (const NullReferenceException& ex)
     {
-        throw std::runtime_error("class data field not set");
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -1141,11 +1347,30 @@ VmCallInst::VmCallInst() : IndexParamInst("callvm")
 
 void VmCallInst::Execute(Frame& frame)
 {
-    ConstantId vmFunctionId(Index());
-    Constant vmFunctionName = frame.GetConstantPool().GetConstant(vmFunctionId);
-    Assert(vmFunctionName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
-    VmFunction* vmFunction = VmFunctionTable::Instance().GetVmFunction(StringPtr(vmFunctionName.Value().AsStringLiteral()));
-    vmFunction->Execute(frame);
+    try
+    {
+        ConstantId vmFunctionId(Index());
+        Constant vmFunctionName = frame.GetConstantPool().GetConstant(vmFunctionId);
+        Assert(vmFunctionName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+        VmFunction* vmFunction = VmFunctionTable::Instance().GetVmFunction(StringPtr(vmFunctionName.Value().AsStringLiteral()));
+        vmFunction->Execute(frame);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const IndexOutOfRangeException& ex)
+    {
+        ThrowIndexOutOfRangeException(ex, frame);
+    }
+    catch (const ArgumentOutOfRangeException& ex)
+    {
+        ThrowArgumentOutOfRangeException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 SetClassDataInst::SetClassDataInst() : Instruction("setclassdata")
@@ -1193,17 +1418,28 @@ Instruction* SetClassDataInst::Decode(Reader& reader)
 
 void SetClassDataInst::Execute(Frame& frame)
 {
-    IntegralValue value = frame.OpStack().Pop();
-    Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference objectReference(value.Value());
-    IntegralValue classDataFieldValue = frame.GetManagedMemoryPool().GetField(objectReference, 0);
-    Assert(classDataFieldValue.GetType() == ValueType::classDataPtr, "class data pointer expected");
-    if (!classDataFieldValue.AsClassDataPtr())
+    try
     {
-        Assert(classData.Value().GetType() == ValueType::classDataPtr, "class data pointer expected");
-        ClassData* cd = classData.Value().AsClassDataPtr();
-        classDataFieldValue = IntegralValue(cd);
-        frame.GetManagedMemoryPool().SetField(objectReference, 0, classDataFieldValue);
+        IntegralValue value = frame.OpStack().Pop();
+        Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference objectReference(value.Value());
+        IntegralValue classDataFieldValue = frame.GetManagedMemoryPool().GetField(objectReference, 0);
+        Assert(classDataFieldValue.GetType() == ValueType::classDataPtr, "class data pointer expected");
+        if (!classDataFieldValue.AsClassDataPtr())
+        {
+            Assert(classData.Value().GetType() == ValueType::classDataPtr, "class data pointer expected");
+            ClassData* cd = classData.Value().AsClassDataPtr();
+            classDataFieldValue = IntegralValue(cd);
+            frame.GetManagedMemoryPool().SetField(objectReference, 0, classDataFieldValue);
+        }
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -1291,11 +1527,22 @@ CopyObjectInst::CopyObjectInst() : Instruction("copyo", "copy", "object")
 
 void CopyObjectInst::Execute(Frame& frame)
 {
-    IntegralValue value = frame.OpStack().Pop();
-    Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference objectReference(value.Value());
-    ObjectReference copy = frame.GetManagedMemoryPool().CopyObject(objectReference);
-    frame.OpStack().Push(copy);
+    try
+    {
+        IntegralValue value = frame.OpStack().Pop();
+        Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference objectReference(value.Value());
+        ObjectReference copy = frame.GetManagedMemoryPool().CopyObject(objectReference);
+        frame.OpStack().Push(copy);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 StrLitToStringInst::StrLitToStringInst() : Instruction("slit2s")
@@ -1304,21 +1551,32 @@ StrLitToStringInst::StrLitToStringInst() : Instruction("slit2s")
 
 void StrLitToStringInst::Execute(Frame& frame)
 {
-    IntegralValue value = frame.OpStack().Pop();
-    Assert(value.GetType() == ValueType::stringLiteral, "string literal expected");
-    const char32_t* strLit = value.AsStringLiteral();
-    uint32_t len = static_cast<uint32_t>(StringLen(strLit));
-    Type* type = TypeTable::Instance().GetType(StringPtr(U"System.String"));
-    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
-    Assert(objectType, "object type expected");
-    ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
-    Object& o = frame.GetManagedMemoryPool().GetObject(objectReference);
-    AllocationHandle charsHandle = frame.GetManagedMemoryPool().CreateStringCharsFromLiteral(strLit, len);
-    ClassData* classData = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String"));
-    o.SetField(IntegralValue(classData), 0);
-    o.SetField(IntegralValue(static_cast<int32_t>(len), ValueType::intType), 1);
-    o.SetField(charsHandle, 2);
-    frame.OpStack().Push(objectReference);
+    try
+    {
+        IntegralValue value = frame.OpStack().Pop();
+        Assert(value.GetType() == ValueType::stringLiteral, "string literal expected");
+        const char32_t* strLit = value.AsStringLiteral();
+        uint32_t len = static_cast<uint32_t>(StringLen(strLit));
+        Type* type = TypeTable::Instance().GetType(StringPtr(U"System.String"));
+        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+        Assert(objectType, "object type expected");
+        ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
+        Object& o = frame.GetManagedMemoryPool().GetObject(objectReference);
+        AllocationHandle charsHandle = frame.GetManagedMemoryPool().CreateStringCharsFromLiteral(strLit, len);
+        ClassData* classData = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String"));
+        o.SetField(IntegralValue(classData), 0);
+        o.SetField(IntegralValue(static_cast<int32_t>(len), ValueType::intType), 1);
+        o.SetField(charsHandle, 2);
+        frame.OpStack().Push(objectReference);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 LoadStringCharInst::LoadStringCharInst() : Instruction("loadstringchar")
@@ -1327,12 +1585,23 @@ LoadStringCharInst::LoadStringCharInst() : Instruction("loadstringchar")
 
 void LoadStringCharInst::Execute(Frame& frame)
 {
-    IntegralValue index = frame.OpStack().Pop();
-    Assert(index.GetType() == ValueType::intType, "int expected");
-    IntegralValue str = frame.OpStack().Pop();
-    Assert(str.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference strReference(str.Value());
-    frame.OpStack().Push(frame.GetManagedMemoryPool().GetStringChar(strReference, index.AsInt()));
+    try
+    {
+        IntegralValue index = frame.OpStack().Pop();
+        Assert(index.GetType() == ValueType::intType, "int expected");
+        IntegralValue str = frame.OpStack().Pop();
+        Assert(str.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference strReference(str.Value());
+        frame.OpStack().Push(frame.GetManagedMemoryPool().GetStringChar(strReference, index.AsInt()));
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 DupInst::DupInst() : Instruction("dup")
@@ -1377,20 +1646,31 @@ UpCastInst::UpCastInst() : TypeInstruction("upcast")
 
 void UpCastInst::Execute(Frame& frame)
 {
-    IntegralValue value = frame.OpStack().Pop();
-    Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference objectReference(value.Value());
-    if (objectReference.IsNull())
+    try
     {
-        frame.OpStack().Push(ObjectReference(0));
+        IntegralValue value = frame.OpStack().Pop();
+        Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference objectReference(value.Value());
+        if (objectReference.IsNull())
+        {
+            frame.OpStack().Push(ObjectReference(0));
+        }
+        else
+        {
+            Type* type = GetType();
+            ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+            Assert(objectType, "object type expected");
+            ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(objectReference);
+            frame.OpStack().Push(casted);
+        }
     }
-    else
+    catch (const NullReferenceException& ex)
     {
-        Type* type = GetType();
-        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
-        Assert(objectType, "object type expected");
-        ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(objectReference);
-        frame.OpStack().Push(casted);
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -1400,29 +1680,44 @@ DownCastInst::DownCastInst() : TypeInstruction("downcast")
 
 void DownCastInst::Execute(Frame& frame)
 {
-    IntegralValue value = frame.OpStack().Pop();
-    Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
-    ObjectReference objectReference(value.Value());
-    if (objectReference.IsNull())
+    try
     {
-        frame.OpStack().Push(ObjectReference(0));
-    }
-    else
-    {
-        IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(objectReference, 0);
-        Assert(classDataField.GetType() == ValueType::classDataPtr, "class data pointer expected");
-        ClassData* classData = classDataField.AsClassDataPtr();
-        uint64_t sourceTypeId = classData->Type()->Id();
-        Type* type = GetType();
-        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
-        Assert(objectType, "object type expected");
-        uint64_t targetTypeId = objectType->Id();
-        if (sourceTypeId % targetTypeId != 0)
+        IntegralValue value = frame.OpStack().Pop();
+        Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
+        ObjectReference objectReference(value.Value());
+        if (objectReference.IsNull())
         {
-            throw std::runtime_error("invalid cast");
+            frame.OpStack().Push(ObjectReference(0));
         }
-        ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(objectReference);
-        frame.OpStack().Push(casted);
+        else
+        {
+            IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(objectReference, 0);
+            Assert(classDataField.GetType() == ValueType::classDataPtr, "class data pointer expected");
+            ClassData* classData = classDataField.AsClassDataPtr();
+            uint64_t sourceTypeId = classData->Type()->Id();
+            Type* type = GetType();
+            ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+            Assert(objectType, "object type expected");
+            uint64_t targetTypeId = objectType->Id();
+            if (sourceTypeId % targetTypeId != 0)
+            {
+                throw InvalidCastException("invalid cast from '" + ToUtf8(classData->Type()->Name().Value()) + "' to '" + ToUtf8(type->Name().Value()));
+            }
+            ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(objectReference);
+            frame.OpStack().Push(casted);
+        }
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const InvalidCastException& ex)
+    {
+        ThrowInvalidCastException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -1432,14 +1727,25 @@ ThrowInst::ThrowInst() : Instruction("throw")
 
 void ThrowInst::Execute(Frame& frame)
 {
-    IntegralValue exceptionValue = frame.OpStack().Pop();
-    Assert(exceptionValue.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference exception(exceptionValue.Value());
-    Object& exceptionObject = frame.GetManagedMemoryPool().GetObject(exception);
-    utf32_string stackTraceStr = frame.GetThread().GetStackTrace();
-    ObjectReference stackTrace = frame.GetManagedMemoryPool().CreateString(frame.GetThread(), stackTraceStr);
-    exceptionObject.SetField(stackTrace, 2);
-    frame.GetThread().HandleException(exception);
+    try
+    {
+        IntegralValue exceptionValue = frame.OpStack().Pop();
+        Assert(exceptionValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference exception(exceptionValue.Value());
+        Object& exceptionObject = frame.GetManagedMemoryPool().GetObject(exception);
+        utf32_string stackTraceStr = frame.GetThread().GetStackTrace();
+        ObjectReference stackTrace = frame.GetManagedMemoryPool().CreateString(frame.GetThread(), stackTraceStr);
+        exceptionObject.SetField(stackTrace, 2);
+        frame.GetThread().HandleException(exception);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 RethrowInst::RethrowInst() : Instruction("rethrow")
@@ -1489,34 +1795,41 @@ StaticInitInst::StaticInitInst() : TypeInstruction("staticinit")
 
 void StaticInitInst::Execute(Frame& frame)
 {
-    Type* type = GetType();
-    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
-    Assert(objectType, "object type expected");
-    ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
-    StaticClassData* staticClassData = classData->GetStaticClassData();
-    Assert(staticClassData, "class has no static data");
-    if (staticClassData->Initialized()) return;
-    staticClassData->Lock();
-    if (!staticClassData->Initialized() && !staticClassData->Initializing())
+    try
     {
-        staticClassData->SetInitializing();
-        staticClassData->AllocateStaticData();
-        StringPtr staticConstructorName = staticClassData->StaticConstructorName().Value().AsStringLiteral();
-        if (staticConstructorName.Value())
+        Type* type = GetType();
+        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+        Assert(objectType, "object type expected");
+        ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+        StaticClassData* staticClassData = classData->GetStaticClassData();
+        Assert(staticClassData, "class has no static data");
+        if (staticClassData->Initialized()) return;
+        staticClassData->Lock();
+        if (!staticClassData->Initialized() && !staticClassData->Initializing())
         {
-            Function* staticConstructor = FunctionTable::Instance().GetFunction(staticConstructorName);
-            frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *staticConstructor));
+            staticClassData->SetInitializing();
+            staticClassData->AllocateStaticData();
+            StringPtr staticConstructorName = staticClassData->StaticConstructorName().Value().AsStringLiteral();
+            if (staticConstructorName.Value())
+            {
+                Function* staticConstructor = FunctionTable::Instance().GetFunction(staticConstructorName);
+                frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *staticConstructor));
+            }
+            else
+            {
+                staticClassData->ResetInitializing();
+                staticClassData->SetInitialized();
+                staticClassData->Unlock();
+            }
         }
         else
         {
-            staticClassData->ResetInitializing();
-            staticClassData->SetInitialized();
             staticClassData->Unlock();
         }
     }
-    else
+    catch (const SystemException& ex)
     {
-        staticClassData->Unlock();
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -1526,15 +1839,22 @@ DoneStaticInitInst::DoneStaticInitInst() : TypeInstruction("donestaticinit")
 
 void DoneStaticInitInst::Execute(Frame& frame)
 {
-    Type* type = GetType();
-    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
-    Assert(objectType, "object type expected");
-    ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
-    StaticClassData* staticClassData = classData->GetStaticClassData();
-    Assert(staticClassData, "class has no static data");
-    staticClassData->ResetInitializing();
-    staticClassData->SetInitialized();
-    staticClassData->Unlock();
+    try
+    {
+        Type* type = GetType();
+        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+        Assert(objectType, "object type expected");
+        ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+        StaticClassData* staticClassData = classData->GetStaticClassData();
+        Assert(staticClassData, "class has no static data");
+        staticClassData->ResetInitializing();
+        staticClassData->SetInitialized();
+        staticClassData->Unlock();
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 LoadStaticFieldInst::LoadStaticFieldInst() : TypeInstruction("loadstaticfield"), index(-1)
@@ -1567,14 +1887,21 @@ Instruction* LoadStaticFieldInst::Decode(Reader& reader)
 
 void LoadStaticFieldInst::Execute(Frame& frame)
 {
-    Type* type = GetType();
-    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
-    Assert(objectType, "object type expected");
-    ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
-    StaticClassData* staticData = classData->GetStaticClassData();
-    Assert(staticData, "class has no static data");
-    Assert(index != -1, "index not set");
-    frame.OpStack().Push(staticData->GetStaticField(index));
+    try
+    {
+        Type* type = GetType();
+        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+        Assert(objectType, "object type expected");
+        ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+        StaticClassData* staticData = classData->GetStaticClassData();
+        Assert(staticData, "class has no static data");
+        Assert(index != -1, "index not set");
+        frame.OpStack().Push(staticData->GetStaticField(index));
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 StoreStaticFieldInst::StoreStaticFieldInst() : TypeInstruction("storestaticfield"), index(-1)
@@ -1607,15 +1934,22 @@ Instruction* StoreStaticFieldInst::Decode(Reader& reader)
 
 void StoreStaticFieldInst::Execute(Frame& frame)
 {
-    IntegralValue fieldValue = frame.OpStack().Pop();
-    Type* type = GetType();
-    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
-    Assert(objectType, "object type expected");
-    ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
-    StaticClassData* staticData = classData->GetStaticClassData();
-    Assert(staticData, "class has no static data");
-    Assert(index != -1, "index not set");
-    staticData->SetStaticField(fieldValue, index);
+    try
+    {
+        IntegralValue fieldValue = frame.OpStack().Pop();
+        Type* type = GetType();
+        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+        Assert(objectType, "object type expected");
+        ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+        StaticClassData* staticData = classData->GetStaticClassData();
+        Assert(staticData, "class has no static data");
+        Assert(index != -1, "index not set");
+        staticData->SetStaticField(fieldValue, index);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 EqualObjectNullInst::EqualObjectNullInst() : Instruction("equalonull")
@@ -1652,13 +1986,28 @@ AllocateArrayElementsInst::AllocateArrayElementsInst() : TypeInstruction("alloce
 
 void AllocateArrayElementsInst::Execute(Frame& frame)
 {
-    IntegralValue length = frame.OpStack().Pop();
-    Assert(length.GetType() == ValueType::intType, "int expected");
-    IntegralValue arrayValue = frame.OpStack().Pop();
-    Assert(arrayValue.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference arr(arrayValue.Value());
-    Type* elementType = GetType();
-    frame.GetManagedMemoryPool().AllocateArrayElements(frame.GetThread(), arr, elementType, length.AsInt());
+    try
+    {
+        IntegralValue length = frame.OpStack().Pop();
+        Assert(length.GetType() == ValueType::intType, "int expected");
+        IntegralValue arrayValue = frame.OpStack().Pop();
+        Assert(arrayValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference arr(arrayValue.Value());
+        Type* elementType = GetType();
+        frame.GetManagedMemoryPool().AllocateArrayElements(frame.GetThread(), arr, elementType, length.AsInt());
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const ArgumentOutOfRangeException& ex)
+    {
+        ThrowArgumentOutOfRangeException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
 }
 
 IsInst::IsInst() : TypeInstruction("is")
@@ -1667,25 +2016,36 @@ IsInst::IsInst() : TypeInstruction("is")
 
 void IsInst::Execute(Frame& frame)
 {
-    IntegralValue value = frame.OpStack().Pop();
-    Assert(value.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference ob(value.Value());
-    if (ob.IsNull())
+    try
     {
-        frame.OpStack().Push(IntegralValue(false, ValueType::boolType));
+        IntegralValue value = frame.OpStack().Pop();
+        Assert(value.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference ob(value.Value());
+        if (ob.IsNull())
+        {
+            frame.OpStack().Push(IntegralValue(false, ValueType::boolType));
+        }
+        else
+        {
+            IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(ob, 0);
+            Assert(classDataField.GetType() == ValueType::classDataPtr, "class data pointer expected");
+            ClassData* classData = classDataField.AsClassDataPtr();
+            uint64_t sourceTypeId = classData->Type()->Id();
+            Type* type = GetType();
+            ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+            Assert(objectType, "object type expected");
+            uint64_t targetId = objectType->Id();
+            bool result = sourceTypeId % targetId == 0;
+            frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
+        }
     }
-    else
+    catch (const NullReferenceException& ex)
     {
-        IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(ob, 0);
-        Assert(classDataField.GetType() == ValueType::classDataPtr, "class data pointer expected");
-        ClassData* classData = classDataField.AsClassDataPtr();
-        uint64_t sourceTypeId = classData->Type()->Id();
-        Type* type = GetType();
-        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
-        Assert(objectType, "object type expected");
-        uint64_t targetId = objectType->Id();
-        bool result = sourceTypeId % targetId == 0;
-        frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
     }
 }
 
@@ -1695,33 +2055,91 @@ AsInst::AsInst() : TypeInstruction("as")
 
 void AsInst::Execute(Frame& frame)
 {
-    IntegralValue value = frame.OpStack().Pop();
-    Assert(value.GetType() == ValueType::objectReference, "object reference expected");
-    ObjectReference ob(value.Value());
-    if (ob.IsNull())
+    try
     {
-        frame.OpStack().Push(ObjectReference(0));
-    }
-    else
-    {
-        IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(ob, 0);
-        Assert(classDataField.GetType() == ValueType::classDataPtr, "class data pointer expected");
-        ClassData* classData = classDataField.AsClassDataPtr();
-        uint64_t sourceTypeId = classData->Type()->Id();
-        Type* type = GetType();
-        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
-        Assert(objectType, "object type expected");
-        uint64_t targetId = objectType->Id();
-        bool result = sourceTypeId % targetId == 0;
-        if (result)
-        {
-            frame.OpStack().Push(ob);
-        }
-        else
+        IntegralValue value = frame.OpStack().Pop();
+        Assert(value.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference ob(value.Value());
+        if (ob.IsNull())
         {
             frame.OpStack().Push(ObjectReference(0));
         }
+        else
+        {
+            IntegralValue classDataField = frame.GetManagedMemoryPool().GetField(ob, 0);
+            Assert(classDataField.GetType() == ValueType::classDataPtr, "class data pointer expected");
+            ClassData* classData = classDataField.AsClassDataPtr();
+            uint64_t sourceTypeId = classData->Type()->Id();
+            Type* type = GetType();
+            ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+            Assert(objectType, "object type expected");
+            uint64_t targetId = objectType->Id();
+            bool result = sourceTypeId % targetId == 0;
+            if (result)
+            {
+                frame.OpStack().Push(ob);
+            }
+            else
+            {
+                frame.OpStack().Push(ObjectReference(0));
+            }
+        }
     }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        ThrowSystemException(ex, frame);
+    }
+}
+
+void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName)
+{
+    Type* type = TypeTable::Instance().GetType(StringPtr(exceptionTypeName.c_str()));
+    ObjectType* objectType = dynamic_cast<ObjectType*>(type);
+    Assert(objectType, "object type expected");
+    ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
+    ClassData* classData = ClassDataTable::Instance().GetClassData(StringPtr(exceptionTypeName.c_str()));
+    Object& o = frame.GetManagedMemoryPool().GetObject(objectReference);
+    IntegralValue classDataValue(classData);
+    o.SetField(classDataValue, 0);
+    ObjectReference messageStr = frame.GetManagedMemoryPool().CreateString(frame.GetThread(), ToUtf32(message));
+    o.SetField(messageStr, 1);
+    frame.OpStack().Push(objectReference);
+    ThrowInst throwInst;
+    throwInst.Execute(frame);
+}
+
+void ThrowSystemException(const SystemException& ex, Frame& frame)
+{
+    ThrowException(ex.what(), frame, U"System.SystemException");
+}
+
+void ThrowNullReferenceException(const NullReferenceException& ex, Frame& frame)
+{
+    ThrowException(ex.what(), frame, U"System.NullReferenceException");
+}
+
+void ThrowIndexOutOfRangeException(const IndexOutOfRangeException& ex, Frame& frame)
+{
+    ThrowException(ex.what(), frame, U"System.IndexOutOfRangeException");
+}
+
+void ThrowArgumentOutOfRangeException(const ArgumentOutOfRangeException& ex, Frame& frame)
+{
+    ThrowException(ex.what(), frame, U"System.ArgumentOutOfRangeException");
+}
+
+void ThrowInvalidCastException(const InvalidCastException& ex, Frame& frame)
+{
+    ThrowException(ex.what(), frame, U"System.InvalidCastException");
+}
+
+void ThrowFileSystemException(const FileSystemError& ex, Frame& frame)
+{
+    ThrowException(ex.what(), frame, U"System.FileSystemException");
 }
 
 } } // namespace cminor::machine

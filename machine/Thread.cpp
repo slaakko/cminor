@@ -183,16 +183,23 @@ void Thread::Sleep()
 
 void Thread::HandleException(ObjectReference exception_)
 {
-    if (frames.empty())
+    try
     {
-        throw std::runtime_error("no handler for exception found");
+        if (frames.empty())
+        {
+            throw std::runtime_error("unhandled exception escaped from main");
+        }
+        handlingException = true;
+        exception = exception_;
+        Frame* frame = &frames.back();
+        Object& exceptionObject = frame->GetManagedMemoryPool().GetObject(exception);
+        exceptionObjectType = exceptionObject.GetType();
+        FindExceptionBlock(frame);
     }
-    handlingException = true;
-    exception = exception_;
-    Frame* frame = &frames.back();
-    Object& exceptionObject = frame->GetManagedMemoryPool().GetObject(exception);
-    exceptionObjectType = exceptionObject.GetType();
-    FindExceptionBlock(frame);
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frames.back());
+    }
 }
 
 void Thread::EndCatch()
@@ -281,7 +288,7 @@ void Thread::FindExceptionBlock(Frame* frame)
             frame = &frames.back();
         }
     }
-    throw std::runtime_error("no handler for exception found");
+    throw std::runtime_error("unhandled exception escaped from main");
 }
 
 bool Thread::DispatchToHandlerOrFinally(Frame* frame)
