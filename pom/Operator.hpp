@@ -13,7 +13,7 @@
 
 namespace cminor { namespace pom {
 
-enum Operator 
+enum class Operator 
 {  
     deref, addrOf, plus, minus, and_, or_, not_, neg, dotStar, arrowStar, bitand_, bitxor, bitor_, mul, div, rem, shiftLeft, shiftRight, 
     less, greater, lessOrEq, greaterOrEq, eq, notEq, comma,

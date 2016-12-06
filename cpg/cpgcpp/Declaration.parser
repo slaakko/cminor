@@ -1,0 +1,119 @@
+﻿/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[cpp]#include <cminor/cpg/cpgcpp/Declarator.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Identifier.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Expression.hpp>
+[hpp]#include <cminor/cpg/cpgcpp/Declaration.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Type.hpp>
+
+namespace cpg.cpp
+{
+    [cpp]using namespace cminor::pom;
+
+    grammar DeclarationGrammar
+    {
+        using stdlib.identifier;
+        using DeclaratorGrammar.InitDeclaratorList;
+        using DeclaratorGrammar.TypeId;
+        using IdentifierGrammar.Identifier;
+        using IdentifierGrammar.QualifiedId;
+        using ExpressionGrammar.AssignmentExpression;
+        
+        BlockDeclaration: cminor::pom::CppObject*
+                        ::= NamespaceAliasDefinition{ value = NamespaceAliasDefinition; }
+                        |   UsingDirective{ value = UsingDirective; }
+                        |   UsingDeclaration{ value = UsingDeclaration; }
+                        |   SimpleDeclaration{ value = SimpleDeclaration; }
+                        ;
+                                    
+        SimpleDeclaration(var std::unique_ptr<SimpleDeclaration> sd): cminor::pom::SimpleDeclaration*
+                        ::= empty{ sd.reset(new SimpleDeclaration()); }
+                            (DeclSpecifierSeq(sd.get())? (InitDeclaratorList{ sd->SetInitDeclaratorList(InitDeclaratorList); })? ';'){ value = sd.release(); }
+                        ;
+                                        
+        DeclSpecifierSeq(cminor::pom::SimpleDeclaration* declaration)
+                        ::= (DeclSpecifier{ declaration->Add(DeclSpecifier); })+ 
+                        |   TypeName{ declaration->Add(TypeName); }
+                        ;
+                                        
+        DeclSpecifier: cminor::pom::DeclSpecifier*
+                        ::= StorageClassSpecifier{ value = StorageClassSpecifier; }
+                        |   TypeSpecifier{ value = TypeSpecifier; }
+                        |   Typedef{ value = Typedef; }
+                        ;
+                                        
+        StorageClassSpecifier: cminor::pom::StorageClassSpecifier*
+                        ::= keyword_list(identifier, 
+                            ["auto", "register", "static", "extern", "mutable"])
+                        {
+                            value = new StorageClassSpecifier(std::string(matchBegin, matchEnd));
+                        }
+                        ;
+                                        
+        TypeSpecifier: cminor::pom::TypeSpecifier*
+                        ::= SimpleTypeSpecifier{ value = SimpleTypeSpecifier; }
+                        |   CVQualifier{ value = CVQualifier; }
+                        ;
+
+        SimpleTypeSpecifier: cminor::pom::TypeSpecifier*
+                        ::= keyword_list(identifier,
+                            ["char", "wchar_t", "bool", "short", "int", "long", "signed", "unsigned", "float", "double", "void"])
+                            {
+                                value = new TypeSpecifier(std::string(matchBegin, matchEnd));
+                            }
+                        ;
+                        
+        TypeName: cminor::pom::TypeName*
+                        ::= QualifiedId{ value = new cminor::pom::TypeName(std::string(matchBegin, matchEnd)); }('<'{ value->IsTemplate() = true; } TemplateArgumentList(value) '>')?
+                        ;
+                        
+        TemplateArgumentList(cminor::pom::TypeName* typeName)
+                        ::= TemplateArgument{ typeName->AddTemplateArgument(TemplateArgument); } % ','
+                        ;
+                        
+        TemplateArgument: cminor::pom::CppObject*
+                        ::= TypeId{ value = TypeId; }
+                        |   AssignmentExpression{ value = AssignmentExpression; }
+                        ;
+    
+        Typedef: cminor::pom::DeclSpecifier*
+                        ::= keyword("typedef")
+                        {
+                            value = new Typedef(); 
+                        }
+                        ;
+
+        CVQualifier: cminor::pom::TypeSpecifier*
+                        ::= keyword("const"){ value = new Const(); }
+                        |   keyword("volatile"){ value = new Volatile(); }
+                        ;
+                        
+        NamespaceAliasDefinition: cminor::pom::UsingObject*
+                        ::= keyword("namespace") Identifier '=' QualifiedId ';'
+                        {
+                            value = new NamespaceAlias(Identifier, QualifiedId); 
+                        }
+                        ;
+                        
+        UsingDeclaration: cminor::pom::UsingObject*
+                        ::= keyword("using") QualifiedId ';'
+                        {
+                            value = new UsingDeclaration(QualifiedId); 
+                        }
+                        ;
+                        
+        UsingDirective: cminor::pom::UsingObject*
+                        ::= keyword("using") keyword("namespace") QualifiedId ';'
+                        {
+                            value = new UsingDirective(QualifiedId); 
+                        }
+                        ;
+    }
+}

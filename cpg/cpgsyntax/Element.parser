@@ -1,0 +1,79 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <../pl/Scope.hpp>
+[hpp]#include <../pl/Grammar.hpp>
+[cpp]#include <../pl/Rule.hpp>
+[cpp]#include <cminor/pom/Type.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Declarator.hpp>
+
+namespace cpg.syntax
+{
+    grammar ElementGrammar
+    {
+        using stdlib.qualified_id;
+        using stdlib.identifier;
+        using stdlib.string;
+        using Cm.Parsing.Cpp.DeclaratorGrammar.TypeId;
+        using Cm.Parsing.Cpp.DeclaratorGrammar.Declarator;
+
+        RuleLink(cminor::parsing::Grammar* grammar)
+                            ::= (keyword("using") identifier:aliasName '=' qualified_id:ruleName ';')
+                                { 
+                                    RuleLink* link(new RuleLink(aliasName, grammar, ruleName)); 
+                                    link->SetSpan(span); 
+                                    grammar->AddRuleLink(link); 
+                                }
+                            |   (keyword("using") qualified_id ';')
+                                { 
+                                    RuleLink* link(new RuleLink(grammar, qualified_id)); 
+                                    link->SetSpan(span);
+                                    grammar->AddRuleLink(link);  
+                                }
+                            ;
+
+        Signature(cminor::parsing::Rule* rule)
+                            ::= ParameterList(rule)? ReturnType(rule)?
+                            ;
+
+        ParameterList(cminor::parsing::Rule* rule)
+                            ::= '(' ((Variable(rule) | Parameter(rule)) % ',') ')'!
+                            ;
+
+        Variable(cminor::parsing::Rule* rule)
+                            ::= keyword("var") TypeId Declarator{ rule->AddLocalVariable(AttrOrVariable(TypeId->ToString(), Declarator)); delete TypeId; }
+                            ;
+
+        Parameter(cminor::parsing::Rule* rule)
+                            ::= TypeId Declarator{ rule->AddInheritedAttribute(AttrOrVariable(TypeId->ToString(), Declarator)); delete TypeId; }
+                            ;
+
+        ReturnType(cminor::parsing::Rule* rule)
+                            ::= (':' - "::") TypeId{ rule->SetValueTypeName(TypeId->ToString()); delete TypeId; }
+                            ;
+
+        Keyword             ::= keyword_list(identifier, 
+                                [   "using", "grammar", "start", "end", "skip", "token", "keyword", "keyword_list", 
+                                    "empty", "space", "anychar", "letter", "digit", "hexdigit", "punctuation", "var", "cc"
+                                ])
+                            ;
+
+        Identifier: std::string
+                            ::= (identifier - Keyword){ value = std::string(matchBegin, matchEnd); }
+                            ;
+
+        QualifiedId: std::string
+                            ::= token(Identifier:first('.' Identifier:rest)*){ value = std::string(matchBegin, matchEnd); }
+                            ;
+
+        StringArray(std::vector<std::string>* array)
+                            ::= '[' (string:str{ array->push_back(str); } % ',') ']'!
+                            ;
+    }
+}

@@ -1,0 +1,204 @@
+﻿/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[cpp]#include <cminor/cpg/cpgcpp/Expression.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Declaration.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Declarator.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Identifier.hpp>
+[hpp]#include <cminor/cpg/cpgcpp/Statement.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Type.hpp>
+
+namespace cpg.cpp
+{
+    [cpp]using namespace cminor::pom;
+    
+    grammar StatementGrammar
+    {
+        using ExpressionGrammar.Expression;
+        using ExpressionGrammar.ConstantExpression;
+        using ExpressionGrammar.AssignmentExpression;
+        using DeclaratorGrammar.TypeId;
+        using DeclaratorGrammar.Declarator;
+        using DeclaratorGrammar.TypeSpecifierSeq;
+        using DeclaratorGrammar.AbstractDeclarator;
+        using IdentifierGrammar.Identifier;
+        using DeclarationGrammar.SimpleDeclaration;
+        using DeclarationGrammar.BlockDeclaration;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        start CompoundStatement;
+        
+        Statement: cminor::pom::Statement*
+                    ::= LabeledStatement{ value = LabeledStatement; }
+                    |   EmptyStatement{ value = EmptyStatement; }
+                    |   CompoundStatement{ value = CompoundStatement; }
+                    |   SelectionStatement{ value = SelectionStatement; }
+                    |   IterationStatement{ value = IterationStatement; }
+                    |   JumpStatement{ value = JumpStatement; }
+                    |   DeclarationStatement{ value = DeclarationStatement; }
+                    |   TryStatement{ value = TryStatement; }
+                    |   ExpressionStatement{ value = ExpressionStatement; }
+                    ;
+        
+        LabeledStatement: cminor::pom::Statement*
+                    ::= (Label (':' - "::") Statement:s1!){ value = new LabeledStatement(Label, s1); }
+                    |   (keyword("case") ConstantExpression! ':'! Statement:s2!){ value = new CaseStatement(ConstantExpression, s2); }
+                    |   (keyword("default") ':'! Statement:s3!){ value = new DefaultStatement(s3); }
+                    ;
+                    
+        Label: std::string
+                    ::= Identifier{ value = Identifier; }
+                    ;
+                    
+        EmptyStatement: cminor::pom::Statement*
+                    ::= ';'{ value = new EmptyStatement(); }
+                    ;
+                    
+        ExpressionStatement: cminor::pom::Statement*
+                    ::= (Expression ';'!){ value = new ExpressionStatement(Expression); }
+                    ;
+                    
+        CompoundStatement(var std::unique_ptr<CompoundStatement> cs): cminor::pom::CompoundStatement*
+                    ::= '{'{ cs.reset(new CompoundStatement()); } 
+                        (Statement{ cs->Add(Statement); })* 
+                        '}'!{ value = cs.release(); }
+                    ;
+                    
+        SelectionStatement: cminor::pom::Statement*
+                    ::= IfStatement{ value = IfStatement; }
+                    |   SwitchStatement{ value = SwitchStatement; }
+                    ;
+                    
+        IfStatement: cminor::pom::Statement*
+                    ::= (keyword("if") '('! Condition! ')'! Statement:thenStatement! (keyword("else") Statement:elseStatement!)?)
+                    {
+                        value = new IfStatement(Condition, thenStatement, elseStatement);
+                    }
+                    ;
+                    
+        SwitchStatement: cminor::pom::Statement*
+                    ::= keyword("switch") '('! Condition! ')'! Statement!
+                    {
+                        value = new SwitchStatement(Condition, Statement);
+                    }
+                    ;
+                    
+        IterationStatement: cminor::pom::Statement*
+                    ::= WhileStatement{ value = WhileStatement; }
+                    |   DoStatement{ value = DoStatement; }
+                    |   ForStatement{ value = ForStatement; }
+                    ;
+                    
+        WhileStatement: cminor::pom::Statement*
+                    ::= keyword("while") '('! Condition! ')'! Statement!
+                    {
+                        value = new WhileStatement(Condition, Statement);
+                    }
+                    ;
+                    
+        DoStatement: cminor::pom::Statement*
+                    ::= keyword("do") Statement! keyword("while")! '('! Expression! ')'! ';'!
+                    {
+                        value = new DoStatement(Statement, Expression);
+                    }
+                    ;
+                    
+        ForStatement: cminor::pom::Statement*
+                    ::= keyword("for") '('! ForInitStatement! Condition? ';'! Expression? ')'! Statement!
+                    {
+                        value = new ForStatement(ForInitStatement, Condition, Expression, Statement);
+                    }
+                    ;
+                    
+        ForInitStatement: cminor::pom::CppObject*
+                    ::= EmptyStatement{ value = EmptyStatement; }
+                    |   ExpressionStatement{ value = ExpressionStatement; }
+                    |   SimpleDeclaration{ value = SimpleDeclaration; }
+                    ;
+                    
+        JumpStatement: cminor::pom::Statement*
+                    ::= BreakStatement{ value = BreakStatement; }
+                    |   ContinueStatement{ value = ContinueStatement; }
+                    |   ReturnStatement{ value = ReturnStatement; }
+                    |   GotoStatement{ value = GotoStatement; }
+                    ;
+                    
+        BreakStatement: cminor::pom::Statement*
+                    ::= keyword("break") ';'!
+                    {
+                        value = new BreakStatement(); 
+                    }
+                    ;
+                    
+        ContinueStatement: cminor::pom::Statement*
+                    ::= keyword("continue") ';'!
+                    {
+                        value = new ContinueStatement();
+                    }
+                    ;
+                    
+        ReturnStatement: cminor::pom::Statement*
+                    ::= keyword("return") Expression? ';'!
+                    {
+                        value = new ReturnStatement(Expression);
+                    }
+                    ;
+                    
+        GotoStatement: cminor::pom::Statement*
+                    ::= keyword("goto") GotoTarget! ';'!
+                    {
+                        value = new GotoStatement(GotoTarget);
+                    }
+                    ;
+                    
+        GotoTarget: std::string
+                    ::= Identifier{ value = Identifier; }
+                    ;
+                    
+        DeclarationStatement: cminor::pom::Statement*
+                    ::= BlockDeclaration{ value = new DeclarationStatement(BlockDeclaration); }
+                    ;
+                    
+        Condition(var std::unique_ptr<TypeId> ti): cminor::pom::CppObject*
+                    ::= TypeId{ ti.reset(TypeId); } Declarator '=' AssignmentExpression{ value = new ConditionWithDeclarator(ti.release(), Declarator, AssignmentExpression); }
+                    |   Expression{ value = Expression; }
+                    ;
+                    
+        TryStatement: cminor::pom::TryStatement*
+                    ::= keyword("try") CompoundStatement! { value = new TryStatement(CompoundStatement); }
+                        HandlerSeq(value)!
+                    ;
+        
+        HandlerSeq(TryStatement* st)
+                    ::= Handler!{ st->Add(Handler); } HandlerSeq(st)?
+                    ;
+        
+        Handler: cminor::pom::Handler*
+                    ::= keyword("catch") '('! ExceptionDeclaration! ')'! CompoundStatement!
+                    {
+                        value = new Handler(ExceptionDeclaration, CompoundStatement);
+                    }
+                    ;
+                    
+        ExceptionDeclaration(var std::unique_ptr<ExceptionDeclaration> ed): cminor::pom::ExceptionDeclaration*
+                    ::= empty{ ed.reset(new ExceptionDeclaration()); }
+                    (
+                        TypeSpecifierSeq(ed->GetTypeId())
+                        (   Declarator{ ed->GetTypeId()->Declarator() = Declarator; }
+                        |   AbstractDeclarator{ ed->GetTypeId()->Declarator() = AbstractDeclarator; }
+                        |   empty
+                        )
+                    |   "..."{ value->CatchAll() = true; }
+                    )
+                    {
+                        value = ed.release();
+                    }
+                    ;
+    }
+}

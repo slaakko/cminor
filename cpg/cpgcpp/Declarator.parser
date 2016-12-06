@@ -1,0 +1,125 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[cpp]#include <cminor/cpg/cpgcpp/Expression.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Declaration.hpp>
+[cpp]#include <cminor/machine/TextUtils.hpp>
+[hpp]#include <cminor/cpg/cpgcpp/Declaration.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Type.hpp>
+
+namespace cpg.cpp
+{
+    [cpp]using cminor::machine::Trim;
+    [cpp]using namespace cminor::pom;
+
+    grammar DeclaratorGrammar
+    {
+        using ExpressionGrammar.ConstantExpression;
+        using ExpressionGrammar.IdExpression;
+        using ExpressionGrammar.ExpressionList;
+        using ExpressionGrammar.AssignmentExpression;
+        using DeclarationGrammar.TypeName;
+        using DeclarationGrammar.TypeSpecifier;
+        using DeclarationGrammar.CVQualifier;
+
+        InitDeclaratorList(var std::unique_ptr<InitDeclaratorList> idl): cminor::pom::InitDeclaratorList*
+                        ::= empty{ idl.reset(new InitDeclaratorList()); }
+                            (InitDeclarator{ idl->Add(InitDeclarator); } % ','){ value = idl.release(); }
+                        ;
+
+        InitDeclarator: cminor::pom::InitDeclarator*
+                        ::= (Declarator Initializer?)
+                        {
+                            value = new InitDeclarator(Declarator, Initializer);
+                        }
+                        ;
+
+        Declarator: std::string
+                        ::=
+                        (   DirectDeclarator
+                        |   PtrOperator Declarator
+                        )
+                        {
+                            value = Trim(std::string(matchBegin, matchEnd));
+                        }
+                        ;
+
+        DirectDeclarator(var std::unique_ptr<CppObject> o)
+                        ::= DeclaratorId
+                        (
+                            '[' (ConstantExpression{ o.reset(ConstantExpression); })? ']'
+                            '(' Declarator ')'
+                        )*
+                        ;
+
+        DeclaratorId(var std::unique_ptr<CppObject> o)
+                        ::= IdExpression{ o.reset(IdExpression); }
+                        |   TypeName{ o.reset(TypeName); }
+                        ;
+
+        TypeId(var std::unique_ptr<TypeId> ti): cminor::pom::TypeId*
+                        ::= empty{ ti.reset(new TypeId()); }
+                        (
+                            (TypeSpecifierSeq(ti.get()) | TypeName{ ti->Add(TypeName); })
+                            (AbstractDeclarator{ ti->Declarator() = AbstractDeclarator; })?
+                        ){ value = ti.release(); }
+                        ;
+
+        Type(var std::unique_ptr<Type> t): cminor::pom::Type*
+                        ::= empty{ t.reset(new Type()); }
+                            (   (TypeSpecifier{ t->Add(TypeSpecifier); })+
+                            |   TypeName{ t->Add(TypeName); }
+                            ){ value = t.release(); }
+                        ;
+
+        TypeSpecifierSeq(cminor::pom::TypeId* typeId)
+                        ::= (TypeSpecifier{ typeId->Add(TypeSpecifier); })+
+                        ;
+
+        AbstractDeclarator: std::string
+                        ::=
+                        (   PtrOperator AbstractDeclarator?
+                        |   DirectAbstractDeclarator
+                        )
+                        {
+                            value = Trim(std::string(matchBegin, matchEnd));
+                        }
+                        ;
+
+        DirectAbstractDeclarator(var std::unique_ptr<CppObject> o)
+                        ::=
+                        (   '[' (ConstantExpression{ o.reset(ConstantExpression); })? ']'
+                        |   '(' AbstractDeclarator ')'
+                        )+
+                        ;
+
+        PtrOperator     ::= '*' CVQualifierSeq?
+                        |   '&'
+                        ;
+
+        CVQualifierSeq(var std::unique_ptr<CppObject> o)
+                        ::= (CVQualifier{ o.reset(CVQualifier); })+
+                        ;
+
+        Initializer: cminor::pom::Initializer*
+                        ::= '=' InitializerClause{ value = new Initializer(InitializerClause, GetEmptyVector()); }
+                        |   ('(' ExpressionList ')'){ value = new Initializer(nullptr, ExpressionList); }
+                        ;
+
+        InitializerClause: cminor::pom::AssignInit*
+                        ::= AssignmentExpression{  value = new AssignInit(AssignmentExpression); }
+                        |   '{'{ value = new AssignInit(nullptr); } InitializerList(value) '}'
+                        |   '{' '}'{ value = new AssignInit(nullptr); }
+                        ;
+
+        InitializerList(cminor::pom::AssignInit* init)
+                        ::= InitializerClause{ init->Add(InitializerClause); } % ','
+                        ;
+   }
+}

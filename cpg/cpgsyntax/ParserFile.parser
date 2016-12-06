@@ -1,0 +1,73 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[cpp]#include <cminor/cpg/cpgcpp/Declaration.hpp>
+[hpp]#include <cminor/cpg/cpgsyntax/ParserFileContent.hpp>
+[cpp]#include <cpgsyntax/Element.hpp>
+[cpp]#include <cpgsyntax/Grammar.hpp>
+[cpp]#include <../pl/Namespace.hpp>
+[cpp]#include <../pl/Grammar.hpp>
+
+namespace cpg.syntax
+{
+    grammar ParserFileGrammar
+    {
+        using stdlib.spaces_and_comments;
+        using stdlib.newline;
+        using stdlib.qualified_id;
+        using GrammarGrammar.Grammar;
+        using Cm.Parsing.Cpp.DeclarationGrammar.UsingDeclaration;
+        using Cm.Parsing.Cpp.DeclarationGrammar.UsingDirective;
+        using Cm.Parsing.Cpp.DeclarationGrammar.NamespaceAliasDefinition;
+
+        skip spaces_and_comments;
+
+        ParserFile(int id_, cminor::parsing::ParsingDomain* parsingDomain_): ParserFileContent*
+                    ::= empty{ value = new ParserFileContent(id_, parsingDomain_); value->SetFilePath(fileName); }
+                        IncludeDirectives(value)?
+                        NamespaceContent(value)
+                    ;
+
+        IncludeDirectives(ParserFileContent* parserFileContent)
+                    ::= IncludeDirective(parserFileContent)+
+                    ;
+
+        IncludeDirective(ParserFileContent* parserFileContent)
+                    ::= FileAttribute? '#' keyword("include") token(IncludeFileName [^\r\n]* newline){ parserFileContent->AddIncludeDirective(IncludeFileName, FileAttribute); }
+                    ;
+
+        FileAttribute: std::string
+                    ::= '[' ("cpp" | "hpp"){ value = std::string(matchBegin, matchEnd); } ']'
+                    ;
+
+        IncludeFileName: std::string
+                    ::= token('<' [^>\r\n]+ '>'){ value = std::string(matchBegin, matchEnd); }
+                    ;
+
+        NamespaceContent(ParserFileContent* parserFileContent)
+                    ::= 
+                    (   
+                        FileAttribute? 
+                        (   UsingDeclaration{ UsingDeclaration->SetFileAttr(FileAttribute); parserFileContent->AddUsingObject(UsingDeclaration); }
+                        |   UsingDirective{ UsingDirective->SetFileAttr(FileAttribute); parserFileContent->AddUsingObject(UsingDirective); }
+                        |   NamespaceAliasDefinition{ NamespaceAliasDefinition->SetFileAttr(FileAttribute); parserFileContent->AddUsingObject(NamespaceAliasDefinition); }
+                        )
+                    |   Grammar(parserFileContent->CurrentScope()){ parserFileContent->AddGrammar(Grammar); }
+                    |   Namespace(parserFileContent)
+                    )*
+                    ;
+
+        Namespace(ParserFileContent* parserFileContent)
+                    ::= keyword("namespace") qualified_id:ns!{ parserFileContent->BeginNamespace(ns); }
+                        '{'!
+                        NamespaceContent(parserFileContent)
+                        '}'!{ parserFileContent->EndNamespace(); }
+                    ;
+    }
+}

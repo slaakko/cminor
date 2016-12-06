@@ -1,0 +1,99 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <../pl/Parser.hpp>
+[hpp]#include <../pl/Scope.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Expression.hpp>
+[cpp]#include <cminor/cpg/cpgcpp/Statement.hpp>
+[cpp]#include <cpgsyntax/Primitive.hpp>
+[cpp]#include <cpgsyntax/Composite.hpp>
+[cpp]#include <cpgsyntax/Element.hpp>
+[cpp]#include <../pl/Nonterminal.hpp>
+[cpp]#include <cminor/pom/Statement.hpp>
+
+namespace cpg.syntax
+{
+    [cpp]using namespace cpg::cpp;
+
+    grammar PrimaryGrammar
+    {
+        using PrimitiveGrammar.Primitive;
+        using ElementGrammar.Identifier;
+        using CompositeGrammar.Alternative;
+        using Cm.Parsing.Cpp.ExpressionGrammar.ExpressionList;
+        using Cm.Parsing.Cpp.StatementGrammar.CompoundStatement;
+
+        Primary(cminor::parsing::Scope* enclosingScope): cminor::parsing::Parser*
+                    ::=
+                    (   RuleCall{ value = RuleCall; }
+                    |   Primitive{ value = Primitive; }
+                    |   Grouping(enclosingScope){ value = Grouping; }
+                    |   Token(enclosingScope){ value = Token; }
+                    )
+                    (Expectation(value){ value = Expectation; })?
+                    (Action(value){ value = Action; })?
+                    (CCOpt(value){ value = CCOpt; })?
+                    ;
+
+        RuleCall: cminor::parsing::Parser*
+                    ::= ((token(Nonterminal:ntWithArgs '(') ExpressionList ')' | Nonterminal:nt) Alias?)
+                    {
+                        std::string ruleName;
+                        if (!ntWithArgs.empty())
+                        {
+                            ruleName = ntWithArgs;
+                        }
+                        else
+                        {
+                            ruleName = nt;
+                        }
+                        std::string alias = Alias;
+                        std::string name = !alias.empty() ? alias : ruleName;
+                        NonterminalParser* parser(new NonterminalParser(name, ruleName));
+                        parser->SetSpan(span);
+                        if (!ExpressionList.empty())
+                        {
+                            parser->SetArguments(ExpressionList); 
+                        }
+                        value = parser;
+                    }
+                    ;
+
+        Nonterminal: std::string 
+                    ::= Identifier{ value = Identifier; }
+                    ;
+
+        Alias: std::string
+                    ::= ':' Identifier!{ value = Identifier; }
+                    ;
+
+        Grouping(cminor::parsing::Scope* enclosingScope): cminor::parsing::Parser*
+                    ::= '(' Alternative(enclosingScope)! ')'!{ value = Alternative; }
+                    ;
+
+        Token(cminor::parsing::Scope* enclosingScope): cminor::parsing::Parser*
+                    ::= keyword("token") '('! Alternative(enclosingScope)! ')'!{ value = new TokenParser(Alternative); }
+                    ;
+
+        Expectation(cminor::parsing::Parser* child): cminor::parsing::Parser* 
+                    ::= '!'{ value = new ExpectationParser(child); }
+                    ;
+
+        Action(cminor::parsing::Parser* child): cminor::parsing::Parser*
+                    ::= (CompoundStatement:action ('/' CompoundStatement:failureAction)?)
+                    {
+                        value = new ActionParser("", action, failureAction, child);
+                    }
+                    ;
+
+        CCOpt(cminor::parsing::Parser* child): cminor::parsing::Parser*
+                    ::= '$'{ value = new CCOptParser(child); }
+                    ;
+    }
+}

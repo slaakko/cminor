@@ -1,0 +1,149 @@
+﻿/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <cminor/cpg/cpgcpp/Literal.hpp>
+
+namespace cpg.cpp
+{
+    [cpp]using namespace cminor::pom;
+    
+    grammar LiteralGrammar
+    {
+        Literal: cminor::pom::Literal*
+                        ::= IntegerLiteral{ value = IntegerLiteral; }
+                        |   CharacterLiteral{ value = CharacterLiteral; }
+                        |   FloatingLiteral{ value = FloatingLiteral; }
+                        |   StringLiteral{ value = StringLiteral; }
+                        |   BooleanLiteral{ value = BooleanLiteral; }
+                        |   PointerLiteral{ value = PointerLiteral; }
+                        ;
+                
+        IntegerLiteral: cminor::pom::Literal*
+                        ::= token(DecimalLiteral:dl IntegerSuffix:is1?) { value = new Literal(std::string(matchBegin, matchEnd)); }
+                        |   token(OctalLiteral:ol IntegerSuffix:is2?){ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        |   token(HexadecimalLiteral:hl IntegerSuffix:is3?){ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        ;
+                        
+        DecimalLiteral  ::= token([1-9] digit*)
+                        ;
+                        
+        OctalLiteral    ::= token('0' OctalDigit*)
+                        ;
+                        
+        OctalDigit      ::= [0-7]
+                        ;
+                        
+        HexadecimalLiteral
+                        ::= token(("0x" | "0X")(hexdigit+))
+                        ;
+                        
+        IntegerSuffix   ::= token(UnsignedSuffix (LongLongSuffix | LongSuffix)?)
+                        |   token(LongLongSuffix UnsignedSuffix?)
+                        |   token(LongSuffix UnsignedSuffix?)
+                        ;
+
+        UnsignedSuffix  ::= 'u' | 'U'
+                        ;
+                        
+        LongLongSuffix  ::= "ll" | "LL"
+                        ;
+                        
+        LongSuffix      ::= 'l' | 'L'
+                        ;
+                        
+        CharacterLiteral: cminor::pom::Literal*
+                        ::= NarrowCharacterLiteral{ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        |   UniversalCharacterLiteral{ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        |   WideCharacterLiteral{ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        ;
+                            
+        NarrowCharacterLiteral
+                        ::= token('\'' CCharSequence '\'')
+                        ;
+                        
+        UniversalCharacterLiteral
+                        ::= token('u' '\'' CCharSequence:cs1 '\'')
+                        |   token('U' '\'' CCharSequence:cs2 '\'')
+                        ;
+                        
+        WideCharacterLiteral
+                        ::= token('L' '\'' CCharSequence '\'')
+                        ;
+                        
+        CCharSequence: std::string
+                        ::= token(CChar+){ value = std::string(matchBegin, matchEnd); }
+                        ;
+                        
+        CChar           ::= [^'\\\n]
+                        |   EscapeSequence
+                        ;
+                        
+        EscapeSequence  ::= SimpleEscapeSequence
+                        |   OctalEscapeSequence
+                        |   HexadecimalEscapeSequence
+                        ;
+                        
+        SimpleEscapeSequence
+                        ::= "\\'" | "\\\"" | "\\?" | "\\\\" | "\\a" | "\\b" | "\\f" | "\\n" | "\\r" | "\\t" | "\\v"
+                        ;
+                        
+        OctalEscapeSequence
+                        ::= '\\' OctalDigit OctalDigit? OctalDigit?
+                        ;
+                        
+        HexadecimalEscapeSequence
+                        ::= "\\x" hexdigit+
+                        ;
+                        
+        FloatingLiteral: cminor::pom::Literal*
+                        ::= token(FractionalConstant ExponentPart? FloatingSuffix?){ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        |   token(DigitSequence ExponentPart FloatingSuffix?){ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        ;
+                        
+        FractionalConstant
+                        ::= DigitSequence? '.' DigitSequence
+                        |   DigitSequence '.'
+                        ;
+                        
+        DigitSequence   ::= digit+
+                        ;
+        
+        ExponentPart    ::= ('e' | 'E') Sign? DigitSequence
+                        ;
+                        
+        Sign            ::= '+' | '-'
+                        ;
+                        
+        FloatingSuffix  ::= [fFlL]
+                        ;
+                        
+        StringLiteral: cminor::pom::Literal*
+                        ::= token(EncodingPrefix? '"' SCharSequence? '"'){ value = new Literal(std::string(matchBegin, matchEnd)); }
+                        ;
+                        
+        EncodingPrefix  ::= "u8" | 'u' | 'U' | 'L'
+                        ;
+                        
+        SCharSequence   ::= (SChar+)
+                        ;
+        
+        SChar           ::= [^"\\\n]
+                        |   EscapeSequence
+                        ;
+                        
+        BooleanLiteral: cminor::pom::Literal*
+                        ::= keyword("true"){ value = new Literal("true"); }
+                        |   keyword("false"){ value = new Literal("false"); }
+                        ;
+                        
+        PointerLiteral: cminor::pom::Literal*
+                        ::= keyword("nullptr"){ value = new cminor::pom::Literal("nullptr"); }
+                        ;
+    }
+}
