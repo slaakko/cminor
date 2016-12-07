@@ -1,11 +1,7 @@
-/*========================================================================
-    Copyright (c) 2011-2013 Seppo Laakko
-    http://sourceforge.net/projects/soulparsing/
- 
-    Distributed under the GNU General Public License, version 3 (GPLv3).
-    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
-
-========================================================================*/
+// =================================
+// Copyright (c) 2017 Seppo Laakko
+// Distributed under the MIT license
+// =================================
 
 #include <cminor/cpg/cpgsyntax/ParserFileContent.hpp>
 #include <cminor/pl/Grammar.hpp>

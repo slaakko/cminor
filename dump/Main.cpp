@@ -1,5 +1,5 @@
 // =================================
-// Copyright (c) 2016 Seppo Laakko
+// Copyright (c) 2017 Seppo Laakko
 // Distributed under the MIT license
 // =================================
 
@@ -131,6 +131,7 @@ int main(int argc, const char** argv)
         typeInstructions.clear();
         setClassDataInstructions.clear();
         classTypes.clear();
+        classTemplateSpecializationNames.clear();
         FunctionTable::Done();
         ClassDataTable::Done();
         TypeTable::Done();

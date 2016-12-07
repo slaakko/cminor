@@ -1,5 +1,5 @@
 // =================================
-// Copyright (c) 2016 Seppo Laakko
+// Copyright (c) 2017 Seppo Laakko
 // Distributed under the MIT license
 // =================================
 
