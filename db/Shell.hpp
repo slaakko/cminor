@@ -18,7 +18,7 @@ class Shell
 public:
     Shell(Machine& machine_);
     void StartMachine();
-    void Run();
+    void Run(const std::vector<utf32_string>& programArguments_, ObjectType* argsArrayObjectType_);
     void Exit();
     void Step();
     void Next();
@@ -30,6 +30,8 @@ private:
     Machine& machine;
     bool exit;
     std::unique_ptr<Command> prevCommand;
+    std::vector<utf32_string> programArguments;
+    ObjectType* argsArrayObjectType;
 };
 
 } } // namespace cminor::db

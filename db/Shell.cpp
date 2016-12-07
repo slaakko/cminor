@@ -17,11 +17,13 @@ Shell::Shell(Machine& machine_) : machine(machine_), exit(false)
 
 void Shell::StartMachine()
 {
-    machine.Start();
+    machine.Start(programArguments, argsArrayObjectType);
 }
 
-void Shell::Run()
+void Shell::Run(const std::vector<utf32_string>& programArguments_, ObjectType* argsArrayObjectType_)
 {
+    programArguments = programArguments_;
+    argsArrayObjectType = argsArrayObjectType_;
     StartMachine();
     CommandGrammar* commandGrammar = CommandGrammar::Create();
     while (!exit)

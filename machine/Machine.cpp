@@ -520,7 +520,7 @@ Machine::~Machine()
     }
 }
 
-void Machine::Start()
+void Machine::Start(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
 {
     threads.clear();
     Function* mainFun = FunctionTable::Instance().GetMain();
@@ -530,6 +530,13 @@ void Machine::Start()
     }
     //RunGarbageCollector();
     threads.push_back(std::unique_ptr<Thread>(new Thread(*this, *mainFun)));
+    if (argsArrayObjectType)
+    {
+        Thread& mainThread = MainThread();
+        Frame* frame = &mainThread.Frames().back();
+        ObjectReference args = frame->GetManagedMemoryPool().CreateStringArray(mainThread, programArguments, argsArrayObjectType);
+        frame->OpStack().Push(args);
+    }
 }
 
 void Machine::Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)

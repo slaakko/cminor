@@ -17,7 +17,7 @@ class Machine
 public:
     Machine();
     ~Machine();
-    void Start();
+    void Start(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void AddInst(Instruction* inst);
     std::unique_ptr<Instruction> CreateInst(const std::string& instName) const;
