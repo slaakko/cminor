@@ -50,6 +50,6 @@ void RegisterParsingDomain(ParsingDomain* parsingDomain);
 void ParsingDomainInit();
 void ParsingDomainDone();
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_PARSINGDOMAIN_INCLUDED

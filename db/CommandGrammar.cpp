@@ -183,7 +183,7 @@ private:
 void CommandGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
         grammar0 = cminor::parsing::stdlib::Create(pd);
@@ -193,7 +193,7 @@ void CommandGrammar::GetReferencedGrammars()
 
 void CommandGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
+    AddRuleLink(new cminor::parsing::RuleLink("int", this, "cminor.parsing.stdlib.int"));
     AddRule(new CommandRule("Command", GetScope(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(

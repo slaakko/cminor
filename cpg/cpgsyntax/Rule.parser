@@ -7,9 +7,9 @@
 
  ========================================================================*/
 
-[cpp]#include <cpgsyntax/Element.hpp>
-[cpp]#include <cpgsyntax/Composite.hpp>
-[hpp]#include <../pl/Rule.hpp>
+[cpp]#include <cminor/cpg/cpgsyntax/Element.hpp>
+[cpp]#include <cminor/cpg/cpgsyntax/Composite.hpp>
+[hpp]#include <cminor/pl/Rule.hpp>
 
 namespace cpg.syntax
 {

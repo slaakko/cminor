@@ -7,7 +7,7 @@
 
  ========================================================================*/
 
-[hpp]#include <cminor/cpg/cpgcpp/Literal.hpp>
+[hpp]#include <cminor/pom/Literal.hpp>
 
 namespace cpg.cpp
 {

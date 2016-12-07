@@ -134,7 +134,7 @@ private:
     std::unique_ptr<FailureAction> failureAction;
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_ACTION_INCLUDED
 

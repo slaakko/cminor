@@ -82,5 +82,5 @@ void ParsingObject::AddToScope()
 
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 

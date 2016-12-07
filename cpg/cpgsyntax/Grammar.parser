@@ -7,9 +7,9 @@
 
  ========================================================================*/
 
-[hpp]#include <../pl/Grammar.hpp>
-[cpp]#include <cpgsyntax/Element.hpp>
-[cpp]#include <cpgsyntax/Rule.hpp>
+[hpp]#include <cminor/pl/Grammar.hpp>
+[cpp]#include <cminor/cpg/cpgsyntax/Element.hpp>
+[cpp]#include <cminor/cpg/cpgsyntax/Rule.hpp>
 
 namespace cpg.syntax
 {

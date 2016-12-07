@@ -28,7 +28,7 @@ ProjectFileGrammar* ProjectFileGrammar::Create(cminor::parsing::ParsingDomain* p
     return grammar;
 }
 
-ProjectFileGrammar::ProjectFileGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("ProjectFileGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Syntax"), parsingDomain_)
+ProjectFileGrammar::ProjectFileGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("ProjectFileGrammar", parsingDomain_->GetNamespaceScope("cpg.syntax"), parsingDomain_)
 {
     SetOwner(0);
 }
@@ -346,7 +346,7 @@ private:
 void ProjectFileGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
         grammar0 = cminor::parsing::stdlib::Create(pd);
@@ -356,8 +356,8 @@ void ProjectFileGrammar::GetReferencedGrammars()
 
 void ProjectFileGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
-    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "cminor.parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
     AddRule(new ProjectFileRule("ProjectFile", GetScope(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(

@@ -1,5 +1,5 @@
-#ifndef ParserFile_hpp_8022
-#define ParserFile_hpp_8022
+#ifndef ParserFile_hpp_20689
+#define ParserFile_hpp_20689
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -28,4 +28,4 @@ private:
 
 } } // namespace cpg.syntax
 
-#endif // ParserFile_hpp_8022
+#endif // ParserFile_hpp_20689

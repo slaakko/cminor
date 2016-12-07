@@ -161,4 +161,4 @@ void KeywordDone()
 
 
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

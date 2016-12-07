@@ -33,6 +33,6 @@ private:
     int indent;
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_XMLLOG_INCLUDED

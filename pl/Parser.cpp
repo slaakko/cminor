@@ -19,4 +19,4 @@ Parser::Parser(const std::string& name_, const std::string& info_): ParsingObjec
 {
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

@@ -2129,7 +2129,7 @@ private:
 void ExpressionGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
         grammar0 = cminor::parsing::stdlib::Create(pd);
@@ -2174,7 +2174,7 @@ void ExpressionGrammar::CreateRules()
     AddRuleLink(new cminor::parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRuleLink(new cminor::parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
     AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRule(new ExpressionRule("Expression", GetScope(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::NonterminalParser("Disjunction", "Disjunction", 1))));

@@ -1,5 +1,5 @@
-#ifndef Statement_hpp_26870
-#define Statement_hpp_26870
+#ifndef Statement_hpp_20441
+#define Statement_hpp_20441
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -47,4 +47,4 @@ private:
 
 } } // namespace cpg.cpp
 
-#endif // Statement_hpp_26870
+#endif // Statement_hpp_20441

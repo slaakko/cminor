@@ -15,6 +15,6 @@ namespace cminor { namespace parsing {
 void Init();
 void Done();
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_INITDONE_INCLUDED

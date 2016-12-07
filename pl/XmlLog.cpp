@@ -36,4 +36,4 @@ void XmlLog::Write(const std::string& s)
     stream << s << std::endl;
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

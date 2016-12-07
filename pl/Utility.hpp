@@ -19,6 +19,6 @@ std::string HexEscape(char c);
 std::string XmlCharStr(char c);
 std::string XmlEscape(const std::string& s);
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_UTILITY_INCLUDED

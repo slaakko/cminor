@@ -183,7 +183,7 @@ void IdentifierGrammar::GetReferencedGrammars()
         grammar0 = cminor::parser::KeywordGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar1)
     {
         grammar1 = cminor::parsing::stdlib::Create(pd);
@@ -194,7 +194,7 @@ void IdentifierGrammar::GetReferencedGrammars()
 void IdentifierGrammar::CreateRules()
 {
     AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRule(new IdentifierRule("Identifier", GetScope(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::TokenParser(

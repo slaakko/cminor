@@ -130,7 +130,7 @@ private:
     Rule* rule;
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_RULE_INCLUDED
 

@@ -1,5 +1,5 @@
-#ifndef Grammar_hpp_8022
-#define Grammar_hpp_8022
+#ifndef Grammar_hpp_20689
+#define Grammar_hpp_20689
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -26,4 +26,4 @@ private:
 
 } } // namespace cpg.syntax
 
-#endif // Grammar_hpp_8022
+#endif // Grammar_hpp_20689

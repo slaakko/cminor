@@ -40,6 +40,6 @@ private:
 void Link(ParsingDomain* parsingDomain);
 void ExpandCode(ParsingDomain* parsingDomain);
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_LINKING_INCLUDED

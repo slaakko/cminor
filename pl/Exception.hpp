@@ -45,6 +45,6 @@ private:
     std::string info;
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_EXCEPTION_INCLUDED

@@ -29,7 +29,7 @@ IdentifierGrammar* IdentifierGrammar::Create(cminor::parsing::ParsingDomain* par
     return grammar;
 }
 
-IdentifierGrammar::IdentifierGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("IdentifierGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Cpp"), parsingDomain_)
+IdentifierGrammar::IdentifierGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("IdentifierGrammar", parsingDomain_->GetNamespaceScope("cpg.cpp"), parsingDomain_)
 {
     SetOwner(0);
 }
@@ -51,7 +51,7 @@ std::string IdentifierGrammar::Parse(const char* start, const char* end, int fil
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -177,13 +177,13 @@ private:
 void IdentifierGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
         grammar0 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Cpp.KeywordGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cpg.cpp.KeywordGrammar");
     if (!grammar1)
     {
         grammar1 = cpg::cpp::KeywordGrammar::Create(pd);
@@ -193,7 +193,7 @@ void IdentifierGrammar::GetReferencedGrammars()
 
 void IdentifierGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
     AddRule(new IdentifierRule("Identifier", GetScope(),
         new cminor::parsing::ActionParser("A0",

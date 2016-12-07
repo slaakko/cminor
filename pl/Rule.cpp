@@ -268,7 +268,7 @@ RuleLink::RuleLink(const std::string& name_, Grammar* grammar_, const std::strin
     std::string prefix = GetPrefix(linkedRuleName);
     if (prefix == "stdlib")
     {
-        linkedRuleName = "Cm.Parsing.stdlib." + GetCommonName(linkedRuleName);
+        linkedRuleName = "cminor.parsing.stdlib." + GetCommonName(linkedRuleName);
     }
 }
 
@@ -277,7 +277,7 @@ RuleLink::RuleLink(Grammar* grammar_, const std::string& linkedRuleName_): Parsi
     std::string prefix = GetPrefix(linkedRuleName);
     if (prefix == "stdlib")
     {
-        linkedRuleName = "Cm.Parsing.stdlib." + GetCommonName(linkedRuleName);
+        linkedRuleName = "cminor.parsing.stdlib." + GetCommonName(linkedRuleName);
     }
 }
 
@@ -292,4 +292,4 @@ void RuleLink::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

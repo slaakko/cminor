@@ -1,5 +1,5 @@
-#ifndef ProjectFile_hpp_8022
-#define ProjectFile_hpp_8022
+#ifndef ProjectFile_hpp_20689
+#define ProjectFile_hpp_20689
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -26,4 +26,4 @@ private:
 
 } } // namespace cpg.syntax
 
-#endif // ProjectFile_hpp_8022
+#endif // ProjectFile_hpp_20689

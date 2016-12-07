@@ -39,4 +39,4 @@ void UsingObject::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

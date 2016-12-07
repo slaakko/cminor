@@ -34,7 +34,7 @@ DeclaratorGrammar* DeclaratorGrammar::Create(cminor::parsing::ParsingDomain* par
     return grammar;
 }
 
-DeclaratorGrammar::DeclaratorGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("DeclaratorGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Cpp"), parsingDomain_)
+DeclaratorGrammar::DeclaratorGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("DeclaratorGrammar", parsingDomain_->GetNamespaceScope("cpg.cpp"), parsingDomain_)
 {
     SetOwner(0);
 }
@@ -56,7 +56,7 @@ cminor::pom::InitDeclaratorList* DeclaratorGrammar::Parse(const char* start, con
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -977,29 +977,29 @@ private:
 void DeclaratorGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Cpp.ExpressionGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cpg.cpp.DeclarationGrammar");
     if (!grammar0)
     {
-        grammar0 = cpg::cpp::ExpressionGrammar::Create(pd);
+        grammar0 = cpg::cpp::DeclarationGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Cpp.DeclarationGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cpg.cpp.ExpressionGrammar");
     if (!grammar1)
     {
-        grammar1 = cpg::cpp::DeclarationGrammar::Create(pd);
+        grammar1 = cpg::cpp::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void DeclaratorGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("AssignmentExpression", this, "ExpressionGrammar.AssignmentExpression"));
-    AddRuleLink(new cminor::parsing::RuleLink("ConstantExpression", this, "ExpressionGrammar.ConstantExpression"));
-    AddRuleLink(new cminor::parsing::RuleLink("IdExpression", this, "ExpressionGrammar.IdExpression"));
-    AddRuleLink(new cminor::parsing::RuleLink("ExpressionList", this, "ExpressionGrammar.ExpressionList"));
-    AddRuleLink(new cminor::parsing::RuleLink("TypeSpecifier", this, "DeclarationGrammar.TypeSpecifier"));
     AddRuleLink(new cminor::parsing::RuleLink("TypeName", this, "DeclarationGrammar.TypeName"));
+    AddRuleLink(new cminor::parsing::RuleLink("ConstantExpression", this, "ExpressionGrammar.ConstantExpression"));
     AddRuleLink(new cminor::parsing::RuleLink("CVQualifier", this, "DeclarationGrammar.CVQualifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("IdExpression", this, "ExpressionGrammar.IdExpression"));
+    AddRuleLink(new cminor::parsing::RuleLink("TypeSpecifier", this, "DeclarationGrammar.TypeSpecifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("ExpressionList", this, "ExpressionGrammar.ExpressionList"));
+    AddRuleLink(new cminor::parsing::RuleLink("AssignmentExpression", this, "ExpressionGrammar.AssignmentExpression"));
     AddRule(new InitDeclaratorListRule("InitDeclaratorList", GetScope(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::ActionParser("A0",

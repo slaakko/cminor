@@ -28,5 +28,5 @@ void Done()
     cminor::pom::Done();
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 

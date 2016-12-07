@@ -1,5 +1,5 @@
-#ifndef Literal_hpp_26870
-#define Literal_hpp_26870
+#ifndef Literal_hpp_20441
+#define Literal_hpp_20441
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -29,4 +29,4 @@ private:
 
 } } // namespace cpg.cpp
 
-#endif // Literal_hpp_26870
+#endif // Literal_hpp_20441

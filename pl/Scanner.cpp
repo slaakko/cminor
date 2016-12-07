@@ -296,4 +296,4 @@ void Scanner::PopCCRule()
 }
 
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

@@ -94,4 +94,4 @@ void ExpectationFailure::CombineInfo(const std::string& parentInfo)
     info = parentInfo + info;
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

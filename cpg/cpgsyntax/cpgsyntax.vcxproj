@@ -20,7 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpgsyntax.pl" />
-    <None Include="pcgsyntax.pp" />
+    <None Include="cpgsyntax.pp" />
     <None Include="Composite.parser" />
     <None Include="Element.parser" />
     <None Include="Grammar.parser" />

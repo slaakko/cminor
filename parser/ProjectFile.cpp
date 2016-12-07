@@ -483,7 +483,7 @@ private:
 void ProjectGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
         grammar0 = cminor::parsing::stdlib::Create(pd);
@@ -493,8 +493,8 @@ void ProjectGrammar::GetReferencedGrammars()
 
 void ProjectGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
-    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
+    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "cminor.parsing.stdlib.spaces_and_comments"));
     AddRule(new ProjectRule("Project", GetScope(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(

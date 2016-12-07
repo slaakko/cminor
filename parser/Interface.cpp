@@ -365,7 +365,7 @@ void InterfaceGrammar::GetReferencedGrammars()
         grammar0 = cminor::parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar1)
     {
         grammar1 = cminor::parsing::stdlib::Create(pd);
@@ -404,7 +404,7 @@ void InterfaceGrammar::CreateRules()
     AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new cminor::parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRule(new InterfaceRule("Interface", GetScope(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(

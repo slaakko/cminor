@@ -7,9 +7,9 @@
 
  ========================================================================*/
 
-[hpp]#include <../pl/Scope.hpp>
-[hpp]#include <../pl/Grammar.hpp>
-[cpp]#include <../pl/Rule.hpp>
+[hpp]#include <cminor/pl/Scope.hpp>
+[hpp]#include <cminor/pl/Grammar.hpp>
+[cpp]#include <cminor/pl/Rule.hpp>
 [cpp]#include <cminor/pom/Type.hpp>
 [cpp]#include <cminor/cpg/cpgcpp/Declarator.hpp>
 
@@ -20,8 +20,8 @@ namespace cpg.syntax
         using stdlib.qualified_id;
         using stdlib.identifier;
         using stdlib.string;
-        using Cm.Parsing.Cpp.DeclaratorGrammar.TypeId;
-        using Cm.Parsing.Cpp.DeclaratorGrammar.Declarator;
+        using cpg.cpp.DeclaratorGrammar.TypeId;
+        using cpg.cpp.DeclaratorGrammar.Declarator;
 
         RuleLink(cminor::parsing::Grammar* grammar)
                             ::= (keyword("using") identifier:aliasName '=' qualified_id:ruleName ';')

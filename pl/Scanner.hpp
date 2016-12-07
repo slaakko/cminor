@@ -102,6 +102,6 @@ private:
     std::stack<Rule*> ccRuleStack;
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_SCANNER_INCLUDED

@@ -84,6 +84,6 @@ private:
     int maxLogLineLength;
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_GRAMMAR_INCLUDED

@@ -703,7 +703,7 @@ private:
 void FunctionGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
         grammar0 = cminor::parsing::stdlib::Create(pd);
@@ -749,17 +749,17 @@ void FunctionGrammar::GetReferencedGrammars()
 
 void FunctionGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new cminor::parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
     AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new cminor::parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
     AddRuleLink(new cminor::parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
     AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
-    AddRuleLink(new cminor::parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
-    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
-    AddRuleLink(new cminor::parsing::RuleLink("long", this, "Cm.Parsing.stdlib.long"));
-    AddRuleLink(new cminor::parsing::RuleLink("bool", this, "Cm.Parsing.stdlib.bool"));
+    AddRuleLink(new cminor::parsing::RuleLink("string", this, "cminor.parsing.stdlib.string"));
+    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
+    AddRuleLink(new cminor::parsing::RuleLink("long", this, "cminor.parsing.stdlib.long"));
+    AddRuleLink(new cminor::parsing::RuleLink("bool", this, "cminor.parsing.stdlib.bool"));
     AddRule(new FunctionRule("Function", GetScope(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(

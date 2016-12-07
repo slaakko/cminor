@@ -33,7 +33,7 @@ ParserFileGrammar* ParserFileGrammar::Create(cminor::parsing::ParsingDomain* par
     return grammar;
 }
 
-ParserFileGrammar::ParserFileGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("ParserFileGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Syntax"), parsingDomain_)
+ParserFileGrammar::ParserFileGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("ParserFileGrammar", parsingDomain_->GetNamespaceScope("cpg.syntax"), parsingDomain_)
 {
     SetOwner(0);
 }
@@ -523,35 +523,35 @@ private:
 void ParserFileGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Cpp.DeclarationGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cpg.syntax.GrammarGrammar");
     if (!grammar0)
     {
-        grammar0 = cpg::cpp::DeclarationGrammar::Create(pd);
+        grammar0 = cpg::syntax::GrammarGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar1)
     {
         grammar1 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar1);
-    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.Syntax.GrammarGrammar");
+    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cpg.cpp.DeclarationGrammar");
     if (!grammar2)
     {
-        grammar2 = cpg::syntax::GrammarGrammar::Create(pd);
+        grammar2 = cpg::cpp::DeclarationGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
 }
 
 void ParserFileGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("newline", this, "Cm.Parsing.stdlib.newline"));
-    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new cminor::parsing::RuleLink("Grammar", this, "GrammarGrammar.Grammar"));
-    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
-    AddRuleLink(new cminor::parsing::RuleLink("UsingDeclaration", this, "Cm.Parsing.Cpp.DeclarationGrammar.UsingDeclaration"));
-    AddRuleLink(new cminor::parsing::RuleLink("NamespaceAliasDefinition", this, "Cm.Parsing.Cpp.DeclarationGrammar.NamespaceAliasDefinition"));
-    AddRuleLink(new cminor::parsing::RuleLink("UsingDirective", this, "Cm.Parsing.Cpp.DeclarationGrammar.UsingDirective"));
+    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
+    AddRuleLink(new cminor::parsing::RuleLink("newline", this, "cminor.parsing.stdlib.newline"));
+    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "cminor.parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new cminor::parsing::RuleLink("UsingDeclaration", this, "cpg.cpp.DeclarationGrammar.UsingDeclaration"));
+    AddRuleLink(new cminor::parsing::RuleLink("UsingDirective", this, "cpg.cpp.DeclarationGrammar.UsingDirective"));
+    AddRuleLink(new cminor::parsing::RuleLink("NamespaceAliasDefinition", this, "cpg.cpp.DeclarationGrammar.NamespaceAliasDefinition"));
     AddRule(new ParserFileRule("ParserFile", GetScope(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(

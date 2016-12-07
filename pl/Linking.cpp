@@ -202,4 +202,4 @@ void ExpandCode(ParsingDomain* parsingDomain)
     parsingDomain->GlobalNamespace()->Accept(visitor);
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

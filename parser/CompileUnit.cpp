@@ -1068,7 +1068,7 @@ void CompileUnitGrammar::GetReferencedGrammars()
         grammar0 = cminor::parser::ClassGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar1)
     {
         grammar1 = cminor::parsing::stdlib::Create(pd);
@@ -1108,7 +1108,7 @@ void CompileUnitGrammar::GetReferencedGrammars()
 
 void CompileUnitGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "cminor.parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new cminor::parsing::RuleLink("Function", this, "FunctionGrammar.Function"));

@@ -293,4 +293,4 @@ void AnyCharParser::Accept(Visitor& visitor)
 }
 
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

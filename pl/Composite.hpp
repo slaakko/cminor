@@ -134,6 +134,6 @@ private:
     Parser* right;
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_COMPOSITE_INCLUDED

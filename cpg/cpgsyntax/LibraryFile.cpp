@@ -31,7 +31,7 @@ LibraryFileGrammar* LibraryFileGrammar::Create(cminor::parsing::ParsingDomain* p
     return grammar;
 }
 
-LibraryFileGrammar::LibraryFileGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("LibraryFileGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Syntax"), parsingDomain_)
+LibraryFileGrammar::LibraryFileGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("LibraryFileGrammar", parsingDomain_->GetNamespaceScope("cpg.syntax"), parsingDomain_)
 {
     SetOwner(0);
 }
@@ -423,26 +423,26 @@ private:
 void LibraryFileGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cpg.syntax.ElementGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parsing::stdlib::Create(pd);
+        grammar0 = cpg::syntax::ElementGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Syntax.ElementGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar1)
     {
-        grammar1 = cpg::syntax::ElementGrammar::Create(pd);
+        grammar1 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void LibraryFileGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
     AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "ElementGrammar.Identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "cminor.parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
     AddRuleLink(new cminor::parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
     AddRule(new LibraryFileRule("LibraryFile", GetScope(),
         new cminor::parsing::NonterminalParser("NamespaceContent", "NamespaceContent", 1)));

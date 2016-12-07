@@ -9,10 +9,10 @@
 
 [cpp]#include <cminor/cpg/cpgcpp/Declaration.hpp>
 [hpp]#include <cminor/cpg/cpgsyntax/ParserFileContent.hpp>
-[cpp]#include <cpgsyntax/Element.hpp>
-[cpp]#include <cpgsyntax/Grammar.hpp>
-[cpp]#include <../pl/Namespace.hpp>
-[cpp]#include <../pl/Grammar.hpp>
+[cpp]#include <cminor/cpg/cpgsyntax/Element.hpp>
+[cpp]#include <cminor/cpg/cpgsyntax/Grammar.hpp>
+[cpp]#include <cminor/pl/Namespace.hpp>
+[cpp]#include <cminor/pl/Grammar.hpp>
 
 namespace cpg.syntax
 {
@@ -22,9 +22,9 @@ namespace cpg.syntax
         using stdlib.newline;
         using stdlib.qualified_id;
         using GrammarGrammar.Grammar;
-        using Cm.Parsing.Cpp.DeclarationGrammar.UsingDeclaration;
-        using Cm.Parsing.Cpp.DeclarationGrammar.UsingDirective;
-        using Cm.Parsing.Cpp.DeclarationGrammar.NamespaceAliasDefinition;
+        using cpg.cpp.DeclarationGrammar.UsingDeclaration;
+        using cpg.cpp.DeclarationGrammar.UsingDirective;
+        using cpg.cpp.DeclarationGrammar.NamespaceAliasDefinition;
 
         skip spaces_and_comments;
 

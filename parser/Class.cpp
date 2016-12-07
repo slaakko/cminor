@@ -1564,7 +1564,7 @@ void ClassGrammar::GetReferencedGrammars()
         grammar9 = cminor::parser::ConstantGrammar::Create(pd);
     }
     AddGrammarReference(grammar9);
-    cminor::parsing::Grammar* grammar10 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar10 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar10)
     {
         grammar10 = cminor::parsing::stdlib::Create(pd);
@@ -1586,7 +1586,7 @@ void ClassGrammar::CreateRules()
     AddRuleLink(new cminor::parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
     AddRuleLink(new cminor::parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
     AddRuleLink(new cminor::parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRule(new ClassRule("Class", GetScope(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(

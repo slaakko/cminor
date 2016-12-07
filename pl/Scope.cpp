@@ -182,4 +182,4 @@ Namespace* Scope::GetNamespace(const std::string& fullNamespaceName) const
     return nullptr;
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

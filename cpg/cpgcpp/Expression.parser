@@ -12,8 +12,8 @@
 [cpp]#include <cminor/cpg/cpgcpp/Literal.hpp>
 [cpp]#include <cminor/cpg/cpgcpp/Identifier.hpp>
 [cpp]#include <cminor/machine/TextUtils.hpp>
-[hpp]#include <cminor/cpg/cpgcpp/Expression.hpp>
-[cpp]#include <cminor/cpg/cpgcpp/Type.hpp>
+[hpp]#include <cminor/pom/Expression.hpp>
+[cpp]#include <cminor/pom/Type.hpp>
 
 namespace cpg.cpp
 {
@@ -31,7 +31,7 @@ namespace cpg.cpp
         using DeclarationGrammar.TypeName;
 
         Expression: cminor::pom::CppObject*
-                            ::= AssignmentExpression:left{ value = left; } (',' AssignmentExpression:right{ value = new BinaryOpExpr(value, comma, 0, right); })*
+                            ::= AssignmentExpression:left{ value = left; } (',' AssignmentExpression:right{ value = new BinaryOpExpr(value, Operator::comma, 0, right); })*
                             ;
 
         ConstantExpression: cminor::pom::CppObject*

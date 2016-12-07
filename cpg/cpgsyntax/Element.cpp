@@ -31,7 +31,7 @@ ElementGrammar* ElementGrammar::Create(cminor::parsing::ParsingDomain* parsingDo
     return grammar;
 }
 
-ElementGrammar::ElementGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("ElementGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Syntax"), parsingDomain_)
+ElementGrammar::ElementGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("ElementGrammar", parsingDomain_->GetNamespaceScope("cpg.syntax"), parsingDomain_)
 {
     SetOwner(0);
     keywords0.push_back("anychar");
@@ -618,27 +618,27 @@ private:
 void ElementGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Cpp.DeclaratorGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = cpg::cpp::DeclaratorGrammar::Create(pd);
+        grammar0 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cpg.cpp.DeclaratorGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parsing::stdlib::Create(pd);
+        grammar1 = cpg::cpp::DeclaratorGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void ElementGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("Declarator", this, "Cm.Parsing.Cpp.DeclaratorGrammar.Declarator"));
-    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
-    AddRuleLink(new cminor::parsing::RuleLink("TypeId", this, "Cm.Parsing.Cpp.DeclaratorGrammar.TypeId"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
+    AddRuleLink(new cminor::parsing::RuleLink("TypeId", this, "cpg.cpp.DeclaratorGrammar.TypeId"));
+    AddRuleLink(new cminor::parsing::RuleLink("string", this, "cminor.parsing.stdlib.string"));
+    AddRuleLink(new cminor::parsing::RuleLink("Declarator", this, "cpg.cpp.DeclaratorGrammar.Declarator"));
     AddRule(new RuleLinkRule("RuleLink", GetScope(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::ActionParser("A0",

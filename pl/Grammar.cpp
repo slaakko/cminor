@@ -215,4 +215,4 @@ void Grammar::AddRuleLink(RuleLink* ruleLink)
     ruleLinks.insert(ruleLink);
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

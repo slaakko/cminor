@@ -172,4 +172,4 @@ void ParsingDomainDone()
     ParsingDomainRepository::Done();
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

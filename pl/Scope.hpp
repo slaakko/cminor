@@ -42,7 +42,7 @@ private:
     Scope* GetGlobalScope() const;
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_SCOPE_INCLUDED
 

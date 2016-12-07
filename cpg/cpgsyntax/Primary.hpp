@@ -1,5 +1,5 @@
-#ifndef Primary_hpp_22788
-#define Primary_hpp_22788
+#ifndef Primary_hpp_20689
+#define Primary_hpp_20689
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -31,4 +31,4 @@ private:
 
 } } // namespace cpg.syntax
 
-#endif // Primary_hpp_22788
+#endif // Primary_hpp_20689

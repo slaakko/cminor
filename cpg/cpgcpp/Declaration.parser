@@ -10,8 +10,8 @@
 [cpp]#include <cminor/cpg/cpgcpp/Declarator.hpp>
 [cpp]#include <cminor/cpg/cpgcpp/Identifier.hpp>
 [cpp]#include <cminor/cpg/cpgcpp/Expression.hpp>
-[hpp]#include <cminor/cpg/cpgcpp/Declaration.hpp>
-[cpp]#include <cminor/cpg/cpgcpp/Type.hpp>
+[hpp]#include <cminor/pom/Declaration.hpp>
+[cpp]#include <cminor/pom/Type.hpp>
 
 namespace cpg.cpp
 {

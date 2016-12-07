@@ -35,6 +35,6 @@ private:
     std::unique_ptr<cminor::pom::UsingObject> ownedSubject;
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_NAMESPACE_INCLUDED

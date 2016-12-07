@@ -58,6 +58,6 @@ private:
     Span span;
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_PARSING_OBJECT_INCLUDED

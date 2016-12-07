@@ -29,7 +29,7 @@ PrimitiveGrammar* PrimitiveGrammar::Create(cminor::parsing::ParsingDomain* parsi
     return grammar;
 }
 
-PrimitiveGrammar::PrimitiveGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("PrimitiveGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Syntax"), parsingDomain_)
+PrimitiveGrammar::PrimitiveGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("PrimitiveGrammar", parsingDomain_->GetNamespaceScope("cpg.syntax"), parsingDomain_)
 {
     SetOwner(0);
 }
@@ -1154,13 +1154,13 @@ private:
 void PrimitiveGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
         grammar0 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Syntax.ElementGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cpg.syntax.ElementGrammar");
     if (!grammar1)
     {
         grammar1 = cpg::syntax::ElementGrammar::Create(pd);
@@ -1170,10 +1170,10 @@ void PrimitiveGrammar::GetReferencedGrammars()
 
 void PrimitiveGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
-    AddRuleLink(new cminor::parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
-    AddRuleLink(new cminor::parsing::RuleLink("escape", this, "Cm.Parsing.stdlib.escape"));
+    AddRuleLink(new cminor::parsing::RuleLink("char", this, "cminor.parsing.stdlib.char"));
     AddRuleLink(new cminor::parsing::RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
+    AddRuleLink(new cminor::parsing::RuleLink("string", this, "cminor.parsing.stdlib.string"));
+    AddRuleLink(new cminor::parsing::RuleLink("escape", this, "cminor.parsing.stdlib.escape"));
     AddRuleLink(new cminor::parsing::RuleLink("StringArray", this, "ElementGrammar.StringArray"));
     AddRule(new PrimitiveRule("Primitive", GetScope(),
         new cminor::parsing::AlternativeParser(

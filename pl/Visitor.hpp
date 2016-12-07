@@ -102,6 +102,6 @@ public:
     virtual void Visit(RuleLink& link) {}
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_VISITOR_INCLUDED

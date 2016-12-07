@@ -88,4 +88,4 @@ void ActionParser::Accept(Visitor& visitor)
 }
 
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

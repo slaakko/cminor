@@ -7,10 +7,10 @@
 
  ========================================================================*/
 
-[hpp]#include <../pl/ParsingDomain.hpp>
-[cpp]#include <cpgsyntax/Element.hpp>
-[cpp]#include <../pl/Rule.hpp>
-[cpp]#include <../pl/Namespace.hpp>
+[hpp]#include <cminor/pl/ParsingDomain.hpp>
+[cpp]#include <cminor/cpg/cpgsyntax/Element.hpp>
+[cpp]#include <cminor/pl/Rule.hpp>
+[cpp]#include <cminor/pl/Namespace.hpp>
 
 namespace cpg.syntax
 {

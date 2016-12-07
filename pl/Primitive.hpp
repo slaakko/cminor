@@ -117,6 +117,6 @@ public:
     virtual void Accept(Visitor& visitor);
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_PRIMITIVE_INCLUDED

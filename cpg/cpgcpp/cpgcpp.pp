@@ -1,4 +1,4 @@
-project Cm.Parsing.Cpp;
+project cpg.cpp;
 
 reference <../../pl/StdLib.pl>;
 source <Declaration.parser>;

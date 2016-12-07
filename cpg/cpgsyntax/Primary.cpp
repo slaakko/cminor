@@ -36,7 +36,7 @@ PrimaryGrammar* PrimaryGrammar::Create(cminor::parsing::ParsingDomain* parsingDo
     return grammar;
 }
 
-PrimaryGrammar::PrimaryGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("PrimaryGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Syntax"), parsingDomain_)
+PrimaryGrammar::PrimaryGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("PrimaryGrammar", parsingDomain_->GetNamespaceScope("cpg.syntax"), parsingDomain_)
 {
     SetOwner(0);
 }
@@ -770,34 +770,34 @@ private:
 void PrimaryGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Syntax.CompositeGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cpg.syntax.PrimitiveGrammar");
     if (!grammar0)
     {
-        grammar0 = cpg::syntax::CompositeGrammar::Create(pd);
+        grammar0 = cpg::syntax::PrimitiveGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Syntax.PrimitiveGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cpg.cpp.ExpressionGrammar");
     if (!grammar1)
     {
-        grammar1 = cpg::syntax::PrimitiveGrammar::Create(pd);
+        grammar1 = cpg::cpp::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.Cpp.ExpressionGrammar");
+    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cpg.cpp.StatementGrammar");
     if (!grammar2)
     {
-        grammar2 = cpg::cpp::ExpressionGrammar::Create(pd);
+        grammar2 = cpg::cpp::StatementGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parsing.Syntax.ElementGrammar");
+    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cpg.syntax.ElementGrammar");
     if (!grammar3)
     {
         grammar3 = cpg::syntax::ElementGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parsing.Cpp.StatementGrammar");
+    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cpg.syntax.CompositeGrammar");
     if (!grammar4)
     {
-        grammar4 = cpg::cpp::StatementGrammar::Create(pd);
+        grammar4 = cpg::syntax::CompositeGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
 }
@@ -805,10 +805,10 @@ void PrimaryGrammar::GetReferencedGrammars()
 void PrimaryGrammar::CreateRules()
 {
     AddRuleLink(new cminor::parsing::RuleLink("Primitive", this, "PrimitiveGrammar.Primitive"));
-    AddRuleLink(new cminor::parsing::RuleLink("ExpressionList", this, "Cm.Parsing.Cpp.ExpressionGrammar.ExpressionList"));
-    AddRuleLink(new cminor::parsing::RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
+    AddRuleLink(new cminor::parsing::RuleLink("CompoundStatement", this, "cpg.cpp.StatementGrammar.CompoundStatement"));
     AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "ElementGrammar.Identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("CompoundStatement", this, "Cm.Parsing.Cpp.StatementGrammar.CompoundStatement"));
+    AddRuleLink(new cminor::parsing::RuleLink("ExpressionList", this, "cpg.cpp.ExpressionGrammar.ExpressionList"));
+    AddRuleLink(new cminor::parsing::RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
     AddRule(new PrimaryRule("Primary", GetScope(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(

@@ -92,7 +92,7 @@ KeywordGrammar::KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_): 
 void KeywordGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
         grammar0 = cminor::parsing::stdlib::Create(pd);
@@ -102,7 +102,7 @@ void KeywordGrammar::GetReferencedGrammars()
 
 void KeywordGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRule(new cminor::parsing::Rule("Keyword", GetScope(),
         new cminor::parsing::KeywordListParser("identifier", keywords0)));
 }

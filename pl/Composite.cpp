@@ -390,4 +390,4 @@ void ListParser::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing

@@ -28,7 +28,7 @@ stdlib* stdlib::Create(cminor::parsing::ParsingDomain* parsingDomain)
     return grammar;
 }
 
-stdlib::stdlib(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("stdlib", parsingDomain_->GetNamespaceScope("Cm.Parsing"), parsingDomain_)
+stdlib::stdlib(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("stdlib", parsingDomain_->GetNamespaceScope("cminor.parsing"), parsingDomain_)
 {
     SetOwner(0);
 }

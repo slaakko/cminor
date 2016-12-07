@@ -39,7 +39,7 @@ private:
     int length;
 };
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_MATCH_INCLUDED
 

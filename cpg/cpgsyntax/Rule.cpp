@@ -30,7 +30,7 @@ RuleGrammar* RuleGrammar::Create(cminor::parsing::ParsingDomain* parsingDomain)
     return grammar;
 }
 
-RuleGrammar::RuleGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("RuleGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Syntax"), parsingDomain_)
+RuleGrammar::RuleGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("RuleGrammar", parsingDomain_->GetNamespaceScope("cpg.syntax"), parsingDomain_)
 {
     SetOwner(0);
 }
@@ -264,22 +264,22 @@ private:
 void RuleGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Syntax.ElementGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cpg.syntax.ElementGrammar");
     if (!grammar0)
     {
         grammar0 = cpg::syntax::ElementGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cpg.syntax.CompositeGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parsing::stdlib::Create(pd);
+        grammar1 = cpg::syntax::CompositeGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.Syntax.CompositeGrammar");
+    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar2)
     {
-        grammar2 = cpg::syntax::CompositeGrammar::Create(pd);
+        grammar2 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar2);
 }
@@ -288,8 +288,8 @@ void RuleGrammar::CreateRules()
 {
     AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "ElementGrammar.Identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
-    AddRuleLink(new cminor::parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
     AddRuleLink(new cminor::parsing::RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
+    AddRuleLink(new cminor::parsing::RuleLink("string", this, "cminor.parsing.stdlib.string"));
     AddRule(new RuleRule("Rule", GetScope(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(

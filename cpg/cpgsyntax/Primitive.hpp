@@ -1,5 +1,5 @@
-#ifndef Primitive_hpp_8022
-#define Primitive_hpp_8022
+#ifndef Primitive_hpp_20689
+#define Primitive_hpp_20689
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -39,4 +39,4 @@ private:
 
 } } // namespace cpg.syntax
 
-#endif // Primitive_hpp_8022
+#endif // Primitive_hpp_20689

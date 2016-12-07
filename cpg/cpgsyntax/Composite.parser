@@ -7,10 +7,10 @@
 
  ========================================================================*/
 
-[hpp]#include <../pl/Scope.hpp>
-[hpp]#include <../pl/Parser.hpp>
-[cpp]#include <../pl/Composite.hpp>
-[cpp]#include <cpgsyntax/Primary.hpp>
+[hpp]#include <cminor/pl/Scope.hpp>
+[hpp]#include <cminor/pl/Parser.hpp>
+[cpp]#include <cminor/pl/Composite.hpp>
+[cpp]#include <cminor/cpg/cpgsyntax/Primary.hpp>
 
 namespace cpg.syntax
 {

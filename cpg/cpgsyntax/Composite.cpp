@@ -30,7 +30,7 @@ CompositeGrammar* CompositeGrammar::Create(cminor::parsing::ParsingDomain* parsi
     return grammar;
 }
 
-CompositeGrammar::CompositeGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("CompositeGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Syntax"), parsingDomain_)
+CompositeGrammar::CompositeGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("CompositeGrammar", parsingDomain_->GetNamespaceScope("cpg.syntax"), parsingDomain_)
 {
     SetOwner(0);
 }
@@ -670,7 +670,7 @@ private:
 void CompositeGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Syntax.PrimaryGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cpg.syntax.PrimaryGrammar");
     if (!grammar0)
     {
         grammar0 = cpg::syntax::PrimaryGrammar::Create(pd);

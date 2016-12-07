@@ -29,7 +29,7 @@ LiteralGrammar* LiteralGrammar::Create(cminor::parsing::ParsingDomain* parsingDo
     return grammar;
 }
 
-LiteralGrammar::LiteralGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("LiteralGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Cpp"), parsingDomain_)
+LiteralGrammar::LiteralGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("LiteralGrammar", parsingDomain_->GetNamespaceScope("cpg.cpp"), parsingDomain_)
 {
     SetOwner(0);
 }
@@ -51,7 +51,7 @@ cminor::pom::Literal* LiteralGrammar::Parse(const char* start, const char* end, 
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {

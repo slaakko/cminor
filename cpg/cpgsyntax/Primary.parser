@@ -7,14 +7,14 @@
 
  ========================================================================*/
 
-[hpp]#include <../pl/Parser.hpp>
-[hpp]#include <../pl/Scope.hpp>
+[hpp]#include <cminor/pl/Parser.hpp>
+[hpp]#include <cminor/pl/Scope.hpp>
 [cpp]#include <cminor/cpg/cpgcpp/Expression.hpp>
 [cpp]#include <cminor/cpg/cpgcpp/Statement.hpp>
-[cpp]#include <cpgsyntax/Primitive.hpp>
-[cpp]#include <cpgsyntax/Composite.hpp>
-[cpp]#include <cpgsyntax/Element.hpp>
-[cpp]#include <../pl/Nonterminal.hpp>
+[cpp]#include <cminor/cpg/cpgsyntax/Primitive.hpp>
+[cpp]#include <cminor/cpg/cpgsyntax/Composite.hpp>
+[cpp]#include <cminor/cpg/cpgsyntax/Element.hpp>
+[cpp]#include <cminor/pl/Nonterminal.hpp>
 [cpp]#include <cminor/pom/Statement.hpp>
 
 namespace cpg.syntax
@@ -26,8 +26,8 @@ namespace cpg.syntax
         using PrimitiveGrammar.Primitive;
         using ElementGrammar.Identifier;
         using CompositeGrammar.Alternative;
-        using Cm.Parsing.Cpp.ExpressionGrammar.ExpressionList;
-        using Cm.Parsing.Cpp.StatementGrammar.CompoundStatement;
+        using cpg.cpp.ExpressionGrammar.ExpressionList;
+        using cpg.cpp.StatementGrammar.CompoundStatement;
 
         Primary(cminor::parsing::Scope* enclosingScope): cminor::parsing::Parser*
                     ::=

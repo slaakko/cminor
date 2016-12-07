@@ -33,7 +33,7 @@ DeclarationGrammar* DeclarationGrammar::Create(cminor::parsing::ParsingDomain* p
     return grammar;
 }
 
-DeclarationGrammar::DeclarationGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("DeclarationGrammar", parsingDomain_->GetNamespaceScope("Cm.Parsing.Cpp"), parsingDomain_)
+DeclarationGrammar::DeclarationGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("DeclarationGrammar", parsingDomain_->GetNamespaceScope("cpg.cpp"), parsingDomain_)
 {
     SetOwner(0);
     keywords0.push_back("auto");
@@ -71,7 +71,7 @@ cminor::pom::CppObject* DeclarationGrammar::Parse(const char* start, const char*
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -1030,25 +1030,25 @@ private:
 void DeclarationGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cpg.cpp.IdentifierGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parsing::stdlib::Create(pd);
+        grammar0 = cpg::cpp::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Cpp.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar1)
     {
-        grammar1 = cpg::cpp::IdentifierGrammar::Create(pd);
+        grammar1 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar1);
-    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.Cpp.DeclaratorGrammar");
+    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cpg.cpp.DeclaratorGrammar");
     if (!grammar2)
     {
         grammar2 = cpg::cpp::DeclaratorGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parsing.Cpp.ExpressionGrammar");
+    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cpg.cpp.ExpressionGrammar");
     if (!grammar3)
     {
         grammar3 = cpg::cpp::ExpressionGrammar::Create(pd);
@@ -1058,12 +1058,12 @@ void DeclarationGrammar::GetReferencedGrammars()
 
 void DeclarationGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("InitDeclaratorList", this, "DeclaratorGrammar.InitDeclaratorList"));
-    AddRuleLink(new cminor::parsing::RuleLink("TypeId", this, "DeclaratorGrammar.TypeId"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new cminor::parsing::RuleLink("InitDeclaratorList", this, "DeclaratorGrammar.InitDeclaratorList"));
     AddRuleLink(new cminor::parsing::RuleLink("AssignmentExpression", this, "ExpressionGrammar.AssignmentExpression"));
+    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("TypeId", this, "DeclaratorGrammar.TypeId"));
     AddRule(new BlockDeclarationRule("BlockDeclaration", GetScope(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(

@@ -60,4 +60,4 @@ std::string XmlEscape(const std::string& s)
     return result;
 }
 
-} } // namespace Cm::Parsing
+} } // namespace cminor::parsing
