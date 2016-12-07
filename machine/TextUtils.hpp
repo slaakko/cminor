@@ -1,11 +1,7 @@
-/*========================================================================
-    Copyright (c) 2012-2016 Seppo Laakko
-    http://sourceforge.net/projects/cmajor/
- 
-    Distributed under the GNU General Public License, version 3 (GPLv3).
-    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
-
- ========================================================================*/
+// =================================
+// Copyright (c) 2017 Seppo Laakko
+// Distributed under the MIT license
+// =================================
 
 #ifndef CMINOR_MACHINE_TEXTUTILS_INCLUDED
 #define CMINOR_MACHINE_TEXTUTILS_INCLUDED
@@ -38,12 +34,6 @@ std::string ToLower(const std::string& s);
 std::string ToString(double x);
 std::string ToString(double x, int maxNumDecimals);
 std::string ToString(double x, int minNumDecimals, int maxNumDecimals);
-std::vector<uint32_t> ToUtf32(const std::string& utf8Str);
-std::vector<uint32_t> ToUtf32(const std::vector<uint16_t>& utf16Str);
-std::vector<uint16_t> ToUtf16(const std::vector<uint32_t>& utf32Str);
-std::vector<uint16_t> ToUtf16(const std::string& utf8Str);
-std::string ToUtf8(const std::vector<uint32_t>& utf32Str);
-std::string ToUtf8(const std::vector<uint16_t>& utf16Str);
 
 } } // namespace cminor::machine
 

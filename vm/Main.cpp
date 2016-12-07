@@ -13,20 +13,22 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
+#include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/vmlib/VmFunction.hpp>
 #include <cminor/vmlib/File.hpp>
 #include <cminor/machine/Path.hpp>
+#include <cminor/machine/TextUtils.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
 #include <chrono>
 #include <cminor/machine/Unicode.hpp>
+#include <sstream>
 
 using namespace cminor::machine;
 using namespace cminor::symbols;
 using namespace cminor::ast;
 using namespace cminor::vmlib;
-using namespace cminor::machine;
 
 struct InitDone
 {
@@ -94,6 +96,7 @@ int main(int argc, const char** argv)
         State state = State::vmOptions;
         std::string programName;
         std::vector<std::string> arguments;
+        uint64_t segmentSizeMB = 0;
         for (int i = 1; i < argc; ++i)
         {
             std::string arg = argv[i];
@@ -108,9 +111,34 @@ int main(int argc, const char** argv)
                             PrintHelp();
                             return 0;
                         }
+                        else if (arg.find('=', 0) != std::string::npos)
+                        {
+                            std::vector<std::string> components = Split(arg, '=');
+                            if (components.size() != 2)
+                            {
+                                throw std::runtime_error("invalid argument '" + arg + "'");
+                            }
+                            if (components[0] == "-s")
+                            {
+                                std::stringstream s;
+                                s.str(components[1]);
+                                if (!(s >> segmentSizeMB))
+                                {
+                                    throw std::runtime_error("segment size not an integer type: " + arg);
+                                }
+                                else
+                                {
+                                    SetSegmentSize(segmentSizeMB * 1024 * 1024);
+                                }
+                            }
+                            else
+                            {
+                                throw std::runtime_error("unknown run option '" + arg + "'");
+                            }
+                        }
                         else
                         {
-                            throw std::runtime_error("unknown argument '" + arg + "'");
+                            throw std::runtime_error("unknown run option '" + arg + "'");
                         }
                     }
                     else
@@ -161,7 +189,31 @@ int main(int argc, const char** argv)
         setClassDataInstructions.clear();
         classTypes.clear();
         classTemplateSpecializationNames.clear();
-        machine.Run();
+        std::vector<utf32_string> programArguments;
+        for (const std::string& arg : arguments)
+        {
+            programArguments.push_back(ToUtf32(arg));
+        }
+        FunctionSymbol* mainFun = assembly.GetSymbolTable().GetMainFunction();
+        if (!mainFun)
+        {
+            throw std::runtime_error("program has no main function");
+        }
+        ObjectType* argsArrayObjectType = nullptr;
+        if (mainFun->Arity() == 1)
+        {
+            TypeSymbol* argsParamType = mainFun->Parameters()[0]->GetType();
+            ArrayTypeSymbol* argsArrayType = dynamic_cast<ArrayTypeSymbol*>(argsParamType);
+            if (argsArrayType && argsArrayType->ElementType() == assembly.GetSymbolTable().GetType(U"System.String"))
+            {
+                argsArrayObjectType = argsArrayType->GetObjectType();
+            }
+            else
+            {
+                throw Exception("parameter type of program main function is not string[]", mainFun->GetSpan());
+            }
+        }
+        machine.Run(programArguments, argsArrayObjectType);
     }
     catch (const std::exception& ex)
     {

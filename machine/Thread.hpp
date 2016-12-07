@@ -34,7 +34,7 @@ public:
     std::vector<Frame>& Frames() { return frames; }
     const std::vector<Frame>& Frames() const { return frames; }
     void IncInstructionCount() { ++instructionCount;  }
-    void Run();
+    void Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void Step();
     void Next();
     void RunDebug();

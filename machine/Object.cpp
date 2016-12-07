@@ -667,6 +667,24 @@ int32_t ManagedMemoryPool::GetNumArrayElements(ObjectReference arr)
     }
 }
 
+ObjectReference ManagedMemoryPool::CreateStringArray(Thread& thread, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
+{
+    ObjectReference arrayReference = CreateObject(thread, argsArrayObjectType);
+    Object& object = GetObject(arrayReference);
+    ClassData* classData = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String[]"));
+    object.SetField(IntegralValue(classData), 0);
+    int32_t length = int32_t(programArguments.size());
+    object.SetField(IntegralValue(length, ValueType::intType), 1);
+    AllocateArrayElements(thread, arrayReference, TypeTable::Instance().GetType(U"System.String"), length);
+    for (int32_t i = 0; i < length; ++i)
+    {
+        const utf32_string& arg = programArguments[i];
+        ObjectReference argStr = CreateString(thread, arg);
+        SetArrayElement(arrayReference, i, argStr);
+    }
+    return arrayReference;
+}
+
 MemPtr ManagedMemoryPool::GetMemPtr(AllocationHandle handle) const
 {
     auto it = allocations.find(handle);

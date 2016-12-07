@@ -11,7 +11,7 @@
 namespace cminor { namespace machine {
 
 Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this),
-    garbageCollector(*this, defaultGarbageCollectionIntervalMs), gen1Arena(ArenaId::gen1Arena, defaultArenaSize), gen2Arena(ArenaId::gen2Arena, defaultArenaSize), exiting(), exited(), nextFrameId(0)
+    garbageCollector(*this, defaultGarbageCollectionIntervalMs), gen1Arena(ArenaId::gen1Arena, GetSegmentSize()), gen2Arena(ArenaId::gen2Arena, GetSegmentSize()), exiting(), exited(), nextFrameId(0)
 {
     // no operation:
     rootInst.SetInst(0x00, new NopInst());
@@ -532,7 +532,7 @@ void Machine::Start()
     threads.push_back(std::unique_ptr<Thread>(new Thread(*this, *mainFun)));
 }
 
-void Machine::Run()
+void Machine::Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
 {
     Function* mainFun = FunctionTable::Instance().GetMain();
     if (!mainFun)
@@ -541,7 +541,7 @@ void Machine::Run()
     }
     //RunGarbageCollector();
     threads.push_back(std::unique_ptr<Thread>(new Thread(*this, *mainFun)));
-    MainThread().Run();
+    MainThread().Run(programArguments, argsArrayObjectType);
 }
 
 void Machine::AddInst(Instruction* inst)

@@ -7,6 +7,7 @@
 #define CMINOR_SYMBOLS_SYMBOL_INCLUDED
 #include <cminor/machine/Constant.hpp>
 #include <cminor/machine/Type.hpp>
+#include <cminor/machine/CodeFormatter.hpp>
 #include <cminor/ast/Function.hpp>
 #include <cminor/ast/Class.hpp>
 #include <cminor/ast/Statement.hpp>
@@ -170,6 +171,7 @@ public:
     virtual void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol);
     void Merge(const Symbol& that);
     virtual void Evaluate(SymbolEvaluator* evaluator, const Span& span);
+    virtual void Dump(CodeFormatter& formatter, Assembly* assembly);
 private:
     Span span;
     Constant name;
@@ -262,6 +264,7 @@ public:
     FunctionGroupSymbol* MakeFunctionGroupSymbol(StringPtr groupName, const Span& span);
     IndexerGroupSymbol* MakeIndexerGroupSymbol(const Span& span);
     void Evaluate(SymbolEvaluator* evaluator, const Span& span) override;
+    void Dump(CodeFormatter& formatter, Assembly* assembly) override;
 private:
     ContainerScope containerScope;
     std::vector<std::unique_ptr<Symbol>> symbols;

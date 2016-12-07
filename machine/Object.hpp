@@ -258,6 +258,7 @@ public:
     IntegralValue GetArrayElement(ObjectReference reference, int32_t index);
     void SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue);
     int32_t GetNumArrayElements(ObjectReference arr);
+    ObjectReference CreateStringArray(Thread& thread, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void ResetObjectsLiveFlag();
     void MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena);
     MemPtr GetMemPtr(AllocationHandle handle) const;

@@ -54,8 +54,14 @@ void Thread::RunToEnd()
     }
 }
 
-void Thread::Run()
+void Thread::Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
 {
+    Frame* frame = &frames.back();
+    if (argsArrayObjectType)
+    {
+        ObjectReference args = frame->GetManagedMemoryPool().CreateStringArray(*this, programArguments, argsArrayObjectType);
+        frame->OpStack().Push(args);
+    }
     RunToEnd();
     std::lock_guard<std::mutex> lock(mtx);
     paused.store(true);

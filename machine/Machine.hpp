@@ -18,7 +18,7 @@ public:
     Machine();
     ~Machine();
     void Start();
-    void Run();
+    void Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void AddInst(Instruction* inst);
     std::unique_ptr<Instruction> CreateInst(const std::string& instName) const;
     std::unique_ptr<Instruction> CreateInst(const std::string& instGroupName, const std::string& typeName) const;

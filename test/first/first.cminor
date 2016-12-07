@@ -10,3 +10,8 @@ namespace Alpha.Beta
         }
     }
 }
+
+void main(string[] args)
+{
+    return;
+}

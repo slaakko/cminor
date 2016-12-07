@@ -211,6 +211,50 @@ void GenerateCodeForClassTemplateSpecializations(Assembly& assembly, std::unorde
     GenerateCode(synthesizedCompileUnit, assembly.GetMachine());
 }
 
+void CheckValidityOfMainFunction(Target target, Assembly& assembly)
+{
+    if (target != Target::program) return;
+    FunctionSymbol* mainFunctionSymbol = assembly.GetSymbolTable().GetMainFunction();
+    if (!mainFunctionSymbol)
+    {
+        throw Exception("program has no main function", Span());
+    }
+    Assert(mainFunctionSymbol->ReturnType(), "main function has no return type");
+    if (!mainFunctionSymbol->ReturnType()->IsVoidType() && mainFunctionSymbol->ReturnType() != assembly.GetSymbolTable().GetType(U"System.Int32"))
+    {
+        throw Exception("main function should either be void or return an int", mainFunctionSymbol->GetSpan());
+    }
+    if (mainFunctionSymbol->Arity() != 0)
+    {
+        bool valid = true;
+        if (mainFunctionSymbol->Arity() != 1)
+        {
+            valid = false;
+        }
+        else
+        {
+            TypeSymbol* paramType = mainFunctionSymbol->Parameters()[0]->GetType();
+            ArrayTypeSymbol* arrayType = dynamic_cast<ArrayTypeSymbol*>(paramType);
+            if (arrayType)
+            {
+                TypeSymbol* elementType = arrayType->ElementType();
+                if (elementType->FullName() != U"System.String")
+                {
+                    valid = false;
+                }
+            }
+            else
+            {
+                valid = false;
+            }
+        }
+        if (!valid)
+        {
+            throw Exception("main function should either have no parameters or have one string[] parameter", mainFunctionSymbol->GetSpan());
+        }
+    }
+}
+
 void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
 {
     FunctionTable::Init();
@@ -219,7 +263,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     std::string config = GetConfig();
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "Building project '" << project->Name() << "(" << project->FilePath() << " using " << config << " configuration." << std::endl;
+        std::cout << "Building project '" << project->Name() << "' (" << project->FilePath() << ") using " << config << " configuration." << std::endl;
     }
     std::vector<std::unique_ptr<CompileUnitNode>> compileUnits = ParseSources(project->SourceFilePaths());
     utf32_string assemblyName = ToUtf32(project->Name());
@@ -263,6 +307,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     }
     GenerateCodeForCreatedArrays(assembly, classTemplateSpecializations);
     GenerateCodeForClassTemplateSpecializations(assembly, std::move(classTemplateSpecializations));
+    CheckValidityOfMainFunction(project->GetTarget(), assembly);
     boost::filesystem::path obp(assembly.FilePath());
     obp.remove_filename();
     boost::filesystem::create_directories(obp);
@@ -270,7 +315,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     assembly.Write(writer);
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "Project '" << project->Name() << "build successfully." << std::endl;
+        std::cout << "Project '" << project->Name() << "' built successfully." << std::endl;
         std::cout << "=> " << assembly.FilePath() << std::endl;
     }
     if (assembly.IsSystemAssembly())

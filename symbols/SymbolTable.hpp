@@ -83,6 +83,8 @@ public:
     ClassTemplateSpecializationSymbol* MakeClassTemplateSpecialization(ClassTypeSymbol* primaryClassTemplate, const std::vector<TypeSymbol*>& typeArguments, const Span& span);
     bool AddTypes() const { return !doNotAddTypes; }
     void MergeClassTemplateSpecializations();
+    void Dump(CodeFormatter& codeFormatter);
+    FunctionSymbol* GetMainFunction() const { return mainFunction; }
 private:
     Assembly* assembly;
     NamespaceSymbol globalNs;

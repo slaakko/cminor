@@ -930,6 +930,11 @@ void SymbolTable::MergeClassTemplateSpecializations()
     }
 }
 
+void SymbolTable::Dump(CodeFormatter& codeFormatter)
+{
+    globalNs.Dump(codeFormatter, assembly);
+}
+
 SymbolCreator::~SymbolCreator()
 {
 }

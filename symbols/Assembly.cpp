@@ -306,9 +306,16 @@ void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadTy
     }
 }
 
-void Assembly::Dump(CodeFormatter& formatter)
+void Assembly::Dump(CodeFormatter& formatter, DumpOptions dumpOptions)
 {
-    machineFunctionTable.Dump(formatter);
+    if ((dumpOptions & DumpOptions::functions) != DumpOptions::none)
+    {
+        machineFunctionTable.Dump(formatter);
+    }
+    if ((dumpOptions & DumpOptions::symbols) != DumpOptions::none)
+    {
+        symbolTable.Dump(formatter);
+    }
 }
 
 void Assembly::AddSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId, uint32_t mySymbolId)

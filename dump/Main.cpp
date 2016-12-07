@@ -55,7 +55,10 @@ void PrintHelp()
         "Usage: cminordump [options] assembly.cminora [outputfile]\n" <<
         "Dump information in assembly.cminora.\n" <<
         "Options:\n" <<
-        "-h | --help     : print this help message" <<
+        "-f | --functions : dump functions\n" <<
+        "-s | --symbols   : dump symbols\n" << 
+        "-a | --all       : dump all (default)\n" <<
+        "-h | --help      : print this help message" <<
         std::endl;
 }
 
@@ -63,8 +66,10 @@ int main(int argc, const char** argv)
 {
     try
     {
+        DumpOptions dumpOptions = DumpOptions::none;
         std::string assemblyFileName;
         std::string outputFileName;
+        bool verbose = false;
         if (argc < 2)
         {
             PrintHelp();
@@ -80,6 +85,22 @@ int main(int argc, const char** argv)
                 {
                     PrintHelp();
                     return 0;
+                }
+                else if (arg == "-f" || arg == "--functions")
+                {
+                    dumpOptions = dumpOptions | DumpOptions::functions;
+                }
+                else if (arg == "-s" || arg == "--symbols")
+                {
+                    dumpOptions = dumpOptions | DumpOptions::symbols;
+                }
+                else if (arg == "-a" || arg == "--all")
+                {
+                    dumpOptions = dumpOptions | DumpOptions::functions | DumpOptions::symbols;
+                }
+                else if (arg == "-v" || arg == "--verbose")
+                {
+                    verbose = true;
                 }
                 else
                 {
@@ -142,8 +163,12 @@ int main(int argc, const char** argv)
             outputFileStream.open(outputFileName);
             outputStream = &outputFileStream;
         }
+        if (dumpOptions == DumpOptions::none)
+        {
+            dumpOptions = DumpOptions::functions | DumpOptions::symbols;
+        }
         CodeFormatter codeFormatter(*outputStream);
-        assembly.Dump(codeFormatter);
+        assembly.Dump(codeFormatter, dumpOptions);
     }
     catch (const std::exception& ex)
     {

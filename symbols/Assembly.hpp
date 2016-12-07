@@ -15,6 +15,21 @@ using namespace cminor::machine;
 class SymbolReader;
 class SymbolWriter;
 
+enum class DumpOptions : uint8_t
+{
+    none = 0, functions = 1, symbols = 2
+};
+
+inline DumpOptions operator&(DumpOptions left, DumpOptions right)
+{
+    return DumpOptions(uint8_t(left) & uint8_t(right));
+}
+
+inline DumpOptions operator|(DumpOptions left, DumpOptions right)
+{
+    return DumpOptions(uint8_t(left) | uint8_t(right));
+}
+
 enum class LoadType
 {
     build, execute
@@ -57,7 +72,7 @@ public:
         std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
         std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames);
     void ImportSymbolTables();
-    void Dump(CodeFormatter& formatter);
+    void Dump(CodeFormatter& formatter, DumpOptions dumpOptions);
     const std::vector<std::unique_ptr<Assembly>>& ReferencedAssemblies() const { return referencedAssemblies; }
     void AddSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId, uint32_t mySymbolId);
     uint32_t GetSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId) const;

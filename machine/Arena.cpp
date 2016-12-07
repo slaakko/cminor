@@ -10,6 +10,18 @@
 
 namespace cminor { namespace machine {
 
+uint64_t segmentSize = defaultSegmentSize;
+
+void SetSegmentSize(uint64_t segmentSize_)
+{
+    segmentSize = segmentSize_;
+}
+
+uint64_t GetSegmentSize()
+{
+    return segmentSize;
+}
+
 Arena::Arena(ArenaId id_, uint64_t size_) : id(id_), pageSize(GetSystemPageSize()), size(size_), mem(ReserveMemory(size)), commit(mem), free(mem), end(mem + size)
 {
 }

@@ -432,6 +432,12 @@ void Symbol::Evaluate(SymbolEvaluator* evaluator, const Span& span)
     throw Exception("cannot evaluate statically", span, GetSpan());
 }
 
+void Symbol::Dump(CodeFormatter& formatter, Assembly* assembly)
+{
+    if (GetAssembly() != assembly) return;
+    formatter.WriteLine(TypeString() + " " + ToUtf8(Name().Value()));
+}
+
 Scope::~Scope()
 {
 }
@@ -1001,6 +1007,22 @@ IndexerGroupSymbol* ContainerSymbol::MakeIndexerGroupSymbol(const Span& span)
 void ContainerSymbol::Evaluate(SymbolEvaluator* evaluator, const Span& span)
 {
     evaluator->EvaluateContainerSymbol(this);
+}
+
+void ContainerSymbol::Dump(CodeFormatter& formatter, Assembly* assembly)
+{
+    if (GetAssembly() != assembly) return;
+    Symbol::Dump(formatter, assembly);
+    formatter.WriteLine("{");
+    formatter.IncIndent();
+    int n = int(symbols.size());
+    for (int i = 0; i < n; ++i)
+    {
+        Symbol* symbol = symbols[i].get();
+        symbol->Dump(formatter, assembly);
+    }
+    formatter.DecIndent();
+    formatter.WriteLine("}");
 }
 
 NamespaceSymbol::NamespaceSymbol(const Span& span_, Constant name_) : ContainerSymbol(span_, name_)

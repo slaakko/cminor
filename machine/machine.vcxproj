@@ -29,6 +29,7 @@
     <ClInclude Include="Function.hpp" />
     <ClInclude Include="GarbageCollector.hpp" />
     <ClInclude Include="GenObject.hpp" />
+    <ClInclude Include="Handle.hpp" />
     <ClInclude Include="Instruction.hpp" />
     <ClInclude Include="LocalVariable.hpp" />
     <ClInclude Include="Machine.hpp" />
@@ -40,6 +41,7 @@
     <ClInclude Include="Prime.hpp" />
     <ClInclude Include="Reader.hpp" />
     <ClInclude Include="String.hpp" />
+    <ClInclude Include="System.hpp" />
     <ClInclude Include="TextUtils.hpp" />
     <ClInclude Include="Thread.hpp" />
     <ClInclude Include="Type.hpp" />
@@ -67,6 +69,7 @@
     <ClCompile Include="Path.cpp" />
     <ClCompile Include="Prime.cpp" />
     <ClCompile Include="Reader.cpp" />
+    <ClCompile Include="System.cpp" />
     <ClCompile Include="TextUtils.cpp" />
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="Type.cpp" />
