@@ -5,3 +5,8 @@ void test()
     testsecond();
     testthird();
 }
+
+void main()
+{
+    test();
+}

@@ -107,12 +107,71 @@ inline bool operator!=(const AssemblyTag& left, const AssemblyTag& right)
     return !(left == right);
 }
 
-Assembly::Assembly(Machine& machine_) : machine(machine_), filePath(), constantPool(), symbolTable(this), name(), id(-1)
+AssemblyDependency::AssemblyDependency(Assembly* assembly_) : assembly(assembly_)
+{
+}
+
+void AssemblyDependency::AddReferencedAssembly(Assembly* referencedAssembly)
+{
+    if (std::find(referencedAssemblies.cbegin(), referencedAssemblies.cend(), referencedAssembly) == referencedAssemblies.cend())
+    {
+        referencedAssemblies.push_back(referencedAssembly);
+    }
+}
+
+void Visit(std::vector<Assembly*>& finishReadOrder, Assembly* assembly, std::unordered_set<Assembly*>& visited, std::unordered_set<Assembly*>& tempVisit,
+    std::unordered_map<Assembly*, AssemblyDependency*>& dependencyMap, const Assembly* rootAssembly)
+{
+    if (tempVisit.find(assembly) == tempVisit.cend())
+    {
+        if (visited.find(assembly) == visited.cend())
+        {
+            tempVisit.insert(assembly);
+            auto i = dependencyMap.find(assembly);
+            if (i != dependencyMap.cend())
+            {
+                AssemblyDependency* dependency = i->second;
+                for (Assembly* dependentAssembly : dependency->ReferencedAssemblies())
+                {
+                    Visit(finishReadOrder, dependentAssembly, visited, tempVisit, dependencyMap, rootAssembly);
+                }
+                tempVisit.erase(assembly);
+                visited.insert(assembly);
+                finishReadOrder.push_back(assembly);
+            }
+            else
+            {
+                throw std::runtime_error("assembly '" + ToUtf8(assembly->Name().Value()) + "' not found in dependencies of assembly '" + ToUtf8(rootAssembly->Name().Value()) + "'");
+            }
+        }
+    }
+    else
+    {
+        throw std::runtime_error("circular assembly dependency '" + ToUtf8(assembly->Name().Value()) + "' detected in dependencies of assembly '" + ToUtf8(rootAssembly->Name().Value()) + "'");
+    }
+}
+
+std::vector<Assembly*> CreateFinishReadOrder(const std::vector<Assembly*>& assemblies, std::unordered_map<Assembly*, AssemblyDependency*>& dependencyMap, const Assembly* rootAssembly)
+{
+    std::vector<Assembly*> finishReadOrder;
+    std::unordered_set<Assembly*> visited;
+    std::unordered_set<Assembly*> tempVisit;
+    for (Assembly* assembly : assemblies)
+    {
+        if (visited.find(assembly) == visited.cend())
+        {
+            Visit(finishReadOrder, assembly, visited, tempVisit, dependencyMap, rootAssembly);
+        }
+    }
+    return finishReadOrder;
+}
+
+Assembly::Assembly(Machine& machine_) : machine(machine_), filePath(), constantPool(), symbolTable(this), name(), id(-1), finishReadPos(0), assemblyDependency(this)
 {
 }
 
 Assembly::Assembly(Machine& machine_, const utf32_string& name_, const std::string& filePath_) : machine(machine_), filePath(filePath_), constantPool(), symbolTable(this),
-    name(constantPool.GetConstant(constantPool.Install(StringPtr(name_.c_str())))), id(-1)
+    name(constantPool.GetConstant(constantPool.Install(StringPtr(name_.c_str())))), id(-1), finishReadPos(0), assemblyDependency(this)
 {
 }
 
@@ -139,12 +198,12 @@ void Assembly::Write(SymbolWriter& writer)
     WriteSymbolIdMapping(writer);
 }
 
-void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
+void Assembly::BeginRead(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet,
     std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
-    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames)
+    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
+    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
 {
     reader.SetMachine(machine);
-    reader.SetClassTemplateSpecializationNames(&classTemplateSpecializationNames);
     AssemblyTag defaultTag;
     AssemblyTag tagRead;
     tagRead.Read(reader);
@@ -154,6 +213,11 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
     }
     reader.SetAssembly(this);
     filePath = reader.GetUtf8String();
+    if (dependencyMap.find(filePath) == dependencyMap.cend())
+    {
+        assemblies.push_back(this);
+        dependencyMap[filePath] = &assemblyDependency;
+    }
     uint32_t n = reader.GetEncodedUInt();
     for (uint32_t i = 0; i < n; ++i)
     {
@@ -166,7 +230,80 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
     nameId.Read(reader);
     name = constantPool.GetConstant(nameId);
     machineFunctionTable.Read(reader);
-    ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames);
+    finishReadPos = reader.Pos();
+    ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames,
+        assemblies, dependencyMap);
+    callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
+    typeInstructions.insert(typeInstructions.end(), reader.TypeInstructions().cbegin(), reader.TypeInstructions().cend());
+    setClassDataInstructions.insert(setClassDataInstructions.end(), reader.SetClassDataInstructions().cbegin(), reader.SetClassDataInstructions().cend());
+    classTypeSymbols.insert(classTypeSymbols.end(), reader.ClassTypeSymbols().cbegin(), reader.ClassTypeSymbols().cend());
+}
+
+void Assembly::FinishReads(std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
+    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, int prevAssemblyIndex, const std::vector<Assembly*>& finishReadOrder,
+    bool readSymbolTable)
+{
+    Assembly* prevAssembly = nullptr;
+    if (prevAssemblyIndex >= 0)
+    {
+        prevAssembly = finishReadOrder[prevAssemblyIndex];
+    }
+    if (prevAssembly)
+    {
+        prevAssembly->FinishReads(callInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, prevAssemblyIndex - 1, finishReadOrder, readSymbolTable);
+        symbolTable.Import(prevAssembly->symbolTable);
+    }
+    if (prevAssemblyIndex != int(finishReadOrder.size() - 2) || readSymbolTable)
+    {
+        SymbolReader reader(filePath);
+        reader.SetAssembly(this);
+        reader.SetConstantPool(&constantPool);
+        reader.SetClassTemplateSpecializationNames(&classTemplateSpecializationNames);
+        reader.Skip(finishReadPos);
+        symbolTable.Read(reader);
+        ReadSymbolIdMapping(reader);
+        callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
+        typeInstructions.insert(typeInstructions.end(), reader.TypeInstructions().cbegin(), reader.TypeInstructions().cend());
+        setClassDataInstructions.insert(setClassDataInstructions.end(), reader.SetClassDataInstructions().cbegin(), reader.SetClassDataInstructions().cend());
+        classTypeSymbols.insert(classTypeSymbols.end(), reader.ClassTypeSymbols().cbegin(), reader.ClassTypeSymbols().cend());
+    }
+}
+
+void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
+    std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
+    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
+    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
+{
+    reader.SetMachine(machine);
+    reader.SetClassTemplateSpecializationNames(&classTemplateSpecializationNames);
+    AssemblyTag defaultTag;
+    AssemblyTag tagRead;
+    tagRead.Read(reader);
+    if (tagRead != defaultTag)
+    {
+        throw std::runtime_error("invalid cminor assembly tag read from file '" + filePath + "'. (not an assembly file?)");
+    }
+    reader.SetAssembly(this);
+    filePath = reader.GetUtf8String();
+    if (dependencyMap.find(filePath) == dependencyMap.cend())
+    {
+        assemblies.push_back(this);
+        dependencyMap[filePath] = &assemblyDependency;
+    }
+    uint32_t n = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        std::string referenceFilePath = reader.GetUtf8String();
+        referenceFilePaths.push_back(referenceFilePath);
+    }
+    constantPool.Read(reader);
+    reader.SetConstantPool(&constantPool);
+    ConstantId nameId;
+    nameId.Read(reader);
+    name = constantPool.GetConstant(nameId);
+    machineFunctionTable.Read(reader);
+    ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames,
+        assemblies, dependencyMap);
     ImportSymbolTables();
     symbolTable.Read(reader);
     ReadSymbolIdMapping(reader);
@@ -183,10 +320,11 @@ bool Assembly::IsSystemAssembly() const
 
 void Assembly::ImportAssemblies(LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
     std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
-    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames)
+    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
+    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
 {
     ImportAssemblies(referenceFilePaths, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, 
-        classTemplateSpecializationNames);
+        classTemplateSpecializationNames, assemblies, dependencyMap);
 }
 
 void Assembly::ImportSymbolTables()
@@ -199,7 +337,8 @@ void Assembly::ImportSymbolTables()
 
 void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, 
     std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions,
-    std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames)
+    std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames,
+    std::vector<Assembly*>& assemblies, std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
 {
     std::vector<std::string> allAssemblyReferences;
     allAssemblyReferences.insert(allAssemblyReferences.end(), assemblyReferences.cbegin(), assemblyReferences.cend());
@@ -207,12 +346,14 @@ void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferenc
     {
         allAssemblyReferences.push_back(CminorSystemAssemblyFilePath(GetConfig()));
     }
-    Import(allAssemblyReferences, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames);
+    Import(allAssemblyReferences, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, 
+        classTemplateSpecializationNames, assemblies, dependencyMap);
 }
 
 void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, 
     const std::string& currentAssemblyDir, std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions,
-    std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames)
+    std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames,
+    std::vector<Assembly*>& assemblies, std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
 {
     for (const std::string& assemblyReference : assemblyReferences)
     {
@@ -294,14 +435,16 @@ void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadTy
                 }
             }
             std::string assemblyFilePath = GetFullPath(afp.generic_string());
+            importSet.insert(assemblyFilePath);
             SymbolReader reader(assemblyFilePath);
             reader.SetMachine(machine);
-            referencedAssembly->Read(reader, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, 
-                classTemplateSpecializationNames);
+            referencedAssembly->BeginRead(reader, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, 
+                classTemplateSpecializationNames, assemblies, dependencyMap);
             Assembly* referencedAssemblyPtr = referencedAssembly.get();
+            assemblyDependency.AddReferencedAssembly(referencedAssemblyPtr);
             referencedAssemblies.push_back(std::move(referencedAssembly));
             Import(referencedAssemblyPtr->referenceFilePaths, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, typeInstructions, setClassDataInstructions,
-                classTypeSymbols, classTemplateSpecializationNames);
+                classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
         }
     }
 }

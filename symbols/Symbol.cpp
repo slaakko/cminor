@@ -1239,10 +1239,7 @@ ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol
 void ClassTypeSymbol::Write(SymbolWriter& writer)
 {
     TypeSymbol::Write(writer);
-    if (IsReopenedClassTemplateSpecialization())
-    {
-        return;
-    }
+    writer.AsMachineWriter().Put(uint8_t(flags));
     if (IsClassTemplate())
     {
         Node* node = GetAssembly()->GetSymbolTable().GetNode(this);
@@ -1260,6 +1257,19 @@ void ClassTypeSymbol::Write(SymbolWriter& writer)
     }
     else
     {
+        uint32_t sizePos = 0;
+        uint32_t size = 0;
+        uint32_t start = 0;
+        if (GetSymbolType() == SymbolType::classTemplateSpecializationSymbol)
+        {
+            sizePos = writer.Pos();
+            writer.AsMachineWriter().Put(size);
+            start = writer.Pos();
+        }
+        if (IsReopened())
+        {
+            return;
+        }
         bool hasBaseClass = baseClass != nullptr;
         writer.AsMachineWriter().Put(hasBaseClass);
         if (hasBaseClass)
@@ -1282,27 +1292,46 @@ void ClassTypeSymbol::Write(SymbolWriter& writer)
         Assert(objectType, "object type not set");
         objectType->Write(writer);
         classData->Write(writer);
-        writer.AsMachineWriter().Put(uint8_t(flags));
+        if (GetSymbolType() == SymbolType::classTemplateSpecializationSymbol)
+        {
+            uint32_t end = writer.Pos();
+            size = end - start;
+            writer.Seek(sizePos);
+            writer.AsMachineWriter().Put(size);
+            writer.Seek(end);
+        }
     }
 }
 
 void ClassTypeSymbol::Read(SymbolReader& reader)
 {
     TypeSymbol::Read(reader);
+    flags = ClassTypeSymbolFlags(reader.GetByte());
     if (GetSymbolType() == SymbolType::classTemplateSpecializationSymbol)
     {
         utf32_string fullClassTemplateSpecializationName = reader.MakeFullClassTemplateSpecializationName(Name().Value());
         if (reader.FoundInClassTemplateSpecializationNames(fullClassTemplateSpecializationName))
         {
-            ClassTemplateSpecializationSymbol* cts = static_cast<ClassTemplateSpecializationSymbol*>(this);
-            cts->SetReopened();
+            if (!IsReopened())
+            {
+                SetReopenDetected();
+                SetReopened();
+            }
         }
         else
         {
             reader.AddToClassTemplateSpecializationNames(fullClassTemplateSpecializationName);
         }
     }
-    if (IsReopenedClassTemplateSpecialization())
+    if (GetSymbolType() == SymbolType::classTemplateSpecializationSymbol)
+    {
+        uint32_t size = reader.GetUInt();
+        if (IsReopenDetected())
+        {
+            reader.Skip(size);
+        }
+    }
+    if (IsReopened())
     {
         return;
     }
@@ -1334,7 +1363,6 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
         TypeTable::Instance().SetType(objectType.get());
         classData->Read(reader);
         ClassDataTable::Instance().SetClassData(classData.get());
-        flags = ClassTypeSymbolFlags(reader.GetByte());
         reader.AddClassTypeSymbol(this);
     }
 }
@@ -1822,18 +1850,21 @@ void InterfaceTypeSymbol::SetSpecifiers(Specifiers specifiers)
 }
 
 ClassTemplateSpecializationSymbol::ClassTemplateSpecializationSymbol(const Span& span_, Constant name_) : 
-    ClassTypeSymbol(span_, name_), key(), flags(ClassTemplateSpecializationSymbolFlags::none), assemblyId(-1), globalNsPos(-1)
+    ClassTypeSymbol(span_, name_), key(), assemblyId(-1), globalNsPos(-1)
 {
 }
 
 void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)
 {
-    writer.AsMachineWriter().Put(uint8_t(flags));
     ClassTypeSymbol::Write(writer);
+    uint32_t sizePos = writer.Pos();
+    uint32_t size = 0;
+    writer.AsMachineWriter().Put(size);
     if (IsReopened())
     {
         return;
     }
+    uint32_t start = writer.Pos();
     utf32_string keyFullClassName;
     if (key.classTypeSymbol)
     {
@@ -1853,15 +1884,25 @@ void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)
         typeArgumentId.Write(writer);
     }
     WriteGlobalNs(writer);
+    uint32_t end = writer.Pos();
+    size = end - start;
+    writer.Seek(sizePos);
+    writer.AsMachineWriter().Put(size);
+    writer.Seek(end);
 }
 
 void ClassTemplateSpecializationSymbol::Read(SymbolReader& reader)
 {
     reader.BeginReadingClassTemplateSpecialization();
-    flags = ClassTemplateSpecializationSymbolFlags(reader.GetByte());
     ClassTypeSymbol::Read(reader);
+    uint32_t size = reader.GetUInt();
+    if (IsReopenDetected())
+    {
+        reader.Skip(size);
+    }
     if (IsReopened())
     {
+        reader.EndReadingClassTemplateSpecialization();
         return;
     }
     ConstantId classTypeId;
@@ -1949,7 +1990,8 @@ void ClassTemplateSpecializationSymbol::MergeConstructorSymbol(const Constructor
     bool found = false;
     for (ConstructorSymbol* baseConstructor : Constructors())
     {
-        if (constructorSymbolId == constructorSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseConstructor->GetAssembly()->Name().Value()), baseConstructor->Id()))
+        if (constructorSymbolId == baseConstructor->Id() || 
+            constructorSymbolId == constructorSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseConstructor->GetAssembly()->Name().Value()), baseConstructor->Id()))
         {
             baseConstructor->Merge(constructorSymbol);
             found = true;
@@ -1968,7 +2010,8 @@ void ClassTemplateSpecializationSymbol::MergeMemberFunctionSymbol(const MemberFu
     bool found = false;
     for (MemberFunctionSymbol* baseMemFun : MemberFunctions())
     {
-        if (memFunSymbolId == memberFunctionSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseMemFun->GetAssembly()->Name().Value()), baseMemFun->Id()))
+        if (memFunSymbolId == baseMemFun->Id() || 
+            memFunSymbolId == memberFunctionSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseMemFun->GetAssembly()->Name().Value()), baseMemFun->Id()))
         {
             baseMemFun->Merge(memberFunctionSymbol);
             found = true;
@@ -1987,7 +2030,8 @@ void ClassTemplateSpecializationSymbol::MergePropertySymbol(const PropertySymbol
     bool found = false;
     for (PropertySymbol* baseProperty : Properties())
     {
-        if (propertySymbolId == propertySymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseProperty->GetAssembly()->Name().Value()), baseProperty->Id()))
+        if (propertySymbolId == baseProperty->Id() ||
+            propertySymbolId == propertySymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseProperty->GetAssembly()->Name().Value()), baseProperty->Id()))
         {
             baseProperty->Merge(propertySymbol);
             found = true;
@@ -2006,7 +2050,8 @@ void ClassTemplateSpecializationSymbol::MergeIndexerSymbol(const IndexerSymbol& 
     bool found = false;
     for (IndexerSymbol* baseIndexer : Indexers())
     {
-        if (indexerSymbolId == indexerSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseIndexer->GetAssembly()->Name().Value()), baseIndexer->Id()))
+        if (indexerSymbolId == baseIndexer->Id() || 
+            indexerSymbolId == indexerSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseIndexer->GetAssembly()->Name().Value()), baseIndexer->Id()))
         {
             baseIndexer->Merge(indexerSymbol);
             found = true;

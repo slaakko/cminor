@@ -18,6 +18,7 @@
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/symbols/MappingSymbolVisitor.hpp>
+#include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/MappedInputFile.hpp>
 #include <cminor/machine/Machine.hpp>
@@ -32,7 +33,6 @@ using namespace cminor::ast;
 using namespace cminor::symbols;
 using namespace cminor::binder;
 using namespace cminor::emitter;
-using namespace cminor::machine;
 using namespace cminor::machine;
 
 CompileUnitGrammar* compileUnitGrammar = nullptr;
@@ -255,6 +255,15 @@ void CheckValidityOfMainFunction(Target target, Assembly& assembly)
     }
 }
 
+void GetAssemblyReferenceClosureFor(Assembly* referencedAssembly, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
+{
+    assemblyReferenceInfos.insert(AssemblyReferenceInfo(referencedAssembly->FilePath(), referencedAssembly->IsSystemAssembly()));
+    for (const std::unique_ptr<Assembly>& childReferencedAssembly : referencedAssembly->ReferencedAssemblies())
+    {
+        GetAssemblyReferenceClosureFor(childReferencedAssembly.get(), assemblyReferenceInfos);
+    }
+}
+
 void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
 {
     FunctionTable::Init();
@@ -277,11 +286,23 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     std::vector<SetClassDataInst*> setClassDataInstructions;
     std::vector<ClassTypeSymbol*> classTypes;
     std::unordered_set<utf32_string> classTemplateSpecializationNames;
+    std::vector<Assembly*> assemblies;
+    std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
     std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(project->AssemblyFilePath()).remove_filename().generic_string());
     std::unordered_set<std::string> importSet;
     assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions,
-        classTypes, classTemplateSpecializationNames);
-    assembly.ImportSymbolTables();
+        classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
+    assemblies.push_back(&assembly);
+    auto it = std::unique(assemblies.begin(), assemblies.end());
+    assemblies.erase(it, assemblies.end());
+    assemblyDependencyMap[project->AssemblyFilePath()] = assembly.GetAssemblyDependency();
+    std::unordered_map<Assembly*, AssemblyDependency*> dependencyMap;
+    for (const auto& p : assemblyDependencyMap)
+    {
+        dependencyMap[p.second->GetAssembly()] = p.second;
+    }
+    std::vector<Assembly*> finishReadOrder = CreateFinishReadOrder(assemblies, dependencyMap, rootAssembly);
+    assembly.FinishReads(callInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, int(finishReadOrder.size() - 2), finishReadOrder, false);
     callInstructions.clear();
     typeInstructions.clear();
     setClassDataInstructions.clear();
@@ -324,7 +345,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     }
     for (const std::unique_ptr<Assembly>& referencedAssembly : assembly.ReferencedAssemblies())
     {
-        assemblyReferenceInfos.insert(AssemblyReferenceInfo(referencedAssembly->FilePath(), referencedAssembly->IsSystemAssembly()));
+        GetAssemblyReferenceClosureFor(referencedAssembly.get(), assemblyReferenceInfos);
     }
     bool buildingSystemProject = project->IsSystemProject();
     boost::filesystem::path projectAssemblyDir = project->BasePath();

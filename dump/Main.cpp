@@ -144,8 +144,19 @@ int main(int argc, const char** argv)
         std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(assemblyFilePath).remove_filename().generic_string());
         std::unordered_set<std::string> importSet;
         std::unordered_set<utf32_string> classTemplateSpecializationNames;
-        assembly.Read(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypes, 
-            classTemplateSpecializationNames);
+        std::vector<Assembly*> assemblies;
+        std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
+        assembly.BeginRead(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions, classTypes,
+            classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
+        auto it = std::unique(assemblies.begin(), assemblies.end());
+        assemblies.erase(it, assemblies.end());
+        std::unordered_map<Assembly*, AssemblyDependency*> dependencyMap;
+        for (const auto& p : assemblyDependencyMap)
+        {
+            dependencyMap[p.second->GetAssembly()] = p.second;
+        }
+        std::vector<Assembly*> finishReadOrder = CreateFinishReadOrder(assemblies, dependencyMap, rootAssembly);
+        assembly.FinishReads(callInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, int(finishReadOrder.size() - 2), finishReadOrder, true);
         Link(callInstructions, typeInstructions, setClassDataInstructions, classTypes);
         assembly.GetSymbolTable().MergeClassTemplateSpecializations();
         callInstructions.clear();

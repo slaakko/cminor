@@ -1,4 +1,5 @@
-project third;
+project fourth;
 target=program;
+reference <../second/second.cminorp>;
 reference <../third/third.cminorp>;
 source <fourth.cminor>;

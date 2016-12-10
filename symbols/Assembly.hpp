@@ -46,6 +46,22 @@ struct SymbolIdHash
     }
 };
 
+class Assembly;
+
+class AssemblyDependency
+{
+public:
+    AssemblyDependency(Assembly* assembly_);
+    Assembly* GetAssembly() const { return assembly; }
+    void AddReferencedAssembly(Assembly* referencedAssembly);
+    const std::vector<Assembly*>& ReferencedAssemblies() const { return referencedAssemblies; }
+private:
+    Assembly* assembly;
+    std::vector<Assembly*> referencedAssemblies;
+};
+
+std::vector<Assembly*> CreateFinishReadOrder(const std::vector<Assembly*>& assemblies, std::unordered_map<Assembly*, AssemblyDependency*>& dependencyMap, const Assembly* rootAssembly);
+
 class Assembly
 {
 public:
@@ -57,7 +73,15 @@ public:
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
         std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
-        std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames);
+        std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
+        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap);
+    void BeginRead(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet,
+        std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
+        std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
+        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap);
+    void FinishReads(std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
+        std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, int prevAssemblyIndex, const std::vector<Assembly*>& finishReadOrder,
+        bool readSymbolTable);
     const std::string& FilePath() const { return filePath; }
     StringPtr Name() const { return StringPtr(name.Value().AsStringLiteral()); }
     ConstantPool& GetConstantPool() { return constantPool; }
@@ -66,30 +90,35 @@ public:
     bool IsSystemAssembly() const;
     void ImportAssemblies(LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions,
         std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, 
-        std::unordered_set<utf32_string>& classTemplateSpecializationNames);
+        std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, std::unordered_map<std::string, AssemblyDependency*>& dependencyMap);
     void ImportAssemblies(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, 
         std::unordered_set<std::string>& importSet,
         std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
-        std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames);
+        std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
+        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap);
     void ImportSymbolTables();
     void Dump(CodeFormatter& formatter, DumpOptions dumpOptions);
     const std::vector<std::unique_ptr<Assembly>>& ReferencedAssemblies() const { return referencedAssemblies; }
     void AddSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId, uint32_t mySymbolId);
     uint32_t GetSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId) const;
+    AssemblyDependency* GetAssemblyDependency() { return &assemblyDependency; }
 private:
     Machine& machine;
     std::string filePath;
     std::vector<std::string> referenceFilePaths;
     std::vector<std::unique_ptr<Assembly>> referencedAssemblies;
+    AssemblyDependency assemblyDependency;
     ConstantPool constantPool;
     Constant name;
     uint32_t id;
     MachineFunctionTable machineFunctionTable;
+    uint32_t finishReadPos;
     SymbolTable symbolTable;
     std::unordered_map<std::pair<std::string, uint32_t>, uint32_t, SymbolIdHash> symbolIdMapping;
     void Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, const std::string& currentAssemblyDir,
         std::vector<CallInst*>& callInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
-        std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames);
+        std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
+        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap);
     void WriteSymbolIdMapping(SymbolWriter& writer);
     void ReadSymbolIdMapping(SymbolReader& reader);
 };
@@ -105,6 +134,7 @@ public:
     static AssemblyTable& Instance();
     void AddAssembly(Assembly* assembly);
     Assembly* GetAssembly(uint32_t assemblyId) const;
+    const std::vector<Assembly*> Assemblies() const { return assemblies; }
 private:
     static std::unique_ptr<AssemblyTable> instance;
     std::vector<Assembly*> assemblies;

@@ -2,6 +2,7 @@ using System;
 
 public void testthird()
 {  
-    Alpha.Beta.Foo<int> f;
-    f.foo(1);
+    Alpha.Beta.Foo<int> f = new Alpha.Beta.Foo<int>();
+    int x = f.foo(2);
+    Console.WriteLine(x);
 }

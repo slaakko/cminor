@@ -2,6 +2,7 @@ using System;
 
 public void testsecond()
 {  
-    Alpha.Beta.Foo<int> f;
-    f.foo(1);
+    Alpha.Beta.Foo<int> f = new Alpha.Beta.Foo<int>();
+    int x = f.foo(1);
+    Console.WriteLine(x);
 }

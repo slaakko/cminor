@@ -502,7 +502,9 @@ enum class ClassTypeSymbolFlags : uint8_t
 {
     none = 0,
     abstract_ = 1 << 0,
-    nonLeaf = 1 << 1
+    nonLeaf = 1 << 1,
+    reopened = 1 << 2,
+    reopenDetected = 1 <<3
 };
 
 inline ClassTypeSymbolFlags operator&(ClassTypeSymbolFlags left, ClassTypeSymbolFlags right)
@@ -565,6 +567,10 @@ public:
     const NodeList<Node>& UsingNodes() const { return usingNodes; }
     bool IsAbstract() const override { return GetFlag(ClassTypeSymbolFlags::abstract_); }
     void SetAbstract() { SetFlag(ClassTypeSymbolFlags::abstract_); }
+    bool IsReopened() const { return GetFlag(ClassTypeSymbolFlags::reopened); }
+    void SetReopened() { SetFlag(ClassTypeSymbolFlags::reopened); }
+    bool IsReopenDetected() const { return GetFlag(ClassTypeSymbolFlags::reopenDetected); }
+    void SetReopenDetected() { SetFlag(ClassTypeSymbolFlags::reopenDetected); }
     void EmplaceType(TypeSymbol* type, int index) override;
     int Level() const { return level; }
     void SetLevel(int level_) { level = level_; }
@@ -690,22 +696,6 @@ struct ClassTemplateSpecializationKeyHash
     }
 };
 
-enum class ClassTemplateSpecializationSymbolFlags : uint8_t
-{
-    none = 0,
-    reopened = 1 << 0
-};
-
-inline ClassTemplateSpecializationSymbolFlags operator|(ClassTemplateSpecializationSymbolFlags left, ClassTemplateSpecializationSymbolFlags right)
-{
-    return ClassTemplateSpecializationSymbolFlags(uint8_t(left) | uint8_t(right));
-}
-
-inline ClassTemplateSpecializationSymbolFlags operator&(ClassTemplateSpecializationSymbolFlags left, ClassTemplateSpecializationSymbolFlags right)
-{
-    return ClassTemplateSpecializationSymbolFlags(uint8_t(left) & uint8_t(right));
-}
-
 class ClassTemplateSpecializationSymbol : public ClassTypeSymbol
 {
 public:
@@ -721,8 +711,6 @@ public:
     TypeSymbol* TypeArgument(int index) const { Assert(index >= 0 && index < key.typeArguments.size(), "invalid type argument index"); return key.typeArguments[index]; }
     void SetGlobalNs(std::unique_ptr<NamespaceNode>&& globalNs_);
     NamespaceNode* GlobalNs() const { return globalNs.get(); }
-    bool IsReopened() const { return GetFlag(ClassTemplateSpecializationSymbolFlags::reopened); }
-    void SetReopened() { SetFlag(ClassTemplateSpecializationSymbolFlags::reopened); }
     bool IsReopenedClassTemplateSpecialization() const override { return IsReopened(); }
     void AddToBeMerged(std::unique_ptr<ClassTemplateSpecializationSymbol>&& that);
     void MergeOpenedInstances();
@@ -733,13 +721,10 @@ public:
     bool HasGlobalNs() const { return globalNs != nullptr; }
     void ReadGlobalNs();
 private:
-    ClassTemplateSpecializationSymbolFlags flags;
     ClassTemplateSpecializationKey key;
     std::unique_ptr<NamespaceNode> globalNs;
     uint32_t assemblyId;
     uint32_t globalNsPos;
-    bool GetFlag(ClassTemplateSpecializationSymbolFlags flag) const { return (flags & flag) != ClassTemplateSpecializationSymbolFlags::none; }
-    void SetFlag(ClassTemplateSpecializationSymbolFlags flag) { flags = flags | flag; }
     std::vector<std::unique_ptr<ClassTemplateSpecializationSymbol>> toBeMerged;
     void WriteGlobalNs(SymbolWriter& symbolWriter);
 };

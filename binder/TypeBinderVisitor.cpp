@@ -229,10 +229,6 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
             throw Exception("symbol '" + ToUtf8(baseOrInterfaceSymbol->FullName()) + "' is not a class or interface type symbol", baseOrInterfaceNode->GetSpan(), baseOrInterfaceSymbol->GetSpan());
         }
     }
-    if (classTypeSymbol->FullName() == U"System.String")
-    {
-        int x = 0;
-    }
     int nm = classNode.Members().Count();
     for (int i = 0; i < nm; ++i)
     {

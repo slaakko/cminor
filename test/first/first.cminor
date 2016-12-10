@@ -1,17 +1,15 @@
+using System;
+
 namespace Alpha.Beta
 {
     public class Foo<T>
     {
-        public void foo(T x)
+        public int foo(T x)
         {
+            return x;
         }
         public void bar()
         {
         }
     }
-}
-
-void main(string[] args)
-{
-    return;
 }
