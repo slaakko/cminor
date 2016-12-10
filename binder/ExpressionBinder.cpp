@@ -1082,19 +1082,28 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
     }
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
     std::unique_ptr<Exception> exception;
-    std::unique_ptr<BoundFunctionCall> functionCall = ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan(), OverloadResolutionFlags::dontThrow, exception);
+    std::unique_ptr<BoundFunctionCall> functionCall = ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan(), 
+        OverloadResolutionFlags::dontThrow, exception);
     if (!functionCall)
     {
+        std::unique_ptr<Exception> thisEx;
         ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->GetThisParam();
+        bool thisParamInserted = false;
         if (thisParam)
         {
             BoundParameter* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), thisParam->GetType(), thisParam);
             arguments.insert(arguments.begin(), std::unique_ptr<BoundExpression>(boundThisParam));
+            thisParamInserted = true;
             functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base, thisParam->GetType()->ClassInterfaceOrNsScope()));
-            functionCall = std::move(ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan()));
+            functionCall = std::move(ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan(),
+                OverloadResolutionFlags::dontThrow, thisEx));
         }
-        else
+        if (!functionCall)
         {
+            if (thisParamInserted)
+            {
+                arguments.erase(arguments.begin());
+            }
             arguments.erase(arguments.begin());
             functionCall = std::move(ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan()));
         }

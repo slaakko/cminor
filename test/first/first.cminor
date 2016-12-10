@@ -4,9 +4,9 @@ namespace Alpha.Beta
 {
     public class Foo<T>
     {
-        public int foo(T x)
+        public void foo(T x)
         {
-            return x;
+            Console.WriteLine(x);
         }
         public void bar()
         {

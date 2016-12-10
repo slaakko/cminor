@@ -59,7 +59,7 @@ std::vector<std::unique_ptr<CompileUnitNode>> ParseSources(const std::vector<std
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
         std::string s;
-        if (sourceFilePaths.size() > 1)
+        if (sourceFilePaths.size() != 1)
         {
             s = "s";
         }
@@ -421,7 +421,7 @@ void BuildSolution(const std::string& solutionFilePath)
     std::string config = GetConfig();
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "Building solution '" << solution->Name() << "(" << solution->FilePath() << " using " << config << " configuration." << std::endl;
+        std::cout << "Building solution '" << solution->Name() << "' (" << solution->FilePath() << ") using " << config << " configuration." << std::endl;
     }
     for (const std::string& projectFilePath : solution->ProjectFilePaths())
     {
@@ -484,8 +484,8 @@ void BuildSolution(const std::string& solutionFilePath)
     }
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "Solution '" << solution->Name() << "build successfully." << std::endl;
-        std::cout << "=> " << solutionAssemblyDir << std::endl;
+        std::cout << "Solution '" << solution->Name() << "' build successfully." << std::endl;
+        std::cout << "=> " << GetFullPath(solutionAssemblyDir.generic_string()) << std::endl;
     }
 }
 

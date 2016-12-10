@@ -3,6 +3,5 @@ using System;
 public void testsecond()
 {  
     Alpha.Beta.Foo<int> f = new Alpha.Beta.Foo<int>();
-    int x = f.foo(1);
-    Console.WriteLine(x);
+    f.foo(1);
 }
