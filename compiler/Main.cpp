@@ -63,6 +63,7 @@ void PrintHelp()
         "-v | --verbose : verbose output\n" << 
         "-h | --help    : print this help message\n" <<
         "-d | --dparse  : debug parsing to stdout\n" <<
+        "-cl | --clean  : clean given projects and solutions\n" <<
         "-c=CONFIG\n" <<
         "   Use CONFIG configuration. CONFIG can be debug or release.\n" <<
         "   The default is debug.\n" <<
@@ -92,6 +93,10 @@ int main(int argc, const char** argv)
                 else if (arg == "-d" || arg == "--dparse")
                 {
                     SetGlobalFlag(GlobalFlags::debugParsing);
+                }
+                else if (arg == "-cl" || arg == "--clean")
+                {
+                    SetGlobalFlag(GlobalFlags::clean);
                 }
                 else if (arg.find('=', 0) != std::string::npos)
                 {

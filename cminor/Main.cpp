@@ -19,6 +19,7 @@ void PrintHelp()
         "(      run [run-options] program.cminora [program-arguments]\n" <<
         "|      debug [debug-options] program.cminora [program-arguments]\n" <<
         "|      compile [compile-options] { solution.cminors | project.cminorp }\n" <<
+        "|      clean { solution.cminors | project.cminorp }\n" <<
         "|      dump [dump-options] assembly.cminora [outputfile]\n" <<
         ")\n" <<
         "---------------------------------------------------------------------\n" <<
@@ -50,6 +51,14 @@ void PrintHelp()
         "       The default is debug.\n" <<
         "   -d | --dparse\n" <<
         "       Debug parsing to standard output\n"
+        "   -cl | --clean\n" <<
+        "       Clean given projects and solutions.\n" << 
+        "---------------------------------------------------------------------\n" <<
+        "cminor clean [clean-options] { solution.cminors | project.cminorp }\n\n" <<
+        "clean-options:\n" <<
+        "   -c=CONFIG\n" <<
+        "       Use CONFIG configuration. CONFIG can be debug or release.\n" <<
+        "       The default is debug.\n" <<
         "---------------------------------------------------------------------\n" <<
         "cminor dump [dump-options] assembly.cminora [outputfile]\n\n" <<
         "Dump information in assembly.cminora to standard output or given file.\n" <<
@@ -66,6 +75,7 @@ enum class State
     globalOptions, 
     runOptions, runProgram, programArguments,
     compileOptions, projectsAndSolutions,
+    cleanOptions,
     debugOptions,
     dumpOptions, dumpAssemblyName, dumpOutputFile, dumpEnd
 };
@@ -131,6 +141,11 @@ int main(int argc, const char** argv)
                         {
                             state = State::compileOptions;
                         }
+                        else if (command == "clean")
+                        {
+                            compileOptions.push_back("--clean");
+                            state = State::cleanOptions;
+                        }
                         else if (command == "dump")
                         {
                             state = State::dumpOptions;
@@ -158,7 +173,7 @@ int main(int argc, const char** argv)
                             {
                                 if (components[0] == "-s")
                                 {
-                                    
+                                    runOptions.push_back(arg);
                                 }
                                 else
                                 {
@@ -231,6 +246,10 @@ int main(int argc, const char** argv)
                         {
                             compileOptions.push_back(arg);
                         }
+                        else if (arg == "-cl" || arg == "--clean")
+                        {
+                            compileOptions.push_back(arg);
+                        }
                         else if (arg.find('=', 0) != std::string::npos)
                         {
                             std::vector<std::string> components = Split(arg, '=');
@@ -270,6 +289,52 @@ int main(int argc, const char** argv)
                     {
                         projectsAndSolutions.push_back(arg);
                     }
+                    break;
+                }
+                case State::cleanOptions:
+                {
+                    if (!arg.empty() && arg[0] == '-')
+                    {
+                        if (arg.find('=', 0) != std::string::npos)
+                        {
+                            std::vector<std::string> components = Split(arg, '=');
+                            if (components.size() != 2)
+                            {
+                                throw std::runtime_error("invalid argument '" + arg + "'");
+                            }
+                            else
+                            {
+                                if (components[0] == "-c")
+                                {
+                                    if (components[1] == "release")
+                                    {
+                                        compileOptions.push_back(arg);
+                                    }
+                                    else if (components[1] == "debug")
+                                    {
+                                        compileOptions.push_back(arg);
+                                    }
+                                    else
+                                    {
+                                        throw std::runtime_error("unknown configuration argument '" + arg + "'");
+                                    }
+                                }
+                                else
+                                {
+                                    throw std::runtime_error("unknown argument '" + arg + "'");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            throw std::runtime_error("unknown argument '" + arg + "'");
+                        }
+                    }
+                    else
+                    {
+                        projectsAndSolutions.push_back(arg);
+                    }
+                    break;
                 }
             }
         }
@@ -295,11 +360,11 @@ int main(int argc, const char** argv)
                 commandLine.append(" ").append(QuotedPath(dumpOutputFile));
             }
         }
-        else if (command == "compile")
+        else if (command == "compile" || command == "clean")
         {
             if (projectsAndSolutions.empty())
             {
-                throw std::runtime_error("incomplete compile command: no project or solution given");
+                throw std::runtime_error("incomplete compile/clean command: no project or solution given");
             }
             commandLine = "cminorc";
             for (const std::string& globalOption : globalOptions)

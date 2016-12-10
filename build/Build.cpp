@@ -264,6 +264,22 @@ void GetAssemblyReferenceClosureFor(Assembly* referencedAssembly, std::set<Assem
     }
 }
 
+void CleanProject(Project* project)
+{
+    std::string config = GetConfig();
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "Cleaning project '" << project->Name() << "' (" << project->FilePath() << ") using " << config << " configuration." << std::endl;
+    }
+    boost::filesystem::path afp = project->AssemblyFilePath();
+    afp.remove_filename();
+    boost::filesystem::remove_all(afp);
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "Project '" << project->Name() << "' cleaned successfully." << std::endl;
+    }
+}
+
 void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
 {
     FunctionTable::Init();
@@ -400,7 +416,14 @@ void BuildProject(const std::string& projectFilePath, std::set<AssemblyReference
     MappedInputFile projectFile(projectFilePath);
     std::unique_ptr<Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, config));
     project->ResolveDeclarations();
-    BuildProject(project.get(), assemblyReferenceInfos);
+    if (GetGlobalFlag(GlobalFlags::clean))
+    {
+        CleanProject(project.get());
+    }
+    else
+    {
+        BuildProject(project.get(), assemblyReferenceInfos);
+    }
 }
 
 SolutionGrammar* solutionGrammar = nullptr;
@@ -421,7 +444,14 @@ void BuildSolution(const std::string& solutionFilePath)
     std::string config = GetConfig();
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "Building solution '" << solution->Name() << "' (" << solution->FilePath() << ") using " << config << " configuration." << std::endl;
+        if (GetGlobalFlag(GlobalFlags::clean))
+        {
+            std::cout << "Cleaning solution '" << solution->Name() << "' (" << solution->FilePath() << ") using " << config << " configuration." << std::endl;
+        }
+        else
+        {
+            std::cout << "Building solution '" << solution->Name() << "' (" << solution->FilePath() << ") using " << config << " configuration." << std::endl;
+        }
     }
     for (const std::string& projectFilePath : solution->ProjectFilePaths())
     {
@@ -435,15 +465,31 @@ void BuildSolution(const std::string& solutionFilePath)
     bool buildingSystemProjects = false;
     for (Project* project : buildOrder)
     {
-         BuildProject(project, assemblyReferenceInfos);
-         if (project->IsSystemProject())
-         {
-             buildingSystemProjects = true;
-         }
+        if (GetGlobalFlag(GlobalFlags::clean))
+        {
+            CleanProject(project);
+        }
+        else
+        {
+            BuildProject(project, assemblyReferenceInfos);
+            if (project->IsSystemProject())
+            {
+                buildingSystemProjects = true;
+            }
+        }
     }
     boost::filesystem::path solutionAssemblyDir = solution->BasePath();
     solutionAssemblyDir /= "assembly";
     solutionAssemblyDir /= config;
+    if (GetGlobalFlag(GlobalFlags::clean))
+    {
+        boost::filesystem::remove_all(solutionAssemblyDir);
+        if (GetGlobalFlag(GlobalFlags::verbose))
+        {
+            std::cout << "Solution '" << solution->Name() << "' cleaned successfully." << std::endl;
+        }
+        return;
+    }
     boost::filesystem::create_directories(solutionAssemblyDir);
     std::unordered_set<std::string> copied;
     if (buildingSystemProjects)
