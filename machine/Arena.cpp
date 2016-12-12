@@ -130,9 +130,27 @@ std::pair<MemPtr, int32_t> GenArena1::Allocate(uint64_t blockSize, bool allocate
     throw std::runtime_error("could not allocate " + std::to_string(blockSize) + " bytes memory from arena " + std::to_string(int(Id())) + ": arena 1 needs a thread");
 }
 
+struct Resetter
+{
+    Resetter(std::atomic_bool& toReset_) : toReset(toReset_) {}
+    ~Resetter() { toReset = false; }
+    std::atomic_bool& toReset;
+};
+
 std::pair<MemPtr, int32_t> GenArena1::Allocate(Thread& thread, uint64_t blockSize)
 {
-    std::lock_guard<std::mutex> lock(mtx);
+    bool allocating = thread.GetMachine().ThreadAllocating().exchange(true);
+    if (allocating)
+    {
+        thread.SetState(ThreadState::paused);
+        while (thread.GetMachine().ThreadAllocating())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+        }
+        thread.SetState(ThreadState::running);
+        thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
+    }
+    Resetter resetter(thread.GetMachine().ThreadAllocating());
     if (blockSize == 0)
     {
         throw std::runtime_error("invalid allocation request of zero bytes from arena " + std::to_string(int(Id())));
@@ -232,6 +250,18 @@ std::pair<MemPtr, int32_t>  GenArena2::Allocate(uint64_t blockSize, bool allocat
 
 std::pair<MemPtr, int32_t> GenArena2::Allocate(Thread& thread, uint64_t blockSize)
 {
+    bool allocating = thread.GetMachine().ThreadAllocating().exchange(true);
+    if (allocating)
+    {
+        thread.SetState(ThreadState::paused);
+        while (thread.GetMachine().ThreadAllocating())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+        }
+        thread.SetState(ThreadState::running);
+        thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
+    }
+    Resetter resetter(thread.GetMachine().ThreadAllocating());
     if (blockSize > SegmentSize())
     {
         Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), blockSize);

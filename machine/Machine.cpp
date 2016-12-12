@@ -10,8 +10,7 @@
 
 namespace cminor { namespace machine {
 
-Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this),
-    garbageCollector(*this), exiting(), exited(), nextFrameId(0), nextSegmentId(0)
+Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this), garbageCollector(*this), exiting(), exited(), nextFrameId(0), nextSegmentId(0), threadAllocating(false)
 {
     gen1Arena.reset(new GenArena1(*this, GetSegmentSize()));
     gen2Arena.reset(new GenArena2(*this, GetSegmentSize()));

@@ -39,6 +39,7 @@ public:
     void AddSegment(Segment* segment);
     void RemoveSegment(int32_t segmentId);
     Segment* GetSegment(int32_t segmentId) const;
+    std::atomic_bool& ThreadAllocating() { return threadAllocating; }
 private:
     ContainerInst rootInst;
     std::unordered_map<std::string, Instruction*> instructionMap;
@@ -50,6 +51,7 @@ private:
     std::unique_ptr<GenArena2> gen2Arena;
     std::atomic_bool exiting;
     std::atomic_bool exited;
+    std::atomic_bool threadAllocating;
     std::thread garbageCollectorThread;
     std::atomic_int32_t nextFrameId;
     std::atomic_int32_t nextSegmentId;

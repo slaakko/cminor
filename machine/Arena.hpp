@@ -73,8 +73,6 @@ public:
     GenArena1(Machine& machine_, uint64_t size_);
     std::pair<MemPtr, int32_t> Allocate(uint64_t blockSize, bool allocateNewSegment);
     std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize);
-private:
-    std::mutex mtx;
 };
 
 class GenArena2 : public Arena
@@ -83,8 +81,6 @@ public:
     GenArena2(Machine& machine_, uint64_t size_);
     std::pair<MemPtr, int32_t>  Allocate(uint64_t blockSize, bool allocateNewSegment);
     std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize);
-private:
-    std::mutex mtx;
 };
 
 } } // namespace cminor::machine
