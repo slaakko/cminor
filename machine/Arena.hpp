@@ -19,15 +19,20 @@ uint64_t GetSegmentSize();
 const uint64_t defaultSegmentSize = static_cast<uint64_t>(16) * 1024 * 1024; // 16 MB
 const uint64_t defaultLargeObjectThresholdSize = static_cast<uint64_t>(64) * 1024; // 64 K
 
+
+const int32_t notGarbageCollectedSegment = -1;
+
 class Segment
 {
 public:
-    Segment(ArenaId arenaId_, uint64_t pageSize_, uint64_t size_);
+    Segment(int32_t id_, ArenaId arenaId_, uint64_t pageSize_, uint64_t size_);
     ~Segment();
+    int32_t Id() const { return id; }
+    ArenaId GetArenaId() const { return arenaId; }
     MemPtr Allocate(uint64_t blockSize);
-    MemPtr Allocate(Thread& thread, uint64_t blockSize);
     void Clear();
 private:
+    int32_t id;
     ArenaId arenaId;
     uint64_t pageSize;
     uint64_t size;
@@ -36,23 +41,26 @@ private:
     uint8_t* free;
     uint8_t* end;
     std::mutex mtx;
-    bool cleared;
-    std::condition_variable clearedCond;
 };
 
 class Arena
 {
 public:
-    Arena(ArenaId id_, uint64_t segmentSize_);
+    Arena(Machine& machine_, ArenaId id_, uint64_t segmentSize_);
+    Machine& GetMachine() { return machine; }
     ArenaId Id() const { return id; }
-    virtual MemPtr Allocate(uint64_t blockSize) = 0;
-    virtual MemPtr Allocate(Thread& thread, uint64_t blockSize) = 0;
+    std::pair<MemPtr, int32_t> Allocate(uint64_t blockSize);
+    virtual std::pair<MemPtr, int32_t> Allocate(uint64_t blockSize, bool allocateNewSegment) = 0;
+    virtual std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize) = 0;
     void Clear();
     const std::vector<std::unique_ptr<Segment>>& Segments() const { return segments; }
     std::vector<std::unique_ptr<Segment>>& Segments() { return segments; }
     uint64_t PageSize() const { return pageSize; }
     uint64_t SegmentSize() const { return segmentSize; }
+    void RemoveSegment(int32_t segmentId);
+    void RemoveEmptySegments(const std::unordered_set<int32_t>& liveSegments);
 private:
+    Machine& machine;
     ArenaId id;
     uint64_t pageSize;
     uint64_t segmentSize;
@@ -62,9 +70,9 @@ private:
 class GenArena1 : public Arena
 {
 public:
-    GenArena1(uint64_t size_);
-    MemPtr Allocate(uint64_t blockSize);
-    MemPtr Allocate(Thread& thread, uint64_t blockSize);
+    GenArena1(Machine& machine_, uint64_t size_);
+    std::pair<MemPtr, int32_t> Allocate(uint64_t blockSize, bool allocateNewSegment);
+    std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize);
 private:
     std::mutex mtx;
 };
@@ -72,9 +80,9 @@ private:
 class GenArena2 : public Arena
 {
 public:
-    GenArena2(uint64_t size_);
-    MemPtr Allocate(uint64_t blockSize);
-    MemPtr Allocate(Thread& thread, uint64_t blockSize);
+    GenArena2(Machine& machine_, uint64_t size_);
+    std::pair<MemPtr, int32_t>  Allocate(uint64_t blockSize, bool allocateNewSegment);
+    std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize);
 private:
     std::mutex mtx;
 };

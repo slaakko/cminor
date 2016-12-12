@@ -111,8 +111,8 @@ uint64_t ValueSize(ValueType type)
     return sizeof(uint64_t);
 }
 
-ManagedAllocation::ManagedAllocation(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, uint64_t size_) : 
-    handle(handle_), arenaId(arenaId_), memPtr(memPtr_), size(size_), flags(AllocationFlags::none)
+ManagedAllocation::ManagedAllocation(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, uint64_t size_) : 
+    handle(handle_), memPtr(memPtr_), segmentId(segmentId_), size(size_), flags(AllocationFlags::none)
 {
 }
 
@@ -124,8 +124,8 @@ void ManagedAllocation::MarkLiveAllocations(std::unordered_set<AllocationHandle,
 {
 }
 
-Object::Object(ObjectReference reference_, ArenaId arenaId_, MemPtr memPtr_, ObjectType* type_, uint64_t size_) : 
-    ManagedAllocation(reference_, arenaId_, memPtr_, size_), reference(reference_), type(type_)
+Object::Object(ObjectReference reference_, MemPtr memPtr_, int32_t segmentId_, ObjectType* type_, uint64_t size_) : 
+    ManagedAllocation(reference_, memPtr_, segmentId_, size_), reference(reference_), type(type_)
 {
 }
 
@@ -230,8 +230,8 @@ void Object::Set(ManagedMemoryPool* pool)
     pool->Set(this);
 }
 
-ArrayElements::ArrayElements(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, Type* elementType_, int32_t numElements_, uint64_t size_) :
-    ManagedAllocation(handle_, arenaId_, memPtr_, size_), elementType(elementType_), numElements(numElements_)
+ArrayElements::ArrayElements(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, Type* elementType_, int32_t numElements_, uint64_t size_) :
+    ManagedAllocation(handle_, memPtr_, segmentId_, size_), elementType(elementType_), numElements(numElements_)
 {
 }
 
@@ -324,8 +324,8 @@ void ArrayElements::MarkLiveAllocations(std::unordered_set<AllocationHandle, All
     }
 }
 
-StringCharacters::StringCharacters(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, int32_t numChars_, uint64_t size_) : 
-    ManagedAllocation(handle_, arenaId_, memPtr_, size_), numChars(numChars_)
+StringCharacters::StringCharacters(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, int32_t numChars_, uint64_t size_) :
+    ManagedAllocation(handle_, memPtr_, segmentId_, size_), numChars(numChars_)
 {
 }
 
@@ -347,8 +347,8 @@ ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nex
 ObjectReference ManagedMemoryPool::CreateObject(Thread& thread, ObjectType* type)
 {
     ObjectReference reference(nextReferenceValue++);
-    std::pair<ArenaId, MemPtr> arenaMemPtr = machine.AllocateMemory(thread, type->ObjectSize());
-    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, arenaMemPtr.first, arenaMemPtr.second, type, type->ObjectSize()))));
+    std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, type->ObjectSize());
+    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, memPtrSegmentId.first, memPtrSegmentId.second, type, type->ObjectSize()))));
     if (!pairItBool.second)
     {
         throw SystemException("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
@@ -364,7 +364,7 @@ ObjectReference ManagedMemoryPool::CopyObject(ObjectReference from)
     }
     ObjectReference reference(nextReferenceValue++);
     Object& object = GetObject(from);
-    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, object.GetArenaId(), object.GetMemPtr(), object.GetType(), object.Size()))));
+    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, object.GetMemPtr(), object.SegmentId(), object.GetType(), object.Size()))));
     if (!pairItBool.second)
     {
         throw SystemException("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
@@ -427,7 +427,7 @@ AllocationHandle ManagedMemoryPool::CreateStringCharsFromLiteral(const char32_t*
 {
     AllocationHandle handle(nextReferenceValue++);
     uint64_t stringSize = static_cast<uint64_t>(sizeof(char32_t)) * len;
-    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, ArenaId::notGCMem, MemPtr(strLit), len, stringSize))));
+    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, MemPtr(strLit), notGarbageCollectedSegment, len, stringSize))));
     if (!pairItBool.second)
     {
         throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
@@ -451,13 +451,13 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
         MemPtr characters = charElements->GetMemPtr();
         AllocationHandle handle(nextReferenceValue++);
         uint64_t stringSize = numChars * ValueSize(ValueType::charType);
-        std::pair<ArenaId, MemPtr> arenaMemPtr = machine.AllocateMemory(thread, stringSize);
-        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, arenaMemPtr.first, arenaMemPtr.second, numChars, stringSize))));
+        std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
+        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize))));
         if (!pairItBool.second)
         {
             throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
         }
-        MemPtr stringMem = arenaMemPtr.second;
+        MemPtr stringMem = memPtrSegmentId.first;
         std::memcpy(stringMem.Value(), characters.Value(), stringSize);
         return std::make_pair(handle, numChars);
     }
@@ -476,13 +476,13 @@ ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_stri
     int32_t numChars = int32_t(s.length());
     AllocationHandle handle(nextReferenceValue++);
     uint64_t stringSize = numChars * ValueSize(ValueType::charType);
-    std::pair<ArenaId, MemPtr> arenaMemPtr = machine.AllocateMemory(thread, stringSize);
-    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, arenaMemPtr.first, arenaMemPtr.second, numChars, stringSize))));
+    std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
+    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize))));
     if (!pairItBool.second)
     {
         throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
     }
-    MemPtr stringMem = arenaMemPtr.second;
+    MemPtr stringMem = memPtrSegmentId.first;
     std::memcpy(stringMem.Value(), s.c_str(), stringSize);
     Object& strObject = GetObject(str);
     ClassData* classDataPtr = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String"));
@@ -616,8 +616,8 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
     uint64_t arraySize = ValueSize(elementType->GetValueType()) * uint64_t(length);
     if (arraySize > 0)
     {
-        std::pair<ArenaId, MemPtr> arenaMemPtr = machine.AllocateMemory(thread, arraySize);
-        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, arenaMemPtr.first, arenaMemPtr.second, elementType, length, arraySize))));
+        std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, arraySize);
+        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, memPtrSegmentId.first, memPtrSegmentId.second, elementType, length, arraySize))));
         if (!pairItBool.second)
         {
             throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
@@ -625,7 +625,7 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
     }
     else
     {
-        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, ArenaId::notGCMem, MemPtr(), elementType, length, arraySize))));
+        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, MemPtr(), notGarbageCollectedSegment, elementType, length, arraySize))));
         if (!pairItBool.second)
         {
             throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
@@ -763,38 +763,153 @@ void ManagedMemoryPool::ResetLiveFlags()
 
 void ManagedMemoryPool::MoveLiveAllocationsToArena(ArenaId fromArenaId, Arena& toArena)
 {
-    std::unordered_map<void*, void*> moveMap;
+    std::unordered_map<void*, std::pair<MemPtr, int32_t>> moveMap;
     std::vector<AllocationHandle> toBeDestroyed;
     for (auto& p : allocations)
     {
         ManagedAllocation* allocation = p.second.get();
-        if (allocation->GetArenaId() == fromArenaId)
+        if (allocation->SegmentId() != notGarbageCollectedSegment)
         {
-            if (allocation->IsLive())
+            if (machine.GetSegment(allocation->SegmentId())->GetArenaId() == fromArenaId)
             {
-                MemPtr oldMemPtr = allocation->GetMemPtr();
-                auto it = moveMap.find(oldMemPtr.Value());
-                if (it == moveMap.cend())
+                if (allocation->IsLive())
                 {
-                    uint64_t n = allocation->Size();
-                    MemPtr newMemPtr = toArena.Allocate(n);
-                    std::memcpy(newMemPtr.Value(), oldMemPtr.Value(), n);
-                    allocation->SetMemPtr(newMemPtr);
-                    allocation->SetArenaId(toArena.Id());
-                    moveMap[oldMemPtr.Value()] = newMemPtr.Value();
+                    MemPtr oldMemPtr = allocation->GetMemPtr();
+                    auto it = moveMap.find(oldMemPtr.Value());
+                    if (it == moveMap.cend())
+                    {
+                        uint64_t n = allocation->Size();
+                        std::pair<MemPtr, int32_t> newMemPtrSegmentId = toArena.Allocate(n);
+                        std::memcpy(newMemPtrSegmentId.first.Value(), oldMemPtr.Value(), n);
+                        allocation->SetMemPtr(newMemPtrSegmentId.first);
+                        allocation->SetSegmentId(newMemPtrSegmentId.second);
+                        moveMap[oldMemPtr.Value()] = newMemPtrSegmentId;
+                    }
+                    else
+                    {
+                        MemPtr newMemPtr(it->second.first);
+                        int32_t segmentId = it->second.second;
+                        allocation->SetMemPtr(it->second.first);
+                        allocation->SetSegmentId(segmentId);
+                    }
                 }
                 else
                 {
-                    MemPtr newMemPtr(it->second);
-                    allocation->SetMemPtr(newMemPtr);
-                    allocation->SetArenaId(toArena.Id());
+                    toBeDestroyed.push_back(allocation->Handle());
                 }
             }
-            else
+        }
+    }
+    for (AllocationHandle handle : toBeDestroyed)
+    {
+        DestroyAllocation(handle);
+    }
+}
+
+struct SegmentIdLess
+{
+    bool operator()(ManagedAllocation* left, ManagedAllocation* right) const
+    {
+        return left->SegmentId() < right->SegmentId();
+    }
+};
+
+void MoveSegment(Arena& arena, std::unordered_map<void*, std::pair<MemPtr, int32_t>>& moveMap, int32_t segmentId, 
+    std::vector<ManagedAllocation*>::iterator segmentBegin, std::vector<ManagedAllocation*>::iterator segmentEnd, bool allocateNewSegment)
+{
+    for (auto sit = segmentBegin; sit != segmentEnd; ++sit)
+    {
+        ManagedAllocation* allocation = *sit;
+        MemPtr oldMemPtr = allocation->GetMemPtr();
+        auto mit = moveMap.find(oldMemPtr.Value());
+        if (mit == moveMap.cend())
+        {
+            uint64_t n = allocation->Size();
+            std::pair<MemPtr, int32_t> newMemPtrSegmentId = arena.Allocate(n, allocateNewSegment);
+            allocateNewSegment = false;
+            std::memcpy(newMemPtrSegmentId.first.Value(), oldMemPtr.Value(), n);
+            allocation->SetMemPtr(newMemPtrSegmentId.first);
+            allocation->SetSegmentId(newMemPtrSegmentId.second);
+            moveMap[oldMemPtr.Value()] = newMemPtrSegmentId;
+        }
+        else
+        {
+            MemPtr newMemPtr(mit->second.first);
+            int32_t segmentId = mit->second.second;
+            allocation->SetMemPtr(newMemPtr);
+            allocation->SetSegmentId(segmentId);
+        }
+    }
+    arena.RemoveSegment(segmentId);
+}
+
+void ManagedMemoryPool::MoveLiveAllocationsToNewSegments(Arena& arena)
+{
+    std::unordered_map<void*, std::pair<MemPtr, int32_t>> moveMap;
+    std::vector<ManagedAllocation*> liveAllocations;
+    std::vector<AllocationHandle> toBeDestroyed;
+    std::unordered_set<int32_t> liveSegments;
+    for (auto& p : allocations)
+    {
+        ManagedAllocation* allocation = p.second.get();
+        if (allocation->SegmentId() != notGarbageCollectedSegment)
+        {
+            if (machine.GetSegment(allocation->SegmentId())->GetArenaId() == arena.Id())
             {
-                toBeDestroyed.push_back(allocation->Handle());
+                if (allocation->IsLive())
+                {
+                    liveAllocations.push_back(allocation);
+                    liveSegments.insert(allocation->SegmentId());
+                }
+                else
+                {
+                    toBeDestroyed.push_back(allocation->Handle());
+                }
             }
         }
+    }
+    arena.RemoveEmptySegments(liveSegments);
+    std::sort(liveAllocations.begin(), liveAllocations.end(), SegmentIdLess());
+    int32_t currentSegmentId = -1;
+    auto segmentBegin = liveAllocations.begin();
+    auto end = liveAllocations.end();
+    bool firstMove = true;
+    for (auto it = liveAllocations.begin(); it != end; ++it)
+    {
+        ManagedAllocation* liveAllocation = *it;
+        if (liveAllocation->SegmentId() != currentSegmentId)
+        {
+            bool moveSegment = currentSegmentId != -1;
+            if (it - segmentBegin == 1)
+            {
+                ManagedAllocation* allocation = *segmentBegin;
+                if (allocation->Size() >= GetSegmentSize())
+                {
+                    moveSegment = false;
+                }
+            }
+            if (moveSegment)
+            {
+                MoveSegment(arena, moveMap, liveAllocation->SegmentId(), segmentBegin, it, firstMove);
+                firstMove = false;
+            }
+            currentSegmentId = liveAllocation->SegmentId();
+            segmentBegin = it;
+        }
+    }
+    bool moveSegment = currentSegmentId != -1;
+    if (end - segmentBegin == 1)
+    {
+        ManagedAllocation* allocation = *segmentBegin;
+        if (allocation->Size() >= GetSegmentSize())
+        {
+            moveSegment = false;
+        }
+    }
+    if (moveSegment)
+    {
+        MoveSegment(arena, moveMap, currentSegmentId, segmentBegin, end, firstMove);
+        firstMove = false;
     }
     for (AllocationHandle handle : toBeDestroyed)
     {

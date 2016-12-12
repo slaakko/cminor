@@ -12,7 +12,7 @@ namespace cminor { namespace machine {
 
 std::mutex garbageCollectorMutex;
 
-GarbageCollector::GarbageCollector(Machine& machine_) : machine(machine_), state(GarbageCollectorState::idle), started(false), collectionRequested(false)
+GarbageCollector::GarbageCollector(Machine& machine_) : machine(machine_), state(GarbageCollectorState::idle), started(false), collectionRequested(false), fullCollectionRequested(false)
 {
 }
 
@@ -79,6 +79,34 @@ void GarbageCollector::RequestGarbageCollection(Thread& thread)
 #endif
 }
 
+void GarbageCollector::RequestFullCollection(Thread& thread)
+{
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + ":RequestFullCollection()");
+#endif
+    while (state != GarbageCollectorState::idle)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+    }
+    fullCollectionRequested = true;
+    collectionRequested = true;
+    collectionRequestedCond.notify_one();
+#ifdef GC_LOGGING
+    LogMessage("<" + std::to_string(thread.Id()) + ":RequestFullCollection()");
+#endif
+}
+
+void GarbageCollector::RequestFullCollection()
+{
+#ifdef GC_LOGGING
+    LogMessage(">gc:RequestFullCollection()");
+#endif
+    fullCollectionRequested = true;
+#ifdef GC_LOGGING
+    LogMessage("<gc:RequestFullCollection()");
+#endif
+}
+
 void GarbageCollector::WaitUntilGarbageCollected(Thread& thread)
 {
 #ifdef GC_LOGGING
@@ -99,6 +127,7 @@ void GarbageCollector::WaitForGarbageCollection()
     LogMessage(">gc:WaitForGarbageCollection() (idle)");
 #endif
     std::unique_lock<std::mutex> lock(garbageCollectorMutex);
+    fullCollectionRequested = false;
     state = GarbageCollectorState::idle;
     collectionRequestedCond.wait(lock);
 #ifdef GC_LOGGING
@@ -125,7 +154,7 @@ void GarbageCollector::Run()
 #ifdef GC_LOGGING
             LogMessage(">gc:Run() (collecting)");
 #endif
-            DoCollectGarbage();
+            CollectGarbage();
             state = GarbageCollectorState::collected;
 #ifdef GC_LOGGING
             LogMessage(">gc:Run() (collected)");
@@ -135,27 +164,19 @@ void GarbageCollector::Run()
     }
 }
 
-void GarbageCollector::DoCollectGarbage()
-{
-    DoGarbageCollectArena(ArenaId::gen1Arena);
-#ifdef GC_LOGGING
-    std::cout << ".";
-#endif
-}
-
-void GarbageCollector::DoGarbageCollectArena(ArenaId arenaId)
+void GarbageCollector::CollectGarbage()
 {
     machine.GetManagedMemoryPool().ResetLiveFlags();
     MarkLiveAllocations();
-    if (arenaId == ArenaId::gen1Arena)
+    machine.GetManagedMemoryPool().MoveLiveAllocationsToArena(ArenaId::gen1Arena, machine.Gen2Arena());
+    machine.Gen1Arena().Clear();
+    if (fullCollectionRequested)
     {
-        machine.GetManagedMemoryPool().MoveLiveAllocationsToArena(arenaId, machine.Gen2Arena());
-        machine.Gen1Arena().Clear();
+        machine.GetManagedMemoryPool().MoveLiveAllocationsToNewSegments(machine.Gen2Arena());
     }
-    else
-    {
-        // compact gen2Arena 
-    }
+#ifdef GC_LOGGING
+    std::cout << ".";
+#endif
 }
 
 inline void GarbageCollector::MarkLiveAllocations(ObjectReference objectReference, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked)

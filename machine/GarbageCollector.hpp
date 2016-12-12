@@ -30,6 +30,8 @@ public:
     bool WantToCollectGarbage();
     void WaitForIdle(Thread& thread);
     void RequestGarbageCollection(Thread& thread);
+    void RequestFullCollection(Thread& thread);
+    void RequestFullCollection();
     void WaitUntilGarbageCollected(Thread& thread);
     void Run();
     bool Started() const { return started; }
@@ -39,11 +41,11 @@ private:
     std::atomic_bool collectionRequested;
     std::condition_variable collectionRequestedCond;
     bool started;
+    bool fullCollectionRequested;
     void WaitForGarbageCollection();
     void WaitForThreadsPaused();
     void WaitForThreadsRunning();
-    void DoCollectGarbage();
-    void DoGarbageCollectArena(ArenaId arenaId);
+    void CollectGarbage();
     void MarkLiveAllocations(ObjectReference objectReference, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked);
     void MarkLiveAllocations();
 };

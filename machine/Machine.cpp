@@ -11,8 +11,10 @@
 namespace cminor { namespace machine {
 
 Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this),
-    garbageCollector(*this), gen1Arena(GetSegmentSize()), gen2Arena(GetSegmentSize()), exiting(), exited(), nextFrameId(0)
+    garbageCollector(*this), exiting(), exited(), nextFrameId(0), nextSegmentId(0)
 {
+    gen1Arena.reset(new GenArena1(*this, GetSegmentSize()));
+    gen2Arena.reset(new GenArena2(*this, GetSegmentSize()));
     // no operation:
     rootInst.SetInst(0x00, new NopInst());
 
@@ -605,15 +607,15 @@ std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
     return std::unique_ptr<Instruction>(clonedInst);
 }
 
-std::pair<ArenaId, MemPtr> Machine::AllocateMemory(Thread& thread, uint64_t blockSize)
+std::pair<MemPtr, int32_t> Machine::AllocateMemory(Thread& thread, uint64_t blockSize)
 {
     if (blockSize <= defaultLargeObjectThresholdSize)
     {
-        return std::make_pair(gen1Arena.Id(), gen1Arena.Allocate(thread, blockSize));
+        return gen1Arena->Allocate(thread, blockSize);
     }
     else
     {
-        return std::make_pair(gen2Arena.Id(), gen2Arena.Allocate(thread, blockSize));
+        return gen2Arena->Allocate(thread, blockSize);
     }
 }
 
@@ -640,6 +642,11 @@ int32_t Machine::GetNextFrameId()
     return nextFrameId++;
 }
 
+int32_t Machine::GetNextSegmentId()
+{
+    return nextSegmentId++;
+}
+
 bool Machine::Exiting()
 {
     return exiting.load();
@@ -658,6 +665,26 @@ void Machine::Exit()
         garbageCollectorThread.join();
     }
     exited = true;
+}
+
+void Machine::AddSegment(Segment* segment)
+{
+    segmentMap[segment->Id()] = segment;
+}
+
+void Machine::RemoveSegment(int32_t segmentId)
+{
+    segmentMap.erase(segmentId);
+}
+
+Segment* Machine::GetSegment(int32_t segmentId) const
+{
+    auto it = segmentMap.find(segmentId);
+    if (it != segmentMap.cend())
+    {
+        return it->second;
+    }
+    throw std::runtime_error("segment " + std::to_string(segmentId) + " not found");
 }
 
 } } // namespace cminor::machine

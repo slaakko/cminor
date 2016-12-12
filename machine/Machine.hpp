@@ -28,13 +28,17 @@ public:
     const std::vector<std::unique_ptr<Thread>>& Threads() const { return threads; }
     Thread& MainThread() { Assert(!threads.empty(), "no main thread"); return *threads.front().get(); }
     GarbageCollector& GetGarbageCollector() { return garbageCollector; }
-    std::pair<ArenaId, MemPtr> AllocateMemory(Thread& thread, uint64_t blockSize);
+    std::pair<MemPtr, int32_t> AllocateMemory(Thread& thread, uint64_t blockSize);
     void RunGarbageCollector();
-    Arena& Gen1Arena() { return gen1Arena; }
-    Arena& Gen2Arena() { return gen2Arena; }
+    Arena& Gen1Arena() { return *gen1Arena; }
+    Arena& Gen2Arena() { return *gen2Arena; }
     int32_t GetNextFrameId();
+    int32_t GetNextSegmentId();
     bool Exiting();
     void Exit();
+    void AddSegment(Segment* segment);
+    void RemoveSegment(int32_t segmentId);
+    Segment* GetSegment(int32_t segmentId) const;
 private:
     ContainerInst rootInst;
     std::unordered_map<std::string, Instruction*> instructionMap;
@@ -42,12 +46,14 @@ private:
     ManagedMemoryPool managedMemoryPool;
     std::vector<std::unique_ptr<Thread>> threads;
     GarbageCollector garbageCollector;
-    GenArena1 gen1Arena;
-    GenArena2 gen2Arena;
+    std::unique_ptr<GenArena1> gen1Arena;
+    std::unique_ptr<GenArena2> gen2Arena;
     std::atomic_bool exiting;
     std::atomic_bool exited;
     std::thread garbageCollectorThread;
     std::atomic_int32_t nextFrameId;
+    std::atomic_int32_t nextSegmentId;
+    std::unordered_map<int32_t, Segment*> segmentMap;
 };
 
 } } // namespace cminor::machine
