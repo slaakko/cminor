@@ -6,29 +6,59 @@
 #include <cminor/machine/Thread.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Function.hpp>
+#include <chrono>
 
 namespace cminor { namespace machine {
 
-Thread::Thread(Machine& machine_, Function& fun_) : 
-    machine(machine_), fun(fun_), instructionCount(0), checkWantToCollectGarbageCount(100), paused(), sleeping(), pausedCond(), handlingException(false), currentExceptionBlock(nullptr), 
-    exceptionObjectType(nullptr), exitBlockNext(-1)
+Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
+    id(id_), machine(machine_), fun(fun_), instructionCount(0), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), exceptionObjectType(nullptr), exitBlockNext(-1)
 {
     frames.push_back(Frame(machine, *this, fun));
 }
 
 inline void Thread::CheckPause()
 {
-    if (CheckWantToCollectGarbage())
+    if (GetMachine().GetGarbageCollector().WantToCollectGarbage())
     {
-        if (GetMachine().GetGarbageCollector().WantToCollectGarbage())
-        {
-            PauseUntilGarbageCollected();
-        }
+        SetState(ThreadState::paused);
+        GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(*this);
+        SetState(ThreadState::running);
+        GetMachine().GetGarbageCollector().WaitForIdle(*this);
     }
 }
 
+void Thread::SetState(ThreadState state_)
+{
+    state = state_;
+}
+
+void Thread::WaitPaused()
+{
+    while (state != ThreadState::paused && state != ThreadState::exited)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+    }
+}
+
+void Thread::WaitRunning()
+{
+    while (state != ThreadState::running && state != ThreadState::exited)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+    }
+}
+
+struct ExitSetter
+{
+    ExitSetter(Thread& thread_) : thread(thread_) {}
+    ~ExitSetter() { thread.SetState(ThreadState::exited);  }
+    Thread& thread;
+};
+
 void Thread::RunToEnd()
 {
+    SetState(ThreadState::running);
+    ExitSetter exitSetter(*this);
     Assert(!frames.empty(), "thread got no frame");
     while (true)
     {
@@ -63,13 +93,12 @@ void Thread::Run(const std::vector<utf32_string>& programArguments, ObjectType* 
         frame->OpStack().Push(args);
     }
     RunToEnd();
-    std::lock_guard<std::mutex> lock(mtx);
-    paused.store(true);
-    pausedCond.notify_one();
 }
 
 void Thread::RunDebug()
 {
+    SetState(ThreadState::running);
+    ExitSetter exitSetter(*this);
     Assert(!frames.empty(), "thread got no frame");
     while (true)
     {
@@ -153,38 +182,6 @@ void Thread::Next()
     breakPoints.insert(bp);
     RunDebug();
     breakPoints.erase(bp);
-}
-
-void Thread::PauseUntilGarbageCollected()
-{
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        paused.store(true);
-        pausedCond.notify_one();
-    }
-    machine.GetGarbageCollector().WaitUntilGarbageCollected();
-}
-
-void Thread::WaitPaused()
-{
-    std::unique_lock<std::mutex> lock(mtx);
-    pausedCond.wait(lock, [this] { return paused.load(); });
-}
-
-bool Thread::Sleeping()
-{
-    return sleeping.load();
-}
-
-void Thread::Sleep()
-{
-    sleeping.store(true);
-    // todo: sleep
-    sleeping.store(false);
-    if (machine.GetGarbageCollector().CollectingGarbage())
-    {
-        machine.GetGarbageCollector().WaitUntilGarbageCollected();
-    }
 }
 
 void Thread::HandleException(ObjectReference exception_)

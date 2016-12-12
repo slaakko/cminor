@@ -16,56 +16,55 @@ void PrintHelp()
     std::cout <<
         "Cminor programming language commander version " << version << "\n\n" <<
         "Usage: cminor [global-options]\n" <<
-        "(      run [run-options] program.cminora [program-arguments]\n" <<
+        "(      build [build-options] { solution.cminors | project.cminorp }\n" <<
+        "|      clean [clean-options] { solution.cminors | project.cminorp }\n" <<
         "|      debug [debug-options] program.cminora [program-arguments]\n" <<
-        "|      compile [compile-options] { solution.cminors | project.cminorp }\n" <<
-        "|      clean { solution.cminors | project.cminorp }\n" <<
         "|      dump [dump-options] assembly.cminora [outputfile]\n" <<
+        "|      run [run-options] program.cminora [program-arguments]\n" <<
         ")\n" <<
         "---------------------------------------------------------------------\n" <<
         "global-options:\n" <<
         "   -v | --verbose : verbose output\n" <<
         "   -h | --help    : print this help\n" << 
         "---------------------------------------------------------------------\n" <<
-        "cminor run [run-options] program.cminora [program-arguments]\n\n" <<
-        "Run program.cminora with given program-arguments in virtual machine.\n" <<
-        "run-options:\n" <<
-        "   -s=SEGMENT-SIZE\n" <<
-        "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
-        "       segment in megabytes. The default is 16 MB. SEGMENT-SIZE is\n" <<
-        "       also the maximum size of single continuous object.\n" <<
-        "---------------------------------------------------------------------\n" <<
-        "cminor debug [debug-options] program.cminora [program-arguments]\n\n" <<
-        "Debug program.cminora with given program arguments.\n"
-        "debug-options:\n" <<
-        "   -s=SEGMENT-SIZE\n" <<
-        "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
-        "       segment in megabytes. The default is 16 MB. SEGMENT-SIZE is\n" <<
-        "       also the maximum size of single continuous object.\n" <<
-        "---------------------------------------------------------------------\n" <<
-        "cminor compile [compile-options] { solution.cminors | project.cminorp }\n\n" <<
-        "Compile each given solution.cminors and project.cminorp.\n" <<
-        "compile-options:\n" <<
-        "   -c=CONFIG\n" << 
+        "cminor build [build-options] { solution.cminors | project.cminorp }\n\n" <<
+        "Build each given solution.cminors and project.cminorp.\n\n" <<
+        "build-options:\n" <<
+        "   -c=CONFIG | --config=CONFIG\n" <<
         "       Use CONFIG configuration. CONFIG can be debug or release.\n" <<
         "       The default is debug.\n" <<
         "   -d | --dparse\n" <<
-        "       Debug parsing to standard output\n"
-        "   -cl | --clean\n" <<
-        "       Clean given projects and solutions.\n" << 
+        "       Debug parsing to standard output.\n"
+        "   -n | --clean\n" <<
+        "       Clean given projects and solutions.\n" <<
         "---------------------------------------------------------------------\n" <<
         "cminor clean [clean-options] { solution.cminors | project.cminorp }\n\n" <<
+        "Clean each given solution.cminors and project.cminorp.\n\n" <<
         "clean-options:\n" <<
-        "   -c=CONFIG\n" <<
+        "   -c=CONFIG | --config=CONFIG\n" <<
         "       Use CONFIG configuration. CONFIG can be debug or release.\n" <<
         "       The default is debug.\n" <<
         "---------------------------------------------------------------------\n" <<
+        "cminor debug [debug-options] program.cminora [program-arguments]\n\n" <<
+        "Debug program.cminora with given program arguments.\n\n"
+        "debug-options:\n" <<
+        "   -s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE\n" <<
+        "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
+        "       segment in megabytes. The default is 16 MB.\n" <<
+        "---------------------------------------------------------------------\n" <<
         "cminor dump [dump-options] assembly.cminora [outputfile]\n\n" <<
-        "Dump information in assembly.cminora to standard output or given file.\n" <<
+        "Dump information in assembly.cminora to standard output or given file.\n\n" <<
         "dump-options:\n" <<
+        "   -a | --all       : dump all (default)\n" <<
         "   -f | --functions : dump functions\n" <<
         "   -s | --symbols   : dump symbols\n" <<
-        "   -a | --all       : dump all (default)\n" <<
+        "---------------------------------------------------------------------\n" <<
+        "cminor run [run-options] program.cminora [program-arguments]\n\n" <<
+        "Run program.cminora with given program-arguments in virtual machine.\n\n" <<
+        "run-options:\n" <<
+        "   -s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE\n" <<
+        "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
+        "       segment in megabytes. The default is 16 MB.\n" <<
         "---------------------------------------------------------------------\n" <<
         std::endl;
 }
@@ -74,7 +73,7 @@ enum class State
 {
     globalOptions, 
     runOptions, runProgram, programArguments,
-    compileOptions, projectsAndSolutions,
+    buildOptions, projectsAndSolutions,
     cleanOptions,
     debugOptions,
     dumpOptions, dumpAssemblyName, dumpOutputFile, dumpEnd
@@ -96,7 +95,7 @@ int main(int argc, const char** argv)
         std::vector<std::string> runOptions;
         std::string runProgram;
         std::vector<std::string> programArguments;
-        std::vector<std::string> compileOptions;
+        std::vector<std::string> buildOptions;
         std::vector<std::string> projectsAndSolutions;
         std::vector<std::string> globalOptions;
         std::vector<std::string> debugOptions;
@@ -137,13 +136,13 @@ int main(int argc, const char** argv)
                         {
                             state = State::debugOptions;
                         }
-                        else if (command == "compile")
+                        else if (command == "build")
                         {
-                            state = State::compileOptions;
+                            state = State::buildOptions;
                         }
                         else if (command == "clean")
                         {
-                            compileOptions.push_back("--clean");
+                            buildOptions.push_back("--clean");
                             state = State::cleanOptions;
                         }
                         else if (command == "dump")
@@ -171,7 +170,7 @@ int main(int argc, const char** argv)
                             }
                             else
                             {
-                                if (components[0] == "-s")
+                                if (components[0] == "-s" || components[0] == "--segment-size")
                                 {
                                     runOptions.push_back(arg);
                                 }
@@ -194,61 +193,61 @@ int main(int argc, const char** argv)
                     programArguments.push_back(arg);
                     break;
                 }
-                case State::dumpOptions:
+                case State::dumpOptions: case State::dumpAssemblyName: case State::dumpOutputFile: case State::dumpEnd:
                 {
-                    if (!arg.empty() && arg[0] == '-')
+                    if (state == State::dumpOptions)
                     {
-                        if (arg == "-f" || arg == "--functions")
+                        if (!arg.empty() && arg[0] == '-')
                         {
-                            dumpOptions.push_back(arg);
-                        }
-                        else if (arg == "-s" || arg == "--symbols")
-                        {
-                            dumpOptions.push_back(arg);
-                        }
-                        else if (arg == "-a" || arg == "--all")
-                        {
-                            dumpOptions.push_back(arg);
+                            if (arg == "-f" || arg == "--functions")
+                            {
+                                dumpOptions.push_back(arg);
+                            }
+                            else if (arg == "-s" || arg == "--symbols")
+                            {
+                                dumpOptions.push_back(arg);
+                            }
+                            else if (arg == "-a" || arg == "--all")
+                            {
+                                dumpOptions.push_back(arg);
+                            }
+                            else
+                            {
+                                throw std::runtime_error("unknown dump option '" + arg + "'");
+                            }
                         }
                         else
                         {
-                            throw std::runtime_error("unknown dump option '" + arg + "'");
-                        }
-                    }
-                    else
-                    {
-                        if (state == State::dumpOptions)
-                        {
                             state = State::dumpAssemblyName;
                         }
-                        if (state == State::dumpAssemblyName)
-                        {
-                            dumpAssemblyName = arg;
-                            state = State::dumpOutputFile;
-                        }
-                        else if (state == State::dumpOutputFile)
-                        {
-                            dumpOutputFile = arg;
-                            state = State::dumpEnd;
-                        }
-                        else if (state == State::dumpEnd)
-                        {
-                            throw std::runtime_error("unknown dump argument '" + arg + "'");
-                        }
+                    }
+                    if (state == State::dumpAssemblyName)
+                    {
+                        dumpAssemblyName = arg;
+                        state = State::dumpOutputFile;
+                    }
+                    else if (state == State::dumpOutputFile)
+                    {
+                        dumpOutputFile = arg;
+                        state = State::dumpEnd;
+                    }
+                    else if (state == State::dumpEnd)
+                    {
+                        throw std::runtime_error("unknown dump argument '" + arg + "'");
                     }
                     break;
                 }
-                case State::compileOptions:
+                case State::buildOptions:
                 {
                     if (!arg.empty() && arg[0] == '-')
                     {
                         if (arg == "-d" || arg == "--dparse")
                         {
-                            compileOptions.push_back(arg);
+                            buildOptions.push_back(arg);
                         }
-                        else if (arg == "-cl" || arg == "--clean")
+                        else if (arg == "-n" || arg == "--clean")
                         {
-                            compileOptions.push_back(arg);
+                            buildOptions.push_back(arg);
                         }
                         else if (arg.find('=', 0) != std::string::npos)
                         {
@@ -259,15 +258,15 @@ int main(int argc, const char** argv)
                             }
                             else
                             {
-                                if (components[0] == "-c")
+                                if (components[0] == "-c" || components[0] == "--config")
                                 {
                                     if (components[1] == "release")
                                     {
-                                        compileOptions.push_back(arg);
+                                        buildOptions.push_back(arg);
                                     }
                                     else if (components[1] == "debug")
                                     {
-                                        compileOptions.push_back(arg);
+                                        buildOptions.push_back(arg);
                                     }
                                     else
                                     {
@@ -282,7 +281,7 @@ int main(int argc, const char** argv)
                         }
                         else
                         {
-                            throw std::runtime_error("unknown compile option '" + arg + "'");
+                            throw std::runtime_error("unknown build option '" + arg + "'");
                         }
                     }
                     else
@@ -304,15 +303,15 @@ int main(int argc, const char** argv)
                             }
                             else
                             {
-                                if (components[0] == "-c")
+                                if (components[0] == "-c" || components[0] == "--config")
                                 {
                                     if (components[1] == "release")
                                     {
-                                        compileOptions.push_back(arg);
+                                        buildOptions.push_back(arg);
                                     }
                                     else if (components[1] == "debug")
                                     {
-                                        compileOptions.push_back(arg);
+                                        buildOptions.push_back(arg);
                                     }
                                     else
                                     {
@@ -360,20 +359,20 @@ int main(int argc, const char** argv)
                 commandLine.append(" ").append(QuotedPath(dumpOutputFile));
             }
         }
-        else if (command == "compile" || command == "clean")
+        else if (command == "build" || command == "clean")
         {
             if (projectsAndSolutions.empty())
             {
-                throw std::runtime_error("incomplete compile/clean command: no project or solution given");
+                throw std::runtime_error("incomplete build/clean command: no project or solution given");
             }
             commandLine = "cminorc";
             for (const std::string& globalOption : globalOptions)
             {
                 commandLine.append(" ").append(globalOption);
             }
-            for (const std::string& compileOption : compileOptions)
+            for (const std::string& buildOption : buildOptions)
             {
-                commandLine.append(" ").append(compileOption);
+                commandLine.append(" ").append(buildOption);
             }
             for (const std::string& projectOrSolution : projectsAndSolutions)
             {

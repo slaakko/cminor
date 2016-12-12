@@ -69,10 +69,9 @@ void PrintHelp()
         "Debug program.cminora with given arguments.\n" <<
         "Options:\n" <<
         "-h | --help     : print this help message" <<
-        "-s=SEGMENT-SIZE :\n" <<
+        "-s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE:\n" <<
         "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
-        "       segment in megabytes. The default is 16 MB. SEGMENT-SIZE is\n" <<
-        "       also the maximum size of single continuous object.\n" <<
+        "       segment in megabytes. The default is 16 MB.\n" <<
         std::endl;
 }
 
@@ -116,7 +115,7 @@ int main(int argc, const char** argv)
                             {
                                 throw std::runtime_error("invalid argument '" + arg + "'");
                             }
-                            if (components[0] == "-s")
+                            if (components[0] == "-s" || components[0] == "--segment-size")
                             {
                                 std::stringstream s;
                                 s.str(components[1]);

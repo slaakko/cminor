@@ -14,43 +14,38 @@
 
 namespace cminor { namespace machine {
 
+extern std::mutex garbageCollectorMutex;
+
 class Machine;
-const uint64_t defaultGarbageCollectionIntervalMs = 250;
+
+enum class GarbageCollectorState
+{
+    idle, requested, collecting, collected
+};
 
 class GarbageCollector
 {
 public:
-    GarbageCollector(Machine& machine_, uint64_t garbageCollectionIntervalMs_);
+    GarbageCollector(Machine& machine_);
     bool WantToCollectGarbage();
-    void SetWantToCollectGarbage();
-    void ResetWantToCollectGarbage();
-    void WaitForThreadsPaused();
-    void WaitUntilGarbageCollected();
-    void SetGarbageCollected();
-    void ResetGarbageCollected();
-    bool CollectingGarbage();
-    void SetCollectingGarbage();
-    void ResetCollectingGarbage();
-    void DoCollectGarbage();
-    void DoGarbageCollectArena(ArenaId arenaId);
-    void MarkLiveObjects(IntegralValue value, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked);
-    void MarkLiveObjects();
-    void RequestGarbageCollection();
-    void WaitForGarbageCollection();
+    void WaitForIdle(Thread& thread);
+    void RequestGarbageCollection(Thread& thread);
+    void WaitUntilGarbageCollected(Thread& thread);
     void Run();
     bool Started() const { return started; }
 private:
     Machine& machine;
+    std::atomic<GarbageCollectorState> state;
+    std::atomic_bool collectionRequested;
+    std::condition_variable collectionRequestedCond;
     bool started;
-    std::atomic_bool wantToCollectGarbage;
-    std::atomic_bool collectingGarbage;
-    std::atomic_bool garbageCollected;
-    std::atomic_bool doGarbageCollection;
-    std::mutex garbageCollectedMtx;
-    std::condition_variable garbageCollectedCond;
-    std::mutex doGarbageCollectionMtx;
-    std::condition_variable doGarbageCollectionCond;
-    uint64_t garbageCollectionIntervalMs;
+    void WaitForGarbageCollection();
+    void WaitForThreadsPaused();
+    void WaitForThreadsRunning();
+    void DoCollectGarbage();
+    void DoGarbageCollectArena(ArenaId arenaId);
+    void MarkLiveAllocations(ObjectReference objectReference, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked);
+    void MarkLiveAllocations();
 };
 
 } } // namespace cminor::machine

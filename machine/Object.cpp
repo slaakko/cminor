@@ -111,7 +111,8 @@ uint64_t ValueSize(ValueType type)
     return sizeof(uint64_t);
 }
 
-ManagedAllocation::ManagedAllocation(ArenaId arenaId_, MemPtr memPtr_, uint64_t size_) : arenaId(arenaId_), memPtr(memPtr_), size(size_)
+ManagedAllocation::ManagedAllocation(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, uint64_t size_) : 
+    handle(handle_), arenaId(arenaId_), memPtr(memPtr_), size(size_), flags(AllocationFlags::none)
 {
 }
 
@@ -119,8 +120,12 @@ ManagedAllocation::~ManagedAllocation()
 {
 }
 
+void ManagedAllocation::MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool)
+{
+}
+
 Object::Object(ObjectReference reference_, ArenaId arenaId_, MemPtr memPtr_, ObjectType* type_, uint64_t size_) : 
-    ManagedAllocation(arenaId_, memPtr_, size_), reference(reference_), type(type_), flags(ObjectFlags::none)
+    ManagedAllocation(reference_, arenaId_, memPtr_, size_), reference(reference_), type(type_)
 {
 }
 
@@ -186,7 +191,7 @@ int32_t Object::FieldCount() const
     return type->FieldCount();
 }
 
-void Object::MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ManagedMemoryPool& managedMemoryPool)
+void Object::MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool)
 {
     int32_t n = type->FieldCount();
     for (int32_t i = 0; i < n; ++i)
@@ -200,7 +205,21 @@ void Object::MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReference
                 checked.insert(objectRef);
                 Object& object = managedMemoryPool.GetObject(objectRef);
                 object.SetLive();
-                object.MarkLiveObjects(checked, managedMemoryPool);
+                object.MarkLiveAllocations(checked, managedMemoryPool);
+            }
+        }
+        else if (value.GetType() == ValueType::allocationHandle)
+        {
+            AllocationHandle allocationHandle(value.Value());
+            if (allocationHandle.Value())
+            {
+                if (checked.find(allocationHandle) == checked.cend())
+                {
+                    checked.insert(allocationHandle);
+                    ManagedAllocation* allocation = managedMemoryPool.GetAllocation(allocationHandle);
+                    allocation->SetLive();
+                    allocation->MarkLiveAllocations(checked, managedMemoryPool);
+                }
             }
         }
     }
@@ -212,7 +231,7 @@ void Object::Set(ManagedMemoryPool* pool)
 }
 
 ArrayElements::ArrayElements(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, Type* elementType_, int32_t numElements_, uint64_t size_) :
-    ManagedAllocation(arenaId_, memPtr_, size_), handle(handle_), elementType(elementType_), numElements(numElements_)
+    ManagedAllocation(handle_, arenaId_, memPtr_, size_), elementType(elementType_), numElements(numElements_)
 {
 }
 
@@ -285,8 +304,28 @@ void ArrayElements::Set(ManagedMemoryPool* pool)
     pool->Set(this);
 }
 
+void ArrayElements::MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool)
+{
+    if (elementType->GetValueType() == ValueType::objectReference)
+    {
+        for (int32_t i = 0; i < numElements; ++i)
+        {
+            IntegralValue value = GetElement(i);
+            Assert(value.GetType() == ValueType::objectReference, "object reference expected");
+            ObjectReference objectReference(value.Value());
+            if (!objectReference.IsNull() && checked.find(objectReference) == checked.cend())
+            {
+                checked.insert(objectReference);
+                Object& object = managedMemoryPool.GetObject(objectReference);
+                object.SetLive();
+                object.MarkLiveAllocations(checked, managedMemoryPool);
+            }
+        }
+    }
+}
+
 StringCharacters::StringCharacters(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, int32_t numChars_, uint64_t size_) : 
-    ManagedAllocation(arenaId_, memPtr_, size_), handle(handle_), numChars(numChars_)
+    ManagedAllocation(handle_, arenaId_, memPtr_, size_), numChars(numChars_)
 {
 }
 
@@ -333,16 +372,16 @@ ObjectReference ManagedMemoryPool::CopyObject(ObjectReference from)
     return reference;
 }
 
-void ManagedMemoryPool::DestroyObject(ObjectReference reference)
+void ManagedMemoryPool::DestroyAllocation(AllocationHandle handle)
 {
-    if (reference.IsNull())
+    if (!handle.Value())
     {
-        throw SystemException("cannot destroy null reference");
+        throw SystemException("cannot destroy null handle");
     }
-    auto n = allocations.erase(reference);
+    auto n = allocations.erase(handle);
     if (n != 1)
     {
-        throw SystemException("could not erase: object with reference " + std::to_string(reference.Value()) + " not found");
+        throw SystemException("could not erase: allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
 }
 
@@ -699,46 +738,68 @@ MemPtr ManagedMemoryPool::GetMemPtr(AllocationHandle handle) const
     }
 }
 
-void ManagedMemoryPool::ResetObjectsLiveFlag()
+ManagedAllocation* ManagedMemoryPool::GetAllocation(AllocationHandle handle) const
 {
-/*
-    for (auto& objectRefObjectPair : allocations)
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
     {
-        Object& object = objectRefObjectPair.second;
-        object.ResetLive();
+        ManagedAllocation* allocation = it->second.get();
+        return allocation;
     }
-*/
+    else
+    {
+        throw SystemException("allocation with handle " + std::to_string(handle.Value()) + " not found");
+    }
 }
 
-void ManagedMemoryPool::MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena)
+void ManagedMemoryPool::ResetLiveFlags()
 {
-    /*
-    std::vector<ObjectReference> toBeDestroyed;
-    for (auto& objectRefObjectPair : allocations)
+    for (auto& p : allocations)
     {
-        Object& object = objectRefObjectPair.second;
-        if (object.GetArenaId() == fromArenaId)
+        ManagedAllocation* allocation = p.second.get();
+        allocation->ResetLive();
+    }
+}
+
+void ManagedMemoryPool::MoveLiveAllocationsToArena(ArenaId fromArenaId, Arena& toArena)
+{
+    std::unordered_map<void*, void*> moveMap;
+    std::vector<AllocationHandle> toBeDestroyed;
+    for (auto& p : allocations)
+    {
+        ManagedAllocation* allocation = p.second.get();
+        if (allocation->GetArenaId() == fromArenaId)
         {
-            if (object.IsLive())
+            if (allocation->IsLive())
             {
-                uint64_t n = object.Size();
-                MemPtr oldMemPtr = object.GetMemPtr();
-                MemPtr newMemPtr = toArena.Allocate(n);
-                std::memcpy(newMemPtr.Value(), oldMemPtr.Value(), n);
-                object.SetMemPtr(newMemPtr);
-                object.SetArenaId(toArena.Id());
+                MemPtr oldMemPtr = allocation->GetMemPtr();
+                auto it = moveMap.find(oldMemPtr.Value());
+                if (it == moveMap.cend())
+                {
+                    uint64_t n = allocation->Size();
+                    MemPtr newMemPtr = toArena.Allocate(n);
+                    std::memcpy(newMemPtr.Value(), oldMemPtr.Value(), n);
+                    allocation->SetMemPtr(newMemPtr);
+                    allocation->SetArenaId(toArena.Id());
+                    moveMap[oldMemPtr.Value()] = newMemPtr.Value();
+                }
+                else
+                {
+                    MemPtr newMemPtr(it->second);
+                    allocation->SetMemPtr(newMemPtr);
+                    allocation->SetArenaId(toArena.Id());
+                }
             }
             else
             {
-                toBeDestroyed.push_back(object.Reference());
+                toBeDestroyed.push_back(allocation->Handle());
             }
         }
     }
-    for (ObjectReference handle : toBeDestroyed)
+    for (AllocationHandle handle : toBeDestroyed)
     {
-        DestroyObject(handle);
+        DestroyAllocation(handle);
     }
-    */
 }
 
 } } // namespace cminor::machine

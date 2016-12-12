@@ -146,32 +146,33 @@ inline bool operator<(MemPtr left, MemPtr right)
 
 uint64_t ValueSize(ValueType type);
 
-enum class ObjectFlags : uint8_t
+enum class AllocationFlags : uint8_t
 {
     none = 0,
     live = 1 << 0
 };
 
-inline ObjectFlags operator|(ObjectFlags left, ObjectFlags right)
+inline AllocationFlags operator|(AllocationFlags left, AllocationFlags right)
 {
-    return ObjectFlags(uint8_t(left) | uint8_t(right));
+    return AllocationFlags(uint8_t(left) | uint8_t(right));
 }
 
-inline ObjectFlags operator&(ObjectFlags left, ObjectFlags right)
+inline AllocationFlags operator&(AllocationFlags left, AllocationFlags right)
 {
-    return ObjectFlags(uint8_t(left) & uint8_t(right));
+    return AllocationFlags(uint8_t(left) & uint8_t(right));
 }
 
-inline ObjectFlags operator~(ObjectFlags flag)
+inline AllocationFlags operator~(AllocationFlags flag)
 {
-    return ObjectFlags(~uint8_t(flag));
+    return AllocationFlags(~uint8_t(flag));
 }
 
 class ManagedAllocation
 {
 public:
-    ManagedAllocation(ArenaId arenaId_, MemPtr memPtr_, uint64_t size_);
+    ManagedAllocation(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, uint64_t size_);
     virtual ~ManagedAllocation();
+    AllocationHandle Handle() const { return handle; }
     ArenaId GetArenaId() const { return arenaId; }
     void SetArenaId(ArenaId arenaId_) { arenaId = arenaId_; }
     MemPtr GetMemPtr() const { return memPtr; }
@@ -179,10 +180,19 @@ public:
     uint64_t Size() const { return size; }
     void SetSize(uint64_t size_) { size = size_; }
     virtual void Set(ManagedMemoryPool* pool) = 0;
+    bool IsLive() const { return GetFlag(AllocationFlags::live); }
+    void SetLive() { SetFlag(AllocationFlags::live); }
+    void ResetLive() { ResetFlag(AllocationFlags::live); }
+    virtual void MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool);
 private:
+    AllocationHandle handle;
     ArenaId arenaId;
     MemPtr memPtr;
     uint64_t size;
+    AllocationFlags flags;
+    bool GetFlag(AllocationFlags flag) const { return (flags & flag) != AllocationFlags::none; }
+    void SetFlag(AllocationFlags flag) { flags = flags | flag; }
+    void ResetFlag(AllocationFlags flag) { flags = flags & (~flag); }
 };
 
 class Object : public ManagedAllocation
@@ -194,32 +204,24 @@ public:
     IntegralValue GetField(int index) const;
     void SetField(IntegralValue fieldValue, int index);
     int32_t FieldCount() const;
-    bool IsLive() const { return GetFlag(ObjectFlags::live); }
-    void SetLive() { SetFlag(ObjectFlags::live); }
-    void ResetLive() { ResetFlag(ObjectFlags::live); }
-    void MarkLiveObjects(std::unordered_set<ObjectReference, ObjectReferenceHash>& checked, ManagedMemoryPool& managedMemoryPool);
     void Set(ManagedMemoryPool* pool) override;
+    void MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool) override;
 private:
     ObjectReference reference;
     ObjectType* type;
-    ObjectFlags flags;
-    bool GetFlag(ObjectFlags flag) const { return (flags & flag) != ObjectFlags::none; }
-    void SetFlag(ObjectFlags flag) { flags = flags | flag; }
-    void ResetFlag(ObjectFlags flag) { flags = flags & (~flag); }
 };
 
 class ArrayElements : public ManagedAllocation
 {
 public:
     ArrayElements(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, Type* elementType_, int32_t numElements_, uint64_t size_);
-    AllocationHandle Handle() const { return handle; }
     Type* GetElementType() const { return elementType; }
     IntegralValue GetElement(int32_t index) const;
     void SetElement(IntegralValue elementValue, int32_t index);
     int32_t NumElements() const { return numElements; }
     void Set(ManagedMemoryPool* pool) override;
+    void MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool) override;
 private:
-    AllocationHandle handle;
     Type* elementType;
     int32_t numElements;
 };
@@ -228,12 +230,10 @@ class StringCharacters : public ManagedAllocation
 {
 public:
     StringCharacters(AllocationHandle handle_, ArenaId arenaId_, MemPtr memPtr_, int32_t numChars_, uint64_t size_);
-    AllocationHandle Handle() const { return handle; }
     IntegralValue GetChar(int32_t index) const;
     int32_t NumChars() const { return numChars; }
     void Set(ManagedMemoryPool* pool) override;
 private:
-    AllocationHandle handle;
     int32_t numChars;
 };
 
@@ -243,7 +243,7 @@ public:
     ManagedMemoryPool(Machine& machine_);
     ObjectReference CreateObject(Thread& thread, ObjectType* type);
     ObjectReference CopyObject(ObjectReference from);
-    void DestroyObject(ObjectReference reference);
+    void DestroyAllocation(AllocationHandle handle);
     Object& GetObject(ObjectReference reference);
     IntegralValue GetField(ObjectReference reference, int32_t fieldIndex);
     void SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue);
@@ -259,12 +259,13 @@ public:
     void SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue);
     int32_t GetNumArrayElements(ObjectReference arr);
     ObjectReference CreateStringArray(Thread& thread, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
-    void ResetObjectsLiveFlag();
-    void MoveLiveObjectsToArena(ArenaId fromArenaId, Arena& toArena);
+    void ResetLiveFlags();
+    void MoveLiveAllocationsToArena(ArenaId fromArenaId, Arena& toArena);
     MemPtr GetMemPtr(AllocationHandle handle) const;
     void Set(Object* object_) { object = object_; }
     void Set(ArrayElements* arrayElements_) { arrayElements = arrayElements_; }
     void Set(StringCharacters* stringCharacters_) { stringCharacters = stringCharacters_;  }
+    ManagedAllocation* GetAllocation(AllocationHandle handle) const;
 private:
     Machine& machine;
     Object* object;

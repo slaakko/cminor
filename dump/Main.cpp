@@ -55,10 +55,11 @@ void PrintHelp()
         "Usage: cminordump [options] assembly.cminora [outputfile]\n" <<
         "Dump information in assembly.cminora.\n" <<
         "Options:\n" <<
-        "-f | --functions : dump functions\n" <<
-        "-s | --symbols   : dump symbols\n" << 
         "-a | --all       : dump all (default)\n" <<
+        "-f | --functions : dump functions\n" <<
         "-h | --help      : print this help message" <<
+        "-s | --symbols   : dump symbols\n" <<
+        "-v | --verbose   : verbose output\n" <<
         std::endl;
 }
 
@@ -177,6 +178,28 @@ int main(int argc, const char** argv)
         if (dumpOptions == DumpOptions::none)
         {
             dumpOptions = DumpOptions::functions | DumpOptions::symbols;
+        }
+        if (verbose)
+        {
+            std::string description;
+            if (dumpOptions == DumpOptions::functions)
+            {
+                description = "functions";
+            }
+            else if (dumpOptions == DumpOptions::symbols)
+            {
+                description = "symbols";
+            }
+            else 
+            {
+                description = "functions and symbols";
+            }
+            std::string target = "standard output";
+            if (!outputFileName.empty())
+            {
+                target = "file " + outputFileName;
+            }
+            std::cout << "Dumping " << description << " to " << target << std::endl;
         }
         CodeFormatter codeFormatter(*outputStream);
         assembly.Dump(codeFormatter, dumpOptions);

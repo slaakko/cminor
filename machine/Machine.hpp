@@ -42,8 +42,8 @@ private:
     ManagedMemoryPool managedMemoryPool;
     std::vector<std::unique_ptr<Thread>> threads;
     GarbageCollector garbageCollector;
-    Arena gen1Arena;
-    Arena gen2Arena;
+    GenArena1 gen1Arena;
+    GenArena2 gen2Arena;
     std::atomic_bool exiting;
     std::atomic_bool exited;
     std::thread garbageCollectorThread;

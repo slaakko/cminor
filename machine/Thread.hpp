@@ -25,10 +25,16 @@ struct IntPairHash
     }
 };
 
+enum class ThreadState
+{
+    paused, running, exited
+};
+
 class Thread
 {
 public:
-    Thread(Machine& machine_, Function& fun_);
+    Thread(int32_t id_, Machine& machine_, Function& fun_);
+    int32_t Id() const { return id; }
     Machine& GetMachine() { return machine; }
     OperandStack& OpStack() { return opStack; }
     std::vector<Frame>& Frames() { return frames; }
@@ -38,12 +44,10 @@ public:
     void Step();
     void Next();
     void RunDebug();
-    bool CheckWantToCollectGarbage() { return (instructionCount % checkWantToCollectGarbageCount) == 0; }
-    void PauseUntilGarbageCollected();
     void CheckPause();
     void WaitPaused();
-    void Sleep();
-    bool Sleeping();
+    void WaitRunning();
+    void SetState(ThreadState state_);
     void HandleException(ObjectReference exception_);
     void EndCatch();
     void EndFinally();
@@ -51,16 +55,12 @@ public:
     void PopExitBlock();
     utf32_string GetStackTrace() const;
 private:
+    int32_t id;
     Machine& machine;
     Function& fun;
     OperandStack opStack;
     uint64_t instructionCount;
-    uint64_t checkWantToCollectGarbageCount;
     std::vector<Frame> frames;
-    std::mutex mtx;
-    std::atomic_bool paused;
-    std::atomic_bool sleeping;
-    std::condition_variable pausedCond;
     std::unordered_set<std::pair<int32_t, int32_t>, IntPairHash> breakPoints;
     bool handlingException;
     ObjectReference exception;
@@ -68,6 +68,7 @@ private:
     ObjectType* exceptionObjectType;
     int32_t exitBlockNext;
     std::stack<int32_t> exitBlockStack;
+    std::atomic<ThreadState> state;
     void RunToEnd();
     void FindExceptionBlock(Frame* frame);
     bool DispatchToHandlerOrFinally(Frame* frame);

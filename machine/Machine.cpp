@@ -11,7 +11,7 @@
 namespace cminor { namespace machine {
 
 Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this),
-    garbageCollector(*this, defaultGarbageCollectionIntervalMs), gen1Arena(ArenaId::gen1Arena, GetSegmentSize()), gen2Arena(ArenaId::gen2Arena, GetSegmentSize()), exiting(), exited(), nextFrameId(0)
+    garbageCollector(*this), gen1Arena(GetSegmentSize()), gen2Arena(GetSegmentSize()), exiting(), exited(), nextFrameId(0)
 {
     // no operation:
     rootInst.SetInst(0x00, new NopInst());
@@ -528,8 +528,8 @@ void Machine::Start(const std::vector<utf32_string>& programArguments, ObjectTyp
     {
         throw std::runtime_error("no main function set");
     }
-    //RunGarbageCollector();
-    threads.push_back(std::unique_ptr<Thread>(new Thread(*this, *mainFun)));
+    RunGarbageCollector();
+    threads.push_back(std::unique_ptr<Thread>(new Thread(0, *this, *mainFun)));
     if (argsArrayObjectType)
     {
         Thread& mainThread = MainThread();
@@ -546,8 +546,8 @@ void Machine::Run(const std::vector<utf32_string>& programArguments, ObjectType*
     {
         throw std::runtime_error("no main function set");
     }
-    //RunGarbageCollector();
-    threads.push_back(std::unique_ptr<Thread>(new Thread(*this, *mainFun)));
+    RunGarbageCollector();
+    threads.push_back(std::unique_ptr<Thread>(new Thread(0, *this, *mainFun)));
     MainThread().Run(programArguments, argsArrayObjectType);
 }
 
@@ -607,7 +607,7 @@ std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
 
 std::pair<ArenaId, MemPtr> Machine::AllocateMemory(Thread& thread, uint64_t blockSize)
 {
-    if (blockSize < defaultLargeObjectThresholdSize)
+    if (blockSize <= defaultLargeObjectThresholdSize)
     {
         return std::make_pair(gen1Arena.Id(), gen1Arena.Allocate(thread, blockSize));
     }
@@ -647,17 +647,17 @@ bool Machine::Exiting()
 
 void Machine::Exit()
 {
-    if (exited.load())
+    if (exited == true)
     {
         return;
     }
-    exiting.store(true);
+    exiting = true;
     if (garbageCollector.Started())
     {
-        garbageCollector.RequestGarbageCollection();
+        garbageCollector.RequestGarbageCollection(MainThread());
         garbageCollectorThread.join();
     }
-    exited.store(true);
+    exited = true;
 }
 
 } } // namespace cminor::machine

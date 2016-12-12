@@ -5,86 +5,105 @@
 
 #include <cminor/machine/GarbageCollector.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/machine/Log.hpp>
+#include <iostream>
 
 namespace cminor { namespace machine {
 
-GarbageCollector::GarbageCollector(Machine& machine_, uint64_t garbageCollectionIntervalMs_) :
-    machine(machine_), started(false), wantToCollectGarbage(), collectingGarbage(), garbageCollected(), doGarbageCollection(),
-    garbageCollectedCond(), doGarbageCollectionCond(), garbageCollectionIntervalMs(garbageCollectionIntervalMs_)
+std::mutex garbageCollectorMutex;
+
+GarbageCollector::GarbageCollector(Machine& machine_) : machine(machine_), state(GarbageCollectorState::idle), started(false), collectionRequested(false)
 {
 }
 
 bool GarbageCollector::WantToCollectGarbage()
 {
-    return wantToCollectGarbage.load();
+    return state == GarbageCollectorState::requested;
 }
 
-void GarbageCollector::SetWantToCollectGarbage()
+void GarbageCollector::WaitForIdle(Thread& thread)
 {
-    wantToCollectGarbage.store(true);
-}
-
-void GarbageCollector::ResetWantToCollectGarbage()
-{
-    wantToCollectGarbage.store(false);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + ":WaitForIdle()");
+#endif
+    while (state != GarbageCollectorState::idle)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+    }
+#ifdef GC_LOGGING
+    LogMessage("<" + std::to_string(thread.Id()) + ":WaitForIdle()");
+#endif
 }
 
 void GarbageCollector::WaitForThreadsPaused()
 {
+#ifdef GC_LOGGING
+    LogMessage(">gc:WaitForThreadsPaused()");
+#endif
     for (std::unique_ptr<Thread>& thread : machine.Threads())
     {
-        if (!thread->Sleeping())
-        {
-            thread->WaitPaused();
-        }
+        thread->WaitPaused();
     }
+#ifdef GC_LOGGING
+    LogMessage("<gc:WaitForThreadsPaused()");
+#endif
 }
 
-void GarbageCollector::WaitUntilGarbageCollected()
+void GarbageCollector::WaitForThreadsRunning()
 {
-    std::unique_lock<std::mutex> lock(garbageCollectedMtx);
-    garbageCollectedCond.wait(lock, [this] { return garbageCollected.load(); });
+#ifdef GC_LOGGING
+    LogMessage(">gc:WaitForThreadsRunning()");
+#endif
+    for (std::unique_ptr<Thread>& thread : machine.Threads())
+    {
+        thread->WaitRunning();
+    }
+#ifdef GC_LOGGING
+    LogMessage("<gc:WaitForThreadsRunning()");
+#endif
 }
 
-void GarbageCollector::SetGarbageCollected()
+void GarbageCollector::RequestGarbageCollection(Thread& thread)
 {
-    std::lock_guard<std::mutex> lock(garbageCollectedMtx);
-    garbageCollected.store(true);
-    garbageCollectedCond.notify_all();
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + ":RequestGarbageCollection()");
+#endif
+    while (state != GarbageCollectorState::idle)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+    }
+    collectionRequested = true;
+    collectionRequestedCond.notify_one();
+#ifdef GC_LOGGING
+    LogMessage("<" + std::to_string(thread.Id()) + ":RequestGarbageCollection()");
+#endif
 }
 
-void GarbageCollector::ResetGarbageCollected()
+void GarbageCollector::WaitUntilGarbageCollected(Thread& thread)
 {
-    garbageCollected.store(false);
-}
-
-bool GarbageCollector::CollectingGarbage()
-{
-    return collectingGarbage.load();
-}
-
-void GarbageCollector::SetCollectingGarbage()
-{
-    collectingGarbage.store(true);
-}
-
-void GarbageCollector::ResetCollectingGarbage()
-{
-    collectingGarbage.store(false);
-}
-
-void GarbageCollector::RequestGarbageCollection()
-{
-    std::lock_guard<std::mutex> lock(doGarbageCollectionMtx);
-    doGarbageCollection.store(true);
-    doGarbageCollectionCond.notify_one();
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + ":WaitUntilGarbageCollected()");
+#endif
+    while (state != GarbageCollectorState::collected)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+    }
+#ifdef GC_LOGGING
+    LogMessage("<" + std::to_string(thread.Id()) + ":WaitUntilGarbageCollected()");
+#endif
 }
 
 void GarbageCollector::WaitForGarbageCollection()
 {
-    std::unique_lock<std::mutex> lock(doGarbageCollectionMtx);
-    std::chrono::duration<uint64_t, std::milli> garbageCollectionInterval{ garbageCollectionIntervalMs };
-    doGarbageCollectionCond.wait_for(lock, garbageCollectionInterval, [this] { return doGarbageCollection.load(); });
+#ifdef GC_LOGGING
+    LogMessage(">gc:WaitForGarbageCollection() (idle)");
+#endif
+    std::unique_lock<std::mutex> lock(garbageCollectorMutex);
+    state = GarbageCollectorState::idle;
+    collectionRequestedCond.wait(lock);
+#ifdef GC_LOGGING
+    LogMessage("<gc:WaitForGarbageCollection() (idle)");
+#endif
 }
 
 void GarbageCollector::Run()
@@ -94,29 +113,43 @@ void GarbageCollector::Run()
     {
         WaitForGarbageCollection();
         if (machine.Exiting()) break;
-        ResetGarbageCollected();
-        SetWantToCollectGarbage();
-        SetCollectingGarbage();
-        WaitForThreadsPaused();
-        DoCollectGarbage();
-        ResetWantToCollectGarbage();
-        ResetCollectingGarbage();
-        SetGarbageCollected();
+        if (collectionRequested)
+        {
+            collectionRequested = false;
+            state = GarbageCollectorState::requested;
+#ifdef GC_LOGGING
+            LogMessage(">gc:Run() (requested)");
+#endif
+            WaitForThreadsPaused();
+            state = GarbageCollectorState::collecting;
+#ifdef GC_LOGGING
+            LogMessage(">gc:Run() (collecting)");
+#endif
+            DoCollectGarbage();
+            state = GarbageCollectorState::collected;
+#ifdef GC_LOGGING
+            LogMessage(">gc:Run() (collected)");
+#endif
+            WaitForThreadsRunning();
+        }
     }
 }
 
 void GarbageCollector::DoCollectGarbage()
 {
     DoGarbageCollectArena(ArenaId::gen1Arena);
+#ifdef GC_LOGGING
+    std::cout << ".";
+#endif
 }
 
 void GarbageCollector::DoGarbageCollectArena(ArenaId arenaId)
 {
-    machine.GetManagedMemoryPool().ResetObjectsLiveFlag();
-    MarkLiveObjects();
+    machine.GetManagedMemoryPool().ResetLiveFlags();
+    MarkLiveAllocations();
     if (arenaId == ArenaId::gen1Arena)
     {
-        machine.GetManagedMemoryPool().MoveLiveObjectsToArena(arenaId, machine.Gen2Arena());
+        machine.GetManagedMemoryPool().MoveLiveAllocationsToArena(arenaId, machine.Gen2Arena());
         machine.Gen1Arena().Clear();
     }
     else
@@ -125,26 +158,45 @@ void GarbageCollector::DoGarbageCollectArena(ArenaId arenaId)
     }
 }
 
-inline void GarbageCollector::MarkLiveObjects(IntegralValue value, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked)
+inline void GarbageCollector::MarkLiveAllocations(ObjectReference objectReference, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked)
 {
-/*
-    if (value.GetType() == ValueType::objectReference)
+    if (!objectReference.IsNull() && checked.find(objectReference) == checked.cend())
     {
-        ObjectReference objectRef(value.Value());
-        if (!objectRef.IsNull() && checked.find(objectRef) == checked.cend())
-        {
-            checked.insert(objectRef);
-            Object& object = machine.GetManagedMemoryPool().GetObject(objectRef);
-            object.SetLive();
-            object.MarkLiveObjects(checked, machine.GetManagedMemoryPool());
-        }
+        checked.insert(objectReference);
+        Object& object = machine.GetManagedMemoryPool().GetObject(objectReference);
+        object.SetLive();
+        object.MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
     }
-    */
 }
 
-void GarbageCollector::MarkLiveObjects()
+void GarbageCollector::MarkLiveAllocations()
 {
     std::unordered_set<AllocationHandle, AllocationHandleHash> checked;
+    for (const auto& p : ClassDataTable::Instance().ClassDataMap())
+    {
+        ClassData* classData = p.second;
+        StaticClassData* staticClassData = classData->GetStaticClassData();
+        if (staticClassData)
+        {
+            if (staticClassData->HasStaticData())
+            {
+                Layout& staticLayout = staticClassData->StaticLayout();
+                int n = staticLayout.FieldCount();
+                for (int i = 0; i < n; ++i)
+                {
+                    Field field = staticLayout.GetField(i);
+                    ValueType valueType = field.GetType();
+                    if (valueType == ValueType::objectReference)
+                    {
+                        IntegralValue value = staticClassData->GetStaticField(i);
+                        Assert(value.GetType() == ValueType::objectReference, "object reference expected");
+                        ObjectReference objectReference(value.Value());
+                        MarkLiveAllocations(objectReference, checked);
+                    }
+                }
+            }
+        }
+    }
     for (const std::unique_ptr<Thread>& thread : machine.Threads())
     {
         for (const Frame& frame : thread->Frames())
@@ -152,17 +204,24 @@ void GarbageCollector::MarkLiveObjects()
             const OperandStack& operandStack = frame.OpStack();
             for (IntegralValue value : operandStack.Values())
             {
-                MarkLiveObjects(value, checked);
+                if (value.GetType() == ValueType::objectReference)
+                {
+                    ObjectReference objectReference(value.Value());
+                    MarkLiveAllocations(objectReference, checked);
+                }
             }
             const LocalVariableVector& locals = frame.Locals();
             for (const LocalVariable& local : locals.Variables())
             {
                 IntegralValue value = local.GetValue();
-                MarkLiveObjects(value, checked);
+                if (value.GetType() == ValueType::objectReference)
+                {
+                    ObjectReference objectReference(value.Value());
+                    MarkLiveAllocations(objectReference, checked);
+                }
             }
         }
     }
-    // todo: mark also objects referred in static fields
 }
 
 } } // namespace cminor::machine

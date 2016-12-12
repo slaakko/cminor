@@ -45,6 +45,7 @@ public:
     Layout& StaticLayout() { return staticLayout; }
     const Layout& StaticLayout() const { return staticLayout; }
     void AllocateStaticData();
+    bool HasStaticData() const { return staticData.Value() != nullptr; }
     void SetStaticField(IntegralValue fieldValue, int32_t index);
     IntegralValue GetStaticField(int32_t index) const;
 private:
@@ -84,6 +85,7 @@ public:
     static ClassDataTable& Instance();
     ClassData* GetClassData(StringPtr fullClassName);
     void SetClassData(ClassData* classData);
+    std::unordered_map<StringPtr, ClassData*, StringPtrHash>& ClassDataMap() { return classDataMap; }
 private:
     static std::unique_ptr<ClassDataTable> instance;
     ClassDataTable();

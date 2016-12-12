@@ -60,13 +60,13 @@ void PrintHelp()
         "Usage: cminorc [options] { solution.cminors | project.cminorp }\n" <<
         "Compile given solutions and projects.\n" <<
         "Options:\n" <<
-        "-v | --verbose : verbose output\n" << 
-        "-h | --help    : print this help message\n" <<
-        "-d | --dparse  : debug parsing to stdout\n" <<
-        "-cl | --clean  : clean given projects and solutions\n" <<
-        "-c=CONFIG\n" <<
+        "-c=CONFIG | --config=CONFIG\n" <<
         "   Use CONFIG configuration. CONFIG can be debug or release.\n" <<
         "   The default is debug.\n" <<
+        "-d | --dparse  : debug parsing to stdout\n" <<
+        "-h | --help    : print this help message\n" <<
+        "-n | --clean   : clean given projects and solutions\n" <<
+        "-v | --verbose : verbose output\n" <<
         std::endl;
 }
 
@@ -94,7 +94,7 @@ int main(int argc, const char** argv)
                 {
                     SetGlobalFlag(GlobalFlags::debugParsing);
                 }
-                else if (arg == "-cl" || arg == "--clean")
+                else if (arg == "-n" || arg == "--clean")
                 {
                     SetGlobalFlag(GlobalFlags::clean);
                 }
@@ -107,7 +107,7 @@ int main(int argc, const char** argv)
                     }
                     else
                     {
-                        if (components[0] == "-c")
+                        if (components[0] == "-c" || components[0] == "--config")
                         {
                             if (components[1] == "release")
                             {
