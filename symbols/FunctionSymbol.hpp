@@ -85,6 +85,7 @@ public:
     Constant VmFunctionName() const { return vmFunctionName; }
     FunctionSymbolFlags GetFlags() const { return flags; }
     virtual bool IsDerived() const { return false; }
+    void DumpHeader(CodeFormatter& formatter) override;
 private:
     Constant groupName;
     Constant vmFunctionName;
@@ -281,6 +282,38 @@ private:
     ContainerScope* containerScope;
 };
 
+class FunctionGroupTypeSymbol : public TypeSymbol
+{
+public:
+    FunctionGroupTypeSymbol(FunctionGroupSymbol* functionGroup_);
+    SymbolType GetSymbolType() const override { return SymbolType::functionGroupTypeSymbol; }
+    std::string TypeString() const override { return "function group type"; }
+    bool IsExportSymbol() const override { return false; }
+    FunctionGroupSymbol* FunctionGroup() const { return functionGroup; }
+    Type* GetMachineType() const override { Assert(false, "function group type has no machine type"); return nullptr; }
+    bool IsFunctionGroupTypeSymbol() const override { return true; }
+private:
+    FunctionGroupSymbol* functionGroup;
+};
+
+class FunctionToDelegateConversion : public FunctionSymbol
+{
+public:
+    FunctionToDelegateConversion(const Span& span_, Constant name_);
+    ConversionType GetConversionType() const override { return ConversionType::implicit_; }
+    int32_t ConversionDistance() const override { return 1; }
+    void SetSourceType(TypeSymbol* sourceType_) { sourceType = sourceType_; }
+    TypeSymbol* ConversionSourceType() const override { return sourceType; }
+    void SetTargetType(TypeSymbol* targetType_) { targetType = targetType_; SetReturnType(targetType); }
+    TypeSymbol* ConversionTargetType() const override { return targetType; }
+    void SetFunctionName(Constant functionName_);
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
+private:
+    TypeSymbol* sourceType;
+    TypeSymbol* targetType;
+    Constant functionName;
+};
+
 struct ConversionTypeHash
 {
     size_t operator()(const std::pair<TypeSymbol*, TypeSymbol*>& typeSymbolPair) const
@@ -308,6 +341,7 @@ private:
     std::vector<std::unique_ptr<ClassToInterfaceConversion>> interfaceTypeConversions;
     std::vector<std::unique_ptr<FunctionSymbol>> enumTypeConversions;
     std::vector<std::unique_ptr<FunctionSymbol>> stringConversions;
+    std::vector<std::unique_ptr<FunctionSymbol>> delegateConversions;
 };
 
 } } // namespace cminor::symbols

@@ -1,5 +1,5 @@
-#ifndef ProjectFile_hpp_31032
-#define ProjectFile_hpp_31032
+#ifndef ProjectFile_hpp_1192
+#define ProjectFile_hpp_1192
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -29,4 +29,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // ProjectFile_hpp_31032
+#endif // ProjectFile_hpp_1192

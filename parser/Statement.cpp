@@ -3567,28 +3567,28 @@ void StatementGrammar::GetReferencedGrammars()
         grammar0 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.KeywordGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar1 = cminor::parser::KeywordGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
     if (!grammar2)
     {
-        grammar2 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar2 = cminor::parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar3)
     {
-        grammar3 = cminor::parser::ExpressionGrammar::Create(pd);
+        grammar3 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.KeywordGrammar");
+    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar4)
     {
-        grammar4 = cminor::parser::KeywordGrammar::Create(pd);
+        grammar4 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
 }
@@ -3596,10 +3596,10 @@ void StatementGrammar::GetReferencedGrammars()
 void StatementGrammar::CreateRules()
 {
     AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
     AddRuleLink(new cminor::parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
     AddRule(new StatementRule("Statement", GetScope(),
         new cminor::parsing::AlternativeParser(

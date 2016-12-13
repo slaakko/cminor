@@ -87,6 +87,7 @@ public:
     void Visit(EnumTypeNode& enumTypeNode) override;
     void Visit(EnumConstantNode& enumConstantNode) override;
     void Visit(ConstantNode& constantNode) override;
+    void Visit(DelegateNode& delegateNode) override;
 private:
     ConstantPool& constantPool;
 };

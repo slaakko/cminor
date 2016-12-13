@@ -26,6 +26,10 @@ namespace System
         {
             outStream.WriteLine(s);
         }
+        public static void WriteLine()
+        {
+            outStream.WriteLine();
+        }
         public static void Write(char c)
         {
             outStream.Write(c);

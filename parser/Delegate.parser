@@ -1,0 +1,29 @@
+// =================================
+// Copyright (c) 2017 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/Delegate.hpp>
+[hpp]#include <cminor/parser/ParsingContext.hpp>
+[cpp]#include <cminor/parser/Specifier.hpp>
+[cpp]#include <cminor/parser/TypeExpr.hpp>
+[cpp]#include <cminor/parser/Identifier.hpp>
+[cpp]#include <cminor/parser/Parameter.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar DelegateGrammar
+    {
+        using SpecifierGrammar.Specifiers;
+        using TypeExprGrammar.TypeExpr;
+        using IdentifierGrammar.Identifier;
+        using ParameterGrammar.ParameterList;
+
+        Delegate(ParsingContext* ctx) : Node*
+            ::= (Specifiers keyword("delegate") TypeExpr(ctx)! Identifier!){ value = new DelegateNode(span, Specifiers, TypeExpr, Identifier); }
+                ParameterList(ctx, value)!{ value->GetSpan().SetEnd(span.End()); } ';'!
+            ;
+    }
+}

@@ -384,8 +384,8 @@ void TypeExprGrammar::CreateRules()
 {
     AddRuleLink(new cminor::parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
     AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRuleLink(new cminor::parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
+    AddRuleLink(new cminor::parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRule(new TypeExprRule("TypeExpr", GetScope(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::NonterminalParser("PostfixTypeExpr", "PostfixTypeExpr", 1))));

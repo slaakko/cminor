@@ -45,20 +45,6 @@ namespace cminor.parser
     {
         Constant(ParsingContext* ctx): ConstantNode*;
     }
-    grammar SolutionGrammar
-    {
-        Solution: Solution*;
-        Declaration: SolutionDeclaration*;
-        SolutionProjectDeclaration: SolutionDeclaration*;
-        FilePath: std::string;
-    }
-    grammar InterfaceGrammar
-    {
-        Interface(ParsingContext* ctx): InterfaceNode*;
-        InterfaceContent(ParsingContext* ctx, InterfaceNode* intf);
-        InterfaceMemFun(ParsingContext* ctx, var std::unique_ptr<MemberFunctionNode> memFun): Node*;
-        InterfaceFunctionGroupId: FunctionGroupIdNode*;
-    }
     grammar LiteralGrammar
     {
         Literal: Node*;
@@ -104,6 +90,11 @@ namespace cminor.parser
         InterfaceDefinition(ParsingContext* ctx): InterfaceNode*;
         EnumTypeDefinition(ParsingContext* ctx): EnumTypeNode*;
         ConstantDefinition(ParsingContext* ctx): ConstantNode*;
+        DelegateDefinition(ParsingContext* ctx): Node*;
+    }
+    grammar DelegateGrammar
+    {
+        Delegate(ParsingContext* ctx): Node*;
     }
     grammar EnumerationGrammar
     {
@@ -121,6 +112,20 @@ namespace cminor.parser
         NameValuePair(AttributeMap* attributeMap);
         Name: std::string;
         Value: std::string;
+    }
+    grammar SolutionGrammar
+    {
+        Solution: Solution*;
+        Declaration: SolutionDeclaration*;
+        SolutionProjectDeclaration: SolutionDeclaration*;
+        FilePath: std::string;
+    }
+    grammar InterfaceGrammar
+    {
+        Interface(ParsingContext* ctx): InterfaceNode*;
+        InterfaceContent(ParsingContext* ctx, InterfaceNode* intf);
+        InterfaceMemFun(ParsingContext* ctx, var std::unique_ptr<MemberFunctionNode> memFun): Node*;
+        InterfaceFunctionGroupId: FunctionGroupIdNode*;
     }
     grammar KeywordGrammar
     {

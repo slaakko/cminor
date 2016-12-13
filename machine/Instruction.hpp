@@ -713,6 +713,14 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class DelegateCallInst : public Instruction
+{
+public:
+    DelegateCallInst();
+    Instruction* Clone() const override { return new DelegateCallInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class SetClassDataInst : public Instruction
 {
 public:
@@ -1027,6 +1035,24 @@ public:
     AsInst();
     Instruction* Clone() const override { return new AsInst(*this); }
     void Execute(Frame& frame) override;
+};
+
+class Fun2DlgInst : public Instruction
+{
+public:
+    Fun2DlgInst();
+    Fun2DlgInst(const Fun2DlgInst& that) = default;
+    void Clear() override;
+    Instruction* Clone() const override { return new Fun2DlgInst(*this); }
+    void SetFunctionName(Constant functionName);
+    StringPtr GetFunctionName() const;
+    void SetFunction(Function* fun);
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
+private:
+    Constant function;
 };
 
 } } // namespace cminor::machine

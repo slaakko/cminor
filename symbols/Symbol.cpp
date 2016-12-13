@@ -31,7 +31,7 @@ const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
     "declarationBlock", "typeParameterSymbol", "boundTypeParameterSymbol", "classTemplateSpecializationSymbol", "basicTypeDefaultInit", "basicTypeCopyInit", "basicTypeAssignment", 
     "basicTypeReturn", "basicTypeConversion", "basicTypeUnaryOp", "basicTypBinaryOp", "objectDefaultInit", "objectCopyInit", "objectNullInit", "objectAssignment", "objectNullAssignment",
     "objectNullEqual", "nullObjectEqual", "nullToObjectConversion", "classTypeConversion", "classToInterfaceConversion", "enumTypeSymbol", "enumConstantSymbol", "enumTypeDefaultInit", 
-    "enumTypeConversion"
+    "enumTypeConversion", "delegateTypeSymbol", "delegateDefaultInit", "functionGroupTypeSymbol"
 };
 
 std::string SymbolTypeStr(SymbolType symbolType)
@@ -435,7 +435,17 @@ void Symbol::Evaluate(SymbolEvaluator* evaluator, const Span& span)
 void Symbol::Dump(CodeFormatter& formatter, Assembly* assembly)
 {
     if (GetAssembly() != assembly) return;
+    DumpHeader(formatter);
+    DumpContent(formatter, assembly);
+}
+
+void Symbol::DumpHeader(CodeFormatter& formatter)
+{
     formatter.WriteLine(TypeString() + " " + ToUtf8(Name().Value()));
+}
+
+void Symbol::DumpContent(CodeFormatter& formatter, Assembly* assembly)
+{
 }
 
 Scope::~Scope()
@@ -1009,10 +1019,8 @@ void ContainerSymbol::Evaluate(SymbolEvaluator* evaluator, const Span& span)
     evaluator->EvaluateContainerSymbol(this);
 }
 
-void ContainerSymbol::Dump(CodeFormatter& formatter, Assembly* assembly)
+void ContainerSymbol::DumpContent(CodeFormatter& formatter, Assembly* assembly)
 {
-    if (GetAssembly() != assembly) return;
-    Symbol::Dump(formatter, assembly);
     formatter.WriteLine("{");
     formatter.IncIndent();
     int n = int(symbols.size());

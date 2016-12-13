@@ -348,6 +348,7 @@ ObjectReference ManagedMemoryPool::CreateObject(Thread& thread, ObjectType* type
 {
     ObjectReference reference(nextReferenceValue++);
     std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, type->ObjectSize());
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, memPtrSegmentId.first, memPtrSegmentId.second, type, type->ObjectSize()))));
     if (!pairItBool.second)
     {
@@ -364,6 +365,7 @@ ObjectReference ManagedMemoryPool::CopyObject(ObjectReference from)
     }
     ObjectReference reference(nextReferenceValue++);
     Object& object = GetObject(from);
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, object.GetMemPtr(), object.SegmentId(), object.GetType(), object.Size()))));
     if (!pairItBool.second)
     {
@@ -391,6 +393,7 @@ Object& ManagedMemoryPool::GetObject(ObjectReference reference)
     {
         throw NullReferenceException("object reference is null");
     }
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(reference);
     if (it != allocations.cend())
     {
@@ -427,6 +430,7 @@ AllocationHandle ManagedMemoryPool::CreateStringCharsFromLiteral(const char32_t*
 {
     AllocationHandle handle(nextReferenceValue++);
     uint64_t stringSize = static_cast<uint64_t>(sizeof(char32_t)) * len;
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, MemPtr(strLit), notGarbageCollectedSegment, len, stringSize))));
     if (!pairItBool.second)
     {
@@ -441,10 +445,12 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
     IntegralValue charElementsValue = charArrayObject.GetField(2);
     Assert(charElementsValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle charElementsHandle(charElementsValue.Value());
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(charElementsHandle);
     if (it != allocations.cend())
     {
         ManagedAllocation* allocation = it->second.get();
+        lock.unlock();
         ArrayElements* charElements = dynamic_cast<ArrayElements*>(allocation);
         Assert(charElements, "array elements expected");
         int32_t numChars = charElements->NumElements();
@@ -452,6 +458,7 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
         AllocationHandle handle(nextReferenceValue++);
         uint64_t stringSize = numChars * ValueSize(ValueType::charType);
         std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
+        lock.lock();
         auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize))));
         if (!pairItBool.second)
         {
@@ -477,6 +484,7 @@ ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_stri
     AllocationHandle handle(nextReferenceValue++);
     uint64_t stringSize = numChars * ValueSize(ValueType::charType);
     std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize))));
     if (!pairItBool.second)
     {
@@ -502,6 +510,7 @@ IntegralValue ManagedMemoryPool::GetStringChar(ObjectReference str, int32_t inde
     IntegralValue charsHandleValue = o.GetField(2);
     Assert(charsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(charsHandleValue.Value());
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(handle);
     if (it != allocations.cend())
     {
@@ -526,6 +535,7 @@ std::string ManagedMemoryPool::GetUtf8String(ObjectReference str)
     IntegralValue charsHandleValue = o.GetField(2);
     Assert(charsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(charsHandleValue.Value());
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(handle);
     if (it != allocations.cend())
     {
@@ -557,6 +567,7 @@ std::vector<uint8_t> ManagedMemoryPool::GetBytes(ObjectReference arr)
     IntegralValue elementsHandleValue = a.GetField(2);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(handle);
     if (it != allocations.cend())
     {
@@ -587,6 +598,7 @@ void ManagedMemoryPool::SetBytes(ObjectReference arr, const std::vector<uint8_t>
     IntegralValue elementsHandleValue = a.GetField(2);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(handle);
     if (it != allocations.cend())
     {
@@ -617,6 +629,7 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
     if (arraySize > 0)
     {
         std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, arraySize);
+        std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
         auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, memPtrSegmentId.first, memPtrSegmentId.second, elementType, length, arraySize))));
         if (!pairItBool.second)
         {
@@ -625,6 +638,7 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
     }
     else
     {
+        std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
         auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, MemPtr(), notGarbageCollectedSegment, elementType, length, arraySize))));
         if (!pairItBool.second)
         {
@@ -644,6 +658,7 @@ IntegralValue ManagedMemoryPool::GetArrayElement(ObjectReference reference, int3
     IntegralValue elementsHandleValue = arr.GetField(2);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(handle);
     if (it != allocations.cend())
     {
@@ -668,6 +683,7 @@ void ManagedMemoryPool::SetArrayElement(ObjectReference reference, int32_t index
     IntegralValue elementsHandleValue = arr.GetField(2);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(handle);
     if (it != allocations.cend())
     {
@@ -692,6 +708,7 @@ int32_t ManagedMemoryPool::GetNumArrayElements(ObjectReference arr)
     IntegralValue elementsHandleValue = a.GetField(2);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(handle);
     if (it != allocations.cend())
     {
@@ -724,8 +741,9 @@ ObjectReference ManagedMemoryPool::CreateStringArray(Thread& thread, const std::
     return arrayReference;
 }
 
-MemPtr ManagedMemoryPool::GetMemPtr(AllocationHandle handle) const
+MemPtr ManagedMemoryPool::GetMemPtr(AllocationHandle handle) 
 {
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(handle);
     if (it != allocations.cend())
     {
@@ -738,8 +756,9 @@ MemPtr ManagedMemoryPool::GetMemPtr(AllocationHandle handle) const
     }
 }
 
-ManagedAllocation* ManagedMemoryPool::GetAllocation(AllocationHandle handle) const
+ManagedAllocation* ManagedMemoryPool::GetAllocation(AllocationHandle handle)
 {
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(handle);
     if (it != allocations.cend())
     {

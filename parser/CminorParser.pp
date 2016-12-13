@@ -6,6 +6,7 @@ source <CompileUnit.parser>;
 source <Constant.parser>;
 source <Enumeration.parser>;
 source <Expression.parser>;
+source <Delegate.parser>;
 source <Function.parser>;
 source <Identifier.parser>;
 source <Interface.parser>;

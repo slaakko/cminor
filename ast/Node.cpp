@@ -17,6 +17,7 @@
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/ast/Enumeration.hpp>
 #include <cminor/ast/Constant.hpp>
+#include <cminor/ast/Delegate.hpp>
 
 namespace cminor { namespace ast {
 
@@ -33,7 +34,7 @@ const char* nodeTypeStr[] =
     "compoundStatementNode", "returnStatementNode", "ifStatementNode", "whileStatementNode", "doStatementNode", "forStatementNode", "breakStatementNode", "continueStatementNode", "gotoStatementNode",
     "constructionStatementNode", "assignmentStatementNode", "expressionStatementNode", "emptyStatementNode", "incrementStatementNode", "decrementStatementNode", "forEachStatementNode", 
     "switchStatementNode", "caseStatementNode", "defaultStatementNode", "gotoCaseStatementNode", "gotoDefaultStatementNode", "throwStatementNode", "tryStatementNode", "catchNode", "usingStatementNode",
-    "enumTypeNode", "enumConstantNode", "constantNode"
+    "enumTypeNode", "enumConstantNode", "constantNode", "delegateNode"
 };
 
 std::string NodeTypeStr(NodeType nodeType)
@@ -326,6 +327,7 @@ void NodeInit()
     NodeFactory::Instance().Register(NodeType::enumTypeNode, new ConcreteNodeCreator<EnumTypeNode>());
     NodeFactory::Instance().Register(NodeType::enumConstantNode, new ConcreteNodeCreator<EnumConstantNode>());
     NodeFactory::Instance().Register(NodeType::constantNode, new ConcreteNodeCreator<ConstantNode>());
+    NodeFactory::Instance().Register(NodeType::delegateNode, new ConcreteNodeCreator<DelegateNode>());
 }
 
 void NodeDone()

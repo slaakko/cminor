@@ -10,6 +10,7 @@
 #include <cminor/ast/Interface.hpp>
 #include <cminor/ast/Constant.hpp>
 #include <cminor/ast/Enumeration.hpp>
+#include <cminor/ast/Delegate.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -62,6 +63,8 @@ public:
     void EndEnumType();
     void AddEnumConstant(EnumConstantNode& enumConstantNode);
     void AddConstant(ConstantNode& constantNode);
+    void BeginDelegate(DelegateNode& delegateNode);
+    void EndDelegate();
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader);
     void Import(SymbolTable& symbolTable);

@@ -15,6 +15,7 @@
 [cpp]#include <cminor/parser/Template.hpp>
 [cpp]#include <cminor/parser/Enumeration.hpp>
 [cpp]#include <cminor/parser/Constant.hpp>
+[cpp]#include <cminor/parser/Delegate.hpp>
 
 namespace cminor.parser
 {
@@ -34,6 +35,7 @@ namespace cminor.parser
         using TemplateGrammar.TemplateParameterList;
         using EnumerationGrammar.EnumType;
         using ConstantGrammar.Constant;
+        using DelegateGrammar.Delegate;
         using stdlib.identifier;
 
         Class(ParsingContext* ctx) : ClassNode*
@@ -67,6 +69,7 @@ namespace cminor.parser
             |   Class(ctx){ value = Class; }
             |   EnumType(ctx){ value = EnumType; }
             |   Constant(ctx){ value = Constant; }
+            |   Delegate(ctx){ value = Delegate; }
             ;
 
         StaticConstructor(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<IdentifierNode> id) : StaticConstructorNode*

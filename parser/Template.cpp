@@ -282,24 +282,24 @@ private:
 void TemplateGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar0 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar1 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void TemplateGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRule(new TemplateIdRule("TemplateId", GetScope(),
         new cminor::parsing::ActionParser("A0",

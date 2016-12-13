@@ -305,4 +305,16 @@ void SymbolCreatorVisitor::Visit(ConstantNode& constantNode)
     symbolTable.AddConstant(constantNode);
 }
 
+void SymbolCreatorVisitor::Visit(DelegateNode& delegateNode)
+{
+    symbolTable.BeginDelegate(delegateNode);
+    int n = delegateNode.Parameters().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        ParameterNode* parameterNode = delegateNode.Parameters()[i];
+        parameterNode->Accept(*this);
+    }
+    symbolTable.EndDelegate();
+}
+
 } } // namespace cminor::symbols

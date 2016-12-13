@@ -43,6 +43,11 @@ void VariableSymbol::EmplaceType(TypeSymbol* type, int index)
     }
 }
 
+void VariableSymbol::DumpHeader(CodeFormatter& formatter)
+{
+    formatter.WriteLine(TypeString() + " " + ToUtf8(Name().Value()) + ": " + ToUtf8(type->FullName()));
+}
+
 ParameterSymbol::ParameterSymbol(const Span& span_, Constant name_) : VariableSymbol(span_, name_), index(-1)
 {
 }

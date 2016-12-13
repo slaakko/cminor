@@ -1373,6 +1373,26 @@ void VmCallInst::Execute(Frame& frame)
     }
 }
 
+DelegateCallInst::DelegateCallInst() : Instruction("calld")
+{
+}
+
+void DelegateCallInst::Execute(Frame& frame)
+{
+    IntegralValue dlg = frame.OpStack().Pop();
+    Assert(dlg.GetType() == ValueType::functionPtr, "function pointer expected");
+    Function* fun = dlg.AsFunctionPtr();
+    if (!fun)
+    {
+        NullReferenceException ex("value of delegate is null");
+        ThrowNullReferenceException(ex, frame);
+    }
+    else
+    {
+        frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *fun));
+    }
+}
+
 SetClassDataInst::SetClassDataInst() : Instruction("setclassdata")
 {
 }
@@ -2093,6 +2113,62 @@ void AsInst::Execute(Frame& frame)
     {
         ThrowSystemException(ex, frame);
     }
+}
+
+Fun2DlgInst::Fun2DlgInst() : Instruction("fun2dlg")
+{
+}
+
+void Fun2DlgInst::Clear()
+{
+    function = Constant();
+}
+
+void Fun2DlgInst::SetFunctionName(Constant functionName)
+{
+    function = functionName;
+}
+
+StringPtr Fun2DlgInst::GetFunctionName() const
+{
+    Assert(function.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    return StringPtr(function.Value().AsStringLiteral());
+}
+
+void Fun2DlgInst::SetFunction(Function* fun)
+{
+    function.SetValue(IntegralValue(fun));
+}
+
+void Fun2DlgInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    ConstantId id = writer.GetConstantPool()->GetIdFor(function);
+    Assert(id != noConstantId, "id for call inst not found");
+    id.Write(writer);
+}
+
+Instruction* Fun2DlgInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    ConstantId id;
+    id.Read(reader);
+    function = reader.GetConstantPool()->GetConstant(id);
+    return this;
+}
+
+void Fun2DlgInst::Execute(Frame& frame)
+{
+    Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
+    frame.OpStack().Push(function.Value().AsFunctionPtr());
+}
+
+void Fun2DlgInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
+    Function* fun = function.Value().AsFunctionPtr();
+    formatter.Write(" " + ToUtf8(fun->CallName().Value().AsStringLiteral()));
 }
 
 void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName)

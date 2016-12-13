@@ -46,6 +46,7 @@ class BoundArrayElement;
 class BoundStringChar;
 class BoundConversion;
 class BoundFunctionCall;
+class BoundDelegateCall;
 class BoundNewExpression;
 class BoundConjunction;
 class BoundDisjunction;
@@ -94,6 +95,7 @@ public:
     virtual void Visit(BoundStringChar& boundStringChar) {}
     virtual void Visit(BoundConversion& boundConversion) {}
     virtual void Visit(BoundFunctionCall& boundFunctionCall) {}
+    virtual void Visit(BoundDelegateCall& boundDelegateCall) {}
     virtual void Visit(BoundNewExpression& boundNewExpression) {}
     virtual void Visit(BoundConjunction& boundConjunction) {}
     virtual void Visit(BoundDisjunction& boundDisjunction) {}

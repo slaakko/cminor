@@ -21,6 +21,11 @@ void Reader::AddCallInst(CallInst* callInst)
     callInstructions.push_back(callInst);
 }
 
+void Reader::AddFun2DlgInst(Fun2DlgInst* fun2DlgInst)
+{
+    fun2DlgInstructions.push_back(fun2DlgInst);
+}
+
 void Reader::AddTypeInstruction(TypeInstruction* typeInst)
 {
     typeInstructions.push_back(typeInst);

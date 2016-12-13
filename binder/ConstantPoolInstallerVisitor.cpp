@@ -15,6 +15,7 @@
 #include <cminor/ast/Interface.hpp>
 #include <cminor/ast/Expression.hpp>
 #include <cminor/ast/Enumeration.hpp>
+#include <cminor/ast/Delegate.hpp>
 
 namespace cminor { namespace binder {
 
@@ -612,6 +613,18 @@ void ConstantPoolInstallerVisitor::Visit(ConstantNode& constantNode)
     constantNode.TypeExpr()->Accept(*this);
     constantNode.Id()->Accept(*this);
     constantNode.Value()->Accept(*this);
+}
+
+void ConstantPoolInstallerVisitor::Visit(DelegateNode& delegateNode)
+{
+    delegateNode.ReturnTypeExpr()->Accept(*this);
+    delegateNode.Id()->Accept(*this);
+    int n = delegateNode.Parameters().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        ParameterNode* parameter = delegateNode.Parameters()[i];
+        parameter->Accept(*this);
+    }
 }
 
 } } // namespace cminor::binder

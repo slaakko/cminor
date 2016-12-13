@@ -6,6 +6,7 @@
 #include <cminor/db/Shell.hpp>
 #include <cminor/db/Command.hpp>
 #include <cminor/db/CommandGrammar.hpp>
+#include <cminor/symbols/Assembly.hpp>
 #include <stdexcept>
 #include <iostream>
 
@@ -20,7 +21,7 @@ void Shell::StartMachine()
     machine.Start(programArguments, argsArrayObjectType);
 }
 
-void Shell::Run(const std::vector<utf32_string>& programArguments_, ObjectType* argsArrayObjectType_)
+void Shell::Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<utf32_string>& programArguments_, ObjectType* argsArrayObjectType_)
 {
     programArguments = programArguments_;
     argsArrayObjectType = argsArrayObjectType_;
@@ -38,7 +39,15 @@ void Shell::Run(const std::vector<utf32_string>& programArguments_, ObjectType* 
             }
             else
             {
-                codeFormatter.WriteLine("program ended");
+                if (mainFun->ReturnType() == assembly.GetSymbolTable().GetType(U"System.Int32"))
+                {
+                    IntegralValue programReturnValue = machine.MainThread().OpStack().Pop();
+                    codeFormatter.WriteLine("program ended with exit code " + std::to_string(programReturnValue.AsInt()));
+                }
+                else
+                {
+                    codeFormatter.WriteLine("program ended normally");
+                }
             }
             std::cout << "cminordb> ";
             std::string line;

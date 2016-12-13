@@ -5,12 +5,15 @@
 
 #ifndef CMINOR_DB_SHELL_INCLUDED
 #define CMINOR_DB_SHELL_INCLUDED
+#include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/db/Command.hpp>
 
 namespace cminor { namespace db {
 
 using namespace cminor::machine;
+using namespace cminor::symbols;
+
 class Command;
 
 class Shell
@@ -18,7 +21,7 @@ class Shell
 public:
     Shell(Machine& machine_);
     void StartMachine();
-    void Run(const std::vector<utf32_string>& programArguments_, ObjectType* argsArrayObjectType_);
+    void Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<utf32_string>& programArguments_, ObjectType* argsArrayObjectType_);
     void Exit();
     void Step();
     void Next();

@@ -298,6 +298,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     AssemblyTable::Instance().AddAssembly(&assembly);
     const Assembly* rootAssembly = &assembly;
     std::vector<CallInst*> callInstructions;
+    std::vector<Fun2DlgInst*> fun2DlgInstructions;
     std::vector<TypeInstruction*> typeInstructions;
     std::vector<SetClassDataInst*> setClassDataInstructions;
     std::vector<ClassTypeSymbol*> classTypes;
@@ -306,8 +307,8 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
     std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(project->AssemblyFilePath()).remove_filename().generic_string());
     std::unordered_set<std::string> importSet;
-    assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions, typeInstructions, setClassDataInstructions,
-        classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
+    assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, typeInstructions, 
+        setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
     assemblies.push_back(&assembly);
     auto it = std::unique(assemblies.begin(), assemblies.end());
     assemblies.erase(it, assemblies.end());
@@ -318,8 +319,10 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
         dependencyMap[p.second->GetAssembly()] = p.second;
     }
     std::vector<Assembly*> finishReadOrder = CreateFinishReadOrder(assemblies, dependencyMap, rootAssembly);
-    assembly.FinishReads(callInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, int(finishReadOrder.size() - 2), finishReadOrder, false);
+    assembly.FinishReads(callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, int(finishReadOrder.size() - 2), 
+        finishReadOrder, false);
     callInstructions.clear();
+    fun2DlgInstructions.clear();
     typeInstructions.clear();
     setClassDataInstructions.clear();
     classTypes.clear();

@@ -10,6 +10,7 @@
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/IndexerSymbol.hpp>
+#include <cminor/symbols/DelegateSymbol.hpp>
 #include <cminor/machine/GenObject.hpp>
 
 namespace cminor { namespace binder {
@@ -42,6 +43,7 @@ public:
     virtual bool IsComplete() const { return true; }
     virtual bool IsLvalueExpression() const { return false; }
     virtual bool ReturnsValue() const { return false; }
+    virtual bool IsBoundFunctionGroupExpression() const { return false; }
 private:
     TypeSymbol* type;
     BoundExpressionFlags flags;
@@ -224,8 +226,10 @@ public:
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
     bool IsComplete() const override { return false; }
+    bool IsBoundFunctionGroupExpression() const { return true; }
 private:
     FunctionGroupSymbol* functionGroupSymbol;
+    std::unique_ptr<TypeSymbol> functionGroupType;
 };
 
 class BoundMemberExpression : public BoundExpression
@@ -267,6 +271,18 @@ private:
     FunctionSymbol* functionSymbol;
     std::vector<std::unique_ptr<BoundExpression>> arguments;
     FunctionCallType callType;
+};
+
+class BoundDelegateCall : public BoundExpression
+{
+public:
+    BoundDelegateCall(Assembly& assembly_, DelegateTypeSymbol* delegateTypeSymbol_, std::vector<std::unique_ptr<BoundExpression>>&& arguments_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    DelegateTypeSymbol* delegateTypeSymbol;
+    std::vector<std::unique_ptr<BoundExpression>> arguments;
 };
 
 class BoundNewExpression : public BoundExpression

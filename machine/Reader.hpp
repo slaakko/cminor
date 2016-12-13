@@ -12,6 +12,7 @@ namespace cminor { namespace machine {
 
 class Machine;
 class CallInst;
+class Fun2DlgInst;
 class TypeInstruction;
 class SetClassDataInst;
 class ConstantPool;
@@ -28,6 +29,7 @@ public:
     ConstantPool* GetConstantPool() const { return constantPool; }
     void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
     void AddCallInst(CallInst* callInst);
+    void AddFun2DlgInst(Fun2DlgInst* fun2DlgInst);
     void AddTypeInstruction(TypeInstruction* typeInst);
     void AddSetClassDataInst(SetClassDataInst* setClassDataInst);
     bool GetBool();
@@ -48,6 +50,8 @@ public:
     uint32_t GetEncodedUInt();
     std::vector<CallInst*> GetCallInstructions() { return std::move(callInstructions); }
     const std::vector<CallInst*>& CallInstructions() const { return callInstructions; }
+    std::vector<Fun2DlgInst*> GetFun2DlgInstructions() { return std::move(fun2DlgInstructions); }
+    const std::vector<Fun2DlgInst*>& Fun2DlgInstructions() const { return fun2DlgInstructions; }
     std::vector<TypeInstruction*> GetTypeInstructions() { return std::move(typeInstructions); }
     const std::vector<TypeInstruction*>& TypeInstructions() const { return typeInstructions; }
     std::vector<SetClassDataInst*> GetSetClassDataInstructions() { return std::move(setClassDataInstructions); }
@@ -63,6 +67,7 @@ private:
     ConstantPool* constantPool;
     uint32_t pos;
     std::vector<CallInst*> callInstructions;
+    std::vector<Fun2DlgInst*> fun2DlgInstructions;
     std::vector<TypeInstruction*> typeInstructions;
     std::vector<SetClassDataInst*> setClassDataInstructions;
     void CheckEof();

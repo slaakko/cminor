@@ -703,34 +703,34 @@ private:
 void FunctionGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.StatementGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parsing::stdlib::Create(pd);
+        grammar0 = cminor::parser::StatementGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar1 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.SpecifierGrammar");
     if (!grammar2)
     {
-        grammar2 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar2 = cminor::parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.SpecifierGrammar");
+    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar3)
     {
-        grammar3 = cminor::parser::SpecifierGrammar::Create(pd);
+        grammar3 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.StatementGrammar");
+    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar4)
     {
-        grammar4 = cminor::parser::StatementGrammar::Create(pd);
+        grammar4 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar4);
     cminor::parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parser.KeywordGrammar");
@@ -749,15 +749,15 @@ void FunctionGrammar::GetReferencedGrammars()
 
 void FunctionGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new cminor::parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
     AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new cminor::parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
     AddRuleLink(new cminor::parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
     AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
+    AddRuleLink(new cminor::parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("string", this, "cminor.parsing.stdlib.string"));
-    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
     AddRuleLink(new cminor::parsing::RuleLink("long", this, "cminor.parsing.stdlib.long"));
     AddRuleLink(new cminor::parsing::RuleLink("bool", this, "cminor.parsing.stdlib.bool"));
     AddRule(new FunctionRule("Function", GetScope(),

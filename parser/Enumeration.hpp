@@ -1,5 +1,5 @@
-#ifndef Enumeration_hpp_19131
-#define Enumeration_hpp_19131
+#ifndef Enumeration_hpp_1192
+#define Enumeration_hpp_1192
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -27,4 +27,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Enumeration_hpp_19131
+#endif // Enumeration_hpp_1192

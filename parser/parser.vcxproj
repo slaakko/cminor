@@ -24,6 +24,7 @@
     <None Include="CminorParser.pl" />
     <None Include="CompileUnit.parser" />
     <None Include="Constant.parser" />
+    <None Include="Delegate.parser" />
     <None Include="Enumeration.parser" />
     <None Include="Expression.parser" />
     <None Include="Function.parser" />
@@ -45,6 +46,7 @@
     <ClCompile Include="Class.cpp" />
     <ClCompile Include="CompileUnit.cpp" />
     <ClCompile Include="Constant.cpp" />
+    <ClCompile Include="Delegate.cpp" />
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Function.cpp" />
@@ -66,6 +68,7 @@
     <ClInclude Include="Class.hpp" />
     <ClInclude Include="CompileUnit.hpp" />
     <ClInclude Include="Constant.hpp" />
+    <ClInclude Include="Delegate.hpp" />
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Expression.hpp" />
     <ClInclude Include="Function.hpp" />

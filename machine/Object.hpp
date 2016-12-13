@@ -8,6 +8,7 @@
 #include <cminor/machine/Error.hpp>
 #include <stdint.h>
 #include <atomic>
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -262,11 +263,11 @@ public:
     void ResetLiveFlags();
     void MoveLiveAllocationsToArena(ArenaId fromArenaId, Arena& toArena);
     void MoveLiveAllocationsToNewSegments(Arena& arena);
-    MemPtr GetMemPtr(AllocationHandle handle) const;
+    MemPtr GetMemPtr(AllocationHandle handle);
     void Set(Object* object_) { object = object_; }
     void Set(ArrayElements* arrayElements_) { arrayElements = arrayElements_; }
     void Set(StringCharacters* stringCharacters_) { stringCharacters = stringCharacters_;  }
-    ManagedAllocation* GetAllocation(AllocationHandle handle) const;
+    ManagedAllocation* GetAllocation(AllocationHandle handle);
 private:
     Machine& machine;
     Object* object;
@@ -274,6 +275,7 @@ private:
     StringCharacters* stringCharacters;
     std::unordered_map<AllocationHandle, std::unique_ptr<ManagedAllocation>, AllocationHandleHash> allocations;
     std::atomic_uint64_t nextReferenceValue;
+    std::recursive_mutex allocationsMutex;
 };
 
 } } // namespace cminor::machine

@@ -16,6 +16,7 @@
 #include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/symbols/EnumSymbol.hpp>
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
+#include <cminor/symbols/DelegateSymbol.hpp>
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
@@ -1068,6 +1069,41 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
             throw Exception("invoke cannot be applied to this type of expression", invokeNode.Child()->GetSpan());
         }
     }
+    else if (expression->GetType()->IsDelegateType())
+    {
+        BoundExpression* delegateExpr = expression.release();
+        DelegateTypeSymbol* delegateType = static_cast<DelegateTypeSymbol*>(delegateExpr->GetType());
+        int n = invokeNode.Arguments().Count();
+        if (n != delegateType->Arity())
+        {
+            throw Exception("wrong number of arguments to delegate call (got " + std::to_string(n) + ", need " + std::to_string(delegateType->Arity()) + ")", invokeNode.GetSpan());
+        }
+        for (int i = 0; i < n; ++i)
+        {
+            Node* argument = invokeNode.Arguments()[i];
+            argument->Accept(*this);
+            TypeSymbol* sourceType = expression->GetType();
+            TypeSymbol* targetType = delegateType->Parameters()[i]->GetType();
+            if (sourceType != targetType)
+            {
+                FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(sourceType, targetType);
+                if (conversionFun && conversionFun->GetConversionType() == ConversionType::implicit_)
+                {
+                    BoundConversion* conversion = new BoundConversion(boundCompileUnit.GetAssembly(), std::move(expression), conversionFun);
+                    expression.reset(conversion);
+                }
+                else
+                {
+                    throw Exception("no implicit conversion from '" + ToUtf8(sourceType->FullName()) + "' to '" + ToUtf8(targetType->FullName()) + "' exists", invokeNode.GetSpan());
+                }
+            }
+            arguments.push_back(std::unique_ptr<BoundExpression>(expression.release()));
+        }
+        arguments.push_back(std::unique_ptr<BoundExpression>(delegateExpr));
+        expression.reset(new BoundDelegateCall(boundCompileUnit.GetAssembly(), delegateType, std::move(arguments)));
+        CheckAccess(boundFunction->GetFunctionSymbol(), expression->GetType());
+        return;
+    }
     else
     {
         throw Exception("invoke cannot be applied to this type of expression", invokeNode.Child()->GetSpan());
@@ -1077,7 +1113,10 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
     {
         Node* argument = invokeNode.Arguments()[i];
         argument->Accept(*this);
-        functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, expression->GetType()->ClassInterfaceOrNsScope()));
+        if (!expression->GetType()->IsFunctionGroupTypeSymbol())
+        {
+            functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, expression->GetType()->ClassInterfaceOrNsScope()));
+        }
         arguments.push_back(std::unique_ptr<BoundExpression>(expression.release()));
     }
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
@@ -1280,9 +1319,18 @@ std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUn
 
 std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue)
 {
+    return BindExpression(boundCompileUnit, boundFunction, containerScope, node, lvalue, false);
+}
+
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue, bool acceptFunctionGroup)
+{
     ExpressionBinder expressionBinder(boundCompileUnit, boundFunction, containerScope, node->GetSpan(), lvalue);
     node->Accept(expressionBinder);
     std::unique_ptr<BoundExpression> expression = expressionBinder.GetExpression();
+    if (acceptFunctionGroup && expression->IsBoundFunctionGroupExpression())
+    {
+        return expression;
+    }
     if (!expression->IsComplete())
     {
         throw Exception("incomplete expression", node->GetSpan());

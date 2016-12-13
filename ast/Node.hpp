@@ -30,7 +30,7 @@ enum class NodeType : uint8_t
     compoundStatementNode, returnStatementNode, ifStatementNode, whileStatementNode, doStatementNode, forStatementNode, breakStatementNode, continueStatementNode, gotoStatementNode,
     constructionStatementNode, assignmentStatementNode, expressionStatementNode, emptyStatementNode, incrementStatementNode, decrementStatementNode, forEachStatementNode, 
     switchStatementNode, caseStatementNode, defaultStatementNode, gotoCaseStatementNode, gotoDefaultStatementNode, throwStatementNode, tryStatementNode, catchNode, usingStatementNode,
-    enumTypeNode, enumConstantNode, constantNode,
+    enumTypeNode, enumConstantNode, constantNode, delegateNode,
     maxNode
 };
 

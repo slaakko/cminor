@@ -716,13 +716,15 @@ void BoundTypeExpression::Accept(BoundNodeVisitor& visitor)
     throw std::runtime_error("cannot visit bound type expression");
 }
 
-BoundFunctionGroupExpression::BoundFunctionGroupExpression(Assembly& assembly_, FunctionGroupSymbol* functionGroupSymbol_) : BoundExpression(assembly_, nullptr), functionGroupSymbol(functionGroupSymbol_)
+BoundFunctionGroupExpression::BoundFunctionGroupExpression(Assembly& assembly_, FunctionGroupSymbol* functionGroupSymbol_) : 
+    BoundExpression(assembly_, new FunctionGroupTypeSymbol(functionGroupSymbol_)), functionGroupSymbol(functionGroupSymbol_)
 {
+    functionGroupType.reset(GetType());
 }
 
 void BoundFunctionGroupExpression::GenLoad(Machine& machine, Function& function)
 {
-    throw std::runtime_error("cannot load from function group");
+    // Fun2Dlg conversion does not need source value, so this implementation is intentionally left empty.
 }
 
 void BoundFunctionGroupExpression::GenStore(Machine& machine, Function& function)
@@ -812,6 +814,37 @@ void BoundFunctionCall::GenStore(Machine& machine, Function& function)
 }
 
 void BoundFunctionCall::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundDelegateCall::BoundDelegateCall(Assembly& assembly_, DelegateTypeSymbol* delegateTypeSymbol_, std::vector<std::unique_ptr<BoundExpression>>&& arguments_) :
+    BoundExpression(assembly_, delegateTypeSymbol_->GetReturnType()), delegateTypeSymbol(delegateTypeSymbol_), arguments(std::move(arguments_))
+{
+}
+
+void BoundDelegateCall::GenLoad(Machine& machine, Function& function)
+{
+    int n = int(arguments.size());
+    for (int i = 0; i < n; ++i)
+    {
+        GenObject* genObject = arguments[i].get();
+        genObject->GenLoad(machine, function);
+    }
+    InstIndexRequest startDelegateCall;
+    function.GetEmitter()->AddIndexRequest(&startDelegateCall);
+    std::unique_ptr<Instruction> inst = machine.CreateInst("calld");
+    function.AddInst(std::move(inst));
+    function.GetEmitter()->BackpatchConDisSet(startDelegateCall.Index());
+    function.MapPCToSourceLine(startDelegateCall.Index(), function.GetEmitter()->CurrentSourceLine());
+}
+
+void BoundDelegateCall::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to delegate call");
+}
+
+void BoundDelegateCall::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
 }

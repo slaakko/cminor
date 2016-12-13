@@ -403,16 +403,16 @@ private:
 void EnumerationGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.SpecifierGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar0 = cminor::parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.SpecifierGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::SpecifierGrammar::Create(pd);
+        grammar1 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
     cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
@@ -431,8 +431,8 @@ void EnumerationGrammar::GetReferencedGrammars()
 
 void EnumerationGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
+    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new cminor::parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRule(new EnumTypeRule("EnumType", GetScope(),

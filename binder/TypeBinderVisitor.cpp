@@ -10,6 +10,7 @@
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/symbols/ConstantSymbol.hpp>
+#include <cminor/symbols/DelegateSymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/IndexerSymbol.hpp>
@@ -833,6 +834,27 @@ void TypeBinderVisitor::Visit(CatchNode& catchNode)
     }
     catchNode.CatchBlock()->Accept(*this);
     containerScope = prevContainerScope;
+}
+
+void TypeBinderVisitor::Visit(DelegateNode& delegateNode)
+{
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(delegateNode);
+    DelegateTypeSymbol* delegateTypeSymbol = dynamic_cast<DelegateTypeSymbol*>(symbol);
+    Assert(delegateTypeSymbol, "delegate type symbol expected");
+    delegateTypeSymbol->SetSpecifiers(delegateNode.GetSpecifiers());
+    TypeSymbol* returnType = ResolveType(boundCompileUnit, containerScope, delegateNode.ReturnTypeExpr());
+    delegateTypeSymbol->SetReturnType(returnType);
+    int n = delegateNode.Parameters().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        ParameterNode* parameterNode = delegateNode.Parameters()[i];
+        TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
+        Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
+        ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
+        Assert(parameterSymbol, "parameter symbol expected");
+        parameterSymbol->SetType(parameterType);
+    }
+    CreateDelegateFun(boundCompileUnit.GetAssembly(), delegateTypeSymbol);
 }
 
 } } // namespace cminor::binder

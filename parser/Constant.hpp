@@ -1,5 +1,5 @@
-#ifndef Constant_hpp_4617
-#define Constant_hpp_4617
+#ifndef Constant_hpp_1192
+#define Constant_hpp_1192
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -24,4 +24,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Constant_hpp_4617
+#endif // Constant_hpp_1192

@@ -1,5 +1,5 @@
-#ifndef Class_hpp_24706
-#define Class_hpp_24706
+#ifndef Class_hpp_4849
+#define Class_hpp_4849
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -36,4 +36,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Class_hpp_24706
+#endif // Class_hpp_4849

@@ -5,6 +5,7 @@
 
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
+#include <cminor/symbols/DelegateSymbol.hpp>
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
@@ -351,6 +352,15 @@ void FunctionSymbol::SetVmFunctionName(StringPtr vmFunctionName_)
 {
     ConstantPool& constantPool = GetAssembly()->GetConstantPool();
     vmFunctionName = constantPool.GetConstant(constantPool.Install(vmFunctionName_));
+}
+
+void FunctionSymbol::DumpHeader(CodeFormatter& formatter)
+{
+    std::string returnTypeStr;
+    if (returnType)
+    {
+        returnTypeStr = ": " + ToUtf8(returnType->FullName());
+    }
 }
 
 StaticConstructorSymbol::StaticConstructorSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
@@ -1069,6 +1079,28 @@ FunctionSymbol* FunctionGroupSymbol::GetOverload() const
     return nullptr;
 }
 
+FunctionGroupTypeSymbol::FunctionGroupTypeSymbol(FunctionGroupSymbol* functionGroup_) : TypeSymbol(functionGroup_->GetSpan(), functionGroup_->NameConstant()), functionGroup(functionGroup_)
+{
+}
+
+FunctionToDelegateConversion::FunctionToDelegateConversion(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
+{
+    SetConversionFun();
+}
+
+void FunctionToDelegateConversion::SetFunctionName(Constant functionName_)
+{
+    functionName = functionName_;
+}
+
+void FunctionToDelegateConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
+{
+    std::unique_ptr<Instruction> inst = machine.CreateInst("fun2dlg");
+    Fun2DlgInst* fun2DlgInst = dynamic_cast<Fun2DlgInst*>(inst.get());
+    fun2DlgInst->SetFunctionName(functionName);
+    function.AddInst(std::move(inst));
+}
+
 ConversionTable::ConversionTable(Assembly& assembly_) : assembly(assembly_)
 {
 }
@@ -1221,6 +1253,51 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
             conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
             enumTypeConversions.push_back(std::move(underlyingType2enum));
             return conversionFun;
+        }
+    }
+    else if (targetType->IsDelegateType() && sourceType->IsFunctionGroupTypeSymbol())
+    {
+        DelegateTypeSymbol* targetDelegateType = static_cast<DelegateTypeSymbol*>(targetType);
+        int arity = targetDelegateType->Arity();
+        FunctionGroupTypeSymbol* sourceFunctionGroupType = static_cast<FunctionGroupTypeSymbol*>(sourceType);
+        std::unordered_set<FunctionSymbol*> viableFunctions;
+        sourceFunctionGroupType->FunctionGroup()->CollectViableFunctions(arity, viableFunctions);
+        for (FunctionSymbol* viableFunction : viableFunctions)
+        {
+            bool functionFound = true;
+            for (int i = 0; i < arity; ++i)
+            {
+                ParameterSymbol* sourceParam = viableFunction->Parameters()[i];
+                ParameterSymbol* targetParam = targetDelegateType->Parameters()[i];
+                if (sourceParam->GetType() != targetParam->GetType())
+                {
+                    functionFound = false;
+                    break;
+                }
+            }
+            if (viableFunction->ReturnType() != targetDelegateType->GetReturnType())
+            {
+                functionFound = false;
+            }
+            if (functionFound)
+            {
+                ConstantPool& constantPool = assembly.GetConstantPool();
+                utf32_string fullFunctionName = viableFunction->FullName();
+                Constant functionNameContant = constantPool.GetConstant(constantPool.Install(StringPtr(fullFunctionName.c_str())));
+                Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
+                utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
+                Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
+                std::unique_ptr<FunctionToDelegateConversion> fun2DlgConversion(new FunctionToDelegateConversion(Span(), conversionNameConstant));
+                fun2DlgConversion->SetAssembly(&assembly);
+                fun2DlgConversion->SetGroupNameConstant(groupName);
+                fun2DlgConversion->SetSourceType(sourceType);
+                fun2DlgConversion->SetTargetType(targetType);
+                fun2DlgConversion->SetFunctionName(functionNameContant);
+                FunctionSymbol* conversionFun = fun2DlgConversion.get();
+                conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
+                delegateConversions.push_back(std::move(fun2DlgConversion));
+                return conversionFun;
+            }
         }
     }
     return nullptr;

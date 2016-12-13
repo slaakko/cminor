@@ -365,10 +365,10 @@ void InterfaceGrammar::GetReferencedGrammars()
         grammar0 = cminor::parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.ParameterGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parsing::stdlib::Create(pd);
+        grammar1 = cminor::parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
     cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.KeywordGrammar");
@@ -377,22 +377,22 @@ void InterfaceGrammar::GetReferencedGrammars()
         grammar2 = cminor::parser::KeywordGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar3)
     {
-        grammar3 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar3 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar4)
     {
-        grammar4 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar4 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    cminor::parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parser.ParameterGrammar");
+    cminor::parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar5)
     {
-        grammar5 = cminor::parser::ParameterGrammar::Create(pd);
+        grammar5 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar5);
 }

@@ -1,5 +1,5 @@
-#ifndef Template_hpp_14511
-#define Template_hpp_14511
+#ifndef Template_hpp_1192
+#define Template_hpp_1192
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -26,4 +26,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Template_hpp_14511
+#endif // Template_hpp_1192

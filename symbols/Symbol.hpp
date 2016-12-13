@@ -51,7 +51,7 @@ enum class SymbolType : uint8_t
     indexerGroupSymbol, constantSymbol, namespaceSymbol, declarationBlock, typeParameterSymbol, boundTypeParameterSymbol, classTemplateSpecializationSymbol,
     basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, objectDefaultInit, objectCopyInit, objectNullInit, 
     objectAssignment, objectNullAssignment, objectNullEqual, nullObjectEqual, nullToObjectConversion, classTypeConversion, classToInterfaceConversion, enumTypeSymbol, enumConstantSymbol,
-    enumTypeDefaultInit, enumTypeConversion,
+    enumTypeDefaultInit, enumTypeConversion, delegateTypeSymbol, delegateDefaultInit, functionGroupTypeSymbol,
     maxSymbol
 };
 
@@ -171,7 +171,9 @@ public:
     virtual void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol);
     void Merge(const Symbol& that);
     virtual void Evaluate(SymbolEvaluator* evaluator, const Span& span);
-    virtual void Dump(CodeFormatter& formatter, Assembly* assembly);
+    void Dump(CodeFormatter& formatter, Assembly* assembly);
+    virtual void DumpHeader(CodeFormatter& formatter);
+    virtual void DumpContent(CodeFormatter& formatter, Assembly* assembly);
 private:
     Span span;
     Constant name;
@@ -264,7 +266,7 @@ public:
     FunctionGroupSymbol* MakeFunctionGroupSymbol(StringPtr groupName, const Span& span);
     IndexerGroupSymbol* MakeIndexerGroupSymbol(const Span& span);
     void Evaluate(SymbolEvaluator* evaluator, const Span& span) override;
-    void Dump(CodeFormatter& formatter, Assembly* assembly) override;
+    void DumpContent(CodeFormatter& formatter, Assembly* assembly) override;
 private:
     ContainerScope containerScope;
     std::vector<std::unique_ptr<Symbol>> symbols;
@@ -305,6 +307,8 @@ public:
     virtual std::string GetBoxedTypeName() const { return std::string(); }
     virtual bool IsSwitchConditionType() const { return false; }
     virtual bool IsVoidType() const { return false; }
+    virtual bool IsDelegateType() const { return false; }
+    virtual bool IsFunctionGroupTypeSymbol() const { return false; }
 };
 
 class BasicTypeSymbol : public TypeSymbol

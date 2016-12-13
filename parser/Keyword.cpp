@@ -44,6 +44,7 @@ KeywordGrammar::KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_): 
     keywords0.push_back("const");
     keywords0.push_back("continue");
     keywords0.push_back("default");
+    keywords0.push_back("delegate");
     keywords0.push_back("do");
     keywords0.push_back("double");
     keywords0.push_back("else");

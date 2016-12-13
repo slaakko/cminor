@@ -10,6 +10,7 @@
 #include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/symbols/EnumSymbol.hpp>
 #include <cminor/symbols/ConstantSymbol.hpp>
+#include <cminor/symbols/DelegateSymbol.hpp>
 #include <cminor/symbols/EnumTypeFun.hpp>
 #include <cminor/symbols/BasicTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
@@ -608,6 +609,26 @@ void SymbolTable::AddConstant(ConstantNode& constantNode)
     MapNode(constantNode, constantSymbol);
 }
 
+void SymbolTable::BeginDelegate(DelegateNode& delegateNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(delegateNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    DelegateTypeSymbol* delegateTypeSymbol = new DelegateTypeSymbol(delegateNode.GetSpan(), nameConstant);
+    delegateTypeSymbol->SetAssembly(assembly);
+    container->AddSymbol(std::unique_ptr<Symbol>(delegateTypeSymbol));
+    MapNode(delegateNode, delegateTypeSymbol);
+    ContainerScope* delegateScope = delegateTypeSymbol->GetContainerScope();
+    ContainerScope* containerScope = container->GetContainerScope();
+    delegateScope->SetParent(containerScope);
+    BeginContainer(delegateTypeSymbol);
+}
+
+void SymbolTable::EndDelegate()
+{
+    EndContainer();
+}
+
 void SymbolTable::Write(SymbolWriter& writer)
 {
     globalNs.Write(writer);
@@ -1056,6 +1077,8 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::enumConstantSymbol, new ConcreteSymbolCreator<EnumConstantSymbol>());
     SymbolFactory::Instance().Register(SymbolType::enumTypeDefaultInit, new ConcreteSymbolCreator<EnumTypeDefaultInit>());
     SymbolFactory::Instance().Register(SymbolType::enumTypeConversion, new ConcreteSymbolCreator<EnumTypeConversionFun>());
+    SymbolFactory::Instance().Register(SymbolType::delegateTypeSymbol, new ConcreteSymbolCreator<DelegateTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::delegateDefaultInit, new ConcreteSymbolCreator<DelegateDefaultInit>());
 }
 
 void DoneSymbol()

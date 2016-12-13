@@ -311,6 +311,12 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
 
     rootInst.SetInst(0xE0, new AllocateArrayElementsInst());
 
+    // delegates:
+    // ----------
+    rootInst.SetInst(0xE1, new LoadDefaultValueInst<ValueType::functionPtr>("def", "@delegate"));
+    rootInst.SetInst(0xE2, new Fun2DlgInst());
+    rootInst.SetInst(0xE3, new DelegateCallInst());
+
     // vmcall:
     // -------
 
@@ -594,6 +600,10 @@ std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
     if (CallInst* callInst = dynamic_cast<CallInst*>(clonedInst))
     {
         reader.AddCallInst(callInst);
+    }
+    else if (Fun2DlgInst* fun2DlgInst = dynamic_cast<Fun2DlgInst*>(clonedInst))
+    {
+        reader.AddFun2DlgInst(fun2DlgInst);
     }
     else if (TypeInstruction* typeInst = dynamic_cast<TypeInstruction*>(clonedInst))
     {

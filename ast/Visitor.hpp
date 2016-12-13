@@ -123,6 +123,7 @@ class UsingStatementNode;
 class EnumTypeNode;
 class EnumConstantNode;
 class ConstantNode;
+class DelegateNode;
 
 class Visitor
 {
@@ -243,6 +244,7 @@ public:
     virtual void Visit(EnumTypeNode& enumTypeNode) {}
     virtual void Visit(EnumConstantNode& enumConstantNode) {}
     virtual void Visit(ConstantNode& constantNode) {}
+    virtual void Visit(DelegateNode& delegateNode) {}
 };
 
 } } // namespace cminor::ast

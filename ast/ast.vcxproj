@@ -26,6 +26,7 @@
     <ClInclude Include="Clone.hpp" />
     <ClInclude Include="CompileUnit.hpp" />
     <ClInclude Include="Constant.hpp" />
+    <ClInclude Include="Delegate.hpp" />
     <ClInclude Include="Enumeration.hpp" />
     <ClInclude Include="Expression.hpp" />
     <ClInclude Include="Function.hpp" />
@@ -51,6 +52,7 @@
     <ClCompile Include="Clone.cpp" />
     <ClCompile Include="CompileUnit.cpp" />
     <ClCompile Include="Constant.cpp" />
+    <ClCompile Include="Delegate.cpp" />
     <ClCompile Include="Enumeration.cpp" />
     <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Function.cpp" />

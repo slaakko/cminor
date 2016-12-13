@@ -19,6 +19,7 @@ public:
     TypeSymbol* GetType()  const { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }
     void EmplaceType(TypeSymbol* type, int index) override;
+    void DumpHeader(CodeFormatter& formatter) override;
 private:
     TypeSymbol* type;
 };

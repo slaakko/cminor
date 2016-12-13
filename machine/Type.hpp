@@ -166,6 +166,12 @@ public:
     ValueType GetValueType() const override { return ValueType::ulongType; }
 };
 
+class DelegateType : public Type
+{
+public:
+    ValueType GetValueType() const override { return ValueType::functionPtr; }
+};
+
 class ObjectType : public Type
 {
 public:
