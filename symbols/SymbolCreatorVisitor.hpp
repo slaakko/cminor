@@ -47,6 +47,7 @@ public:
     void Visit(EnumTypeNode& enumTypeNode) override;
     void Visit(ConstantNode& constantNode) override;
     void Visit(DelegateNode& delegateNode) override;
+    void Visit(ClassDelegateNode& classDelegateNode) override;
 private:
     Assembly& assembly;
     SymbolTable& symbolTable;

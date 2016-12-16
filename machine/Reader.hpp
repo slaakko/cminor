@@ -13,6 +13,7 @@ namespace cminor { namespace machine {
 class Machine;
 class CallInst;
 class Fun2DlgInst;
+class MemFun2ClassDlgInst;
 class TypeInstruction;
 class SetClassDataInst;
 class ConstantPool;
@@ -30,6 +31,7 @@ public:
     void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
     void AddCallInst(CallInst* callInst);
     void AddFun2DlgInst(Fun2DlgInst* fun2DlgInst);
+    void AddMemFun2ClassDlgInst(MemFun2ClassDlgInst* memFun2ClassDlgInst);
     void AddTypeInstruction(TypeInstruction* typeInst);
     void AddSetClassDataInst(SetClassDataInst* setClassDataInst);
     bool GetBool();
@@ -52,6 +54,8 @@ public:
     const std::vector<CallInst*>& CallInstructions() const { return callInstructions; }
     std::vector<Fun2DlgInst*> GetFun2DlgInstructions() { return std::move(fun2DlgInstructions); }
     const std::vector<Fun2DlgInst*>& Fun2DlgInstructions() const { return fun2DlgInstructions; }
+    std::vector<MemFun2ClassDlgInst*> GetMemFun2ClassDlgInstructions() { return std::move(memFun2ClassDlgInstructions);  }
+    const std::vector<MemFun2ClassDlgInst*>& MemFun2ClassDlgInstructions() const { return memFun2ClassDlgInstructions; }
     std::vector<TypeInstruction*> GetTypeInstructions() { return std::move(typeInstructions); }
     const std::vector<TypeInstruction*>& TypeInstructions() const { return typeInstructions; }
     std::vector<SetClassDataInst*> GetSetClassDataInstructions() { return std::move(setClassDataInstructions); }
@@ -68,9 +72,23 @@ private:
     uint32_t pos;
     std::vector<CallInst*> callInstructions;
     std::vector<Fun2DlgInst*> fun2DlgInstructions;
+    std::vector<MemFun2ClassDlgInst*> memFun2ClassDlgInstructions;
     std::vector<TypeInstruction*> typeInstructions;
     std::vector<SetClassDataInst*> setClassDataInstructions;
     void CheckEof();
+};
+
+class InstAdder
+{
+public:
+    InstAdder(Reader& reader_) : reader(reader_) {}
+    void Add(CallInst* callInst) { reader.AddCallInst(callInst); }
+    void Add(Fun2DlgInst* fun2DlgInst) { reader.AddFun2DlgInst(fun2DlgInst); }
+    void Add(MemFun2ClassDlgInst* memFun2ClassDlgInst) { reader.AddMemFun2ClassDlgInst(memFun2ClassDlgInst); }
+    void Add(TypeInstruction* typeInst) { reader.AddTypeInstruction(typeInst); }
+    void Add(SetClassDataInst* setClassDataInst) { reader.AddSetClassDataInst(setClassDataInst); }
+private:
+    Reader& reader;
 };
 
 } } // namespace cminor::machine

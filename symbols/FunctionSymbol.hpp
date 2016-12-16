@@ -85,6 +85,7 @@ public:
     Constant VmFunctionName() const { return vmFunctionName; }
     FunctionSymbolFlags GetFlags() const { return flags; }
     virtual bool IsDerived() const { return false; }
+    virtual bool IsMemFunToClassDelegateConversion() const { return false; }
     void DumpHeader(CodeFormatter& formatter) override;
 private:
     Constant groupName;
@@ -296,6 +297,20 @@ private:
     FunctionGroupSymbol* functionGroup;
 };
 
+class MemberExpressionTypeSymbol : public TypeSymbol
+{
+public:
+    MemberExpressionTypeSymbol(Constant name_, void* boundMemberExpression_);
+    SymbolType GetSymbolType() const override { return SymbolType::memberExpressionTypeSymbol; }
+    std::string TypeString() const override { return "member expression type"; }
+    bool IsExportSymbol() const override { return false; }
+    void* BoundMemberExpression() const { return boundMemberExpression; }
+    Type* GetMachineType() const override { Assert(false, "member expression type has no machine type"); return nullptr; }
+    bool IsMemberExpressionTypeSymbol() const override { return true; }
+private:
+    void* boundMemberExpression;
+};
+
 class FunctionToDelegateConversion : public FunctionSymbol
 {
 public:
@@ -308,6 +323,25 @@ public:
     TypeSymbol* ConversionTargetType() const override { return targetType; }
     void SetFunctionName(Constant functionName_);
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
+private:
+    TypeSymbol* sourceType;
+    TypeSymbol* targetType;
+    Constant functionName;
+};
+
+class MemFunToClassDelegateConversion : public FunctionSymbol
+{
+public:
+    MemFunToClassDelegateConversion(const Span& span_, Constant name_);
+    ConversionType GetConversionType() const override { return ConversionType::implicit_; }
+    int32_t ConversionDistance() const override { return 1; }
+    void SetSourceType(TypeSymbol* sourceType_) { sourceType = sourceType_; }
+    TypeSymbol* ConversionSourceType() const override { return sourceType; }
+    void SetTargetType(TypeSymbol* targetType_) { targetType = targetType_; SetReturnType(targetType); }
+    TypeSymbol* ConversionTargetType() const override { return targetType; }
+    void SetFunctionName(Constant functionName_);
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
+    bool IsMemFunToClassDelegateConversion() const override { return true; }
 private:
     TypeSymbol* sourceType;
     TypeSymbol* targetType;

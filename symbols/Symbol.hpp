@@ -51,7 +51,7 @@ enum class SymbolType : uint8_t
     indexerGroupSymbol, constantSymbol, namespaceSymbol, declarationBlock, typeParameterSymbol, boundTypeParameterSymbol, classTemplateSpecializationSymbol,
     basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, objectDefaultInit, objectCopyInit, objectNullInit, 
     objectAssignment, objectNullAssignment, objectNullEqual, nullObjectEqual, nullToObjectConversion, classTypeConversion, classToInterfaceConversion, enumTypeSymbol, enumConstantSymbol,
-    enumTypeDefaultInit, enumTypeConversion, delegateTypeSymbol, delegateDefaultInit, functionGroupTypeSymbol,
+    enumTypeDefaultInit, enumTypeConversion, delegateTypeSymbol, delegateDefaultInit, functionGroupTypeSymbol, classDelegateTypeSymbol, memberExpressionTypeSymbol,
     maxSymbol
 };
 
@@ -308,7 +308,10 @@ public:
     virtual bool IsSwitchConditionType() const { return false; }
     virtual bool IsVoidType() const { return false; }
     virtual bool IsDelegateType() const { return false; }
+    virtual bool IsClassDelegateType() const { return false; }
+    virtual bool IsDelegateOrClassDelegateType() const { return false; }
     virtual bool IsFunctionGroupTypeSymbol() const { return false; }
+    virtual bool IsMemberExpressionTypeSymbol() const { return false; }
 };
 
 class BasicTypeSymbol : public TypeSymbol

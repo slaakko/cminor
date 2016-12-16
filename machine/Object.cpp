@@ -153,6 +153,7 @@ IntegralValue Object::GetField(int index) const
         case ValueType::stringLiteral: return IntegralValue(static_cast<const char32_t*>(fieldPtr.Value()));
         case ValueType::allocationHandle: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
         case ValueType::objectReference: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::functionPtr: return IntegralValue(*static_cast<Function**>(fieldPtr.Value()));
         default: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
     }
 }
@@ -182,6 +183,7 @@ void Object::SetField(IntegralValue fieldValue, int index)
         case ValueType::stringLiteral: *static_cast<const char32_t**>(fieldPtr.Value()) = fieldValue.AsStringLiteral(); break;
         case ValueType::allocationHandle: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
         case ValueType::objectReference: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
+        case ValueType::functionPtr: *static_cast<Function**>(fieldPtr.Value()) = fieldValue.AsFunctionPtr(); break;
         default: throw SystemException("invalid field type " + std::to_string(int(field.GetType())));
     }
 }

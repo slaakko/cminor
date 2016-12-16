@@ -49,6 +49,7 @@ public:
     void Visit(TryStatementNode& tryStatementNode) override;
     void Visit(CatchNode& catchNode) override;
     void Visit(DelegateNode& delegateNode) override;
+    void Visit(ClassDelegateNode& classDelegateNode) override;
 private:
     BoundCompileUnit& boundCompileUnit;
     ContainerScope* containerScope;

@@ -16,6 +16,7 @@
 #include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/symbols/EnumTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
+#include <cminor/symbols/SymbolCreatorVisitor.hpp>
 
 namespace cminor { namespace binder {
 
@@ -855,6 +856,60 @@ void TypeBinderVisitor::Visit(DelegateNode& delegateNode)
         parameterSymbol->SetType(parameterType);
     }
     CreateDelegateFun(boundCompileUnit.GetAssembly(), delegateTypeSymbol);
+}
+
+void TypeBinderVisitor::Visit(ClassDelegateNode& classDelegateNode)
+{
+    Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(classDelegateNode);
+    ClassDelegateTypeSymbol* classDelegateTypeSymbol = dynamic_cast<ClassDelegateTypeSymbol*>(symbol);
+    Assert(classDelegateTypeSymbol, "class delegate type symbol expected");
+    classDelegateTypeSymbol->SetSpecifiers(classDelegateNode.GetSpecifiers());
+    TypeSymbol* returnType = ResolveType(boundCompileUnit, containerScope, classDelegateNode.ReturnTypeExpr());
+    classDelegateTypeSymbol->SetReturnType(returnType);
+    int n = classDelegateNode.Parameters().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        ParameterNode* parameterNode = classDelegateNode.Parameters()[i];
+        TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
+        Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
+        ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
+        Assert(parameterSymbol, "parameter symbol expected");
+        parameterSymbol->SetType(parameterType);
+    }
+    ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
+    Constant objName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@obj")));
+    MemberVariableSymbol* objMemVar = new MemberVariableSymbol(classDelegateNode.GetSpan(), objName);
+    objMemVar->SetAssembly(&boundCompileUnit.GetAssembly());
+    objMemVar->SetPublic();
+    objMemVar->SetType(boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Object"));
+    classDelegateTypeSymbol->AddSymbol(std::unique_ptr<Symbol>(objMemVar));
+    Constant dlgName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@dlg")));
+    MemberVariableSymbol* dlgMemVar = new MemberVariableSymbol(classDelegateNode.GetSpan(), dlgName);
+    dlgMemVar->SetAssembly(&boundCompileUnit.GetAssembly());
+    dlgMemVar->SetPublic();
+    CloneContext cloneContext;
+    DelegateNode delegateNode(classDelegateNode.GetSpan(), classDelegateNode.GetSpecifiers(), classDelegateNode.ReturnTypeExpr()->Clone(cloneContext),
+        new IdentifierNode(classDelegateNode.GetSpan(), "@" + classDelegateNode.Id()->Str() + "_delegate_type"));
+    delegateNode.AddParameter(new ParameterNode(classDelegateNode.GetSpan(), new IdentifierNode(classDelegateNode.GetSpan(), "System.Object"), new IdentifierNode(classDelegateNode.GetSpan(), "@obj")));
+    for (int i = 0; i < n; ++i)
+    {
+        ParameterNode* parameterNode = static_cast<ParameterNode*>(classDelegateNode.Parameters()[i]->Clone(cloneContext));
+        delegateNode.AddParameter(parameterNode);
+    }
+    boundCompileUnit.GetAssembly().GetSymbolTable().BeginContainer(containerScope->Container());
+    SymbolCreatorVisitor symbolCreatorVisitor(boundCompileUnit.GetAssembly());
+    delegateNode.Accept(symbolCreatorVisitor);
+    boundCompileUnit.GetAssembly().GetSymbolTable().EndContainer();
+    delegateNode.Accept(*this);
+    Symbol* dlgSym = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(delegateNode);
+    DelegateTypeSymbol* delegateTypeSymbol = dynamic_cast<DelegateTypeSymbol*>(dlgSym);
+    Assert(delegateTypeSymbol, "delegate type symbol expected");
+    dlgMemVar->SetType(delegateTypeSymbol);
+    classDelegateTypeSymbol->AddSymbol(std::unique_ptr<Symbol>(dlgMemVar));
+    ClassNode* classNode = new ClassNode(classDelegateNode.GetSpan(), classDelegateNode.GetSpecifiers(), static_cast<IdentifierNode*>(classDelegateNode.Id()->Clone(cloneContext)));
+    BindClass(classDelegateTypeSymbol, *classNode);
+    boundCompileUnit.GetAssembly().GetSymbolTable().MapNode(*classNode, classDelegateTypeSymbol);
+    boundCompileUnit.AddClassNode(classNode);
 }
 
 } } // namespace cminor::binder

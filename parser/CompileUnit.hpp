@@ -1,5 +1,5 @@
-#ifndef CompileUnit_hpp_4849
-#define CompileUnit_hpp_4849
+#ifndef CompileUnit_hpp_11865
+#define CompileUnit_hpp_11865
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -34,8 +34,9 @@ private:
     class EnumTypeDefinitionRule;
     class ConstantDefinitionRule;
     class DelegateDefinitionRule;
+    class ClassDelegateDefinitionRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // CompileUnit_hpp_4849
+#endif // CompileUnit_hpp_11865

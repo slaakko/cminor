@@ -25,5 +25,10 @@ namespace cminor.parser
             ::= (Specifiers keyword("delegate") TypeExpr(ctx)! Identifier!){ value = new DelegateNode(span, Specifiers, TypeExpr, Identifier); }
                 ParameterList(ctx, value)!{ value->GetSpan().SetEnd(span.End()); } ';'!
             ;
+
+        ClassDelegate(ParsingContext* ctx) : Node*
+            ::= (Specifiers keyword("class") keyword("delegate") TypeExpr(ctx)! Identifier!){ value = new ClassDelegateNode(span, Specifiers, TypeExpr, Identifier); }
+                ParameterList(ctx, value)!{ value->GetSpan().SetEnd(span.End()); } ';'!
+            ;
     }
 }

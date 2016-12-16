@@ -65,6 +65,8 @@ public:
     void AddConstant(ConstantNode& constantNode);
     void BeginDelegate(DelegateNode& delegateNode);
     void EndDelegate();
+    void BeginClassDelegate(ClassDelegateNode& classDelegateNode);
+    void EndClassDelegate();
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader);
     void Import(SymbolTable& symbolTable);

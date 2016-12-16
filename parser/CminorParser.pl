@@ -91,10 +91,12 @@ namespace cminor.parser
         EnumTypeDefinition(ParsingContext* ctx): EnumTypeNode*;
         ConstantDefinition(ParsingContext* ctx): ConstantNode*;
         DelegateDefinition(ParsingContext* ctx): Node*;
+        ClassDelegateDefinition(ParsingContext* ctx): Node*;
     }
     grammar DelegateGrammar
     {
         Delegate(ParsingContext* ctx): Node*;
+        ClassDelegate(ParsingContext* ctx): Node*;
     }
     grammar EnumerationGrammar
     {

@@ -36,6 +36,7 @@ namespace cminor.parser
         using EnumerationGrammar.EnumType;
         using ConstantGrammar.Constant;
         using DelegateGrammar.Delegate;
+        using DelegateGrammar.ClassDelegate;
         using stdlib.identifier;
 
         Class(ParsingContext* ctx) : ClassNode*
@@ -70,6 +71,7 @@ namespace cminor.parser
             |   EnumType(ctx){ value = EnumType; }
             |   Constant(ctx){ value = Constant; }
             |   Delegate(ctx){ value = Delegate; }
+            |   ClassDelegate(ctx){ value = ClassDelegate; }
             ;
 
         StaticConstructor(ParsingContext* ctx, ClassNode* classNode, var AttributeMap attributeMap, var std::unique_ptr<IdentifierNode> id) : StaticConstructorNode*

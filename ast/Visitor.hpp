@@ -124,6 +124,7 @@ class EnumTypeNode;
 class EnumConstantNode;
 class ConstantNode;
 class DelegateNode;
+class ClassDelegateNode;
 
 class Visitor
 {
@@ -245,6 +246,7 @@ public:
     virtual void Visit(EnumConstantNode& enumConstantNode) {}
     virtual void Visit(ConstantNode& constantNode) {}
     virtual void Visit(DelegateNode& delegateNode) {}
+    virtual void Visit(ClassDelegateNode& classDelegateNode) {}
 };
 
 } } // namespace cminor::ast

@@ -44,6 +44,7 @@ public:
     virtual bool IsLvalueExpression() const { return false; }
     virtual bool ReturnsValue() const { return false; }
     virtual bool IsBoundFunctionGroupExpression() const { return false; }
+    virtual bool IsBoundMemberExpression() const { return false; }
 private:
     TypeSymbol* type;
     BoundExpressionFlags flags;
@@ -226,10 +227,14 @@ public:
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
     bool IsComplete() const override { return false; }
-    bool IsBoundFunctionGroupExpression() const { return true; }
+    void SetClassObject(std::unique_ptr<BoundExpression>&& classObject_);
+    BoundExpression* GetClassObject() const { return classObject.get(); }
+    BoundExpression* ReleaseClassObject() { return classObject.release(); }
+    bool IsBoundFunctionGroupExpression() const override { return true; }
 private:
     FunctionGroupSymbol* functionGroupSymbol;
     std::unique_ptr<TypeSymbol> functionGroupType;
+    std::unique_ptr<BoundExpression> classObject;
 };
 
 class BoundMemberExpression : public BoundExpression
@@ -243,9 +248,23 @@ public:
     BoundExpression* ReleaseClassObject() { return classObject.release(); }
     BoundExpression* Member() const { return member.get(); }
     bool IsComplete() const override { return false; }
+    bool IsBoundMemberExpression() const override { return true; }
 private:
     std::unique_ptr<BoundExpression> classObject;
     std::unique_ptr<BoundExpression> member;
+    std::unique_ptr<TypeSymbol> memberExpressionType;
+};
+
+class BoundClassDelegateClassObjectPair : public BoundExpression
+{
+public:
+    BoundClassDelegateClassObjectPair(Assembly& assembly_, std::unique_ptr<BoundExpression>&& newClassDelegateObjectExpr_, std::unique_ptr<BoundExpression>&& classObject_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    std::unique_ptr<BoundExpression> newClassDelegateObjectExpr;
+    std::unique_ptr<BoundExpression> classObject;
 };
 
 enum class FunctionCallType : uint8_t
@@ -282,6 +301,18 @@ public:
     void Accept(BoundNodeVisitor& visitor) override;
 private:
     DelegateTypeSymbol* delegateTypeSymbol;
+    std::vector<std::unique_ptr<BoundExpression>> arguments;
+};
+
+class BoundClassDelegateCall : public BoundExpression
+{
+public:
+    BoundClassDelegateCall(Assembly& assembly_, ClassDelegateTypeSymbol* classDelegateTypeSymbol_, std::vector<std::unique_ptr<BoundExpression>>&& arguments_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    ClassDelegateTypeSymbol* classDelegateTypeSymbol;
     std::vector<std::unique_ptr<BoundExpression>> arguments;
 };
 

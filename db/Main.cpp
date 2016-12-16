@@ -172,6 +172,7 @@ int main(int argc, const char** argv)
         SymbolReader symbolReader(assemblyFilePath);
         std::vector<CallInst*> callInstructions;
         std::vector<Fun2DlgInst*> fun2DlgInstructions;
+        std::vector<MemFun2ClassDlgInst*> memFun2ClassDlgInstructions;
         std::vector<TypeInstruction*> typeInstructions;
         std::vector<SetClassDataInst*> setClassDataInstructions;
         std::vector<ClassTypeSymbol*> classTypes;
@@ -180,8 +181,8 @@ int main(int argc, const char** argv)
         std::unordered_set<utf32_string> classTemplateSpecializationNames;
         std::vector<Assembly*> assemblies;
         std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
-        assembly.BeginRead(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions, classTypes,
-            classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
+        assembly.BeginRead(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, 
+            setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
         auto it = std::unique(assemblies.begin(), assemblies.end());
         assemblies.erase(it, assemblies.end());
         std::unordered_map<Assembly*, AssemblyDependency*> dependencyMap;
@@ -190,12 +191,13 @@ int main(int argc, const char** argv)
             dependencyMap[p.second->GetAssembly()] = p.second;
         }
         std::vector<Assembly*> finishReadOrder = CreateFinishReadOrder(assemblies, dependencyMap, rootAssembly);
-        assembly.FinishReads(callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, int(finishReadOrder.size() - 2), 
-            finishReadOrder, true);
-        Link(callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions, classTypes);
+        assembly.FinishReads(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, 
+            int(finishReadOrder.size() - 2), finishReadOrder, true);
+        Link(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes);
         assembly.GetSymbolTable().MergeClassTemplateSpecializations();
         callInstructions.clear();
         fun2DlgInstructions.clear();
+        memFun2ClassDlgInstructions.clear();
         typeInstructions.clear();
         setClassDataInstructions.clear();
         classTypes.clear();

@@ -1,5 +1,5 @@
-#ifndef Delegate_hpp_4248
-#define Delegate_hpp_4248
+#ifndef Delegate_hpp_11865
+#define Delegate_hpp_11865
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -20,8 +20,9 @@ private:
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class DelegateRule;
+    class ClassDelegateRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // Delegate_hpp_4248
+#endif // Delegate_hpp_11865

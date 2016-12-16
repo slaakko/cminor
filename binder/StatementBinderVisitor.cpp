@@ -114,6 +114,12 @@ StatementBinderVisitor::StatementBinderVisitor(BoundCompileUnit& boundCompileUni
 void StatementBinderVisitor::Visit(CompileUnitNode& compileUnitNode)
 {
     compileUnitNode.GlobalNs()->Accept(*this);
+    int n = int(boundCompileUnit.ClassNodes().size());
+    for (int i = 0; i < n; ++i)
+    {
+        ClassNode* classNode = boundCompileUnit.ClassNodes()[i].get();
+        classNode->Accept(*this);
+    }
 }
 
 void StatementBinderVisitor::Visit(NamespaceNode& namespaceNode)
@@ -580,6 +586,7 @@ void StatementBinderVisitor::Visit(ReturnStatementNode& returnStatementNode)
     {
         TypeSymbol* returnType = function->GetFunctionSymbol()->ReturnType();
         bool returnDelegateType = returnType->IsDelegateType();
+        bool returnClassDelegateType = returnType->IsClassDelegateType();
         if (returnType && !dynamic_cast<VoidTypeSymbol*>(returnType))
         {
             std::vector<std::unique_ptr<BoundExpression>> returnTypeArgs;
@@ -589,7 +596,8 @@ void StatementBinderVisitor::Visit(ReturnStatementNode& returnStatementNode)
             functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, returnType->ClassInterfaceOrNsScope()));
             functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
             std::unique_ptr<BoundFunctionCall> returnFunctionCall = ResolveOverload(boundCompileUnit, U"@return", functionScopeLookups, returnTypeArgs, returnStatementNode.GetSpan());
-            std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, returnStatementNode.Expression(), false, returnDelegateType);
+            std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, returnStatementNode.Expression(), false, 
+                returnDelegateType || returnClassDelegateType, returnClassDelegateType);
             std::vector<std::unique_ptr<BoundExpression>> returnValueArguments;
             returnValueArguments.push_back(std::move(expression));
             FunctionMatch functionMatch(returnFunctionCall->GetFunctionSymbol());
@@ -783,6 +791,7 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
     std::vector<std::unique_ptr<BoundExpression>> arguments;
     arguments.push_back(std::unique_ptr<BoundExpression>(new BoundLocalVariable(boundCompileUnit.GetAssembly(), localVariableSymbol->GetType(), localVariableSymbol)));
     bool constructDelegateType = localVariableSymbol->GetType()->IsDelegateType();
+    bool constructClassDelegateType = localVariableSymbol->GetType()->IsClassDelegateType();
     std::vector<FunctionScopeLookup> functionScopeLookups;
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, localVariableSymbol->GetType()->ClassInterfaceOrNsScope()));
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
@@ -791,7 +800,8 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
     for (int i = 0; i < n; ++i)
     {
         Node* argumentNode = constructionStatementNode.Arguments()[i];
-        std::unique_ptr<BoundExpression> argument = BindExpression(boundCompileUnit, function, containerScope, argumentNode, false, constructDelegateType);
+        std::unique_ptr<BoundExpression> argument = BindExpression(boundCompileUnit, function, containerScope, argumentNode, false, constructDelegateType || constructClassDelegateType, 
+            constructClassDelegateType);
         arguments.push_back(std::move(argument));
     }
     std::unique_ptr<BoundFunctionCall> constructorCall = ResolveOverload(boundCompileUnit, U"@init", functionScopeLookups, arguments, constructionStatementNode.GetSpan());
@@ -804,7 +814,9 @@ void StatementBinderVisitor::Visit(AssignmentStatementNode& assignmentStatementN
     std::unique_ptr<BoundExpression> target = BindExpression(boundCompileUnit, function, containerScope, assignmentStatementNode.TargetExpr(), true);
     TypeSymbol* targetType = target->GetType();
     bool assignDelegateType = targetType->IsDelegateType();
-    std::unique_ptr<BoundExpression> source = BindExpression(boundCompileUnit, function, containerScope, assignmentStatementNode.SourceExpr(), false, assignDelegateType);
+    bool assignClassDelegateType = targetType->IsClassDelegateType();
+    std::unique_ptr<BoundExpression> source = BindExpression(boundCompileUnit, function, containerScope, assignmentStatementNode.SourceExpr(), false, assignDelegateType || assignClassDelegateType, 
+        assignClassDelegateType);
     std::vector<std::unique_ptr<BoundExpression>> arguments;
     arguments.push_back(std::move(target));
     arguments.push_back(std::move(source));

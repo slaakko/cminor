@@ -299,6 +299,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     const Assembly* rootAssembly = &assembly;
     std::vector<CallInst*> callInstructions;
     std::vector<Fun2DlgInst*> fun2DlgInstructions;
+    std::vector<MemFun2ClassDlgInst*> memFun2ClassDlgInstructions;
     std::vector<TypeInstruction*> typeInstructions;
     std::vector<SetClassDataInst*> setClassDataInstructions;
     std::vector<ClassTypeSymbol*> classTypes;
@@ -307,8 +308,8 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
     std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(project->AssemblyFilePath()).remove_filename().generic_string());
     std::unordered_set<std::string> importSet;
-    assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, typeInstructions, 
-        setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
+    assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions,
+        typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
     assemblies.push_back(&assembly);
     auto it = std::unique(assemblies.begin(), assemblies.end());
     assemblies.erase(it, assemblies.end());
@@ -319,10 +320,11 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
         dependencyMap[p.second->GetAssembly()] = p.second;
     }
     std::vector<Assembly*> finishReadOrder = CreateFinishReadOrder(assemblies, dependencyMap, rootAssembly);
-    assembly.FinishReads(callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, int(finishReadOrder.size() - 2), 
-        finishReadOrder, false);
+    assembly.FinishReads(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, 
+        int(finishReadOrder.size() - 2), finishReadOrder, false);
     callInstructions.clear();
     fun2DlgInstructions.clear();
+    memFun2ClassDlgInstructions.clear();
     typeInstructions.clear();
     setClassDataInstructions.clear();
     classTypes.clear();
@@ -387,17 +389,14 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
         }
         else
         {
-            for (const AssemblyReferenceInfo& assemblyReferenceInfo : assemblyReferenceInfos)
+            if (!assemblyReferenceInfo.isSystemAssembly)
             {
-                if (!assemblyReferenceInfo.isSystemAssembly)
-                {
-                    boost::filesystem::path afp = assemblyReferenceInfo.filePath;
-                    boost::filesystem::path pafp = projectAssemblyDir;
-                    pafp /= afp.filename();
-                    std::string from = GetFullPath(afp.generic_string());
-                    std::string to = GetFullPath(pafp.generic_string());
-                    CopyAssemblyFile(from, to, copied);
-                }
+                boost::filesystem::path afp = assemblyReferenceInfo.filePath;
+                boost::filesystem::path pafp = projectAssemblyDir;
+                pafp /= afp.filename();
+                std::string from = GetFullPath(afp.generic_string());
+                std::string to = GetFullPath(pafp.generic_string());
+                CopyAssemblyFile(from, to, copied);
             }
         }
     }

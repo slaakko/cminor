@@ -55,6 +55,7 @@ public:
     virtual void GetOpCodes(std::string& opCodes);
     virtual void SetTarget(int32_t target);
     virtual bool IsJumpingInst() const { return false; }
+    virtual void DispatchTo(InstAdder& adder);
 private:
     uint8_t opCode;
     std::string name;
@@ -665,6 +666,7 @@ public:
     Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
+    void DispatchTo(InstAdder& adder) override;
 private:
     Constant function;
 };
@@ -721,6 +723,14 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class ClassDelegateCallInst : public Instruction
+{
+public:
+    ClassDelegateCallInst();
+    Instruction* Clone() const override { return new ClassDelegateCallInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class SetClassDataInst : public Instruction
 {
 public:
@@ -735,6 +745,7 @@ public:
     Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
+    void DispatchTo(InstAdder& adder) override;
 private:
     Constant classData;
 };
@@ -752,6 +763,7 @@ public:
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
     void Dump(CodeFormatter& formatter) override;
+    void DispatchTo(InstAdder& adder) override;
 private:
     Constant type;
 };
@@ -1051,6 +1063,26 @@ public:
     Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
+    void DispatchTo(InstAdder& adder) override;
+private:
+    Constant function;
+};
+
+class MemFun2ClassDlgInst : public Instruction
+{
+public:
+    MemFun2ClassDlgInst();
+    MemFun2ClassDlgInst(const MemFun2ClassDlgInst& that) = default;
+    void Clear() override;
+    Instruction* Clone() const override { return new MemFun2ClassDlgInst(*this); }
+    void SetFunctionName(Constant functionName);
+    StringPtr GetFunctionName() const;
+    void SetFunction(Function* fun);
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
+    void DispatchTo(InstAdder& adder) override;
 private:
     Constant function;
 };

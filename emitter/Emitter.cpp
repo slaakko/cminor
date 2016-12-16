@@ -54,6 +54,7 @@ public:
     void Visit(BoundConversion& boundConversion) override;
     void Visit(BoundFunctionCall& boundFunctionCall) override;
     void Visit(BoundDelegateCall& boundDelegateCall) override;
+    void Visit(BoundClassDelegateCall& boundClassDelegateCall) override;
     void Visit(BoundNewExpression& boundNewExpression) override;
     void Visit(BoundConjunction& boundConjunction) override;
     void Visit(BoundDisjunction& boundDisjunction) override;
@@ -883,6 +884,12 @@ void EmitterVisitor::Visit(BoundFunctionCall& boundFunctionCall)
 void EmitterVisitor::Visit(BoundDelegateCall& boundDelegateCall)
 {
     boundDelegateCall.GenLoad(machine, *function);
+    GenJumpingBoolCode();
+}
+
+void EmitterVisitor::Visit(BoundClassDelegateCall& boundClassDelegateCall)
+{
+    boundClassDelegateCall.GenLoad(machine, *function);
     GenJumpingBoolCode();
 }
 

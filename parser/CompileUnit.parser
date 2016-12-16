@@ -28,6 +28,7 @@ namespace cminor.parser
         using EnumerationGrammar.EnumType;
         using ConstantGrammar.Constant;
         using DelegateGrammar.Delegate;
+        using DelegateGrammar.ClassDelegate;
         skip spaces_and_comments;
 
         CompileUnit(ParsingContext* ctx) : CompileUnitNode*
@@ -69,6 +70,7 @@ namespace cminor.parser
             |   EnumTypeDefinition(ctx){ value = EnumTypeDefinition; }
             |   ConstantDefinition(ctx){ value = ConstantDefinition; }
             |   DelegateDefinition(ctx){ value = DelegateDefinition; }
+            |   ClassDelegateDefinition(ctx){ value = ClassDelegateDefinition; }
             ;
 
         NamespaceDefinition(ParsingContext* ctx, NamespaceNode* ns) : NamespaceNode*
@@ -97,6 +99,10 @@ namespace cminor.parser
 
         DelegateDefinition(ParsingContext* ctx) : Node*
             ::= Delegate(ctx){ value = Delegate; }
+            ;
+
+        ClassDelegateDefinition(ParsingContext* ctx) : Node*
+            ::= ClassDelegate(ctx){ value = ClassDelegate; }
             ;
     }
 }

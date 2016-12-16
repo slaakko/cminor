@@ -317,4 +317,16 @@ void SymbolCreatorVisitor::Visit(DelegateNode& delegateNode)
     symbolTable.EndDelegate();
 }
 
+void SymbolCreatorVisitor::Visit(ClassDelegateNode& classDelegateNode)
+{
+    symbolTable.BeginClassDelegate(classDelegateNode);
+    int n = classDelegateNode.Parameters().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        ParameterNode* parameterNode = classDelegateNode.Parameters()[i];
+        parameterNode->Accept(*this);
+    }
+    symbolTable.EndClassDelegate();
+}
+
 } } // namespace cminor::symbols

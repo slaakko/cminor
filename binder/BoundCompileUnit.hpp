@@ -31,6 +31,8 @@ public:
     ClassTemplateRepository& GetClassTemplateRepository() { return classTemplateRepository; }
     void SetHasGotos() { hasGotos = true; }
     bool HasGotos() const { return hasGotos; }
+    void AddClassNode(ClassNode* classNode);
+    const std::vector<std::unique_ptr<ClassNode>>& ClassNodes() const { return classNodes; }
 private:
     Assembly& assembly;
     CompileUnitNode* compileUnitNode;
@@ -40,6 +42,8 @@ private:
     ClassTemplateRepository classTemplateRepository;
     std::vector<std::unique_ptr<Node>> nodes;
     bool hasGotos;
+    std::vector<std::unique_ptr<FunctionSymbol>> classDelegateConversions;
+    std::vector<std::unique_ptr<ClassNode>> classNodes;
 };
 
 } } // namespace cminor::binder

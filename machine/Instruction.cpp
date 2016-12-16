@@ -93,6 +93,10 @@ void Instruction::Dump(CodeFormatter& formatter)
     formatter.Write(opCodes + " " + name);
 }
 
+void Instruction::DispatchTo(InstAdder& adder)
+{
+}
+
 InvalidInst::InvalidInst() : Instruction("<invalid_instruction>", "", "")
 {
 }
@@ -1194,6 +1198,11 @@ void CallInst::Dump(CodeFormatter& formatter)
     formatter.Write(" " + ToUtf8(fun->CallName().Value().AsStringLiteral()));
 }
 
+void CallInst::DispatchTo(InstAdder& adder)
+{
+    adder.Add(this);
+}
+
 VirtualCallInst::VirtualCallInst() : Instruction("callv"), numArgs(0), vmtIndex(-1)
 {
 }
@@ -1393,6 +1402,34 @@ void DelegateCallInst::Execute(Frame& frame)
     }
 }
 
+ClassDelegateCallInst::ClassDelegateCallInst() : Instruction("callcd")
+{
+}
+
+void ClassDelegateCallInst::Execute(Frame& frame)
+{
+    IntegralValue classDlgValue = frame.OpStack().Pop();
+    Assert(classDlgValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference classDelegateRef(classDlgValue.Value());
+    Object& classDelegateObject = frame.GetManagedMemoryPool().GetObject(classDelegateRef);
+    IntegralValue classObjectValue = classDelegateObject.GetField(1);
+    Assert(classObjectValue.GetType() == ValueType::objectReference, "object reference expected");
+    IntegralValue funValue = classDelegateObject.GetField(2);
+    Assert(funValue.GetType() == ValueType::functionPtr, "function pointer expected");
+    Function* fun = funValue.AsFunctionPtr();
+    if (!fun)
+    {
+        NullReferenceException ex("value of class delegate is null");
+        ThrowNullReferenceException(ex, frame);
+    }
+    else
+    {
+        frame.OpStack().Insert(fun->NumParameters() - 1, classObjectValue);
+        frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *fun));
+    }
+}
+
+
 SetClassDataInst::SetClassDataInst() : Instruction("setclassdata")
 {
 }
@@ -1471,6 +1508,11 @@ void SetClassDataInst::Dump(CodeFormatter& formatter)
     formatter.Write(" " + ToUtf8(cd->Type()->Name().Value()) + " " + std::to_string(cd->Type()->Id()));
 }
 
+void SetClassDataInst::DispatchTo(InstAdder& adder)
+{
+    adder.Add(this);
+}
+
 TypeInstruction::TypeInstruction(const std::string& name_) : Instruction(name_)
 {
 }
@@ -1526,6 +1568,11 @@ void TypeInstruction::Dump(CodeFormatter& formatter)
     Assert(type.Value().GetType() == ValueType::typePtr, "type pointer expected");
     Type* objectType = type.Value().AsTypePtr();
     formatter.Write(" " + ToUtf8(objectType->Name().Value()));
+}
+
+void TypeInstruction::DispatchTo(InstAdder& adder)
+{
+    adder.Add(this);
 }
 
 CreateObjectInst::CreateObjectInst() : TypeInstruction("createo")
@@ -2169,6 +2216,87 @@ void Fun2DlgInst::Dump(CodeFormatter& formatter)
     Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
     Function* fun = function.Value().AsFunctionPtr();
     formatter.Write(" " + ToUtf8(fun->CallName().Value().AsStringLiteral()));
+}
+
+void Fun2DlgInst::DispatchTo(InstAdder& adder)
+{
+    adder.Add(this);
+}
+
+MemFun2ClassDlgInst::MemFun2ClassDlgInst() : Instruction("memfun2classdlg")
+{
+}
+
+void MemFun2ClassDlgInst::Clear()
+{
+    function = Constant();
+}
+
+void MemFun2ClassDlgInst::SetFunctionName(Constant functionName)
+{
+    function = functionName;
+}
+
+StringPtr MemFun2ClassDlgInst::GetFunctionName() const
+{
+    Assert(function.Value().GetType() == ValueType::stringLiteral, "string literal expected");
+    return StringPtr(function.Value().AsStringLiteral());
+}
+
+void MemFun2ClassDlgInst::SetFunction(Function* fun)
+{
+    function.SetValue(IntegralValue(fun));
+}
+
+void MemFun2ClassDlgInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    ConstantId id = writer.GetConstantPool()->GetIdFor(function);
+    Assert(id != noConstantId, "id for call inst not found");
+    id.Write(writer);
+}
+
+Instruction* MemFun2ClassDlgInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    ConstantId id;
+    id.Read(reader);
+    function = reader.GetConstantPool()->GetConstant(id);
+    return this;
+}
+
+void MemFun2ClassDlgInst::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue classObjectValue = frame.OpStack().Pop();
+        Assert(classObjectValue.GetType() == ValueType::objectReference, "object reference expected");
+        Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
+        IntegralValue value = frame.OpStack().Pop();
+        Assert(value.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference classDelegateObjectRef(value.Value());
+        Object& object = frame.GetManagedMemoryPool().GetObject(classDelegateObjectRef);
+        object.SetField(classObjectValue, 1);
+        object.SetField(function.Value(), 2);
+        frame.OpStack().Push(value);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        ThrowNullReferenceException(ex, frame);
+    }
+}
+
+void MemFun2ClassDlgInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
+    Function* fun = function.Value().AsFunctionPtr();
+    formatter.Write(" " + ToUtf8(fun->CallName().Value().AsStringLiteral()));
+}
+
+void MemFun2ClassDlgInst::DispatchTo(InstAdder& adder)
+{
+    adder.Add(this);
 }
 
 void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName)

@@ -122,6 +122,56 @@ bool FindConversions(BoundCompileUnit& boundCompileUnit, FunctionSymbol* functio
     return true;
 }
 
+std::unique_ptr<BoundFunctionCall> CreateBoundFunctionCall(BoundCompileUnit& boundCompileUnit, FunctionSymbol* bestFun, std::vector<std::unique_ptr<BoundExpression>>& arguments, 
+    const FunctionMatch& bestMatch, const Span& span)
+{
+    std::unique_ptr<BoundFunctionCall> boundFunctionCall(new BoundFunctionCall(boundCompileUnit.GetAssembly(), bestFun));
+    int arity = int(arguments.size());
+    for (int i = 0; i < arity; ++i)
+    {
+        std::unique_ptr<BoundExpression>& argument = arguments[i];
+        const ArgumentMatch& argumentMatch = bestMatch.argumentMatches[i];
+        if (argumentMatch.conversionFun)
+        {
+            if (argumentMatch.conversionFun->IsMemFunToClassDelegateConversion())
+            {
+                MemFunToClassDelegateConversion* conversion = static_cast<MemFunToClassDelegateConversion*>(argumentMatch.conversionFun);
+                ClassDelegateTypeSymbol* targetClassDelegateType = static_cast<ClassDelegateTypeSymbol*>(conversion->ConversionTargetType());
+                std::vector<std::unique_ptr<BoundExpression>> newArguments;
+                newArguments.push_back(std::unique_ptr<BoundExpression>(new BoundTypeExpression(boundCompileUnit.GetAssembly(), targetClassDelegateType)));
+                std::vector<FunctionScopeLookup> functionScopeLookups;
+                functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, targetClassDelegateType->ClassOrNsScope()));
+                std::unique_ptr<BoundFunctionCall> constructorCall = ResolveOverload(boundCompileUnit, U"@constructor", functionScopeLookups, newArguments, span);
+                std::unique_ptr<BoundExpression> newClassDelegateExpr(new BoundNewExpression(constructorCall.release(), targetClassDelegateType));
+                BoundExpression* classObject = nullptr; 
+                if (argument->IsBoundMemberExpression())
+                {
+                    BoundMemberExpression* boundMemberExpr = static_cast<BoundMemberExpression*>(argument.get());
+                    classObject = boundMemberExpr->ReleaseClassObject();
+                }
+                else if (argument->IsBoundFunctionGroupExpression())
+                {
+                    BoundFunctionGroupExpression* boundFunctionGroupExpr = static_cast<BoundFunctionGroupExpression*>(argument.get());
+                    classObject = boundFunctionGroupExpr->ReleaseClassObject();
+                }
+                else
+                {
+                    Assert(false, "bound member expression or bound function group expression expected");
+                }
+                if (!classObject)
+                {
+                    throw Exception("class object not bound", span);
+                }
+                argument.reset(new BoundClassDelegateClassObjectPair(boundCompileUnit.GetAssembly(), std::move(newClassDelegateExpr), std::unique_ptr<BoundExpression>(classObject)));
+            }
+            BoundConversion* conversion = new BoundConversion(boundCompileUnit.GetAssembly(), std::move(argument), argumentMatch.conversionFun);
+            argument.reset(conversion);
+        }
+        boundFunctionCall->AddArgument(std::unique_ptr<BoundExpression>(argument.release()));
+    }
+    return boundFunctionCall;
+}
+
 std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompileUnit, StringPtr groupName, const std::vector<FunctionScopeLookup>& functionScopeLookups,
     std::vector<std::unique_ptr<BoundExpression>>& arguments, const Span& span)
 {
@@ -250,19 +300,7 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
                         boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
                     }
                 }
-                std::unique_ptr<BoundFunctionCall> boundFunctionCall(new BoundFunctionCall(boundCompileUnit.GetAssembly(), bestFun));
-                for (int i = 0; i < arity; ++i)
-                {
-                    std::unique_ptr<BoundExpression>& argument = arguments[i];
-                    const ArgumentMatch& argumentMatch = bestMatch.argumentMatches[i];
-                    if (argumentMatch.conversionFun)
-                    {
-                        BoundConversion* conversion = new BoundConversion(boundCompileUnit.GetAssembly(), std::move(argument), argumentMatch.conversionFun);
-                        argument.reset(conversion);
-                    }
-                    boundFunctionCall->AddArgument(std::unique_ptr<BoundExpression>(argument.release()));
-                }
-                return boundFunctionCall;
+                return CreateBoundFunctionCall(boundCompileUnit, bestFun, arguments, bestMatch, span);
             }
             else
             {
@@ -318,19 +356,7 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
                     boundCompileUnit.GetClassTemplateRepository().Add(classTemplateSpecialization);
                 }
             }
-            std::unique_ptr<BoundFunctionCall> boundFunctionCall(new BoundFunctionCall(boundCompileUnit.GetAssembly(), singleBest));
-            for (int i = 0; i < arity; ++i)
-            {
-                std::unique_ptr<BoundExpression>& argument = arguments[i];
-                const ArgumentMatch& argumentMatch = bestMatch.argumentMatches[i];
-                if (argumentMatch.conversionFun)
-                {
-                    BoundConversion* conversion = new BoundConversion(boundCompileUnit.GetAssembly(), std::move(argument), argumentMatch.conversionFun);
-                    argument.reset(conversion);
-                }
-                boundFunctionCall->AddArgument(std::unique_ptr<BoundExpression>(argument.release()));
-            }
-            return boundFunctionCall;
+            return CreateBoundFunctionCall(boundCompileUnit, singleBest, arguments, bestMatch, span);
         }
     }
 }

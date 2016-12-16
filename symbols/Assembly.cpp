@@ -199,9 +199,9 @@ void Assembly::Write(SymbolWriter& writer)
 }
 
 void Assembly::BeginRead(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet,
-    std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<TypeInstruction*>& typeInstructions, 
-    std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, 
-    std::vector<Assembly*>& assemblies,
+    std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, 
+    std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, 
+    std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
     std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
 {
     reader.SetMachine(machine);
@@ -232,19 +232,19 @@ void Assembly::BeginRead(SymbolReader& reader, LoadType loadType, const Assembly
     name = constantPool.GetConstant(nameId);
     machineFunctionTable.Read(reader);
     finishReadPos = reader.Pos();
-    ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, 
-        classTemplateSpecializationNames,
-        assemblies, dependencyMap);
+    ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, 
+        classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
     callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
     fun2DlgInstructions.insert(fun2DlgInstructions.end(), reader.Fun2DlgInstructions().cbegin(), reader.Fun2DlgInstructions().cend());
+    memFun2ClassDlgInstructions.insert(memFun2ClassDlgInstructions.end(), reader.MemFun2ClassDlgInstructions().cbegin(), reader.MemFun2ClassDlgInstructions().cend());
     typeInstructions.insert(typeInstructions.end(), reader.TypeInstructions().cbegin(), reader.TypeInstructions().cend());
     setClassDataInstructions.insert(setClassDataInstructions.end(), reader.SetClassDataInstructions().cbegin(), reader.SetClassDataInstructions().cend());
     classTypeSymbols.insert(classTypeSymbols.end(), reader.ClassTypeSymbols().cbegin(), reader.ClassTypeSymbols().cend());
 }
 
-void Assembly::FinishReads(std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<TypeInstruction*>& typeInstructions, 
-    std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, 
-    int prevAssemblyIndex, const std::vector<Assembly*>& finishReadOrder, bool readSymbolTable)
+void Assembly::FinishReads(std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, 
+    std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, 
+    std::unordered_set<utf32_string>& classTemplateSpecializationNames, int prevAssemblyIndex, const std::vector<Assembly*>& finishReadOrder, bool readSymbolTable)
 {
     Assembly* prevAssembly = nullptr;
     if (prevAssemblyIndex >= 0)
@@ -253,8 +253,8 @@ void Assembly::FinishReads(std::vector<CallInst*>& callInstructions, std::vector
     }
     if (prevAssembly)
     {
-        prevAssembly->FinishReads(callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, prevAssemblyIndex - 1, 
-            finishReadOrder, readSymbolTable);
+        prevAssembly->FinishReads(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, 
+            prevAssemblyIndex - 1, finishReadOrder, readSymbolTable);
         symbolTable.Import(prevAssembly->symbolTable);
     }
     if (prevAssemblyIndex != int(finishReadOrder.size() - 2) || readSymbolTable)
@@ -268,6 +268,7 @@ void Assembly::FinishReads(std::vector<CallInst*>& callInstructions, std::vector
         ReadSymbolIdMapping(reader);
         callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
         fun2DlgInstructions.insert(fun2DlgInstructions.end(), reader.Fun2DlgInstructions().cbegin(), reader.Fun2DlgInstructions().cend());
+        memFun2ClassDlgInstructions.insert(memFun2ClassDlgInstructions.end(), reader.MemFun2ClassDlgInstructions().cbegin(), reader.MemFun2ClassDlgInstructions().cend());
         typeInstructions.insert(typeInstructions.end(), reader.TypeInstructions().cbegin(), reader.TypeInstructions().cend());
         setClassDataInstructions.insert(setClassDataInstructions.end(), reader.SetClassDataInstructions().cbegin(), reader.SetClassDataInstructions().cend());
         classTypeSymbols.insert(classTypeSymbols.end(), reader.ClassTypeSymbols().cbegin(), reader.ClassTypeSymbols().cend());
@@ -275,9 +276,9 @@ void Assembly::FinishReads(std::vector<CallInst*>& callInstructions, std::vector
 }
 
 void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
-    std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
-    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
-    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
+    std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, 
+    std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, 
+    std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
 {
     reader.SetMachine(machine);
     reader.SetClassTemplateSpecializationNames(&classTemplateSpecializationNames);
@@ -307,13 +308,14 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
     nameId.Read(reader);
     name = constantPool.GetConstant(nameId);
     machineFunctionTable.Read(reader);
-    ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, 
-        classTemplateSpecializationNames, assemblies, dependencyMap);
+    ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, 
+        classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
     ImportSymbolTables();
     symbolTable.Read(reader);
     ReadSymbolIdMapping(reader);
     callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
     fun2DlgInstructions.insert(fun2DlgInstructions.end(), reader.Fun2DlgInstructions().cbegin(), reader.Fun2DlgInstructions().cend());
+    memFun2ClassDlgInstructions.insert(memFun2ClassDlgInstructions.end(), reader.MemFun2ClassDlgInstructions().cbegin(), reader.MemFun2ClassDlgInstructions().cend());
     typeInstructions.insert(typeInstructions.end(), reader.TypeInstructions().cbegin(), reader.TypeInstructions().cend());
     setClassDataInstructions.insert(setClassDataInstructions.end(), reader.SetClassDataInstructions().cbegin(), reader.SetClassDataInstructions().cend());
     classTypeSymbols.insert(classTypeSymbols.end(), reader.ClassTypeSymbols().cbegin(), reader.ClassTypeSymbols().cend());
@@ -325,12 +327,12 @@ bool Assembly::IsSystemAssembly() const
 }
 
 void Assembly::ImportAssemblies(LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
-    std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
-    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
-    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
+    std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, 
+    std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, 
+    std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
 {
-    ImportAssemblies(referenceFilePaths, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, 
-        classTemplateSpecializationNames, assemblies, dependencyMap);
+    ImportAssemblies(referenceFilePaths, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, 
+        setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
 }
 
 void Assembly::ImportSymbolTables()
@@ -342,9 +344,9 @@ void Assembly::ImportSymbolTables()
 }
 
 void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, 
-    std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<TypeInstruction*>& typeInstructions,
-    std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames,
-    std::vector<Assembly*>& assemblies, std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
+    std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, 
+    std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, 
+    std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
 {
     std::vector<std::string> allAssemblyReferences;
     allAssemblyReferences.insert(allAssemblyReferences.end(), assemblyReferences.cbegin(), assemblyReferences.cend());
@@ -352,14 +354,14 @@ void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferenc
     {
         allAssemblyReferences.push_back(CminorSystemAssemblyFilePath(GetConfig()));
     }
-    Import(allAssemblyReferences, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions, classTypeSymbols, 
-        classTemplateSpecializationNames, assemblies, dependencyMap);
+    Import(allAssemblyReferences, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, 
+        setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
 }
 
 void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, 
-    const std::string& currentAssemblyDir, std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<TypeInstruction*>& typeInstructions,
-    std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames,
-    std::vector<Assembly*>& assemblies, std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
+    const std::string& currentAssemblyDir, std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, 
+    std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, 
+    std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
 {
     for (const std::string& assemblyReference : assemblyReferences)
     {
@@ -444,13 +446,13 @@ void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadTy
             importSet.insert(assemblyFilePath);
             SymbolReader reader(assemblyFilePath);
             reader.SetMachine(machine);
-            referencedAssembly->BeginRead(reader, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions, 
-                classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
+            referencedAssembly->BeginRead(reader, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, 
+                setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
             Assembly* referencedAssemblyPtr = referencedAssembly.get();
             assemblyDependency.AddReferencedAssembly(referencedAssemblyPtr);
             referencedAssemblies.push_back(std::move(referencedAssembly));
-            Import(referencedAssemblyPtr->referenceFilePaths, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, fun2DlgInstructions, typeInstructions, setClassDataInstructions,
-                classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
+            Import(referencedAssemblyPtr->referenceFilePaths, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, 
+                typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
         }
     }
 }
@@ -672,8 +674,8 @@ void AssignClassTypeIds(const std::vector<ClassTypeSymbol*>& classTypes)
     AssignCids(classesByPriority);
 }
 
-void Link(const std::vector<CallInst*>& callInstructions, const std::vector<Fun2DlgInst*>& fun2DlgInstructions, const std::vector<TypeInstruction*>& typeInstructions, 
-    const std::vector<SetClassDataInst*>& setClassDataInstructions, const std::vector<ClassTypeSymbol*>& classTypes)
+void Link(const std::vector<CallInst*>& callInstructions, const std::vector<Fun2DlgInst*>& fun2DlgInstructions, const std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, 
+    const std::vector<TypeInstruction*>& typeInstructions, const std::vector<SetClassDataInst*>& setClassDataInstructions, const std::vector<ClassTypeSymbol*>& classTypes)
 {
     for (CallInst* call : callInstructions)
     {
@@ -684,6 +686,11 @@ void Link(const std::vector<CallInst*>& callInstructions, const std::vector<Fun2
     {
         Function* fun = FunctionTable::Instance().GetFunction(fun2Dlg->GetFunctionName());
         fun2Dlg->SetFunction(fun);
+    }
+    for (MemFun2ClassDlgInst* memFun2ClassDlgInst : memFun2ClassDlgInstructions)
+    {
+        Function* fun = FunctionTable::Instance().GetFunction(memFun2ClassDlgInst->GetFunctionName());
+        memFun2ClassDlgInst->SetFunction(fun);
     }
     for (TypeInstruction* typeInst : typeInstructions)
     {

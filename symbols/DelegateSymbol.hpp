@@ -27,7 +27,9 @@ public:
     void EmplaceType(TypeSymbol* type, int index) override;
     Type* GetMachineType() const override { Assert(machineType, "machine type not set"); return machineType.get(); }
     bool IsDelegateType() const override { return true; }
+    bool IsDelegateOrClassDelegateType() const override { return true; }
     void DumpHeader(CodeFormatter& formatter) override;
+    ValueType GetValueType() const override { return ValueType::functionPtr; }
 private:
     TypeSymbol* returnType;
     std::vector<ParameterSymbol*> parameters;
@@ -43,6 +45,30 @@ public:
 };
 
 void CreateDelegateFun(Assembly& assembly, TypeSymbol* type);
+
+class ClassDelegateTypeSymbol : public ClassTypeSymbol
+{
+public:
+    ClassDelegateTypeSymbol(const Span& span_, Constant name_);
+    int Arity() const { return int(parameters.size()); }
+    SymbolType GetSymbolType() const override { return SymbolType::classDelegateTypeSymbol; }
+    std::string TypeString() const override { return "class delegate"; }
+    void SetSpecifiers(Specifiers specifiers);
+    void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
+    TypeSymbol* GetReturnType() const { return returnType; }
+    void SetReturnType(TypeSymbol* returnType_) { returnType = returnType_; }
+    const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
+    void EmplaceType(TypeSymbol* type, int index) override;
+    bool IsClassDelegateType() const override { return true; }
+    bool IsDelegateOrClassDelegateType() const override { return true; }
+    void DumpHeader(CodeFormatter& formatter) override;
+private:
+    TypeSymbol* returnType;
+    std::vector<ParameterSymbol*> parameters;
+};
+
 
 } } // namespace cminor::symbols
 

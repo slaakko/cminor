@@ -130,4 +130,88 @@ void CreateDelegateFun(Assembly& assembly, TypeSymbol* type)
     assembly.GetSymbolTable().EndNamespace();
 }
 
+ClassDelegateTypeSymbol::ClassDelegateTypeSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_), returnType(nullptr)
+{
+}
+
+void ClassDelegateTypeSymbol::SetSpecifiers(Specifiers specifiers)
+{
+    Specifiers accessSpecifiers = specifiers & Specifiers::access_;
+    SetAccess(accessSpecifiers);
+    if ((specifiers & Specifiers::static_) != Specifiers::none)
+    {
+        throw Exception("class delegate type cannot be static", GetSpan());
+    }
+    if ((specifiers & Specifiers::virtual_) != Specifiers::none)
+    {
+        throw Exception("class delegate type cannot be virtual", GetSpan());
+    }
+    if ((specifiers & Specifiers::override_) != Specifiers::none)
+    {
+        throw Exception("class delegate type cannot be override", GetSpan());
+    }
+    if ((specifiers & Specifiers::abstract_) != Specifiers::none)
+    {
+        throw Exception("class delegate type cannot be abstract", GetSpan());
+    }
+    if ((specifiers & Specifiers::inline_) != Specifiers::none)
+    {
+        throw Exception("class delegate type cannot be inline", GetSpan());
+    }
+    if ((specifiers & Specifiers::external_) != Specifiers::none)
+    {
+        throw Exception("class delegate type cannot be external", GetSpan());
+    }
+}
+
+void ClassDelegateTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
+{
+    Symbol* s = symbol.get();
+    ClassTypeSymbol::AddSymbol(std::move(symbol));
+    if (ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(s))
+    {
+        parameterSymbol->SetIndex(int32_t(parameters.size()));
+        parameters.push_back(parameterSymbol);
+    }
+}
+
+void ClassDelegateTypeSymbol::Write(SymbolWriter& writer)
+{
+    ClassTypeSymbol::Write(writer);
+    utf32_string returnTypeFullName = returnType->FullName();
+    ConstantId returnTypeNameId = GetAssembly()->GetConstantPool().GetIdFor(returnTypeFullName);
+    Assert(returnTypeNameId != noConstantId, "got no id for return type");
+    returnTypeNameId.Write(writer);
+}
+
+void ClassDelegateTypeSymbol::Read(SymbolReader& reader)
+{
+    ClassTypeSymbol::Read(reader);
+    ConstantId returnTypeNameId;
+    returnTypeNameId.Read(reader);
+    reader.EmplaceTypeRequest(this, returnTypeNameId, 0);
+}
+
+void ClassDelegateTypeSymbol::EmplaceType(TypeSymbol* type, int index)
+{
+    if (index == 0)
+    {
+        returnType = type;
+    }
+    else
+    {
+        throw std::runtime_error("class delegate type symbol emplace type got invalid type index " + std::to_string(index));
+    }
+}
+
+void ClassDelegateTypeSymbol::DumpHeader(CodeFormatter& formatter)
+{
+    std::string returnTypeStr;
+    if (returnType)
+    {
+        returnTypeStr = ": " + ToUtf8(returnType->FullName());
+    }
+    formatter.WriteLine(TypeString() + " " + ToUtf8(Name().Value()) + returnTypeStr);
+}
+
 } } // namespace cminor::symbols

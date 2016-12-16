@@ -44,6 +44,11 @@ public:
         std::swap(s[s.size() - 3], s[s.size() - 2]);
         std::swap(s.back(), s[s.size() - 2]);
     }
+    void Insert(int32_t index, IntegralValue value)
+    {
+        Assert(s.size() - index >= 0 && s.size() - index < s.size(), "invalid insert index");
+        s.insert(s.end() - index, value);
+    }
 private:
     std::vector<IntegralValue> s;
 };

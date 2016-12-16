@@ -47,11 +47,13 @@ class BoundStringChar;
 class BoundConversion;
 class BoundFunctionCall;
 class BoundDelegateCall;
+class BoundClassDelegateCall;
 class BoundNewExpression;
 class BoundConjunction;
 class BoundDisjunction;
 class BoundIsExpression;
 class BoundAsExpression;
+class BoundClassDelegateClassObjectPair;
 
 class BoundNodeVisitor
 {
@@ -96,11 +98,13 @@ public:
     virtual void Visit(BoundConversion& boundConversion) {}
     virtual void Visit(BoundFunctionCall& boundFunctionCall) {}
     virtual void Visit(BoundDelegateCall& boundDelegateCall) {}
+    virtual void Visit(BoundClassDelegateCall& boundClassDelegateCall) {}
     virtual void Visit(BoundNewExpression& boundNewExpression) {}
     virtual void Visit(BoundConjunction& boundConjunction) {}
     virtual void Visit(BoundDisjunction& boundDisjunction) {}
     virtual void Visit(BoundIsExpression& boundIsExpression) {}
     virtual void Visit(BoundAsExpression& boundAsExpression) {}
+    virtual void Visit(BoundClassDelegateClassObjectPair& boundClassDelegateClassObjectPair) {}
 };
 
 } } // namespace cminor::binder

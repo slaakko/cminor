@@ -737,9 +737,15 @@ void BoundFunctionGroupExpression::Accept(BoundNodeVisitor& visitor)
     throw std::runtime_error("cannot visit bound function group");
 }
 
-BoundMemberExpression::BoundMemberExpression(Assembly& assembly_, std::unique_ptr<BoundExpression>&& classObject_, std::unique_ptr<BoundExpression>&& member_) :
-    BoundExpression(assembly_, member_->GetType()), classObject(std::move(classObject_)), member(std::move(member_))
+void BoundFunctionGroupExpression::SetClassObject(std::unique_ptr<BoundExpression>&& classObject_)
 {
+    classObject = std::move(classObject_);
+}
+
+BoundMemberExpression::BoundMemberExpression(Assembly& assembly_, std::unique_ptr<BoundExpression>&& classObject_, std::unique_ptr<BoundExpression>&& member_) :
+    BoundExpression(assembly_, new MemberExpressionTypeSymbol(member_->GetType()->NameConstant(), this)), classObject(std::move(classObject_)), member(std::move(member_))
+{
+    memberExpressionType.reset(GetType());
 }
 
 void BoundMemberExpression::GenLoad(Machine& machine, Function& function)
@@ -755,6 +761,28 @@ void BoundMemberExpression::GenStore(Machine& machine, Function& function)
 void BoundMemberExpression::Accept(BoundNodeVisitor& visitor)
 {
     throw std::runtime_error("cannot visit member expression");
+}
+
+BoundClassDelegateClassObjectPair::BoundClassDelegateClassObjectPair(Assembly& assembly_, std::unique_ptr<BoundExpression>&& newClassDelegateObjectExpr_,
+    std::unique_ptr<BoundExpression>&& classObject_) : BoundExpression(assembly_, newClassDelegateObjectExpr_->GetType()),
+    newClassDelegateObjectExpr(std::move(newClassDelegateObjectExpr_)), classObject(std::move(classObject_))
+{
+}
+
+void BoundClassDelegateClassObjectPair::GenLoad(Machine& machine, Function& function)
+{
+    newClassDelegateObjectExpr->GenLoad(machine, function);
+    classObject->GenLoad(machine, function);
+}
+
+void BoundClassDelegateClassObjectPair::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to from bound class delegate class object pair");
+}
+
+void BoundClassDelegateClassObjectPair::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 BoundFunctionCall::BoundFunctionCall(Assembly& assembly_, FunctionSymbol* functionSymbol_) : 
@@ -845,6 +873,37 @@ void BoundDelegateCall::GenStore(Machine& machine, Function& function)
 }
 
 void BoundDelegateCall::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundClassDelegateCall::BoundClassDelegateCall(Assembly& assembly_, ClassDelegateTypeSymbol* classDelegateTypeSymbol_, std::vector<std::unique_ptr<BoundExpression>>&& arguments_) :
+    BoundExpression(assembly_, classDelegateTypeSymbol_->GetReturnType()), classDelegateTypeSymbol(classDelegateTypeSymbol_), arguments(std::move(arguments_))
+{
+}
+
+void BoundClassDelegateCall::GenLoad(Machine& machine, Function& function)
+{
+    int n = int(arguments.size());
+    for (int i = 0; i < n; ++i)
+    {
+        GenObject* genObject = arguments[i].get();
+        genObject->GenLoad(machine, function);
+    }
+    InstIndexRequest startClassDelegateCall;
+    function.GetEmitter()->AddIndexRequest(&startClassDelegateCall);
+    std::unique_ptr<Instruction> inst = machine.CreateInst("callcd");
+    function.AddInst(std::move(inst));
+    function.GetEmitter()->BackpatchConDisSet(startClassDelegateCall.Index());
+    function.MapPCToSourceLine(startClassDelegateCall.Index(), function.GetEmitter()->CurrentSourceLine());
+}
+
+void BoundClassDelegateCall::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to class delegate call");
+}
+
+void BoundClassDelegateCall::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
 }

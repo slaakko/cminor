@@ -311,11 +311,13 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
 
     rootInst.SetInst(0xE0, new AllocateArrayElementsInst());
 
-    // delegates:
-    // ----------
+    // delegates & class delegates:
+    // ----------------------------
     rootInst.SetInst(0xE1, new LoadDefaultValueInst<ValueType::functionPtr>("def", "@delegate"));
     rootInst.SetInst(0xE2, new Fun2DlgInst());
     rootInst.SetInst(0xE3, new DelegateCallInst());
+    rootInst.SetInst(0xE4, new MemFun2ClassDlgInst());
+    rootInst.SetInst(0xE5, new ClassDelegateCallInst());
 
     // vmcall:
     // -------
@@ -596,23 +598,13 @@ std::unique_ptr<Instruction> Machine::CreateInst(const std::string& instGroupNam
 std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
 {
     Instruction* inst = rootInst.Decode(reader);
+    if (CallInst* callInst = dynamic_cast<CallInst*>(inst))
+    {
+        int x = 0;
+    }
     Instruction* clonedInst = inst->Clone();
-    if (CallInst* callInst = dynamic_cast<CallInst*>(clonedInst))
-    {
-        reader.AddCallInst(callInst);
-    }
-    else if (Fun2DlgInst* fun2DlgInst = dynamic_cast<Fun2DlgInst*>(clonedInst))
-    {
-        reader.AddFun2DlgInst(fun2DlgInst);
-    }
-    else if (TypeInstruction* typeInst = dynamic_cast<TypeInstruction*>(clonedInst))
-    {
-        reader.AddTypeInstruction(typeInst);
-    }
-    else if (SetClassDataInst* setClassDataInst = dynamic_cast<SetClassDataInst*>(clonedInst))
-    {
-        reader.AddSetClassDataInst(setClassDataInst);
-    }
+    InstAdder adder(reader);
+    clonedInst->DispatchTo(adder);
     return std::unique_ptr<Instruction>(clonedInst);
 }
 

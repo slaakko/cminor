@@ -629,6 +629,26 @@ void SymbolTable::EndDelegate()
     EndContainer();
 }
 
+void SymbolTable::BeginClassDelegate(ClassDelegateNode& classDelegateNode)
+{
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string name = ToUtf32(classDelegateNode.Id()->Str());
+    Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
+    ClassDelegateTypeSymbol* classDelegateTypeSymbol = new ClassDelegateTypeSymbol(classDelegateNode.GetSpan(), nameConstant);
+    classDelegateTypeSymbol->SetAssembly(assembly);
+    container->AddSymbol(std::unique_ptr<Symbol>(classDelegateTypeSymbol));
+    MapNode(classDelegateNode, classDelegateTypeSymbol);
+    ContainerScope* classDelegateScope = classDelegateTypeSymbol->GetContainerScope();
+    ContainerScope* containerScope = container->GetContainerScope();
+    classDelegateScope->SetParent(containerScope);
+    BeginContainer(classDelegateTypeSymbol);
+}
+
+void SymbolTable::EndClassDelegate()
+{
+    EndContainer();
+}
+
 void SymbolTable::Write(SymbolWriter& writer)
 {
     globalNs.Write(writer);
@@ -1078,6 +1098,7 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::enumTypeDefaultInit, new ConcreteSymbolCreator<EnumTypeDefaultInit>());
     SymbolFactory::Instance().Register(SymbolType::enumTypeConversion, new ConcreteSymbolCreator<EnumTypeConversionFun>());
     SymbolFactory::Instance().Register(SymbolType::delegateTypeSymbol, new ConcreteSymbolCreator<DelegateTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::classDelegateTypeSymbol, new ConcreteSymbolCreator<ClassDelegateTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::delegateDefaultInit, new ConcreteSymbolCreator<DelegateDefaultInit>());
 }
 

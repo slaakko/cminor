@@ -26,6 +26,11 @@ void Reader::AddFun2DlgInst(Fun2DlgInst* fun2DlgInst)
     fun2DlgInstructions.push_back(fun2DlgInst);
 }
 
+void Reader::AddMemFun2ClassDlgInst(MemFun2ClassDlgInst* memFun2ClassDlgInst)
+{
+    memFun2ClassDlgInstructions.push_back(memFun2ClassDlgInst);
+}
+
 void Reader::AddTypeInstruction(TypeInstruction* typeInst)
 {
     typeInstructions.push_back(typeInst);

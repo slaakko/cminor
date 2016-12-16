@@ -361,6 +361,7 @@ void FunctionSymbol::DumpHeader(CodeFormatter& formatter)
     {
         returnTypeStr = ": " + ToUtf8(returnType->FullName());
     }
+    formatter.WriteLine(TypeString() + " " + ToUtf8(Name().Value()) + returnTypeStr);
 }
 
 StaticConstructorSymbol::StaticConstructorSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
@@ -1083,6 +1084,10 @@ FunctionGroupTypeSymbol::FunctionGroupTypeSymbol(FunctionGroupSymbol* functionGr
 {
 }
 
+MemberExpressionTypeSymbol::MemberExpressionTypeSymbol(Constant name_, void* boundMemberExpression_) : TypeSymbol(Span(), name_), boundMemberExpression(boundMemberExpression_)
+{
+}
+
 FunctionToDelegateConversion::FunctionToDelegateConversion(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
 {
     SetConversionFun();
@@ -1098,6 +1103,24 @@ void FunctionToDelegateConversion::GenerateCall(Machine& machine, Assembly& asse
     std::unique_ptr<Instruction> inst = machine.CreateInst("fun2dlg");
     Fun2DlgInst* fun2DlgInst = dynamic_cast<Fun2DlgInst*>(inst.get());
     fun2DlgInst->SetFunctionName(functionName);
+    function.AddInst(std::move(inst));
+}
+
+MemFunToClassDelegateConversion::MemFunToClassDelegateConversion(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
+{
+    SetConversionFun();
+}
+
+void MemFunToClassDelegateConversion::SetFunctionName(Constant functionName_)
+{
+    functionName = functionName_;
+}
+
+void MemFunToClassDelegateConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
+{
+    std::unique_ptr<Instruction> inst = machine.CreateInst("memfun2classdlg");
+    MemFun2ClassDlgInst* memfun2ClassDlgInst = dynamic_cast<MemFun2ClassDlgInst*>(inst.get());
+    memfun2ClassDlgInst->SetFunctionName(functionName);
     function.AddInst(std::move(inst));
 }
 
