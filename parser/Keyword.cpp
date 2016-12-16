@@ -32,6 +32,7 @@ KeywordGrammar::KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_): 
 {
     SetOwner(0);
     keywords0.push_back("abstract");
+    keywords0.push_back("as");
     keywords0.push_back("base");
     keywords0.push_back("bool");
     keywords0.push_back("break");
@@ -61,6 +62,7 @@ KeywordGrammar::KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_): 
     keywords0.push_back("int");
     keywords0.push_back("interface");
     keywords0.push_back("internal");
+    keywords0.push_back("is");
     keywords0.push_back("long");
     keywords0.push_back("namespace");
     keywords0.push_back("new");

@@ -1,0 +1,185 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Expressions</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2>
+        Expressions
+    </h2>
+
+    <h4>
+        Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="expression">expression</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#disjunction">disjunction</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="disjunction">disjunction</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#conjunction">conjunction</a></span>
+                (<span class="terminal">||</span> <span class="rulename"><a href="#conjunction">conjunction</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="conjunction">conjunction</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#bit-or">bit-or</a></span>
+                (<span class="terminal">&amp;&amp;</span> <span class="rulename"><a href="#bit-or">bit-or</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="bit-or">bit-or</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#bit-xor">bit-xor</a></span>
+                (<span class="terminal">|</span> <span class="rulename"><a href="#bit-xor">bit-xor</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="bit-xor">bit-xor</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#bit-and">bit-and</a></span>
+                (<span class="terminal">^</span> <span class="rulename"><a href="#bit-and">bit-and</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="bit-and">bit-and</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#equality">equality</a></span>
+                (<span class="terminal">&amp;</span> <span class="rulename"><a href="#equality">equality</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="equality">equality</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#relational">relational</a></span>
+                ((<span class="terminal">==</span> | <span class="terminal">!=</span>) <span class="rulename"><a href="#relational">relational</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="relational">relational</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#shift">shift</a></span>
+                ((<span class="terminal">&lt;</span> | <span class="terminal">&gt;</span> | <span class="terminal">&lt;=</span> | <span class="terminal">&gt;=</span>) 
+                <span class="rulename"><a href="#shift">shift</a></span>)* |
+                <span class="rulename"><a href="#shift">shift</a></span>
+                (
+                <span class="kw">is</span> <span class="rulename"><a href="type.html#type-expr">type-expr</a></span> |
+                <span class="kw">as</span> <span class="rulename"><a href="type.html#type-expr">type-expr</a></span>
+                )*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="shift">shift</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#additive">additive</a></span>
+                ((<span class="terminal">&lt;&lt;</span> | <span class="terminal">&gt;&gt;</span>) 
+                <span class="rulename"><a href="#additive">additive</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="additive">additive</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#multiplicative">multiplicative</a></span>
+                ((<span class="terminal">+</span> | <span class="terminal">&minus;</span>)
+                <span class="rulename"><a href="#multiplicative">multiplicative</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="multiplicative">multiplicative</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#prefix">prefix</a></span>
+                ((<span class="terminal">*</span> | <span class="terminal">/</span> | <span class="terminal">%</span>)
+                <span class="rulename"><a href="#prefix">prefix</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="prefix">prefix</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                ((<span class="terminal">&minus;</span> | <span class="terminal">+</span> | <span class="terminal">!</span> | <span class="terminal">~</span>)
+                <span class="rulename"><a href="#prefix">prefix</a></span>) ) | 
+                <span class="rulename"><a href="#postfix">postfix</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="postfix">postfix</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename">primary</span>
+                (<span class="terminal">.</span> <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span> |
+                 <span class="terminal">[</span> <span class="rulename"><a href="#expression">expression</a></span> <span class="terminal">]</span> |
+                 <span class="terminal">(</span> <span class="rulename"><a href="#argument-list">argument-list</a></span> <span class="terminal">)</span>
+                )*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="primary">primary</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">(</span> <span class="rulename"><a href="#expression">expression</a></span> <span class="terminal">)</span> |
+                <span class="rulename"><a href="lexical_structure.html#literal">literal</a></span> |
+                <span class="rulename"><a href="basic_type.html#basic-type">basic-type</a></span> |
+                <span class="rulename"><a href="template.html#template-id">template-id</a></span> |
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span> |
+                <span class="kw">this</span> |
+                <span class="kw">base</span> |
+                <span class="rulename"><a href="#cast-expr">cast-expr</a></span> |
+                <span class="rulename"><a href="#new-expr">new-expr</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="cast-expr">cast-expr</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">cast</span> <span class="terminal">&lt;</span> <span class="rulename"><a href="type-expr.html#type-expr">type-expr</a></span>
+                <span class="terminal">&gt;</span> 
+                <span class="terminal">(</span> <span class=rulename><a href="#expression">expression</a></span> <span class="terminal">)</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="new-expr">new-expr</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">new</span> 
+                <span class="rulename"><a href="type-expr.html#type-expr">type-expr</a></span>
+                (<span class="terminal">(</span> <span class="rulename"><a href="argument-list">argument-list</a></span> <span class="terminal">)</span>)?
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="argument-list">argument-list</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="expression-list">expression-list</a></span>?
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="expression-list">expression-list</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#expression">expression</a></span>
+                (<span class="terminal">,</span> <span class="rulename"><a href="#expression">expression</a></span>)*
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
