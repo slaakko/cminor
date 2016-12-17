@@ -1,0 +1,393 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Statements</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+
+    <h2>
+        Statements
+    </h2>
+
+    <h4>
+        Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="statement">statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#labeled-statement">labeled&#8209statement</a></span> |
+                <span class="rulename"><a href="#control-statement">control&#8209statement</a></span> | 
+                <span class="rulename"><a href="#increment-statement">increment&#8209statement</a></span> | 
+                <span class="rulename"><a href="#decrement-statement">decrement&#8209statement</a></span> |
+                <span class="rulename"><a href="#expression-statement">expression&#8209statement</a></span> | 
+                <span class="rulename"><a href="#assignment-statement">assignment&#8209statement</a></span> | 
+                <span class="rulename"><a href="#construction-statement">construction&#8209statement</a></span> | 
+                <span class="rulename"><a href="#empty-statement">empty&#8209statement</a></span> | 
+                <span class="rulename"><a href="#throw-statement">throw&#8209statement</a></span> | 
+                <span class="rulename"><a href="#try-statement">try&#8209statement</a></span> | 
+                <span class="rulename"><a href="#using-statement">using&#8209statement</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="labeled-statement">labeled&#8209statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#label-íd">label&#8209id</a></span> 
+                <span class="terminal">:</span> 
+                <span class="rulename"><a href="#statement">statement</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="label-id">label-id</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#id-char-sequence">id&#8209char&#8209sequence</a></span> 
+                <span class="grammarop">&minus;</span>
+                <span class="rulename"><a href="lexical_structure.html#keyword">keyword</a></span> 
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="control-statement">control&#8209statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#compound-statement">compound&#8209statement</a></span> |
+                <span class="rulename"><a href="#return-statement">return&#8209statement</a></span> |
+                <span class="rulename"><a href="#if-statement">if&#8209statement</a></span> |
+                <span class="rulename"><a href="#while-statement">while&#8209statement</a></span> |
+                <span class="rulename"><a href="#do-statement">do&#8209statement</a></span> | 
+                <span class="rulename"><a href="#for-statement">for&#8209statement</a></span> |
+                <span class="rulename"><a href="#foreach-statement">foreach&#8209statement</a></span> |
+                <span class="rulename"><a href="#break-statement">break&#8209statement</a></span> |
+                <span class="rulename"><a href="#continue-statement">continue&#8209statement</a></span> |
+                <span class="rulename"><a href="#goto-statement">goto&#8209statement</a></span> | 
+                <span class="rulename"><a href="#switch-statement">switch&#8209statement</a></span> |
+                <span class="rulename"><a href="#goto-case-statement">goto&#8209case&#8209statement</a></span> |
+                <span class="rulename"><a href="#goto-default-statement">goto&#8209default&#8209statement</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="compound-statement">compound&#8209statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">{</span>
+                <span class="rulename"><a href="#statement">statement</a></span>*
+                <span class="terminal">}</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="return-statement">return&#8209statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">return</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>?
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="if-statement">if&#8209statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">if</span>
+                <span class="terminal">(</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>
+                <span class="terminal">)</span>
+                <span class="rulename"><a href="#statement">statement</a></span>
+                (   <span class="kw">else</span>
+                    <span class="rulename"><a href="#statement">statement</a></span>
+                )?
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="while-statement">while&#8209statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">while</span>
+                <span class="terminal">(</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>
+                <span class="terminal">)</span>
+                <span class="rulename"><a href="#statement">statement</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="do-statement">do&#8209statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">do</span>
+                <span class="rulename"><a href="#statement">statement</a></span>
+                <span class="kw">while</span>
+                <span class="terminal">(</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>
+                <span class="terminal">)</span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="for-statement">for&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">for</span>
+                <span class="terminal">(</span>
+                <span class="rulename"><a href="#for-init-statement">for&#8209;init&#8209;statement</a></span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>?
+                <span class="terminal">;</span>
+                <span class="rulename"><a href="#for-loop-statementexpression">for&#8209;loop&#8209;statement&#8209;expression</a></span>
+                <span class="terminal">)</span>
+                <span class="rulename"><a href="#statement">statement</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="for-init-statement">for&#8209;init&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#assignment-statement">assignment&#8209;statement</a></span> |
+                <span class="rulename"><a href="#construction-statement">construction&#8209;statement</a></span> |
+                <span class="rulename"><a href="#empty-statement">empty&#8209;statement</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="for-loop-statement-expression">for&#8209;loop&#8209;statement&#8209;expression</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                (<span class="rulename"><a href="#increment-statement-expression">increment&#8209;statement&#8209;expression</a></span> |
+                <span class="rulename"><a href="#decrement-statement-expression">decrement&#8209;statement&#8209;expression</a></span> |
+                <span class="rulename"><a href="#assignment-statement-expression">assignment&#8209;statement&#8209;expression</a></span>)?
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="increment-statement-expression">increment&#8209;statement&#8209;expression</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">++</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span> |
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>
+                <span class="terminal">++</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="decrement-statement-expression">decrement&#8209;statement&#8209;expression</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">--</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span> |
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>
+                <span class="terminal">--</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="assignment-statement-expression">assignment&#8209;statement&#8209;expression</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>
+                <span class="terminal">=</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="foreach-statement">foreach&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">foreach</span>
+                <span class="terminal">(</span>
+                <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+                <span class="kw">in</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>
+                <span class="terminal">)</span>
+                <span class="rulename"><a href="#compound-statement">compound&#8209;statement</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="break-statement">break&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">break</span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="continue-statement">continue&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">continue</span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="goto-statement">goto&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">goto</span>
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifer</a></span> 
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="switch-statement">switch&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">switch</span>
+                <span class="terminal">(</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>
+                <span class="terminal">)</span>
+                <span class="terminal">{</span>
+                (<span class="rulename"><a href="#case-statement">case&#8209;statement</a></span> | <span class="rulename"><a href="#default-statement">default&#8209;statement</a></span>)*
+                <span class="terminal">}</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="case-statement">case&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                (<span class="kw">case</span>
+                <span class="rulename"><a href="expression.html#constant-expression">constant&#8209;expression</a></span>
+                <span class="terminal">:</span>
+                )+
+                <span class="rulename"><a href="#statement">statement</a></span>*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="default-statement">default&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">default</span>
+                <span class="terminal">:</span>
+                <span class="rulename"><a href="#statement">statement</a></span>*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="goto-case-statement">goto&#8209;case&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">goto</span>
+                <span class="kw">case</span>
+                <span class="rulename"><a href="expression.html#constant-expression">constant&#8209;expression</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="goto-default-statement">goto&#8209;default&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">goto</span>
+                <span class="kw">default</span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="assignment-statement">assignment&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#assignment-statement-expression">assignment&#8209;statement&#8209;expression</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="construction-statement">construction&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+                (<span class="terminal">(</span>
+                <span class="rulename"><a href="expression.html#argument-list">argument&#8209;list</a></span>
+                <span class="terminal">)</span> |
+                <span class="terminal">=</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>)
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="increment-statement">increment&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#increment-statement-expression">incrment&#8209;statement&#8209;expression</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="decrement-statement">decrement&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#decrement-statement-expression">decrment&#8209;statement&#8209;expression</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="empty-statement">empty&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="throw-statement">throw&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">throw</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>?
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="try-statement">try&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">try</span>
+                <span class="rulename"><a href="#compound-statement">compound&#8209;statement</a></span>
+                <span class="rulename"><a href="#catch">catch</a></span>+
+                <span class="rulename"><a href="#finally">finally</a></span>?
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="catch">catch</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">catch</span>
+                (<span class="terminal">(</span>
+                <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+                <span class="terminal">)</span> 
+                <span class="rulename"><a href="#compound-statement">compound&#8209;statement</a></span> |
+                <span class="rulename"><a href="#compound-statement">compound&#8209;statement</a></span>)
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="finally">finally</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">finally</span>
+                <span class="rulename"><a href="#compound-statement">compound&#8209;statement</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="using-statement">using&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">using</span>
+                <span class="terminal">(</span>
+                <span class="rulename"><a href="#construction-statement-expression">construction&#8209;statement&#8209;expression</a></span>
+                <span class="terminal">)</span>
+                <span class="rulename"><a href="#statement">statement</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="construction-statement-expression">construction&#8209;statement&#8209;expression</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+                (<span class="terminal">(</span>
+                <span class="rulename"><a href="expression.html#argument-list">argument&#8209;list</a></span>
+                <span class="terminal">)</span> |
+                <span class="terminal">=</span>
+                <span class="rulename"><a href="expression.html#expression">expression</a></span>)
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
