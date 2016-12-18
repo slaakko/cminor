@@ -42,6 +42,10 @@ void EnumTypeSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("enumerated types cannot be inline", GetSpan());
     }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("enumerated types cannot be new", GetSpan());
+    }
 }
 
 void EnumTypeSymbol::Write(SymbolWriter& writer)

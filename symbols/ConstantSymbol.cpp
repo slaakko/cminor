@@ -42,6 +42,10 @@ void ConstantSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("constants cannot be inline", GetSpan());
     }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("constants cannot be new", GetSpan());
+    }
 }
 
 void ConstantSymbol::SetValue(Value* value_)

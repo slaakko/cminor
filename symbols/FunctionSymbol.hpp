@@ -170,7 +170,8 @@ enum class MemberFunctionSymbolFlags : uint8_t
     none = 0,
     virtual_ = 1 << 0,
     abstract_ = 1 << 1,
-    override_ = 1 << 2
+    override_ = 1 << 2,
+    new_ = 1 << 3
 };
 
 inline MemberFunctionSymbolFlags operator&(MemberFunctionSymbolFlags left, MemberFunctionSymbolFlags right)
@@ -203,6 +204,8 @@ public:
     bool IsOverride() const { return GetFlag(MemberFunctionSymbolFlags::override_); }
     void SetOverride() { SetFlag(MemberFunctionSymbolFlags::override_); }
     bool IsVirtualAbstractOrOverride() const { return GetFlag(MemberFunctionSymbolFlags::virtual_ | MemberFunctionSymbolFlags::abstract_ | MemberFunctionSymbolFlags::override_); }
+    bool IsNew() const { return GetFlag(MemberFunctionSymbolFlags::new_); }
+    void SetNew() { SetFlag(MemberFunctionSymbolFlags::new_); }
     uint32_t VmtIndex() const { return vmtIndex; }
     void SetVmtIndex(uint32_t vmtIndex_) { vmtIndex = vmtIndex_; }
     uint32_t ImtIndex() const { return imtIndex; }

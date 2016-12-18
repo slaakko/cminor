@@ -96,6 +96,10 @@ void IndexerSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("indexers cannot be inline", GetSpan());
     }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("indexers cannot be new", GetSpan());
+    }
 }
 
 void IndexerSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)

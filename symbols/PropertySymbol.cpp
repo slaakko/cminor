@@ -85,6 +85,10 @@ void PropertySymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("properties cannot be inline", GetSpan());
     }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("properties cannot be new", GetSpan());
+    }
 }
 
 void PropertySymbol::AddTo(ClassTypeSymbol* classTypeSymbol)

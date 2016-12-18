@@ -44,6 +44,10 @@ void DelegateTypeSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("delegate type cannot be external", GetSpan());
     }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("delegate type cannot be new", GetSpan());
+    }
 }
 
 void DelegateTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
@@ -161,6 +165,10 @@ void ClassDelegateTypeSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::external_) != Specifiers::none)
     {
         throw Exception("class delegate type cannot be external", GetSpan());
+    }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("class delegate type cannot be new", GetSpan());
     }
 }
 

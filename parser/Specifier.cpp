@@ -164,6 +164,8 @@ public:
         a8ActionParser->SetAction(new cminor::parsing::MemberParsingAction<SpecifierRule>(this, &SpecifierRule::A8Action));
         cminor::parsing::ActionParser* a9ActionParser = GetAction("A9");
         a9ActionParser->SetAction(new cminor::parsing::MemberParsingAction<SpecifierRule>(this, &SpecifierRule::A9Action));
+        cminor::parsing::ActionParser* a10ActionParser = GetAction("A10");
+        a10ActionParser->SetAction(new cminor::parsing::MemberParsingAction<SpecifierRule>(this, &SpecifierRule::A10Action));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -205,6 +207,10 @@ public:
     {
         context.value = Specifiers::external_;
     }
+    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = Specifiers::new_;
+    }
 private:
     struct Context
     {
@@ -235,26 +241,29 @@ void SpecifierGrammar::CreateRules()
                                 new cminor::parsing::AlternativeParser(
                                     new cminor::parsing::AlternativeParser(
                                         new cminor::parsing::AlternativeParser(
-                                            new cminor::parsing::ActionParser("A0",
-                                                new cminor::parsing::KeywordParser("public")),
-                                            new cminor::parsing::ActionParser("A1",
-                                                new cminor::parsing::KeywordParser("protected"))),
-                                        new cminor::parsing::ActionParser("A2",
-                                            new cminor::parsing::KeywordParser("private"))),
-                                    new cminor::parsing::ActionParser("A3",
-                                        new cminor::parsing::KeywordParser("internal"))),
-                                new cminor::parsing::ActionParser("A4",
-                                    new cminor::parsing::KeywordParser("static"))),
-                            new cminor::parsing::ActionParser("A5",
-                                new cminor::parsing::KeywordParser("virtual"))),
-                        new cminor::parsing::ActionParser("A6",
-                            new cminor::parsing::KeywordParser("override"))),
-                    new cminor::parsing::ActionParser("A7",
-                        new cminor::parsing::KeywordParser("abstract"))),
-                new cminor::parsing::ActionParser("A8",
-                    new cminor::parsing::KeywordParser("inline"))),
-            new cminor::parsing::ActionParser("A9",
-                new cminor::parsing::KeywordParser("extern")))));
+                                            new cminor::parsing::AlternativeParser(
+                                                new cminor::parsing::ActionParser("A0",
+                                                    new cminor::parsing::KeywordParser("public")),
+                                                new cminor::parsing::ActionParser("A1",
+                                                    new cminor::parsing::KeywordParser("protected"))),
+                                            new cminor::parsing::ActionParser("A2",
+                                                new cminor::parsing::KeywordParser("private"))),
+                                        new cminor::parsing::ActionParser("A3",
+                                            new cminor::parsing::KeywordParser("internal"))),
+                                    new cminor::parsing::ActionParser("A4",
+                                        new cminor::parsing::KeywordParser("static"))),
+                                new cminor::parsing::ActionParser("A5",
+                                    new cminor::parsing::KeywordParser("virtual"))),
+                            new cminor::parsing::ActionParser("A6",
+                                new cminor::parsing::KeywordParser("override"))),
+                        new cminor::parsing::ActionParser("A7",
+                            new cminor::parsing::KeywordParser("abstract"))),
+                    new cminor::parsing::ActionParser("A8",
+                        new cminor::parsing::KeywordParser("inline"))),
+                new cminor::parsing::ActionParser("A9",
+                    new cminor::parsing::KeywordParser("extern"))),
+            new cminor::parsing::ActionParser("A10",
+                new cminor::parsing::KeywordParser("new")))));
 }
 
 } } // namespace cminor.parser

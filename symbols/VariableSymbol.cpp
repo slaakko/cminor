@@ -113,6 +113,10 @@ void MemberVariableSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("member variables cannot be inline", GetSpan());
     }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("member variables cannot be new", GetSpan());
+    }
 }
 
 void MemberVariableSymbol::Write(SymbolWriter& writer)

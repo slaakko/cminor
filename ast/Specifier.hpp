@@ -23,6 +23,7 @@ enum class Specifiers : uint16_t
     abstract_ = 1 << 7,
     inline_ = 1 << 8,
     external_ = 1 << 9,
+    new_ = 1 << 10,
     access_ = public_ | protected_ | private_ | internal_
 };
 

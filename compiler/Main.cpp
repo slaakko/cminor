@@ -8,6 +8,7 @@
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/Value.hpp>
+#include <cminor/symbols/Warning.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Util.hpp>
@@ -35,6 +36,7 @@ struct InitDone
         NodeInit();
         InitSymbol();
         ValueInit();
+        InitWarning();
         InitAssembly();
         cminor::parsing::Init();
     }
@@ -42,6 +44,7 @@ struct InitDone
     {
         cminor::parsing::Done();
         DoneAssembly();
+        DoneWarning();
         ValueDone();
         DoneSymbol();
         NodeDone();

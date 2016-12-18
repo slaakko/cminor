@@ -86,6 +86,14 @@ std::string SpecifierStr(Specifiers specifiers)
         }
         s.append("extern");
     }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("new");
+    }
     return s;
 }
 

@@ -17,6 +17,8 @@
 #include <cminor/symbols/EnumTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
+#include <cminor/symbols/Warning.hpp>
+#include <iostream>
 
 namespace cminor { namespace binder {
 
@@ -502,6 +504,30 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
                 throw Exception("virtual machine function name attribute (VmFunctionName) not set for external function", memberFunctionNode.GetSpan());
             }
             memberFunctionSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
+        }
+        if (!memberFunctionSymbol->IsVirtualAbstractOrOverride() && !memberFunctionSymbol->IsNew())
+        {
+            ClassTypeSymbol* ownerClass = dynamic_cast<ClassTypeSymbol*>(memberFunctionSymbol->Parent());
+            Assert(ownerClass, "class type symbol expected");
+            if (ownerClass->BaseClass())
+            {
+                ClassTypeSymbol* baseClass = ownerClass->BaseClass();
+                for (MemberFunctionSymbol* f : baseClass->MemberFunctions())
+                {
+                    if (f->IsVirtualAbstractOrOverride())
+                    {
+                        if (Overrides(memberFunctionSymbol, f))
+                        {
+                            std::string warningMessage = "member function '" + ToUtf8(memberFunctionSymbol->FriendlyName()) + "' hides base class virtual function '" + ToUtf8(f->FriendlyName()) + "'. " +
+                                "To get rid of this warning declare the function either 'override' or 'new'.";
+                            Warning warning(CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage);
+                            warning.SetDefined(memberFunctionSymbol->GetSpan());
+                            warning.SetReferenced(f->GetSpan());
+                            CompileWarningCollection::Instance().AddWarning(warning);
+                        }
+                    }
+                }
+            }
         }
         int n = memberFunctionNode.Parameters().Count();
         for (int i = 0; i < n; ++i)

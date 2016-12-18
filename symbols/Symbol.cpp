@@ -1417,6 +1417,10 @@ void ClassTypeSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("class type symbol cannot be inline", GetSpan());
     }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("class type symbol cannot be new", GetSpan());
+    }
 }
 
 void ClassTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
@@ -1854,6 +1858,10 @@ void InterfaceTypeSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::virtual_) != Specifiers::none)
     {
         throw Exception("interface cannot be virtual", GetSpan());
+    }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("interface cannot be new", GetSpan());
     }
 }
 

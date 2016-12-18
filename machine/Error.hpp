@@ -25,7 +25,9 @@ using cminor::parsing::Span;
 
 std::string Expand(const std::string& errorMessage, const Span& span);
 std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan);
+std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan, const std::string& title);
 std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references);
+std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references, const std::string& title);
 
 class Exception : public std::runtime_error
 {

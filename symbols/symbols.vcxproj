@@ -40,6 +40,7 @@
     <ClInclude Include="SymbolWriter.hpp" />
     <ClInclude Include="Value.hpp" />
     <ClInclude Include="VariableSymbol.hpp" />
+    <ClInclude Include="Warning.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Assembly.cpp" />
@@ -63,6 +64,7 @@
     <ClCompile Include="SymbolWriter.cpp" />
     <ClCompile Include="Value.cpp" />
     <ClCompile Include="VariableSymbol.cpp" />
+    <ClCompile Include="Warning.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2F515190-089A-433E-AE60-A837BCE6BD53}</ProjectGuid>

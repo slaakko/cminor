@@ -26,6 +26,7 @@ namespace cminor.parser
             |   keyword("abstract"){ value = Specifiers::abstract_; }
             |   keyword("inline"){ value = Specifiers::inline_; }
             |   keyword("extern"){ value = Specifiers::external_; }
+            |   keyword("new"){ value = Specifiers::new_; } 
             ;
     }
 }

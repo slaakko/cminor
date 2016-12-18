@@ -19,6 +19,7 @@
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/symbols/MappingSymbolVisitor.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
+#include <cminor/symbols/Warning.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/MappedInputFile.hpp>
 #include <cminor/machine/Machine.hpp>
@@ -290,6 +291,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     {
         std::cout << "Building project '" << project->Name() << "' (" << project->FilePath() << ") using " << config << " configuration." << std::endl;
     }
+    CompileWarningCollection::Instance().SetCurrentProjectName(project->Name());
     std::vector<std::unique_ptr<CompileUnitNode>> compileUnits = ParseSources(project->SourceFilePaths());
     utf32_string assemblyName = ToUtf32(project->Name());
     Machine machine;
@@ -353,6 +355,14 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     boost::filesystem::path obp(assembly.FilePath());
     obp.remove_filename();
     boost::filesystem::create_directories(obp);
+    if (!CompileWarningCollection::Instance().Warnings().empty())
+    {
+        for (const Warning& warning : CompileWarningCollection::Instance().Warnings())
+        {
+            std::string warningMessage = Expand(warning.Message(), warning.Defined(), warning.Referenced(), "Warning");
+            std::cerr << warningMessage << std::endl;
+        }
+    }
     SymbolWriter writer(assembly.FilePath());
     assembly.Write(writer);
     if (GetGlobalFlag(GlobalFlags::verbose))

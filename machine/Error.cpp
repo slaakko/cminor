@@ -19,12 +19,23 @@ std::string Expand(const std::string& errorMessage, const Span& span)
 std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan)
 {
     std::vector<Span> references(1, referenceSpan);
-    return Expand(errorMessage, primarySpan, references);
+    return Expand(errorMessage, primarySpan, references, "Error");
+}
+
+std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan, const std::string& title)
+{
+    std::vector<Span> references(1, referenceSpan);
+    return Expand(errorMessage, primarySpan, references, title);
 }
 
 std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references)
 {
-    std::string expandedMessage = "Error: " + errorMessage;
+    return Expand(errorMessage, span, references, "Error");
+}
+
+std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references, const std::string& title)
+{
+    std::string expandedMessage = title + ": " + errorMessage;
     if (span.Valid())
     {
         FileRegistry* currentFileRegistry = FileRegistry::Instance();

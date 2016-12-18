@@ -149,6 +149,10 @@ void FunctionSymbol::SetSpecifiers(Specifiers specifiers)
     {
         SetExternal();
     }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("only member functions can be new", GetSpan());
+    }
 }
 
 void FunctionSymbol::EmplaceType(TypeSymbol* type, int index)
@@ -393,6 +397,10 @@ void StaticConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     {
         throw Exception("static constructor cannot be external", GetSpan());
     }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("static constructor cannot be new", GetSpan());
+    }
 }
 
 utf32_string StaticConstructorSymbol::FullParsingName() const
@@ -446,6 +454,10 @@ void ConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::external_) != Specifiers::none)
     {
         SetExternal();
+    }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        throw Exception("constructor cannot be new", GetSpan());
     }
 }
 
@@ -707,6 +719,14 @@ std::string MemberFunctionSymbolFlagStr(MemberFunctionSymbolFlags flags)
         }
         s.append("virtual");
     }
+    if ((flags & MemberFunctionSymbolFlags::new_) != MemberFunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("new");
+    }
     return s;
 }
 
@@ -868,6 +888,10 @@ void MemberFunctionSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::external_) != Specifiers::none)
     {
         SetExternal();
+    }
+    if ((specifiers & Specifiers::new_) != Specifiers::none)
+    {
+        SetNew();
     }
 }
 

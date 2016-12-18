@@ -46,3 +46,30 @@ td.rulename
     padding-left: 4pt; 
     padding-right: 4pt;
 }
+
+.secnum
+{
+    padding-right: 8px;
+}
+
+.toc1
+{
+    position: relative;
+    left: 1em;
+    padding-bottom: 4px;
+    font-family: sans-serif;
+}
+
+.toc2
+{
+    position: relative;
+    left: 1em;
+    font-family: sans-serif;
+}
+
+.toc3
+{
+    position: relative;
+    left: 2em;
+    font-family: sans-serif;
+}
