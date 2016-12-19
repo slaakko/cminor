@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Templates</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2 id="templates">
+        10 Templates
+    </h2>
+
+    <h4 id="templates-syntax">
+        10.1 Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="template-id">template-id</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#qualified-id">qualified-id</a></span>
+                <span class="terminal">&lt;</span>
+                <span class="rulename"><a href="type_expression.html#type-expr">type-expr</a></span>
+                (<span class="terminal">,</span> 
+                <span class="rulename"><a href="type_expression.html#type-expr">type-expr</a></span>)*
+                <span class="terminal">&gt;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="template-parameter">template-parameter</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="template-parameter-list">template-parameter-list</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">&lt;</span>
+                <span class="rulename"><a href="#template-parameter">template-parameter</a></span>
+                (
+                <span class="terminal">,</span>
+                <span class="rulename"><a href="#template-parameter">template-parameter</a></span>
+                )*
+                <span class="terminal">&gt;</span>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

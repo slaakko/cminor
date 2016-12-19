@@ -9,11 +9,11 @@
 <body>
 
     <h2 id="statements">
-        4 Statements
+        5 Statements
     </h2>
 
     <h4 id="statements-syntax">
-        4.1 Syntax
+        5.1 Syntax
     </h4>
 
     <table class="grammar">
@@ -47,9 +47,7 @@
             <td class="rulename" id="label-id">label-id</td>
             <td class="prodsep">&rarr;</td>
             <td class="rulecontent">
-                <span class="rulename"><a href="lexical_structure.html#id-char-sequence">id&#8209char&#8209sequence</a></span> 
-                <span class="grammarop">&minus;</span>
-                <span class="rulename"><a href="lexical_structure.html#keyword">keyword</a></span> 
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span> 
             </td>
         </tr>
         <tr>
@@ -288,7 +286,7 @@
             </td>
         </tr>
         <tr>
-            <td class="rulename" id="construction-statement">construction&#8209;statement</td>
+            <td class="rulename" id="construction-statement-expression">construction&#8209;statement&#8209;expression</td>
             <td class="prodsep">&rarr;</td>
             <td class="rulecontent">
                 <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
@@ -298,6 +296,13 @@
                 <span class="terminal">)</span> |
                 <span class="terminal">=</span>
                 <span class="rulename"><a href="expression.html#expression">expression</a></span>)
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="construction-statement">construction&#8209;statement</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#construction-statement-expression">construction&#8209;statement&#8209;expression</a></span>
                 <span class="terminal">;</span>
             </td>
         </tr>
@@ -373,19 +378,6 @@
                 <span class="rulename"><a href="#construction-statement-expression">construction&#8209;statement&#8209;expression</a></span>
                 <span class="terminal">)</span>
                 <span class="rulename"><a href="#statement">statement</a></span>
-            </td>
-        </tr>
-        <tr>
-            <td class="rulename" id="construction-statement-expression">construction&#8209;statement&#8209;expression</td>
-            <td class="prodsep">&rarr;</td>
-            <td class="rulecontent">
-                <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
-                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
-                (<span class="terminal">(</span>
-                <span class="rulename"><a href="expression.html#argument-list">argument&#8209;list</a></span>
-                <span class="terminal">)</span> |
-                <span class="terminal">=</span>
-                <span class="rulename"><a href="expression.html#expression">expression</a></span>)
             </td>
         </tr>
     </table>

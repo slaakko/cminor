@@ -11,6 +11,19 @@ namespace System
         {
             return this;
         }
+        private const ulong hashOffset = 14695981039346656037u;
+        private const ulong hashPrime = 1099511628211u;
+        public override ulong GetHashCode()
+        {
+            ulong hashCode = hashOffset;
+            for (int i = 0; i < length; ++i)
+            {
+                char c = this[i];
+                hashCode = hashCode ^ cast<ulong>(c);
+                hashCode = hashCode * hashPrime;
+            }
+            return hashCode;
+        }
         public Enumerator GetEnumerator()
         {
             return new StringEnumerator(this);

@@ -16,6 +16,7 @@
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/Value.hpp>
+#include <cminor/symbols/Warning.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/FileRegistry.hpp>
@@ -42,11 +43,13 @@ struct InitDone
         InitSymbol();
         ValueInit();
         InitAssembly();
+        InitWarning();
         cminor::parsing::Init();
     }
     ~InitDone()
     {
         cminor::parsing::Done();
+        DoneWarning();
         DoneAssembly();
         ValueDone();
         DoneSymbol();

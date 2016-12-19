@@ -45,6 +45,34 @@ namespace System.Collections.Generic
             items[count] = item;
             ++count;
         }
+        public void AddRange(Enumerable range)
+        {
+            foreach (T item in range)
+            {
+                Add(item);
+            }
+        }
+        public int BinarySearch(T item)
+        {
+            int len = count;
+            int first = 0;
+            while (len > 0)
+            {
+                int half = len >> 1;
+                int middle = first + half;
+                T m = items[middle];
+                if (item > m)
+                {
+                    first = middle + 1;
+                    len = len - half - 1;
+                }
+                else
+                {
+                    len = half;
+                }
+            }
+            return first;
+        }
         public bool Remove(T item)
         {
             for (int i = 0; i < count; ++i)
@@ -65,6 +93,17 @@ namespace System.Collections.Generic
                 items[i] = items[i + 1];
             }
             --count;
+        }
+        public void Resize(int newCount)
+        {
+            T[] newItems = new T[newCount];
+            int n = Min(count, newCount);
+            for (int i = 0; i < n; ++i)
+            {
+                newItems[i] = items[i];
+            }
+            items = newItems;
+            count = newCount;
         }
         public void Clear()
         {

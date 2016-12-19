@@ -1,0 +1,226 @@
+using System;
+
+namespace System.Collections.Generic
+{
+    public static class HashtablePrimes
+    {
+        static HashtablePrimes()
+        {
+            primes = new List<int>(26);
+            primes.Add(53);
+            primes.Add(97);
+            primes.Add(193);
+            primes.Add(389);
+            primes.Add(769);
+            primes.Add(1543);
+            primes.Add(3079);
+            primes.Add(6151);
+            primes.Add(12289);
+            primes.Add(24593);
+            primes.Add(49157);
+            primes.Add(98317);
+            primes.Add(196613);
+            primes.Add(393241);
+            primes.Add(786433);
+            primes.Add(1572869);
+            primes.Add(3145739);
+            primes.Add(6291469);
+            primes.Add(12582917);
+            primes.Add(25165843);
+            primes.Add(50331653);
+            primes.Add(100663319);
+            primes.Add(201326611);
+            primes.Add(402653189);
+            primes.Add(805306457);
+            primes.Add(1610612741);
+        }
+        public static int GetNextPrime(int n)
+        {
+            int i = primes.BinarySearch(n);
+            if (i < primes.Count)
+            {
+                return primes[i];
+            }
+            return primes[primes.Count - 1];
+        }
+        private static List<int> primes;
+    }
+
+    internal class Bucket<T>
+    {
+        public Bucket(T val, Bucket<T> next)
+        {
+            this.val = val;
+            this.next = next;
+        }
+        public T Value
+        {
+            get { return val; }
+            set { val = value; }
+        }
+        public Bucket<T> Next
+        {
+            get { return next; }
+            set { next = value; }
+        }
+        private T val;
+        private Bucket<T> next;
+    }
+
+    public class Hashtable<KeyType, ValueType, KeyOfValue> : Enumerable
+    {
+        public Hashtable()
+        {
+            this.buckets = null;
+            this.count = 0;
+            this.loadFactor = 0;
+            this.maxLoadFactor = 0.8;
+            this.keyOf = new KeyOfValue();
+        }
+        public int Count
+        {
+            get { return count;}
+        }
+        public double LoadFactor
+        {
+            get { return loadFactor; }
+        }
+        public double MaxLoadFactor
+        {
+            get { return maxLoadFactor; }
+            set { maxLoadFactor = value; }
+        }
+        public void Clear()
+        {
+            this.buckets = null;
+            this.count = 0;
+            this.loadFactor = 0;
+        }
+        public bool Insert(ValueType value)
+        {
+            if (buckets == null)
+            {
+                buckets = new List<Bucket<ValueType>>(0);
+            }
+            if (buckets.Count == 0)
+            {
+                buckets.Resize(HashtablePrimes.GetNextPrime(0));
+            }
+            KeyType key = KeyOf(value);
+            int index = Hash(key);
+            Bucket<ValueType> bucket = buckets[index];
+            while (bucket != null)
+            {
+                if (KeyOf(bucket.Value) == key)
+                {
+                    return false;
+                }
+                bucket = bucket.Next;
+            }
+            bucket = new Bucket<ValueType>(value, buckets[index]);
+            buckets[index] = bucket;
+            ++count;
+            SetLoadFactor();
+            CheckForRehash();
+            return true;
+        }
+        public Enumerator GetEnumerator()
+        {
+            return new HashtableEnumerator<Hashtable<KeyType, ValueType, KeyOfValue>, ValueType>(this, buckets);
+        }
+        public int GetBucketIndex(ValueType value)
+        {
+            return Hash(KeyOf(value));
+        }
+        private void SetLoadFactor()
+        {
+            int bc = buckets.Count;
+            if (bc == 0)
+            {
+                loadFactor = 1.0;
+            }
+            else
+            {
+                double c = count;
+                loadFactor = c / bc;
+            }
+        }
+        private void CheckForRehash()
+        {
+            if (loadFactor > maxLoadFactor)
+            {
+                Rehash();
+            }
+        }
+        private void Rehash()
+        {
+            // todo
+        }
+        private KeyType KeyOf(ValueType value)
+        {
+            return keyOf(value);
+        }
+        private int Hash(KeyType key)
+        {
+            if (buckets == null || buckets.Count == 0) 
+            {
+                throw new LogicException("cannot hash into empty hash table");
+            }
+            return cast<int>(key.GetHashCode() % cast<ulong>(buckets.Count()));
+        }
+        private List<Bucket<ValueType>> buckets;
+        private int count;
+        private double loadFactor;
+        private double maxLoadFactor;
+        private KeyOfValue keyOf;
+    }
+
+    internal class HashtableEnumerator<TableType, ValueType> : Enumerator
+    {
+        public HashtableEnumerator(TableType table, List<Bucket<ValueType>> buckets)
+        {
+            this.table = table;
+            this.buckets = buckets;
+            this.bucket = null;
+            if (buckets != null && buckets.Count != 0)
+            {
+                int n = buckets.Count;
+                for (int i = 0; i < n; ++i)
+                {
+                   bucket = buckets[i];
+                   if (bucket != null)
+                   {
+                        break;
+                   }
+                }
+            }
+        }
+        public bool AtEnd()
+        {
+            return bucket == null;
+        }
+        public object GetCurrent()
+        {
+            return bucket.Value;
+        }
+        public void MoveNext()
+        {
+            Bucket<ValueType> prev = bucket;
+            bucket = bucket.Next;
+            if (bucket == null)
+            {
+                int index = table.GetBucketIndex(prev.Value);
+                ++index;
+                int n = buckets.Count;
+                while (bucket == null && index < n)
+                {
+                    bucket = buckets[index];
+                    ++index;
+                }
+            }
+        }
+        private TableType table;
+        private List<Bucket<ValueType>> buckets;
+        private Bucket<ValueType> bucket;
+    }
+}

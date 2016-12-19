@@ -80,8 +80,8 @@
                 <span class="rulename"><a href="#shift">shift</a></span>)* |
                 <span class="rulename"><a href="#shift">shift</a></span>
                 (
-                <span class="kw">is</span> <span class="rulename"><a href="type.html#type-expr">type-expr</a></span> |
-                <span class="kw">as</span> <span class="rulename"><a href="type.html#type-expr">type-expr</a></span>
+                <span class="kw">is</span> <span class="rulename"><a href="type_expression.html#type-expr">type-expr</a></span> |
+                <span class="kw">as</span> <span class="rulename"><a href="type_expression.html#type-expr">type-expr</a></span>
                 )*
             </td>
         </tr>
@@ -151,7 +151,7 @@
             <td class="rulename" id="cast-expr">cast-expr</td>
             <td class="prodsep">&rarr;</td>
             <td class="rulecontent">
-                <span class="kw">cast</span> <span class="terminal">&lt;</span> <span class="rulename"><a href="type-expr.html#type-expr">type-expr</a></span>
+                <span class="kw">cast</span> <span class="terminal">&lt;</span> <span class="rulename"><a href="type_expression.html#type-expr">type-expr</a></span>
                 <span class="terminal">&gt;</span> 
                 <span class="terminal">(</span> <span class=rulename><a href="#expression">expression</a></span> <span class="terminal">)</span>
             </td>
@@ -162,14 +162,14 @@
             <td class="rulecontent">
                 <span class="kw">new</span> 
                 <span class="rulename"><a href="type_expression.html#type-expr">type-expr</a></span>
-                (<span class="terminal">(</span> <span class="rulename"><a href="argument-list">argument-list</a></span> <span class="terminal">)</span>)?
+                (<span class="terminal">(</span> <span class="rulename"><a href="#argument-list">argument-list</a></span> <span class="terminal">)</span>)?
             </td>
         </tr>
         <tr>
             <td class="rulename" id="argument-list">argument-list</td>
             <td class="prodsep">&rarr;</td>
             <td class="rulecontent">
-                <span class="rulename"><a href="expression-list">expression-list</a></span>?
+                <span class="rulename"><a href="#expression-list">expression-list</a></span>?
             </td>
         </tr>
         <tr>
@@ -184,7 +184,7 @@
             <td class="rulename" id="constant-expression">constant&#8209;expression</td>
             <td class="prodsep">&rarr;</td>
             <td class="rulecontent">
-                <span class="rulename"><a href="expression">expression</a></span>
+                <span class="rulename"><a href="#expression">expression</a></span>
             </td>
         </tr>
     </table>

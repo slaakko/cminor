@@ -56,7 +56,7 @@ td.rulename
 {
     position: relative;
     left: 1em;
-    padding-bottom: 4px;
+    padding-bottom: 8px;
     font-family: sans-serif;
 }
 
@@ -72,4 +72,15 @@ td.rulename
     position: relative;
     left: 2em;
     font-family: sans-serif;
+}
+
+.notation
+{
+    max-width: 800px;
+}
+
+.note
+{
+    margin: 20px;
+    font-style: italic;
 }

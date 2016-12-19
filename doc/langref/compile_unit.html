@@ -1,0 +1,281 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Compile Units, Projects and Solutions</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2 id="compile-units-projects-and-solutions">
+        12 Compile Units, Projects and Solutions
+    </h2>
+
+    <h3 id="compile-units">
+        12.1 Compile Units
+    </h3>
+
+    <h4 id="compile-units-syntax">
+        12.1.1 Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="compile-unit">compile&#8209;unit</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#namespace-content">namespace&#8209;content</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="namespace-content">namespace&#8209;content</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#using-directives">using&#8209;directives</a></span>
+                <span class="rulename"><a href="#definitions">definitions</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="using-directives">using&#8209;directives</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#using-directive">using&#8209;directive</a></span>*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="using-directive">using&#8209;directive</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#using-alias-directive">using&#8209;alias&#8209;directive</a></span> |
+                <span class="rulename"><a href="#using-namespace-directive">using&#8209;namespace&#8209;directive</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="using-alias-directive">using&#8209;alias&#8209;directive</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">using</span>
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+                <span class="terminal">=</span>
+                <span class="rulename"><a href="lexical_structure.html#qualified-id">qualified&#8209;id</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="using-namespace-directive">using&#8209;namespace&#8209;directive</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">using</span>
+                <span class="rulename"><a href="lexical_structure.html#qualified-id">qualified&#8209;id</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="definitions">definitions</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#definition">definition</a></span>*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="definition">definition</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#namespace-definition">namespace&#8209;definition</a></span> |
+                <span class="rulename"><a href="#function-definition">function&#8209;definition</a></span> |
+                <span class="rulename"><a href="#class-definition">class&#8209;definition</a></span> |
+                <span class="rulename"><a href="#interface-definition">interface&#8209;definition</a></span> |
+                <span class="rulename"><a href="#enum-type-definition">enum&#8209;type&#8209;definition</a></span> |
+                <span class="rulename"><a href="#constant-definition">constant&#8209;definition</a></span> |
+                <span class="rulename"><a href="#delegate-definition">delegate&#8209;definition</a></span> |
+                <span class="rulename"><a href="#class-delegate-definition">class&#8209;delegate&#8209;definition</a></span> |
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="namespace-definition">namespace&#8209;definition</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">namespace</span>
+                <span class="rulename"><a href="lexical_structure.html#qualified-id">qualified&#8209;id</a></span>
+                <span class="terminal">{</span>
+                <span class="rulename"><a href="#namespace-content">namespace&#8209;content</a></span>
+                <span class="terminal">}</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="function-definition">function&#8209;definition</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="function.html#function">function</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="class-definition">class&#8209;definition</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="class_interface.html#class">class</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="interface-definition">interface&#8209;definition</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="class_interface.html#interface">interface</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="enum-type-definition">enum&#8209;type&#8209;definition</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="constenum.html#enumerated-type">enumerated&#8209;type</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="constant-definition">constant&#8209;definition</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="constenum.html#constant">constant</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="delegate-definition">delegate&#8209;definition</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="delegate.html#delegate">delegate</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="class-delegate-definition">class&#8209;delegate&#8209;definition</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="delegate.html#class-delegate">class&#8209;delegate</a></span>
+            </td>
+        </tr>
+    </table>
+
+    <h3 id="projects">
+        12.2 Projects
+    </h3>
+
+    <h4 id="projects-syntax">
+        12.2.1 Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="project">project</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">project</span>
+                <span class="rulename"><a href="#project-name">project&#8209;name</a></span>
+                <span class="terminal">;</span><br /> 
+                <span class="rulename"><a href="#project-declaration">project&#8209;declaration</a></span>*
+            </td>
+         </tr>
+        <tr>
+            <td class="rulename" id="project-name">project&#8209;name</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#id-char-sequence">id&#8209;char&#8209;sequence</a></span>
+                (   <span class="terminal">.</span> 
+                    <span class="rulename"><a href="lexical_structure.html#id-char-sequence">id&#8209;char&#8209;sequence</a></span>
+                )*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="project-declaration">project&#8209;declaration</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#reference-declaration">reference&#8209;declaration</a></span> |
+                <span class="rulename"><a href="#source-file-declaration">source&#8209;file&#8209;declaration</a></span> |
+                <span class="rulename"><a href="#target-declaration">target&#8209;declaration</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="reference-declaration">reference&#8209;declaration</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">reference</span>
+                <span class="rulename"><a href="#file-path">file&#8209;path</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="source-file-declaration">source&#8209;file&#8209;declaration</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">source</span>
+                <span class="rulename"><a href="#file-path">file&#8209;path</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="target-declaration">target&#8209;declaration</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">target</span>
+                <span class="terminal">=</span>
+                (<span class="kw">program</span> | <span class="kw">library</span>)
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="file-path">file&#8209;path</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">&lt;</span>
+                [<span class="grammarop">^</span>
+                <span class="terminal">&gt;</span>]+
+                <span class="terminal">&gt;</span>
+            </td>
+        </tr>
+    </table>
+
+    <h3 id="solutions">
+        12.3 Solutions
+    </h3>
+
+    <h4 id="solutions-syntax">
+        12.3.1 Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="solution">solution</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">solution</span>
+                <span class="rulename"><a href="#solution-name">solution&#8209;name</a></span>
+                <span class="terminal">;</span><br/>
+                <span class="rulename"><a href="#solution-declaration">solution&#8209;declaration</a></span>*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="solution-name">solution&#8209;name</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#id-char-sequence">id&#8209;char&#8209;sequence</a></span>
+                (   <span class="terminal">.</span>
+                    <span class="rulename"><a href="lexical_structure.html#id-char-sequence">id&#8209;char&#8209;sequence</a></span>
+                )*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="solution-declaration">solution&#8209;declaration</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#solution-project-declaration">solution&#8209;project&#8209;declaration</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="solution-project-declaration">solution&#8209;project&#8209;declaration</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">project</span>
+                <span class="rulename"><a href="#file-path">file&#8209;path</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,57 @@
+using System;
+
+namespace System.Collections.Generic
+{
+    public class KeyValuePair<KeyType, ValueType>
+    {
+        public KeyValuePair(KeyType key, ValueType val)
+        {
+            this.key = key;
+            this.val = val;
+        }
+        public KeyType Key
+        {
+            get { return key; }
+        }
+        public ValueType Value
+        {
+            get { return val; }
+            set { val = value; }
+        }
+        private KeyType key;
+        private ValueType val;
+    }
+
+    public class ExtractKey<KeyType, ValueType>
+    {
+        public KeyType operator()(KeyValuePair<KeyType, ValueType> keyValuePair)
+        {
+            return keyValuePair.Key;
+        }
+    }
+
+    public class HashMap<KeyType, ValueType> : Enumerable
+    {
+        public HashMap()
+        {
+            table = new Hashtable<KeyType, KeyValuePair<KeyType, ValueType>, ExtractKey<KeyType, ValueType>>();
+        }
+        public Enumerator GetEnumerator()
+        {
+            return table.GetEnumrator();
+        }
+        public void Clear()
+        {
+            table.Clear();
+        }
+        public int Count
+        {
+            get { return table.Count;}
+        }
+        public bool Insert(KeyValuePair<KeyType, ValueType> keyValuePair)
+        {
+            return table.Insert(keyValuePair);
+        }
+        private Hashtable<KeyType, KeyValuePair<KeyType, ValueType>, ExtractKey<KeyType, ValueType>> table;
+    }
+}

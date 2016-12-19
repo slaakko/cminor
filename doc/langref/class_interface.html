@@ -1,0 +1,316 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Classes and Interfaces</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2 id="classes-and-interfaces">
+        9 Classes and Interfaces
+    </h2>
+
+    <h3 id="classes">
+        9.1 Classes
+    </h3>
+
+    <h4 id="classes-syntax">
+        9.1.1 Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="class">class</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#class-specifiers">class&#8209;specifiers</a></span>
+                <span class="kw">class</span>
+                <span class="rulename"><a href="#class-name">class&#8209;name</a></span>
+                <span class="rulename"><a href="template.html#template-parameter-list">template&#8209;parameter&#8209;list</a></span>?
+                <span class="rulename"><a href="#inheritance-and-interfaces">inheritance&#8209;and&#8209;interfaces</a></span>?<br />
+                <span class="terminal">{</span>
+                <span class="rulename"><a href="#class-content">class&#8209;content</a></span>
+                <span class="terminal">}</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="class-specifiers">class&#8209;specifiers</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                (<span class="rulename"><a href="access.html#access">access</a></span> |
+                <span class="kw">abstract</span> |
+                <span class="kw">static</span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="class-name">class&#8209;name</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="inheritance-and-interfaces">inheritance&#8209;and&#8209;interfaces</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">:</span>
+                <span class="rulename"><a href="#base-class-or-interface">base&#8209;class&#8209;or&#8209;interface</a></span>
+                (<span class="terminal">,</span>
+                <span class="rulename"><a href="#base-class-or-interface">base&#8209;class&#8209;or&#8209;interface</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="base-class-or-interface">base&#8209;class&#8209;or&#8209;interface</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#qualified-id">qualified&#8209;id</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="class-content">class&#8209;content</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#class-member">class&#8209;member</a></span>*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="class-member">class&#8209;member</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#static-constructor">static&#8209;constructor</a></span> |
+                <span class="rulename"><a href="#constructor">constructor</a></span> |
+                <span class="rulename"><a href="#member-function">member&#8209;function</a></span> |
+                <span class="rulename"><a href="#member-variable">member&#8209;variable</a></span> |
+                <span class="rulename"><a href="#property">property</a></span> |
+                <span class="rulename"><a href="#indexer">indexer</a></span> |
+                <span class="rulename"><a href="#class">class</a></span> |
+                <span class="rulename"><a href="constenum.html#enumerated-type">enumerated&#8209;type</a></span> |
+                <span class="rulename"><a href="constenum.html#constant">constant</a></span> |
+                <span class="rulename"><a href="delegate.html#delegate">delegate</a></span> |
+                <span class="rulename"><a href="delegate.html#class-delegate">class&#8209;delegate</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="static-constructor">static&#8209;constructor</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="function.html#attributes">attributes</a></span>?
+                <span class="kw">static</span> 
+                <span class="kw">extern</span>?
+                <span class="rulename"><a href="#class-name">class&#8209;name</a></span>
+                <span class="terminal">(</span>
+                <span class="terminal">)</span>
+                (<span class="rulename"><a href="statement.html#compound-statement">compound&#8209statement</a></span> | <span class="terminal">;</span>)
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="constructor">constructor</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="function.html#attributes">attributes</a></span>?
+                <span class="rulename"><a href="#constructor-specifiers">constructor&#8209;specifiers</a></span>
+                <span class="rulename"><a href="#class-name">class&#8209;name</a></span>
+                <span class="rulename"><a href="function.html#parameter-list">parameter&#8209;list</a></span>
+                (<span class="terminal">:</span> <span class="rulename"><a href="#initializer">initializer</a></span>)?
+                (<span class="rulename"><a href="statement.html#compound-statement">compound&#8209statement</a></span> | <span class="terminal">;</span>)
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="constructor-specifiers">constructor&#8209;specifiers</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                (<span class="rulename"><a href="access.html#access">access</a></span> |
+                <span class="kw">extern</span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="initializer">initializer</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">this</span> 
+                <span class="terminal">(</span>
+                <span class="rulename"><a href="expression.html#argument-list">argument&#8209;list</a></span>
+                <span class="terminal">)</span>
+                | <span class="kw">base</span>
+                <span class="terminal">(</span>
+                <span class="rulename"><a href="expression.html#argument-list">argument&#8209;list</a></span>
+                <span class="terminal">)</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="member-function">member&#8209;function</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="function.html#attributes">attributes</a></span>?
+                <span class="rulename"><a href="#member-function-specifiers">member&#8209;function&#8209;specifiers</a></span>
+                <span class="rulename"><a href="function.html#return-type">return&#8209;type</a></span>
+                <span class="rulename"><a href="function.html#function-group-id">function&#8209;group&#8209;id</a></span>
+                <span class="rulename"><a href="function.html#parameter-list">parameter&#8209;list</a></span>
+                (<span class="rulename"><a href="function.html#function-body">function&#8209;body</a></span> | <span class="terminal">;</span>)
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="member-function-specifiers">member&#8209;function&#8209;specifiers</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                (<span class="rulename"><a href="access.html#access">access</a></span> |
+                <span class="kw">abstract</span> |
+                <span class="kw">extern</span> |
+                <span class="kw">new</span> |
+                <span class="kw">override</span> |
+                <span class="kw">static</span> |
+                <span class="kw">virtual</span>
+                )*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="member-variable">member&#8209;variable</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#member-variable-specifiers">member&#8209;variable&#8209;specifiers</a></span>
+                <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
+                <span class="rulename"><a href="#member-variable-name">member&#8209;variable&#8209;name</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="member-variable-name">member&#8209;variable&#8209;name</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="member-variable-specifiers">member&#8209;variable&#8209;specifiers</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                (<span class="rulename"><a href="access.html#access">access</a></span> |
+                <span class="kw">static</span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="property">property</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#property-specifiers">property&#8209;specifiers</a></span>
+                <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
+                <span class="rulename"><a href="#property-name">property&#8209;name</a></span>
+                <span class="terminal">{</span>
+                <span class="rulename"><a href="#getter-or-setter">getter&#8209;or&#8209;setter</a></span>+
+                <span class="terminal">}</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="property-specifiers">property&#8209;specifiers</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                (<span class="rulename"><a href="access.html#access">access</a></span> |
+                <span class="kw">static</span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="property-name">property&#8209;name</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="getter-or-setter">getter&#8209;or&#8209;setter</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">get</span>
+                <span class="rulename"><a href="statement.html#compound-statement">compound&#8209statement</a></span> |
+                <span class="kw">set</span>
+                <span class="rulename"><a href="statement.html#compound-statement">compound&#8209statement</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="indexer">indexer</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#indexer-specifiers">indexer&#8209;specifiers</a></span>
+                <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
+                <span class="kw">this</span>
+                <span class="terminal">[</span>
+                <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
+                <span class="rulename"><a href="#indexer-name">indexer&#8209;name</a></span>
+                <span class="terminal">]</span>
+                <span class="terminal">{</span>
+                <span class="rulename"><a href="#getter-or-setter">getter&#8209;or&#8209;setter</a></span>+
+                <span class="terminal">}</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="indexer-specifiers">indexer&#8209;specifiers</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                (<span class="rulename"><a href="access.html#access">access</a></span> |
+                <span class="kw">static</span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="indexer-name">index&#8209;name</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+            </td>
+        </tr>
+    </table>
+
+    <h3 id="interfaces">
+        9.2 Interfaces
+    </h3>
+    
+    <h4 id="interfaces-syntax">
+        9.2.1 Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="interface">interface</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#interface-specifiers">interface&#8209;specifiers</a></span>
+                <span class="kw">interface</span>
+                <span class="rulename"><a href="#interface-name">interface&#8209;name</a></span>
+                <span class="terminal">{</span>
+                <span class="rulename"><a href="#interface-content">interface&#8209;content</a></span>
+                <span class="terminal">}</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="interface-specifiers">interface&#8209;specifiers</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="access.html#access">access</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="interface-name">interface&#8209;name</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="interface-content">interface&#8209;content</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#interface-memfun">interface&#8209;memfun</a></span>*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="interface-memfun">interface&#8209;memfun</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="function.html#return-type">return&#8209;type</a></span>
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+                <span class="rulename"><a href="function.html#parameter-list">parameter&#8209;list</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

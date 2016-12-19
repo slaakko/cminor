@@ -1,0 +1,29 @@
+using System;
+
+namespace System.Collections.Generic
+{
+    public class HashSet<T> : Enumerable
+    {
+        public HashSet()
+        {
+            table = new Hashtable<T, T, Identity<T>>();
+        }
+        public Enumerator GetEnumerator()
+        {
+            return table.GetEnumerator();
+        }
+        public void Clear()
+        {
+            table.Clear();
+        }
+        public int Count
+        {
+            get { return table.Count;}
+        }
+        public bool Insert(T value)
+        {
+            return table.Insert(value);
+        }
+        private Hashtable<T, T, Identity<T>> table;
+    }
+}

@@ -92,7 +92,7 @@ namespace cminor.parser
             ;
 
         Initializer(ParsingContext* ctx) : InitializerNode*
-            ::= keyword("this", identifier){ value = new ThisInitializerNode(span); }'('! ArgumentList(ctx, value):thisArgs! ')'!
+            ::= keyword("this", identifier){ value = new ThisInitializerNode(span); } '('! ArgumentList(ctx, value):thisArgs! ')'!
             |   keyword("base", identifier){ value = new BaseInitializerNode(span); } '('! ArgumentList(ctx, value):baseArgs! ')'!
             ;
 

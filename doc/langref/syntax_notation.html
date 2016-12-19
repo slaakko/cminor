@@ -6,9 +6,351 @@
     <title>Syntax Notation</title>
     <link rel="stylesheet" type="text/css" href="../style/style.css" />
 </head>
-<body>
+<body class="notation">
     <h2>
-        Syntax Notation
+        A Syntax Notation
     </h2>
+
+    <p>
+        The notation used to define the syntax of the Cminor language is a variation of 
+        <a href="http://bford.info/pub/lang/peg.pdf">Parsing Expression Grammar</a> or PEG notation for short
+        (See also <a href="http://en.wikipedia.org/wiki/Parsing_expression_grammar">wikipedia article for PEG</a>.)
+        In PEG ambiguities that can arise in general context-free grammars are avoided by defining a <em>ordered choice</em> 
+        operator that tests each alternative in a body of a rule in order and defines that the
+        first alternative that matches input always wins without testing alternatives that come after it.
+    </p>
+
+    <p>
+        The syntax notation used in this Cminor language reference uses the pipe symbol, <span class="terminal">|</span> for separating alternatives, but
+        its semantics is ment to be the same as the semantics of PEG's ordered choice operator.
+    </p>
+
+    <h3 id="grammars">
+        A.1 Grammars
+    </h3>
+
+    <p>
+        A grammar that defines the structure of some language consists of <em>productions</em> or <em>rules</em> that define strings of symbols that belong to the language.  
+        A production consists of a <em>head</em>, a production symbol, <span class="prodsep">&rarr;</span>, and a <em>body</em>.
+        The head names the production. The body consists of <em>terminal</em> and <em>nonterminal</em> symbols and <em>grammar operators</em>.
+        Collectively the terminal symbols used in bodies of the rules form an <em>alphabet</em> of the language. 
+        An alphabet is commonly denoted by the greek letter &Sigma;. The alphabet can be the set of ASCII characters, symbols 0 and 1 (a binary alphabet) 
+        or a set of Unicode character, for example. The alphabet for Cminor is the set of Unicode characters.
+        The names of the rules are also called nonterminal symbols. Each nonterminal represents strings of terminals and forms a sublanguage of the whole language.
+        Terminals, nonterminals and grammar operators are collectively called <em>gammar symbols</em>.
+    </p>
+
+    <h3 id="notation">
+        A.2 Notation
+    </h3>
+
+    <p>
+        In this language reference terminals are shown using a <span class="terminal">monospace font</span>, nonterminals are shown in <span class="rulename">italic</span> and
+        grammar operators are in serif font like this: [ ], +, &minus;, etc. Cminor keywords that are also terminal strings are shown in <span class="kw">bold</span>.
+    </p>
+
+    <h4 id="notation-alternatives">
+        A.2.1 Alternatives
+    </h4>
+
+    <p>
+        Given two grammar expressions &alpha; and &beta;, that represent strings consisting terminals, nonterminals and grammar operators, 
+        expression &alpha; | &beta; represents ordered choice of &alpha; and &beta;.
+    </p>
+
+    <h4 id="notation-sequence">
+        A.2.2 Sequence
+    </h4>
+
+    <p>
+        An expression &alpha; &beta; represents strings of terminals consisting strings represented by &alpha; catenated with strings represented by &beta;.
+    </p>
+
+    <h4 id="notation-difference">
+        A.2.3 Difference
+    </h4>
+
+    <p>
+        An expression &alpha; <span class="grammarop">&minus;</span> &beta; represents strings that match &alpha; but do not match &beta;.
+    </p>
+
+    <h4 id="notation-exclusive-or">
+        A.2.4 Exclusive Or
+    </h4>
+
+    <p>
+        An expression &alpha; <span class="grammarop">^</span> &beta; represents strings that match either &alpha; or &beta; but not both.
+    </p>
+
+    <h4 id="notation-intersection">
+        A.2.5 Intersection
+    </h4>
+
+    <p>
+        An expression &alpha; <span class="grammarop">&amp;</span> &beta; represents strings that match both &alpha; and &beta;.
+    </p>
+
+    <h4 id="notation-list">
+        A.2.6 List
+    </h4>
+
+    <p>
+        An expression &alpha; <span class="grammarop">%</span> &beta; is a short-hand notation for expression &alpha; ( &beta; &alpha; )*.
+    </p>
+
+    <h4 id="notation-postfix">
+        A.2.7 Postfix
+    </h4>
+
+    <p>
+        An expression &alpha;* represents the <a href="http://en.wikipedia.org/wiki/Kleene_star">Kleene closure</a> of &alpha;, 
+        that is: the empty string, strings represented by &alpha;, strings represented by sequence expression &alpha; &alpha;, 
+        strings represented by sequence expression &alpha; &alpha; &alpha;, and so on.
+    </p>
+
+    <p>
+        An expression &alpha;+ represents strings represented by &alpha;, strings represented by sequence expression &alpha; &alpha;, and so on.
+        That is: we exclude the empty string from &alpha;*.
+    </p>
+
+    <p>
+        An expression &alpha;? represents the empty string or strings represented by single &alpha;.
+    </p>
+
+    <h4 id="notation-grouping">
+        A.2.8 Grouping
+    </h4>
+
+    <p>
+        Parentheses ( ) are used to group strings of grammar symbols. They are slightly taller than parentheses used to denote terminal symbols <span class="terminal">( )</span>.
+    </p>
+
+    <h4 id="notation-terminals">
+        A.2.9 Terminals
+    </h4>
+
+    <p>
+        Terminal symbol <span class="terminal">a</span> represents a string consisting of sole symbol <span class="terminal">a</span>.
+        Terminal symbol combination <span class="terminal">\n</span> represents a newline character, 
+        combination <span class="terminal">\r</span> represents a carriage return character, 
+        and combination <span class="terminal">\\</span> represents backslash.
+    </p>
+
+    <h4 id="notation-keywords">
+        A.2.10 Keywords
+    </h4>
+
+    <p>
+        Keyword <span class="kw">keyword</span> represents a Cminor keyword string <span class="kw">keyword</span>. 
+        Strings that are equal to a keyword string but continue with some identifier character do not match a keyword.
+        For example, input string "classified" does not match keyword <span class="kw">class</span>.
+    </p>
+
+    <h4 id="notation-classes">
+        A.2.11 Character classes
+    </h4>
+
+    <p>
+        Expression [<span class="terminal">a</span> <span class="grammarop">&minus;</span> <span class="terminal">z</span>] denotes a single lower case Latin letter character.
+        Expression [<span class="grammarop">^<span> </span><span class="terminal">a</span> <span class="grammarop">&minus;</span> <span class="terminal">f</span>] 
+        denotes a single character excluding characters from <span class="terminal">a</span> to <span class="terminal">f</span>.
+    </p>
+
+    <h4 id="notation-informal">
+        A.2.12 Informal rules
+    </h4>
+
+    <p>
+        Sometimes syntax would be so verbose that it is more convenient to describe it in plain text. This is denoted by english text in apostrophes: &apos;complicated syntax&apos;.
+    </p>
+    
+    <h3 id="notation-syntax">
+        A.3 The syntax of the syntax notation in itself
+    </h3>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="alternative">alternative</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#sequence">sequence</a></span>
+                (<span class="terminal">|</span> 
+                <span class="rulename"><a href="#sequence">sequence</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="sequence">sequence</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#difference">difference</a></span>
+                <span class="rulename"><a href="#difference">difference</a></span>*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="difference">difference</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#exclusive-or">exclusive-or</a></span>
+                (<span class="terminal">&minus;</span>
+                <span class="rulename"><a href="#exclusive-or">exclusive-or</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="exclusive-or">exclusive-or</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#intersection">intersection</a></span>
+                (<span class="terminal">^</span>
+                <span class="rulename"><a href="#intersection">intersection</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="intersection">intersection</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#intersection">intersection</a></span>
+                (<span class="terminal">&amp;</span>
+                <span class="rulename"><a href="#intersection">intersection</a></span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="list">list</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#postfix">postfix</a></span>
+                (<span class="terminal">%</span>
+                <span class="rulename"><a href="#postfix">postfix</a></span>)?
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="postfix">postfix</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#primary">primary</a></span> 
+                (<span class="terminal">*</span> | <span class="terminal">+</span> | <span class="terminal">?</span>)?
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="primary">primary</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#rule-name">rule&#8209;name</a></span> |
+                <span class="rulename"><a href="#primitive">primitive</a></span> |
+                <span class="rulename"><a href="#grouping">grouping</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="rule-name">rule&#8209;name</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#id">id</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="id">id</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                [<span class="terminal">a</span><span class="grammarop">&minus;</span><span class="terminal">z</span>
+                <span class="terminal">A</span><span class="grammarop">&minus;</span><span class="terminal">Z</span>
+                <span class="terminal">&minus;</span>]+
+                [<span class="terminal">a</span><span class="grammarop">&minus;</span><span class="terminal">z</span>
+                <span class="terminal">A</span><span class="grammarop">&minus;</span><span class="terminal">Z</span>
+                <span class="terminal">0</span><span class="grammarop">&minus;</span><span class="terminal">9</span>
+                <span class="terminal">&minus;</span>]*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="primitive">primitive</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#terminal">terminal</a></span> |
+                <span class="rulename"><a href="#char-class">char&#8209;class</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="grouping">grouping</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">(</span>
+                <span class="rulename"><a href="#alternative">alternative</a></span>
+                <span class="terminal">)</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="terminal">terminal</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                'any Unicode character'
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="char-class">char&#8209;class</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">[</span>
+                <span class="terminal">^</span>?
+                <span class="rulename"><a href="#char-range">char&#8209;range</a></span>*
+                <span class="terminal">]</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="char-class">char&#8209;range</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#char">char</a></span>
+                (   <span class="terminal">&minus;</span>
+                    <span class="rulename"><a href="#char">char</a></span>
+                )?
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="char">char</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                [<span class="grammarop">^</span>
+                <span class="terminal">\\\]</span>] |
+                <span class="rulename"><a href="#escape">escape</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="escape">escape</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">\\</span>
+                ([<span class="terminal">xX</span>] <span class="rulename"><a href="#hex">hex</a></span> |
+                [<span class="terminal">dD</span>] <span class="rulename"><a href="#dec">dec</a></span> |
+                [<span class="grammarop">^</span> <span class="terminal">xXdD</span>]
+                )
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="hex">hex</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#hex-digit">hex&#8209;digit</a></span>+
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="hex-digit">hex&#8209;digit</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                [<span class="terminal">0&minus;9a&minus;fA&minus;F</span>]
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="dec">dec</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#dec-digit">dec&#8209;digit</a></span>+
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="dec-digit">dex&#8209;digit</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                [<span class="terminal">0&minus;9</span>]
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

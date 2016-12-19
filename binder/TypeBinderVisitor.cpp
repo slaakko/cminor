@@ -508,22 +508,24 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         if (!memberFunctionSymbol->IsVirtualAbstractOrOverride() && !memberFunctionSymbol->IsNew())
         {
             ClassTypeSymbol* ownerClass = dynamic_cast<ClassTypeSymbol*>(memberFunctionSymbol->Parent());
-            Assert(ownerClass, "class type symbol expected");
-            if (ownerClass->BaseClass())
+            if (ownerClass)
             {
-                ClassTypeSymbol* baseClass = ownerClass->BaseClass();
-                for (MemberFunctionSymbol* f : baseClass->MemberFunctions())
+                if (ownerClass->BaseClass())
                 {
-                    if (f->IsVirtualAbstractOrOverride())
+                    ClassTypeSymbol* baseClass = ownerClass->BaseClass();
+                    for (MemberFunctionSymbol* f : baseClass->MemberFunctions())
                     {
-                        if (Overrides(memberFunctionSymbol, f))
+                        if (f->IsVirtualAbstractOrOverride())
                         {
-                            std::string warningMessage = "member function '" + ToUtf8(memberFunctionSymbol->FriendlyName()) + "' hides base class virtual function '" + ToUtf8(f->FriendlyName()) + "'. " +
-                                "To get rid of this warning declare the function either 'override' or 'new'.";
-                            Warning warning(CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage);
-                            warning.SetDefined(memberFunctionSymbol->GetSpan());
-                            warning.SetReferenced(f->GetSpan());
-                            CompileWarningCollection::Instance().AddWarning(warning);
+                            if (Overrides(memberFunctionSymbol, f))
+                            {
+                                std::string warningMessage = "member function '" + ToUtf8(memberFunctionSymbol->FriendlyName()) + "' hides base class virtual function '" + ToUtf8(f->FriendlyName()) + "'. " +
+                                    "To get rid of this warning declare the function either 'override' or 'new'.";
+                                Warning warning(CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage);
+                                warning.SetDefined(memberFunctionSymbol->GetSpan());
+                                warning.SetReferenced(f->GetSpan());
+                                CompileWarningCollection::Instance().AddWarning(warning);
+                            }
                         }
                     }
                 }

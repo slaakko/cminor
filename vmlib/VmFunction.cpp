@@ -52,6 +52,37 @@ void VmSystemObjectToString::Execute(Frame& frame)
     }
 }
 
+class VmSystemObjectGetHashCode : public VmFunction
+{
+public:
+    VmSystemObjectGetHashCode(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemObjectGetHashCode::VmSystemObjectGetHashCode(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Object.GetHashCode"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemObjectGetHashCode::Execute(Frame& frame)
+{
+    IntegralValue value = frame.Local(0).GetValue();
+    Assert(value.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference reference(value.Value());
+    if (reference.IsNull())
+    {
+        frame.OpStack().Push(IntegralValue(0, ValueType::ulongType));
+    }
+    else
+    {
+        MemPtr memPtr = frame.GetManagedMemoryPool().GetMemPtr(reference);
+        uint64_t hashCode = reinterpret_cast<uint64_t>(memPtr.Value());
+        frame.OpStack().Push(IntegralValue(hashCode, ValueType::ulongType));
+    }
+}
+
 class VmSystemObjectEqual : public VmFunction
 {
 public:

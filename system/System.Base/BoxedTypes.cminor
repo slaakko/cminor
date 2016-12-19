@@ -10,6 +10,10 @@ namespace System
         {
             return System.ToString(value);
         }
+        public override ulong GetHashCode()
+        {
+            return cast<ulong>(value);
+        }
         public sbyte value;
     }
 
@@ -22,6 +26,10 @@ namespace System
         public override string ToString()
         {
             return System.ToString(value);
+        }
+        public override ulong GetHashCode()
+        {
+            return value;
         }
         public byte value;
     }
@@ -36,6 +44,10 @@ namespace System
         {
             return System.ToString(value);
         }
+        public override ulong GetHashCode()
+        {
+            return cast<ulong>(value);
+        }
         public short value;
     }
 
@@ -48,6 +60,10 @@ namespace System
         public override string ToString()
         {
             return System.ToString(value);
+        }
+        public override ulong GetHashCode()
+        {
+            return value;
         }
         public ushort value;
     }
@@ -62,6 +78,10 @@ namespace System
         {
             return System.ToString(value);
         }
+        public override ulong GetHashCode()
+        {
+            return cast<ulong>(value);
+        }
         public int value;
     }
 
@@ -74,6 +94,10 @@ namespace System
         public override string ToString()
         {
             return System.ToString(value);
+        }
+        public override ulong GetHashCode()
+        {
+            return value;
         }
         public uint value;
     }
@@ -88,6 +112,10 @@ namespace System
         {
             return System.ToString(value);
         }
+        public override ulong GetHashCode()
+        {
+            return cast<ulong>(value);
+        }
         public long value;
     }
 
@@ -100,6 +128,10 @@ namespace System
         public override string ToString()
         {
             return System.ToString(value);
+        }
+        public override ulong GetHashCode()
+        {
+            return value;
         }
         public ulong value;
     }
@@ -114,6 +146,10 @@ namespace System
         {
             return System.ToString(value);
         }
+        public override ulong GetHashCode()
+        {
+            return cast<ulong>(value);
+        }
         public float value;
     }
 
@@ -126,6 +162,10 @@ namespace System
         public override string ToString()
         {
             return System.ToString(value);
+        }
+        public override ulong GetHashCode()
+        {
+            return cast<ulong>(value);
         }
         public double value;
     }
@@ -140,6 +180,10 @@ namespace System
         {
             return System.ToString(value);
         }
+        public override ulong GetHashCode()
+        {
+            return cast<ulong>(value);
+        }
         public char value;
     }
 
@@ -152,6 +196,10 @@ namespace System
         public override string ToString()
         {
             return System.ToString(value);
+        }
+        public override ulong GetHashCode()
+        {
+            return cast<ulong>(value);
         }
         public bool value;
     }

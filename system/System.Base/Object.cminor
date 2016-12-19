@@ -4,6 +4,8 @@ namespace System
     {
         [VmFunctionName=Vm.System.Object.ToString]
         public extern virtual string ToString();
+        [VmFunctionName=Vm.System.Object.GetHashCode]
+        public extern virtual ulong GetHashCode();
     }
 
     [VmFunctionName=Vm.System.Object.Equal]

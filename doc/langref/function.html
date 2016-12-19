@@ -1,0 +1,139 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Functions</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2 id="functions">
+        8 Functions
+    </h2>
+
+    <h4 id="functions-syntax">
+        8.1 Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="function">function</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#attributes">attributes</a></span>?
+                <span class="rulename"><a href="#function-specifiers">function&#8209;specifiers</a></span>
+                <span class="rulename"><a href="#return-type">return&#8209;type</a></span>
+                <span class="rulename"><a href="#function-group-id">function&#8209;group&#8209;id</a></span>
+                <span class="rulename"><a href="#parameter-list">parameter&#8209;list</a></span>
+                (<span class="rulename"><a href="#function-body">function&#8209;body</a></span> |
+                <span class="terminal">;</span>)
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="function-specifiers">function&#8209;specifiers</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                (<span class="rulename"><a href="access.html#access">access</a></span> |
+                <span class="kw">extern</span>)*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="return-type">return&#8209;type</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="function-group-id">function&#8209;group&#8209;id</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span> |
+                <span class="rulename"><a href="#operator-group-id">operator&#8209;group&#8209;id</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="parameter-list">parameter&#8209;list</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">(</span>
+                (<span class="rulename"><a href="#parameter">parameter</a></span>
+                (<span class="terminal">,</span> <span class="rulename"><a href="#parameter">parameter</a></span>)*
+                )?
+                <span class="terminal">)</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="parameter">parameter</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="type_expression.html#type-expr">type&#8209;expr</a></span>
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="operator-group-id">operator&#8209;group&#8209;id</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="kw">operator</span>
+                (   <span class="terminal">&lt;&lt;</span> |
+                    <span class="terminal">&gt;&gt;</span> |
+                    <span class="terminal">==</span> |
+                    <span class="terminal">&lt;</span> |
+                    <span class="terminal">+</span> |
+                    <span class="terminal">&minus;</span> |
+                    <span class="terminal">*</span> |
+                    <span class="terminal">/</span> |
+                    <span class="terminal">^</span> |
+                    <span class="terminal">!</span> |
+                    <span class="terminal">()</span> 
+                )
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="function-body">function&#8209;body</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="statement.html#compound-statement">compound&#8209statement</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="attributes">attributes</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">[</span> 
+                (   <span class="rulename"><a href="#name-value-pair">name&#8209;value&#8209;pair</a></span>
+                    (<span class="terminal">,</span> <span class="rulename"><a href="#name-value-pair">name&#8209;value&#8209;pair</a></span>)*
+                )
+                <span class="terminal">]</span> 
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="name-value-pair">name&#8209;value&#8209;pair</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#name">name</a></span>
+                <span class="terminal">=</span>
+                <span class="rulename"><a href="#value">value</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="name">name</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#qualified-id">qualified&#8209;id</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="value">value</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#qualified-id">qualified&#8209;id</a></span> |
+                <span class="rulename"><a href="lexical_structure.html#string-literal">string&#8209;literal</a></span> |
+                <span class="rulename"><a href="lexical_structure.html#integer-literal">integer&#8209;literal</a></span> |
+                <span class="rulename"><a href="lexical_structure.html#boolean-literal">boolean&#8209;literal</a></span>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

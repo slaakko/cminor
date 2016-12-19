@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Constants and Enumerations</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2 id="constants-enumerations">
+        7 Constants and Enumerations
+    </h2>
+
+    <h3 id="constants">
+        7.1 Constants
+    </h3>
+
+    <h4 id="constants-syntax">
+        7.1.1 Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="constant">constant</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="access.html#access">access</a></span>
+                <span class="kw">const</span>
+                <span class="rulename"><a href="type_expression.html#type-expr">type-expr</a></span>
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+                <span class="terminal">=</span>
+                <span class="rulename"><a href="expression.html#constant-expression">constant-expression</a></span>
+                <span class="terminal">;</span>
+            </td>
+        </tr>
+    </table>
+
+    <h3 id="enumerations">
+        7.2 Enumerations
+    </h3>
+
+    <h4 id="enumerations-syntax">
+        7.2.1 Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="enumerated-type">enumerated-type</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="access.html#access">access</a></span>
+                <span class="kw">enum</span>
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+                <span class="rulename"><a href="#underlying-type">underlying-type</a></span>?
+                <span class="terminal">{</span>
+                <span class="rulename"><a href="#enum-constants">enum-constants</a></span>
+                <span class="terminal">}</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="underlying-type">underlying-type</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="terminal">:</span>
+                <span class="rulename"><a href="type_expression.html#type-expr">type-expr</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="enum-constants">enum-constants</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#enum-constant">enum-constant</a></span>
+                (<span class="terminal">,</span>
+                <span class="rulename"><a href="#enum-constant">enum-constant</a></span>
+                )*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="enum-constant">enum-constant</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+                (<span class="terminal">=</span>
+                <span class="rulename"><a href="expression.html#constant-expression">constant-expression</a></span>)?
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Type Expressions</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2 id="type-expressions">
+        4 Type Expressions
+    </h2>
+
+    <h4 id="type-expressions-syntax">
+        4.1 Syntax
+    </h4>
+
+    <table class="grammar">
+        <tr>
+            <td class="rulename" id="type-expr">type-expr</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#postfix-type-expr">postfix-type-expr</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="postfix-type-expr">postfix-type-expr</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="#primary-type-expr">primary-type-expr</a></span>
+                (   <span class="terminal">.</span>
+                    <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+                |   <span class="terminal">[</span>
+                    <span class="rulename"><a href="expression.html#expression">expression</a></span>?
+                    <span class="terminal">]</span>
+                )*
+            </td>
+        </tr>
+        <tr>
+            <td class="rulename" id="primary-type-expr">primary-type-expr</td>
+            <td class="prodsep">&rarr;</td>
+            <td class="rulecontent">
+                <span class="rulename"><a href="basic_type.html#basic-type">basic-type</a></span> |
+                <span class="rulename"><a href="template.html#template-id">template-id</a></span> |
+                <span class="rulename"><a href="lexical_structure.html#identifier">identifier</a></span>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
