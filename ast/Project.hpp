@@ -50,6 +50,18 @@ private:
     Target target;
 };
 
+class ProjectFormatter
+{
+public:
+    virtual ~ProjectFormatter();
+    virtual void BeginFormat() {}
+    virtual void EndFormat() {}
+    virtual void FormatName(const std::string& name) {}
+    virtual void FormatTarget(Target target) {}
+    virtual void FormatAssemblyReference(const std::string& assemblyReference) {}
+    virtual void FormatSourceFilePath(const std::string& sourceFilePath) {}
+};
+
 class Project
 {
 public:
@@ -66,6 +78,7 @@ public:
     bool DependsOn(Project* that) const;
     bool IsSystemProject() const { return isSystemProject; }
     void SetSystemProject() { isSystemProject = true; }
+    void Format(ProjectFormatter& formatter);
 private:
     std::string name;
     std::string filePath;
@@ -75,7 +88,6 @@ private:
     boost::filesystem::path systemAssemblyDir;
     std::vector<std::unique_ptr<ProjectDeclaration>> declarations;
     std::string assemblyFilePath;
-    std::vector<std::string> projectReferences;
     std::vector<std::string> assemblyReferences;
     std::vector<std::string> sourceFilePaths;
     bool isSystemProject;

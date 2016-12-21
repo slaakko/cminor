@@ -1,0 +1,4 @@
+void main();
+int main();
+void main(string[] args);
+int main(string[] args);

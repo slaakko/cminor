@@ -1,0 +1,3 @@
+project library;
+target=library;
+source <library_functions.cminor>;

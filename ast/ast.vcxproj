@@ -39,6 +39,7 @@
     <ClInclude Include="Parameter.hpp" />
     <ClInclude Include="Project.hpp" />
     <ClInclude Include="Solution.hpp" />
+    <ClInclude Include="SourceToken.hpp" />
     <ClInclude Include="Specifier.hpp" />
     <ClInclude Include="Statement.hpp" />
     <ClInclude Include="Template.hpp" />
@@ -64,6 +65,7 @@
     <ClCompile Include="Parameter.cpp" />
     <ClCompile Include="Project.cpp" />
     <ClCompile Include="Solution.cpp" />
+    <ClCompile Include="SourceToken.cpp" />
     <ClCompile Include="Specifier.cpp" />
     <ClCompile Include="Statement.cpp" />
     <ClCompile Include="Template.cpp" />

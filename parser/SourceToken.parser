@@ -1,0 +1,54 @@
+// =================================
+// Copyright (c) 2017 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/ast/SourceToken.hpp>
+[cpp]#include <cminor/parser/Keyword.hpp>
+[cpp]#include <cminor/parser/Identifier.hpp>
+[cpp]#include <cminor/parser/Literal.hpp>
+
+namespace cminor.parser
+{
+    [hpp]using namespace cminor::ast;
+
+    grammar SourceTokenGrammar
+    {
+        using KeywordGrammar.Keyword;
+        using IdentifierGrammar.QualifiedId;
+        using LiteralGrammar.FloatingLiteral;
+        using LiteralGrammar.IntegerLiteral;
+        using LiteralGrammar.CharLiteral;
+        using LiteralGrammar.StringLiteral;
+        using stdlib.line_comment;
+        using stdlib.block_comment;
+        using stdlib.newline;
+
+        SourceTokens(SourceTokenFormatter* formatter)
+            ::= empty{ formatter->BeginFormat(); }
+                SourceToken(formatter)*
+                empty{ formatter->EndFormat(); }
+            ;
+
+        SourceToken(SourceTokenFormatter* formatter)
+            ::= Keyword{ formatter->Keyword(std::string(matchBegin, matchEnd)); }
+            |   QualifiedId{ formatter->Identifier(std::string(matchBegin, matchEnd)); }
+            |   (FloatingLiteral | IntegerLiteral){ formatter->Number(std::string(matchBegin, matchEnd)); }
+            |   CharLiteral{ formatter->Char(std::string(matchBegin, matchEnd)); }
+            |   StringLiteral{ formatter->String(std::string(matchBegin, matchEnd)); }
+            |   Spaces{ formatter->Spaces(Spaces); }
+            |   line_comment{ formatter->Comment(std::string(matchBegin, matchEnd)); }
+            |   block_comment{ formatter->Comment(std::string(matchBegin, matchEnd)); }
+            |   newline{ formatter->NewLine(std::string(matchBegin, matchEnd)); }
+            |   Other{ formatter->Other(Other); }
+            ;
+
+        Spaces : std::string
+            ::= ([\t ]+){ value = std::string(matchBegin, matchEnd); }
+            ;
+
+        Other : std::string
+            ::= [^\r\n]{ value = std::string(matchBegin, matchEnd); }
+            ;
+    }
+}

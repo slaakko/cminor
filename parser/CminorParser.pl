@@ -154,6 +154,13 @@ namespace cminor.parser
         Target: Target;
         FilePath: std::string;
     }
+    grammar SourceTokenGrammar
+    {
+        SourceTokens(SourceTokenFormatter* formatter);
+        SourceToken(SourceTokenFormatter* formatter);
+        Spaces: std::string;
+        Other: std::string;
+    }
     grammar SpecifierGrammar
     {
         Specifiers: Specifiers;

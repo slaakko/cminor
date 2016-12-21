@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>encoding.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.IO</span><span class="other">;</span>
+
+<span class="keyword">int</span> <span class="identifier">main</span><span class="other">(</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="keyword">try</span>
+    <span class="other">{</span>
+        <span class="keyword">using</span> <span class="other">(</span><span class="identifier">StreamWriter</span> <span class="identifier">w</span> <span class="other">=</span> <span class="identifier">File.CreateText</span><span class="other">(</span><span class="string">&quot;hello.txt&quot;</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">w.WriteLine</span><span class="other">(</span><span class="string">&quot;Hello, 世界!&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+    <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">Exception</span> <span class="identifier">ex</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">Console.Error.WriteLine</span><span class="other">(</span><span class="identifier">ex.Message</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">return</span> <span class="number">1</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">return</span> <span class="number">0</span><span class="other">;</span>
+<span class="other">}</span></pre>
+</body>
+</html>

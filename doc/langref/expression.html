@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -76,7 +76,7 @@
             <td class="prodsep">&rarr;</td>
             <td class="rulecontent">
                 <span class="rulename"><a href="#shift">shift</a></span>
-                ((<span class="terminal">&lt;</span> | <span class="terminal">&gt;</span> | <span class="terminal">&lt;=</span> | <span class="terminal">&gt;=</span>) 
+                ((<span class="terminal">&lt;</span> | <span class="terminal">&gt;</span> | <span class="terminal">&lt;=</span> | <span class="terminal">&gt;=</span>)
                 <span class="rulename"><a href="#shift">shift</a></span>)* |
                 <span class="rulename"><a href="#shift">shift</a></span>
                 (
@@ -90,7 +90,7 @@
             <td class="prodsep">&rarr;</td>
             <td class="rulecontent">
                 <span class="rulename"><a href="#additive">additive</a></span>
-                ((<span class="terminal">&lt;&lt;</span> | <span class="terminal">&gt;&gt;</span>) 
+                ((<span class="terminal">&lt;&lt;</span> | <span class="terminal">&gt;&gt;</span>)
                 <span class="rulename"><a href="#additive">additive</a></span>)*
             </td>
         </tr>
@@ -117,7 +117,7 @@
             <td class="prodsep">&rarr;</td>
             <td class="rulecontent">
                 ((<span class="terminal">&minus;</span> | <span class="terminal">+</span> | <span class="terminal">!</span> | <span class="terminal">~</span>)
-                <span class="rulename"><a href="#prefix">prefix</a></span>) ) | 
+                <span class="rulename"><a href="#prefix">prefix</a></span>) ) |
                 <span class="rulename"><a href="#postfix">postfix</a></span>
             </td>
         </tr>
@@ -152,7 +152,7 @@
             <td class="prodsep">&rarr;</td>
             <td class="rulecontent">
                 <span class="kw">cast</span> <span class="terminal">&lt;</span> <span class="rulename"><a href="type_expression.html#type-expr">type-expr</a></span>
-                <span class="terminal">&gt;</span> 
+                <span class="terminal">&gt;</span>
                 <span class="terminal">(</span> <span class=rulename><a href="#expression">expression</a></span> <span class="terminal">)</span>
             </td>
         </tr>
@@ -160,7 +160,7 @@
             <td class="rulename" id="new-expr">new-expr</td>
             <td class="prodsep">&rarr;</td>
             <td class="rulecontent">
-                <span class="kw">new</span> 
+                <span class="kw">new</span>
                 <span class="rulename"><a href="type_expression.html#type-expr">type-expr</a></span>
                 (<span class="terminal">(</span> <span class="rulename"><a href="#argument-list">argument-list</a></span> <span class="terminal">)</span>)?
             </td>

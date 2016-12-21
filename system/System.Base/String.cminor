@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace System
 {
     public class String : Enumerable
@@ -100,5 +102,12 @@ namespace System
         }
         private string s;
         private int index;
+    }
+
+    public string operator+(string left, string right)
+    {
+        StringBuilder s = new StringBuilder();
+        s.Append(left).Append(right);
+        return s.ToString();
     }
 }

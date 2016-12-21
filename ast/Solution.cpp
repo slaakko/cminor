@@ -28,6 +28,10 @@ void ProjectDependencyDeclaration::AddDependency(const std::string& dependsOn)
     dependsOnProjects.push_back(dependsOn);
 }
 
+SolutionFormatter::~SolutionFormatter()
+{
+}
+
 Solution::Solution(const std::string& name_, const std::string& filePath_) : name(name_), filePath(filePath_), basePath(filePath)
 {
     basePath.remove_filename();
@@ -72,6 +76,20 @@ void Solution::ResolveDeclarations()
             throw std::runtime_error("unknown solution declaration");
         }
     }
+}
+
+void Solution::Format(SolutionFormatter& formatter)
+{
+    formatter.BeginFormat();
+    formatter.FormatName(name);
+    for (const std::unique_ptr<SolutionDeclaration>& declaration : declarations)
+    {
+        if (SolutionProjectDeclaration* solutionProjectDeclaration = dynamic_cast<SolutionProjectDeclaration*>(declaration.get()))
+        {
+            formatter.FormatProjectFilePath(solutionProjectDeclaration->FilePath());
+        }
+    }
+    formatter.EndFormat();
 }
 
 void Solution::AddProject(std::unique_ptr<Project>&& project)

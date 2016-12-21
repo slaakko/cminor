@@ -1,0 +1,69 @@
+main() [internal System.Void main()]
+{
+    0    BC    receive
+    1    C3    enterblock
+    2    B9    loadconstant.b 128
+    3    DE    slit2s
+    4    C0    call System.Console.WriteLine(System.String)
+    5    C4    exitblock
+}
+namespace 
+{
+    namespace System
+    {
+        function group @init
+        function group @assignment
+        function group @return
+        function group operator!
+        function group operator==
+        function group operator<
+        function group operator+
+        function group operator-
+        function group operator~
+        function group operator*
+        function group operator/
+        function group operator%
+        function group operator&
+        function group operator|
+        function group operator^
+        function group operator<<
+        function group operator>>
+        function group @conversion
+        function group Min
+        function group Max
+        namespace IO
+        {
+            function group OpenFile
+            function group CloseFile
+            function group WriteByteToFile
+            function group WriteFile
+            function group ReadByteFromFile
+            function group ReadFile
+            function group @init
+            function group @assignment
+            function group @return
+            function group @conversion
+        }
+        function group ToString
+        namespace Collections
+        {
+            namespace Generic
+            {
+            }
+        }
+        function group MakeCharArray
+        namespace Text
+        {
+        }
+        namespace Unicode
+        {
+        }
+    }
+    function group main
+    function main(): System.Void
+    {
+        declaration block @locals0
+        {
+        }
+    }
+}

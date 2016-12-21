@@ -15,6 +15,7 @@ source <Literal.parser>;
 source <Parameter.parser>;
 source <ProjectFile.parser>;
 source <SolutionFile.parser>;
+source <SourceToken.parser>;
 source <Specifier.parser>;
 source <Statement.parser>;
 source <Template.parser>;

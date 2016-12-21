@@ -1,11 +1,28 @@
 ﻿body
 {
+    max-width: 800px;
+}
+
+p
+{
+    margin-left: 20px;
 }
 
 h1, h2, h3
 {
     color: #005ab4;
-    font-family: sans-serif
+    font-family: sans-serif;
+}
+
+h4.code
+{
+    margin-left: 20px;
+    font-family: monospace;
+}
+
+span.code
+{
+    font-family: monospace;
 }
 
 table.grammar
@@ -14,6 +31,16 @@ table.grammar
     margin: 20px;
     padding: 20px;
     max-width: 800px;
+}
+
+.commands
+{
+    background-color: aliceblue;
+    margin: 20px;
+    padding: 20px;
+    max-width: 800px;
+    font-family: monospace;
+    font-weight: bold;
 }
 
 td.rulename , td.prodsep, td.rulecontent
@@ -83,4 +110,28 @@ td.rulename
 {
     margin: 20px;
     font-style: italic;
+}
+
+.program
+{
+    border: none;
+    background-color: ghostwhite;
+    margin: 20px;
+    padding: 20px;
+    max-width: 800px;
+}
+
+.project, .solution
+{
+    border: none;
+    background-color: #f8f8f8;
+    margin: 20px;
+    padding: 20px;
+    max-width: 800px;
+}
+
+.projectFileKeyword
+{
+    color: black;
+    font-weight: bold;
 }

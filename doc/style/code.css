@@ -1,0 +1,83 @@
+﻿body
+{
+    font-family: Consolas;
+}
+
+.keyword
+{
+    font-weight: bold;
+    color: blue;
+}
+
+.identifier
+{
+    color : blue;
+}
+
+.number
+{
+    color: brown;
+}
+
+.char
+{
+    color: red;
+}
+
+.string
+{
+    color: red;
+}
+
+.comment
+{
+    color: green;
+}
+
+.other
+{
+
+}
+
+.projectFileKeyword
+{
+    color: black;
+    font-weight: bold;
+}
+
+.projectName 
+{
+    color: black;
+}
+
+.target
+{
+    color: black;
+    font-weight: bold;
+}
+
+.reference
+{
+    color: black;
+}
+
+.source
+{
+    color: black;
+}
+
+.solutionFileKeyword
+{
+    color: black;
+    font-weight: bold;
+}
+
+.solutionName 
+{
+    color: black;
+}
+
+.projectFilePath
+{
+    color: black;
+}

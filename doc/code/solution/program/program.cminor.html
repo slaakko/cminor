@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>program.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">Lib</span><span class="other">;</span>
+
+<span class="keyword">void</span> <span class="identifier">main</span><span class="other">(</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="keyword">int</span> <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">Sub</span><span class="other">(</span><span class="identifier">Add</span><span class="other">(</span><span class="number">1</span><span class="other">,</span> <span class="number">2</span><span class="other">)</span><span class="other">,</span> <span class="number">1</span><span class="other">)</span><span class="other">;</span>
+    <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;1 + 2 - 1 == &quot;</span> <span class="other">+</span> <span class="identifier">value.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

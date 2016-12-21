@@ -1,0 +1,3 @@
+project program;
+reference <../library/library.cminorp>;
+source <program.cminor>;

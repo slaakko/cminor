@@ -37,6 +37,16 @@ private:
     std::vector<std::string> dependsOnProjects;
 };
 
+class SolutionFormatter
+{
+public:
+    virtual ~SolutionFormatter();
+    virtual void BeginFormat() {}
+    virtual void EndFormat() {}
+    virtual void FormatName(const std::string& name) {}
+    virtual void FormatProjectFilePath(const std::string& projectFilePath) {}
+};
+
 class Solution
 {
 public:
@@ -49,6 +59,7 @@ public:
     const std::vector<std::string>& ProjectFilePaths() const { return projectFilePaths; }
     void AddProject(std::unique_ptr<Project>&& project);
     std::vector<Project*> CreateBuildOrder();
+    void Format(SolutionFormatter& formatter);
 private:
     std::string name;
     std::string filePath;

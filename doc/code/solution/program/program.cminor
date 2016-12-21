@@ -1,0 +1,8 @@
+using System;
+using Lib;
+
+void main()
+{
+    int value = Sub(Add(1, 2), 1);
+    Console.WriteLine("1 + 2 - 1 == " + value.ToString());
+}

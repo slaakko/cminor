@@ -11,6 +11,10 @@ namespace cminor { namespace ast {
 
 using namespace cminor::machine;
 
+ProjectFormatter::~ProjectFormatter()
+{
+}
+
 ProjectDeclaration::~ProjectDeclaration()
 {
 }
@@ -125,6 +129,29 @@ void Project::ResolveDeclarations()
             throw std::runtime_error("unknown project declaration");
         }
     }
+}
+
+void Project::Format(ProjectFormatter& formatter)
+{
+    formatter.BeginFormat();
+    formatter.FormatName(name);
+    for (const std::unique_ptr<ProjectDeclaration>& declaration : declarations)
+    {
+        if (TargetDeclaration* targetDeclaration = dynamic_cast<TargetDeclaration*>(declaration.get()))
+        {
+            Target target = targetDeclaration->GetTarget();
+            formatter.FormatTarget(target);
+        }
+        else if (ReferenceDeclaration* reference = dynamic_cast<ReferenceDeclaration*>(declaration.get()))
+        {
+            formatter.FormatAssemblyReference(reference->FilePath());
+        }
+        else if (SourceFileDeclaration* sourceFileDeclaration = dynamic_cast<SourceFileDeclaration*>(declaration.get()))
+        {
+            formatter.FormatSourceFilePath(sourceFileDeclaration->FilePath());
+        }
+    }
+    formatter.EndFormat();
 }
 
 bool Project::DependsOn(Project* that) const

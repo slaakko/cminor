@@ -36,6 +36,7 @@
     <None Include="Parameter.parser" />
     <None Include="ProjectFile.parser" />
     <None Include="SolutionFile.parser" />
+    <None Include="SourceToken.parser" />
     <None Include="Specifier.parser" />
     <None Include="Statement.parser" />
     <None Include="Template.parser" />
@@ -58,6 +59,7 @@
     <ClCompile Include="ParsingContext.cpp" />
     <ClCompile Include="ProjectFile.cpp" />
     <ClCompile Include="SolutionFile.cpp" />
+    <ClCompile Include="SourceToken.cpp" />
     <ClCompile Include="Specifier.cpp" />
     <ClCompile Include="Statement.cpp" />
     <ClCompile Include="Template.cpp" />
@@ -81,6 +83,7 @@
     <ClInclude Include="ParsingContext.hpp" />
     <ClInclude Include="ProjectFile.hpp" />
     <ClInclude Include="SolutionFile.hpp" />
+    <ClInclude Include="SourceToken.hpp" />
     <ClInclude Include="Specifier.hpp" />
     <ClInclude Include="Statement.hpp" />
     <ClInclude Include="Template.hpp" />
