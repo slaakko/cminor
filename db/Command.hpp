@@ -47,6 +47,12 @@ public:
     void Execute(Shell& shell) override;
 };
 
+class RunCommand : public Command
+{
+public:
+    void Execute(Shell& shell) override;
+};
+
 class LocalCommand : public Command
 {
 public:

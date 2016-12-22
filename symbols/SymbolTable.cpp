@@ -957,6 +957,12 @@ ClassTemplateSpecializationSymbol* SymbolTable::MakeClassTemplateSpecialization(
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     ClassTemplateSpecializationSymbol* classTemplateSpecialization = new ClassTemplateSpecializationSymbol(span, nameConstant);
     classTemplateSpecialization->SetAssembly(assembly);
+    Constant sfp = primaryClassTemplate->GetSourceFilePathConstant();
+    if (sfp.Value().AsStringLiteral())
+    {
+        Constant ctsc = constantPool.GetConstant(constantPool.Install(sfp.Value().AsStringLiteral()));
+        classTemplateSpecialization->SetSourceFilePathConstant(ctsc);
+    }
     classTemplateSpecialization->SetPublic();
     classTemplateSpecialization->SetKey(classTemplateSpecializationKey);
     classTemplateSpecialization->SetProject();

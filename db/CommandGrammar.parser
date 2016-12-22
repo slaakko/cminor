@@ -19,6 +19,7 @@ namespace cminor.db
             |   ("quit" | "q"){ value = new ExitCommand(); }
             |   ("step" | "s"){ value = new StepCommand(); }
             |   ("next" | "n"){ value = new NextCommand(); }
+            |   ("run"  | "r"){ value = new RunCommand(); }
             |   (("local" | "l") int:ln){ value = new LocalCommand(ln); }
             |   (("stack" | "k") int:sn){ value = new StackCommand(sn); }
             |   empty{ value = new PrevCommand(); }

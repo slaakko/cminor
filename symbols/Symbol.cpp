@@ -17,6 +17,7 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/machine/Util.hpp>
+#include <cminor/machine/FileRegistry.hpp>
 #include <boost/filesystem.hpp>
 
 namespace cminor { namespace symbols {
@@ -84,7 +85,7 @@ bool Symbol::IsExportSymbol() const
 
 void Symbol::Write(SymbolWriter& writer)
 {
-    writer.AsMachineWriter().Put(uint8_t(flags & ~(SymbolFlags::project | SymbolFlags::bound | SymbolFlags::instantiationRequested)));
+    writer.AsMachineWriter().Put(uint8_t(flags & ~(SymbolFlags::project | SymbolFlags::bound | SymbolFlags::instantiationRequested | SymbolFlags::typesResolved)));
     writer.AsMachineWriter().PutEncodedUInt(id);
 }
 
@@ -1262,6 +1263,9 @@ void ClassTypeSymbol::Write(SymbolWriter& writer)
         writer.Seek(sizePos);
         writer.AsMachineWriter().Put(size);
         writer.Seek(end);
+        ConstantId sfpId = GetAssembly()->GetConstantPool().GetIdFor(sourceFilePathConstant);
+        Assert(sfpId.Value() != noConstantId, "got no id");
+        sfpId.Write(writer);
     }
     else
     {
@@ -1300,6 +1304,12 @@ void ClassTypeSymbol::Write(SymbolWriter& writer)
         Assert(objectType, "object type not set");
         objectType->Write(writer);
         classData->Write(writer);
+        if (!IsArrayType())
+        {
+            ConstantId sfpId = GetAssembly()->GetConstantPool().GetIdFor(sourceFilePathConstant);
+            Assert(sfpId != noConstantId, "got no constant id");
+            sfpId.Write(writer);
+        }
         if (GetSymbolType() == SymbolType::classTemplateSpecializationSymbol)
         {
             uint32_t end = writer.Pos();
@@ -1349,6 +1359,9 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
         assemblyId = reader.GetAssembly()->Id();
         classNodePos = reader.Pos();
         reader.Skip(classNodeSize);
+        ConstantId sfpId;
+        sfpId.Read(reader);
+        sourceFilePathConstant = GetAssembly()->GetConstantPool().GetConstant(sfpId);
     }
     else
     {
@@ -1372,6 +1385,12 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
         classData->Read(reader);
         ClassDataTable::Instance().SetClassData(classData.get());
         reader.AddClassTypeSymbol(this);
+        if (!IsArrayType())
+        {
+            ConstantId sfpId;
+            sfpId.Read(reader);
+            sourceFilePathConstant = GetAssembly()->GetConstantPool().GetConstant(sfpId);
+        }
     }
 }
 
@@ -1381,6 +1400,12 @@ void ClassTypeSymbol::ReadClassNode(Assembly& assembly)
     Assert(assemblyId != -1, "assembly id not valid");
     Assembly* nodeAssembly = AssemblyTable::Instance().GetAssembly(assemblyId);
     AstReader reader(nodeAssembly->FilePath());
+    Constant sourceFilePathConstant = GetSourceFilePathConstant();
+    if (sourceFilePathConstant.Value().AsStringLiteral())
+    {
+        int fileIndex = FileRegistry::Instance()->RegisterParsedFile(ToUtf8(sourceFilePathConstant.Value().AsStringLiteral()));
+        reader.ReplaceFileIndex(fileIndex);
+    }
     reader.SetConstantPool(&nodeAssembly->GetConstantPool());
     reader.Skip(classNodePos);
     usingNodes.Read(reader);
@@ -2101,6 +2126,12 @@ void ClassTemplateSpecializationSymbol::ReadGlobalNs()
     Assert(globalNsPos != -1, "global ns pos not valid");
     Assembly* nodeAssembly = AssemblyTable::Instance().GetAssembly(assemblyId);
     AstReader reader(nodeAssembly->FilePath());
+    Constant sourceFilePathConstant = GetSourceFilePathConstant();
+    if (sourceFilePathConstant.Value().AsStringLiteral())
+    {
+        int fileIndex = FileRegistry::Instance()->RegisterParsedFile(ToUtf8(sourceFilePathConstant.Value().AsStringLiteral()));
+        reader.ReplaceFileIndex(fileIndex);
+    }
     reader.SetConstantPool(&nodeAssembly->GetConstantPool());
     reader.Skip(globalNsPos);
     Node* node = reader.GetNode();

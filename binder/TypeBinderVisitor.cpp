@@ -22,8 +22,13 @@
 
 namespace cminor { namespace binder {
 
-TypeBinderVisitor::TypeBinderVisitor(BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), containerScope(nullptr), instantiateRequested(false), enumType(nullptr)
+TypeBinderVisitor::TypeBinderVisitor(BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), containerScope(nullptr), instantiateRequested(false), enumType(nullptr),
+    sourceFilePathConstant()
 {
+    if (boundCompileUnit.GetCompileUnitNode())
+    {
+        sourceFilePathConstant = boundCompileUnit.GetAssembly().RegisterSourceFilePath(boundCompileUnit.GetCompileUnitNode()->FilePath());
+    }
 }
 
 void TypeBinderVisitor::Visit(CompileUnitNode& compileUnitNode)
@@ -165,6 +170,10 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
 {
     if (classTypeSymbol->IsBound()) return;
     classTypeSymbol->SetBound();
+    if (sourceFilePathConstant.Value().AsStringLiteral())
+    {
+        classTypeSymbol->SetSourceFilePathConstant(sourceFilePathConstant);
+    }
     if (instantiateRequested)
     {
         ContainerScope* prevContainerScope = containerScope;
@@ -408,6 +417,10 @@ void TypeBinderVisitor::Visit(StaticConstructorNode& staticConstructorNode)
         }
     }
     containerScope = prevContainerScope;
+    if (staticConstructorSymbol->IsExternal() || staticConstructorNode.HasBody())
+    {
+        staticConstructorSymbol->SetTypesResolved();
+    }
 }
 
 void TypeBinderVisitor::Visit(ConstructorNode& constructorNode)
@@ -473,6 +486,10 @@ void TypeBinderVisitor::Visit(ConstructorNode& constructorNode)
         }
     }
     containerScope = prevContainerScope;
+    if (constructorSymbol->IsExternal() || constructorNode.HasBody())
+    {
+        constructorSymbol->SetTypesResolved();
+    }
 }
 
 void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
@@ -563,6 +580,10 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         }
     }
     containerScope = prevContainerScope;
+    if (memberFunctionSymbol->ContainingInterface() || memberFunctionSymbol->IsAbstract() || memberFunctionSymbol->IsExternal() || memberFunctionNode.HasBody())
+    {
+        memberFunctionSymbol->SetTypesResolved();
+    }
 }
 
 void TypeBinderVisitor::Visit(MemberVariableNode& memberVariableNode)
@@ -619,6 +640,7 @@ void TypeBinderVisitor::Visit(PropertyNode& propertyNode)
         containerScope = getter->GetContainerScope();
         propertyNode.Getter()->Accept(*this);
         containerScope = prevContainerScope;
+        getter->SetTypesResolved();
     }
     bool instantiateSetter = true;
     if (instantiateRequested)
@@ -641,6 +663,7 @@ void TypeBinderVisitor::Visit(PropertyNode& propertyNode)
         value->SetType(propertyType);
         propertyNode.Setter()->Accept(*this);
         containerScope = prevContainerScope;
+        setter->SetTypesResolved();
     }
     containerScope = prevContainerScope;
 }
@@ -698,6 +721,7 @@ void TypeBinderVisitor::Visit(IndexerNode& indexerNode)
         }
         indexerNode.Getter()->Accept(*this);
         containerScope = prevContainerScope;
+        getter->SetTypesResolved();
     }
     bool instantiateSetter = true;
     if (instantiateRequested)
@@ -732,6 +756,7 @@ void TypeBinderVisitor::Visit(IndexerNode& indexerNode)
         }
         indexerNode.Setter()->Accept(*this);
         containerScope = prevContainerScope;
+        setter->SetTypesResolved();
     }
     containerScope = prevContainerScope;
 }

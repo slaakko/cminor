@@ -75,7 +75,8 @@ enum class SymbolFlags : uint8_t
     project = 1 << 3,
     bound = 1 << 4,
     instantiated = 1 << 5,
-    instantiationRequested = 1 << 6
+    instantiationRequested = 1 << 6,
+    typesResolved = 1 << 7
 };
 
 inline SymbolFlags operator~(SymbolFlags flag)
@@ -140,6 +141,8 @@ public:
     bool IsInstantiationRequested() const { return GetFlag(SymbolFlags::instantiationRequested); }
     void SetInstantiated() { SetFlag(SymbolFlags::instantiated); }
     bool IsInstantiated() const { return GetFlag(SymbolFlags::instantiated); }
+    bool TypesResolved() const { return GetFlag(SymbolFlags::typesResolved); }
+    void SetTypesResolved() { SetFlag(SymbolFlags::typesResolved); }
     Symbol* Parent() const { return parent; }
     void SetParent(Symbol* parent_) { parent = parent_; }
     Assembly* GetAssembly() const { Assert(assembly, "symbol's assembly not set");  return assembly; }
@@ -307,6 +310,8 @@ public:
     virtual std::string GetBoxedTypeName() const { return std::string(); }
     virtual bool IsSwitchConditionType() const { return false; }
     virtual bool IsVoidType() const { return false; }
+    virtual bool IsClassType() const { return false; }
+    virtual bool IsArrayType() const { return false; }
     virtual bool IsDelegateType() const { return false; }
     virtual bool IsClassDelegateType() const { return false; }
     virtual bool IsDelegateOrClassDelegateType() const { return false; }
@@ -548,6 +553,7 @@ public:
     void Add(TypeParameterSymbol* typeParameterSymbol);
     void Add(PropertySymbol* propertySymbol);
     void Add(IndexerSymbol* indexerSymbol);
+    bool IsClassType() const override { return true; }
     bool HasBaseClass(ClassTypeSymbol* cls) const;
     bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const;
     ClassTypeSymbol* BaseClass() const { return baseClass; }
@@ -593,6 +599,8 @@ public:
     void LinkVmt();
     void InitImts();
     void LinkImts();
+    void SetSourceFilePathConstant(Constant sourceFilePathConstant_) { sourceFilePathConstant = sourceFilePathConstant_; }
+    Constant GetSourceFilePathConstant() const { return sourceFilePathConstant; }
 private:
     ClassTypeSymbol* baseClass;
     std::vector<InterfaceTypeSymbol*> implementedInterfaces;
@@ -616,6 +624,7 @@ private:
     uint32_t classNodePos;
     NodeList<Node> usingNodes;
     std::unique_ptr<Node> classNode;
+    Constant sourceFilePathConstant;
     bool GetFlag(ClassTypeSymbolFlags flag) const
     {
         return (flags & flag) != ClassTypeSymbolFlags::none;
@@ -638,6 +647,7 @@ public:
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
     void EmplaceType(TypeSymbol* type, int index);
+    bool IsArrayType() const override { return true; }
 private:
     TypeSymbol* elementType;
 };

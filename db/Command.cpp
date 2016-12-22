@@ -47,6 +47,11 @@ void NextCommand::Execute(Shell& shell)
     shell.Next();
 }
 
+void RunCommand::Execute(Shell& shell)
+{
+    shell.Run();
+}
+
 LocalCommand::LocalCommand(int index_) : index(index_)
 {
 }

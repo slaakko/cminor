@@ -117,12 +117,16 @@ void Thread::RunDebug()
             if (!frames.empty())
             {
                 frame = &frames.back();
-                std::pair<int32_t, int32_t> point = std::make_pair(frame->Id(), frame->PC());
-                if (breakPoints.find(point) != breakPoints.cend())
-                {
-                    return;
-                }
                 inst = frame->GetNextInst();
+                if (inst)
+                {
+                    std::pair<int32_t, int32_t> point = std::make_pair(frame->Id(), frame->PC() - 1);
+                    if (breakPoints.find(point) != breakPoints.cend())
+                    {
+                        frame->SetPC(frame->PC() - 1);
+                        return;
+                    }
+                }
             }
             else
             {
@@ -160,28 +164,28 @@ void Thread::Step()
 
 void Thread::Next()
 {
-    Frame* frame = &frames.back();
-    int instIndex = frame->PC();
-    if (instIndex >= frame->Fun().NumInsts())
+    int n = int(machine.MainThread().Frames().size());
+    for (int i = n - 1; i >= 0; --i)
     {
-        Step();
-        return;
-    }
-    else if (instIndex >= 0 && instIndex < frame->Fun().NumInsts())
-    {
-        Instruction* inst = frame->Fun().GetInst(instIndex);
-        if (inst->IsJumpingInst())
+        Frame* frame = &machine.MainThread().Frames()[i];
+        if (frame->PC() < frame->Fun().NumInsts())
         {
-            Step();
+            Instruction* inst = frame->Fun().GetInst(frame->PC());
+            if (inst->IsJumpingInst())
+            {
+                Step();
+                return;
+            }
+            int32_t frameId = frame->Id();
+            int32_t nextPc = frame->PC() + 1;
+            std::pair<int32_t, int32_t> bp = std::make_pair(frameId, nextPc);
+            breakPoints.insert(bp);
+            RunDebug();
+            breakPoints.erase(bp);
             return;
         }
     }
-    int32_t frameId = frame->Id();
-    int32_t nextPc = frame->PC() + 1;
-    std::pair<int32_t, int32_t> bp = std::make_pair(frameId, nextPc);
-    breakPoints.insert(bp);
     RunDebug();
-    breakPoints.erase(bp);
 }
 
 void Thread::HandleException(ObjectReference exception_)

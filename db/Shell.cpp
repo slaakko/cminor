@@ -34,8 +34,16 @@ void Shell::Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<u
             CodeFormatter codeFormatter(std::cout);
             if (!machine.MainThread().Frames().empty())
             {
-                Frame& frame = machine.MainThread().Frames().back();
-                frame.Fun().Dump(codeFormatter, frame.PC());
+                int n = int(machine.MainThread().Frames().size());
+                for (int i = n - 1; i >= 0; --i)
+                {
+                    Frame* frame = &machine.MainThread().Frames()[i];
+                    if (frame->PC() < frame->Fun().NumInsts())
+                    {
+                        frame->Fun().Dump(codeFormatter, frame->PC());
+                        break;
+                    }
+                }
             }
             else
             {
@@ -79,6 +87,11 @@ void Shell::Step()
 void Shell::Next()
 {
     machine.MainThread().Next();
+}
+
+void Shell::Run()
+{
+    machine.MainThread().RunDebug();
 }
 
 void Shell::Local(int index)

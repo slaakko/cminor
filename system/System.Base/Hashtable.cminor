@@ -166,7 +166,7 @@ namespace System.Collections.Generic
             {
                 throw new LogicException("cannot hash into empty hash table");
             }
-            return cast<int>(key.GetHashCode() % cast<ulong>(buckets.Count()));
+            return cast<int>(key.GetHashCode() % cast<ulong>(buckets.Count));
         }
         private List<Bucket<ValueType>> buckets;
         private int count;

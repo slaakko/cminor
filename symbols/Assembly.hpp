@@ -104,6 +104,7 @@ public:
     void AddSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId, uint32_t mySymbolId);
     uint32_t GetSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId) const;
     AssemblyDependency* GetAssemblyDependency() { return &assemblyDependency; }
+    Constant RegisterSourceFilePath(const std::string& sourceFilePath);
 private:
     Machine& machine;
     std::string filePath;

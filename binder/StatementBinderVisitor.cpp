@@ -178,7 +178,7 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
     Assert(constructorSymbol, "constructor symbol expected");
     if (instantiateRequested)
     {
-        if (!constructorSymbol->IsInstantiated() && constructorSymbol->IsInstantiationRequested())
+        if (!constructorSymbol->IsInstantiated() && constructorSymbol->IsInstantiationRequested() && constructorSymbol->TypesResolved())
         {
             constructorSymbol->ResetFlag(SymbolFlags::instantiationRequested);
             constructorSymbol->SetInstantiated();
@@ -336,7 +336,7 @@ void StatementBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
     if (memberFunctionSymbol->IsAbstract()) return;
     if (instantiateRequested)
     {
-        if (!memberFunctionSymbol->IsInstantiated() && memberFunctionSymbol->IsInstantiationRequested())
+        if (!memberFunctionSymbol->IsInstantiated() && memberFunctionSymbol->IsInstantiationRequested() && memberFunctionSymbol->TypesResolved())
         {
             memberFunctionSymbol->ResetFlag(SymbolFlags::instantiationRequested);
             memberFunctionSymbol->SetInstantiated();
@@ -416,7 +416,7 @@ void StatementBinderVisitor::Visit(PropertyNode& propertyNode)
     {
         if (getter)
         {
-            if (!getter->IsInstantiated() && getter->IsInstantiationRequested())
+            if (!getter->IsInstantiated() && getter->IsInstantiationRequested() && getter->TypesResolved())
             {
                 getter->ResetFlag(SymbolFlags::instantiationRequested);
                 getter->SetInstantiated();
@@ -448,7 +448,7 @@ void StatementBinderVisitor::Visit(PropertyNode& propertyNode)
     {
         if (setter)
         {
-            if (!setter->IsInstantiated() && setter->IsInstantiationRequested())
+            if (!setter->IsInstantiated() && setter->IsInstantiationRequested() && setter->TypesResolved())
             {
                 setter->ResetFlag(SymbolFlags::instantiationRequested);
                 setter->SetInstantiated();
@@ -492,7 +492,7 @@ void StatementBinderVisitor::Visit(IndexerNode& indexerNode)
     {
         if (getter)
         {
-            if (!getter->IsInstantiated() && getter->IsInstantiationRequested())
+            if (!getter->IsInstantiated() && getter->IsInstantiationRequested() && getter->TypesResolved())
             {
                 getter->ResetFlag(SymbolFlags::instantiationRequested);
                 getter->SetInstantiated();
@@ -524,7 +524,7 @@ void StatementBinderVisitor::Visit(IndexerNode& indexerNode)
     {
         if (setter)
         {
-            if (!setter->IsInstantiated() && setter->IsInstantiationRequested())
+            if (!setter->IsInstantiated() && setter->IsInstantiationRequested() && setter->TypesResolved())
             {
                 setter->ResetFlag(SymbolFlags::instantiationRequested);
                 setter->SetInstantiated();

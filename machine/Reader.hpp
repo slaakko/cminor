@@ -62,6 +62,7 @@ public:
     const std::vector<SetClassDataInst*>& SetClassDataInstructions() const { return setClassDataInstructions; }
     uint32_t Pos() const { return pos; }
     void Skip(uint32_t size);
+    void ReplaceFileIndex(int fileIndex) { newFileIndex = fileIndex; }
 private:
     Machine* machine;
     std::string filePath;
@@ -75,6 +76,7 @@ private:
     std::vector<MemFun2ClassDlgInst*> memFun2ClassDlgInstructions;
     std::vector<TypeInstruction*> typeInstructions;
     std::vector<SetClassDataInst*> setClassDataInstructions;
+    int newFileIndex;
     void CheckEof();
 };
 

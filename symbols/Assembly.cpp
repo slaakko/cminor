@@ -521,6 +521,12 @@ void Assembly::ReadSymbolIdMapping(SymbolReader& reader)
     }
 }
 
+Constant Assembly::RegisterSourceFilePath(const std::string& sourceFilePath)
+{
+    utf32_string sfp = ToUtf32(sourceFilePath);
+    return constantPool.GetConstant(constantPool.Install(StringPtr(sfp.c_str())));
+}
+
 int NumberOfAncestors(ClassTypeSymbol* classType)
 {
     int numAncestors = 0;

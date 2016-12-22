@@ -25,6 +25,7 @@ public:
     void Exit();
     void Step();
     void Next();
+    void Run();
     void Local(int index);
     void Stack(int index);
     void Print(IntegralValue value);

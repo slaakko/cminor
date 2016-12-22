@@ -58,6 +58,7 @@ private:
     EnumTypeSymbol* enumType;
     void BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& classNode);
     void BindInterface(InterfaceTypeSymbol* interfaceTypeSymbol, InterfaceNode& interfaceNode);
+    Constant sourceFilePathConstant;
 };
 
 } } // namespace cminor::binder
