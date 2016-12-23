@@ -569,6 +569,62 @@ void ArrayNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+RefTypeExprNode::RefTypeExprNode(const Span& span_) : UnaryNode(span_)
+{
+}
+
+RefTypeExprNode::RefTypeExprNode(const Span& span_, Node* subject_) : UnaryNode(span_, subject_)
+{
+}
+
+Node* RefTypeExprNode::Clone(CloneContext& cloneContext) const
+{
+    return new RefTypeExprNode(GetSpan(), Child()->Clone(cloneContext));
+}
+
+void RefTypeExprNode::Write(AstWriter& writer)
+{
+    UnaryNode::Write(writer);
+}
+
+void RefTypeExprNode::Read(AstReader& reader)
+{
+    UnaryNode::Read(reader);
+}
+
+void RefTypeExprNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+RefNode::RefNode(const Span& span_) : UnaryNode(span_)
+{
+}
+
+RefNode::RefNode(const Span& span_, Node* subject_) : UnaryNode(span_, subject_)
+{
+}
+
+Node* RefNode::Clone(CloneContext& cloneContext) const
+{
+    return new RefNode(GetSpan(), Child()->Clone(cloneContext));
+}
+
+void RefNode::Write(AstWriter& writer)
+{
+    UnaryNode::Write(writer);
+}
+
+void RefNode::Read(AstReader& reader)
+{
+    UnaryNode::Read(reader);
+}
+
+void RefNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 IndexingNode::IndexingNode(const Span& span_) : UnaryNode(span_)
 {
 }

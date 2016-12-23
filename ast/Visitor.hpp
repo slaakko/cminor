@@ -87,6 +87,8 @@ class IsNode;
 class AsNode;
 class DotNode;
 class ArrayNode;
+class RefTypeExprNode;
+class RefNode;
 class IndexingNode;
 class InvokeNode;
 class CastNode;
@@ -209,6 +211,8 @@ public:
     virtual void Visit(AsNode& asNode) {}
     virtual void Visit(DotNode& dotNode) {}
     virtual void Visit(ArrayNode& arrayNode) {}
+    virtual void Visit(RefTypeExprNode& refTypeExprNode) {}
+    virtual void Visit(RefNode& refNode) {}
     virtual void Visit(IndexingNode& indexingNode) {}
     virtual void Visit(InvokeNode& invokeNode) {}
     virtual void Visit(CastNode& castNode) {}

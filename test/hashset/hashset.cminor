@@ -1,0 +1,44 @@
+using System;
+using System.Collections.Generic;
+
+class Alpha
+{
+    public Alpha(int x)
+    {
+        this.x = x;
+        this.y = new byte[cast<int>(1024) * 60];
+    }
+    public int X
+    {
+        get { return x; }
+    }
+    private int x;
+    private byte[] y;
+}
+
+void main()
+{
+    try
+    {
+        HashSet<Alpha> h = new HashSet<Alpha>();
+        for (int i = 0; i < 100; ++i)
+        {
+            h.Add(new Alpha(i));
+        }
+        Alpha x = new Alpha(999);
+        h.Add(x);
+        foreach (Alpha a in h)
+        {
+            Console.WriteLine(a.X);
+        }
+        if (h.Remove(x))
+        {
+            Console.WriteLine("jee");
+        }
+        Console.WriteLine(h.Count);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+    }
+}

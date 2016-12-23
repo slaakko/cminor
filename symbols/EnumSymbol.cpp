@@ -120,9 +120,10 @@ void EnumConstantSymbol::SetValue(Value* value_)
     GetAssembly()->GetConstantPool().Install(constant);
 }
 
-void EnumConstantSymbol::Evaluate(SymbolEvaluator* evaluator, const Span& span)
+bool EnumConstantSymbol::Evaluate(SymbolEvaluator* evaluator, const Span& span, bool dontThrow)
 {
     evaluator->EvaluateEnumConstantSymbol(this);
+    return true;
 }
 
 } } // namespace cminor::symbols

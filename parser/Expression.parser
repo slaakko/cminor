@@ -282,7 +282,9 @@ namespace cminor.parser
             ;
 
         ExpressionList(ParsingContext* ctx, Node* node)
-            ::= empty{ ctx->BeginParsingArguments(); } (Expression(ctx):arg{ node->AddArgument(arg); } % ','){ ctx->EndParsingArguments(); } / { ctx->EndParsingArguments(); }
+            ::= empty{ ctx->BeginParsingArguments(); } 
+            (   (keyword("ref") Expression(ctx):refExpr{ node->AddArgument(new RefNode(span, refExpr)); } | Expression(ctx):arg{ node->AddArgument(arg); }) % ','){ ctx->EndParsingArguments(); } 
+            /   { ctx->EndParsingArguments(); }
             ;
     }
 }

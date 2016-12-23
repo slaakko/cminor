@@ -73,6 +73,7 @@ KeywordGrammar::KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_): 
     keywords0.push_back("private");
     keywords0.push_back("protected");
     keywords0.push_back("public");
+    keywords0.push_back("ref");
     keywords0.push_back("return");
     keywords0.push_back("sbyte");
     keywords0.push_back("short");

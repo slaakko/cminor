@@ -1,5 +1,5 @@
-#ifndef TypeExpr_hpp_1192
-#define TypeExpr_hpp_1192
+#ifndef TypeExpr_hpp_22205
+#define TypeExpr_hpp_22205
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -20,10 +20,11 @@ private:
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class TypeExprRule;
+    class PrefixTypeExprRule;
     class PostfixTypeExprRule;
     class PrimaryTypeExprRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // TypeExpr_hpp_1192
+#endif // TypeExpr_hpp_22205

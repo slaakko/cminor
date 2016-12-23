@@ -136,6 +136,7 @@ namespace cminor.parser
     grammar TypeExprGrammar
     {
         TypeExpr(ParsingContext* ctx): Node*;
+        PrefixTypeExpr(ParsingContext* ctx): Node*;
         PostfixTypeExpr(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr, var Span s): Node*;
         PrimaryTypeExpr(ParsingContext* ctx): Node*;
     }

@@ -173,7 +173,7 @@ public:
     virtual void AddTo(ClassTypeSymbol* classTypeSymbol);
     virtual void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol);
     void Merge(const Symbol& that);
-    virtual void Evaluate(SymbolEvaluator* evaluator, const Span& span);
+    virtual bool Evaluate(SymbolEvaluator* evaluator, const Span& span, bool dontThrow);
     void Dump(CodeFormatter& formatter, Assembly* assembly);
     virtual void DumpHeader(CodeFormatter& formatter);
     virtual void DumpContent(CodeFormatter& formatter, Assembly* assembly);
@@ -268,7 +268,7 @@ public:
     void Clear();
     FunctionGroupSymbol* MakeFunctionGroupSymbol(StringPtr groupName, const Span& span);
     IndexerGroupSymbol* MakeIndexerGroupSymbol(const Span& span);
-    void Evaluate(SymbolEvaluator* evaluator, const Span& span) override;
+    bool Evaluate(SymbolEvaluator* evaluator, const Span& span, bool dontThrow) override;
     void DumpContent(CodeFormatter& formatter, Assembly* assembly) override;
 private:
     ContainerScope containerScope;

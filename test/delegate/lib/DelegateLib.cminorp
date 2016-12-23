@@ -1,0 +1,3 @@
+project DelegateLib;
+target=library;
+source <DelegateLib.cminor>;

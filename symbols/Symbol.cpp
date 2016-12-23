@@ -428,9 +428,14 @@ void Symbol::Merge(const Symbol& that)
     }
 }
 
-void Symbol::Evaluate(SymbolEvaluator* evaluator, const Span& span)
+bool Symbol::Evaluate(SymbolEvaluator* evaluator, const Span& span, bool dontThrow)
 {
+    if (dontThrow)
+    {
+        return false;
+    }
     throw Exception("cannot evaluate statically", span, GetSpan());
+    return true;
 }
 
 void Symbol::Dump(CodeFormatter& formatter, Assembly* assembly)
@@ -1015,9 +1020,10 @@ IndexerGroupSymbol* ContainerSymbol::MakeIndexerGroupSymbol(const Span& span)
     }
 }
 
-void ContainerSymbol::Evaluate(SymbolEvaluator* evaluator, const Span& span)
+bool ContainerSymbol::Evaluate(SymbolEvaluator* evaluator, const Span& span, bool dontThrow)
 {
     evaluator->EvaluateContainerSymbol(this);
+    return true;
 }
 
 void ContainerSymbol::DumpContent(CodeFormatter& formatter, Assembly* assembly)

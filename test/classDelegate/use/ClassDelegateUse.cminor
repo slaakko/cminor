@@ -1,0 +1,36 @@
+using System;
+
+public class Alpha
+{
+    public Alpha(int a)
+    {
+        this.a = a;
+    }
+    public void Bar(int x, double y)
+    {
+        Console.Write("bar ");
+        Console.Write(a);
+        Console.Write(" ");
+        Console.Write(x);
+        Console.Write(" ");
+        Console.Write(y);
+        Console.WriteLine();
+    }
+    private int a;
+}
+
+int main()
+{
+    try
+    {
+        Alpha alpha = new Alpha(0);
+        FooClassDlg foo = alpha.Bar;
+        foo(1, 2.0);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+        return 1;
+    }
+    return 0;
+}

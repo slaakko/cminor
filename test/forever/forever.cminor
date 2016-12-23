@@ -1,0 +1,18 @@
+int main()
+{
+    for (;;)
+    {
+        if (true)
+        {
+            return 0;
+        }
+    }
+}
+
+int foo()
+{
+    while (true)
+    {
+        return 1;
+    }
+}

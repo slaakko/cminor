@@ -27,15 +27,15 @@ public:
     Value* Clone() const override { throw std::runtime_error("not applicable"); }
     void Write(SymbolWriter& writer) override { throw std::runtime_error("not applicable"); }
     void Read(SymbolReader& reader) override { throw std::runtime_error("not applicable"); }
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override { throw std::runtime_error("not applicable"); }
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override { throw std::runtime_error("not applicable"); }
     IntegralValue GetIntegralValue() const override { throw std::runtime_error("not applicable"); }
     bool IsComplete() const override { return false; }
 private:
     ContainerSymbol* containerSymbol;
 };
 
-typedef Value* (*BinaryOperatorFun)(Value* left, Value* right, const Span& span);
-typedef Value* (*UnaryOperatorFun)(Value* subject, const Span& span);
+typedef Value* (*BinaryOperatorFun)(Value* left, Value* right, const Span& span, bool dontThrow);
+typedef Value* (*UnaryOperatorFun)(Value* subject, const Span& span, bool dontThrow);
 
 ScopedValue::ScopedValue(ContainerSymbol* containerSymbol_) : containerSymbol(containerSymbol_)
 {
@@ -44,7 +44,7 @@ ScopedValue::ScopedValue(ContainerSymbol* containerSymbol_) : containerSymbol(co
 class Evaluator : public Visitor, SymbolEvaluator
 {
 public:
-    Evaluator(ValueKind targetKind_, bool cast_, ContainerScope* containerScope_, BoundCompileUnit& boundCompileUnit_, const Span& span_);
+    Evaluator(ValueKind targetKind_, bool cast_, ContainerScope* containerScope_, BoundCompileUnit& boundCompileUnit_, const Span& span_, EvaluationFlags flags_);
     Value* GetValue();
 
     void Visit(BoolNode& boolNode) override;
@@ -128,7 +128,7 @@ public:
     void Visit(ArrayNode& arrayNode) override;
     void Visit(IndexingNode& indexingNode) override;
     void Visit(InvokeNode& invokeNode) override;
-    void Visit(CastNode& castNode) override; 
+    void Visit(CastNode& castNode) override;
     void Visit(NewNode& newNode) override;
     void Visit(ThisNode& thisNode) override;
     void Visit(BaseNode& baseNode) override;
@@ -162,98 +162,184 @@ private:
     BoundCompileUnit& boundCompileUnit;
     Span span;
     std::unique_ptr<Value> value;
+    EvaluationFlags flags;
+    bool interrupted;
     void EvaluateSymbol(Symbol* symbol, const Span& span);
     void EvaluateBinOp(const BinaryNode& node, BinaryOperatorFun* fun);
     void EvaluateUnaryOp(const UnaryNode& node, UnaryOperatorFun* fun);
 };
 
-Evaluator::Evaluator(ValueKind targetKind_, bool cast_, ContainerScope* containerScope_, BoundCompileUnit& boundCompileUnit_, const Span& span_) :
-    targetKind(targetKind_), cast(cast_), containerScope(containerScope_), boundCompileUnit(boundCompileUnit_), span(span_)
+Evaluator::Evaluator(ValueKind targetKind_, bool cast_, ContainerScope* containerScope_, BoundCompileUnit& boundCompileUnit_, const Span& span_, EvaluationFlags flags_) :
+    targetKind(targetKind_), cast(cast_), containerScope(containerScope_), boundCompileUnit(boundCompileUnit_), span(span_), flags(flags_), interrupted(false)
 {
 }
 
 Value* Evaluator::GetValue()
-{ 
+{
+    if (interrupted)
+    {
+        return nullptr;
+    }
+    bool dontThrow = (flags & EvaluationFlags::dontThrow) != EvaluationFlags::none;
     if (!value->IsComplete())
     {
+        if (dontThrow)
+        {
+            return nullptr;
+        }
         throw Exception("value not complete", span);
     }
-    value.reset(value->As(targetKind, cast, span));
+    value.reset(value->As(targetKind, cast, span, dontThrow));
     return value.release();
 }
 
 void Evaluator::Visit(BoolNode& boolNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true; 
+        return;
+    }
     throw Exception("cannot evaluate statically", boolNode.GetSpan());
 }
 
 void Evaluator::Visit(SByteNode& sbyteNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true; 
+        return;
+    }
     throw Exception("cannot evaluate statically", sbyteNode.GetSpan());
 }
 
 void Evaluator::Visit(ByteNode& byteNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", byteNode.GetSpan());
 }
 
 void Evaluator::Visit(ShortNode& shortNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", shortNode.GetSpan());
 }
 
 void Evaluator::Visit(UShortNode& ushortNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", ushortNode.GetSpan());
 }
 
 void Evaluator::Visit(IntNode& intNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", intNode.GetSpan());
 }
 
 void Evaluator::Visit(UIntNode& uintNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", uintNode.GetSpan());
 }
 
 void Evaluator::Visit(LongNode& longNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", longNode.GetSpan());
 }
 
 void Evaluator::Visit(ULongNode& ulongNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", ulongNode.GetSpan());
 }
 
 void Evaluator::Visit(FloatNode& floatNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", floatNode.GetSpan());
 }
 
 void Evaluator::Visit(DoubleNode& doubleNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", doubleNode.GetSpan());
 }
 
 void Evaluator::Visit(CharNode& charNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", charNode.GetSpan());
 }
 
 void Evaluator::Visit(StringNode& stringNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", stringNode.GetSpan());
 }
 
 void Evaluator::Visit(VoidNode& voidNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", voidNode.GetSpan());
 }
 
 void Evaluator::Visit(ObjectNode& objectNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", objectNode.GetSpan());
 }
 
@@ -319,18 +405,29 @@ void Evaluator::Visit(CharLiteralNode& charLiteralNode)
 
 void Evaluator::Visit(StringLiteralNode& stringLiteralNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", stringLiteralNode.GetSpan());
 }
 
 void Evaluator::Visit(NullLiteralNode& nullLiteralNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", nullLiteralNode.GetSpan());
 }
 
 void Evaluator::Visit(IdentifierNode& identifierNode)
 {
+    bool dontThrow = (flags & EvaluationFlags::dontThrow) != EvaluationFlags::none;
     utf32_string s = ToUtf32(identifierNode.Str());
-    Symbol* symbol = containerScope->Lookup(StringPtr(s.c_str()), ScopeLookup::this_and_base_and_parent);;
+    Symbol* symbol = containerScope->Lookup(StringPtr(s.c_str()), ScopeLookup::this_and_base_and_parent);
     if (!symbol)
     {
         for (const std::unique_ptr<FileScope>& fileScope : boundCompileUnit.FileScopes())
@@ -342,117 +439,232 @@ void Evaluator::Visit(IdentifierNode& identifierNode)
     if (symbol)
     {
         EvaluateSymbol(symbol, identifierNode.GetSpan());
+        if (interrupted)
+        {
+            return;
+        }
     }
     else
     {
+        if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+        {
+            interrupted = true;
+            return;
+        }
         throw Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
     }
 }
 
 void Evaluator::Visit(ParameterNode& parameterNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", parameterNode.GetSpan());
 }
 
 void Evaluator::Visit(FunctionNode& functionNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", functionNode.GetSpan());
 }
 
 void Evaluator::Visit(FunctionGroupIdNode& functionGroupIdNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", functionGroupIdNode.GetSpan());
 }
 
 void Evaluator::Visit(AttributeMap& attributeMap)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", span);
 }
 
 void Evaluator::Visit(NamespaceNode& namespaceNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", namespaceNode.GetSpan());
 }
 
 void Evaluator::Visit(AliasNode& aliasNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", aliasNode.GetSpan());
 }
 
 void Evaluator::Visit(NamespaceImportNode& namespaceImportNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", namespaceImportNode.GetSpan());
 }
 
 void Evaluator::Visit(CompileUnitNode& compileUnitNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", compileUnitNode.GetSpan());
 }
 
 void Evaluator::Visit(ClassNode& classNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", classNode.GetSpan());
 }
 
 void Evaluator::Visit(InterfaceNode& interfaceNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", interfaceNode.GetSpan());
 }
 
 void Evaluator::Visit(TemplateIdNode& templateIdNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", templateIdNode.GetSpan());
 }
 
 void Evaluator::Visit(TemplateParameterNode& templateParameterNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", templateParameterNode.GetSpan());
 }
 
 void Evaluator::Visit(StaticConstructorNode& staticConstructorNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", staticConstructorNode.GetSpan());
 }
 
 void Evaluator::Visit(BaseInitializerNode& baseInitializerNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", baseInitializerNode.GetSpan());
 }
 
 void Evaluator::Visit(ThisInitializerNode& thisInitializerNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", thisInitializerNode.GetSpan());
 }
 
 void Evaluator::Visit(ConstructorNode& constructorNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", constructorNode.GetSpan());
 }
 
 void Evaluator::Visit(MemberFunctionNode& memberFunctionNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", memberFunctionNode.GetSpan());
 }
 
 void Evaluator::Visit(MemberVariableNode& memberVariableNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", memberVariableNode.GetSpan());
 }
 
 void Evaluator::Visit(PropertyNode& propertyNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", propertyNode.GetSpan());
 }
 
 void Evaluator::Visit(IndexerNode& indexerNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", indexerNode.GetSpan());
 }
 
 void Evaluator::EvaluateSymbol(Symbol* symbol, const Span& span)
 {
+    bool dontThrow = (flags & EvaluationFlags::dontThrow) != EvaluationFlags::none;
     this->span = span;
-    symbol->Evaluate(this, span);
+    bool evaluated = symbol->Evaluate(this, span, dontThrow);
+    if (!evaluated)
+    {
+        interrupted = true;
+        return;
+    }
 }
 
 void Evaluator::EvaluateContainerSymbol(ContainerSymbol* containerSymbol)
@@ -464,6 +676,11 @@ void Evaluator::EvaluateConstantSymbol(ConstantSymbol* constantSymbol)
 {
     if (constantSymbol->Evaluating())
     {
+        if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+        {
+            interrupted = true;
+            return;
+        }
         throw Exception("cyclic depenency detected", span);
     }
     Value* constantValue = constantSymbol->GetValue();
@@ -491,6 +708,11 @@ void Evaluator::EvaluateEnumConstantSymbol(EnumConstantSymbol* enumConstantSymbo
 {
     if (enumConstantSymbol->Evaluating())
     {
+        if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+        {
+            interrupted = true;
+            return;
+        }
         throw Exception("cyclic depenency detected", span);
     }
     Value* enumConstantValue = enumConstantSymbol->GetValue();
@@ -515,13 +737,21 @@ void Evaluator::EvaluateEnumConstantSymbol(EnumConstantSymbol* enumConstantSymbo
     }
 }
 
-Value* NotSupported(Value* subject, const Span& span)
+Value* NotSupported(Value* subject, const Span& span, bool dontThrow)
 {
+    if (dontThrow)
+    {
+        return nullptr;
+    }
     throw Exception("operation not supported for type " + ValueKindStr(subject->GetValueKind()), span);
 }
 
-Value* NotSupported(Value* left, Value* right, const Span& span)
+Value* NotSupported(Value* left, Value* right, const Span& span, bool dontThrow)
 {
+    if (dontThrow)
+    {
+        return nullptr;
+    }
     throw Exception("operation not supported for types " + ValueKindStr(left->GetValueKind()) + " and " + ValueKindStr(right->GetValueKind()), span);
 }
 
@@ -534,7 +764,7 @@ Value* BinaryEvaluate(Value* left, Value* right, Op op)
 }
 
 template<typename ValueT>
-Value* Disjunction(Value* left, Value* right, const Span& span)
+Value* Disjunction(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, std::logical_or<typename ValueT::OperandType>());
 }
@@ -546,9 +776,18 @@ BinaryOperatorFun disjunction[uint8_t(ValueKind::max)] =
 
 void Evaluator::EvaluateBinOp(const BinaryNode& node, BinaryOperatorFun* fun)
 {
+    bool dontThrow = (flags & EvaluationFlags::dontThrow) != EvaluationFlags::none;
     node.Left()->Accept(*this);
+    if (interrupted)
+    {
+        return;
+    }
     std::unique_ptr<Value> left(value.release());
     node.Right()->Accept(*this);
+    if (interrupted)
+    {
+        return;
+    }
     std::unique_ptr<Value> right(value.release());
     ValueKind leftKind = left->GetValueKind();
     ValueKind rightKind = right->GetValueKind();
@@ -558,10 +797,18 @@ void Evaluator::EvaluateBinOp(const BinaryNode& node, BinaryOperatorFun* fun)
     {
         operationKind = targetKind;
     }
-    std::unique_ptr<Value> left_(left->As(operationKind, cast, span));
-    std::unique_ptr<Value> right_(right->As(operationKind, cast, span));
+    std::unique_ptr<Value> left_(left->As(operationKind, cast, span, dontThrow));
+    std::unique_ptr<Value> right_(right->As(operationKind, cast, span, dontThrow));
+    if (dontThrow)
+    {
+        if (!left_ || !right_)
+        {
+            interrupted = true;
+            return;
+        }
+    }
     BinaryOperatorFun operation = fun[uint8_t(operationKind)];
-    value.reset(operation(left_.get(), right_.get(), span));
+    value.reset(operation(left_.get(), right_.get(), span, dontThrow));
 }
 
 void Evaluator::Visit(DisjunctionNode& disjunctionNode)
@@ -570,7 +817,7 @@ void Evaluator::Visit(DisjunctionNode& disjunctionNode)
 }
 
 template<typename ValueT>
-Value* Conjunction(Value* left, Value* right, const Span& span)
+Value* Conjunction(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, std::logical_or<typename ValueT::OperandType>());
 }
@@ -586,7 +833,7 @@ void Evaluator::Visit(ConjunctionNode& conjunctionNode)
 }
 
 template<typename ValueT>
-Value* BitOr(Value* left, Value* right, const Span& span)
+Value* BitOr(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, std::bit_or<typename ValueT::OperandType>());
 }
@@ -603,7 +850,7 @@ void Evaluator::Visit(BitOrNode& bitOrNode)
 }
 
 template<typename ValueT>
-Value* BitXor(Value* left, Value* right, const Span& span)
+Value* BitXor(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, std::bit_xor<typename ValueT::OperandType>());
 }
@@ -620,7 +867,7 @@ void Evaluator::Visit(BitXorNode& bitXorNode)
 }
 
 template<typename ValueT>
-Value* BitAnd(Value* left, Value* right, const Span& span)
+Value* BitAnd(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, std::bit_and<typename ValueT::OperandType>());
 }
@@ -645,7 +892,7 @@ Value* BinaryPredEvaluate(Value* left, Value* right, Op op)
 }
 
 template<typename ValueT>
-Value* Equal(Value* left, Value* right, const Span& span)
+Value* Equal(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryPredEvaluate<ValueT>(left, right, std::equal_to<typename ValueT::OperandType>());
 }
@@ -662,7 +909,7 @@ void Evaluator::Visit(EqualNode& equalNode)
 }
 
 template<typename ValueT>
-Value* NotEqual(Value* left, Value* right, const Span& span)
+Value* NotEqual(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryPredEvaluate<ValueT>(left, right, std::not_equal_to<typename ValueT::OperandType>());
 }
@@ -679,7 +926,7 @@ void Evaluator::Visit(NotEqualNode& notEqualNode)
 }
 
 template<typename ValueT>
-Value* Less(Value* left, Value* right, const Span& span)
+Value* Less(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryPredEvaluate<ValueT>(left, right, std::less<typename ValueT::OperandType>());
 }
@@ -696,7 +943,7 @@ void Evaluator::Visit(LessNode& lessNode)
 }
 
 template<typename ValueT>
-Value* Greater(Value* left, Value* right, const Span& span)
+Value* Greater(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryPredEvaluate<ValueT>(left, right, std::greater<typename ValueT::OperandType>());
 }
@@ -713,7 +960,7 @@ void Evaluator::Visit(GreaterNode& greaterNode)
 }
 
 template<typename ValueT>
-Value* LessOrEqual(Value* left, Value* right, const Span& span)
+Value* LessOrEqual(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryPredEvaluate<ValueT>(left, right, std::less_equal<typename ValueT::OperandType>());
 }
@@ -730,7 +977,7 @@ void Evaluator::Visit(LessOrEqualNode& lessOrEqualNode)
 }
 
 template<typename ValueT>
-Value* GreaterOrEqual(Value* left, Value* right, const Span& span)
+Value* GreaterOrEqual(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryPredEvaluate<ValueT>(left, right, std::greater_equal<typename ValueT::OperandType>());
 }
@@ -756,7 +1003,7 @@ struct shiftLeftFun : std::binary_function<T, T, T>
 };
 
 template<typename ValueT>
-Value* ShiftLeft(Value* left, Value* right, const Span& span)
+Value* ShiftLeft(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, shiftLeftFun<typename ValueT::OperandType>());
 }
@@ -782,7 +1029,7 @@ struct shiftRightFun : std::binary_function<T, T, T>
 };
 
 template<typename ValueT>
-Value* ShiftRight(Value* left, Value* right, const Span& span)
+Value* ShiftRight(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, shiftRightFun<typename ValueT::OperandType>());
 }
@@ -799,7 +1046,7 @@ void Evaluator::Visit(ShiftRightNode& shiftRightNode)
 }
 
 template<typename ValueT>
-Value* Add(Value* left, Value* right, const Span& span)
+Value* Add(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, std::plus<typename ValueT::OperandType>());
 }
@@ -816,7 +1063,7 @@ void Evaluator::Visit(AddNode& addNode)
 }
 
 template<typename ValueT>
-Value* Sub(Value* left, Value* right, const Span& span)
+Value* Sub(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, std::minus<typename ValueT::OperandType>());
 }
@@ -833,7 +1080,7 @@ void Evaluator::Visit(SubNode& subNode)
 }
 
 template<typename ValueT>
-Value* Mul(Value* left, Value* right, const Span& span)
+Value* Mul(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, std::multiplies<typename ValueT::OperandType>());
 }
@@ -850,7 +1097,7 @@ void Evaluator::Visit(MulNode& mulNode)
 }
 
 template<typename ValueT>
-Value* Div(Value* left, Value* right, const Span& span)
+Value* Div(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, std::divides<typename ValueT::OperandType>());
 }
@@ -867,7 +1114,7 @@ void Evaluator::Visit(DivNode& divNode)
 }
 
 template<typename ValueT>
-Value* Rem(Value* left, Value* right, const Span& span)
+Value* Rem(Value* left, Value* right, const Span& span, bool dontThrow)
 {
     return BinaryEvaluate<ValueT>(left, right, std::modulus<typename ValueT::OperandType>());
 }
@@ -891,7 +1138,7 @@ Value* UnaryEvaluate(Value* subject, Op op)
 }
 
 template<typename ValueT>
-Value* Not(Value* subject, const Span& span)
+Value* Not(Value* subject, const Span& span, bool dontThrow)
 {
     return UnaryEvaluate<ValueT>(subject, std::logical_not<typename ValueT::OperandType>());
 }
@@ -903,7 +1150,12 @@ UnaryOperatorFun not_[uint8_t(ValueKind::max)] =
 
 void Evaluator::EvaluateUnaryOp(const UnaryNode& node, UnaryOperatorFun* fun)
 {
+    bool dontThrow = (flags & EvaluationFlags::dontThrow) != EvaluationFlags::none;
     node.Child()->Accept(*this);
+    if (interrupted)
+    {
+        return;
+    }
     std::unique_ptr<Value> child(value.release());
     ValueKind childKind = child->GetValueKind();
     ValueKind operationKind = childKind;
@@ -911,9 +1163,9 @@ void Evaluator::EvaluateUnaryOp(const UnaryNode& node, UnaryOperatorFun* fun)
     {
         operationKind = targetKind;
     }
-    std::unique_ptr<Value> child_(child->As(operationKind, cast, span));
+    std::unique_ptr<Value> child_(child->As(operationKind, cast, span, dontThrow));
     UnaryOperatorFun operation = fun[uint8_t(operationKind)];
-    value.reset(operation(child_.get(), span));
+    value.reset(operation(child_.get(), span, dontThrow));
 }
 
 void Evaluator::Visit(NotNode& notNode)
@@ -931,7 +1183,7 @@ struct identityFun: std::unary_function<T, T>
 };
 
 template<typename ValueT>
-Value* UnaryPlus(Value* subject, const Span& span)
+Value* UnaryPlus(Value* subject, const Span& span, bool dontThrow)
 {
     return UnaryEvaluate<ValueT>(subject, identityFun<typename ValueT::OperandType>());
 }
@@ -948,7 +1200,7 @@ void Evaluator::Visit(UnaryPlusNode& unaryPlusNode)
 }
 
 template<typename ValueT>
-Value* UnaryMinus(Value* subject, const Span& span)
+Value* UnaryMinus(Value* subject, const Span& span, bool dontThrow)
 {
     return UnaryEvaluate<ValueT>(subject, std::negate<typename ValueT::OperandType>());
 }
@@ -965,7 +1217,7 @@ void Evaluator::Visit(UnaryMinusNode& unaryMinusNode)
 }
 
 template<typename ValueT>
-Value* Complement(Value* subject, const Span& span)
+Value* Complement(Value* subject, const Span& span, bool dontThrow)
 {
     return UnaryEvaluate<ValueT>(subject, std::bit_not<typename ValueT::OperandType>());
 }
@@ -983,11 +1235,21 @@ void Evaluator::Visit(ComplementNode& complementNode)
 
 void Evaluator::Visit(IsNode& isNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", isNode.GetSpan());
 }
 
 void Evaluator::Visit(AsNode& asNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", asNode.GetSpan());
 }
 
@@ -1006,27 +1268,52 @@ void Evaluator::Visit(DotNode& dotNode)
         }
         else
         {
+            if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+            {
+                interrupted = true;
+                return;
+            }
             throw Exception("symbol '" + ToUtf8(containerSymbol->FullName()) + "' does not have member '" + dotNode.MemberStr() + "'", dotNode.GetSpan());
         }
     }
     else
     {
+        if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+        {
+            interrupted = true;
+            return;
+        }
         throw Exception("expression '" + dotNode.Child()->ToString() + "' must denote a namespace, class type or enumerated type", dotNode.Child()->GetSpan());
     }
 }
 
 void Evaluator::Visit(ArrayNode& arrayNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", arrayNode.GetSpan());
 }
 
 void Evaluator::Visit(IndexingNode& indexingNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", indexingNode.GetSpan());
 }
 
 void Evaluator::Visit(InvokeNode& invokeNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", invokeNode.GetSpan());
 }
 
@@ -1041,109 +1328,227 @@ void Evaluator::Visit(CastNode& castNode)
 
 void Evaluator::Visit(NewNode& newNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", newNode.GetSpan());
 }
 
 void Evaluator::Visit(ThisNode& thisNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", thisNode.GetSpan());
 }
 
 void Evaluator::Visit(BaseNode& baseNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", baseNode.GetSpan());
 }
 
 void Evaluator::Visit(CompoundStatementNode& compoundStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", compoundStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(ReturnStatementNode& returnStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", returnStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(IfStatementNode& ifStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", ifStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(WhileStatementNode& whileStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", whileStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(DoStatementNode& doStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", doStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(ForStatementNode& forStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", forStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(BreakStatementNode& breakStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", breakStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(ContinueStatementNode& continueStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", continueStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(ConstructionStatementNode& constructionStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", constructionStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(AssignmentStatementNode& assignmentStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", assignmentStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(ExpressionStatementNode& expressionStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", expressionStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(EmptyStatementNode& emptyStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", emptyStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(IncrementStatementNode& incrementStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", incrementStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(DecrementStatementNode& decrementStatementNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", decrementStatementNode.GetSpan());
 }
 
 void Evaluator::Visit(EnumTypeNode& enumTypeNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", enumTypeNode.GetSpan());
 }
 
 void Evaluator::Visit(EnumConstantNode& enumConstantNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", enumConstantNode.GetSpan());
 }
 
 void Evaluator::Visit(ConstantNode& constantNode)
 {
+    if ((flags & EvaluationFlags::dontThrow) != EvaluationFlags::none)
+    {
+        interrupted = true;
+        return;
+    }
     throw Exception("cannot evaluate statically", constantNode.GetSpan());
 }
 
 Value* Evaluate(ValueKind targetKind, bool cast, ContainerScope* containerScope, BoundCompileUnit& boundCompileUnit, Node* value)
 {
-    Evaluator evaluator(targetKind, cast, containerScope, boundCompileUnit, value->GetSpan());
+    return Evaluate(targetKind, cast, containerScope, boundCompileUnit, value, EvaluationFlags::none);
+}
+
+Value* Evaluate(ValueKind targetKind, bool cast, ContainerScope* containerScope, BoundCompileUnit& boundCompileUnit, Node* value, EvaluationFlags flags)
+{
+    Evaluator evaluator(targetKind, cast, containerScope, boundCompileUnit, value->GetSpan(), flags);
     value->Accept(evaluator);
     return evaluator.GetValue();
+}
+
+bool IsAlwaysTrue(ContainerScope* containerScope, BoundCompileUnit& boundCompileUnit, Node* value)
+{
+    Value* result = Evaluate(ValueKind::boolValue, false, containerScope, boundCompileUnit, value, EvaluationFlags::dontThrow);
+    if (result)
+    {
+        if (BoolValue* boolValue = dynamic_cast<BoolValue*>(result))
+        {
+            if (boolValue->Value() == true) return true;
+        }
+    }
+    return false;
 }
 
 } } // namespace cminor::binder

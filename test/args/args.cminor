@@ -1,0 +1,9 @@
+using System;
+
+void main(string[] args)
+{
+    foreach (string arg in args)
+    {
+        Console.WriteLine(arg);
+    }
+}

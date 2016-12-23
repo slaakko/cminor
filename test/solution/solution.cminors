@@ -1,0 +1,5 @@
+solution solution;
+project <../fourth/fourth.cminorp>;
+project <../first/first.cminorp>;
+project <../second/second.cminorp>;
+project <../third/third.cminorp>;

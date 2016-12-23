@@ -26,7 +26,7 @@ public:
     virtual Value* Clone() const = 0;
     virtual void Write(SymbolWriter& writer) = 0;
     virtual void Read(SymbolReader& reader) = 0;
-    virtual Value* As(ValueKind targetKind, bool cast, const Span& span) const = 0;
+    virtual Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const = 0;
     virtual bool IsComplete() const { return true; }
     virtual IntegralValue GetIntegralValue() const = 0;
 };
@@ -41,7 +41,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     bool Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(value, ValueType::boolType); }
 private:
@@ -58,7 +58,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     char32_t Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(value, ValueType::charType); }
 private:
@@ -75,7 +75,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     int8_t Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(value, ValueType::sbyteType); }
 private:
@@ -92,7 +92,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     uint8_t Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(value, ValueType::byteType); }
 private:
@@ -109,7 +109,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     int16_t Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(value, ValueType::shortType); }
 private:
@@ -126,7 +126,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     uint16_t Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(value, ValueType::ushortType); }
 private:
@@ -143,7 +143,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     int32_t Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(value, ValueType::intType); }
 private:
@@ -160,7 +160,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     uint32_t Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(value, ValueType::uintType); }
 private:
@@ -177,7 +177,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     int64_t Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(value, ValueType::longType); }
 private:
@@ -194,7 +194,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     uint64_t Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(value, ValueType::ulongType); }
 private:
@@ -211,7 +211,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     float Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(static_cast<uint64_t>(value), ValueType::floatType); }
 private:
@@ -228,7 +228,7 @@ public:
     Value* Clone() const override;
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
-    Value* As(ValueKind targetKind, bool cast, const Span& span) const override;
+    Value* As(ValueKind targetKind, bool cast, const Span& span, bool dontThrow) const override;
     double Value() const { return value; }
     IntegralValue GetIntegralValue() const override { return IntegralValue(static_cast<uint64_t>(value), ValueType::doubleType); }
 private:

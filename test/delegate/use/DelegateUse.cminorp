@@ -1,0 +1,4 @@
+project DelegateUse;
+target=program;
+reference <../lib/DelegateLib.cminorp>;
+source <DelegateUse.cminor>;

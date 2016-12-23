@@ -92,9 +92,10 @@ void ConstantSymbol::EmplaceType(TypeSymbol* type, int index)
     }
 }
 
-void ConstantSymbol::Evaluate(SymbolEvaluator* evaluator, const Span& span)
+bool ConstantSymbol::Evaluate(SymbolEvaluator* evaluator, const Span& span, bool dontThrow)
 {
     evaluator->EvaluateConstantSymbol(this);
+    return true;
 }
 
 } } // namespace cminor::symbols

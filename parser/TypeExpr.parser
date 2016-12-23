@@ -22,7 +22,12 @@ namespace cminor.parser
         using ExpressionGrammar.Expression;
 
         TypeExpr(ParsingContext* ctx) : Node*
-            ::= PostfixTypeExpr(ctx){ value = PostfixTypeExpr; }
+            ::= PrefixTypeExpr(ctx){ value = PrefixTypeExpr; }
+            ;
+
+        PrefixTypeExpr(ParsingContext* ctx) : Node*
+            ::= (keyword("ref") PostfixTypeExpr(ctx):refExpr){ value = new RefTypeExprNode(span, refExpr); }
+            |   PostfixTypeExpr(ctx):pf{ value = pf; }
             ;
 
         PostfixTypeExpr(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr, var Span s) : Node*

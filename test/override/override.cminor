@@ -1,0 +1,20 @@
+using System;
+
+class Alpha
+{
+    public virtual void foo()
+    {
+    }
+}
+
+class Beta : Alpha
+{
+    public override void foo()
+    {
+    }
+}
+
+void main()
+{
+
+}

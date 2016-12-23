@@ -1,0 +1,4 @@
+project ClassDelegateUse;
+target=program;
+reference <../lib/ClassDelegateLib.cminorp>;
+source <ClassDelegateUse.cminor>;

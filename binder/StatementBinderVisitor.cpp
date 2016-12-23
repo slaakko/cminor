@@ -23,7 +23,7 @@
 
 namespace cminor { namespace binder {
 
-bool TerminatesFunction(StatementNode* statement, bool inForEverLoop)
+bool TerminatesFunction(StatementNode* statement, bool inForEverLoop, ContainerScope* containerScope, BoundCompileUnit& boundCompileUnit)
 {
     switch (statement->GetNodeType())
     {
@@ -34,7 +34,7 @@ bool TerminatesFunction(StatementNode* statement, bool inForEverLoop)
             for (int i = 0; i < n; ++i)
             {
                 StatementNode* statement = compoundStatement->Statements()[i];
-                if (TerminatesFunction(statement, inForEverLoop)) return true;
+                if (TerminatesFunction(statement, inForEverLoop, containerScope, boundCompileUnit)) return true;
             }
             break;
         }
@@ -43,8 +43,8 @@ bool TerminatesFunction(StatementNode* statement, bool inForEverLoop)
             IfStatementNode* ifStatement = static_cast<IfStatementNode*>(statement);
             if (inForEverLoop || ifStatement->ElseS())
             {
-                if (TerminatesFunction(ifStatement->ThenS(), inForEverLoop) && 
-                    inForEverLoop || (ifStatement->ElseS() && TerminatesFunction(ifStatement->ElseS(), inForEverLoop)))
+                if (TerminatesFunction(ifStatement->ThenS(), inForEverLoop, containerScope, boundCompileUnit) &&
+                    inForEverLoop || (ifStatement->ElseS() && TerminatesFunction(ifStatement->ElseS(), inForEverLoop, containerScope, boundCompileUnit)))
                 {
                     return true;
                 }
@@ -54,19 +54,28 @@ bool TerminatesFunction(StatementNode* statement, bool inForEverLoop)
         case NodeType::whileStatementNode:
         {
             WhileStatementNode* whileStatement = static_cast<WhileStatementNode*>(statement);
-            // todo for ever loop detection
+            if (IsAlwaysTrue(containerScope, boundCompileUnit, whileStatement->Condition()))
+            {
+                if (TerminatesFunction(whileStatement->Statement(), true, containerScope, boundCompileUnit)) return true;
+            }
             break;
         }
         case NodeType::doStatementNode:
         {
             DoStatementNode* doStatement = static_cast<DoStatementNode*>(statement);
-            // todo for ever loop detection
+            if (IsAlwaysTrue(containerScope, boundCompileUnit, doStatement->Condition()))
+            {
+                if (TerminatesFunction(doStatement->Statement(), true, containerScope, boundCompileUnit)) return true;
+            }
             break;
         }
         case NodeType::forStatementNode:
         {
             ForStatementNode* forStatement = static_cast<ForStatementNode*>(statement);
-            // todo for ever loop detection
+            if (!forStatement->Condition() || IsAlwaysTrue(containerScope, boundCompileUnit, forStatement->Condition()))
+            {
+                if (TerminatesFunction(forStatement->ActionS(), true, containerScope, boundCompileUnit)) return true;
+            }
             break;
         }
         default:
@@ -81,14 +90,14 @@ bool TerminatesFunction(StatementNode* statement, bool inForEverLoop)
     return false;
 }
 
-void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, CompoundStatementNode* bodyNode, const Span& span);
+void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, CompoundStatementNode* bodyNode, const Span& span, ContainerScope* containerScope, BoundCompileUnit& boundCompileUnit);
 
-void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, FunctionNode& functionNode)
+void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, FunctionNode& functionNode, ContainerScope* containerScope, BoundCompileUnit& boundCompileUnit)
 {
-    CheckFunctionReturnPaths(functionSymbol, functionNode.Body(), functionNode.GetSpan());
+    CheckFunctionReturnPaths(functionSymbol, functionNode.Body(), functionNode.GetSpan(), containerScope, boundCompileUnit);
 }
 
-void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, CompoundStatementNode* bodyNode, const Span& span)
+void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, CompoundStatementNode* bodyNode, const Span& span, ContainerScope* containerScope, BoundCompileUnit& boundCompileUnit)
 {
     TypeSymbol* returnType = functionSymbol->ReturnType();
     if (!returnType || dynamic_cast<VoidTypeSymbol*>(returnType)) return;
@@ -100,7 +109,7 @@ void CheckFunctionReturnPaths(FunctionSymbol* functionSymbol, CompoundStatementN
     for (int i = 0; i < n; ++i)
     {
         StatementNode* statement = body->Statements()[i];
-        if (TerminatesFunction(statement, false)) return;
+        if (TerminatesFunction(statement, false, containerScope, boundCompileUnit)) return;
     }
     throw Exception("not all control paths terminate in return or throw statement", span);
 }
@@ -370,7 +379,7 @@ void StatementBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         }
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
     }
-    CheckFunctionReturnPaths(memberFunctionSymbol, memberFunctionNode);
+    CheckFunctionReturnPaths(memberFunctionSymbol, memberFunctionNode, containerScope, boundCompileUnit);
     if (!doNotInstantiate)
     {
         boundClass->AddMember(std::move(boundFunction));
@@ -396,7 +405,7 @@ void StatementBinderVisitor::Visit(FunctionNode& functionNode)
         Assert(compoundStatement, "compound statement expected");
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
     }
-    CheckFunctionReturnPaths(functionSymbol, functionNode);
+    CheckFunctionReturnPaths(functionSymbol, functionNode, containerScope, boundCompileUnit);
     boundCompileUnit.AddBoundNode(std::move(boundFunction));
     containerScope = prevContainerScope;
     function = prevFunction;
@@ -435,7 +444,7 @@ void StatementBinderVisitor::Visit(PropertyNode& propertyNode)
         function = boundFunction.get();
         containerScope = getter->GetContainerScope();
         propertyNode.Getter()->Accept(*this);
-        CheckFunctionReturnPaths(getter, propertyNode.Getter(), propertyNode.Getter()->GetSpan());
+        CheckFunctionReturnPaths(getter, propertyNode.Getter(), propertyNode.Getter()->GetSpan(), containerScope, boundCompileUnit);
         BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
         Assert(compoundStatement, "compound statement expected");
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
@@ -467,7 +476,7 @@ void StatementBinderVisitor::Visit(PropertyNode& propertyNode)
         BoundFunction* prevFunction = function;
         function = boundFunction.get();
         propertyNode.Setter()->Accept(*this);
-        CheckFunctionReturnPaths(setter, propertyNode.Setter(), propertyNode.Setter()->GetSpan());
+        CheckFunctionReturnPaths(setter, propertyNode.Setter(), propertyNode.Setter()->GetSpan(), containerScope, boundCompileUnit);
         BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
         Assert(compoundStatement, "compound statement expected");
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
@@ -511,7 +520,7 @@ void StatementBinderVisitor::Visit(IndexerNode& indexerNode)
         function = boundFunction.get();
         containerScope = getter->GetContainerScope();
         indexerNode.Getter()->Accept(*this);
-        CheckFunctionReturnPaths(getter, indexerNode.Getter(), indexerNode.Getter()->GetSpan());
+        CheckFunctionReturnPaths(getter, indexerNode.Getter(), indexerNode.Getter()->GetSpan(), containerScope, boundCompileUnit);
         BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
         Assert(compoundStatement, "compound statement expected");
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));
@@ -543,7 +552,7 @@ void StatementBinderVisitor::Visit(IndexerNode& indexerNode)
         BoundFunction* prevFunction = function;
         function = boundFunction.get();
         indexerNode.Setter()->Accept(*this);
-        CheckFunctionReturnPaths(setter, indexerNode.Setter(), indexerNode.Setter()->GetSpan());
+        CheckFunctionReturnPaths(setter, indexerNode.Setter(), indexerNode.Setter()->GetSpan(), containerScope, boundCompileUnit);
         BoundCompoundStatement* compoundStatement = dynamic_cast<BoundCompoundStatement*>(statement.release());
         Assert(compoundStatement, "compound statement expected");
         function->SetBody(std::unique_ptr<BoundCompoundStatement>(compoundStatement));

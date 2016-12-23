@@ -295,6 +295,30 @@ private:
     std::unique_ptr<Node> size;
 };
 
+class RefTypeExprNode : public UnaryNode
+{
+public:
+    RefTypeExprNode(const Span& span_);
+    RefTypeExprNode(const Span& span_, Node* subject_);
+    NodeType GetNodeType() const override { return NodeType::refTypeExprNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
+    void Accept(Visitor& visitor) override;
+};
+
+class RefNode : public UnaryNode
+{
+public:
+    RefNode(const Span& span_);
+    RefNode(const Span& span_, Node* subject_);
+    NodeType GetNodeType() const override { return NodeType::refNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
+    void Accept(Visitor& visitor) override;
+};
+
 class IndexingNode : public UnaryNode
 {
 public:

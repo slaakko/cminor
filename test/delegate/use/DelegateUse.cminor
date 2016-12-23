@@ -1,0 +1,25 @@
+using System;
+
+void bar(int x, double y)
+{
+    Console.Write("bar ");
+    Console.Write(x);
+    Console.Write(" ");
+    Console.Write(y);
+    Console.WriteLine();
+}
+
+int main()
+{
+    try
+    {
+        foo f = bar;
+        f(1, 2.0);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+        return 1;
+    }
+    return 0;
+}

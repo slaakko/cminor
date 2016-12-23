@@ -42,7 +42,7 @@ public:
     bool Evaluating() const { return evaluating; }
     void SetEvaluating() { evaluating = true; }
     void ResetEvaluating() { evaluating = false; }
-    void Evaluate(SymbolEvaluator* evaluator, const Span& span);
+    bool Evaluate(SymbolEvaluator* evaluator, const Span& span, bool dontThrow);
     Constant GetConstant() const { return constant; }
 private:
     std::unique_ptr<Value> value;
