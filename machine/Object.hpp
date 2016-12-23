@@ -126,13 +126,16 @@ inline bool operator==(ObjectReference left, ObjectReference right)
 class MemPtr
 {
 public:
-    MemPtr() : value(nullptr) {}
-    MemPtr(void* value_) : value(value_) {}
-    MemPtr(const char32_t* strValue_) : strValue(strValue_) {}
+    MemPtr() : value(nullptr), hashCode(0) {}
+    MemPtr(void* value_) : value(value_), hashCode(0) {}
+    MemPtr(const char32_t* strValue_) : strValue(strValue_), hashCode(0) {}
     void* Value() const { return value; }
     const char32_t* StrValue() const { return strValue; }
+    uint64_t HashCode() const { return hashCode; }
+    void SetHashCode(uint64_t hashCode_) { hashCode = hashCode_; }
 private:
     union { void* value; const char32_t* strValue; };
+    uint64_t hashCode;
 };
 
 inline bool operator==(MemPtr left, MemPtr right)

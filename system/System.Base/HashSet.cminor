@@ -20,9 +20,17 @@ namespace System.Collections.Generic
         {
             get { return table.Count;}
         }
-        public bool Insert(T value)
+        public bool Add(T value)
         {
-            return table.Insert(value);
+            return table.Add(value);
+        }
+        public bool Remove(T value)
+        {
+            return table.Remove(value);
+        }
+        public bool Contains(T value)
+        {
+            return table.Contains(value);
         }
         private Hashtable<T, T, Identity<T>> table;
     }

@@ -8,6 +8,7 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/String.hpp>
 #include <cminor/machine/Class.hpp>
+#include <cminor/machine/Random.hpp>
 
 namespace cminor { namespace machine {
 
@@ -350,6 +351,7 @@ ObjectReference ManagedMemoryPool::CreateObject(Thread& thread, ObjectType* type
 {
     ObjectReference reference(nextReferenceValue++);
     std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, type->ObjectSize());
+    memPtrSegmentId.first.SetHashCode(Random64());
     std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, memPtrSegmentId.first, memPtrSegmentId.second, type, type->ObjectSize()))));
     if (!pairItBool.second)
@@ -433,7 +435,9 @@ AllocationHandle ManagedMemoryPool::CreateStringCharsFromLiteral(const char32_t*
     AllocationHandle handle(nextReferenceValue++);
     uint64_t stringSize = static_cast<uint64_t>(sizeof(char32_t)) * len;
     std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, MemPtr(strLit), notGarbageCollectedSegment, len, stringSize))));
+    MemPtr memPtr(strLit);
+    memPtr.SetHashCode(Random64());
+    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, memPtr, notGarbageCollectedSegment, len, stringSize))));
     if (!pairItBool.second)
     {
         throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
@@ -460,6 +464,7 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
         AllocationHandle handle(nextReferenceValue++);
         uint64_t stringSize = numChars * ValueSize(ValueType::charType);
         std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
+        memPtrSegmentId.first.SetHashCode(Random64());
         lock.lock();
         auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize))));
         if (!pairItBool.second)
@@ -486,6 +491,7 @@ ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_stri
     AllocationHandle handle(nextReferenceValue++);
     uint64_t stringSize = numChars * ValueSize(ValueType::charType);
     std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
+    memPtrSegmentId.first.SetHashCode(Random64());
     std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize))));
     if (!pairItBool.second)
@@ -631,6 +637,7 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
     if (arraySize > 0)
     {
         std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, arraySize);
+        memPtrSegmentId.first.SetHashCode(Random64());
         std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
         auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, memPtrSegmentId.first, memPtrSegmentId.second, elementType, length, arraySize))));
         if (!pairItBool.second)
@@ -801,6 +808,7 @@ void ManagedMemoryPool::MoveLiveAllocationsToArena(ArenaId fromArenaId, Arena& t
                     {
                         uint64_t n = allocation->Size();
                         std::pair<MemPtr, int32_t> newMemPtrSegmentId = toArena.Allocate(n);
+                        newMemPtrSegmentId.first.SetHashCode(oldMemPtr.HashCode());
                         std::memcpy(newMemPtrSegmentId.first.Value(), oldMemPtr.Value(), n);
                         allocation->SetMemPtr(newMemPtrSegmentId.first);
                         allocation->SetSegmentId(newMemPtrSegmentId.second);
@@ -847,6 +855,7 @@ void MoveSegment(Arena& arena, std::unordered_map<void*, std::pair<MemPtr, int32
         {
             uint64_t n = allocation->Size();
             std::pair<MemPtr, int32_t> newMemPtrSegmentId = arena.Allocate(n, allocateNewSegment);
+            newMemPtrSegmentId.first.SetHashCode(oldMemPtr.HashCode());
             allocateNewSegment = false;
             std::memcpy(newMemPtrSegmentId.first.Value(), oldMemPtr.Value(), n);
             allocation->SetMemPtr(newMemPtrSegmentId.first);
@@ -911,7 +920,7 @@ void ManagedMemoryPool::MoveLiveAllocationsToNewSegments(Arena& arena)
             }
             if (moveSegment)
             {
-                MoveSegment(arena, moveMap, liveAllocation->SegmentId(), segmentBegin, it, firstMove);
+                MoveSegment(arena, moveMap, currentSegmentId, segmentBegin, it, firstMove);
                 firstMove = false;
             }
             currentSegmentId = liveAllocation->SegmentId();

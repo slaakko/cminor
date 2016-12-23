@@ -2,6 +2,13 @@ using System;
 
 namespace System.Collections.Generic
 {
+    public class KeyNotFoundException : Exception
+    {
+        public KeyNotFoundException(string message) : base(message)
+        {
+        }
+    }
+
     public class KeyValuePair<KeyType, ValueType>
     {
         public KeyValuePair(KeyType key, ValueType val)
@@ -48,9 +55,36 @@ namespace System.Collections.Generic
         {
             get { return table.Count;}
         }
-        public bool Insert(KeyValuePair<KeyType, ValueType> keyValuePair)
+        public bool Add(KeyValuePair<KeyType, ValueType> keyValuePair)
         {
-            return table.Insert(keyValuePair);
+            return table.Add(keyValuePair);
+        }
+        public bool Remove(KeyType key)
+        {
+            return table.Remove(key);
+        }
+        public bool ContainsKey(KeyType key)
+        {
+            return table.Contains(key);
+        }
+        public ValueType this[KeyType key]
+        {
+            get 
+            { 
+                KeyValuePair<KeyType, ValueType> pair = table[key];
+                if (pair != null)
+                {
+                    return pair.Value;
+                }
+                else
+                {
+                    throw KeyNotFoundException("key '" + key.ToString() + "' not found");
+                }
+            }
+            set 
+            { 
+                table.AddOrReplace(new KeyValuePair<KeyType, ValueType>(key, value));
+            }
         }
         private Hashtable<KeyType, KeyValuePair<KeyType, ValueType>, ExtractKey<KeyType, ValueType>> table;
     }

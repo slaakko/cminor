@@ -96,16 +96,9 @@ namespace System.Collections.Generic
             this.count = 0;
             this.loadFactor = 0;
         }
-        public bool Insert(ValueType value)
+        public bool Add(ValueType value)
         {
-            if (buckets == null)
-            {
-                buckets = new List<Bucket<ValueType>>(0);
-            }
-            if (buckets.Count == 0)
-            {
-                buckets.Resize(HashtablePrimes.GetNextPrime(0));
-            }
+            InitBuckets();
             KeyType key = KeyOf(value);
             int index = Hash(key);
             Bucket<ValueType> bucket = buckets[index];
@@ -123,6 +116,86 @@ namespace System.Collections.Generic
             SetLoadFactor();
             CheckForRehash();
             return true;
+        }
+        public bool Remove(KeyType key)
+        {
+            InitBuckets();
+            int index = Hash(key);
+            Bucket<ValueType> bucket = buckets[index];
+            Bucket<ValueType> prev = null;
+            while (bucket != null)
+            {
+                if (KeyOf(bucket.Value) == key)
+                {
+                    if (prev == null)
+                    {
+                        buckets[index] = bucket.Next;
+                    }
+                    else
+                    {
+                        prev.Next = bucket.Next;
+                    }
+                    --count;
+                    SetLoadFactor();
+                    return true;
+                }
+                prev = bucket;
+                bucket = bucket.Next;
+            }
+            return false;
+        }
+        public bool Contains(KeyType key)
+        {
+            InitBuckets();
+            int index = Hash(key);
+            Bucket<ValueType> bucket = buckets[index];
+            while (bucket != null)
+            {
+                if (KeyOf(bucket.Value) == key)
+                {
+                    return true;
+                }
+                bucket = bucket.Next;
+            }
+            return false;
+        }
+        public ValueType this[KeyType key]
+        {
+            get 
+            { 
+                InitBuckets();
+                int index = Hash(key);
+                Bucket<ValueType> bucket = buckets[index];
+                while (bucket != null)
+                {
+                    if (KeyOf(bucket.Value) == key)
+                    {
+                        return bucket.Value;
+                    }
+                }
+                return null;
+            }
+        }
+
+        public void AddOrReplace(ValueType value)
+        {
+            InitBuckets();
+            KeyType key = KeyOf(value);
+            int index = Hash(key);
+            Bucket<ValueType> bucket = buckets[index];
+            while (bucket != null)
+            {
+                if (KeyOf(bucket.Value) == key)
+                {
+                    bucket.Value = value;
+                    return;
+                }
+            }
+            Bucket<ValueType> bucket = new Bucket<ValueType>(value, buckets[index]);
+            buckets[index] = bucket;
+            ++count;
+            SetLoadFactor();
+            CheckForRehash();
         }
         public Enumerator GetEnumerator()
         {
@@ -154,7 +227,36 @@ namespace System.Collections.Generic
         }
         private void Rehash()
         {
-            // todo
+            List<Bucket<ValueType>> b = new List<Bucket<ValueType>>();
+            List<Bucket<ValueType>> temp = buckets;
+            buckets = b;
+            b = temp;
+            int n = b.Count;
+            buckets.Resize(HashtablePrimes.GetNextPrime(n + 1));
+            for (int i = 0; i < n; ++i)
+            {
+                Bucket<ValueType> bucket = b[i];
+                while (bucket != null)
+                {
+                    KeyType key = KeyOf(bucket.Value);
+                    int index = Hash(key);
+                    Bucket<ValueType> next = bucket.Next;
+                    bucket.Next = buckets[index];
+                    buckets[index] = bucket;
+                    bucket = next;
+                }
+            }
+        }
+        private void InitBuckets()
+        {
+            if (buckets == null)
+            {
+                buckets = new List<Bucket<ValueType>>(0);
+            }
+            if (buckets.Count == 0)
+            {
+                buckets.Resize(HashtablePrimes.GetNextPrime(0));
+            }
         }
         private KeyType KeyOf(ValueType value)
         {

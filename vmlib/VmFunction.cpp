@@ -78,7 +78,7 @@ void VmSystemObjectGetHashCode::Execute(Frame& frame)
     else
     {
         MemPtr memPtr = frame.GetManagedMemoryPool().GetMemPtr(reference);
-        uint64_t hashCode = reinterpret_cast<uint64_t>(memPtr.Value());
+        uint64_t hashCode = memPtr.HashCode();
         frame.OpStack().Push(IntegralValue(hashCode, ValueType::ulongType));
     }
 }
@@ -548,6 +548,7 @@ void VmFunctionPool::Done()
 void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
 {
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectToString(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectGetHashCode(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectEqual(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemStringConstructorCharArray(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOOpenFile(constantPool)));

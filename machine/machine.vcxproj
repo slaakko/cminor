@@ -40,6 +40,7 @@
     <ClInclude Include="OsInterface.hpp" />
     <ClInclude Include="Path.hpp" />
     <ClInclude Include="Prime.hpp" />
+    <ClInclude Include="Random.hpp" />
     <ClInclude Include="Reader.hpp" />
     <ClInclude Include="String.hpp" />
     <ClInclude Include="System.hpp" />
@@ -70,6 +71,7 @@
     <ClCompile Include="OsInterface.cpp" />
     <ClCompile Include="Path.cpp" />
     <ClCompile Include="Prime.cpp" />
+    <ClCompile Include="Random.cpp" />
     <ClCompile Include="Reader.cpp" />
     <ClCompile Include="System.cpp" />
     <ClCompile Include="TextUtils.cpp" />
