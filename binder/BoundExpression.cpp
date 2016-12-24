@@ -528,30 +528,38 @@ void BoundParameter::GenLoad(Machine& machine, Function& function)
     std::unique_ptr<Instruction> loadLocalInst;
     if (index != -1)
     {
-        switch (index)
+        if (parameterSymbol->GetType()->IsRefType())
         {
-            case 0:  loadLocalInst = std::move(machine.CreateInst("loadlocal.0")); break;
-            case 1:  loadLocalInst = std::move(machine.CreateInst("loadlocal.1")); break;
-            case 2:  loadLocalInst = std::move(machine.CreateInst("loadlocal.2")); break;
-            case 3:  loadLocalInst = std::move(machine.CreateInst("loadlocal.3")); break;
-            default:
+            loadLocalInst = std::move(machine.CreateInst("loadlocalref"));
+            loadLocalInst->SetIndex(index);
+        }
+        else
+        {
+            switch (index)
             {
-                if (index < 256)
+                case 0:  loadLocalInst = std::move(machine.CreateInst("loadlocal.0")); break;
+                case 1:  loadLocalInst = std::move(machine.CreateInst("loadlocal.1")); break;
+                case 2:  loadLocalInst = std::move(machine.CreateInst("loadlocal.2")); break;
+                case 3:  loadLocalInst = std::move(machine.CreateInst("loadlocal.3")); break;
+                default:
                 {
-                    loadLocalInst = std::move(machine.CreateInst("loadlocal.b")); 
-                    loadLocalInst->SetIndex(static_cast<uint8_t>(index));
+                    if (index < 256)
+                    {
+                        loadLocalInst = std::move(machine.CreateInst("loadlocal.b"));
+                        loadLocalInst->SetIndex(static_cast<uint8_t>(index));
+                    }
+                    else if (index < 65536)
+                    {
+                        loadLocalInst = std::move(machine.CreateInst("loadlocal.s"));
+                        loadLocalInst->SetIndex(static_cast<uint16_t>(index));
+                    }
+                    else
+                    {
+                        loadLocalInst = std::move(machine.CreateInst("loadlocal"));
+                        loadLocalInst->SetIndex(index);
+                    }
+                    break;
                 }
-                else if (index < 65536)
-                {
-                    loadLocalInst = std::move(machine.CreateInst("loadlocal.s")); 
-                    loadLocalInst->SetIndex(static_cast<uint16_t>(index));
-                }
-                else
-                {
-                    loadLocalInst = std::move(machine.CreateInst("loadlocal"));
-                    loadLocalInst->SetIndex(index);
-                }
-                break;
             }
         }
         function.AddInst(std::move(loadLocalInst));
@@ -568,30 +576,38 @@ void BoundParameter::GenStore(Machine& machine, Function& function)
     int32_t index = parameterSymbol->Index();
     if (index != -1)
     {
-        switch (index)
+        if (parameterSymbol->GetType()->IsRefType())
         {
-            case 0:  storeLocalInst = std::move(machine.CreateInst("storelocal.0")); break;
-            case 1:  storeLocalInst = std::move(machine.CreateInst("storelocal.1")); break;
-            case 2:  storeLocalInst = std::move(machine.CreateInst("storelocal.2")); break;
-            case 3:  storeLocalInst = std::move(machine.CreateInst("storelocal.3")); break;
-            default:
+            storeLocalInst = std::move(machine.CreateInst("storelocalref"));
+            storeLocalInst->SetIndex(index);
+        }
+        else
+        {
+            switch (index)
             {
-                if (index < 256)
+                case 0:  storeLocalInst = std::move(machine.CreateInst("storelocal.0")); break;
+                case 1:  storeLocalInst = std::move(machine.CreateInst("storelocal.1")); break;
+                case 2:  storeLocalInst = std::move(machine.CreateInst("storelocal.2")); break;
+                case 3:  storeLocalInst = std::move(machine.CreateInst("storelocal.3")); break;
+                default:
                 {
-                    storeLocalInst = std::move(machine.CreateInst("storelocal.b")); 
-                    storeLocalInst->SetIndex(static_cast<uint8_t>(index));
+                    if (index < 256)
+                    {
+                        storeLocalInst = std::move(machine.CreateInst("storelocal.b"));
+                        storeLocalInst->SetIndex(static_cast<uint8_t>(index));
+                    }
+                    else if (index < 65536)
+                    {
+                        storeLocalInst = std::move(machine.CreateInst("storelocal.s"));
+                        storeLocalInst->SetIndex(static_cast<uint16_t>(index));
+                    }
+                    else
+                    {
+                        storeLocalInst = std::move(machine.CreateInst("storelocal"));
+                        storeLocalInst->SetIndex(index);
+                    }
+                    break;
                 }
-                else if (index < 65536)
-                {
-                    storeLocalInst = std::move(machine.CreateInst("storelocal.s")); 
-                    storeLocalInst->SetIndex(static_cast<uint16_t>(index));
-                }
-                else
-                {
-                    storeLocalInst = std::move(machine.CreateInst("storelocal"));
-                    storeLocalInst->SetIndex(index);
-                }
-                break;
             }
         }
         function.AddInst(std::move(storeLocalInst));
@@ -1048,6 +1064,28 @@ void BoundAsExpression::GenStore(Machine& machine, Function& function)
 }
 
 void BoundAsExpression::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundLocalRefExpression::BoundLocalRefExpression(Assembly& assembly_, int32_t localIndex_, TypeSymbol* refType_) : BoundExpression(assembly_, refType_), localIndex(localIndex_)
+{
+}
+
+void BoundLocalRefExpression::GenLoad(Machine& machine, Function& function)
+{
+    std::unique_ptr<Instruction> inst = machine.CreateInst("createlocalref");
+    CreateLocalVariableReferenceInst* createLocalVarRefInst = dynamic_cast<CreateLocalVariableReferenceInst*>(inst.get());
+    createLocalVarRefInst->SetLocalIndex(localIndex);
+    function.AddInst(std::move(inst));
+}
+
+void BoundLocalRefExpression::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to bound ref expression");
+}
+
+void BoundLocalRefExpression::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
 }

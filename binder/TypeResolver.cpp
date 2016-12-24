@@ -26,7 +26,7 @@ private:
 class TypeResolverVisitor : public Visitor
 {
 public:
-    TypeResolverVisitor(BoundCompileUnit& boundCompileUnit_, ContainerScope* containerScope_);
+    TypeResolverVisitor(BoundCompileUnit& boundCompileUnit_, ContainerScope* containerScope_, TypeResolverFlags flags_);
     TypeSymbol* GetType() const { Assert(type, "type not set");  return type; }
     void Visit(BoolNode& boolNode) override;
     void Visit(SByteNode& sbyteNode) override;
@@ -47,15 +47,18 @@ public:
     void Visit(TemplateIdNode& templateIdNode) override;
     void Visit(DotNode& dotNode) override;
     void Visit(ArrayNode& arrayNode) override;
+    void Visit(RefTypeExprNode& refTypeExprNode) override;
 private:
     BoundCompileUnit& boundCompileUnit;
     ContainerScope* containerScope;
     TypeSymbol* type;
     std::unique_ptr<NamespaceTypeSymbol> nsTypeSymbol;
+    TypeResolverFlags flags;
     void ResolveSymbol(Node& node, Symbol* symbol);
 };
 
-TypeResolverVisitor::TypeResolverVisitor(BoundCompileUnit& boundCompileUnit_, ContainerScope* containerScope_) : boundCompileUnit(boundCompileUnit_), containerScope(containerScope_), type(nullptr)
+TypeResolverVisitor::TypeResolverVisitor(BoundCompileUnit& boundCompileUnit_, ContainerScope* containerScope_, TypeResolverFlags flags_) : 
+    boundCompileUnit(boundCompileUnit_), containerScope(containerScope_), type(nullptr), flags(flags_)
 {
 }
 
@@ -236,9 +239,25 @@ void TypeResolverVisitor::Visit(ArrayNode& arrayNode)
     type = boundCompileUnit.GetAssembly().GetSymbolTable().CreateArrayType(arrayNode, elementType);
 }
 
+void TypeResolverVisitor::Visit(RefTypeExprNode& refTypeExprNode)
+{
+    if ((flags & TypeResolverFlags::parameterType) == TypeResolverFlags::none)
+    {
+        throw Exception("reference type can be used only as parameter's type", refTypeExprNode.GetSpan());
+    }
+    refTypeExprNode.Child()->Accept(*this);
+    TypeSymbol* baseType = type;
+    type = boundCompileUnit.GetAssembly().GetSymbolTable().MakeRefType(refTypeExprNode, baseType);
+}
+
 TypeSymbol* ResolveType(BoundCompileUnit& boundCompileUnit, ContainerScope* containerScope, Node* typeExprNode)
 {
-    TypeResolverVisitor typeResolver(boundCompileUnit, containerScope);
+    return ResolveType(boundCompileUnit, containerScope, typeExprNode, TypeResolverFlags::none);
+}
+
+TypeSymbol* ResolveType(BoundCompileUnit& boundCompileUnit, ContainerScope* containerScope, Node* typeExprNode, TypeResolverFlags flags)
+{
+    TypeResolverVisitor typeResolver(boundCompileUnit, containerScope, flags);
     typeExprNode->Accept(typeResolver);
     TypeSymbol* type = typeResolver.GetType();
     if (type->IsInComplete())

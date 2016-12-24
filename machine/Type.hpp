@@ -172,6 +172,12 @@ public:
     ValueType GetValueType() const override { return ValueType::functionPtr; }
 };
 
+class RefType : public Type
+{
+public:
+    ValueType GetValueType() const override { return ValueType::variableReference; };
+};
+
 class ObjectType : public Type
 {
 public:

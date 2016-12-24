@@ -37,8 +37,8 @@ public:
     int32_t Id() const { return id; }
     Machine& GetMachine() { return machine; }
     OperandStack& OpStack() { return opStack; }
-    std::vector<Frame>& Frames() { return frames; }
-    const std::vector<Frame>& Frames() const { return frames; }
+    std::vector<std::unique_ptr<Frame>>& Frames() { return frames; }
+    const std::vector<std::unique_ptr<Frame>>& Frames() const { return frames; }
     void IncInstructionCount() { ++instructionCount;  }
     void Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void Step();
@@ -54,13 +54,22 @@ public:
     void PushExitBlock(int32_t exitBlockNext_);
     void PopExitBlock();
     utf32_string GetStackTrace() const;
+    void MapFrame(Frame* frame);
+    void RemoveFrame(int32_t frameId);
+    Frame* GetFrame(int32_t frameId) const;
+    void AddVariableReference(VariableReference* variableReference);
+    VariableReference* GetVariableReference(int32_t variableReferenceId) const;
+    void RemoveVariableReference(int32_t variableReferenceId);
+    int32_t GetNextVariableReferenceId();
 private:
     int32_t id;
     Machine& machine;
     Function& fun;
     OperandStack opStack;
     uint64_t instructionCount;
-    std::vector<Frame> frames;
+    std::vector<std::unique_ptr<Frame>> frames;
+    std::unordered_map<int32_t, Frame*> frameMap;
+    std::unordered_map<int32_t, VariableReference*> variableReferenceMap;
     std::unordered_set<std::pair<int32_t, int32_t>, IntPairHash> breakPoints;
     bool handlingException;
     ObjectReference exception;
@@ -69,6 +78,7 @@ private:
     int32_t exitBlockNext;
     std::stack<int32_t> exitBlockStack;
     std::atomic<ThreadState> state;
+    int32_t nextVariableReferenceId;
     void RunToEnd();
     void FindExceptionBlock(Frame* frame);
     bool DispatchToHandlerOrFinally(Frame* frame);

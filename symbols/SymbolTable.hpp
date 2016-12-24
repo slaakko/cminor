@@ -86,6 +86,7 @@ public:
     TypeSymbol* CreateArrayType(ArrayNode& arrayNode, TypeSymbol* elementType);
     const std::vector<ArrayTypeSymbol*>& CreatedArrays() const { return createdArrays; }
     ClassTemplateSpecializationSymbol* MakeClassTemplateSpecialization(ClassTypeSymbol* primaryClassTemplate, const std::vector<TypeSymbol*>& typeArguments, const Span& span);
+    TypeSymbol* MakeRefType(Node& node, TypeSymbol* baseType);
     bool AddTypes() const { return !doNotAddTypes; }
     void MergeClassTemplateSpecializations();
     void Dump(CodeFormatter& codeFormatter);
@@ -110,6 +111,7 @@ private:
     bool doNotAddClassTemplateSpecializations;
     std::vector<ArrayTypeSymbol*> createdArrays;
     std::unordered_map<ClassTemplateSpecializationKey, ClassTemplateSpecializationSymbol*, ClassTemplateSpecializationKeyHash> classTemplateSpecializationMap;
+    std::unordered_map<TypeSymbol*, RefTypeSymbol*> refTypeMap;
     uint32_t nextSymbolId;
     std::unordered_map<uint32_t, Symbol*> idSymbolMap;
 };

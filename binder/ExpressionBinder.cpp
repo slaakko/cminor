@@ -95,6 +95,7 @@ public:
 
     void Visit(IsNode& isNode) override;
     void Visit(AsNode& asNode) override;
+    void Visit(RefNode& refNode) override;
 private:
     BoundCompileUnit& boundCompileUnit;
     BoundFunction* boundFunction;
@@ -1179,11 +1180,12 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
     }
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
     std::unique_ptr<Exception> exception;
-    std::unique_ptr<BoundFunctionCall> functionCall = ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan(), 
+    std::unique_ptr<Exception> thisEx;
+    std::unique_ptr<Exception> nsEx;
+    std::unique_ptr<BoundFunctionCall> functionCall = ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan(),
         OverloadResolutionFlags::dontThrow, exception);
     if (!functionCall)
     {
-        std::unique_ptr<Exception> thisEx;
         ParameterSymbol* thisParam = boundFunction->GetFunctionSymbol()->GetThisParam();
         bool thisParamInserted = false;
         if (thisParam)
@@ -1202,7 +1204,51 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
                 arguments.erase(arguments.begin());
             }
             arguments.erase(arguments.begin());
-            functionCall = std::move(ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan()));
+            functionCall = std::move(ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan(),
+                OverloadResolutionFlags::dontThrow, nsEx));
+        }
+    }
+    if (!functionCall)
+    {
+        if (CastOverloadException* castException = dynamic_cast<CastOverloadException*>(exception.get()))
+        {
+            throw *exception;
+        }
+        else if (RefOverloadException* refException = dynamic_cast<RefOverloadException*>(exception.get()))
+        {
+            throw *exception;
+        }
+        if (CastOverloadException* castException = dynamic_cast<CastOverloadException*>(thisEx.get()))
+        {
+            throw *thisEx;
+        }
+        else if (RefOverloadException* refException = dynamic_cast<RefOverloadException*>(thisEx.get()))
+        {
+            throw *thisEx;
+        }
+        if (CastOverloadException* castException = dynamic_cast<CastOverloadException*>(nsEx.get()))
+        {
+            throw *nsEx;
+        }
+        else if (RefOverloadException* refException = dynamic_cast<RefOverloadException*>(nsEx.get()))
+        {
+            throw *nsEx;
+        }
+        if (exception.get())
+        {
+            throw *exception;
+        }
+        else if (thisEx.get())
+        {
+            throw *thisEx;
+        }
+        else if (nsEx.get())
+        { 
+            throw *nsEx;
+        }
+        else
+        {
+            throw Exception("overload resolution failed: overload not found", invokeNode.GetSpan());
         }
     }
     CheckAccess(boundFunction->GetFunctionSymbol(), functionCall->GetFunctionSymbol());
@@ -1368,6 +1414,18 @@ void ExpressionBinder::Visit(AsNode& asNode)
     {
         throw Exception("target type of as expression must be a class type", asNode.TargetTypeExpr()->GetSpan());
     }
+}
+
+void ExpressionBinder::Visit(RefNode& refNode)
+{
+    refNode.Child()->Accept(*this);
+    if (!expression->IsBoundLocalVariable())
+    {
+        throw Exception("only refs to local variables supported", refNode.GetSpan());
+    }
+    BoundLocalVariable* boundLocalVariable = static_cast<BoundLocalVariable*>(expression.get());
+    TypeSymbol* refType = boundCompileUnit.GetAssembly().GetSymbolTable().MakeRefType(refNode, expression->GetType());
+    expression.reset(new BoundLocalRefExpression(boundCompileUnit.GetAssembly(), boundLocalVariable->GetLocalVariableSymbol()->Index(), refType));
 }
 
 std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node)

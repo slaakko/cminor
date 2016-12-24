@@ -220,9 +220,9 @@ void GarbageCollector::MarkLiveAllocations()
     }
     for (const std::unique_ptr<Thread>& thread : machine.Threads())
     {
-        for (const Frame& frame : thread->Frames())
+        for (const std::unique_ptr<Frame>& frame : thread->Frames())
         {
-            const OperandStack& operandStack = frame.OpStack();
+            const OperandStack& operandStack = frame->OpStack();
             for (IntegralValue value : operandStack.Values())
             {
                 if (value.GetType() == ValueType::objectReference)
@@ -231,7 +231,7 @@ void GarbageCollector::MarkLiveAllocations()
                     MarkLiveAllocations(objectReference, checked);
                 }
             }
-            const LocalVariableVector& locals = frame.Locals();
+            const LocalVariableVector& locals = frame->Locals();
             for (const LocalVariable& local : locals.Variables())
             {
                 IntegralValue value = local.GetValue();

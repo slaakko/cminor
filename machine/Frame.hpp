@@ -7,6 +7,7 @@
 #define CMINOR_MACHINE_FRAME_INCLUDED
 #include <cminor/machine/OperandStack.hpp>
 #include <cminor/machine/LocalVariable.hpp>
+#include <cminor/machine/VariableReference.hpp>
 
 namespace cminor { namespace machine {
 
@@ -20,6 +21,8 @@ class Frame
 {
 public:
     Frame(Machine& machine_, Thread& thread_, Function& fun_);
+    ~Frame();
+    Frame(Frame&&) = default;
     Machine& GetMachine() { return machine; }
     int32_t Id() const { return id; }
     Thread& GetThread() { return thread; }
@@ -34,6 +37,7 @@ public:
     int32_t PC() const { return pc; }
     void SetPC(int32_t pc_);
     int32_t PrevPC() const { return prevPC; }
+    void AddVariableReference(VariableReference* variableReference);
 private:
     Machine& machine;
     int32_t id;
@@ -43,6 +47,7 @@ private:
     ConstantPool& constantPool;
     OperandStack& opStack;
     LocalVariableVector locals;
+    std::vector<std::unique_ptr<VariableReference>> variableReferences;
     int32_t pc;
     int32_t prevPC;
 };

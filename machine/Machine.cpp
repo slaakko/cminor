@@ -319,6 +319,12 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     rootInst.SetInst(0xE4, new MemFun2ClassDlgInst());
     rootInst.SetInst(0xE5, new ClassDelegateCallInst());
 
+    // references:
+    // -----------
+    rootInst.SetInst(0xE6, new CreateLocalVariableReferenceInst());
+    rootInst.SetInst(0xE7, new LoadLocalVariableReferenceInst());
+    rootInst.SetInst(0xE8, new StoreLocalVariableReferenceInst());
+
     // vmcall:
     // -------
 
@@ -542,7 +548,7 @@ void Machine::Start(const std::vector<utf32_string>& programArguments, ObjectTyp
     if (argsArrayObjectType)
     {
         Thread& mainThread = MainThread();
-        Frame* frame = &mainThread.Frames().back();
+        Frame* frame = mainThread.Frames().back().get();
         ObjectReference args = frame->GetManagedMemoryPool().CreateStringArray(mainThread, programArguments, argsArrayObjectType);
         frame->OpStack().Push(args);
     }

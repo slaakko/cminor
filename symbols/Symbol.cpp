@@ -32,7 +32,7 @@ const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
     "declarationBlock", "typeParameterSymbol", "boundTypeParameterSymbol", "classTemplateSpecializationSymbol", "basicTypeDefaultInit", "basicTypeCopyInit", "basicTypeAssignment", 
     "basicTypeReturn", "basicTypeConversion", "basicTypeUnaryOp", "basicTypBinaryOp", "objectDefaultInit", "objectCopyInit", "objectNullInit", "objectAssignment", "objectNullAssignment",
     "objectNullEqual", "nullObjectEqual", "nullToObjectConversion", "classTypeConversion", "classToInterfaceConversion", "enumTypeSymbol", "enumConstantSymbol", "enumTypeDefaultInit", 
-    "enumTypeConversion", "delegateTypeSymbol", "delegateDefaultInit", "functionGroupTypeSymbol", "classDelegateTypeSymbol", "memberExpressionTypeSymbol"
+    "enumTypeConversion", "delegateTypeSymbol", "delegateDefaultInit", "functionGroupTypeSymbol", "classDelegateTypeSymbol", "memberExpressionTypeSymbol", "refTypeSymbol", "refTypeAssignment"
 };
 
 std::string SymbolTypeStr(SymbolType symbolType)
@@ -1203,6 +1203,16 @@ TypeParameterSymbol::TypeParameterSymbol(const Span& span_, Constant name_) : Ty
 {
 }
 
+utf32_string TypeParameterSymbol::FullName() const
+{
+    return Name().Value();
+}
+
+void TypeParameterSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
+{
+    classTypeSymbol->Add(this);
+}
+
 BoundTypeParameterSymbol::BoundTypeParameterSymbol(const Span& span_, Constant name_) : Symbol(span_, name_), type(nullptr)
 {
 }
@@ -1236,14 +1246,45 @@ void BoundTypeParameterSymbol::EmplaceType(TypeSymbol* type, int index)
     }
 }
 
-utf32_string TypeParameterSymbol::FullName() const
+RefTypeSymbol::RefTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), baseType(nullptr), machineType(new RefType())
 {
-    return Name().Value();
 }
 
-void TypeParameterSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
+void RefTypeSymbol::Write(SymbolWriter& writer)
 {
-    classTypeSymbol->Add(this);
+    TypeSymbol::Write(writer);
+    utf32_string baseTypeName = baseType->FullName();
+    ConstantId baseTypeId = GetAssembly()->GetConstantPool().GetIdFor(baseTypeName);
+    Assert(baseTypeId != noConstantId, "got no id");
+    baseTypeId.Write(writer);
+}
+
+void RefTypeSymbol::Read(SymbolReader& reader)
+{
+    TypeSymbol::Read(reader);
+    ConstantId baseTypeId;
+    baseTypeId.Read(reader);
+    reader.EmplaceTypeRequest(this, baseTypeId, 0);
+}
+
+void RefTypeSymbol::EmplaceType(TypeSymbol* type, int index)
+{
+    if (index == 0)
+    {
+        baseType = type;
+    }
+    else
+    {
+        throw std::runtime_error("ref type got invalid emplace type index " + std::to_string(index));
+    }
+}
+
+void RefTypeSymbol::SetBaseType(TypeSymbol* baseType_)
+{   
+    baseType = baseType_; 
+    utf32_string baseTypeFullName = baseType->FullName();
+    ConstantPool& constantPool = GetAssembly()->GetConstantPool();
+    constantPool.Install(StringPtr(baseTypeFullName.c_str()));
 }
 
 ClassTypeSymbol::ClassTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), baseClass(nullptr), objectType(new ObjectType()), classData(new ClassData(objectType.get())), 

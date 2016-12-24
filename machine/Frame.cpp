@@ -15,6 +15,20 @@ Frame::Frame(Machine& machine_, Thread& thread_, Function& fun_) :
 {
 }
 
+Frame::~Frame()
+{
+    for (const std::unique_ptr<VariableReference>& variableReference : variableReferences)
+    {
+        thread.RemoveVariableReference(variableReference->Id());
+    }
+}
+
+void Frame::AddVariableReference(VariableReference* variableReference)
+{
+    variableReferences.push_back(std::unique_ptr<VariableReference>(variableReference));
+    thread.AddVariableReference(variableReference);
+}
+
 Instruction* Frame::GetNextInst()
 {
     prevPC = pc;

@@ -44,6 +44,30 @@ private:
     std::vector<Span> references;
 };
 
+class CastOverloadException : public Exception
+{
+public:
+    CastOverloadException(const std::string& message_, const Span& defined_);
+    CastOverloadException(const std::string& message_, const Span& defined_, const Span& referenced_);
+    CastOverloadException(const std::string& message_, const Span& defined_, const std::vector<Span>& references_);
+};
+
+class RefOverloadException : public Exception
+{
+public:
+    RefOverloadException(const std::string& message_, const Span& defined_);
+    RefOverloadException(const std::string& message_, const Span& defined_, const Span& referenced_);
+    RefOverloadException(const std::string& message_, const Span& defined_, const std::vector<Span>& references_);
+};
+
+class CastException : public Exception
+{
+public:
+    CastException(const std::string& message_, const Span& defined_);
+    CastException(const std::string& message_, const Span& defined_, const Span& referenced_);
+    CastException(const std::string& message_, const Span& defined_, const std::vector<Span>& references_);
+};
+
 class MachineException : public std::runtime_error
 {
 public:

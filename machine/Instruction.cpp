@@ -1187,7 +1187,9 @@ void CallInst::Execute(Frame& frame)
 {
     Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
     Function* fun = function.Value().AsFunctionPtr();
-    frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *fun));
+    Thread& thread = frame.GetThread();
+    thread.Frames().push_back(std::unique_ptr<Frame>(new Frame(frame.GetMachine(), thread, *fun)));
+    thread.MapFrame(thread.Frames().back().get());
 }
 
 void CallInst::Dump(CodeFormatter& formatter)
@@ -1245,7 +1247,9 @@ void VirtualCallInst::Execute(Frame& frame)
             Function* method = classData->Vmt().GetMethod(vmtIndex);
             if (method)
             {
-                frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *method));
+                Thread& thread = frame.GetThread();
+                thread.Frames().push_back(std::unique_ptr<Frame>(new Frame(frame.GetMachine(), thread, *method)));
+                thread.MapFrame(thread.Frames().back().get());
             }
             else
             {
@@ -1322,7 +1326,9 @@ void InterfaceCallInst::Execute(Frame& frame)
             if (method)
             {
                 frame.OpStack().SetValue(numArgs, receiver);
-                frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *method));
+                Thread& thread = frame.GetThread();
+                thread.Frames().push_back(std::unique_ptr<Frame>(new Frame(frame.GetMachine(), thread, *method)));
+                thread.MapFrame(thread.Frames().back().get());
             }
             else
             {
@@ -1398,7 +1404,9 @@ void DelegateCallInst::Execute(Frame& frame)
     }
     else
     {
-        frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *fun));
+        Thread& thread = frame.GetThread();
+        thread.Frames().push_back(std::unique_ptr<Frame>(new Frame(frame.GetMachine(), thread, *fun)));
+        thread.MapFrame(thread.Frames().back().get());
     }
 }
 
@@ -1425,7 +1433,9 @@ void ClassDelegateCallInst::Execute(Frame& frame)
     else
     {
         frame.OpStack().Insert(fun->NumParameters() - 1, classObjectValue);
-        frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *fun));
+        Thread& thread = frame.GetThread();
+        thread.Frames().push_back(std::unique_ptr<Frame>(new Frame(frame.GetMachine(), thread, *fun)));
+        thread.MapFrame(thread.Frames().back().get());
     }
 }
 
@@ -1880,7 +1890,9 @@ void StaticInitInst::Execute(Frame& frame)
             if (staticConstructorName.Value())
             {
                 Function* staticConstructor = FunctionTable::Instance().GetFunction(staticConstructorName);
-                frame.GetThread().Frames().push_back(Frame(frame.GetMachine(), frame.GetThread(), *staticConstructor));
+                Thread& thread = frame.GetThread();
+                thread.Frames().push_back(std::unique_ptr<Frame>(new Frame(frame.GetMachine(), thread, *staticConstructor)));
+                thread.MapFrame(thread.Frames().back().get());
             }
             else
             {
@@ -2297,6 +2309,69 @@ void MemFun2ClassDlgInst::Dump(CodeFormatter& formatter)
 void MemFun2ClassDlgInst::DispatchTo(InstAdder& adder)
 {
     adder.Add(this);
+}
+
+CreateLocalVariableReferenceInst::CreateLocalVariableReferenceInst() : Instruction("createlocalref"), localIndex(-1)
+{
+}
+
+void CreateLocalVariableReferenceInst::Clear()
+{
+    localIndex = -1;
+}
+
+void CreateLocalVariableReferenceInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(localIndex);
+}
+
+Instruction* CreateLocalVariableReferenceInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    localIndex = reader.GetInt();
+    return this;
+}
+
+void CreateLocalVariableReferenceInst::Execute(Frame& frame)
+{
+    int32_t variableReferenceId = frame.GetThread().GetNextVariableReferenceId();
+    frame.AddVariableReference(new VariableReference(variableReferenceId, frame.Id(), localIndex));
+    frame.OpStack().Push(IntegralValue(variableReferenceId, ValueType::variableReference));
+}
+
+LoadLocalVariableReferenceInst::LoadLocalVariableReferenceInst() : IndexParamInst("loadlocalref")
+{
+}
+
+void LoadLocalVariableReferenceInst::Execute(Frame& frame)
+{
+    IntegralValue refValue = frame.Local(Index()).GetValue();
+    Assert(refValue.GetType() == ValueType::variableReference, "variable reference expected");
+    int32_t variableReferenceId = refValue.AsInt();
+    VariableReference* variableReference = frame.GetThread().GetVariableReference(variableReferenceId);
+    Assert(variableReference, "variable reference not found");
+    Frame* frm = frame.GetThread().GetFrame(variableReference->FrameId());
+    Assert(frm, "frame not found");
+    IntegralValue value = frm->Local(variableReference->LocalIndex()).GetValue();
+    frame.OpStack().Push(value);
+}
+
+StoreLocalVariableReferenceInst::StoreLocalVariableReferenceInst() : IndexParamInst("storelocalref")
+{
+}
+
+void StoreLocalVariableReferenceInst::Execute(Frame& frame)
+{
+    IntegralValue refValue = frame.Local(Index()).GetValue();
+    Assert(refValue.GetType() == ValueType::variableReference, "variable reference expected");
+    int32_t variableReferenceId = refValue.AsInt();
+    VariableReference* variableReference = frame.GetThread().GetVariableReference(variableReferenceId);
+    Assert(variableReference, "variable reference not found");
+    Frame* frm = frame.GetThread().GetFrame(variableReference->FrameId());
+    Assert(frm, "frame not found");
+    IntegralValue value = frame.OpStack().Pop();
+    frm->Local(variableReference->LocalIndex()).SetValue(value);
 }
 
 void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName)

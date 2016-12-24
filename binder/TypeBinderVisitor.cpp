@@ -89,7 +89,7 @@ void TypeBinderVisitor::Visit(FunctionNode& functionNode)
     for (int i = 0; i < n; ++i)
     {
         ParameterNode* parameterNode = functionNode.Parameters()[i];
-        TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
+        TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr(), TypeResolverFlags::parameterType);
         Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
         ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
         Assert(parameterSymbol, "parameter symbol expected");
@@ -457,7 +457,7 @@ void TypeBinderVisitor::Visit(ConstructorNode& constructorNode)
         for (int i = 0; i < n; ++i)
         {
             ParameterNode* parameterNode = constructorNode.Parameters()[i];
-            TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
+            TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr(), TypeResolverFlags::parameterType);
             Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
             ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
             Assert(parameterSymbol, "parameter symbol expected");
@@ -552,7 +552,7 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         for (int i = 0; i < n; ++i)
         {
             ParameterNode* parameterNode = memberFunctionNode.Parameters()[i];
-            TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
+            TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr(), TypeResolverFlags::parameterType);
             Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
             ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
             Assert(parameterSymbol, "parameter symbol expected");
@@ -902,7 +902,7 @@ void TypeBinderVisitor::Visit(DelegateNode& delegateNode)
     for (int i = 0; i < n; ++i)
     {
         ParameterNode* parameterNode = delegateNode.Parameters()[i];
-        TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
+        TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr(), TypeResolverFlags::parameterType);
         Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
         ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
         Assert(parameterSymbol, "parameter symbol expected");
@@ -923,7 +923,7 @@ void TypeBinderVisitor::Visit(ClassDelegateNode& classDelegateNode)
     for (int i = 0; i < n; ++i)
     {
         ParameterNode* parameterNode = classDelegateNode.Parameters()[i];
-        TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr());
+        TypeSymbol* parameterType = ResolveType(boundCompileUnit, containerScope, parameterNode->TypeExpr(), TypeResolverFlags::parameterType);
         Symbol* ps = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(*parameterNode);
         ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(ps);
         Assert(parameterSymbol, "parameter symbol expected");

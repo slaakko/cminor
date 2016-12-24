@@ -1087,6 +1087,37 @@ private:
     Constant function;
 };
 
+class CreateLocalVariableReferenceInst : public Instruction
+{
+public:
+    CreateLocalVariableReferenceInst();
+    CreateLocalVariableReferenceInst(const CreateLocalVariableReferenceInst& that) = default;
+    void Clear() override;
+    Instruction* Clone() const override { return new CreateLocalVariableReferenceInst(*this); }
+    void SetLocalIndex(int32_t localIndex_) { localIndex = localIndex_; }
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
+    void Execute(Frame& frame) override;
+private:
+    int32_t localIndex;
+};
+
+class LoadLocalVariableReferenceInst : public IndexParamInst
+{
+public:
+    LoadLocalVariableReferenceInst();
+    Instruction* Clone() const override { return new LoadLocalVariableReferenceInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class StoreLocalVariableReferenceInst : public IndexParamInst
+{
+public:
+    StoreLocalVariableReferenceInst();
+    Instruction* Clone() const override { return new StoreLocalVariableReferenceInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 } } // namespace cminor::machine
 
 #endif // CMINOR_MACHINE_INSTRUCTION_INCLUDED

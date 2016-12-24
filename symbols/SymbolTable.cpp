@@ -15,6 +15,7 @@
 #include <cminor/symbols/BasicTypeFun.hpp>
 #include <cminor/symbols/ObjectFun.hpp>
 #include <cminor/symbols/StringFun.hpp>
+#include <cminor/symbols/RefTypeFun.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/ast/Project.hpp>
@@ -776,6 +777,10 @@ void SymbolTable::AddType(TypeSymbol* type)
     {
         classTemplateSpecializationMap[classTemplateSpecialization->Key()] = classTemplateSpecialization;
     }
+    else if (RefTypeSymbol* refTypeSymbol = dynamic_cast<RefTypeSymbol*>(type))
+    {
+        refTypeMap[refTypeSymbol->GetBaseType()] = refTypeSymbol;
+    }
 }
 
 Symbol* SymbolTable::GetSymbol(Node& node) const
@@ -969,6 +974,26 @@ ClassTemplateSpecializationSymbol* SymbolTable::MakeClassTemplateSpecialization(
     return classTemplateSpecialization;
 }
 
+TypeSymbol* SymbolTable::MakeRefType(Node& node, TypeSymbol* baseType)
+{
+    auto it = refTypeMap.find(baseType);
+    if (it != refTypeMap.cend())
+    {
+        return it->second;
+    }
+    ConstantPool& constantPool = assembly->GetConstantPool();
+    utf32_string s = U"ref " + baseType->FullName();
+    Constant name = constantPool.GetConstant(constantPool.Install(StringPtr(s.c_str())));
+    RefTypeSymbol* refTypeSymbol = new RefTypeSymbol(node.GetSpan(), name);
+    refTypeSymbol->SetAssembly(assembly);
+    refTypeSymbol->SetPublic();
+    globalNs.AddSymbol(std::unique_ptr<Symbol>(refTypeSymbol));
+    refTypeSymbol->SetBaseType(baseType);
+    refTypeMap[baseType] = refTypeSymbol;
+    CreateRefTypeBasicFun(*assembly, refTypeSymbol);
+    return refTypeSymbol;
+}
+
 void SymbolTable::MergeClassTemplateSpecializations()
 {
     for (auto& p : classTemplateSpecializationMap)
@@ -1106,6 +1131,8 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::delegateTypeSymbol, new ConcreteSymbolCreator<DelegateTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::classDelegateTypeSymbol, new ConcreteSymbolCreator<ClassDelegateTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::delegateDefaultInit, new ConcreteSymbolCreator<DelegateDefaultInit>());
+    SymbolFactory::Instance().Register(SymbolType::refTypeAssignment, new ConcreteSymbolCreator<RefTypeAssignment>());
+    SymbolFactory::Instance().Register(SymbolType::refTypeSymbol, new ConcreteSymbolCreator<RefTypeSymbol>());
 }
 
 void DoneSymbol()

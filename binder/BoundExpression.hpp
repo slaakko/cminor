@@ -45,6 +45,7 @@ public:
     virtual bool ReturnsValue() const { return false; }
     virtual bool IsBoundFunctionGroupExpression() const { return false; }
     virtual bool IsBoundMemberExpression() const { return false; }
+    virtual bool IsBoundLocalVariable() const { return false; }
 private:
     TypeSymbol* type;
     BoundExpressionFlags flags;
@@ -92,6 +93,8 @@ public:
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
     bool IsLvalueExpression() const override { return true; }
+    LocalVariableSymbol* GetLocalVariableSymbol() const { return localVariableSymbol; }
+    bool IsBoundLocalVariable() const { return true; }
 private:
     LocalVariableSymbol* localVariableSymbol;
 };
@@ -383,6 +386,17 @@ public:
 private:
     std::unique_ptr<BoundExpression> expr;
     TypeSymbol* classType;
+};
+
+class BoundLocalRefExpression : public BoundExpression
+{
+public:
+    BoundLocalRefExpression(Assembly& assembly_, int32_t localIndex_, TypeSymbol* refType_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    int32_t localIndex;
 };
 
 } } // namespace cminor::binder

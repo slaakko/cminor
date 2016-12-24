@@ -77,6 +77,30 @@ Exception::Exception(const std::string& message_, const Span& defined_, const st
 {
 }
 
+CastOverloadException::CastOverloadException(const std::string& message_, const Span& defined_) : Exception(message_, defined_)
+{
+}
+
+CastOverloadException::CastOverloadException(const std::string& message_, const Span& defined_, const Span& referenced_) : Exception(message_, defined_, referenced_)
+{
+}
+
+CastOverloadException::CastOverloadException(const std::string& message_, const Span& defined_, const std::vector<Span>& references_) : Exception(message_, defined_, references_)
+{
+}
+
+RefOverloadException::RefOverloadException(const std::string& message_, const Span& defined_) : Exception(message_, defined_)
+{
+}
+
+RefOverloadException::RefOverloadException(const std::string& message_, const Span& defined_, const Span& referenced_) : Exception(message_, defined_, referenced_)
+{
+}
+
+RefOverloadException::RefOverloadException(const std::string& message_, const Span& defined_, const std::vector<Span>& references_) : Exception(message_, defined_, references_)
+{
+}
+
 MachineException::MachineException(const std::string& message_) : std::runtime_error(message_)
 {
 }

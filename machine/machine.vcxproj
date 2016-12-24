@@ -49,6 +49,7 @@
     <ClInclude Include="Type.hpp" />
     <ClInclude Include="Unicode.hpp" />
     <ClInclude Include="Util.hpp" />
+    <ClInclude Include="VariableReference.hpp" />
     <ClInclude Include="Writer.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -79,6 +80,7 @@
     <ClCompile Include="Type.cpp" />
     <ClCompile Include="Unicode.cpp" />
     <ClCompile Include="Util.cpp" />
+    <ClCompile Include="VariableReference.cpp" />
     <ClCompile Include="Writer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -94,6 +94,11 @@ bool FindConversions(BoundCompileUnit& boundCompileUnit, FunctionSymbol* functio
             {
                 return false;
             }
+            if (targetType->IsRefType() && !sourceType->IsRefType())
+            {
+                functionMatch.refRequired = true;
+                return false;
+            }
             FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(sourceType, targetType);
             if (conversionFun)
             {
@@ -236,6 +241,7 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
         {
             std::string overloadName = MakeOverloadName(groupName, arguments);
             bool castRequired = false;
+            bool refRequired = false;
             TypeSymbol* castSourceType = nullptr;
             TypeSymbol* castTargetType = nullptr;
             if (!failedFunctionMatches.empty())
@@ -250,6 +256,11 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
                         castTargetType = failedFunctionMatches[i].castTargetType;
                         break;
                     }
+                    else if (failedFunctionMatches[i].refRequired)
+                    {
+                        refRequired = true;
+                        break;
+                    }
                 }
             }
             if (castRequired)
@@ -258,16 +269,30 @@ std::unique_ptr<BoundFunctionCall> ResolveOverload(BoundCompileUnit& boundCompil
                 Assert(castTargetType, "cast target type not set");
                 if ((flags & OverloadResolutionFlags::dontThrow) != OverloadResolutionFlags::none)
                 {
-                    exception.reset(new Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                    exception.reset(new CastOverloadException("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
                         std::to_string(viableFunctions.size()) + " viable functions examined. Note: cannot convert implicitly from '" +
                         ToUtf8(castSourceType->FullName()) + "' to '" + ToUtf8(castTargetType->FullName()) + "' but explicit conversion (cast) exists.", span));
                     return std::unique_ptr<BoundFunctionCall>();
                 }
                 else
                 {
-                    throw Exception("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                    throw CastOverloadException("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
                         std::to_string(viableFunctions.size()) + " viable functions examined. Note: cannot convert implicitly from '" +
                         ToUtf8(castSourceType->FullName()) + "' to '" + ToUtf8(castTargetType->FullName()) + "' but explicit conversion (cast) exists.", span);
+                }
+            }
+            else if (refRequired)
+            {
+                if ((flags & OverloadResolutionFlags::dontThrow) != OverloadResolutionFlags::none)
+                {
+                    exception.reset(new RefOverloadException("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                        std::to_string(viableFunctions.size()) + " viable functions examined. Note: ref type parameter needs a ref specifier for the argument at the call site.", span));
+                    return std::unique_ptr<BoundFunctionCall>();
+                }
+                else
+                {
+                    throw RefOverloadException("overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " +
+                        std::to_string(viableFunctions.size()) + " viable functions examined. Note: ref type parameter needs a ref specifier for the argument at the call site.", span);
                 }
             }
             else

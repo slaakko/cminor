@@ -15,7 +15,19 @@ using namespace cminor::ast;
 
 class BoundCompileUnit;
 
+enum class TypeResolverFlags : uint8_t
+{
+    none = 0, parameterType = 1
+};
+
+inline TypeResolverFlags operator&(TypeResolverFlags left, TypeResolverFlags right)
+{
+    return TypeResolverFlags(uint8_t(left) & uint8_t(right));
+}
+
 TypeSymbol* ResolveType(BoundCompileUnit& boundCompileUnit, ContainerScope* containerScope, Node* typeExprNode);
+
+TypeSymbol* ResolveType(BoundCompileUnit& boundCompileUnit, ContainerScope* containerScope, Node* typeExprNode, TypeResolverFlags flags);
 
 } } // namespace cminor::binder
 

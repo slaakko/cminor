@@ -51,7 +51,7 @@ enum class SymbolType : uint8_t
     indexerGroupSymbol, constantSymbol, namespaceSymbol, declarationBlock, typeParameterSymbol, boundTypeParameterSymbol, classTemplateSpecializationSymbol,
     basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, objectDefaultInit, objectCopyInit, objectNullInit, 
     objectAssignment, objectNullAssignment, objectNullEqual, nullObjectEqual, nullToObjectConversion, classTypeConversion, classToInterfaceConversion, enumTypeSymbol, enumConstantSymbol,
-    enumTypeDefaultInit, enumTypeConversion, delegateTypeSymbol, delegateDefaultInit, functionGroupTypeSymbol, classDelegateTypeSymbol, memberExpressionTypeSymbol,
+    enumTypeDefaultInit, enumTypeConversion, delegateTypeSymbol, delegateDefaultInit, functionGroupTypeSymbol, classDelegateTypeSymbol, memberExpressionTypeSymbol, refTypeSymbol, refTypeAssignment,
     maxSymbol
 };
 
@@ -317,6 +317,7 @@ public:
     virtual bool IsDelegateOrClassDelegateType() const { return false; }
     virtual bool IsFunctionGroupTypeSymbol() const { return false; }
     virtual bool IsMemberExpressionTypeSymbol() const { return false; }
+    virtual bool IsRefType() const { return false; }
 };
 
 class BasicTypeSymbol : public TypeSymbol
@@ -506,6 +507,25 @@ public:
     void SetType(TypeSymbol* type_) { type = type_; }
 private:
     TypeSymbol* type;
+};
+
+class RefTypeSymbol : public TypeSymbol
+{
+public:
+    RefTypeSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::refTypeSymbol; }
+    std::string TypeString() const override { return "ref type"; };
+    void Write(SymbolWriter& writer) override;
+    void Read(SymbolReader& reader) override;
+    void EmplaceType(TypeSymbol* type, int index) override;
+    void SetBaseType(TypeSymbol* baseType_);
+    TypeSymbol* GetBaseType() const { return baseType; }
+    Type* GetMachineType() const override { return machineType.get(); }
+    ValueType GetValueType() const override { return ValueType::variableReference; }
+    bool IsRefType() const override { return true; }
+private:
+    TypeSymbol* baseType;
+    std::unique_ptr<Type> machineType;
 };
 
 bool Overrides(MemberFunctionSymbol* f, MemberFunctionSymbol* g);

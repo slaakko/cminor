@@ -60,6 +60,7 @@ public:
     void Visit(BoundDisjunction& boundDisjunction) override;
     void Visit(BoundIsExpression& boundIsExpression) override;
     void Visit(BoundAsExpression& boundAsExpression) override;
+    void Visit(BoundLocalRefExpression& boundLocalRefExpression) override;
     void Visit(GenObject& genObject) override;
     bool CreatePCRange() const override;
     bool SetPCRangeEnd() const override;
@@ -1088,6 +1089,12 @@ void EmitterVisitor::Visit(BoundIsExpression& boundIsExpression)
 void EmitterVisitor::Visit(BoundAsExpression& boundAsExpression)
 {
     boundAsExpression.GenLoad(machine, *function);
+    GenJumpingBoolCode();
+}
+
+void EmitterVisitor::Visit(BoundLocalRefExpression& boundLocalRefExpression)
+{
+    boundLocalRefExpression.GenLoad(machine, *function);
     GenJumpingBoolCode();
 }
 

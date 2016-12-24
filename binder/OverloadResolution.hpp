@@ -55,13 +55,14 @@ inline bool BetterArgumentMatch(const ArgumentMatch& left, const ArgumentMatch& 
 
 struct FunctionMatch
 {
-    FunctionMatch(FunctionSymbol* fun_) : fun(fun_), numConversions(0), castRequired(false), castSourceType(nullptr), castTargetType(nullptr) {}
+    FunctionMatch(FunctionSymbol* fun_) : fun(fun_), numConversions(0), castRequired(false), castSourceType(nullptr), castTargetType(nullptr), refRequired(false) {}
     FunctionSymbol* fun;
     std::vector<ArgumentMatch> argumentMatches;
     int numConversions;
     bool castRequired;
     TypeSymbol* castSourceType;
     TypeSymbol* castTargetType;
+    bool refRequired;
 };
 
 struct BetterFunctionMatch
