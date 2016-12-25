@@ -191,8 +191,8 @@ namespace System.Collections.Generic
                     return;
                 }
             }
-            Bucket<ValueType> bucket = new Bucket<ValueType>(value, buckets[index]);
-            buckets[index] = bucket;
+            Bucket<ValueType> newBucket = new Bucket<ValueType>(value, buckets[index]);
+            buckets[index] = newBucket;
             ++count;
             SetLoadFactor();
             CheckForRehash();

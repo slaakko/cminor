@@ -45,7 +45,7 @@ namespace System.Collections.Generic
         }
         public Enumerator GetEnumerator()
         {
-            return table.GetEnumrator();
+            return table.GetEnumerator();
         }
         public void Clear()
         {
@@ -78,13 +78,23 @@ namespace System.Collections.Generic
                 }
                 else
                 {
-                    throw KeyNotFoundException("key '" + key.ToString() + "' not found");
+                    throw new KeyNotFoundException("key '" + key.ToString() + "' not found");
                 }
             }
             set 
             { 
                 table.AddOrReplace(new KeyValuePair<KeyType, ValueType>(key, value));
             }
+        }
+        public bool TryGetValue(KeyType key, ref ValueType value)
+        {
+            KeyValuePair<KeyType, ValueType> pair = table[key];
+            if (pair != null)
+            {
+                value = pair.Value;
+                return true;
+            }
+            return false;
         }
         private Hashtable<KeyType, KeyValuePair<KeyType, ValueType>, ExtractKey<KeyType, ValueType>> table;
     }
