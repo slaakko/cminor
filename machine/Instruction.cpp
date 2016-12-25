@@ -2336,42 +2336,98 @@ Instruction* CreateLocalVariableReferenceInst::Decode(Reader& reader)
 void CreateLocalVariableReferenceInst::Execute(Frame& frame)
 {
     int32_t variableReferenceId = frame.GetThread().GetNextVariableReferenceId();
-    frame.AddVariableReference(new VariableReference(variableReferenceId, frame.Id(), localIndex));
+    frame.AddVariableReference(new LocalVariableReference(variableReferenceId, frame.Id(), localIndex));
     frame.OpStack().Push(IntegralValue(variableReferenceId, ValueType::variableReference));
 }
 
-LoadLocalVariableReferenceInst::LoadLocalVariableReferenceInst() : IndexParamInst("loadlocalref")
+CreateMemberVariableReferenceInst::CreateMemberVariableReferenceInst() : Instruction("createfieldref"), memberVarIndex(-1)
 {
 }
 
-void LoadLocalVariableReferenceInst::Execute(Frame& frame)
+void CreateMemberVariableReferenceInst::Clear()
+{
+    memberVarIndex = -1;
+}
+
+void CreateMemberVariableReferenceInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(memberVarIndex);
+}
+
+Instruction* CreateMemberVariableReferenceInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    memberVarIndex = reader.GetInt();
+    return this;
+}
+
+void CreateMemberVariableReferenceInst::Execute(Frame& frame)
+{
+    IntegralValue objectValue = frame.OpStack().Pop();
+    Assert(objectValue.GetType() == ValueType::objectReference, "object reference expected");
+    ObjectReference objectReference(objectValue.Value());
+    int32_t variableReferenceId = frame.GetThread().GetNextVariableReferenceId();
+    frame.AddVariableReference(new MemberVariableReference(variableReferenceId, objectReference, memberVarIndex));
+    frame.OpStack().Push(IntegralValue(variableReferenceId, ValueType::variableReference));
+}
+
+LoadVariableReferenceInst::LoadVariableReferenceInst() : IndexParamInst("loadref")
+{
+}
+
+void LoadVariableReferenceInst::Execute(Frame& frame)
 {
     IntegralValue refValue = frame.Local(Index()).GetValue();
     Assert(refValue.GetType() == ValueType::variableReference, "variable reference expected");
     int32_t variableReferenceId = refValue.AsInt();
     VariableReference* variableReference = frame.GetThread().GetVariableReference(variableReferenceId);
     Assert(variableReference, "variable reference not found");
-    Frame* frm = frame.GetThread().GetFrame(variableReference->FrameId());
+    variableReference->DispatchTo(this, frame);
+}
+
+void LoadVariableReferenceInst::Handle(Frame& frame, LocalVariableReference* localVariableReference)
+{
+    Frame* frm = frame.GetThread().GetFrame(localVariableReference->FrameId());
     Assert(frm, "frame not found");
-    IntegralValue value = frm->Local(variableReference->LocalIndex()).GetValue();
+    IntegralValue value = frm->Local(localVariableReference->LocalIndex()).GetValue();
     frame.OpStack().Push(value);
 }
 
-StoreLocalVariableReferenceInst::StoreLocalVariableReferenceInst() : IndexParamInst("storelocalref")
+void LoadVariableReferenceInst::Handle(Frame& frame, MemberVariableReference* memberVariableRefeence)
+{
+    Object& object = frame.GetManagedMemoryPool().GetObject(memberVariableRefeence->GetObjectReference());
+    IntegralValue value = object.GetField(memberVariableRefeence->MemberVarIndex());
+    frame.OpStack().Push(value);
+}
+
+StoreVariableReferenceInst::StoreVariableReferenceInst() : IndexParamInst("storeref")
 {
 }
 
-void StoreLocalVariableReferenceInst::Execute(Frame& frame)
+void StoreVariableReferenceInst::Execute(Frame& frame)
 {
     IntegralValue refValue = frame.Local(Index()).GetValue();
     Assert(refValue.GetType() == ValueType::variableReference, "variable reference expected");
     int32_t variableReferenceId = refValue.AsInt();
     VariableReference* variableReference = frame.GetThread().GetVariableReference(variableReferenceId);
     Assert(variableReference, "variable reference not found");
-    Frame* frm = frame.GetThread().GetFrame(variableReference->FrameId());
+    variableReference->DispatchTo(this, frame);
+}
+
+void StoreVariableReferenceInst::Handle(Frame& frame, LocalVariableReference* localVariableReference)
+{
+    Frame* frm = frame.GetThread().GetFrame(localVariableReference->FrameId());
     Assert(frm, "frame not found");
     IntegralValue value = frame.OpStack().Pop();
-    frm->Local(variableReference->LocalIndex()).SetValue(value);
+    frm->Local(localVariableReference->LocalIndex()).SetValue(value);
+}
+
+void StoreVariableReferenceInst::Handle(Frame& frame, MemberVariableReference* memberVariableReference)
+{
+    Object& object = frame.GetManagedMemoryPool().GetObject(memberVariableReference->GetObjectReference());
+    IntegralValue value = frame.OpStack().Pop();
+    object.SetField(value, memberVariableReference->MemberVarIndex());
 }
 
 void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName)

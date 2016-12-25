@@ -1419,13 +1419,23 @@ void ExpressionBinder::Visit(AsNode& asNode)
 void ExpressionBinder::Visit(RefNode& refNode)
 {
     refNode.Child()->Accept(*this);
-    if (!expression->IsBoundLocalVariable())
+    if (expression->IsBoundLocalVariable())
     {
-        throw Exception("only refs to local variables supported", refNode.GetSpan());
+        BoundLocalVariable* boundLocalVariable = static_cast<BoundLocalVariable*>(expression.get());
+        TypeSymbol* refType = boundCompileUnit.GetAssembly().GetSymbolTable().MakeRefType(refNode, expression->GetType());
+        expression.reset(new BoundLocalRefExpression(boundCompileUnit.GetAssembly(), boundLocalVariable->GetLocalVariableSymbol()->Index(), refType));
     }
-    BoundLocalVariable* boundLocalVariable = static_cast<BoundLocalVariable*>(expression.get());
-    TypeSymbol* refType = boundCompileUnit.GetAssembly().GetSymbolTable().MakeRefType(refNode, expression->GetType());
-    expression.reset(new BoundLocalRefExpression(boundCompileUnit.GetAssembly(), boundLocalVariable->GetLocalVariableSymbol()->Index(), refType));
+    else if (expression->IsBoundMemberVariable())
+    {
+        BoundMemberVariable* boundMemberVariable = static_cast<BoundMemberVariable*>(expression.get());
+        TypeSymbol* refType = boundCompileUnit.GetAssembly().GetSymbolTable().MakeRefType(refNode, expression->GetType());
+        expression.reset(new BoundMemberVarRefExpression(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(boundMemberVariable->ReleaseClassObject()),
+            boundMemberVariable->GetMemberVariableSymbol()->Index(), refType));
+    }
+    else
+    {
+        throw Exception("only refs to local or member variables supported", refNode.GetSpan());
+    }
 }
 
 std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node)

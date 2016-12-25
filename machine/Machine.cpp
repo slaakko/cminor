@@ -322,8 +322,9 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     // references:
     // -----------
     rootInst.SetInst(0xE6, new CreateLocalVariableReferenceInst());
-    rootInst.SetInst(0xE7, new LoadLocalVariableReferenceInst());
-    rootInst.SetInst(0xE8, new StoreLocalVariableReferenceInst());
+    rootInst.SetInst(0xE7, new CreateMemberVariableReferenceInst());
+    rootInst.SetInst(0xE8, new LoadVariableReferenceInst());
+    rootInst.SetInst(0xE9, new StoreVariableReferenceInst());
 
     // vmcall:
     // -------

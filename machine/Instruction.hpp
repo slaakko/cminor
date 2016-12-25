@@ -1102,20 +1102,39 @@ private:
     int32_t localIndex;
 };
 
-class LoadLocalVariableReferenceInst : public IndexParamInst
+class CreateMemberVariableReferenceInst : public Instruction
 {
 public:
-    LoadLocalVariableReferenceInst();
-    Instruction* Clone() const override { return new LoadLocalVariableReferenceInst(*this); }
+    CreateMemberVariableReferenceInst();
+    CreateMemberVariableReferenceInst(const CreateMemberVariableReferenceInst& that) = default;
+    void Clear() override;
+    Instruction* Clone() const override { return new CreateMemberVariableReferenceInst(*this); }
+    void SetMemberVarIndex(int32_t memberVarIndex_) { memberVarIndex = memberVarIndex_; }
+    void Encode(Writer& writer) override;
+    Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
+private:
+    int32_t memberVarIndex;
 };
 
-class StoreLocalVariableReferenceInst : public IndexParamInst
+class LoadVariableReferenceInst : public IndexParamInst, public VariableReferenceHandler
 {
 public:
-    StoreLocalVariableReferenceInst();
-    Instruction* Clone() const override { return new StoreLocalVariableReferenceInst(*this); }
+    LoadVariableReferenceInst();
+    Instruction* Clone() const override { return new LoadVariableReferenceInst(*this); }
     void Execute(Frame& frame) override;
+    void Handle(Frame& frame, LocalVariableReference* localVariableReference) override;
+    void Handle(Frame& frame, MemberVariableReference* memberVariableRefeence) override;
+};
+
+class StoreVariableReferenceInst : public IndexParamInst, public VariableReferenceHandler
+{
+public:
+    StoreVariableReferenceInst();
+    Instruction* Clone() const override { return new StoreVariableReferenceInst(*this); }
+    void Execute(Frame& frame) override;
+    void Handle(Frame& frame, LocalVariableReference* localVariableReference) override;
+    void Handle(Frame& frame, MemberVariableReference* memberVariableRefeence) override;
 };
 
 } } // namespace cminor::machine

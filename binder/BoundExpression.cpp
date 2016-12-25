@@ -530,7 +530,7 @@ void BoundParameter::GenLoad(Machine& machine, Function& function)
     {
         if (parameterSymbol->GetType()->IsRefType())
         {
-            loadLocalInst = std::move(machine.CreateInst("loadlocalref"));
+            loadLocalInst = std::move(machine.CreateInst("loadref"));
             loadLocalInst->SetIndex(index);
         }
         else
@@ -578,7 +578,7 @@ void BoundParameter::GenStore(Machine& machine, Function& function)
     {
         if (parameterSymbol->GetType()->IsRefType())
         {
-            storeLocalInst = std::move(machine.CreateInst("storelocalref"));
+            storeLocalInst = std::move(machine.CreateInst("storeref"));
             storeLocalInst->SetIndex(index);
         }
         else
@@ -1082,10 +1082,34 @@ void BoundLocalRefExpression::GenLoad(Machine& machine, Function& function)
 
 void BoundLocalRefExpression::GenStore(Machine& machine, Function& function)
 {
-    throw std::runtime_error("cannot store to bound ref expression");
+    throw std::runtime_error("cannot store to bound local ref expression");
 }
 
 void BoundLocalRefExpression::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+BoundMemberVarRefExpression::BoundMemberVarRefExpression(Assembly& assembly_, std::unique_ptr<BoundExpression>&& classObject_, int32_t memberVarIndex_, TypeSymbol* refType_) :
+    BoundExpression(assembly_, refType_), classObject(std::move(classObject_)), memberVarIndex(memberVarIndex_)
+{
+}
+
+void BoundMemberVarRefExpression::GenLoad(Machine& machine, Function& function)
+{
+    classObject->GenLoad(machine, function);
+    std::unique_ptr<Instruction> inst = machine.CreateInst("createfieldref");
+    CreateMemberVariableReferenceInst* createMemberVarRefInst = dynamic_cast<CreateMemberVariableReferenceInst*>(inst.get());
+    createMemberVarRefInst->SetMemberVarIndex(memberVarIndex);
+    function.AddInst(std::move(inst));
+}
+
+void BoundMemberVarRefExpression::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to bound member var ref expression");
+}
+
+void BoundMemberVarRefExpression::Accept(BoundNodeVisitor& visitor)
 {
     visitor.Visit(*this);
 }

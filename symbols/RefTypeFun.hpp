@@ -9,6 +9,14 @@
 
 namespace cminor { namespace symbols {
 
+class RefTypeInit : public BasicTypeInit
+{
+public:
+    RefTypeInit(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::refTypeInit; }
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
+};
+
 class RefTypeAssignment : public BasicTypeFun
 {
 public:

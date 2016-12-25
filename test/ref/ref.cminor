@@ -1,0 +1,34 @@
+using System;
+
+void foo(ref int x)
+{
+    x = 1;
+    int y = x;
+    y = x;
+}
+
+class Alpha
+{
+    public Alpha()
+    {
+        this.x = 0;
+    }
+    public void Foo()
+    {
+        Console.WriteLine("Alpha before: " + x.ToString());
+        foo(ref x);
+        Console.WriteLine("Alpha after: " + x.ToString());
+    }
+    private int x;
+}
+
+
+void main()
+{
+    int x = 0;
+    Console.WriteLine("main before: " + x.ToString());
+    foo(ref x);
+    Console.WriteLine("main after: " + x.ToString());
+    Alpha a = new Alpha();
+    a.Foo();
+}

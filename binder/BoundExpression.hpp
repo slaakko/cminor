@@ -46,6 +46,7 @@ public:
     virtual bool IsBoundFunctionGroupExpression() const { return false; }
     virtual bool IsBoundMemberExpression() const { return false; }
     virtual bool IsBoundLocalVariable() const { return false; }
+    virtual bool IsBoundMemberVariable() const { return false; }
 private:
     TypeSymbol* type;
     BoundExpressionFlags flags;
@@ -104,12 +105,14 @@ class BoundMemberVariable : public BoundExpression
 public:
     BoundMemberVariable(Assembly& assembly_, TypeSymbol* type_, MemberVariableSymbol* memberVariableSymbol_);
     void SetClassObject(std::unique_ptr<BoundExpression>&& classObject_);
+    BoundExpression* ReleaseClassObject() { return classObject.release(); }
     void GenLoad(Machine& machine, Function& function) override;
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
     bool IsLvalueExpression() const override { return true; }
     MemberVariableSymbol* GetMemberVariableSymbol() const { return memberVariableSymbol; }
     void SetStaticInitNeeded() { staticInitNeeded = true; }
+    bool IsBoundMemberVariable() const override { return true; }
 private:
     std::unique_ptr<BoundExpression> classObject;
     MemberVariableSymbol* memberVariableSymbol;
@@ -397,6 +400,18 @@ public:
     void Accept(BoundNodeVisitor& visitor) override;
 private:
     int32_t localIndex;
+};
+
+class BoundMemberVarRefExpression : public BoundExpression
+{
+public:
+    BoundMemberVarRefExpression(Assembly& assembly_, std::unique_ptr<BoundExpression>&& classObject_, int32_t memberVarIndex_, TypeSymbol* refType_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+private:
+    std::unique_ptr<BoundExpression> classObject;
+    int32_t memberVarIndex;
 };
 
 } } // namespace cminor::binder
