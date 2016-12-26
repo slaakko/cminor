@@ -1,0 +1,39 @@
+using System;
+
+namespace System.Text.Parsing
+{
+    public class Match
+    {
+        public Match(bool hit, int length)
+        {
+            this.hit = hit;
+            this.length = length;
+        }
+        public void Concatenate(Match that)
+        {
+            length = length + that.length;
+        }
+        public bool Hit
+        {
+            get { return hit; }
+        }
+        public int Length
+        {
+            get { return length; }
+        }
+        public static Match Empty
+        {
+            get { return new Match(true, 0); }
+        }
+        public static Match One
+        {
+            get { return new Match(true, 1); }
+        }
+        public static Match Nothing
+        {
+            get { return new Match(false, -1); }
+        }
+        private bool hit;
+        private int length;
+    }
+}

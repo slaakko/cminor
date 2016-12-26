@@ -1,0 +1,163 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing
+{
+    public abstract class UnaryParser : Parser
+    {
+        public UnaryParser(string name, Parser child, string info) : base(name, info)
+        {
+            this.child = child;
+        }
+        public Parser Child
+        {
+            get { return child; }
+        }
+        private Parser child;
+    }
+
+    public abstract class BinaryParser : Parser
+    {
+        public BinaryParser(string name, Parser left, Parser right, string info) : base(name, info)
+        {
+            this.left = left;
+            this.right = right;
+        }
+        public Parser Left
+        {
+            get { return left; }
+        }
+        public Parser Right
+        {
+            get { return right; }
+        }
+        private Parser left;
+        private Parser right;
+    }
+
+    public class OptionalParser : UnaryParser
+    {
+        public OptionalParser(Parser child) : base("optional", child, child.Info + "?")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Span save = scanner.SpanValue;
+            Match match = Child.Parse(scanner, stack);
+            if (match.Hit)
+            {
+                return match;
+            }
+            return Match.Empty;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class PositiveParser : UnaryParser
+    {
+        public PositiveParser(Parser child) : base("positive", child, child.Info + "+")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Match match = Child.Parse(scanner, stack);
+            if (match.Hit)
+            {
+                for (;;)
+                {
+                    Span save = scanner.SpanValue;
+                    scanner.Skip();
+                    Match next = Child.Parse(scanner, stack);
+                    if (next.Hit)
+                    {
+                        match.Concatenate(next);
+                    }
+                    else
+                    {
+                        scanner.SpanValue = save;
+                        break;
+                    }
+                }
+            }
+            return match;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class KleeneStarParser : UnaryParser
+    {
+        public KleeneStarParser(Parser child) : base("kleene", child, child.Info + "*")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Match match = Match.Empty;
+            bool first = true;
+            for (;;)
+            {
+                Span save = scanner.SpanValue;
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    scanner.Skip();
+                }
+                Match next = Child.Parse(scanner, stack);
+                if (next.Hit)
+                {
+                    match.Concatenate(next);
+                }
+                else
+                {
+                    scanner.SpanValue = save;
+                    break;
+                }
+            }
+            return match;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class ExpectationParser : UnaryParser
+    {
+        public ExpectationParser(Parser child) : base("expectation", child, child.Info + "!")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Span expectationSpan = scanner.SpanValue;
+            Match match = Match.Nothing;
+            try
+            {
+                match = Child.Parse(scanner, stack);
+            }
+            catch (ExpectationFailure ex)
+            {
+                throw new ExpectationFailure(Child.Info + ex.Info, ex.FileName, ex.SpanValue, ex.Content);
+            }
+            if (match.Hit)
+            {
+                return match;
+            }
+            else
+            {
+                throw new ExpectationFailure(Child.Info, scanner.FileName, expectationSpan, scanner.Content);
+            }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+}

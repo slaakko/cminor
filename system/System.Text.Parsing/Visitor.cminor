@@ -1,0 +1,22 @@
+using System;
+
+namespace System.Text.Parsing
+{
+    public class Visitor
+    {
+        public virtual void Visit(CharParser parser) {}
+        public virtual void Visit(StringParser parser) {}
+        public virtual void Visit(CharSetParser parser) {}
+        public virtual void Visit(EmptyParser parser) {}
+        public virtual void Visit(SpaceParser parser) {}
+        public virtual void Visit(LetterParser parser) {}
+        public virtual void Visit(DigitParser parser) {}
+        public virtual void Visit(HexDigitParser parser) {}
+        public virtual void Visit(PunctuationParser parser) {}
+        public virtual void Visit(AnyCharParser parser) {}
+        public virtual void Visit(OptionalParser parser) {}
+        public virtual void Visit(PositiveParser parser) {}
+        public virtual void Visit(KleeneStarParser parser) {}
+        public virtual void Visit(ExpectationParser parser) {}
+    }
+}

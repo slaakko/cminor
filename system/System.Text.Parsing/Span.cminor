@@ -1,0 +1,63 @@
+using System;
+
+namespace System.Text.Parsing
+{
+    public class Span
+    {
+        public Span() 
+        {
+            this.fileIndex = -1;
+            this.lineNumber = 0;
+            this.start = -1;
+            this.end = -1;
+        }
+        public Span(int fileindex)
+        {
+            this.fileIndex = fileIndex;
+            this.lineNumber = 1;
+            this.start = 0;
+            this.end = 0;
+        }
+        public Span(int fileIndex, int lineNumber, int start, int end)
+        {
+            this.fileIndex = fileIndex;
+            this.lineNumber = lineNumber;
+            this.start = start;
+            this.end = end;
+        }
+        public bool Valid
+        {
+            get { return start != -1; }
+        }
+        public void Advance()
+        {
+            ++start;
+            ++end;
+        }
+        public void IncLineNumber()
+        {
+            ++lineNumber;
+        }
+        public int FileIndex
+        {
+            get { return fileIndex; }
+        }
+        public int LineNumber
+        {
+            get { return lineNumber; }
+        }
+        public int Start
+        {
+            get { return start; }
+        }
+        public int End
+        {
+            get { return end;}
+            set { end = value; }
+        }
+        private int fileIndex;
+        private int lineNumber;
+        private int start;
+        private int end;
+    }
+}

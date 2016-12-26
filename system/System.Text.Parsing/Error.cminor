@@ -1,0 +1,85 @@
+using System;
+
+namespace System.Text.Parsing
+{
+    public int LineStart(string content, int start)
+    {
+        while (start > 0 && content[start] != '\n')
+        {
+            --start;
+        }
+        if (content[start] == '\n')
+        {
+            ++start;
+        }
+        return start;
+    }
+
+    public int LineEnd(string content, int start)
+    {
+        int n = content.Length;
+        while (start < n && content[start] != '\r' && content[start] != '\n')
+        {
+            ++start;
+        }
+        return start;
+    }
+
+    public string GetErrorLines(string content, Span span)
+    {
+        if (span.Start < 0 || span.Start >= content.Length)
+        {
+            return string.Empty;
+        }
+        int lineStart = LineStart(content, span.Start);
+        int cols = span.Start - lineStart;
+        if (cols < 0)
+        {
+            cols = 0;
+        }
+        int lineEnd = LineEnd(content, span.Start);
+        if (lineEnd < lineStart)
+        {
+            lineEnd = lineStart;
+        }
+        int lineLength = lineEnd - lineStart;
+        string lines = content.Substring(lineStart, lineLength);
+        int spanCols = Max(1, Min(span.End - span.Start, lineLength - cols));
+        string spaces = new string(' ', cols);
+        string hats = new string('^', spanCols);
+        lines = lines + "\n" + spaces + hats;
+        return lines;
+    }
+
+    public class ExpectationFailure : Exception
+    {
+        public ExpectationFailure(string info, string fileName, Span span, string content) : base("Parsing file '" + fileName + "' failed at line " + span.LineNumber.ToString() + ":\n" + info + 
+            " expected:\n" + GetErrorLines(content, span))
+        {
+            this.info = info;
+            this.fileName = fileName;
+            this.span = span;
+            this.content = content;
+        }
+        public string Info
+        {
+            get { return info; }
+        }
+        public string FileName
+        {
+            get { return fileName; }
+        }
+        public Span SpanValue
+        {
+            get { return span; }
+        }
+        public string Content
+        {
+            get { return content; }
+        }
+        private string info;
+        private string fileName;
+        private Span span;
+        private string content;
+    }
+}

@@ -13,6 +13,33 @@ namespace System
         {
             return this;
         }
+        public string Substring(int start)
+        {
+            if (start == length)
+            {
+                return Empty;
+            }
+            StringBuilder s = new StringBuilder();
+            for (int i = start; i < length; ++i)
+            {
+                s.Append(this[i]);
+            }
+            return s.ToString();
+        }
+        public string Substring(int start, int len)
+        {
+            StringBuilder s = new StringBuilder();
+            int n = start + len;
+            for (int i = start; i < n; ++i)
+            {
+                s.Append(this[i]);
+            }
+            return s.ToString();
+        }
+        public static string Empty
+        {
+            get { return ""; }
+        }
         private const ulong hashOffset = 14695981039346656037u;
         private const ulong hashPrime = 1099511628211u;
         public override ulong GetHashCode()
@@ -25,6 +52,10 @@ namespace System
                 hashCode = hashCode * hashPrime;
             }
             return hashCode;
+        }
+        public static bool IsNullOrEmpty(String s)
+        {
+            return s == null || s.Length == 0;
         }
         public Enumerator GetEnumerator()
         {

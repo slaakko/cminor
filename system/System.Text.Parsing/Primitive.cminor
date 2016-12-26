@@ -1,0 +1,342 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing
+{
+    public class CharParser : Parser
+    {
+        public CharParser(char c) : base("char", "'" + c.ToString() + "'")
+        {
+            this.c = c;
+        }
+        public char Char
+        {
+            get { return c; }
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (scanner.Char == c)
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+        private char c;
+    }
+
+    public class StringParser : Parser
+    {
+        public StringParser(string s) : base("string", "\"" + s + "\"")
+        {
+            this.s = s;
+        }
+        public string String
+        {
+            get { return s; }
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Match match = Match.Empty;
+            int i = 0;
+            int n = s.Length;
+            while (i < n && !scanner.AtEnd && scanner.Char == s[i])
+            {
+                scanner.Advance();
+                ++i;
+                match.Concatenate(Match.One);
+            }
+            if (i == n)
+            {
+                return match;
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {        
+            visitor.Visit(this);
+        }    
+        private string s;
+    }
+
+    internal string InverseStr(bool inverse)
+    {
+        if (inverse) return "^";
+        return "";
+    }
+
+    public class CharRange
+    {
+        public CharRange(char begin)
+        {
+            this.begin = begin;
+            this.end = begin;
+        }
+        public CharRange(char begin, char end)
+        {
+            this.begin = begin;
+            this.end = end;
+        }
+        public bool Includes(char c)
+        {
+            return c >= begin && c <= end;
+        }
+        public char Begin
+        {
+            get { return begin; }
+            set { begin = value; }
+        }
+        public char End
+        {
+            get { return end; }
+            set { end = value; }
+        }
+        private char begin;
+        private char end;
+    }
+
+    public class CharSetParser : Parser
+    {
+        public CharSetParser(string s) : base("charset", "[" + s + "]")
+        {
+            this.s = s;
+            this.inverse = false;
+            this.ranges = new List<CharRange>();
+            InitRanges();
+        }
+        public CharSetParser(string s, bool inverse) : base("charset", "[" + InverseStr(inverse) + s + "]")
+        {
+            this.s = s;
+            this.inverse = inverse;
+            this.ranges = new List<CharRange>();
+            InitRanges();
+        }
+        public string Set
+        {
+            get { return s; }
+        }
+        public bool Inverse
+        {
+            get { return inverse; }
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            if (!scanner.AtEnd)
+            {
+                char c = scanner.Char;
+                bool found = false;
+                int n = ranges.Count;
+                for (int i = 0; i < n; ++i)
+                {
+                    CharRange range = ranges[i];
+                    if (range.Includes(c))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                bool matched = found != inverse;
+                if (matched)
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+        private void InitRanges()
+        {
+            int i = 0;
+            int n = s.Length;
+            while (i < n)
+            {
+                char first = s[i];
+                char last = first;
+                ++i;
+                if (i < n)
+                {
+                    if (s[i] == '-')
+                    {
+                        ++i;
+                        if (i < n)
+                        {
+                            last = s[i];
+                            ++i;
+                        }
+                        else
+                        {
+                            ranges.Add(new CharRange(first));
+                            first = '-';
+                            last = first;
+                        }
+                    }
+                }
+                ranges.Add(new CharRange(first, last));
+            }
+        }
+        private string s;
+        private bool inverse;
+        private List<CharRange> ranges;
+    }
+
+    public class EmptyParser : Parser
+    {
+        public EmptyParser() : base("empty", "<empty>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            return Match.Empty;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class SpaceParser : Parser
+    {
+        public SpaceParser() : base("space", "<space>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsSpace(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class LetterParser : Parser
+    {
+        public LetterParser() : base("letter", "<letter>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsLetter(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class DigitParser : Parser
+    {
+        public DigitParser() : base("digit", "<digit>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsDigit(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class HexDigitParser : Parser
+    {
+        public HexDigitParser() : base("hexdigit", "<hexdigit>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsHexDigit(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class PunctuationParser : Parser
+    {
+        public PunctuationParser() : base("punctuation", "<punctuation>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsPunctuation(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class AnyCharParser : Parser
+    {
+        public AnyCharParser() : base("anyChar", "<anyChar>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            if (!scanner.AtEnd)
+            {
+                scanner.Advance();
+                return Match.One;
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+}

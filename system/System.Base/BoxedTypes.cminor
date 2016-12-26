@@ -268,6 +268,22 @@ namespace System
         {
             return System.IsSpace(c);
         }
+        public static bool IsLetter(char c)
+        {
+            return System.IsLetter(c);
+        }
+        public static bool IsDigit(char c)
+        {
+            return System.IsDigit(c);
+        }
+        public static bool IsHexDigit(char c)
+        {
+            return System.IsHexDigit(c);
+        }
+        public static bool IsPunctuation(char c)
+        {
+            return System.IsPunctuation(c);
+        }
         public static char Parse(string s)
         {
             return System.ParseChar(s);

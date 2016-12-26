@@ -1,0 +1,26 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing
+{
+    public abstract class Parser
+    {
+        public Parser(string name, string info)
+        {
+            this.name = name;
+            this.info = info;
+        }
+        public abstract Match Parse(Scanner scanner, Stack<object> stack);
+        public abstract void Accept(Visitor visitor);
+        public string Name
+        {
+            get { return name; }
+        }
+        public string Info
+        {
+            get { return info; }
+        }
+        private string name;
+        private string info;
+    }
+}

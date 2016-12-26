@@ -1,0 +1,102 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing
+{
+    public class Scanner
+    {
+        public Scanner(string content, int fileIndex, string fileName, Parser skipper)
+        {
+            this.content = content;
+            this.span = new Span(fileIndex);
+            this.fileName = fileName;
+            this.skipper = skipper;
+            this.skipping = false;
+            this.atBeginningOfLine = true;
+            this.tokenCounter = 0;
+        }
+        public void Advance()
+        {
+            char c = Char;
+            span.Advance();
+            if (c == '\n')
+            {
+                atBeginningOfLine = true;
+                span.IncLineNumber();
+            }
+        }
+        public void BeginToken()
+        {
+            ++tokenCounter;
+        }
+        public void EndToken()
+        {
+            --tokenCounter;
+        }
+        public void Skip()
+        {
+            if (tokenCounter == 0 && skipper != null)
+            {
+                Span save = span;
+                BeginToken();
+                skipping = true;
+                Stack<object> stack = new Stack<object>();
+                Match match = skipper.Parse(this, stack);
+                skipping = false;
+                EndToken();
+                if (!match.Hit)
+                {
+                    span = save;
+                }
+            }
+        }
+        public char Char
+        {
+            get { return content[span.Start]; }
+        }
+        public string String
+        {
+            get { return content.Substring(span.Start, span.End - span.Start); }
+        }
+        public bool AtEnd
+        {
+            get { return span.Start >= content.Length; }
+        }
+        public string Content
+        {   
+            get { return content; }
+        }
+        public Span SpanValue
+        {
+            get { return span; }
+            set { span = value; }
+        }
+        public string FileName
+        {
+            get { return fileName; }
+        }
+        public Parser Skipper
+        {
+            get { return skipper; }
+        }
+        public bool Skipping
+        { 
+            get { return skipping; }
+        }
+        public bool AtBeginningOfLine
+        {
+            get { return atBeginningOfLine; }
+        }
+        public int TokenCounter
+        {
+            get { return tokenCounter; }
+        }
+        private string content;
+        private Span span;
+        private string fileName;
+        private Parser skipper;
+        private bool skipping;
+        private bool atBeginningOfLine;
+        private int tokenCounter;
+    }
+}

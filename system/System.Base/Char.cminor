@@ -2,4 +2,12 @@ namespace System
 {
     [VmFunctionName=Vm.System.IsSpace.Char]
     public extern bool IsSpace(char c);
+    [VmFunctionName=Vm.System.IsLetter.Char]
+    public extern bool IsLetter(char c);
+    [VmFunctionName=Vm.System.IsDigit.Char]
+    public extern bool IsDigit(char c);
+    [VmFunctionName=Vm.System.IsHexDigit.Char]
+    public extern bool IsHexDigit(char c);
+    [VmFunctionName=Vm.System.IsPunctuation.Char]
+    public extern bool IsPunctuation(char c);
 }

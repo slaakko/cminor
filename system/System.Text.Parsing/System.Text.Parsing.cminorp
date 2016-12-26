@@ -1,0 +1,11 @@
+project System.Text.Parsing;
+target=library;
+reference <../System.Base/System.Base.cminorp>;
+source <Composite.cminor>;
+source <Error.cminor>;
+source <Match.cminor>;
+source <Parser.cminor>;
+source <Primitive.cminor>;
+source <Scanner.cminor>;
+source <Span.cminor>;
+source <Visitor.cminor>;
