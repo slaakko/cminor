@@ -85,6 +85,7 @@ public:
     void Visit(ComplementNode& complementNode) override;
 
     void Visit(IdentifierNode& identifierNode) override;
+    void Visit(TemplateIdNode& templateIdNode) override;
     void Visit(DotNode& dotNode) override;
     void Visit(IndexingNode& indexingNode) override;
     void Visit(InvokeNode& invokeNode) override;
@@ -746,6 +747,13 @@ void ExpressionBinder::Visit(IdentifierNode& identifierNode)
     }
 }
 
+void ExpressionBinder::Visit(TemplateIdNode& templateIdNode)
+{
+    TypeSymbol* type = ResolveType(boundCompileUnit, containerScope, &templateIdNode);
+    CheckAccess(boundFunction->GetFunctionSymbol(), type);
+    expression.reset(new BoundTypeExpression(boundCompileUnit.GetAssembly(), type));
+}
+
 void ExpressionBinder::Visit(DotNode& dotNode)
 {
     ContainerScope* prevContainerScope = containerScope;
@@ -758,6 +766,12 @@ void ExpressionBinder::Visit(DotNode& dotNode)
         if (symbol)
         {
             BindSymbol(symbol);
+            if (expression->IsBoundFunctionGroupExpression())
+            {
+                BoundFunctionGroupExpression* bfe = static_cast<BoundFunctionGroupExpression*>(expression.get());
+                bfe->SetScopeQualified();
+                bfe->SetQualifiedScope(containerScope);
+            }
         }
         else
         {
@@ -788,7 +802,14 @@ void ExpressionBinder::Visit(DotNode& dotNode)
                             classObject = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(classObject), boundCompileUnit.GetConversion(classType, owner));
                         }
                     }
-                    expression.reset(new BoundMemberExpression(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(classObject), std::move(expression)));
+                    if (classObject->IsBoundTypeExpression())
+                    {
+                        BoundTypeExpression* bte = static_cast<BoundTypeExpression*>(classObject);
+                        bfg->SetScopeQualified();
+                        bfg->SetQualifiedScope(bte->GetType()->GetContainerScope());
+                    }
+                    BoundMemberExpression* bme = new BoundMemberExpression(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(classObject), std::move(expression));
+                    expression.reset(bme);
                 }
                 else if (BoundMemberVariable* bmv = dynamic_cast<BoundMemberVariable*>(expression.get()))
                 {
@@ -870,11 +891,20 @@ void ExpressionBinder::Visit(DotNode& dotNode)
             const Span& span = dotNode.GetSpan();
             if (type->HasBoxedType())
             {
-                NewNode* newNode = new NewNode(span, new IdentifierNode(span, type->GetBoxedTypeName()));
-                CloneContext cloneContext;
-                newNode->AddArgument(dotNode.Child()->Clone(cloneContext));
-                DotNode objectDot(span, newNode, dotNode.MemberId()->Clone(cloneContext));
-                objectDot.Accept(*this);
+                if (expression->IsBoundTypeExpression())
+                {
+                    CloneContext cloneContext;
+                    DotNode classDot(span, new IdentifierNode(span, type->GetBoxedTypeName()), dotNode.MemberId()->Clone(cloneContext));
+                    classDot.Accept(*this);
+                }
+                else
+                {
+                    NewNode* newNode = new NewNode(span, new IdentifierNode(span, type->GetBoxedTypeName()));
+                    CloneContext cloneContext;
+                    newNode->AddArgument(dotNode.Child()->Clone(cloneContext));
+                    DotNode objectDot(span, newNode, dotNode.MemberId()->Clone(cloneContext));
+                    objectDot.Accept(*this);
+                }
             }
             else
             {
@@ -1058,17 +1088,33 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
     std::vector<FunctionScopeLookup> functionScopeLookups;
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
     FunctionGroupSymbol* functionGroupSymbol = nullptr;
+    bool scopeQualified = false;
     if (BoundFunctionGroupExpression* bfe = dynamic_cast<BoundFunctionGroupExpression*>(expression.get()))
     {
         functionGroupSymbol = bfe->FunctionGroup();
+        if (bfe->ScopeQualified())
+        {
+            functionScopeLookups.clear();
+            functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, bfe->QualiedScope()));
+            scopeQualified = true;
+        }
     }
     else if (BoundMemberExpression* bme = dynamic_cast<BoundMemberExpression*>(expression.get()))
     {
         if (BoundFunctionGroupExpression* bfe = dynamic_cast<BoundFunctionGroupExpression*>(bme->Member()))
         {
             functionGroupSymbol = bfe->FunctionGroup();
+            if (bfe->ScopeQualified())
+            {
+                functionScopeLookups.clear();
+                functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, bfe->QualiedScope()));
+                scopeQualified = true;
+            }
             BoundExpression* classOrInterfaceObject = bme->ReleaseClassObject();
-            functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base, classOrInterfaceObject->GetType()->ClassInterfaceOrNsScope()));
+            if (!scopeQualified)
+            {
+                functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base, classOrInterfaceObject->GetType()->ClassInterfaceOrNsScope()));
+            }
             arguments.push_back(std::unique_ptr<BoundExpression>(classOrInterfaceObject));
         }
         else
@@ -1172,13 +1218,16 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
     {
         Node* argument = invokeNode.Arguments()[i];
         argument->Accept(*this);
-        if (!expression->GetType()->IsFunctionGroupTypeSymbol())
+        if (!expression->GetType()->IsFunctionGroupTypeSymbol() && !scopeQualified)
         {
             functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_, expression->GetType()->ClassInterfaceOrNsScope()));
         }
         arguments.push_back(std::unique_ptr<BoundExpression>(expression.release()));
     }
-    functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
+    if (!scopeQualified)
+    {
+        functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
+    }
     std::unique_ptr<Exception> exception;
     std::unique_ptr<Exception> thisEx;
     std::unique_ptr<Exception> nsEx;
@@ -1425,6 +1474,12 @@ void ExpressionBinder::Visit(RefNode& refNode)
         TypeSymbol* refType = boundCompileUnit.GetAssembly().GetSymbolTable().MakeRefType(refNode, expression->GetType());
         expression.reset(new BoundLocalRefExpression(boundCompileUnit.GetAssembly(), boundLocalVariable->GetLocalVariableSymbol()->Index(), refType));
     }
+    else if (expression->IsBoundParameter())
+    {
+        BoundParameter* boundParameter = static_cast<BoundParameter*>(expression.get());
+        TypeSymbol* refType = boundCompileUnit.GetAssembly().GetSymbolTable().MakeRefType(refNode, expression->GetType());
+        expression.reset(new BoundLocalRefExpression(boundCompileUnit.GetAssembly(), boundParameter->GetParameterSymbol()->Index(), refType));
+    }
     else if (expression->IsBoundMemberVariable())
     {
         BoundMemberVariable* boundMemberVariable = static_cast<BoundMemberVariable*>(expression.get());
@@ -1434,7 +1489,7 @@ void ExpressionBinder::Visit(RefNode& refNode)
     }
     else
     {
-        throw Exception("only refs to local or member variables supported", refNode.GetSpan());
+        throw Exception("only refs to local or member variables and parameters supported", refNode.GetSpan());
     }
 }
 

@@ -214,35 +214,40 @@ void BasicTypeGrammar::CreateRules()
                                                         new cminor::parsing::AlternativeParser(
                                                             new cminor::parsing::AlternativeParser(
                                                                 new cminor::parsing::ActionParser("A0",
-                                                                    new cminor::parsing::KeywordParser("bool")),
+                                                                    new cminor::parsing::KeywordParser("bool", "IdentifierChars")),
                                                                 new cminor::parsing::ActionParser("A1",
-                                                                    new cminor::parsing::KeywordParser("sbyte"))),
+                                                                    new cminor::parsing::KeywordParser("sbyte", "IdentifierChars"))),
                                                             new cminor::parsing::ActionParser("A2",
-                                                                new cminor::parsing::KeywordParser("byte"))),
+                                                                new cminor::parsing::KeywordParser("byte", "IdentifierChars"))),
                                                         new cminor::parsing::ActionParser("A3",
-                                                            new cminor::parsing::KeywordParser("short"))),
+                                                            new cminor::parsing::KeywordParser("short", "IdentifierChars"))),
                                                     new cminor::parsing::ActionParser("A4",
-                                                        new cminor::parsing::KeywordParser("ushort"))),
+                                                        new cminor::parsing::KeywordParser("ushort", "IdentifierChars"))),
                                                 new cminor::parsing::ActionParser("A5",
-                                                    new cminor::parsing::KeywordParser("int"))),
+                                                    new cminor::parsing::KeywordParser("int", "IdentifierChars"))),
                                             new cminor::parsing::ActionParser("A6",
-                                                new cminor::parsing::KeywordParser("uint"))),
+                                                new cminor::parsing::KeywordParser("uint", "IdentifierChars"))),
                                         new cminor::parsing::ActionParser("A7",
-                                            new cminor::parsing::KeywordParser("long"))),
+                                            new cminor::parsing::KeywordParser("long", "IdentifierChars"))),
                                     new cminor::parsing::ActionParser("A8",
-                                        new cminor::parsing::KeywordParser("ulong"))),
+                                        new cminor::parsing::KeywordParser("ulong", "IdentifierChars"))),
                                 new cminor::parsing::ActionParser("A9",
-                                    new cminor::parsing::KeywordParser("float"))),
+                                    new cminor::parsing::KeywordParser("float", "IdentifierChars"))),
                             new cminor::parsing::ActionParser("A10",
-                                new cminor::parsing::KeywordParser("double"))),
+                                new cminor::parsing::KeywordParser("double", "IdentifierChars"))),
                         new cminor::parsing::ActionParser("A11",
-                            new cminor::parsing::KeywordParser("char"))),
+                            new cminor::parsing::KeywordParser("char", "IdentifierChars"))),
                     new cminor::parsing::ActionParser("A12",
-                        new cminor::parsing::KeywordParser("string"))),
+                        new cminor::parsing::KeywordParser("string", "IdentifierChars"))),
                 new cminor::parsing::ActionParser("A13",
-                    new cminor::parsing::KeywordParser("void"))),
+                    new cminor::parsing::KeywordParser("void", "IdentifierChars"))),
             new cminor::parsing::ActionParser("A14",
-                new cminor::parsing::KeywordParser("object")))));
+                new cminor::parsing::KeywordParser("object", "IdentifierChars")))));
+    AddRule(new cminor::parsing::Rule("IdentifierChars", GetScope(),
+        new cminor::parsing::PositiveParser(
+            new cminor::parsing::AlternativeParser(
+                new cminor::parsing::LetterParser(),
+                new cminor::parsing::CharParser('_')))));
 }
 
 } } // namespace cminor.parser

@@ -9,8 +9,57 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Type.hpp>
 #include <boost/filesystem.hpp>
+#include <cctype>
 
 namespace cminor { namespace vmlib {
+
+class VmSystemPowDoubleInt : public VmFunction
+{
+public:
+    VmSystemPowDoubleInt(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemPowDoubleInt::VmSystemPowDoubleInt(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Pow.Double.Int"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemPowDoubleInt::Execute(Frame& frame)
+{
+    IntegralValue baseValue = frame.Local(0).GetValue();
+    double base = baseValue.AsDouble();
+    IntegralValue exponentValue = frame.Local(1).GetValue();
+    int exponent = exponentValue.AsInt();
+    double result = std::pow(base, exponent);
+#pragma warning(disable : 4244)
+    frame.OpStack().Push(IntegralValue(result, ValueType::doubleType));
+#pragma warning(default : 4244)
+}
+
+class VmSystemIsSpaceChar : public VmFunction
+{
+public:
+    VmSystemIsSpaceChar(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIsSpaceChar::VmSystemIsSpaceChar(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsSpace.Char"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemIsSpaceChar::Execute(Frame& frame)
+{
+    IntegralValue value = frame.Local(0).GetValue();
+    char32_t c = value.AsChar();
+    bool isSpace = std::isspace(char(c));
+    frame.OpStack().Push(IntegralValue(isSpace, ValueType::boolType));
+}
 
 class VmSystemObjectToString : public VmFunction
 {
@@ -547,6 +596,8 @@ void VmFunctionPool::Done()
 
 void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
 {
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemPowDoubleInt(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsSpaceChar(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectToString(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectGetHashCode(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectEqual(constantPool)));

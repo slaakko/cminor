@@ -132,6 +132,7 @@ void BasicTypeReturn::GenerateCall(Machine& machine, Assembly& assembly, Functio
     Assert(objects.size() == 1, "return needs one object");
     GenObject* value = objects[0];
     value->GenLoad(machine, function);
+    function.GetEmitter()->BackpatchConDisSet(startLoad.Index());
     function.MapPCToSourceLine(startLoad.Index(), function.GetEmitter()->CurrentSourceLine());
 }
 
@@ -1523,6 +1524,16 @@ void CreateBasicTypeConversions(Assembly& assembly, TypeSymbol* boolType, TypeSy
     double2ulong->SetTargetType(ulongType);
     double2ulong->SetConversionInstructionName("do2ul");
     assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2ulong));
+
+    BasicTypeConversion* double2float = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2float")));
+    double2float->SetAssembly(&assembly);
+    double2float->SetGroupNameConstant(groupName);
+    double2float->SetConversionType(ConversionType::explicit_);
+    double2float->SetConversionDistance(999);
+    double2float->SetSourceType(doubleType);
+    double2float->SetTargetType(floatType);
+    double2float->SetConversionInstructionName("do2fl");
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2float));
 
     BasicTypeConversion* double2char = new BasicTypeConversion(Span(), constantPool.GetConstant(constantPool.Install(U"double2char")));
     double2char->SetAssembly(&assembly);

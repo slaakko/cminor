@@ -1,0 +1,5 @@
+namespace System
+{
+    [VmFunctionName=Vm.System.IsSpace.Char]
+    public extern bool IsSpace(char c);
+}

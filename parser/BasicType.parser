@@ -11,22 +11,26 @@ namespace cminor.parser
 
     grammar BasicTypeGrammar
     {
-        BasicType: Node*
-            ::= keyword("bool"){ value = new BoolNode(span); }
-            |   keyword("sbyte"){ value = new SByteNode(span); }
-            |   keyword("byte"){ value = new ByteNode(span); }
-            |   keyword("short"){ value = new ShortNode(span); }
-            |   keyword("ushort"){ value = new UShortNode(span); }
-            |   keyword("int"){ value = new IntNode(span); }
-            |   keyword("uint"){ value = new UIntNode(span); }
-            |   keyword("long"){ value = new LongNode(span); }
-            |   keyword("ulong"){ value = new ULongNode(span); }
-            |   keyword("float"){ value = new FloatNode(span); }
-            |   keyword("double"){ value = new DoubleNode(span); }
-            |   keyword("char"){ value = new CharNode(span); }
-            |   keyword("string"){ value = new StringNode(span); }
-            |   keyword("void"){ value = new VoidNode(span); }
-            |   keyword("object"){ value = new ObjectNode(span); }
+        BasicType : Node*
+            ::= keyword("bool", IdentifierChars){ value = new BoolNode(span); }
+            |   keyword("sbyte", IdentifierChars){ value = new SByteNode(span); }
+            |   keyword("byte", IdentifierChars){ value = new ByteNode(span); }
+            |   keyword("short", IdentifierChars){ value = new ShortNode(span); }
+            |   keyword("ushort", IdentifierChars){ value = new UShortNode(span); }
+            |   keyword("int", IdentifierChars){ value = new IntNode(span); }
+            |   keyword("uint", IdentifierChars){ value = new UIntNode(span); }
+            |   keyword("long", IdentifierChars){ value = new LongNode(span); }
+            |   keyword("ulong", IdentifierChars){ value = new ULongNode(span); }
+            |   keyword("float", IdentifierChars){ value = new FloatNode(span); }
+            |   keyword("double", IdentifierChars){ value = new DoubleNode(span); }
+            |   keyword("char", IdentifierChars){ value = new CharNode(span); }
+            |   keyword("string", IdentifierChars){ value = new StringNode(span); }
+            |   keyword("void", IdentifierChars){ value = new VoidNode(span); }
+            |   keyword("object", IdentifierChars){ value = new ObjectNode(span); }
+            ;
+
+        IdentifierChars
+            ::= (letter | '_')+
             ;
     }
 }

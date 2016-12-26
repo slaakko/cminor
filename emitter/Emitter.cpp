@@ -279,7 +279,11 @@ void EmitterVisitor::Visit(BoundReturnStatement& boundReturnStatement)
     BoundFunctionCall* returnFunctionCall = boundReturnStatement.ReturnFunctionCall();
     if (returnFunctionCall)
     {
+        std::vector<Instruction*>* prevConDisSet = conDisSet;
+        std::vector<Instruction*> conDis;
+        conDisSet = &conDis;
         returnFunctionCall->Accept(*this);
+        conDisSet = prevConDisSet;
     }
     ExitBlocks(nullptr);
     std::unique_ptr<Instruction> inst = machine.CreateInst("jump");

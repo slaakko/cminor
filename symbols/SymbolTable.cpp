@@ -976,6 +976,11 @@ ClassTemplateSpecializationSymbol* SymbolTable::MakeClassTemplateSpecialization(
 
 TypeSymbol* SymbolTable::MakeRefType(Node& node, TypeSymbol* baseType)
 {
+    if (baseType->IsRefType())
+    {
+        RefTypeSymbol* refBaseType = static_cast<RefTypeSymbol*>(baseType);
+        baseType = refBaseType->GetBaseType();
+    }
     auto it = refTypeMap.find(baseType);
     if (it != refTypeMap.cend())
     {

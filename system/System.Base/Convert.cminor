@@ -2,9 +2,16 @@ using System.Text;
 
 namespace System
 {
-    internal class UnsignedConversion<T>
+    public class ConversionException : Exception
     {
-        public string ToString(T x)
+        public ConversionException(string message) : base(message)
+        {
+        }
+    }
+
+    internal static class UnsignedConversion<T>
+    {
+        public static string ToString(T x)
         {
             StringBuilder s = new StringBuilder();
             do
@@ -18,9 +25,9 @@ namespace System
         }
     }
 
-    internal class SignedConversion<T, U>
+    internal static class SignedConversion<T, U>
     {
-        public string ToString(T x)
+        public static string ToString(T x)
         {
             U u = 0u;
             bool neg = x < 0;
@@ -50,42 +57,42 @@ namespace System
 
     public string ToString(sbyte x)
     {
-        return new SignedConversion<sbyte, byte>().ToString(x);
+        return SignedConversion<sbyte, byte>.ToString(x);
     }
 
     public string ToString(byte x)
     {
-        return new UnsignedConversion<byte>().ToString(x);
+        return UnsignedConversion<byte>.ToString(x);
     }
 
     public string ToString(short x)
     {
-        return new SignedConversion<short, ushort>().ToString(x);
+        return SignedConversion<short, ushort>.ToString(x);
     }
 
     public string ToString(ushort x)
     {
-        return new UnsignedConversion<ushort>().ToString(x);
+        return UnsignedConversion<ushort>.ToString(x);
     }
 
     public string ToString(int x)
     {
-        return new SignedConversion<int, uint>().ToString(x);
+        return SignedConversion<int, uint>.ToString(x);
     }
 
     public string ToString(uint x)
     {
-        return new UnsignedConversion<uint>().ToString(x);
+        return UnsignedConversion<uint>.ToString(x);
     }
 
     public string ToString(long x)
     {
-        return new SignedConversion<long, ulong>().ToString(x);
+        return SignedConversion<long, ulong>.ToString(x);
     }
 
     public string ToString(ulong x)
     {
-        return new UnsignedConversion<ulong>().ToString(x);
+        return UnsignedConversion<ulong>.ToString(x);
     }
 
     public string ToString(float x)
@@ -138,4 +145,497 @@ namespace System
         if (x) return "true";
         return "false";
     }
+
+    public sbyte ParseSByte(string s)
+    {
+        sbyte value;
+        if (TryParseSByte(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("sbyte cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseSByte(string s, ref sbyte value)
+    {
+        return SignedIntegerParser<sbyte>.Parse(s, ref value);
+    }
+
+    public byte ParseByte(string s)
+    {
+        byte value;
+        if (TryParseByte(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("byte cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseByte(string s, ref byte value)
+    {
+        return UnsignedIntegerParser<byte>.Parse(s, ref value);
+    }
+
+    public short ParseShort(string s)
+    {
+        short value;
+        if (TryParseShort(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("short cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseShort(string s, ref short value)
+    {
+        return SignedIntegerParser<short>.Parse(s, ref value);
+    }
+
+    public ushort ParseUShort(string s)
+    {
+        ushort value;
+        if (TryParseUShort(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("ushort cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseUShort(string s, ref ushort value)
+    {
+        return UnsignedIntegerParser<ushort>.Parse(s, ref value);
+    }
+
+    public int ParseInt(string s)
+    {
+        int value;
+        if (TryParseInt(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("int cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseInt(string s, ref int value)
+    {
+        return SignedIntegerParser<int>.Parse(s, ref value);
+    }
+
+    public uint ParseUInt(string s)
+    {
+        uint value;
+        if (TryParseUInt(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("uint cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseUInt(string s, ref uint value)
+    {
+        return UnsignedIntegerParser<uint>.Parse(s, ref value);
+    }
+
+    public long ParseLong(string s)
+    {
+        long value;
+        if (TryParseLong(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("long cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseLong(string s, ref long value)
+    {
+        return SignedIntegerParser<long>.Parse(s, ref value);
+    }
+
+    public ulong ParseULong(string s)
+    {
+        ulong value;
+        if (TryParseULong(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("ulong cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseULong(string s, ref ulong value)
+    {
+        return UnsignedIntegerParser<ulong>.Parse(s, ref value);
+    }
+
+    public float ParseFloat(string s)
+    {
+        float value;
+        if (TryParseFloat(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("float cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseFloat(string s, ref float value)
+    {
+        return FloatingParser<float>.Parse(s, ref value);
+    }
+
+    public double ParseDouble(string s)
+    {
+        double value;
+        if (TryParseDouble(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("double cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseDouble(string s, ref double value)
+    {
+        return FloatingParser<double>.Parse(s, ref value);
+    }
+
+    public char ParseChar(string s)
+    {
+        char value;
+        if (TryParseChar(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("char cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseChar(string s, ref char value)
+    {
+        if (s == "" || s.Length != 1)
+        {
+            return false;
+        }
+        else
+        {
+            value = s[0];
+        }
+        return true;
+    }
+
+    public bool ParseBool(string s)
+    {
+        bool value;
+        if (TryParseBool(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("bool cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseBool(string s, ref bool value)
+    {
+        if (s == "")
+        {
+            return false;
+        }
+        else if (s == "true")
+        {
+            value = true;
+            return true;
+        }
+        else if (s == "false")
+        {
+            value = false;
+            return true;
+        }
+        return false;
+    }
+
+    internal static class SignedIntegerParser<T>
+    {
+        public static bool Parse(string s, ref T x)
+        {
+            T value = 0;
+            if (s == "") 
+            {
+                return false;
+            }
+            bool negative = false;
+            int state = 0;
+            foreach (char c in s)
+            {
+                switch (state)
+                {
+                    case 0:
+                    {
+                        if (c == '+') 
+                        {
+                            state = 1;
+                        }
+                        else if (c == '-')
+                        {
+                            negative = true;
+                            state = 1;
+                        }
+                        else if (c >= '0' && c <= '9')
+                        {
+                            value = cast<T>(c) - cast<T>('0');
+                            state = 1;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                        break;
+                    }
+                    case 1:
+                    {
+                        if (c >= '0' && c <= '9')
+                        {
+                            value = 10 * value + cast<T>(c) - cast<T>('0');
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (state != 1)
+            {
+                return false;
+            }
+            if (negative)
+            {
+                value = -value;
+            }
+            x = value;
+            return true;
+        }
+    }
+
+    internal static class UnsignedIntegerParser<T>
+    {
+        public static bool Parse(string s, ref T x)
+        {
+            T value = 0u;
+            if (s == "") 
+            {
+                return false;
+            }
+            int state = 0;
+            foreach (char c in s)
+            {
+                switch (state)
+                {
+                    case 0:
+                    {
+                        if (c == '+') 
+                        {
+                            state = 1;
+                        }
+                        else if (c >= '0' && c <= '9')
+                        {
+                            value = cast<T>(c) - cast<T>('0');
+                            state = 1;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                        break;
+                    }
+                    case 1:
+                    {
+                        if (c >= '0' && c <= '9')
+                        {
+                            value = 10u * value + cast<T>(c) - cast<T>('0');
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (state != 1)
+            {
+                return false;
+            }
+            x = value;
+            return true;
+        }
+    }
+
+    internal static class FloatingParser<T>
+    {
+        public static bool Parse(string s, ref T x)
+        {
+            T value = cast<T>(0.0);
+            if (s == "")
+            {
+                return false;
+            }
+            bool negative = false;
+            int state = 0;
+            T d = cast<T>(10.0);
+            int exponent = 0;
+            bool negativeExponent = false;
+            foreach (char c in s)
+            {
+                switch (state)
+                {
+                    case 0: 
+                    {
+                        if (c == '+')
+                        {
+                            state = 1;
+                        }
+                        else if (c == '-')
+                        {
+                            negative = true;
+                            state = 1;
+                        }
+                        else if (c >= '0' && c <= '9')
+                        {
+                            value = cast<int>(c) - cast<int>('0');
+                            state = 1;
+                        }
+                        else if (c == '.')
+                        {
+                            state = 2;
+                        }
+                        else
+                        {   
+                            return false;
+                        }
+                        break;
+                    }
+                    case 1:
+                    {
+                        if (c >= '0' && c <= '9')
+                        {
+                            value = 10 * value + cast<int>(c) - cast<int>('0');
+                        }
+                        else if (c == '.')
+                        {
+                            state = 2;
+                        }
+                        else if (c == 'e' || c == 'E')
+                        {
+                            state = 3;
+                        }
+                        break;
+                    }
+                    case 2:
+                    {
+                        if (c >= '0' && c <= '9')
+                        {
+                            value = value + (cast<int>(c) - cast<int>('0')) / d;
+                            d = d * cast<T>(10.0);
+                        }
+                        else if (c == 'e' || c == 'E')
+                        {
+                            state = 3;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                        break;
+                    }
+                    case 3:
+                    {
+                        if (c == '+')
+                        {
+                            state = 4;
+                        }
+                        else if (c == '-')
+                        {
+                            negativeExponent = true;
+                            state = 4;
+                        }
+                        else if (c >= '0' && c <= '9')
+                        {
+                            exponent = cast<int>(c) - cast<int>('0');
+                            state = 4;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                        break;
+                    }
+                    case 4:
+                    {
+                        if (c >= '0' && c <= '9')
+                        {
+                            exponent = 10 * exponent + cast<int>(c) - cast<int>('0');
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (state == 0)
+            {
+                return false;
+            }
+            if (negative)
+            {
+                value = -value;
+            }
+            if (exponent != 0)
+            {
+                if (negativeExponent)
+                {
+                    exponent = -exponent;
+                }
+                value = value + cast<T>(Pow(10.0, exponent));
+            }
+            x = value;
+            return true;
+        }
+    }
+
+    [VmFunctionName=Vm.System.Pow.Double.Int]
+    public extern double Pow(double base_, int exponent);
 }

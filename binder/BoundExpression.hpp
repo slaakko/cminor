@@ -46,7 +46,9 @@ public:
     virtual bool IsBoundFunctionGroupExpression() const { return false; }
     virtual bool IsBoundMemberExpression() const { return false; }
     virtual bool IsBoundLocalVariable() const { return false; }
+    virtual bool IsBoundParameter() const { return false; }
     virtual bool IsBoundMemberVariable() const { return false; }
+    virtual bool IsBoundTypeExpression() const { return false; }
 private:
     TypeSymbol* type;
     BoundExpressionFlags flags;
@@ -160,6 +162,8 @@ public:
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
     bool IsLvalueExpression() const override { return true; }
+    bool IsBoundParameter() const override { return true; }
+    ParameterSymbol* GetParameterSymbol() const { return parameterSymbol; }
 private:
     ParameterSymbol* parameterSymbol;
 };
@@ -222,6 +226,7 @@ public:
     void GenStore(Machine& machine, Function& function) override;
     void Accept(BoundNodeVisitor& visitor) override;
     bool IsComplete() const override { return false; }
+    bool IsBoundTypeExpression() const override { return true; }
 };
 
 class BoundFunctionGroupExpression : public BoundExpression
@@ -237,10 +242,16 @@ public:
     BoundExpression* GetClassObject() const { return classObject.get(); }
     BoundExpression* ReleaseClassObject() { return classObject.release(); }
     bool IsBoundFunctionGroupExpression() const override { return true; }
+    bool ScopeQualified() const { return scopeQualified; }
+    void SetScopeQualified() { scopeQualified = true; }
+    ContainerScope* QualiedScope() const { return qualifiedScope; }
+    void SetQualifiedScope(ContainerScope* qualifiedScope_) { qualifiedScope = qualifiedScope_; }
 private:
     FunctionGroupSymbol* functionGroupSymbol;
     std::unique_ptr<TypeSymbol> functionGroupType;
     std::unique_ptr<BoundExpression> classObject;
+    bool scopeQualified;
+    ContainerScope* qualifiedScope;
 };
 
 class BoundMemberExpression : public BoundExpression

@@ -151,14 +151,14 @@ namespace cminor.parser
             ;
 
         AssignmentExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr) : StatementNode*
-            ::= empty{ ctx->PushParsingLvalue(true); } (Expression(ctx):target{ ctx->PopParsingLvalue(); targetExpr.reset(target); } / { ctx->PopParsingLvalue(); } '=' Expression(ctx):source!)
+            ::= empty{ ctx->PushParsingLvalue(true); } (Expression(ctx):target{ ctx->PopParsingLvalue(); targetExpr.reset(target); } / { ctx->PopParsingLvalue(); } '=' Expression(ctx):source)
                 {
                     value = new AssignmentStatementNode(span, targetExpr.release(), source);
                 }
             ;
 
         AssignmentStatement(ParsingContext* ctx) : StatementNode*
-            ::= (AssignmentExpressionStatement(ctx) ';'!){ value = AssignmentExpressionStatement; value->GetSpan().SetEnd(span.End()); }
+            ::= (AssignmentExpressionStatement(ctx) ';'){ value = AssignmentExpressionStatement; value->GetSpan().SetEnd(span.End()); }
             ;
 
         ConstructionStatement(ParsingContext* ctx) : ConstructionStatementNode*

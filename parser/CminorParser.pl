@@ -24,6 +24,7 @@ namespace cminor.parser
     grammar BasicTypeGrammar
     {
         BasicType: Node*;
+        IdentifierChars;
     }
     grammar ClassGrammar
     {

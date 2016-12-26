@@ -733,7 +733,7 @@ void BoundTypeExpression::Accept(BoundNodeVisitor& visitor)
 }
 
 BoundFunctionGroupExpression::BoundFunctionGroupExpression(Assembly& assembly_, FunctionGroupSymbol* functionGroupSymbol_) : 
-    BoundExpression(assembly_, new FunctionGroupTypeSymbol(functionGroupSymbol_)), functionGroupSymbol(functionGroupSymbol_)
+    BoundExpression(assembly_, new FunctionGroupTypeSymbol(functionGroupSymbol_)), functionGroupSymbol(functionGroupSymbol_), scopeQualified(false), qualifiedScope(nullptr)
 {
     functionGroupType.reset(GetType());
 }

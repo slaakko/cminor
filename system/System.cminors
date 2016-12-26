@@ -1,3 +1,4 @@
 solution System;
 project <System.Base/System.Base.cminorp>;
+project <System.Text.Parsing/System.Text.Parsing.cminorp>;
 project <System/System.cminorp>;
