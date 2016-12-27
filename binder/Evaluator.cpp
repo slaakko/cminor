@@ -686,7 +686,7 @@ void Evaluator::EvaluateConstantSymbol(ConstantSymbol* constantSymbol)
     Value* constantValue = constantSymbol->GetValue();
     if (constantValue)
     {
-        value.reset(constantValue);
+        value.reset(constantValue->Clone());
     }
     else
     {
@@ -700,7 +700,7 @@ void Evaluator::EvaluateConstantSymbol(ConstantSymbol* constantSymbol)
         constantSymbol->ResetEvaluating();
         Value* constantValue = constantSymbol->GetValue();
         Assert(constantValue, "constant value expected");
-        value.reset(constantValue);
+        value.reset(constantValue->Clone());
     }
 }
 
@@ -718,7 +718,7 @@ void Evaluator::EvaluateEnumConstantSymbol(EnumConstantSymbol* enumConstantSymbo
     Value* enumConstantValue = enumConstantSymbol->GetValue();
     if (enumConstantValue)
     {
-        value.reset(enumConstantValue);
+        value.reset(enumConstantValue->Clone());
     }
     else
     {
@@ -733,7 +733,7 @@ void Evaluator::EvaluateEnumConstantSymbol(EnumConstantSymbol* enumConstantSymbo
         enumConstantSymbol->ResetEvaluating();
         Value* enumConstantValue = enumConstantSymbol->GetValue();
         Assert(enumConstantValue, "enum constant value expected");
-        value.reset(enumConstantValue);
+        value.reset(enumConstantValue->Clone());
     }
 }
 
@@ -1255,6 +1255,7 @@ void Evaluator::Visit(AsNode& asNode)
 
 void Evaluator::Visit(DotNode& dotNode)
 {
+    dotNode.Child()->Accept(*this);
     ScopedValue* scopedValue = dynamic_cast<ScopedValue*>(value.get());
     if (scopedValue)
     {

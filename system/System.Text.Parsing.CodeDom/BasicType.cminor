@@ -1,0 +1,116 @@
+using System;
+
+namespace System.Text.Parsing.CodeDom
+{
+    public abstract class Type : DomObject
+    {
+        public Type(string name) : base(name)
+        {
+        }
+    }
+
+    public class BoolType : Type
+    {
+        public BoolType() : base("bool")
+        {
+        }
+    }
+
+    public class CharType : Type
+    {
+        public CharType() : base("char")
+        {
+        }
+    }
+
+    public class VoidType : Type
+    {
+        public VoidType() : base("void")
+        {
+        }
+    }
+
+    public class SByteType : Type
+    {
+        public SByteType() : base("sbyte")
+        {
+        }
+    }
+
+    public class ByteType : Type
+    {
+        public ByteType() : base("byte")
+        {
+        }
+    }
+
+    public class ShortType : Type
+    {
+        public ShortType() : base("short")
+        {
+        }
+    }
+
+    public class UShortType : Type
+    {
+        public UShortType() : base("ushort")
+        {
+        }
+    }
+
+    public class IntType : Type
+    {
+        public IntType() : base("int")
+        {
+        }
+    }
+
+    public class UIntType : Type
+    {
+        public UIntType() : base("uint")
+        {
+        }
+    }
+
+    public class LongType : Type
+    {
+        public LongType() : base("long")
+        {
+        }
+    }
+
+    public class ULongType : Type
+    {
+        public ULongType() : base("ulong")
+        {
+        }
+    }
+
+    public class FloatType : Type
+    {
+        public FloatType() : base("float")
+        {
+        }
+    }
+
+    public class DoubleType : Type
+    {
+        public DoubleType() : base("double")
+        {
+        }
+    }
+
+    public class ObjectType : Type
+    {
+        public ObjectType() : base("object")
+        {
+        }
+    }
+
+    public class StringType : Type
+    {
+        public StringType() : base("string")
+        {
+        }
+    }
+}

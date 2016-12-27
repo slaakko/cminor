@@ -52,6 +52,7 @@ CminorSystemAssemblyNameCollection::CminorSystemAssemblyNameCollection()
     systemAssemblyNames.push_back(U"System.Core");
     systemAssemblyNames.push_back(U"System.Base");
     systemAssemblyNames.push_back(U"System.Text.Parsing");
+    systemAssemblyNames.push_back(U"System.Text.Parsing.CodeDom");
     for (const utf32_string& systemAssemblyName : systemAssemblyNames)
     {
         systemAssemblyNameMap.insert(StringPtr(systemAssemblyName.c_str()));

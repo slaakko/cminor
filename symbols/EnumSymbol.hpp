@@ -24,6 +24,7 @@ public:
     void SetUnderlyingType(TypeSymbol* underlyingType_);
     ValueType GetValueType() const override { return underlyingType->GetValueType(); }
     Type* GetMachineType() const override;
+    bool IsSwitchConditionType() const override { return true; }
 private:
     TypeSymbol* underlyingType;
 };

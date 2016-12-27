@@ -7,6 +7,7 @@ source <BoxedTypes.cminor>;
 source <BufferedStream.cminor>;
 source <Char.cminor>;
 source <Closable.cminor>;
+source <CodeFormatter.cminor>;
 source <Console.cminor>;
 source <Convert.cminor>;
 source <Enumerator.cminor>;

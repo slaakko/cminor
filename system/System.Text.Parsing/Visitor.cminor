@@ -18,5 +18,15 @@ namespace System.Text.Parsing
         public virtual void Visit(PositiveParser parser) {}
         public virtual void Visit(KleeneStarParser parser) {}
         public virtual void Visit(ExpectationParser parser) {}
+        public virtual void Visit(TokenParser parser) {}
+        public virtual void Visit(SequenceParser parser) {}
+        public virtual void Visit(AlternativeParser parser) {}
+        public virtual void Visit(DifferenceParser parser) {}
+        public virtual void Visit(ExclusiveOrParser parser) {}
+        public virtual void Visit(IntersectionParser parser) {}
+        public virtual void Visit(ListParser parser) {}
+        public virtual void Visit(ActionParser parser) {}
+        public virtual void Visit(RuleParser parser) {}
+        public virtual void Visit(NonterminalParser parser) {}
     }
 }

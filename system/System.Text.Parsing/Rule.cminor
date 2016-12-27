@@ -1,0 +1,42 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing
+{
+    public class RuleParser : Parser
+    {
+        public RuleParser(string name, Scope enclosingScope) : base(name, "<" + name + ">")
+        {
+        }
+        public Parser Definition
+        {
+            get { return definition; }
+            set { definition = value; }
+        }
+        public virtual void Link()
+        {
+        }
+        public virtual void Enter(Stack<object> stack)
+        {
+        }
+        public virtual void Leave(Stack<object> stack, bool matched)
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Enter(stack);
+            Match match = Match.Nothing;
+            if (definition != null)
+            {
+                match = definition.Parse(scanner, stack);
+            }
+            Leave(stack, match.Hit);
+            return match;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+        private Parser definition;
+    }
+}

@@ -1,0 +1,61 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing
+{
+    public class delegate void PreCall(Stack<object> stack);
+
+    public class delegate void PostCall(Stack<object> stack, bool matched);
+
+    public class NonterminalParser : Parser
+    {
+        public NonterminalParser(string name, string ruleName) : base(name, "<" + name + ">")
+        {
+            this.ruleName = ruleName;
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            if (rule != null)
+            {
+                if (preCall != null)
+                {
+                    preCall(stack);
+                }
+                Match match = rule.Parse(scanner, stack);
+                if (postCall != null)
+                {
+                    postCall(stack, match.Hit);
+                }
+                return match;
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+        public string RuleName
+        {
+            get { return ruleName; }
+        }
+        public RuleParser Rule
+        {
+            get { return rule; }
+            set { rule = value; }
+        }
+        public PreCall Pre
+        {
+            get { return preCall; }
+            set { preCall = value; }
+        }
+        public PostCall Post
+        {
+            get { return postCall; }
+            set { postCall = value; }
+        }
+        private string ruleName;
+        private RuleParser rule;
+        private PreCall preCall;
+        private PostCall postCall;
+    }
+}

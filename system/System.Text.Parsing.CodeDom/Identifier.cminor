@@ -1,0 +1,61 @@
+using System;
+using System.Text;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing.CodeDom
+{
+    public class Identifier : DomObject
+    {
+        public Identifier(string name) : base(name)
+        {
+        }
+        public override int GetRank()
+        {
+            return 20;
+        }
+    }
+
+    public class TemplateId : DomObject
+    {
+        public TemplateId(string name) : base(name)
+        {
+            this.templateArgs = new List<DomObject>();
+        }
+        public void AddTemplateArg(DomObject templateArg)
+        {
+            templateArgs.Add(templateArg);
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            formatter.Write(Name);
+            formatter.Write("<");
+            bool first = true;
+            foreach (DomObject templateArg in templateArgs)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    formatter.Write(", ");
+                }
+                templateArg.Print(formatter);
+            }
+            formatter.Write(">");
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        public override int GetRank()
+        {
+            return 20;
+        }
+        private List<DomObject> templateArgs;
+    }
+}

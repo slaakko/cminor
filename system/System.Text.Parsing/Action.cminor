@@ -1,0 +1,72 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing
+{
+    public class delegate void ParsingAction(string match, Span span, string fileName, ref bool pass);
+
+    public class delegate void FailureAction();
+
+    public class ActionParser : UnaryParser
+    {
+        public ActionParser(string name, Parser child) : base(name, child, child.Info)
+        {
+        }
+        public string MethodName
+        {
+            get { return Name + "Action"; }
+        }
+        public string VariableName
+        {
+            get 
+            { 
+                string name = Name;
+                if (string.IsNullOrEmpty(name))
+                {
+                    return "ActionParser";
+                }
+                return new string(char.ToLower(name[0]), 1) + name.Substring(1) + "ActionParser";
+            }
+        }
+        public ParsingAction Action
+        {
+            get { return action; }
+            set { action = value; }
+        }
+        public FailureAction Failure
+        {
+            get { return failureAction; }
+            set { failureAction = value; }
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Span actionSpan = scanner.SpanValue;
+            Match match = Child.Parse(scanner, stack);
+            if (match.Hit)
+            {
+                if (action != null)
+                {
+                    bool pass = true;
+                    actionSpan.End = scanner.SpanValue.Start;
+                    string match = scanner.Content.Substring(actionSpan.Start, actionSpan.End - actionSpan.Start);
+                    action(match, actionSpan, scanner.FileName, ref pass);
+                    if (!pass)
+                    {
+                        return Match.Nothing;
+                    }
+                }
+            }
+            else if (failureAction != null)
+            {
+                failureAction();
+            }
+            return match;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+        private ParsingAction action;
+        private FailureAction failureAction;
+    }
+}

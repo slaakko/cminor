@@ -87,6 +87,8 @@ public:
     virtual bool IsDerived() const { return false; }
     virtual bool IsMemFunToClassDelegateConversion() const { return false; }
     void DumpHeader(CodeFormatter& formatter) override;
+    int DeclarationBlockId() const { return declarationBlockId; }
+    void SetDeclarationBlockId(int declarationBlockId_) { declarationBlockId = declarationBlockId_; }
 private:
     Constant groupName;
     Constant vmFunctionName;
@@ -95,6 +97,7 @@ private:
     TypeSymbol* returnType;
     FunctionSymbolFlags flags;
     Function* machineFunction;
+    int declarationBlockId;
 };
 
 class StaticConstructorSymbol : public FunctionSymbol

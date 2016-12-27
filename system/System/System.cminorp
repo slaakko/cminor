@@ -2,3 +2,4 @@ project System;
 target=library;
 reference <../System.Base/System.Base.cminorp>;
 reference <../System.Text.Parsing/System.Text.Parsing.cminorp>;
+reference <../System.Text.Parsing.CodeDom/System.Text.Parsing.CodeDom.cminorp>;

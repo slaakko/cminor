@@ -1,0 +1,539 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace System.Text.Parsing.CodeDom
+{
+    public abstract class Expression : DomObject
+    {
+        public Expression(string name, int rank) : base(name)
+        {
+            this.rank = rank;
+        }
+        public override int GetRank()
+        {
+            return rank;
+        }
+        private int rank;
+    }
+
+    public enum Operator
+    {
+        disjunction, conjunction, bitOr, bitXor, bitAnd, equal, notEqual, less, greater, lessOrEqual, greaterOrEqual, shiftLeft, shiftRight, add, sub, mul, div, rem, 
+        not, unaryPlus, unaryMinus, complement
+    }
+
+    public string MakeBinOpName(Operator op)
+    {
+        switch (op)
+        {
+            case Operator.disjunction: return "||";
+            case Operator.conjunction: return "&&";
+            case Operator.bitOr: return "|";
+            case Operator.bitXor: return "^";
+            case Operator.bitAnd: return "&";
+            case Operator.equal: return "==";
+            case Operator.notEqual: return "!=";
+            case Operator.less: return "<";
+            case Operator.greater: return ">";
+            case Operator.lessOrEqual: return "<=";
+            case Operator.greaterOrEqual: return ">=";
+            case Operator.shiftLeft: return "<<";
+            case Operator.shiftRight: return ">>";
+            case Operator.add: return "+";
+            case Operator.sub: return "-";
+            case Operator.mul: return "*";
+            case Operator.div: return "/";
+            case Operator.rem: return "%";
+        }
+        return "";
+    }
+
+    public string MakePrefixOpName(Operator op)
+    {
+        switch (op)
+        {
+            case Operator.not: return "!";
+            case Operator.unaryPlus: return "+";
+            case Operator.unaryMinus: return "-";
+            case Operator.complement: return "~";
+        }
+        return "";
+    }
+
+    public int GetBinOpRank(Operator op)
+    {
+        switch (op)
+        {
+            case Operator.disjunction: return 1;
+            case Operator.conjunction: return 2;
+            case Operator.bitOr: return 3;
+            case Operator.bitXor: return 4;
+            case Operator.bitAnd: return 5;
+            case Operator.equal: return 6;
+            case Operator.notEqual: return 6;
+            case Operator.less: return 7;
+            case Operator.greater: return 7;
+            case Operator.lessOrEqual: return 7;
+            case Operator.greaterOrEqual: return 7;
+            case Operator.shiftLeft: return 8;
+            case Operator.shiftRight: return 8;
+            case Operator.add: return 9;
+            case Operator.sub: return 9;
+            case Operator.mul: return 10;
+            case Operator.div: return 10;
+            case Operator.rem: return 10;
+        }
+        return 100;
+    }
+
+    public abstract class BinaryExpression : Expression
+    {
+        public BinaryExpression(Operator op, DomObject left, DomObject right) : base(MakeBinOpName(op), GetBinOpRank(op))
+        {
+            this.left = left;
+            this.right = right;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            if (left.GetRank() < GetRank())
+            {
+                left.Parens = true;
+            }
+            left.Print(formatter);
+            formatter.Write(" ");
+            formatter.Write(Name);
+            formatter.Write(" ");
+            if (right.GetRank() < GetRank())
+            {
+                right.Parens = true;
+            }
+            right.Print(formatter);
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        private DomObject left;
+        private DomObject right;
+    }
+
+    public abstract class PrefixExpression : Expression
+    {
+        public PrefixExpression(Operator op, DomObject child) : base(MakePrefixOpName(op), 11)
+        {
+            this.child = child;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            if (child.GetRank() < GetRank())
+            {
+                child.Parens = true;
+            }
+            formatter.Write(Name);
+            child.Print(formatter);
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        private DomObject child;
+    }
+
+    public class Disjunction : BinaryExpression
+    {
+        public Disjunction(DomObject left, DomObject right) : base(Operator.disjunction, left, right)
+        {
+        }
+    }
+
+    public class Conjunction : BinaryExpression
+    {
+        public Conjunction(DomObject left, DomObject right) : base(Operator.conjunction, left, right)
+        {
+        }
+    }
+
+    public class BitOr : BinaryExpression
+    {
+        public BitOr(DomObject left, DomObject right) : base(Operator.bitOr, left, right)
+        {
+        }
+    }
+
+    public class BitXor : BinaryExpression
+    {
+        public BitXor(DomObject left, DomObject right) : base(Operator.bitXor, left, right)
+        {
+        }
+    }
+
+    public class BitAnd : BinaryExpression
+    {
+        public BitAnd(DomObject left, DomObject right) : base(Operator.bitAnd, left, right)
+        {
+        }
+    }
+
+    public class Equal : BinaryExpression
+    {
+        public Equal(DomObject left, DomObject right) : base(Operator.equal, left, right)
+        {
+        }
+    }
+
+    public class NotEqual : BinaryExpression
+    {
+        public NotEqual(DomObject left, DomObject right) : base(Operator.notEqual, left, right)
+        {
+        }
+    }
+
+    public class Less : BinaryExpression
+    {
+        public Less(DomObject left, DomObject right) : base(Operator.less, left, right)
+        {
+        }
+    }
+
+    public class Greater : BinaryExpression
+    {
+        public Greater(DomObject left, DomObject right) : base(Operator.greater, left, right)
+        {
+        }
+    }
+
+    public class LessOrEqual : BinaryExpression
+    {
+        public LessOrEqual(DomObject left, DomObject right) : base(Operator.lessOrEqual, left, right)
+        {
+        }
+    }
+
+    public class GreaterOrEqual : BinaryExpression
+    {
+        public GreaterOrEqual(DomObject left, DomObject right) : base(Operator.greaterOrEqual, left, right)
+        {
+        }
+    }
+
+    public class ShiftLeft : BinaryExpression
+    {
+        public ShiftLeft(DomObject left, DomObject right) : base(Operator.shiftLeft, left, right)
+        {
+        }
+    }
+
+    public class ShiftRight : BinaryExpression
+    {
+        public ShiftRight(DomObject left, DomObject right) : base(Operator.shiftRight, left, right)
+        {
+        }
+    }
+
+    public class Add : BinaryExpression
+    {
+        public Add(DomObject left, DomObject right) : base(Operator.add, left, right)
+        {
+        }
+    }
+
+    public class Sub : BinaryExpression
+    {
+        public Sub(DomObject left, DomObject right) : base(Operator.sub, left, right)
+        {
+        }
+    }
+
+    public class Mul : BinaryExpression
+    {
+        public Mul(DomObject left, DomObject right) : base(Operator.mul, left, right)
+        {
+        }
+    }
+
+    public class Div : BinaryExpression
+    {
+        public Div(DomObject left, DomObject right) : base(Operator.div, left, right)
+        {
+        }
+    }
+
+    public class Rem : BinaryExpression
+    {
+        public Rem(DomObject left, DomObject right) : base(Operator.rem, left, right)
+        {
+        }
+    }
+
+    public class Not : PrefixExpression
+    {
+        public Not(DomObject child) : base(Operator.not, child)
+        {
+        }
+    }
+
+    public class UnaryPlus : PrefixExpression
+    {
+        public UnaryPlus(DomObject child) : base(Operator.unaryPlus, child)
+        {
+        }
+    }
+
+    public class UnaryMinus : PrefixExpression
+    {
+        public UnaryMinus(DomObject child) : base(Operator.unaryMinus, child)
+        {
+        }
+    }
+
+    public class Complement : PrefixExpression
+    {
+        public Complement(DomObject child) : base(Operator.complement, child)
+        {
+        }
+    }
+
+    public class IsExpression : Expression
+    {
+        public IsExpression(DomObject subject, DomObject type) : base("is", 7)
+        {
+            this.subject = subject;
+            this.type = type;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            subject.Print(formatter);
+            formatter.Write(" is ");
+            type.Print(formatter);
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        private DomObject subject;
+        private DomObject type;
+    }
+
+    public class AsExpression : Expression
+    {
+        public AsExpression(DomObject subject, DomObject type) : base("as", 7)
+        {
+            this.subject = subject;
+            this.type = type;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            subject.Print(formatter);
+            formatter.Write(" as ");
+            type.Print(formatter);
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        private DomObject subject;
+        private DomObject type;
+    }
+
+    public class DotExpression : Expression
+    {
+        public DotExpression(DomObject subject, Identifier memberId) : base(".", 12)
+        {
+            this.subject = subject;
+            this.memberId = memberId;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            subject.Print(formatter);
+            formatter.Write(".");
+            memberId.Print(formatter);
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        private DomObject subject;
+        private Identifier memberId;
+    }
+
+    public class IndexExpression : Expression
+    {
+        public IndexExpression(DomObject subject, DomObject index) : base("[]", 12)
+        {
+            this.subject = subject;
+            this.index = index;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            subject.Print(formatter);
+            formatter.Write("[");
+            index.Print(formatter);
+            formatter.Write("]");
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        private DomObject subject;
+        private DomObject index;
+    }
+
+    public class InvokeExpression : Expression
+    {
+        public InvokeExpression(DomObject subject) : base("()", 12)
+        {
+            this.subject = subject;
+            this.arguments = new List<DomObject>();
+        }
+        public void AddArgument(DomObject argument)
+        {
+            arguments.Add(argument);
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            subject.Print(formatter);
+            formatter.Write("(");
+            bool first = true;
+            foreach (DomObject argument in arguments)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    formatter.Write(", ");
+                }
+                argument.Print(formatter);
+            }
+            formatter.Write(")");
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        private DomObject subject;
+        private List<DomObject> arguments;
+    }
+
+    public class CastExpression : Expression
+    {
+        public CastExpression(DomObject targetType, DomObject sourceExpr) : base("cast", 12)
+        {
+            this.targetType = targetType;
+            this.sourceExpr = sourceExpr;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            formatter.Write("cast<");
+            targetType.Print(formatter);
+            formatter.Write(">(");
+            sourceExpr.Print(formatter);
+            formatter.Write(")");
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        private DomObject targetType;
+        private DomObject sourceExpr;
+    }
+
+    public class NewExpression : Expression
+    {
+        public NewExpression(DomObject type) : base("new", 12)
+        {
+            this.type = type;
+            this.arguments = new List<DomObject>();
+        }
+        public void AddArgument(DomObject argument)
+        {
+            arguments.Add(argument);
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            formatter.Write("new ");
+            type.Print(formatter);
+            formatter.Write("(");
+            bool first = true;
+            foreach (DomObject argument in arguments)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    formatter.Write(", ");
+                }
+                argument.Print(formatter);
+            }
+            formatter.Write(")");
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        private DomObject type;
+        private List<DomObject> arguments;
+    }
+
+    public class This : DomObject
+    {
+        public This() : base("this")
+        {
+        }
+        public override int GetRank()
+        {
+            return 20;
+        }
+    }
+
+    public class Base: DomObject
+    {
+        public Base() : base("base")
+        {
+        }
+        public override int GetRank()
+        {
+            return 20;
+        }
+    }
+}

@@ -42,7 +42,7 @@ std::string FunctionSymbolFlagStr(FunctionSymbolFlags flags)
     return s;
 }
 
-FunctionSymbol::FunctionSymbol(const Span& span_, Constant name_) : ContainerSymbol(span_, name_), returnType(nullptr), flags(FunctionSymbolFlags::none), machineFunction(nullptr)
+FunctionSymbol::FunctionSymbol(const Span& span_, Constant name_) : ContainerSymbol(span_, name_), returnType(nullptr), flags(FunctionSymbolFlags::none), machineFunction(nullptr), declarationBlockId(0)
 {
 }
 

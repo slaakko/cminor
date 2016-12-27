@@ -10,4 +10,8 @@ namespace System
     public extern bool IsHexDigit(char c);
     [VmFunctionName=Vm.System.IsPunctuation.Char]
     public extern bool IsPunctuation(char c);
+    [VmFunctionName=Vm.System.ToLower.Char]
+    public extern char ToLower(char c);
+    [VmFunctionName=Vm.System.ToUpper.Char]
+    public extern char ToUpper(char c);
 }

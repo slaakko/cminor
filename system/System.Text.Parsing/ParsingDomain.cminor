@@ -1,0 +1,31 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing
+{
+    public class ParsingDomain
+    {
+        public ParsingDomain()
+        {
+            this.grammarMap = new HashMap<string, Grammar>();
+        }
+        public Grammar GetGrammar(string grammarName)
+        {
+            Grammar grammar;
+            if (grammarMap.TryGetValue(grammarName, ref grammar))
+            {
+                return grammar;
+            }
+            return null;
+        }
+        public void AddGrammar(Grammar grammar)
+        {
+            string grammarFullName = grammar.FullName;
+            if (!grammarMap.ContainsKey(grammarFullName))
+            {
+                grammarMap[grammarFullName] = grammar;
+            }
+        }
+        private HashMap<string, Grammar> grammarMap;
+    }
+}

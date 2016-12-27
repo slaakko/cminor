@@ -1,0 +1,35 @@
+using System;
+
+namespace System.Text.Parsing
+{
+    public class Scope
+    {
+        public Scope(string name, Scope enclosingScope)
+        {
+            this.name = name;
+            this.enclosingScope = enclosingScope;
+        }
+        public string Name
+        {
+            get { return name; }
+        }
+        public string FullName
+        {
+            get 
+            { 
+                string enclosingScopeFullName = "";
+                if (enclosingScope != null)
+                {
+                    enclosingScopeFullName = enclosingScope.FullName;
+                }
+                if (string.IsNullOrEmpty(enclosingScopeFullName))
+                {
+                    return name;
+                }
+                return enclosingScopeFullName + "." + name;
+            }
+        }
+        private string name;
+        private Scope enclosingScope;
+    }
+}

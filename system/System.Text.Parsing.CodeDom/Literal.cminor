@@ -1,0 +1,11 @@
+using System;
+
+namespace System.Text.Parsing.CodeDom
+{
+    public class Literal : DomObject
+    {
+        public Literal(string text) : base(text)
+        {
+        }
+    }
+}

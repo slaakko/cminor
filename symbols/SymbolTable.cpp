@@ -118,6 +118,7 @@ void SymbolTable::BeginFunction(FunctionNode& functionNode)
 void SymbolTable::EndFunction()
 {
     EndContainer();
+    function->SetDeclarationBlockId(declarationBlockId);
     container->AddSymbol(std::unique_ptr<Symbol>(function));
     function = nullptr;
 }
@@ -140,6 +141,7 @@ void SymbolTable::BeginStaticConstructor(StaticConstructorNode& staticConstructo
 void SymbolTable::EndStaticConstructor()
 {
     EndContainer();
+    function->SetDeclarationBlockId(declarationBlockId);
     container->AddSymbol(std::unique_ptr<Symbol>(function));
     function = nullptr;
 }
@@ -169,6 +171,7 @@ void SymbolTable::BeginConstructor(ConstructorNode& constructorNode)
 void SymbolTable::EndConstructor()
 {
     EndContainer();
+    function->SetDeclarationBlockId(declarationBlockId);
     container->AddSymbol(std::unique_ptr<Symbol>(function));
     function = nullptr;
 }
@@ -216,6 +219,7 @@ void SymbolTable::BeginMemberFunction(MemberFunctionNode& memberFunctionNode)
 void SymbolTable::EndMemberFunction()
 {
     EndContainer();
+    function->SetDeclarationBlockId(declarationBlockId);
     container->AddSymbol(std::unique_ptr<Symbol>(function));
     function = nullptr;
 }

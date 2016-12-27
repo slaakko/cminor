@@ -1122,23 +1122,6 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
             throw Exception("invoke cannot be applied to this type of expression", invokeNode.Child()->GetSpan());
         }
     }
-    else if (expression->GetType()->IsClassType())
-    {
-        BoundExpression* classExpr = expression.release();
-        arguments.push_back(std::unique_ptr<BoundExpression>(classExpr));
-        functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base, classExpr->GetType()->Class()->GetContainerScope()));
-        int n = invokeNode.Arguments().Count();
-        for (int i = 0; i < n; ++i)
-        {
-            Node* argument = invokeNode.Arguments()[i];
-            argument->Accept(*this);
-            arguments.push_back(std::unique_ptr<BoundExpression>(expression.release()));
-        }
-        std::unique_ptr<BoundFunctionCall> functionCall = ResolveOverload(boundCompileUnit, U"operator()", functionScopeLookups, arguments, invokeNode.GetSpan());
-        CheckAccess(boundFunction->GetFunctionSymbol(), functionCall->GetFunctionSymbol());
-        expression.reset(functionCall.release());
-        return;
-    }
     else if (expression->GetType()->IsDelegateType())
     {
         BoundExpression* delegateExpr = expression.release();
@@ -1207,6 +1190,23 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
         arguments.push_back(std::unique_ptr<BoundExpression>(classDelegateExpr));
         expression.reset(new BoundClassDelegateCall(boundCompileUnit.GetAssembly(), classDelegateType, std::move(arguments)));
         CheckAccess(boundFunction->GetFunctionSymbol(), expression->GetType());
+        return;
+    }
+    else if (expression->GetType()->IsClassType())
+    {
+        BoundExpression* classExpr = expression.release();
+        arguments.push_back(std::unique_ptr<BoundExpression>(classExpr));
+        functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base, classExpr->GetType()->Class()->GetContainerScope()));
+        int n = invokeNode.Arguments().Count();
+        for (int i = 0; i < n; ++i)
+        {
+            Node* argument = invokeNode.Arguments()[i];
+            argument->Accept(*this);
+            arguments.push_back(std::unique_ptr<BoundExpression>(expression.release()));
+        }
+        std::unique_ptr<BoundFunctionCall> functionCall = ResolveOverload(boundCompileUnit, U"operator()", functionScopeLookups, arguments, invokeNode.GetSpan());
+        CheckAccess(boundFunction->GetFunctionSymbol(), functionCall->GetFunctionSymbol());
+        expression.reset(functionCall.release());
         return;
     }
     else

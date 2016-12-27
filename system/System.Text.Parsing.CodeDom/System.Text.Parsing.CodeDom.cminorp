@@ -1,0 +1,8 @@
+project System.Text.Parsing.CodeDom;
+reference <../System.Base/System.Base.cminorp>;
+target=library;
+source <BasicType.cminor>;
+source <Expression.cminor>;
+source <Identifier.cminor>;
+source <Literal.cminor>;
+source <Object.cminor>;

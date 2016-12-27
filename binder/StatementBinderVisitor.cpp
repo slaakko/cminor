@@ -915,9 +915,12 @@ void StatementBinderVisitor::Visit(ForEachStatementNode& forEachStatementNode)
     WhileStatementNode* whileNotEnd = new WhileStatementNode(span, new NotNode(span, 
         new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "AtEnd")))), loopBody);
     forEachBlock.AddStatement(whileNotEnd);
+    int declarationBlockId = function->GetFunctionSymbol()->DeclarationBlockId();
+    boundCompileUnit.GetAssembly().GetSymbolTable().SetDeclarationBlockId(declarationBlockId);
     boundCompileUnit.GetAssembly().GetSymbolTable().BeginContainer(containerScope->Container());
     SymbolCreatorVisitor symbolCreatorVisitor(boundCompileUnit.GetAssembly());
     forEachBlock.Accept(symbolCreatorVisitor);
+    function->GetFunctionSymbol()->SetDeclarationBlockId(boundCompileUnit.GetAssembly().GetSymbolTable().GetDeclarationBlockId());
     boundCompileUnit.GetAssembly().GetSymbolTable().EndContainer();
     TypeBinderVisitor typeBinderVisitor(boundCompileUnit);
     forEachBlock.Accept(typeBinderVisitor);
@@ -941,6 +944,10 @@ void StatementBinderVisitor::Visit(SwitchStatementNode& switchStatementNode)
     switchConditionType = condType;
     if (condType->IsSwitchConditionType())
     {
+        if (EnumTypeSymbol* enumTypeSymbol = dynamic_cast<EnumTypeSymbol*>(switchConditionType))
+        {
+            switchConditionType = enumTypeSymbol->GetUnderlyingType();
+        }
         std::unique_ptr<BoundSwitchStatement> switchStatement(new BoundSwitchStatement(boundCompileUnit.GetAssembly(), std::move(condition)));
         int n = switchStatementNode.Cases().Count();
         for (int i = 0; i < n; ++i)
@@ -1075,6 +1082,13 @@ void StatementBinderVisitor::Visit(CaseStatementNode& caseStatementNode)
     for (int i = 0; i < m; ++i)
     {
         Node* caseExpr = caseStatementNode.CaseExprs()[i];
+        if (DotNode* dotNode = dynamic_cast<DotNode*>(caseExpr))
+        {
+            if (dotNode->MemberStr() == "disjunction")
+            {
+                int x = 0;
+            }
+        }
         std::unique_ptr<Value> value(Evaluate(GetValueKindFor(switchConditionType->GetSymbolType(), caseStatementNode.GetSpan()), false, containerScope, boundCompileUnit, caseExpr));
         IntegralValue caseValue = value->GetIntegralValue();
         auto it = caseValueMap->find(caseValue);
@@ -1249,10 +1263,13 @@ void StatementBinderVisitor::Visit(UsingStatementNode& usingStatementNode)
     TryStatementNode* tryStatementNode = new TryStatementNode(span, tryBlock);
     tryStatementNode->SetFinally(finallyBlock);
     usingBlock.AddStatement(tryStatementNode);
+    int declarationBlockId = function->GetFunctionSymbol()->DeclarationBlockId();
+    boundCompileUnit.GetAssembly().GetSymbolTable().SetDeclarationBlockId(declarationBlockId);
     boundCompileUnit.GetAssembly().GetSymbolTable().BeginContainer(containerScope->Container());
     SymbolCreatorVisitor symbolCreatorVisitor(boundCompileUnit.GetAssembly());
     usingBlock.Accept(symbolCreatorVisitor);
     boundCompileUnit.GetAssembly().GetSymbolTable().EndContainer();
+    function->GetFunctionSymbol()->SetDeclarationBlockId(boundCompileUnit.GetAssembly().GetSymbolTable().GetDeclarationBlockId());
     TypeBinderVisitor typeBinderVisitor(boundCompileUnit);
     usingBlock.Accept(typeBinderVisitor);
     usingBlock.Accept(*this);

@@ -1,0 +1,42 @@
+using System;
+using System.Text;
+
+namespace System.Text.Parsing.CodeDom
+{
+    public class DomObject
+    {
+        public DomObject(string name)
+        {
+            this.name = name;
+            this.parens = false;
+        }
+        public string Name
+        {
+            get { return name; }
+            set { name = value; }
+        }
+        public bool Parens
+        {
+            get { return parens; }
+            set { parens = value; }
+        }
+        public virtual void Print(CodeFormatter formatter)
+        {
+            if (parens)
+            {
+                formatter.Write("(");
+            }
+            formatter.Write(name);
+            if (parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        public virtual int GetRank()
+        {
+            return 100;
+        }
+        private string name;
+        private bool parens;
+    }
+}

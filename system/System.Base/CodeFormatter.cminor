@@ -1,0 +1,79 @@
+using System;
+using System.IO;
+
+namespace System.Text
+{
+    public class CodeFormatter
+    {
+        public CodeFormatter(StreamWriter writer)
+        {
+            this.writer = writer;
+            this.indent = 0;
+            this.indentSize = 4;
+            this.atBeginningOfLine = true;
+            this.line = 1;
+        }
+        public void Write(string text)
+        {
+            if (atBeginningOfLine)
+            {
+                if (indent != 0)
+                {
+                    writer.Write(new string(' ', CurrentIndent));
+                    atBeginningOfLine = false;
+                }
+            }
+            writer.Write(text);
+        }
+        public void WriteLine(string text)
+        {
+            Write(text);
+            WriteLine();
+        }
+        public void WriteLine()
+        {
+            writer.WriteLine();
+            atBeginningOfLine = true;
+            ++line;
+        }
+        public void IncIndent()
+        {
+            ++indent;
+        }
+        public void DecIndent()
+        {
+            --indent;
+        }
+        public StreamWriter Writer
+        {
+            get { return writer; }
+        }
+        public int Indent
+        {
+            get { return indent; }
+        }
+        public int IndentSize
+        {
+            get { return indentSize; }
+            set { indentSize = value; }
+        }
+        public int CurrentIndent
+        {
+            get { return indentSize * indent; }
+        }
+        public bool AtBeginningOfLine
+        {
+            get { return atBeginningOfLine; }
+        }
+        public int Line
+        {
+            get { return line; }
+            set { line = value; }
+        }
+        private StreamWriter writer;
+        private int indent;
+        private int indentSize;
+        private bool atBeginningOfLine;
+        private int line;
+    }
+}

@@ -70,6 +70,7 @@ ValueKind GetValueKindFor(SymbolType symbolType, const Span& span)
         case SymbolType::ulongTypeSymbol: return ValueKind::ulongValue;
         case SymbolType::floatTypeSymbol: return ValueKind::floatValue;
         case SymbolType::doubleTypeSymbol: return ValueKind::doubleValue;
+        case SymbolType::enumTypeSymbol: 
         default: throw Exception("cannot evaluate statically", span);
     }
 }

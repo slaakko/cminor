@@ -1,0 +1,133 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing
+{
+    public class Grammar
+    {
+        public Grammar(string name, Scope enclosingScope) : this(name, enclosingScope, new ParsingDomain())
+        {
+        }
+        public Grammar(string name, Scope enclosingScope, ParsingDomain parsingDomain)
+        {
+            this.name = name;
+            this.enclosingScope = enclosingScope;
+            this.parsingDomain = parsingDomain;
+            this.referencedGrammars = new HashSet<Grammar>();
+            this.linking = false;
+            this.linked = false;
+        }
+        public string Name
+        {
+            get { return name; }
+        }
+        public string FullName
+        {
+            get
+            {
+                string scopeName = "";
+                if (enclosingScope != null)
+                {
+                    scopeName = enclosingScope.FullName;
+                }
+                if (string.IsNullOrEmpty(scopeName))
+                {
+                    return name;
+                }
+                else
+                {
+                    return scopeName + "." + name;
+                }
+            }
+        }
+        public virtual void GetReferencedGrammars()
+        {
+        }
+        public virtual void CreateRules()
+        {
+        }
+        public virtual void Link()
+        {
+            if (!linking && !linked)
+            {
+                linking = true;
+                GetReferencedGrammars();
+                foreach (Grammar referencedGrammar in referencedGrammars)
+                {
+                    referencedGrammar.Link();
+                }
+                // todo
+                linking = false;
+                linked = true;
+            }
+        }
+        public void Parse(string content, int fileIndex, string fileName)
+        {
+            Scanner scanner = new Scanner(content, fileIndex, fileName, skipRule);
+            Stack<object> stack = new Stack<object>();
+            Match match = Parse(scanner, stack);
+            Span stop = scanner.SpanValue;
+            if (!match.Hit || stop.Start != content.Length)
+            {
+                if (startRule == null)
+                {
+                    throw new Exception("grammar '" + FullName + "' has no start rule");
+                }
+                else
+                {
+                    throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                }
+            }
+        }
+        public Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            if (startRule != null)
+            {
+                if (contentParser == null)
+                {
+                    if (skipRule != null)
+                    {
+                        contentParser = new SequenceParser(new SequenceParser(new OptionalParser(skipRule), startRule), new OptionalParser(skipRule));
+                    }
+                    else
+                    {
+                        contentParser = startRule;
+                    }
+                }
+                return contentParser.Parse(scanner, stack);
+            }
+            return Match.Nothing;
+        }
+        public string StartRuleName
+        {
+            get { return startRuleName; }
+            set { startRuleName = value; }
+        }
+        public string SkipRuleName
+        {
+            get { return skipRuleName; }
+            set { skipRuleName = value; }
+        }
+        public RuleParser StartRule
+        {
+            get { return startRule; }
+            set { startRule = value; }
+        }
+        public RuleParser SkipRule
+        {
+            get { return skipRule; }
+            set { skipRule = value; }
+        }
+        private string name;
+        private Scope enclosingScope;
+        private ParsingDomain parsingDomain;
+        private string startRuleName;
+        private string skipRuleName;
+        private Parser contentParser;
+        private RuleParser startRule;
+        private RuleParser skipRule;
+        private HashSet<Grammar> referencedGrammars;
+        private bool linking;
+        private bool linked;
+    }
+}

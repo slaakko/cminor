@@ -1,11 +1,18 @@
 project System.Text.Parsing;
 target=library;
 reference <../System.Base/System.Base.cminorp>;
+reference <../System.Text.Parsing.CodeDom/System.Text.Parsing.CodeDom.cminorp>;
+source <Action.cminor>;
 source <Composite.cminor>;
+source <Grammar.cminor>;
 source <Error.cminor>;
 source <Match.cminor>;
+source <Nonterminal.cminor>;
 source <Parser.cminor>;
+source <ParsingDomain.cminor>;
 source <Primitive.cminor>;
+source <Rule.cminor>;
 source <Scanner.cminor>;
+source <Scope.cminor>;
 source <Span.cminor>;
 source <Visitor.cminor>;

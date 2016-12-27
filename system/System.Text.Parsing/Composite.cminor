@@ -160,4 +160,175 @@ namespace System.Text.Parsing
             visitor.Visit(this);
         }
     }
+
+    public class TokenParser : UnaryParser
+    {
+        public TokenParser(Parser child) : base("token", child, child.Info)
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            scanner.BeginToken();
+            Match match = Child.Parse(scanner, stack);
+            scanner.EndToken();
+            return match;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class SequenceParser : BinaryParser
+    {
+        public SequenceParser(Parser left, Parser right) : base("sequence", left, right, left.Info)
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Match left = Left.Parse(scanner, stack);
+            if (left.Hit)
+            {
+                scanner.Skip();
+                Match right = Right.Parse(scanner, stack);
+                if (right.Hit)
+                {
+                    left.Concatenate(right);
+                    return left;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class AlternativeParser : BinaryParser
+    {
+        public AlternativeParser(Parser left, Parser right) : base("alternative", left, right, left.Info + " | " + right.Info)
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Span save = scanner.SpanValue;
+            Match left = Left.Parse(scanner, stack);
+            if (left.Hit)
+            {
+                return left;
+            }
+            scanner.SpanValue = save;
+            return Right.Parse(scanner, stack);
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class DifferenceParser : BinaryParser
+    {
+        public DifferenceParser(Parser left, Parser right) : base("difference", left, right, left.Info + " - " + right.Info)
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Span save = scanner.SpanValue;
+            Match left = Left.Parse(scanner, stack);
+            if (left.Hit)
+            {
+                Span temp = scanner.SpanValue;
+                scanner.SpanValue = save;
+                save = temp;
+                Match right = Right.Parse(scanner, stack);
+                if (!right.Hit || right.Length < left.Length)
+                {
+                    scanner.SpanValue = save;
+                    return left;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class ExclusiveOrParser : BinaryParser
+    {
+        public ExclusiveOrParser(Parser left, Parser right) : base("exclusive_or", left, right, left.Info + " ^ " + right.Info)
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Span save = scanner.SpanValue;
+            Match left = Left.Parse(scanner, stack);
+            Span temp = scanner.SpanValue;
+            scanner.SpanValue = save;
+            save = temp;
+            Match right = Right.Parse(scanner, stack);
+            bool hit = right.Hit;
+            if (left.Hit)
+            {
+                hit = !right.Hit;
+            }
+            if (hit)
+            {
+                if (left.Hit)
+                {
+                    scanner.SpanValue = save;
+                    return left;
+                }
+                return right;
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class IntersectionParser : BinaryParser
+    {
+        public IntersectionParser(Parser left, Parser right) : base("intersection", left, right, left.Info + " & " + right.Info)
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            Span save = scanner.SpanValue;
+            Match left = Left.Parse(scanner, stack);
+            if (left.Hit)
+            {
+                scanner.SpanValue = save;
+                Match right = Right.Parse(scanner, stack);
+                if (left.Length == right.Length)
+                {
+                    return left;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class ListParser : UnaryParser
+    {
+        public ListParser(Parser left, Parser right) : base("list", new SequenceParser(left, new KleeneStarParser(new SequenceParser(right, left))), left.Info + " % " + right.Info)
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack)
+        {
+            return Child.Parse(scanner, stack);
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
 }

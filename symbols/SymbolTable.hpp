@@ -91,6 +91,8 @@ public:
     void MergeClassTemplateSpecializations();
     void Dump(CodeFormatter& codeFormatter);
     FunctionSymbol* GetMainFunction() const { return mainFunction; }
+    int GetDeclarationBlockId() const { return declarationBlockId; }
+    void SetDeclarationBlockId(int declarationBlockId_) { declarationBlockId = declarationBlockId_; }
 private:
     Assembly* assembly;
     NamespaceSymbol globalNs;
