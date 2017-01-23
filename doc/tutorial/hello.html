@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Hello</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2>
+        3 Hello World in Cminor
+    </h2>
+
+    <p>
+        Here's the contents of <span class="code">hello.cminor</span>:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/hello/hello.cminor.html" height="90px" width="400px"style="border:none;"></iframe>
+    </div>
+
+    <p>
+        And here's the contents of the project file <span class="code">hello.cminorp</span>:
+    </p>
+
+    <div class="project">
+        <iframe src="../code/hello/hello.cminorp.html" height="60px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="building">
+        3.1 Building the Project
+    </h3>
+
+    <div class="commands">
+        > cminor build hello.cminorp
+    </div>
+
+    <h3 id="running">
+        3.2 Running the Hello World Program
+    </h3>
+
+    <div class="commands">
+        > cminor run assembly/debug/hello.cminora<br/>
+        Hello, world!
+    </div>
+
+    <h3 id="dumping">
+        3.3 Inspecting the Contents of an Assembly
+    </h3>
+
+    <p>
+        To inspect the contents of an assembly file, 
+        we use the <span code>cminor dump</span> command.
+        The dump contains virtual machine instructions for each compiled function.
+        After that symbols of the hierarchical symbol table are printed.
+    </p>
+
+    <div class="commands">
+        > cminor dump assembly/debug/hello.cminora hello.dump<br/>
+        > type hello.dump<br />
+        main() [internal System.Void main()]<br/>
+        {<br />
+        <div style="margin-left: 20px;">
+            0    BC    receive<br />
+            1    C3    enterblock<br />
+            2    B9    loadconstant.b 128<br />
+            3    DE    slit2s<br />
+            4    C0    call System.Console.WriteLine(System.String)<br />
+            5    C4    exitblock<br />
+        </div>
+        }<br />
+        namespace<br />
+        {<br />
+        ...<br />
+    </div>
+
+</body>
+</html>

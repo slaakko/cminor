@@ -92,6 +92,7 @@ namespace System.Collections.Generic
             {
                 items[i] = items[i + 1];
             }
+            //items[n] = null;
             --count;
         }
         public void Resize(int newCount)

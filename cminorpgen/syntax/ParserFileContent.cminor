@@ -1,0 +1,61 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Parsing;
+using System.Text.Parsing.CodeDom;
+
+namespace Syntax
+{
+    public class ParserFileContent
+    {
+        public ParserFileContent(int id, ParsingDomain parsingDomain)
+        {
+            this.id = id;
+            this.parsingDomain = parsingDomain;
+            this.usingObjects = new List<UsingObject>();
+        }
+        public void BeginNamespace(string ns)
+        {
+            parsingDomain.BeginNamespace(ns);
+        }
+        public void EndNamespace()
+        {
+            parsingDomain.EndNamespace();
+        }
+        public void AddGrammar(Grammar grammar)
+        {
+            grammar.Owner = id;
+            parsingDomain.AddGrammar(grammar);
+        }
+        public void AddUsingObject(DomObject subject)
+        {
+            UsingObject usingObject = new UsingObject(subject, parsingDomain.CurrentScope);
+            usingObject.Owner = id;
+            usingObjects.Add(usingObject);
+        }
+        public int Id
+        {
+            get { return id; }
+        }
+        public ParsingDomain Domain
+        {
+            get { return parsingDomain; }
+        }
+        public string FilePath
+        {
+            get { return filePath; }
+            set { filePath = value; }
+        }
+        public List<UsingObject> UsingObjects
+        {
+            get { return usingObjects; }
+        }
+        public Scope CurrentScope
+        {
+            get { return parsingDomain.CurrentScope; }
+        }
+        private int id;
+        private ParsingDomain parsingDomain;
+        private string filePath;
+        private List<UsingObject> usingObjects;
+    }
+}

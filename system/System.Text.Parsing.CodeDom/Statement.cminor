@@ -1,0 +1,983 @@
+using System;
+using System.Text;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing.CodeDom
+{
+    public abstract class Statement : DomObject
+    {
+        public Statement(string name) : base(name)
+        {
+            this.label = string.Empty;
+            this.noNewLine = false;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (!string.IsNullOrEmpty(label))
+            {
+                formatter.Write(label);
+                formatter.Write(": ");
+            }
+        }
+        public string Label
+        {
+            get { return label; }
+            set { label = value; }
+        }
+        public bool NoNewLine
+        {
+            get { return noNewLine; }
+            set { noNewLine = value; }
+        }
+        private string label;
+        private bool noNewLine;
+    }
+
+    public class CompoundStatement : Statement
+    {
+        public CompoundStatement() : base("compound")
+        {
+            this.statements = new List<Statement>();
+        }
+        public void AddStatement(Statement statement)
+        {
+            statements.Add(statement);
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            base.Print(formatter);
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            foreach (Statement statement in statements)
+            {
+                statement.Print(formatter);
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            foreach (Statement statement in statements)
+            {
+                statement.Accept(visitor);
+            }
+        }
+        private List<Statement> statements;
+    }
+
+    public class ReturnStatement : Statement
+    {
+        public ReturnStatement(DomObject expression) : base("return")
+        {
+            this.expression = expression;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("return");
+            if (expression != null)
+            {
+                formatter.Write(" ");
+                expression.Print(formatter);
+            }
+            formatter.Write(";");
+            if (!NoNewLine)
+            {
+                formatter.WriteLine();
+            }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            if (expression != null)
+            {
+                expression.Accept(visitor);
+            }
+        }
+        private DomObject expression;
+    }
+
+    public class IfStatement : Statement
+    {
+        public IfStatement(DomObject condition, Statement thenS, Statement elseS) : base("if")
+        {
+            this.condition = condition;
+            this.thenS = thenS;
+            this.elseS = elseS;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("if (");
+            condition.Print(formatter);
+            formatter.Write(")");
+            if (thenS is CompoundStatement)
+            {
+                formatter.WriteLine();
+            }
+            else
+            {
+                formatter.Write(" ");
+                thenS.NoNewLine = true;
+            }
+            thenS.Print(formatter);
+            if (elseS != null)
+            {
+                if (elseS is CompoundStatement)
+                {
+                    formatter.WriteLine();
+                }
+                else
+                {
+                    formatter.Write(" ");
+                }
+                formatter.Write("else ");
+                elseS.Print(formatter);
+            }
+            else
+            {
+                formatter.WriteLine();
+            }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            condition.Accept(visitor);
+            thenS.Accept(visitor);
+            if (elseS != null)
+            {
+                elseS.Accept(visitor);
+            }
+        }
+        private DomObject condition;
+        private Statement thenS;
+        private Statement elseS;
+    }
+
+    public class WhileStatement : Statement
+    {
+        public WhileStatement(DomObject condition, Statement statement) : base("while")
+        {
+            this.condition = condition;
+            this.statement = statement;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("while (");
+            condition.Print(formatter);
+            formatter.Write(")");
+            if (statement is CompoundStatement)
+            {
+                formatter.WriteLine();
+            }
+            else
+            {
+                formatter.Write(" ");
+            }
+            statement.Print(formatter);
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            condition.Accept(visitor);
+            statement.Accept(visitor);
+        }
+        private DomObject condition;
+        private Statement statement;
+    }
+
+    public class DoStatement : Statement
+    {
+        public DoStatement(DomObject condition, Statement statement) : base("do")
+        {
+            this.condition = condition;
+            this.statement = statement;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("do");
+            if (statement is CompoundStatement)
+            {
+                formatter.WriteLine();
+            }
+            else
+            {
+                formatter.Write(" ");
+                statement.NoNewLine = true;
+            }
+            statement.Print(formatter);
+            formatter.Write(" while (");
+            condition.Print(formatter);
+            formatter.WriteLine(");");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            condition.Accept(visitor);
+            statement.Accept(visitor);
+        }
+        private DomObject condition;
+        private Statement statement;
+    }
+
+    public class ForStatement : Statement
+    {
+        public ForStatement(Statement initS, DomObject condition, Statement loopS, Statement actionS) : base("for")
+        {
+            this.initS = initS;
+            this.condition = condition;
+            this.loopS = loopS;
+            this.actionS = actionS;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("for (");
+            if (initS != null)
+            {
+                initS.NoNewLine = true;
+                initS.Print(formatter);
+            }
+            else
+            {
+                formatter.Write(";");
+            }
+            if (condition != null)
+            {
+                formatter.Write(" ");
+                condition.Print(formatter);
+                formatter.Write(";");
+            }
+            else
+            {
+                formatter.Write(";");
+            }
+            if (loopS != null)
+            {
+                loopS.NoNewLine = true;
+                loopS.Print(formatter);
+            }
+            formatter.Write(")");
+            if (actionS is CompoundStatement)
+            {
+                formatter.WriteLine();
+            }
+            else
+            {
+                formatter.Write(" ");
+            }
+            actionS.Print(formatter);
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            initS.Accept(visitor);
+            if (condition != null)
+            {
+                condition.Accept(visitor);
+            }
+            if (loopS != null)
+            {
+                loopS.Accept(visitor);
+            }
+            actionS.Accept(visitor);
+        }
+        private Statement initS;
+        private DomObject condition;
+        private Statement loopS;
+        private Statement actionS;
+    }
+
+    public class BreakStatement : Statement
+    {
+        public BreakStatement() : base("break")
+        {
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.WriteLine("break;");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class ContinueStatement : Statement
+    {
+        public ContinueStatement() : base("continue")
+        {
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.WriteLine("continue;");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class GotoStatement : Statement
+    {
+        public GotoStatement(Identifier target) : base("goto")
+        {
+            this.target = target;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("goto ");
+            target.Print(formatter);
+            formatter.WriteLine(";");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            target.Accept(visitor);
+        }
+        private Identifier target;
+    }
+
+    public class ConstructionStatement : Statement
+    {
+        public ConstructionStatement(DomObject type, Identifier id) : base("construction")
+        {
+            this.type = type;
+            this.id = id;
+            this.arguments = new List<DomObject>();
+            this.equalSign = false;
+            this.semicolon = false;
+        }
+        public void AddArgument(DomObject argument)
+        {
+            arguments.Add(argument);
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            type.Print(formatter);
+            formatter.Write(" ");
+            id.Print(formatter);
+            if (equalSign)
+            {
+                formatter.Write(" = ");
+            }
+            else 
+            {
+                formatter.Write("(");
+            }
+            bool first = true;
+            foreach (DomObject argument in arguments)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    formatter.Write(", ");
+                }
+                argument.Print(formatter);
+            }
+            if (!equalSign)
+            {
+                formatter.Write(")");
+            }
+            if (NoNewLine)
+            {
+                if (semicolon)
+                {
+                    formatter.Write(";");
+                }
+            }
+            else
+            {
+                if (semicolon)
+                {
+                    formatter.WriteLine(";");
+                }
+            }
+        }
+        public bool EqualSign
+        {
+            get { return equalSign; }
+            set { equalSign = value; }
+        }
+        public bool Semicolon
+        {
+            get { return semicolon; }
+            set { semicolon = value; }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            type.Accept(visitor);
+            id.Accept(visitor);
+            foreach (DomObject argument in arguments)
+            {
+                argument.Accept(visitor);
+            }
+        }
+        private DomObject type;
+        private Identifier id;
+        private bool equalSign;
+        private bool semicolon;
+        private List<DomObject> arguments;
+    }
+
+    public class AssignmentStatement : Statement
+    {
+        public AssignmentStatement(DomObject targetExpr, DomObject sourceExpr) : base("assignment")
+        {
+            this.targetExpr = targetExpr;
+            this.sourceExpr = sourceExpr;
+            this.semicolon = false;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            targetExpr.Print(formatter);
+            formatter.Write(" = ");
+            sourceExpr.Print(formatter);
+            if (semicolon)
+            {
+                formatter.Write(";");
+            }
+            if (!NoNewLine)
+            {
+                formatter.WriteLine();
+            }
+        }
+        public bool Semicolon
+        {
+            get { return semicolon; }
+            set { semicolon = value; }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            targetExpr.Accept(visitor);
+            sourceExpr.Accept(visitor);
+        }
+        private DomObject targetExpr;
+        private DomObject sourceExpr;
+        private bool semicolon;
+    }
+
+    public class ExpressionStatement : Statement
+    {
+        public ExpressionStatement(DomObject expression) : base("expression")
+        {
+            this.expression = expression;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            expression.Print(formatter);
+            formatter.Write(";");
+            if (!NoNewLine)
+            {
+                formatter.WriteLine();
+            }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            expression.Accept(visitor);
+        }
+        private DomObject expression;
+    }
+
+    public class EmptyStatement : Statement
+    {
+        public EmptyStatement() : base("empty")
+        {
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write(";");
+            if (!NoNewLine)
+            {
+                formatter.WriteLine();
+            }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class IncrementStatement : Statement
+    {
+        public IncrementStatement(DomObject expression) : base("increment")
+        {
+            this.expression = expression;
+            this.postfix = false;
+            this.semicolon = false;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (!postfix)
+            {
+                formatter.Write("++");
+            }
+            expression.Print(formatter);
+            if (postfix)
+            {
+                formatter.Write("++");
+            }
+            if (semicolon)
+            {
+                formatter.Write(";");
+            }
+            if (!NoNewLine)
+            {
+                formatter.WriteLine();
+            }
+        }
+        public bool Postfix
+        {
+            get { return postfix; }
+            set { postfix = value; }
+        }
+        public bool Semicolon
+        {
+            get { return semicolon; }
+            set { semicolon = value; }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            expression.Accept(visitor);
+        }
+        private DomObject expression;
+        private bool postfix;
+        private bool semicolon;
+    }
+
+    public class DecrementStatement : Statement
+    {
+        public DecrementStatement(DomObject expression) : base("decrement")
+        {
+            this.expression = expression;
+            this.postfix = false;
+            this.semicolon = false;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (!postfix)
+            {
+                formatter.Write("--");
+            }
+            expression.Print(formatter);
+            if (postfix)
+            {
+                formatter.Write("--");
+            }
+            if (semicolon)
+            {
+                formatter.Write(";");
+            }
+            if (!NoNewLine)
+            {
+                formatter.WriteLine();
+            }
+        }
+        public bool Postfix
+        {
+            get { return postfix; }
+            set { postfix = value; }
+        }
+        public bool Semicolon
+        {
+            get { return semicolon; }
+            set { semicolon = value; }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            expression.Accept(visitor);
+        }
+        private DomObject expression;
+        private bool postfix;
+        private bool semicolon;
+    }
+
+    public class ForEachStatement : Statement
+    {
+        public ForEachStatement(DomObject type, Identifier id, DomObject container, Statement action)
+        {
+            this.type = type;
+            this.id = id;
+            this.container = container;
+            this.action = action;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("foreach (");
+            type.Print(formatter);
+            formatter.Write(" ");
+            id.Print(formatter);
+            formatter.Write(" in ");
+            container.Print(formatter);
+            formatter.Write(")");
+            if (action is CompoundStatement)
+            {
+                formatter.WriteLine();
+            }
+            else
+            {
+                formatter.Write(" ");
+            }
+            action.Print(formatter);
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            type.Accept(visitor);
+            id.Accept(visitor);
+            container.Accept(visitor);
+            action.Accept(visitor);
+        }
+        private DomObject type;
+        private Identifier id;
+        private DomObject container;
+        private Statement action;
+    }
+
+    public class SwitchStatement : Statement
+    {
+        public SwitchStatement(DomObject condition) : base("switch")
+        {
+            this.condition = condition;
+            this.cases = new List<CaseStatement>();
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("switch (");
+            condition.Print(formatter);
+            formatter.WriteLine(")");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            foreach (CaseStatement caseS in cases)
+            {
+                caseS.Print(formatter);
+            }
+            if (defaultS != null)
+            {
+                defaultS.Print(formatter);
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public void AddCase(CaseStatement caseS)
+        {
+            cases.Add(caseS);
+        }
+        public DefaultStatement Default
+        {
+            get { return defaultS; }
+            set { defaultS = value; }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            condition.Accept(visitor);
+            foreach (CaseStatement caseS in cases)
+            {
+                caseS.Accept(visitor);
+            }
+            if (defaultS != null)
+            {
+                defaultS.Accept(visitor);
+            }
+        }
+        private DomObject condition;
+        private List<CaseStatement> cases;
+        private DefaultStatement defaultS;
+    }
+
+    public class CaseStatement : Statement
+    {
+        public CaseStatement() : base("case")
+        {
+            this.caseExprs = new List<DomObject>();
+            this.statements = new List<Statement>();
+        }
+        public void AddCaseExpr(DomObject caseExpr)
+        {
+            caseExprs.Add(caseExpr);
+        }
+        public void AddStatement(Statement statement)
+        {
+            statements.Add(statement);
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            bool first = true;
+            foreach (DomObject caseExpr in caseExprs)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    formatter.Write(" ");
+                }
+                formatter.Write("case ");
+                caseExpr.Print(formatter);
+                formatter.Write(":");
+            }
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            foreach (Statement statement in statements)
+            {
+                statement.Print(formatter);
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            foreach (DomObject caseExpr in caseExprs)
+            {
+                caseExpr.Accept(visitor);
+            }
+            foreach (Statement statement in statements)
+            {
+                statement.Accept(visitor);
+            }
+        }
+        private List<DomObject> caseExprs;
+        private List<Statement> statements;
+    }
+
+    public class DefaultStatement : Statement
+    {
+        public DefaultStatement() : base("default")
+        {
+            this.statements = new List<Statement>();
+        }
+        public void AddStatement(Statement statement)
+        {
+            statements.Add(statement);
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("default:");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            foreach (Statement statement in statements)
+            {
+                statement.Print(formatter);
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            foreach (Statement statement in statements)
+            {
+                statement.Accept(visitor);
+            }
+        }
+        private List<Statement> statements;
+    }
+
+    public class GotoCaseStatement : Statement
+    {
+        public GotoCaseStatement(DomObject caseExpr) : base("goto case")
+        {
+            this.caseExpr = caseExpr;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("goto case ");
+            caseExpr.Print(formatter);
+            formatter.WriteLine(";");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            caseExpr.Accept(visitor);
+        }
+        private DomObject caseExpr;
+    }
+
+    public class GotoDefaultStatement : Statement
+    {
+        public GotoDefaultStatement() : base("goto default")
+        {
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.WriteLine("goto default;");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class ThrowStatement : Statement
+    {
+        public ThrowStatement(DomObject expression) : base("throw")
+        {
+            this.expression = expression;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("throw ");
+            expression.Print(formatter);
+            formatter.WriteLine(";");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            expression.Accept(visitor);
+        }
+        private DomObject expression;
+    }
+
+    public class TryStatement : Statement
+    {
+        public TryStatement(CompoundStatement tryBlock) : base("try")
+        {
+            this.tryBlock = tryBlock;
+            this.catches = new List<Catch>();
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.WriteLine("try");
+            tryBlock.Print(formatter);
+            foreach (Catch catch_ in catches)
+            {
+                catch_.Print(formatter);
+            }
+            if (finally_ != null)
+            {
+                finally_.Print(formatter);
+            }
+        }
+        public void AddCatch(Catch c)
+        {
+            catches.Add(c);
+        }
+        public void SetFinally(Finally finally_)
+        {
+            this.finally_ = finally_;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            tryBlock.Accept(visitor);
+            foreach (Catch catchS in catches)
+            {
+                catchS.Accept(visitor);
+            }
+            if (finally_ != null)
+            {
+                finally_.Accept(visitor);
+            }
+        }
+        private CompoundStatement tryBlock;
+        private List<Catch> catches;
+        private Finally finally_;
+    }
+
+    public class Catch : DomObject
+    {
+        public Catch(DomObject type, Identifier id, CompoundStatement catchBlock) : base("catch")
+        {
+            this.type = type;
+            this.id = id;
+            this.catchBlock = catchBlock;
+        }
+        public Catch(CompoundStatement catchBlock) : base("catch")
+        {
+            this.type = null;
+            this.id = null;
+            this.catchBlock = catchBlock;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("catch");
+            if (type != null)
+            {
+                formatter.Write(" (");
+                type.Print(formatter);
+                formatter.Write(" ");
+                id.Print(formatter);
+                formatter.Write(")");
+            }
+            formatter.WriteLine();
+            catchBlock.Print(formatter);
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            if (type != null)
+            {
+                type.Accept(visitor);
+            }
+            if (id != null)
+            {
+                id.Accept(visitor);
+            }
+            catchBlock.Accept(visitor);
+        }
+        private DomObject type;
+        private Identifier id;
+        private CompoundStatement catchBlock;
+    }
+
+    public class Finally : DomObject
+    {
+        public Finally(CompoundStatement finallyBlock)
+        {
+            this.finallyBlock = finallyBlock;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.WriteLine("finally");
+            finallyBlock.Print(formatter);
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            finallyBlock.Accept(visitor);
+        }
+        private CompoundStatement finallyBlock;
+    }
+
+    public class UsingStatement : Statement
+    {
+        public UsingStatement(ConstructionStatement constructionStatement, Statement statement) : base("using")
+        {
+            this.constructionStatement = constructionStatement;
+            this.statement = statement;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.Write("using (");
+            constructionStatement.NoNewLine = true;
+            constructionStatement.Print(formatter);
+            formatter.Write(")");
+            if (statement is CompoundStatement)
+            {
+                formatter.WriteLine();
+            }
+            else
+            {
+                formatter.Write(" ");
+            }
+            statement.Print(formatter);
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            constructionStatement.Accept(visitor);
+            statement.Accept(visitor);
+        }
+        private ConstructionStatement constructionStatement;
+        private Statement statement;
+    }
+}

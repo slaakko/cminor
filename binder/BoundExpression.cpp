@@ -438,8 +438,11 @@ void BoundProperty::GenStore(Machine& machine, Function& function)
             function.AddInst(std::move(inst));
         }
     }
-    std::unique_ptr<Instruction> swapInst = machine.CreateInst("swap");
-    function.AddInst(std::move(swapInst));
+    else
+    {
+        std::unique_ptr<Instruction> swapInst = machine.CreateInst("swap");
+        function.AddInst(std::move(swapInst));
+    }
     std::vector<GenObject*> emptyObjects;
     Assert(propertySymbol->Setter(), "property has no setter");
     propertySymbol->Setter()->GenerateCall(machine, GetAssembly(), function, emptyObjects, 0);
@@ -506,8 +509,11 @@ void BoundIndexer::GenStore(Machine& machine, Function& function)
         }
     }
     index->GenLoad(machine, function);
-    std::unique_ptr<Instruction> rotateInst = machine.CreateInst("rotate");
-    function.AddInst(std::move(rotateInst));
+    if (!indexerSymbol->IsStatic())
+    {
+        std::unique_ptr<Instruction> rotateInst = machine.CreateInst("rotate");
+        function.AddInst(std::move(rotateInst));
+    }
     std::vector<GenObject*> emptyObjects;
     Assert(indexerSymbol->Setter(), "indexer has no setter");
     indexerSymbol->Setter()->GenerateCall(machine, GetAssembly(), function, emptyObjects, 0);

@@ -46,7 +46,7 @@ public:
     }
     void Insert(int32_t index, IntegralValue value)
     {
-        Assert(s.size() - index >= 0 && s.size() - index < s.size(), "invalid insert index");
+        Assert(s.size() - index >= 0 && s.size() - index <= s.size(), "invalid insert index");
         s.insert(s.end() - index, value);
     }
 private:

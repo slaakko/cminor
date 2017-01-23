@@ -1,0 +1,147 @@
+using System;
+
+namespace System.Text.Parsing
+{
+    public class LinkerVisitor : Visitor
+    {
+        public LinkerVisitor()
+        {
+            this.currentGrammar = null;
+            this.currentRule = null;
+            this.actionNumber = 0;
+        }
+        public override void BeginVisit(Grammar grammar)
+        {
+            if (!grammar.External)
+            {
+                currentGrammar = grammar;
+            }
+            else
+            {
+                currentGrammar = null;
+            }
+        }
+        public override void EndVisit(Grammar grammar)
+        {
+            if (currentGrammar != null)
+            {
+                currentGrammar.ResolveStartRule();
+                currentGrammar.ResolveSkipRule();
+            }
+        }
+        public override void Visit(RuleLink ruleLink)
+        {
+            if (currentGrammar == null) return;
+            ParsingObject o = currentGrammar.GetScope().Get(ruleLink.LinkedRuleName);
+            if (o != null)
+            {
+                if (o is RuleParser)
+                {
+                    RuleParser rule = cast<RuleParser>(o);
+                    ruleLink.Rule = rule;
+                    currentGrammar.ReferencedGrammars.Add(rule.GrammarValue);
+                    ruleLink.AddToScope();
+                }
+                else
+                {
+                    ThrowException("'" + ruleLink.LinkedRuleName + "' is not a rule", ruleLink.SpanValue);
+                }
+            }
+            else
+            {
+                ThrowException("rule '" + ruleLink.LinkedRuleName + "' not found", ruleLink.SpanValue);
+            }
+        }
+        public override void BeginVisit(RuleParser rule)
+        {
+            if (currentGrammar != null)
+            {
+                currentRule = rule;
+                actionNumber = 0;
+            }
+        }
+        public override void EndVisit(RuleParser rule)
+        {
+            if (currentGrammar != null)
+            {
+                rule.Link();
+            }
+        }
+        public override void BeginVisit(ActionParser action)
+        {
+            if (currentGrammar == null) return;
+            if (string.IsNullOrEmpty(action.Name))
+            {
+                action.Name = "A" + actionNumber.ToString();
+                ++actionNumber;
+            }
+            currentRule.AddAction(action);
+        }
+        public override void Visit(NonterminalParser nonterminal)
+        {
+            if (currentGrammar == null) return;
+            try
+            {
+                RuleParser rule = currentGrammar.GetRule(nonterminal.RuleName);
+                nonterminal.Rule = rule;
+                if (nonterminal.Specialized)
+                {
+                    currentRule.AddNonterminal(nonterminal);
+                }
+            }
+            catch (ParsingException ex)
+            {
+                ThrowException(ex.Message, nonterminal.SpanValue);
+            }
+            catch (Exception ex)
+            {
+                ThrowException(ex.Message, nonterminal.SpanValue);
+            }
+            if (nonterminal.NumberOfArguments != nonterminal.Rule.NumberOfParameters)
+            {
+                ThrowException("rule '" + nonterminal.RuleName + "' takes " + nonterminal.Rule.NumberOfParameters.ToString() + " parameters (" + 
+                    nonterminal.NumberOfArguments.ToString() + " arguments supplied)", nonterminal.SpanValue);
+            }
+        }
+        public override void Visit(KeywordParser keyword)
+        {
+            if (currentGrammar == null) return;
+            if (!string.IsNullOrEmpty(keyword.ContinuationRuleName))
+            {
+                keyword.ContinuationRule = currentGrammar.GetRule(keyword.ContinuationRuleName);
+            }
+        }
+        public override void Visit(KeywordListParser keywordList)
+        {
+            if (currentGrammar == null) return;
+            keywordList.SelectorRule = currentGrammar.GetRule(keywordList.SelectorRuleName);
+        }
+        private Grammar currentGrammar;
+        private RuleParser currentRule;
+        private int actionNumber;
+    }
+
+    public void Link(ParsingDomain parsingDomain)
+    {
+        LinkerVisitor visitor = new LinkerVisitor();
+        parsingDomain.GlobalNamespace.Accept(visitor);
+    }
+
+    public class ExpandCodeVisitor : Visitor
+    {
+        public override void BeginVisit(Grammar grammar)
+        {
+            if (grammar.External) return;
+            foreach (RuleParser rule in grammar.Rules)
+            {
+                rule.ExpandCode();
+            }
+        }
+    }
+
+    public void ExpandCode(ParsingDomain parsingDomain)
+    {
+        ExpandCodeVisitor visitor = new ExpandCodeVisitor();
+        parsingDomain.GlobalNamespace.Accept(visitor);
+    }
+}

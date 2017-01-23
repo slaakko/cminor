@@ -3,7 +3,7 @@ using System.Text;
 
 namespace System.Text.Parsing.CodeDom
 {
-    public class DomObject
+    public abstract class DomObject
     {
         public DomObject(string name)
         {
@@ -19,6 +19,10 @@ namespace System.Text.Parsing.CodeDom
         {
             get { return parens; }
             set { parens = value; }
+        }
+        public virtual void AddArgument(DomObject argument)
+        {
+            throw new Exception("AddArgument override not implemented");
         }
         public virtual void Print(CodeFormatter formatter)
         {
@@ -36,6 +40,7 @@ namespace System.Text.Parsing.CodeDom
         {
             return 100;
         }
+        public abstract void Accept(Visitor visitor);
         private string name;
         private bool parens;
     }

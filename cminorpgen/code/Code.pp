@@ -1,0 +1,11 @@
+project Code;
+reference <StdLib.pl>;
+source <BasicType.parser>;
+source <Expression.parser>;
+source <Identifier.parser>;
+source <Keyword.parser>;
+source <Literal.parser>;
+source <Namespace.parser>;
+source <Statement.parser>;
+source <Template.parser>;
+source <TypeExpr.parser>;

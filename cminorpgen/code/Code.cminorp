@@ -1,0 +1,12 @@
+project Code;
+target=library;
+source <BasicType.cminor>;
+source <Expression.cminor>;
+source <Identifier.cminor>;
+source <Keyword.cminor>;
+source <Literal.cminor>;
+source <Namespace.cminor>;
+source <ParsingContext.cminor>;
+source <Statement.cminor>;
+source <Template.cminor>;
+source <TypeExpr.cminor>;

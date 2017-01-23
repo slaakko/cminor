@@ -241,17 +241,26 @@ private:
     int32_t numChars;
 };
 
+constexpr uint64_t allocationSize = sizeof(std::unordered_map<AllocationHandle, std::unique_ptr<ManagedAllocation>, AllocationHandleHash>::value_type);
+constexpr uint64_t objectSize = sizeof(Object);
+constexpr uint64_t arrayContentSize = sizeof(ArrayElements);
+constexpr uint64_t stringContentSize = sizeof(StringCharacters);
+constexpr uint64_t defaultPoolDiffSize = static_cast<uint64_t>(16) * 1024 * 1024;
+
+void SetPoolDiffSize(uint64_t poolDiffSize_);
+uint64_t GetPoolDiffSize();
+
 class ManagedMemoryPool
 {
 public:
     ManagedMemoryPool(Machine& machine_);
     ObjectReference CreateObject(Thread& thread, ObjectType* type);
-    ObjectReference CopyObject(ObjectReference from);
+    ObjectReference CopyObject(Thread& thread, ObjectReference from);
     void DestroyAllocation(AllocationHandle handle);
     Object& GetObject(ObjectReference reference);
     IntegralValue GetField(ObjectReference reference, int32_t fieldIndex);
     void SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue);
-    AllocationHandle CreateStringCharsFromLiteral(const char32_t* strLit, uint32_t len);
+    AllocationHandle CreateStringCharsFromLiteral(Thread& thread, const char32_t* strLit, uint32_t len);
     std::pair<AllocationHandle, int32_t> CreateStringCharsFromCharArray(Thread& thread, ObjectReference charArray);
     ObjectReference CreateString(Thread& thread, const utf32_string& s);
     IntegralValue GetStringChar(ObjectReference str, int32_t index);
@@ -271,6 +280,7 @@ public:
     void Set(ArrayElements* arrayElements_) { arrayElements = arrayElements_; }
     void Set(StringCharacters* stringCharacters_) { stringCharacters = stringCharacters_;  }
     ManagedAllocation* GetAllocation(AllocationHandle handle);
+    AllocationHandle PoolRoot() const { return poolRoot; }
 private:
     Machine& machine;
     Object* object;
@@ -279,6 +289,14 @@ private:
     std::unordered_map<AllocationHandle, std::unique_ptr<ManagedAllocation>, AllocationHandleHash> allocations;
     std::atomic_uint64_t nextReferenceValue;
     std::recursive_mutex allocationsMutex;
+    void ComputeSize();
+    void CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle handle);
+    uint64_t objectCount;
+    uint64_t arrayContentCount;
+    uint64_t stringContentCount;
+    uint64_t prevSize;
+    uint64_t size;
+    AllocationHandle poolRoot;
 };
 
 } } // namespace cminor::machine

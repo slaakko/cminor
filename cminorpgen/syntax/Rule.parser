@@ -1,0 +1,23 @@
+using Code;
+
+namespace Syntax
+{
+    grammar RuleGrammar
+    {
+        using ElementGrammar.Identifier;
+        using ElementGrammar.Signature;
+        using CompositeGrammar.Alternative;
+
+        Rule(Scope enclosingScope, ParsingContext ctx) : RuleParser
+                    ::= RuleHeader(enclosingScope, ctx){ value = RuleHeader; } "::=" RuleBody(value, ctx)
+                    ;
+
+        RuleHeader(Scope enclosingScope, ParsingContext ctx) : RuleParser
+                    ::= Identifier:name{value = new RuleParser(name, enclosingScope); value.SpanValue = span; } Signature(value, ctx)
+                    ;
+
+        RuleBody(RuleParser rule, ParsingContext ctx)
+                    ::= (Alternative(rule.GetScope(), ctx):definition! ';'!){ rule.Definition = definition; }
+                    ;
+    }
+}

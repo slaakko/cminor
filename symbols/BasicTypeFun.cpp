@@ -132,7 +132,7 @@ void BasicTypeReturn::GenerateCall(Machine& machine, Assembly& assembly, Functio
     Assert(objects.size() == 1, "return needs one object");
     GenObject* value = objects[0];
     value->GenLoad(machine, function);
-    function.GetEmitter()->BackpatchConDisSet(startLoad.Index());
+    //function.GetEmitter()->BackpatchConDisSet(startLoad.Index()); not needed?
     function.MapPCToSourceLine(startLoad.Index(), function.GetEmitter()->CurrentSourceLine());
 }
 

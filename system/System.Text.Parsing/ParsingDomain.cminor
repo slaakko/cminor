@@ -8,6 +8,13 @@ namespace System.Text.Parsing
         public ParsingDomain()
         {
             this.grammarMap = new HashMap<string, Grammar>();
+            this.globalNamespace = new Namespace(string.Empty, null);
+            this.globalScope = globalNamespace.GetScope();
+            globalScope.Ns = globalNamespace;
+            this.currentNamespace = globalNamespace;
+            this.namespaceMap = new HashMap<string, Namespace>();
+            this.namespaceStack = new Stack<Namespace>();
+            namespaceMap[currentNamespace.FullName] = currentNamespace;
         }
         public Grammar GetGrammar(string grammarName)
         {
@@ -24,8 +31,67 @@ namespace System.Text.Parsing
             if (!grammarMap.ContainsKey(grammarFullName))
             {
                 grammarMap[grammarFullName] = grammar;
+                grammar.Ns = currentNamespace;
+                grammar.AddToScope();
             }
         }
+        public Scope GetNamespaceScope(string fullNamespaceName)
+        {
+            if (string.IsNullOrEmpty(fullNamespaceName))
+            {
+                return globalScope;
+            }
+            Namespace ns = globalScope.GetNamespace(fullNamespaceName);
+            if (ns == null)
+            {
+                ns = new Namespace(fullNamespaceName, globalScope);
+                globalScope.AddNamespace(ns);
+            }
+            return ns.GetScope();
+        }
+        public void BeginNamespace(string ns)
+        {
+            string fullNamespaceName = ns;
+            if (!string.IsNullOrEmpty(currentNamespace.FullName))
+            {
+                fullNamespaceName = currentNamespace.FullName + "." + ns;
+            }
+            namespaceStack.Push(currentNamespace);
+            Namespace ns_;
+            if (namespaceMap.TryGetValue(fullNamespaceName, ref ns_))
+            {
+                currentNamespace = ns_;
+            }
+            else
+            {
+                Namespace newNs = new Namespace(fullNamespaceName, globalScope);
+                newNs.GetScope().Ns = newNs;
+                namespaceMap[newNs.FullName] = newNs;
+                currentNamespace = newNs;
+                globalScope.AddNamespace(newNs);
+            }
+        }
+        public void EndNamespace()
+        {
+            currentNamespace = namespaceStack.Pop();
+        }
+        public Namespace GlobalNamespace 
+        {
+            get { return globalNamespace; }
+        }
+        public Namespace CurrentNamespace
+        {
+            get { return currentNamespace; }
+        }
+        public Scope CurrentScope
+        { 
+            get { return currentNamespace.GetScope(); }
+        }
         private HashMap<string, Grammar> grammarMap;
+        private Namespace globalNamespace;
+        private Scope globalScope;
+        private Namespace currentNamespace;
+        private HashMap<string, Namespace> namespaceMap;
+        private Stack<Namespace> namespaceStack;
     }
 }

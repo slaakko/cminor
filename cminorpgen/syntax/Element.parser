@@ -1,0 +1,65 @@
+using Code;
+using System.Text.Parsing.CodeDom;
+
+namespace Syntax
+{
+    grammar ElementGrammar
+    {
+        using stdlib.qualified_id;
+        using stdlib.identifier;
+        using stdlib.string;
+        using Declarator = Code.IdentifierGrammar.Identifier;
+        using Code.TypeExprGrammar.TypeExpr;
+
+        RuleLink(Grammar grammar)
+                            ::= (keyword("using") identifier:aliasName '=' qualified_id:ruleName ';')
+                                {
+                                    RuleLink link = new RuleLink(aliasName, grammar, ruleName);
+                                    link.SpanValue = span;
+                                    grammar.AddRuleLink(link);
+                                }
+                            |   (keyword("using") qualified_id ';')
+                                {
+                                    RuleLink link = new RuleLink(grammar, qualified_id);
+                                    link.SpanValue = span;
+                                    grammar.AddRuleLink(link);
+                                }
+                            ;
+
+        Signature(RuleParser rule, ParsingContext ctx)
+                            ::= ParameterList(rule, ctx)? ReturnType(rule, ctx)?
+                            ;
+
+        ParameterList(RuleParser rule, ParsingContext ctx)
+                            ::= '(' ((Variable(rule, ctx) | Parameter(rule, ctx)) % ',') ')'!
+                            ;
+
+        Variable(RuleParser rule, ParsingContext ctx)
+                            ::= keyword("var") TypeExpr(ctx) Declarator{ rule.LocalVariables.Add(new AttrOrVar(TypeExpr.ToString(), Declarator.Name)); }
+                            ;
+
+        Parameter(RuleParser rule, ParsingContext ctx)
+                            ::= TypeExpr(ctx) Declarator{ rule.InheritedAttributes.Add(new AttrOrVar(TypeExpr.ToString(), Declarator.Name)); }
+                            ;
+
+        ReturnType(RuleParser rule, ParsingContext ctx)
+                            ::= ':' TypeExpr(ctx){ rule.ValueTypeName = TypeExpr.ToString(); }
+                            ;
+
+        Keyword             ::= keyword_list(identifier,
+                                ["using", "grammar", "start", "skip", "token", "keyword", "keyword_list", "empty", "space", "anychar", "letter", "digit", "hexdigit", "punctuation", "var"])
+                            ;
+
+        Identifier: string
+                            ::= (identifier - Keyword){ value = match; }
+                            ;
+
+        QualifiedId: string
+                            ::= token(Identifier:first('.' Identifier:rest)*){ value = match; }
+                            ;
+
+        StringArray(List<string> array)
+                            ::= '[' (string:str{ array.Add(str); } % ',') ']'!
+                            ;
+    }
+}

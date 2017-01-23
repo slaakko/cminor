@@ -1302,7 +1302,7 @@ void LiteralGrammar::CreateRules()
                         new cminor::parsing::AlternativeParser(
                             new cminor::parsing::ActionParser("A1",
                                 new cminor::parsing::PositiveParser(
-                                    new cminor::parsing::CharSetParser("\'\\r\n", true))),
+                                    new cminor::parsing::CharSetParser("\'\\\r\n", true))),
                             new cminor::parsing::ActionParser("A2",
                                 new cminor::parsing::NonterminalParser("CharEscape", "CharEscape", 0)))),
                     new cminor::parsing::ExpectationParser(

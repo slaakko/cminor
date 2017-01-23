@@ -1,0 +1,237 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Parsing;
+using System.Text.Parsing.CodeDom;
+
+namespace Code
+{
+    public class BasicTypeGrammar : System.Text.Parsing.Grammar
+    {
+        public BasicTypeGrammar() : this(new ParsingDomain())
+        {
+        }
+        public BasicTypeGrammar(ParsingDomain parsingDomain) : base("BasicTypeGrammar", parsingDomain.GetNamespaceScope("Code"), parsingDomain)
+        {
+            Owner = 0;
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public Type Parse(string content, int fileIndex, string fileName)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                Match match = Parse(scanner, stack);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+            Type result = cast<Type>(stack.Pop());
+            return result;
+        }
+        public class BasicTypeRule : System.Text.Parsing.RuleParser
+        {
+            public BasicTypeRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                ValueTypeName = "Type";
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                ActionParser a2ActionParser = GetAction("A2");
+                a2ActionParser.Action = A2Action;
+                ActionParser a3ActionParser = GetAction("A3");
+                a3ActionParser.Action = A3Action;
+                ActionParser a4ActionParser = GetAction("A4");
+                a4ActionParser.Action = A4Action;
+                ActionParser a5ActionParser = GetAction("A5");
+                a5ActionParser.Action = A5Action;
+                ActionParser a6ActionParser = GetAction("A6");
+                a6ActionParser.Action = A6Action;
+                ActionParser a7ActionParser = GetAction("A7");
+                a7ActionParser.Action = A7Action;
+                ActionParser a8ActionParser = GetAction("A8");
+                a8ActionParser.Action = A8Action;
+                ActionParser a9ActionParser = GetAction("A9");
+                a9ActionParser.Action = A9Action;
+                ActionParser a10ActionParser = GetAction("A10");
+                a10ActionParser.Action = A10Action;
+                ActionParser a11ActionParser = GetAction("A11");
+                a11ActionParser.Action = A11Action;
+                ActionParser a12ActionParser = GetAction("A12");
+                a12ActionParser.Action = A12Action;
+                ActionParser a13ActionParser = GetAction("A13");
+                a13ActionParser.Action = A13Action;
+                ActionParser a14ActionParser = GetAction("A14");
+                a14ActionParser.Action = A14Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new BoolType();
+            }
+            public void A1Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new CharType();
+            }
+            public void A2Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new VoidType();
+            }
+            public void A3Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new SByteType();
+            }
+            public void A4Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new ByteType();
+            }
+            public void A5Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new ShortType();
+            }
+            public void A6Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new UShortType();
+            }
+            public void A7Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new IntType();
+            }
+            public void A8Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new UIntType();
+            }
+            public void A9Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new LongType();
+            }
+            public void A10Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new ULongType();
+            }
+            public void A11Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new FloatType();
+            }
+            public void A12Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new DoubleType();
+            }
+            public void A13Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new ObjectType();
+            }
+            public void A14Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new StringType();
+            }
+            public class Context
+            {
+                public Type value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+        }
+        public override void CreateRules()
+        {
+            AddRule(new BasicTypeRule("BasicType", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new AlternativeParser(
+                                            new AlternativeParser(
+                                                new AlternativeParser(
+                                                    new AlternativeParser(
+                                                        new AlternativeParser(
+                                                            new AlternativeParser(
+                                                                new AlternativeParser(
+                                                                    new AlternativeParser(
+                                                                        new ActionParser("A0",
+                                                                            new KeywordParser("bool")),
+                                                                        new ActionParser("A1",
+                                                                            new KeywordParser("char"))),
+                                                                    new ActionParser("A2",
+                                                                        new KeywordParser("void"))),
+                                                                new ActionParser("A3",
+                                                                    new KeywordParser("sbyte"))),
+                                                            new ActionParser("A4",
+                                                                new KeywordParser("byte"))),
+                                                        new ActionParser("A5",
+                                                            new KeywordParser("short"))),
+                                                    new ActionParser("A6",
+                                                        new KeywordParser("ushort"))),
+                                                new ActionParser("A7",
+                                                    new KeywordParser("int"))),
+                                            new ActionParser("A8",
+                                                new KeywordParser("uint"))),
+                                        new ActionParser("A9",
+                                            new KeywordParser("long"))),
+                                    new ActionParser("A10",
+                                        new KeywordParser("ulong"))),
+                                new ActionParser("A11",
+                                    new KeywordParser("float"))),
+                            new ActionParser("A12",
+                                new KeywordParser("double"))),
+                        new ActionParser("A13",
+                            new KeywordParser("object"))),
+                    new ActionParser("A14",
+                        new KeywordParser("string")))));
+        }
+    }
+}

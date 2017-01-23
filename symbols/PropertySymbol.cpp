@@ -115,11 +115,11 @@ void PropertySymbol::Merge(const PropertySymbol& that)
     }
 }
 
-PropertyGetterFunctionSymbol::PropertyGetterFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
+PropertyGetterFunctionSymbol::PropertyGetterFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), originalSourceAssembly(nullptr)
 {
 }
 
-PropertySetterFunctionSymbol::PropertySetterFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
+PropertySetterFunctionSymbol::PropertySetterFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), originalSourceAssembly(nullptr)
 {
 }
 

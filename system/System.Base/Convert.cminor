@@ -11,6 +11,10 @@ namespace System
 
     internal static class UnsignedConversion<T>
     {
+        static UnsignedConversion()
+        {
+            hexChars = "0123456789ABCDEF";
+        }
         public static string ToString(T x)
         {
             StringBuilder s = new StringBuilder();
@@ -23,6 +27,24 @@ namespace System
             s.Reverse();
             return s.ToString();
         }
+        public static string ToHexString(T x)
+        {
+            StringBuilder s = new StringBuilder();
+            do
+            {
+                byte b = cast<byte>(x & 0xFFu);
+                s.Append(HexChar(b & 0x0Fu)).Append(HexChar(b & 0xF0u));
+                x = x >> 8u;
+            }
+            while (x != 0u);
+            s.Reverse();
+            return s.ToString();
+        }
+        private static char HexChar(byte nibble)
+        {
+            return hexChars[nibble];
+        }
+        private static string hexChars; 
     }
 
     internal static class SignedConversion<T, U>
@@ -146,6 +168,26 @@ namespace System
         return "false";
     }
 
+    public string ToHexString(byte x)
+    {
+        return UnsignedConversion<byte>.ToHexString(x);
+    }
+
+    public string ToHexString(ushort x)
+    {
+        return UnsignedConversion<ushort>.ToHexString(x);
+    }
+
+    public string ToHexString(uint x)
+    {
+        return UnsignedConversion<uint>.ToHexString(x);
+    }
+
+    public string ToHexString(ulong x)
+    {
+        return UnsignedConversion<ulong>.ToHexString(x);
+    }
+
     public sbyte ParseSByte(string s)
     {
         sbyte value;
@@ -182,6 +224,24 @@ namespace System
         return UnsignedIntegerParser<byte>.Parse(s, ref value);
     }
 
+    public byte ParseHexByte(string s)
+    {
+        byte value;
+        if (TryParseHexByte(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("hex byte cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseHexByte(string s, ref byte value)
+    {
+        return UnsignedIntegerParser<byte>.ParseHex(s, ref value);
+    }
+
     public short ParseShort(string s)
     {
         short value;
@@ -214,6 +274,25 @@ namespace System
     }
 
     public bool TryParseUShort(string s, ref ushort value)
+    {
+        return UnsignedIntegerParser<ushort>.Parse(s, ref value);
+    }
+
+    public ushort ParseHexWord(string s)
+    {
+        ushort value;
+        if (TryParseHexWord(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("hex word cannot be parsed from string \"" + s + "\"");
+        }
+
+    }
+
+    public bool TryParseHexWord(string s, ref ushort value)
     {
         return UnsignedIntegerParser<ushort>.Parse(s, ref value);
     }
@@ -254,6 +333,25 @@ namespace System
         return UnsignedIntegerParser<uint>.Parse(s, ref value);
     }
 
+    public uint ParseHexDWord(string s)
+    {
+        uint value;
+        if (TryParseHexDWord(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("hex dword cannot be parsed from string \"" + s + "\"");
+        }
+
+    }
+
+    public bool TryParseHexDWord(string s, ref uint value)
+    {
+        return UnsignedIntegerParser<uint>.ParseHex(s, ref value);
+    }
+
     public long ParseLong(string s)
     {
         long value;
@@ -288,6 +386,24 @@ namespace System
     public bool TryParseULong(string s, ref ulong value)
     {
         return UnsignedIntegerParser<ulong>.Parse(s, ref value);
+    }
+
+    public ulong ParseHexQWord(string s)
+    {
+        ulong value;
+        if (TryParseHexQWord(s, ref value))
+        {
+            return value;
+        }
+        else
+        {
+            throw new ConversionException("hex qword cannot be parsed from string \"" + s + "\"");
+        }
+    }
+
+    public bool TryParseHexQWord(string s, ref ulong value)
+    {
+        return UnsignedIntegerParser<ulong>.ParseHex(s, ref value);
     }
 
     public float ParseFloat(string s)
@@ -498,6 +614,35 @@ namespace System
                 return false;
             }
             x = value;
+            return true;
+        }
+        public static bool ParseHex(string s, ref T x)
+        {
+            T hex = 0u;
+            if (s == "")
+            {
+                return false;
+            }
+            foreach (char c in s)
+            {
+                if (c >= '0' && c <= '9')
+                {
+                    hex = 16u * hex + (cast<T>(c) - cast<T>('0'));
+                }
+                else if (c >= 'A' && c <= 'F')
+                {
+                    hex = 16u * hex + 10u + (cast<T>(c) - cast<T>('A'));
+                }
+                else if (c >= 'a' && c <= 'f')
+                {
+                    hex = 16u * hex + 10u + (cast<T>(c) - cast<T>('a'));
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            x = hex;
             return true;
         }
     }

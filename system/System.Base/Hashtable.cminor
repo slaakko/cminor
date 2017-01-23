@@ -172,6 +172,7 @@ namespace System.Collections.Generic
                     {
                         return bucket.Value;
                     }
+                    bucket = bucket.Next;
                 }
                 return null;
             }
@@ -190,6 +191,7 @@ namespace System.Collections.Generic
                     bucket.Value = value;
                     return;
                 }
+                bucket = bucket.Next;
             }
             Bucket<ValueType> newBucket = new Bucket<ValueType>(value, buckets[index]);
             buckets[index] = newBucket;

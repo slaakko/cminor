@@ -78,6 +78,10 @@ namespace System.Text
         {
             return new string(chars.ToArray());
         } 
+        public void Clear()
+        {
+            chars.Clear();
+        }
         public int Length
         {
             get { return chars.Count; }

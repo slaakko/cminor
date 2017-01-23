@@ -12,7 +12,17 @@ namespace System.IO
         {
             return new StreamReader(new BufferedStream(new FileStream(filePath, FileMode.open, FileAccess.read)));
         }
+        public static string ReadAllText(String filePath)
+        {
+            using (StreamReader reader = OpenRead(filePath))
+            {
+                return reader.ReadToEnd();
+            }
+            return string.Empty;
+        }
         [VmFunctionName=System.IO.File.Exists]
         extern public static bool Exists(String filePath);
+        [VmFunctionName=System.IO.File.LastWriteTimeLess]
+        extern public static bool LastWriteTimeLess(string filePath1, string filePath2);
     }
 }

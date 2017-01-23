@@ -35,6 +35,10 @@ namespace System
         {
             return System.ToString(value);
         }
+        public static string ToHexString(byte value)
+        {
+            return System.ToHexString(value);
+        }
         public override ulong GetHashCode()
         {
             return value;
@@ -46,6 +50,14 @@ namespace System
         public static bool TryParse(string s, ref byte value)
         {
             return System.TryParseByte(s, ref value);
+        }
+        public static byte ParseHex(string s)
+        {
+            return System.ParseHexByte(s);
+        }
+        public static bool TryParseHex(string s, ref byte value)
+        {
+            return System.TryParseHexByte(s, ref value);
         }
         public byte value;
     }
@@ -85,6 +97,10 @@ namespace System
         {
             return System.ToString(value);
         }
+        public static string ToHexString(ushort value)
+        {
+            return System.ToHexString(value);
+        }
         public override ulong GetHashCode()
         {
             return value;
@@ -96,6 +112,14 @@ namespace System
         public static bool TryParse(string s, ref ushort value)
         {
             return System.TryParseUShort(s, ref value);
+        }
+        public static ushort ParseHex(string s)
+        {
+            return System.ParseHexWord(s);
+        }
+        public static bool TryParseHex(string s, ref ushort value)
+        {
+            return System.TryParseHexWord(s, ref value);
         }
         public ushort value;
     }
@@ -135,6 +159,10 @@ namespace System
         {
             return System.ToString(value);
         }
+        public static string ToHexString(uint value)
+        {
+            return System.ToHexString(value);
+        }
         public override ulong GetHashCode()
         {
             return value;
@@ -146,6 +174,14 @@ namespace System
         public static bool TryParse(string s, ref uint value)
         {
             return System.TryParseUInt(s, ref value);
+        }
+        public static uint ParseHex(string s)
+        {
+            return System.ParseHexDWord(s);
+        }
+        public static bool TryParseHex(string s, ref uint value)
+        {
+            return System.TryParseHexDWord(s, ref value);
         }
         public uint value;
     }
@@ -185,6 +221,10 @@ namespace System
         {
             return System.ToString(value);
         }
+        public static string ToHexString(ulong value)
+        {
+            return System.ToHexString(value);
+        }
         public override ulong GetHashCode()
         {
             return value;
@@ -196,6 +236,14 @@ namespace System
         public static bool TryParse(string s, ref ulong value)
         {
             return System.TryParseULong(s, ref value);
+        }
+        public static ulong ParseHex(string s)
+        {
+            return System.ParseHexQWord(s);
+        }
+        public static bool TryParseHex(string s, ref ulong value)
+        {
+            return System.TryParseHexQWord(s, ref value);
         }
         public ulong value;
     }
@@ -283,6 +331,10 @@ namespace System
         public static bool IsPunctuation(char c)
         {
             return System.IsPunctuation(c);
+        }
+        public static bool IsPrintable(char c)
+        {
+            return System.IsPrintable(c);
         }
         public static char Parse(string s)
         {

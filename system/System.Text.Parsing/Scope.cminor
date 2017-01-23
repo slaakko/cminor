@@ -1,35 +1,160 @@
 using System;
+using System.Collections.Generic;
 
 namespace System.Text.Parsing
 {
-    public class Scope
+    public class Scope : ParsingObject
     {
-        public Scope(string name, Scope enclosingScope)
+        public Scope(string name, Scope enclosingScope) : base(name, enclosingScope)
         {
-            this.name = name;
-            this.enclosingScope = enclosingScope;
+            this.ns = null;
+            this.fullNameMap = new HashMap<string, ParsingObject>();
+            this.shortNameMap = new HashMap<string, ParsingObject>();
         }
-        public string Name
+        public Namespace Ns
         {
-            get { return name; }
+            get { return ns; }
+            set { ns = value; }
         }
-        public string FullName
+        public void AddNamespace(Namespace ns)
         {
-            get 
-            { 
-                string enclosingScopeFullName = "";
-                if (enclosingScope != null)
+            Namespace parent = GetGlobalScope().Ns;
+            List<string> nameComponents = ns.FullName.Split('.');
+            int n = nameComponents.Count;
+            for (int i = 0; i < n - 1; ++i)
+            {
+                string namespaceName = nameComponents[i];
+                Scope enclosingScope = parent.GetScope();
+                ParsingObject o = enclosingScope.Get(namespaceName);
+                if (o != null)
                 {
-                    enclosingScopeFullName = enclosingScope.FullName;
+                    if (o is Namespace)
+                    {
+                        parent = cast<Namespace>(o);
+                    }
+                    else
+                    {
+                        throw new Exception("object '" + namespaceName + "' is not a namespace");
+                    }
                 }
-                if (string.IsNullOrEmpty(enclosingScopeFullName))
+                else
                 {
-                    return name;
+                    parent = new Namespace(namespaceName, enclosingScope);
+                    parent.GetScope().Name = namespaceName;
+                    parent.GetScope().Ns = parent;
+                    enclosingScope.Add(parent);
                 }
-                return enclosingScopeFullName + "." + name;
+            }
+            string name = nameComponents[n - 1];
+            ns.Name = name;
+            ns.GetScope().Name = name;
+            ns.EnclosingScope = parent.GetScope();
+            ns.GetScope().EnclosingScope = parent.GetScope();
+            parent.GetScope().Add(ns);
+        }
+        public Namespace GetNamespace(string fullNamespaceName)
+        {
+            ParsingObject o = GetQualifiedObject(fullNamespaceName);
+            if (o != null)
+            {
+                if (o is Namespace)
+                {
+                    return cast<Namespace>(o);
+                }
+                else
+                {
+                    throw new Exception("object '" + fullNamespaceName + "' is not a namespace");
+                }
+            }
+            return null;
+        }
+        public void Add(ParsingObject o)
+        {
+            string fullName = o.FullName;
+            if (!fullNameMap.Add(new KeyValuePair<string, ParsingObject>(fullName, o)))
+            {
+                string msg = "object '" + fullName + "' already exists (detected in scope '" + FullName + "')";
+                throw new Exception(msg);
+            }
+            if (!shortNameMap.Add(new KeyValuePair<string, ParsingObject>(o.Name, o)))
+            {
+                string msg = "object '" + fullName + "' already exists (detected in scope '" + FullName + "')";
+                throw new Exception(msg);
+            }
+        }
+        public ParsingObject Get(string objectName)
+        {
+            if (objectName.IndexOf('.') != -1)
+            {
+                ParsingObject o;
+                if (fullNameMap.TryGetValue(objectName, ref o))
+                {
+                    return o;
+                }
+                else
+                {
+                    o = GetQualifiedObject(objectName);
+                    if (o != null)
+                    {
+                        return o;
+                    }
+                }
+            }
+            else 
+            {
+                ParsingObject o;
+                if (shortNameMap.TryGetValue(objectName, ref o))
+                {
+                    return o;
+                }
+            }
+            return null;
+        }
+        private Scope GetGlobalScope()
+        {
+            Scope globalScope = this;
+            while (globalScope.EnclosingScope != null)
+            {
+                globalScope = globalScope.EnclosingScope;
+            }
+            return globalScope;
+        }
+        private ParsingObject GetQualifiedObject(string qualifiedObjectName)
+        {
+            List<string> components = qualifiedObjectName.Split('.');
+            int n = components.Count;
+            Scope scope = this;
+            while (scope != null)
+            {
+                Scope subScope = scope;
+                int i = 0;
+                ParsingObject o;
+                while (subScope.shortNameMap.TryGetValue(components[i], ref o))
+                {
+                    if (i == n - 1)
+                    {
+                        return o;
+                    }
+                    else
+                    {
+                        ++i;
+                        subScope = o.GetScope();
+                    }
+                }
+                scope = scope.EnclosingScope;
+            }
+            return null;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            foreach (KeyValuePair<string, ParsingObject> p in fullNameMap)
+            {
+                p.Value.Accept(visitor);
             }
         }
         private string name;
-        private Scope enclosingScope;
+        private Namespace ns;
+        private HashMap<string, ParsingObject> fullNameMap;
+        private HashMap<string, ParsingObject> shortNameMap;
     }
 }

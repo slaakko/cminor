@@ -3,15 +3,142 @@ using System.Collections.Generic;
 
 namespace System.Text.Parsing
 {
+    public class AttrOrVar
+    {
+        public AttrOrVar(string type, string name)
+        {
+            this.type = type;
+            this.name = name;
+        }
+        public string Type
+        {
+            get { return type; }
+        }
+        public string Name
+        {
+            get { return Name; }
+        }
+        private string type;
+        private string name;
+    }
+
     public class RuleParser : Parser
     {
-        public RuleParser(string name, Scope enclosingScope) : base(name, "<" + name + ">")
+        public RuleParser(string name, Scope enclosingScope) : this(name, enclosingScope, null)
         {
+        }
+        public RuleParser(string name, Scope enclosingScope, Parser definition) : base(name, "<" + name + ">")
+        {
+            this.definition = definition;
+            this.inheritedAttributes = new List<AttrOrVar>();
+            this.localVariables = new List<AttrOrVar>();
+            this.valueTypeName = string.Empty;
+            this.actions = new List<ActionParser>();
+            this.nonterminals = new List<NonterminalParser>();
+            ContainerScope = new Scope(name, enclosingScope);
         }
         public Parser Definition
         {
             get { return definition; }
             set { definition = value; }
+        }
+        public List<AttrOrVar> InheritedAttributes
+        {
+            get { return inheritedAttributes; }
+        }
+        public int NumberOfParameters
+        {
+            get { return inheritedAttributes.Count; }
+        }
+        public List<AttrOrVar> LocalVariables
+        {
+            get { return localVariables; }
+        }
+        public string ValueTypeName
+        {
+            get { return valueTypeName; }
+            set { valueTypeName = value; }
+        }
+        public List<ActionParser> Actions
+        {
+            get { return actions; }
+        }
+        public List<NonterminalParser> Nonterminals
+        {
+            get { return nonterminals; }
+        }
+        public bool TakesOrReturnsValuesOrHasLocals
+        {
+            get { return inheritedAttributes.Count != 0 || localVariables.Count != 0 || !string.IsNullOrEmpty(valueTypeName); }
+        }
+        public bool Specialized
+        {
+            get { return TakesOrReturnsValuesOrHasLocals || actions.Count != 0; }
+        }
+        public string SpecializedTypeName
+        {
+            get 
+            { 
+                if (Specialized) 
+                {
+                    return Name + "Rule"; 
+                }
+                else 
+                {
+                    return "Rule";
+                }
+            }
+        }
+        public Grammar GrammarValue
+        {
+            get { return grammar; }
+            set { grammar = value; }
+        }
+        public void AddAction(ActionParser action)
+        {
+            actions.Add(action);
+            action.EnclosingScope = GetScope();
+            action.AddToScope();
+        }
+        public ActionParser GetAction(string actionName)
+        {
+            ParsingObject o = GetScope().Get(actionName);
+            if (o == null)
+            {
+                ThrowException("action '" + actionName + "' not found in rule '" + FullName + "'", SpanValue);
+            }
+            else if (o is ActionParser)
+            {
+                return cast<ActionParser>(o);
+            }
+            else
+            {
+                ThrowException("'" + actionName + "' is not an action", SpanValue);
+            }
+            return null;
+        }
+        public void AddNonterminal(NonterminalParser nonterminal)
+        {
+            nonterminals.Add(nonterminal);
+            nonterminal.EnclosingScope = GetScope();
+            nonterminal.AddToScope();
+        }
+        public NonterminalParser GetNonterminal(string nonterminalName)
+        {
+            ParsingObject o = GetScope().Get(nonterminalName);
+            if (o == null)
+            {
+                ThrowException("nonterminal '" + nonterminalName + "' not found in rule '" + FullName + "'", SpanValue);
+            }
+            else if (o is NonterminalParser)
+            {
+                return cast<NonterminalParser>(o);
+            }
+            else
+            {
+                ThrowException("'" + nonterminalName + "' is not a nonterminal", SpanValue);
+            }
+            return null;
         }
         public virtual void Link()
         {
@@ -24,6 +151,16 @@ namespace System.Text.Parsing
         }
         public override Match Parse(Scanner scanner, Stack<object> stack)
         {
+            bool writeToLog = !scanner.Skipping && scanner.Log != null;
+            if (writeToLog)
+            {
+                XmlLog log = scanner.Log;
+                log.WriteBeginRule(Name);
+                log.IncIndent();
+                log.WriteTry(scanner.RestOfLine);
+                log.IncIndent();
+            }
+            int startIndex = scanner.SpanValue.Start;
             Enter(stack);
             Match match = Match.Nothing;
             if (definition != null)
@@ -31,12 +168,159 @@ namespace System.Text.Parsing
                 match = definition.Parse(scanner, stack);
             }
             Leave(stack, match.Hit);
+            if (writeToLog)
+            {
+                XmlLog log = scanner.Log;
+                log.DecIndent();
+                if (match.Hit)
+                {
+                    string matched = scanner.Content.Substring(startIndex, scanner.SpanValue.Start - startIndex);
+                    log.WriteSuccess(matched);
+                }
+                else
+                {
+                    log.WriteFail();
+                }
+                log.DecIndent();
+                log.WriteEndRule(Name);
+            }
             return match;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.BeginVisit(this);
+            if (definition != null)
+            {
+                definition.Accept(visitor);
+            }
+            visitor.EndVisit(this);
+        }
+        public void ExpandCode()
+        {
+            HashMap<string, string> expandMap = new HashMap<string, string>();
+            expandMap["value"] = "context.value";
+            foreach (NonterminalParser nonterminal in nonterminals)
+            {
+                expandMap[nonterminal.Name] = "context." + nonterminal.ValueFieldName;
+            }
+            foreach (AttrOrVar attr in inheritedAttributes)
+            {
+                expandMap[attr.Name] = "context." + attr.Name;
+            }
+            foreach (AttrOrVar var in localVariables)
+            {
+                expandMap[var.Name] = "context." + var.Name;
+            }
+            CodeExpandingVisitor visitor = new CodeExpandingVisitor(expandMap);
+            foreach (ActionParser action in actions)
+            {
+                System.Text.Parsing.CodeDom.CompoundStatement successCode = action.SuccessCode;
+                successCode.Accept(visitor);
+                System.Text.Parsing.CodeDom.CompoundStatement failureCode = action.FailureCode;
+                if (failureCode != null)
+                {
+                    failureCode.Accept(visitor);
+                }
+            }
+            foreach (NonterminalParser nonterminal in nonterminals)
+            {
+                foreach (System.Text.Parsing.CodeDom.DomObject argument in nonterminal.Arguments)
+                {
+                    argument.Accept(visitor);
+                }
+            }
+        }
+        private Parser definition;
+        private List<AttrOrVar> inheritedAttributes;
+        private List<AttrOrVar> localVariables;
+        private string valueTypeName;
+        private List<ActionParser> actions;
+        private List<NonterminalParser> nonterminals;
+        private Grammar grammar;
+    }
+
+    public string GetPrefix(string fullName)
+    {
+        int dotPos = fullName.IndexOf('.');
+        if (dotPos != -1)
+        {
+            return fullName.Substring(0, dotPos);
+        }
+        return fullName;
+    }
+
+    public string GetCommonName(string qualifiedId)
+    {
+        int lastDotPos = qualifiedId.LastIndexOf('.');
+        if (lastDotPos != -1)
+        {
+            return qualifiedId.Substring(lastDotPos + 1);
+        }
+        return qualifiedId;
+    }
+
+    public class RuleLink : ParsingObject
+    {
+        public RuleLink(Grammar grammar, string linkedRuleName) : this(GetCommonName(linkedRuleName), grammar, linkedRuleName)
+        {
+        }
+        public RuleLink(string name, Grammar grammar, string linkedRuleName) : base(name, grammar.GetScope())
+        {
+            this.linkedRuleName =  linkedRuleName;
+            this.grammar = grammar;
+            string prefix = GetPrefix(linkedRuleName);
+            this.addedToGrammar = false;
+            if (prefix == "stdlib")
+            {
+                linkedRuleName = "System.Text.Parsing.stdlib." + GetCommonName(linkedRuleName);
+            }
+        }
+        public string LinkedRuleName
+        {
+            get { return linkedRuleName; }
+        }
+        public RuleParser Rule
+        {
+            get { return rule; }
+            set { rule = value; }
         }
         public override void Accept(Visitor visitor)
         {
             visitor.Visit(this);
         }
-        private Parser definition;
+        public override void AddToScope()
+        {
+            base.AddToScope();
+            if (!addedToGrammar)
+            {
+                grammar.AddRuleLink(this);
+            }
+        }
+        public bool AddedToGrammar
+        {
+            get { return addedToGrammar; }
+            set { addedToGrammar = value; }
+        }
+        private string linkedRuleName;
+        private Grammar grammar;
+        private RuleParser rule;
+        private bool addedToGrammar;
+    }
+
+    public class CodeExpandingVisitor : System.Text.Parsing.CodeDom.Visitor
+    {
+        public CodeExpandingVisitor(HashMap<string, string> expandMap)
+        {
+            this.expandMap = expandMap;
+        }
+        public override void Visit(System.Text.Parsing.CodeDom.Identifier id)
+        {
+            string expandedName;
+            if (expandMap.TryGetValue(id.Name, ref expandedName))
+            {
+                id.Name = expandedName;
+            }
+        }
+        private HashMap<string, string> expandMap;
     }
 }

@@ -174,6 +174,7 @@ void GarbageCollector::CollectGarbage()
     {
         machine.GetManagedMemoryPool().MoveLiveAllocationsToNewSegments(machine.Gen2Arena());
     }
+    machine.Compact();
 #ifdef GC_LOGGING
     std::cout << ".";
 #endif
@@ -242,6 +243,13 @@ void GarbageCollector::MarkLiveAllocations()
                 }
             }
         }
+    }
+    AllocationHandle handle = machine.GetManagedMemoryPool().PoolRoot();
+    if (handle.Value() != 0)
+    {
+        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocation(handle);
+        allocation->SetLive();
+        allocation->MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
     }
 }
 

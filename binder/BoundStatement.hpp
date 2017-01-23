@@ -46,9 +46,15 @@ public:
     void Accept(BoundNodeVisitor& visitor) override;
     int32_t ExceptionBlockId() const { return exceptionBlockId; }
     void SetExceptionBlockId(int32_t exceptionBlockId_) { exceptionBlockId = exceptionBlockId_; }
+    void SetBeginBraceSpan(const Span& beginBraceSpan_);
+    const Span& BeginBraceSpan() const { return beginBraceSpan; }
+    void SetEndBraceSpan(const Span& endBraceSpan_);
+    const Span& EndBraceSpan() const { return endBraceSpan; }
 private:
     std::vector<std::unique_ptr<BoundStatement>> statements;
     int32_t exceptionBlockId;
+    Span beginBraceSpan;
+    Span endBraceSpan;
 };
 
 class BoundReturnStatement : public BoundStatement

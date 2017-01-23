@@ -38,6 +38,9 @@ public:
     void SetPC(int32_t pc_);
     int32_t PrevPC() const { return prevPC; }
     void AddVariableReference(VariableReference* variableReference);
+    bool HasBreakpointAt(int32_t pc) const;
+    void SetBreakpointAt(int32_t pc);
+    void RemoveBreakpointAt(int32_t pc);
 private:
     Machine& machine;
     int32_t id;
@@ -50,6 +53,7 @@ private:
     std::vector<std::unique_ptr<VariableReference>> variableReferences;
     int32_t pc;
     int32_t prevPC;
+    std::unordered_set<int32_t> breakpoints;
 };
 
 } } // namespace cminor::machine

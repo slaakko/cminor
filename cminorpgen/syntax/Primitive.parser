@@ -1,0 +1,107 @@
+using System;
+using System.Text;
+
+namespace Syntax
+{
+    grammar PrimitiveGrammar
+    {
+        using stdlib.char;
+        using stdlib.string;
+        using stdlib.escape;
+        using ElementGrammar.QualifiedId;
+        using ElementGrammar.StringArray;
+
+        Primitive : Parser
+                        ::= Char{ value = Char; }
+                        |   String{ value = String; }
+                        |   CharSet{ value = CharSet; }
+                        |   Keyword{ value = Keyword; }
+                        |   KeywordList{ value = KeywordList; }
+                        |   Empty{ value = Empty; }
+                        |   Space{ value = Space; }
+                        |   AnyChar{ value = AnyChar; }
+                        |   Letter{ value = Letter; }
+                        |   Digit{ value = Digit; }
+                        |   HexDigit{ value = HexDigit; }
+                        |   Punctuation{ value = Punctuation; }
+                        ;
+
+        Char : Parser   ::= char:chr{ value = new CharParser(chr); }
+                        ;
+
+        String : Parser
+                        ::= string:str{ value = new StringParser(str); }
+                        ;
+
+        CharSet(var bool inverse, var StringBuilder s) : Parser
+                        ::= token
+                            (   '['{ s = new StringBuilder(); }
+                                ('^'{ inverse = true; })?
+                                (CharSetRange{ s.Append(CharSetRange); })*
+                                ']'!
+                            )
+                            {
+                                value = new CharSetParser(s.ToString(), inverse);
+                            }
+                            ;
+
+        CharSetRange(var StringBuilder s) : string
+                        ::= CharSetChar:first{ s = new StringBuilder(); }
+                            ('-' CharSetChar:last
+                                {
+                                    s.Append(first);
+                                    s.Append('-');
+                                    s.Append(last);
+                                }
+                            |   empty{ s.Append(first); }
+                            )
+                            {
+                                value = s.ToString();
+                            }
+                            ;
+
+        CharSetChar : char  ::= [^\\\]]{ value = match[0]; }
+                            |   escape{ value = escape; }
+                            ;
+
+        Keyword : Parser    ::= keyword("keyword") '('! KeywordBody! ')'!{ value = KeywordBody; }
+                            ;
+
+        KeywordBody : Parser
+                            ::= string:str
+                            (   ',' QualifiedId:continuation!{ value = new KeywordParser(str, continuation); }
+                            |   empty{ value = new KeywordParser(str); }
+                            )
+                            ;
+
+        KeywordList : Parser
+                            ::= keyword("keyword_list") '('! KeywordListBody! ')'!{ value = KeywordListBody; }
+                            ;
+
+        KeywordListBody(var List<string> keywords) : Parser
+                            ::= QualifiedId:selector! ','! StringArray(keywords)!{ value = new KeywordListParser(selector, keywords); }
+                            ;
+
+        Empty : Parser      ::= keyword("empty"){ value = new EmptyParser(); }
+                            ;
+
+        Space : Parser      ::= keyword("space"){ value = new SpaceParser(); }
+                            ;
+
+        AnyChar : Parser    ::= keyword("anychar"){ value = new AnyCharParser(); }
+                            ;
+
+        Letter : Parser     ::= keyword("letter"){ value = new LetterParser(); }
+                            ;
+
+        Digit : Parser      ::= keyword("digit"){ value = new DigitParser(); }
+                            ;
+
+        HexDigit : Parser   ::= keyword("hexdigit"){ value = new HexDigitParser(); }
+                            ;
+
+        Punctuation : Parser
+                            ::= keyword("punctuation"){ value = new PunctuationParser(); }
+                            ;
+    }
+}

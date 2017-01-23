@@ -4,5 +4,6 @@ namespace cminor.db
     {
         Command: Command*;
         Spaces;
+        FilePath: std::string;
     }
 }

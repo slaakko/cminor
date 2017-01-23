@@ -288,43 +288,45 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     rootInst.SetInst(0xD0, new SetClassDataInst());
     rootInst.SetInst(0xD1, new UpCastInst());
     rootInst.SetInst(0xD2, new DownCastInst());
-    rootInst.SetInst(0xD3, new ThrowInst());
-    rootInst.SetInst(0xD4, new RethrowInst());
-    rootInst.SetInst(0xD5, new EndCatchInst());
-    rootInst.SetInst(0xD6, new EndFinallyInst());
-    rootInst.SetInst(0xD7, new NextInst());
-    rootInst.SetInst(0xD8, new StaticInitInst());
-    rootInst.SetInst(0xD9, new DoneStaticInitInst());
-    rootInst.SetInst(0xDA, new LoadStaticFieldInst());
-    rootInst.SetInst(0xDB, new StoreStaticFieldInst());
-    rootInst.SetInst(0xDC, new IsInst());
-    rootInst.SetInst(0xDD, new AsInst());
+    rootInst.SetInst(0xD3, new BeginTryInst());
+    rootInst.SetInst(0xD4, new EndTryInst());
+    rootInst.SetInst(0xD5, new ThrowInst());
+    rootInst.SetInst(0xD6, new RethrowInst());
+    rootInst.SetInst(0xD7, new EndCatchInst());
+    rootInst.SetInst(0xD8, new EndFinallyInst());
+    rootInst.SetInst(0xD9, new NextInst());
+    rootInst.SetInst(0xDA, new StaticInitInst());
+    rootInst.SetInst(0xDB, new DoneStaticInitInst());
+    rootInst.SetInst(0xDC, new LoadStaticFieldInst());
+    rootInst.SetInst(0xDD, new StoreStaticFieldInst());
+    rootInst.SetInst(0xDE, new IsInst());
+    rootInst.SetInst(0xDF, new AsInst());
 
     // strings:
     // --------
 
-    rootInst.SetInst(0xDE, new StrLitToStringInst());
-    rootInst.SetInst(0xDF, new LoadStringCharInst());
+    rootInst.SetInst(0xE0, new StrLitToStringInst());
+    rootInst.SetInst(0xE1, new LoadStringCharInst());
 
     // arrays:
     // -------
 
-    rootInst.SetInst(0xE0, new AllocateArrayElementsInst());
+    rootInst.SetInst(0xE2, new AllocateArrayElementsInst());
 
     // delegates & class delegates:
     // ----------------------------
-    rootInst.SetInst(0xE1, new LoadDefaultValueInst<ValueType::functionPtr>("def", "@delegate"));
-    rootInst.SetInst(0xE2, new Fun2DlgInst());
-    rootInst.SetInst(0xE3, new DelegateCallInst());
-    rootInst.SetInst(0xE4, new MemFun2ClassDlgInst());
-    rootInst.SetInst(0xE5, new ClassDelegateCallInst());
+    rootInst.SetInst(0xE3, new LoadDefaultValueInst<ValueType::functionPtr>("def", "@delegate"));
+    rootInst.SetInst(0xE4, new Fun2DlgInst());
+    rootInst.SetInst(0xE5, new DelegateCallInst());
+    rootInst.SetInst(0xE6, new MemFun2ClassDlgInst());
+    rootInst.SetInst(0xE7, new ClassDelegateCallInst());
 
     // references:
     // -----------
-    rootInst.SetInst(0xE6, new CreateLocalVariableReferenceInst());
-    rootInst.SetInst(0xE7, new CreateMemberVariableReferenceInst());
-    rootInst.SetInst(0xE8, new LoadVariableReferenceInst());
-    rootInst.SetInst(0xE9, new StoreVariableReferenceInst());
+    rootInst.SetInst(0xE8, new CreateLocalVariableReferenceInst());
+    rootInst.SetInst(0xE9, new CreateMemberVariableReferenceInst());
+    rootInst.SetInst(0xEA, new LoadVariableReferenceInst());
+    rootInst.SetInst(0xEB, new StoreVariableReferenceInst());
 
     // vmcall:
     // -------
@@ -605,10 +607,6 @@ std::unique_ptr<Instruction> Machine::CreateInst(const std::string& instGroupNam
 std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
 {
     Instruction* inst = rootInst.Decode(reader);
-    if (CallInst* callInst = dynamic_cast<CallInst*>(inst))
-    {
-        int x = 0;
-    }
     Instruction* clonedInst = inst->Clone();
     InstAdder adder(reader);
     clonedInst->DispatchTo(adder);
@@ -693,6 +691,17 @@ Segment* Machine::GetSegment(int32_t segmentId) const
         return it->second;
     }
     throw std::runtime_error("segment " + std::to_string(segmentId) + " not found");
+}
+
+void Machine::Compact()
+{
+    threads.shrink_to_fit();
+    for (const std::unique_ptr<Thread>& thread : threads)
+    {
+        thread->Compact();
+    }
+    gen1Arena->Compact();
+    gen2Arena->Compact();
 }
 
 } } // namespace cminor::machine

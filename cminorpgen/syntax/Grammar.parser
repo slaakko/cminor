@@ -1,0 +1,34 @@
+using Code;
+
+namespace Syntax
+{
+    grammar GrammarGrammar
+    {
+        using ElementGrammar.Identifier;
+        using ElementGrammar.QualifiedId;
+        using ElementGrammar.RuleLink;
+        using RuleGrammar.Rule;
+
+        Grammar(Scope enclosingScope, ParsingContext ctx) : Grammar
+                    ::= keyword("grammar") Identifier:name!{ value = new Grammar(name, enclosingScope); value.SpanValue = span; value.Ns = enclosingScope.Ns; }
+                        '{'! GrammarContent(value, ctx) '}'!
+                    ;
+
+        GrammarContent(Grammar grammar, ParsingContext ctx)
+                    ::=
+                    (   StartClause(grammar)
+                    |   SkipClause(grammar)
+                    |   RuleLink(grammar)
+                    |   Rule(grammar.GetScope(), ctx){ grammar.AddRule(Rule); }
+                    )*
+                    ;
+
+        StartClause(Grammar grammar)
+                    ::= keyword("start") Identifier:strt! ';'{ grammar.StartRuleName = strt; }
+                    ;
+
+        SkipClause(Grammar grammar)
+                    ::= keyword("skip") QualifiedId:skp! ';'{ grammar.SkipRuleName = skp; }
+                    ;
+    }
+}

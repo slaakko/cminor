@@ -1,0 +1,19 @@
+using System.Text.Parsing.CodeDom;
+
+namespace Code
+{
+    grammar IdentifierGrammar
+    {
+        using stdlib.identifier;
+        using KeywordGrammar.Keyword;
+        
+        Identifier : Identifier
+                    ::= (identifier - Keyword){ value = new System.Text.Parsing.CodeDom.Identifier(match); }
+                    ;
+                    
+                            
+        QualifiedId : Identifier
+                    ::= token(Identifier % '.'){ value = new System.Text.Parsing.CodeDom.Identifier(match); }
+                    ;
+    }
+}

@@ -20,7 +20,7 @@ namespace System.Text.Parsing.CodeDom
     public enum Operator
     {
         disjunction, conjunction, bitOr, bitXor, bitAnd, equal, notEqual, less, greater, lessOrEqual, greaterOrEqual, shiftLeft, shiftRight, add, sub, mul, div, rem, 
-        not, unaryPlus, unaryMinus, complement
+        not_, unaryPlus, unaryMinus, complement, is_, as_
     }
 
     public string MakeBinOpName(Operator op)
@@ -53,7 +53,7 @@ namespace System.Text.Parsing.CodeDom
     {
         switch (op)
         {
-            case Operator.not: return "!";
+            case Operator.not_: return "!";
             case Operator.unaryPlus: return "+";
             case Operator.unaryMinus: return "-";
             case Operator.complement: return "~";
@@ -118,6 +118,11 @@ namespace System.Text.Parsing.CodeDom
                 formatter.Write(")");
             }
         }
+        public override void Accept(Visitor visitor)
+        {
+            left.Accept(visitor);
+            right.Accept(visitor);
+        }
         private DomObject left;
         private DomObject right;
     }
@@ -145,6 +150,10 @@ namespace System.Text.Parsing.CodeDom
                 formatter.Write(")");
             }
         }
+        public override void Accept(Visitor visitor)
+        {
+            child.Accept(visitor);
+        }
         private DomObject child;
     }
 
@@ -153,12 +162,22 @@ namespace System.Text.Parsing.CodeDom
         public Disjunction(DomObject left, DomObject right) : base(Operator.disjunction, left, right)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class Conjunction : BinaryExpression
     {
         public Conjunction(DomObject left, DomObject right) : base(Operator.conjunction, left, right)
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
         }
     }
 
@@ -167,12 +186,22 @@ namespace System.Text.Parsing.CodeDom
         public BitOr(DomObject left, DomObject right) : base(Operator.bitOr, left, right)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class BitXor : BinaryExpression
     {
         public BitXor(DomObject left, DomObject right) : base(Operator.bitXor, left, right)
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
         }
     }
 
@@ -181,12 +210,22 @@ namespace System.Text.Parsing.CodeDom
         public BitAnd(DomObject left, DomObject right) : base(Operator.bitAnd, left, right)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class Equal : BinaryExpression
     {
         public Equal(DomObject left, DomObject right) : base(Operator.equal, left, right)
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
         }
     }
 
@@ -195,12 +234,22 @@ namespace System.Text.Parsing.CodeDom
         public NotEqual(DomObject left, DomObject right) : base(Operator.notEqual, left, right)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class Less : BinaryExpression
     {
         public Less(DomObject left, DomObject right) : base(Operator.less, left, right)
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
         }
     }
 
@@ -209,12 +258,22 @@ namespace System.Text.Parsing.CodeDom
         public Greater(DomObject left, DomObject right) : base(Operator.greater, left, right)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class LessOrEqual : BinaryExpression
     {
         public LessOrEqual(DomObject left, DomObject right) : base(Operator.lessOrEqual, left, right)
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
         }
     }
 
@@ -223,12 +282,22 @@ namespace System.Text.Parsing.CodeDom
         public GreaterOrEqual(DomObject left, DomObject right) : base(Operator.greaterOrEqual, left, right)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class ShiftLeft : BinaryExpression
     {
         public ShiftLeft(DomObject left, DomObject right) : base(Operator.shiftLeft, left, right)
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
         }
     }
 
@@ -237,12 +306,22 @@ namespace System.Text.Parsing.CodeDom
         public ShiftRight(DomObject left, DomObject right) : base(Operator.shiftRight, left, right)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class Add : BinaryExpression
     {
         public Add(DomObject left, DomObject right) : base(Operator.add, left, right)
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
         }
     }
 
@@ -251,12 +330,22 @@ namespace System.Text.Parsing.CodeDom
         public Sub(DomObject left, DomObject right) : base(Operator.sub, left, right)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class Mul : BinaryExpression
     {
         public Mul(DomObject left, DomObject right) : base(Operator.mul, left, right)
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
         }
     }
 
@@ -265,6 +354,11 @@ namespace System.Text.Parsing.CodeDom
         public Div(DomObject left, DomObject right) : base(Operator.div, left, right)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class Rem : BinaryExpression
@@ -272,12 +366,22 @@ namespace System.Text.Parsing.CodeDom
         public Rem(DomObject left, DomObject right) : base(Operator.rem, left, right)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class Not : PrefixExpression
     {
-        public Not(DomObject child) : base(Operator.not, child)
+        public Not(DomObject child) : base(Operator.not_, child)
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
         }
     }
 
@@ -286,6 +390,11 @@ namespace System.Text.Parsing.CodeDom
         public UnaryPlus(DomObject child) : base(Operator.unaryPlus, child)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class UnaryMinus : PrefixExpression
@@ -293,12 +402,22 @@ namespace System.Text.Parsing.CodeDom
         public UnaryMinus(DomObject child) : base(Operator.unaryMinus, child)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
+        }
     }
 
     public class Complement : PrefixExpression
     {
         public Complement(DomObject child) : base(Operator.complement, child)
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            base.Accept(visitor);
         }
     }
 
@@ -322,6 +441,12 @@ namespace System.Text.Parsing.CodeDom
             {
                 formatter.Write(")");
             }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            subject.Accept(visitor);
+            type.Accept(visitor);
         }
         private DomObject subject;
         private DomObject type;
@@ -348,6 +473,12 @@ namespace System.Text.Parsing.CodeDom
                 formatter.Write(")");
             }
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            subject.Accept(visitor);
+            type.Accept(visitor);
+        }
         private DomObject subject;
         private DomObject type;
     }
@@ -372,6 +503,12 @@ namespace System.Text.Parsing.CodeDom
             {
                 formatter.Write(")");
             }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            subject.Accept(visitor);
+            memberId.Accept(visitor);
         }
         private DomObject subject;
         private Identifier memberId;
@@ -399,6 +536,12 @@ namespace System.Text.Parsing.CodeDom
                 formatter.Write(")");
             }
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            subject.Accept(visitor);
+            index.Accept(visitor);
+        }
         private DomObject subject;
         private DomObject index;
     }
@@ -410,7 +553,7 @@ namespace System.Text.Parsing.CodeDom
             this.subject = subject;
             this.arguments = new List<DomObject>();
         }
-        public void AddArgument(DomObject argument)
+        public override void AddArgument(DomObject argument)
         {
             arguments.Add(argument);
         }
@@ -441,6 +584,15 @@ namespace System.Text.Parsing.CodeDom
                 formatter.Write(")");
             }
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            subject.Accept(visitor);
+            foreach (DomObject argument in arguments)
+            {
+                argument.Accept(visitor);
+            }
+        }
         private DomObject subject;
         private List<DomObject> arguments;
     }
@@ -468,6 +620,12 @@ namespace System.Text.Parsing.CodeDom
                 formatter.Write(")");
             }
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            targetType.Accept(visitor);
+            sourceExpr.Accept(visitor);
+        }
         private DomObject targetType;
         private DomObject sourceExpr;
     }
@@ -479,7 +637,7 @@ namespace System.Text.Parsing.CodeDom
             this.type = type;
             this.arguments = new List<DomObject>();
         }
-        public void AddArgument(DomObject argument)
+        public override void AddArgument(DomObject argument)
         {
             arguments.Add(argument);
         }
@@ -511,6 +669,15 @@ namespace System.Text.Parsing.CodeDom
                 formatter.Write(")");
             }
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            type.Accept(visitor);
+            foreach (DomObject argument in arguments)
+            {
+                argument.Accept(visitor);
+            }
+        }
         private DomObject type;
         private List<DomObject> arguments;
     }
@@ -524,6 +691,10 @@ namespace System.Text.Parsing.CodeDom
         {
             return 20;
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class Base: DomObject
@@ -535,5 +706,36 @@ namespace System.Text.Parsing.CodeDom
         {
             return 20;
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class RefExpression : Expression
+    {
+        public RefExpression(DomObject subject) : base("ref", 12)
+        {
+            this.subject = subject;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            formatter.Write("ref ");
+            subject.Print(formatter);
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+            subject.Accept(visitor);
+        }
+        private DomObject subject;
     }
 }

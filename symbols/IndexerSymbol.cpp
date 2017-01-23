@@ -135,11 +135,11 @@ void IndexerGroupSymbol::AddIndexer(IndexerSymbol* indexer)
     indexers.push_back(indexer);
 }
 
-IndexerGetterFunctionSymbol::IndexerGetterFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
+IndexerGetterFunctionSymbol::IndexerGetterFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), originalSourceAssembly(nullptr)
 {
 }
 
-IndexerSetterFunctionSymbol::IndexerSetterFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
+IndexerSetterFunctionSymbol::IndexerSetterFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), originalSourceAssembly(nullptr)
 {
 }
 

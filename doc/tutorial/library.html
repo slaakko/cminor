@@ -1,0 +1,188 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Creating Libraries and Solutions</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2>
+        6 Creating Libraries and Solutions
+    </h2>
+
+    <p>
+        Suppose one has not just a single program but some more general functions that one wants to put into a library.
+        Therefore a <em>solution</em> is needed. Here's how to create a solution:
+
+        <ol>
+            <li>
+                Create a directory for the solution.
+            </li>
+            <li>
+                Under the solution directory, create a directory for the library. Here we name it "library".
+            </li>
+            <li>
+                Under the "library" directory, create a project file for the library 
+                where the value of the <span class="projectFileKeyword">target</span> declaration is set to <span class="projectFileKeyword">library</span>.
+            </li>
+            <li>
+                Put the library functions to some source file under the library directory. Here we name it <span class="code">library_functions.cminor</span>.
+            </li>
+            <li>
+                Under the solution directory, create a directory for the program. Here we name it "program".
+            </li>
+            <li>
+                Under the "program" directory, create a project for the program where the value of the <span class="projectFileKeyword">reference</span> declaration points to
+                the project file of the <em>referenced</em> library.
+            </li>
+            <li>
+                Put the source code using the library into some source file under the "program" directory.
+            </li>
+            <li>
+                In the solution directory, create a <em>solution</em> file with an extension <span class="code">.cminors</span>. 
+                Here we name it <span class="code">solution.cminors</span>.
+            </li>
+            <li>
+                In the solution file declare paths to the project files using <span class="projectFileKeyword">project</span> declarations.
+            </li>
+        </ol>
+    </p>
+
+    <h3 id="library">
+        6.1 Library Files
+    </h3>
+
+    <p>
+        Here's the contents of <span class="code">library_functions.cminor</span>:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/solution/library/library_functions.cminor.html" height="240px" width="400px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        And here's the contents of the <span class="code">library.cminorp</span> project file:
+    </p>
+
+    <div class="project">
+        <iframe src="../code/solution/library/library.cminorp.html" height="80px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="program">
+        6.2 Program Files
+    </h3>
+
+    <p>
+        Here's the contents of the <span class="code">program.cminor</span> file using the library:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/solution/program/program.cminor.html" height="160px" width="800px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        And here's the contents of the <span class="code">program.cminorp</span> project file:
+    </p>
+
+    <div class="project">
+        <iframe src="../code/solution/program/program.cminorp.html" height="80px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="solution">
+        6.3 Solution File
+    </h3>
+
+    <p>
+        Finally here's the contents of the <span class="code">solution.cminors</span> soution file:
+    </p>
+
+    <div class="project">
+        <iframe src="../code/solution/solution.cminors.html" height="80px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="building">
+        6.4 Building the Solution
+    </h3>
+
+    <div class="commands">
+        > cminor build solution.cminors
+    </div>
+
+    <p>
+        Under the solution directory the compiler creates an <span class="code">assembly</span> directory.
+        Under that directory there's the directory matching the configuration used to build the solution.
+        Under the configuration directory, the compiler copies the assembly files for each project included in the solution, 
+        and also the assembly file of each referenced library of those projects.
+    </p>
+
+    <p>
+        Here's the directory structure of the solution:
+        <pre class="code">
+        |
+        +--solution
+           |
+           +--solution.cminors
+           |   
+           +--assembly
+           |  |
+           |  +--debug
+           |  |  |
+           |  |  +--library.cminora
+           |  |  |
+           |  |  +--program.cminora
+           |  |
+           |  +--release
+           |     |
+           |     +--library.cminora
+           |     |
+           |     +--program.cminora
+           |
+           +--library
+           |  |
+           |  +--library_functions.cminor
+           |  |
+           |  +--library.cminorp
+           |  |
+           |  +--assembly
+           |     |
+           |     +--debug
+           |     |  |
+           |     |  +--library.cminora
+           |     |
+           |     +--release
+           |        |
+           |        +--library.cminora
+           |
+           +--program
+              |
+              +--program.cminor
+              |
+              +--program.cminorp
+              |
+              +--assembly
+                 |
+                 +--debug
+                 |  |
+                 |  +--program.cminora
+                 |  |
+                 |  +--library.cminora
+                 |
+                 +--release
+                    |
+                    +--program.cminora
+                    |
+                    +--library.cminora
+        </pre>
+    </p>
+
+    <h3 id="running">
+        6.5 Running the Program
+    </h3>
+
+    <div class="commands">
+        > cminor run assembly/debug/program.cminora<br />
+        1 + 2 - 1 == 2
+    </div>
+</body>
+</html>

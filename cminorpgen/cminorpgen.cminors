@@ -1,0 +1,4 @@
+solution cminorpgen;
+project <code/Code.cminorp>;
+project <syntax/Syntax.cminorp>;
+project <cminorpgen/cminorpgen.cminorp>;

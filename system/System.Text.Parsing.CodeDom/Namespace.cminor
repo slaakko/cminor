@@ -1,0 +1,36 @@
+using System;
+
+namespace System.Text.Parsing.CodeDom
+{
+    public class NamespaceImport : DomObject
+    {
+        public NamespaceImport(string name) : base(name)
+        {
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.WriteLine("using " + Name + ";");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class Alias : DomObject
+    {
+        public Alias(string name, string qualifiedId) : base(name)
+        {
+            this.qualifiedId = qualifiedId;
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            formatter.WriteLine("using " + Name + " = " + qualifiedId + ";");
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+        private string qualifiedId;
+    }
+}

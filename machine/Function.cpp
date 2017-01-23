@@ -6,6 +6,10 @@
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Unicode.hpp>
+#include <cminor/machine/Util.hpp>
+#include <cminor/machine/OsInterface.hpp>
+#include <iostream>
+#include <iomanip>
 
 namespace cminor { namespace machine {
 
@@ -199,9 +203,9 @@ void Function::Write(Writer& writer)
     {
         exceptionBlock->Write(writer);
     }
-    uint32_t npc = uint32_t(pcSoureLineMap.size());
+    uint32_t npc = uint32_t(pcSourceLineMap.size());
     writer.PutEncodedUInt(npc);
-    for (const std::pair<uint32_t, uint32_t>& p : pcSoureLineMap)
+    for (const std::pair<uint32_t, uint32_t>& p : pcSourceLineMap)
     {
         writer.PutEncodedUInt(p.first);
         writer.PutEncodedUInt(p.second);
@@ -246,6 +250,11 @@ void Function::Read(Reader& reader)
         uint32_t pc = reader.GetEncodedUInt();
         uint32_t sourceLine = reader.GetEncodedUInt();
         MapPCToSourceLine(pc, sourceLine);
+        SourceFileTable* sourceFileTable = SourceFileTable::Instance();
+        if (sourceFileTable && HasSourceFilePath() && sourceFilePath.Value().AsStringLiteral() != U"")
+        {
+            sourceFileTable->MapSourceFileLine(sourceFilePath, sourceLine, this);
+        }
     }
 }
 
@@ -308,6 +317,11 @@ void Function::Dump(CodeFormatter& formatter, int32_t pc)
 {
     if (pc == 0)
     {
+        if (HasSourceFilePath() && sourceFilePath.Value().AsStringLiteral() != U"")
+        {
+            std::string sfp = ToUtf8(sourceFilePath.Value().AsStringLiteral());
+            WriteInGreenToConsole(sfp + ":");
+        }
         formatter.WriteLine(ToUtf8(callName.Value().AsStringLiteral()) + " [" + ToUtf8(friendlyName.Value().AsStringLiteral()) + "]");
         formatter.WriteLine("{");
         formatter.IncIndent();
@@ -320,6 +334,20 @@ void Function::Dump(CodeFormatter& formatter, int32_t pc)
     int32_t end = std::min(NumInsts(), pc + 4);
     for (int32_t i = start; i < end; ++i)
     {
+        SourceFileTable* sourceFileTable = SourceFileTable::Instance();
+        if (sourceFileTable)
+        {
+            uint32_t sline = GetSourceLine(i);
+            if (sline != -1)
+            {
+                SourceFile* sourceFile = sourceFileTable->GetSourceFile(sourceFilePath);
+                std::string line = sourceFile->GetLine(sline);
+                if (!line.empty())
+                {
+                    WriteInGreenToConsole(line);
+                }
+            }
+        }
         std::string pcInd = " ";
         if (i == pc)
         {
@@ -371,17 +399,55 @@ void Function::ResolveExceptionVarTypes()
 void Function::MapPCToSourceLine(uint32_t pc, uint32_t sourceLine)
 {
     if (pc == -1 || sourceLine == -1) return;
-    pcSoureLineMap[pc] = sourceLine;
+    if (mappedSourceLines.find(sourceLine) == mappedSourceLines.cend())
+    {
+        auto pit = pcSourceLineMap.find(pc);
+        if (pit == pcSourceLineMap.cend())
+        {
+            pcSourceLineMap[pc] = sourceLine;
+            mappedSourceLines.insert(sourceLine);
+        }
+    }
+    auto sit = sourceLinePCMap.find(sourceLine);
+    if (sit == sourceLinePCMap.cend())
+    {
+        sourceLinePCMap[sourceLine] = pc;
+    }
 }
 
 uint32_t Function::GetSourceLine(uint32_t pc) const
 {
-    auto it = pcSoureLineMap.find(pc);
-    if (it != pcSoureLineMap.cend())
+    auto it = pcSourceLineMap.find(pc);
+    if (it != pcSourceLineMap.cend())
     {
         return it->second;
     }
     return -1;
+}
+
+uint32_t Function::GetPC(uint32_t sourceLine) const
+{
+    auto it = sourceLinePCMap.find(sourceLine);
+    if (it != sourceLinePCMap.cend())
+    {
+        return it->second;
+    }
+    return -1;
+}
+
+bool Function::HasBreakPointAt(uint32_t pc) const
+{
+    return breakPoints.find(pc) != breakPoints.cend();
+}
+
+void Function::SetBreakPointAt(uint32_t pc)
+{
+    breakPoints.insert(pc);
+}
+
+void Function::RemoveBreakPointAt(uint32_t pc)
+{
+    breakPoints.erase(pc);
 }
 
 std::unique_ptr<FunctionTable> FunctionTable::instance;
@@ -490,6 +556,240 @@ VmFunction* VmFunctionTable::GetVmFunction(StringPtr vmFuntionName) const
     else
     {
         throw std::runtime_error("virtual machine function '" + ToUtf8(vmFuntionName.Value()) + "' not found from virtual machine function table");
+    }
+}
+
+LineFunctionTable::LineFunctionTable()
+{
+}
+
+void LineFunctionTable::MapSourceLineToFunction(uint32_t sourceLine, Function* function)
+{
+    lineFunctionMap[sourceLine] = function;
+}
+
+Function* LineFunctionTable::GetFunction(uint32_t sourceLine) const
+{
+    auto it = lineFunctionMap.find(sourceLine);
+    if (it != lineFunctionMap.cend())
+    {
+        return it->second;
+    }
+    return nullptr;
+}
+
+BreakPoint::BreakPoint() : function(nullptr), line(-1), pc(-1)
+{
+}
+
+BreakPoint::BreakPoint(Function* function_, uint32_t line_, uint32_t pc_) : function(function_), line(line_), pc(pc_)
+{
+}
+
+void BreakPoint::Remove()
+{
+    function->RemoveBreakPointAt(pc);
+}
+
+SourceFile::SourceFile(Constant sourceFilePath_) : sourceFilePath(sourceFilePath_)
+{
+}
+
+void SourceFile::Read()
+{
+    std::string filePath = ToUtf8(sourceFilePath.Value().AsStringLiteral());
+    MappedInputFile mappedFile(filePath);
+    std::string line;
+    for (const char* p = mappedFile.Begin(); p != mappedFile.End(); ++p)
+    {
+        char c = *p;
+        if (c == '\n')
+        {
+            lines.push_back(line);
+            line.clear();
+        }
+        else if (c != '\r')
+        {
+            line.append(1, c);
+        }
+    }
+    if (!line.empty())
+    {
+        lines.push_back(line);
+    }
+}
+
+void SourceFile::List(int lineNumber, int numLines)
+{
+    int start = lineNumber - 1;
+    int n = std::min(start + numLines, int(lines.size()));
+    for (int i = start; i < n; ++i)
+    {
+        int ln = lineNumber + i - start;
+        std::string line = GetLine(ln);
+        WriteInGreenToConsole(line);
+    }
+}
+
+std::string SourceFile::GetLine(int lineNumber) const
+{
+    if (lineNumber - 1 < int(lines.size()))
+    {
+        std::string ln = std::to_string(lineNumber);
+        while (ln.length() < 4)
+        {
+            ln.insert(ln.begin(), ' ');
+        }
+        ln.append(": ").append(lines[lineNumber - 1]);
+        return ln;
+    }
+    else
+    {
+        return std::string();
+    }
+}
+
+std::unique_ptr<SourceFileTable> SourceFileTable::instance;
+
+SourceFileTable::SourceFileTable() : nextBp(1)
+{
+}
+
+SourceFileTable* SourceFileTable::Instance()
+{
+    return instance.get();
+}
+
+void SourceFileTable::Init()
+{
+    instance.reset(new SourceFileTable());
+}
+
+void SourceFileTable::Done()
+{
+    instance.reset();
+}
+
+Constant SourceFileTable::GetSourceFilePath(const std::string& sourceFileName) const
+{
+    utf32_string sfp = ToUtf32(sourceFileName);
+    std::vector<utf32_string> components = Split(sfp, char32_t('/'));
+    int cn = int(components.size());
+    std::vector<Constant> sourceFilePaths;
+    for (const std::pair<Constant, const LineFunctionTable&>& p : sourceFileLineFunctionMap)
+    {
+        Constant c = p.first;
+        utf32_string s = c.Value().AsStringLiteral();
+        std::vector<utf32_string> v = Split(s, char32_t('/'));
+        int vn = int(v.size());
+        int n = std::min(cn, vn);
+        if (n > 0)
+        {
+            bool match = true;
+            for (int i = 0; i < n; ++i)
+            {
+                if (components[cn - i - 1] != v[vn - i - 1])
+                {
+                    match = false;
+                    break;
+                }
+            }
+            if (match)
+            {
+                sourceFilePaths.push_back(c);
+            }
+        }
+    }
+    if (sourceFilePaths.size() > 1)
+    {
+        throw std::runtime_error("more than one source file path matched \"" + sourceFileName + "\", specify more directory components");
+    }
+    else if (sourceFilePaths.empty())
+    {
+        throw std::runtime_error("source file \"" + sourceFileName + "\" not found");
+    }
+    else
+    {
+        Constant sourceFilePath = sourceFilePaths.front();
+        return sourceFilePath;
+    }
+}
+
+SourceFile* SourceFileTable::GetSourceFile(Constant sourceFilePath)
+{
+    auto it = sourceFileMap.find(sourceFilePath);
+    if (it != sourceFileMap.cend())
+    {
+        return it->second.get();
+    }
+    std::unique_ptr<SourceFile> sourceFile(new SourceFile(sourceFilePath));
+    sourceFile->Read();
+    SourceFile* sf = sourceFile.get();
+    sourceFileMap[sourceFilePath] = std::move(sourceFile);
+    return sf;
+}
+
+SourceFile* SourceFileTable::GetSourceFile(const std::string& sourceFileName)
+{
+    return GetSourceFile(GetSourceFilePath(sourceFileName));
+}
+
+void SourceFileTable::MapSourceFileLine(Constant sourceFilePath, uint32_t sourceLine, Function* function)
+{
+    LineFunctionTable& lineFunctionTable = sourceFileLineFunctionMap[sourceFilePath];
+    lineFunctionTable.MapSourceLineToFunction(sourceLine, function);
+}
+
+int SourceFileTable::SetBreakPoint(Constant sourceFilePath, uint32_t sourceLine)
+{
+    const LineFunctionTable& lineFunctionTable = sourceFileLineFunctionMap[sourceFilePath];
+    Function* function = lineFunctionTable.GetFunction(sourceLine);
+    if (!function)
+    {
+        throw std::runtime_error("no function matched source line " + std::to_string(sourceLine));
+    }
+    uint32_t pc = function->GetPC(sourceLine);
+    if (pc == -1)
+    {
+        throw std::runtime_error("no instruction index matched source line " + std::to_string(sourceLine) + " in function '" + ToUtf8(function->CallName().Value().AsStringLiteral()) + "'");
+    }
+    int bp = nextBp++;
+    function->SetBreakPointAt(pc);
+    breakPoints[bp] = BreakPoint(function, sourceLine, pc);
+    return bp;
+}
+
+int SourceFileTable::SetBreakPoint(const std::string& sourceFileName, uint32_t sourceLine)
+{
+    Constant sourceFilePath = GetSourceFilePath(sourceFileName);
+    return SetBreakPoint(sourceFilePath, sourceLine);
+}
+
+void SourceFileTable::RemoveBreakPoint(int bp)
+{
+    auto it = breakPoints.find(bp);
+    if (it != breakPoints.cend())
+    {
+        BreakPoint& breakPoint = it->second;
+        breakPoint.Remove();
+        breakPoints.erase(bp);
+    }
+    else
+    {
+        throw std::runtime_error("breakpoint number " + std::to_string(bp) + " not found");
+    }
+}
+
+const BreakPoint* SourceFileTable::GetBreakPoint(int bp) const
+{
+    auto it = breakPoints.find(bp);
+    if (it != breakPoints.cend())
+    {
+        return &it->second;
+    }
+    else
+    {
+        throw std::runtime_error("breakpoint number " + std::to_string(bp) + " not found");
     }
 }
 

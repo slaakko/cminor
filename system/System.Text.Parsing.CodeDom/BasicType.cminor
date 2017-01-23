@@ -14,12 +14,20 @@ namespace System.Text.Parsing.CodeDom
         public BoolType() : base("bool")
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class CharType : Type
     {
         public CharType() : base("char")
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 
@@ -28,12 +36,20 @@ namespace System.Text.Parsing.CodeDom
         public VoidType() : base("void")
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class SByteType : Type
     {
         public SByteType() : base("sbyte")
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 
@@ -42,12 +58,20 @@ namespace System.Text.Parsing.CodeDom
         public ByteType() : base("byte")
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class ShortType : Type
     {
         public ShortType() : base("short")
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 
@@ -56,12 +80,20 @@ namespace System.Text.Parsing.CodeDom
         public UShortType() : base("ushort")
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class IntType : Type
     {
         public IntType() : base("int")
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 
@@ -70,12 +102,20 @@ namespace System.Text.Parsing.CodeDom
         public UIntType() : base("uint")
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class LongType : Type
     {
         public LongType() : base("long")
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 
@@ -84,12 +124,20 @@ namespace System.Text.Parsing.CodeDom
         public ULongType() : base("ulong")
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class FloatType : Type
     {
         public FloatType() : base("float")
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 
@@ -98,6 +146,10 @@ namespace System.Text.Parsing.CodeDom
         public DoubleType() : base("double")
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class ObjectType : Type
@@ -105,12 +157,31 @@ namespace System.Text.Parsing.CodeDom
         public ObjectType() : base("object")
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class StringType : Type
     {
         public StringType() : base("string")
         {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class TypeExpr : Type
+    {
+        public TypeExpr(string name) : base(name)
+        {
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 }

@@ -8,6 +8,7 @@
 #include <cminor/machine/Constant.hpp>
 #include <cminor/machine/Instruction.hpp>
 #include <ostream>
+#include <map>
 
 namespace cminor { namespace machine {
 
@@ -143,6 +144,10 @@ public:
     void ResolveExceptionVarTypes();
     void MapPCToSourceLine(uint32_t pc, uint32_t sourceLine);
     uint32_t GetSourceLine(uint32_t pc) const;
+    uint32_t GetPC(uint32_t sourceLine) const;
+    bool HasBreakPointAt(uint32_t pc) const;
+    void SetBreakPointAt(uint32_t pc);
+    void RemoveBreakPointAt(uint32_t pc);
 private:
     Constant callName;
     Constant friendlyName;
@@ -154,7 +159,10 @@ private:
     uint32_t numParameters;
     bool isMain;
     std::vector<std::unique_ptr<ExceptionBlock>> exceptionBlocks;
-    std::unordered_map<uint32_t, uint32_t> pcSoureLineMap;
+    std::map<uint32_t, uint32_t> pcSourceLineMap;
+    std::map<uint32_t, uint32_t> sourceLinePCMap;
+    std::unordered_set<uint32_t> mappedSourceLines;
+    std::unordered_set<uint32_t> breakPoints;
     Emitter* emitter;
 };
 
@@ -197,6 +205,67 @@ public:
 private:
     static std::unique_ptr<VmFunctionTable> instance;
     std::unordered_map<StringPtr, VmFunction*, StringPtrHash> vmFunctionMap;
+};
+
+class LineFunctionTable
+{
+public:
+    LineFunctionTable();
+    void MapSourceLineToFunction(uint32_t sourceLine, Function* function);
+    Function* GetFunction(uint32_t sourceLine) const;
+private:
+    std::unordered_map<uint32_t, Function*> lineFunctionMap;
+};
+
+class BreakPoint
+{
+public:
+    BreakPoint();
+    BreakPoint(Function* function_, uint32_t line_, uint32_t pc_);
+    void Remove();
+    Function* GetFunction() const { return function; }
+    uint32_t Line() const { return line; }
+    uint32_t PC() const { return pc; }
+private:
+    Function* function;
+    uint32_t line;
+    uint32_t pc;
+};
+
+class SourceFile
+{
+public:
+    SourceFile(Constant sourceFilePath_);
+    void Read();
+    void List(int lineNumber, int numLines);
+    Constant SourceFilePath() const { return sourceFilePath; }
+    std::string GetLine(int lineNumber) const;
+private:
+    Constant sourceFilePath;
+    std::vector<std::string> lines;
+};
+
+class SourceFileTable
+{
+public:
+    static SourceFileTable* Instance();
+    static void Init();
+    static void Done();
+    Constant GetSourceFilePath(const std::string& sourceFileName) const;
+    SourceFile* GetSourceFile(Constant sourceFilePath);
+    SourceFile* GetSourceFile(const std::string& sourceFileName);
+    void MapSourceFileLine(Constant sourceFilePath, uint32_t sourceLine, Function* function);
+    int SetBreakPoint(Constant sourceFilePath, uint32_t sourceLine);
+    int SetBreakPoint(const std::string& sourceFileName, uint32_t sourceLine);
+    void RemoveBreakPoint(int bp);
+    const BreakPoint* GetBreakPoint(int bp) const;
+private:
+    SourceFileTable();
+    static std::unique_ptr<SourceFileTable> instance;
+    std::unordered_map<Constant, LineFunctionTable, ConstantHash> sourceFileLineFunctionMap;
+    std::unordered_map<Constant, std::unique_ptr<SourceFile>, ConstantHash> sourceFileMap;
+    std::unordered_map<int, BreakPoint> breakPoints;
+    int nextBp;
 };
 
 } } // namespace cminor::machine

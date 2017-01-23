@@ -343,7 +343,20 @@ void StringCharacters::Set(ManagedMemoryPool* pool)
     pool->Set(this);
 }
 
-ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextReferenceValue(1), object(nullptr), arrayElements(nullptr), stringCharacters(nullptr)
+uint64_t poolDiffSize = defaultPoolDiffSize;
+
+void SetPoolDiffSize(uint64_t poolDiffSize_)
+{
+    poolDiffSize = poolDiffSize_;
+}
+
+uint64_t GetPoolDiffSize()
+{
+    return poolDiffSize;
+}
+
+ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextReferenceValue(1), object(nullptr), arrayElements(nullptr), stringCharacters(nullptr),
+    objectCount(0), arrayContentCount(0), stringContentCount(0), prevSize(0), size(0), poolRoot(AllocationHandle(0))
 {
 }
 
@@ -352,16 +365,19 @@ ObjectReference ManagedMemoryPool::CreateObject(Thread& thread, ObjectType* type
     ObjectReference reference(nextReferenceValue++);
     std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, type->ObjectSize());
     memPtrSegmentId.first.SetHashCode(Random64());
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, memPtrSegmentId.first, memPtrSegmentId.second, type, type->ObjectSize()))));
+    Object* obj = new Object(reference, memPtrSegmentId.first, memPtrSegmentId.second, type, type->ObjectSize());
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
+    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(obj)));
     if (!pairItBool.second)
     {
         throw SystemException("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
     }
+    ++objectCount;
+    CheckSize(thread, lock, reference);
     return reference;
 }
 
-ObjectReference ManagedMemoryPool::CopyObject(ObjectReference from)
+ObjectReference ManagedMemoryPool::CopyObject(Thread& thread, ObjectReference from)
 {
     if (from.IsNull())
     {
@@ -369,12 +385,15 @@ ObjectReference ManagedMemoryPool::CopyObject(ObjectReference from)
     }
     ObjectReference reference(nextReferenceValue++);
     Object& object = GetObject(from);
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(new Object(reference, object.GetMemPtr(), object.SegmentId(), object.GetType(), object.Size()))));
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
+    Object* obj = new Object(reference, object.GetMemPtr(), object.SegmentId(), object.GetType(), object.Size());
+    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(obj)));
     if (!pairItBool.second)
     {
         throw SystemException("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
     }
+    ++objectCount;
+    CheckSize(thread, lock, reference);
     return reference;
 }
 
@@ -384,11 +403,29 @@ void ManagedMemoryPool::DestroyAllocation(AllocationHandle handle)
     {
         throw SystemException("cannot destroy null handle");
     }
+    auto it = allocations.find(handle);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        if (dynamic_cast<Object*>(allocation))
+        {
+            --objectCount;
+        }
+        else if (dynamic_cast<ArrayElements*>(allocation))
+        {
+            --arrayContentCount;
+        }
+        else if (dynamic_cast<StringCharacters*>(allocation))
+        {
+            --stringContentCount;
+        }
+    }
     auto n = allocations.erase(handle);
     if (n != 1)
     {
         throw SystemException("could not erase: allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
+
 }
 
 Object& ManagedMemoryPool::GetObject(ObjectReference reference)
@@ -430,18 +467,21 @@ void ManagedMemoryPool::SetField(ObjectReference reference, int32_t fieldIndex, 
     object.SetField(fieldValue, fieldIndex);
 }
 
-AllocationHandle ManagedMemoryPool::CreateStringCharsFromLiteral(const char32_t* strLit, uint32_t len)
+AllocationHandle ManagedMemoryPool::CreateStringCharsFromLiteral(Thread& thread, const char32_t* strLit, uint32_t len)
 {
     AllocationHandle handle(nextReferenceValue++);
     uint64_t stringSize = static_cast<uint64_t>(sizeof(char32_t)) * len;
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
     MemPtr memPtr(strLit);
     memPtr.SetHashCode(Random64());
-    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, memPtr, notGarbageCollectedSegment, len, stringSize))));
+    StringCharacters* strChars = new StringCharacters(handle, memPtr, notGarbageCollectedSegment, len, stringSize);
+    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(strChars)));
     if (!pairItBool.second)
     {
         throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
     }
+    ++stringContentCount;
+    CheckSize(thread, lock, handle);
     return handle;
 }
 
@@ -463,17 +503,36 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
         MemPtr characters = charElements->GetMemPtr();
         AllocationHandle handle(nextReferenceValue++);
         uint64_t stringSize = numChars * ValueSize(ValueType::charType);
-        std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
-        memPtrSegmentId.first.SetHashCode(Random64());
-        lock.lock();
-        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize))));
-        if (!pairItBool.second)
+        if (stringSize > 0)
         {
-            throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+            std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
+            memPtrSegmentId.first.SetHashCode(Random64());
+            StringCharacters* strChars = new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize);
+            lock.lock();
+            auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(strChars)));
+            if (!pairItBool.second)
+            {
+                throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+            }
+            MemPtr stringMem = memPtrSegmentId.first;
+            std::memcpy(stringMem.Value(), characters.Value(), stringSize);
+            ++stringContentCount;
+            CheckSize(thread, lock, handle);
+            return std::make_pair(handle, numChars);
         }
-        MemPtr stringMem = memPtrSegmentId.first;
-        std::memcpy(stringMem.Value(), characters.Value(), stringSize);
-        return std::make_pair(handle, numChars);
+        else
+        {
+            lock.lock();
+            StringCharacters* strChars = new StringCharacters(handle, MemPtr(), notGarbageCollectedSegment, numChars, stringSize);
+            auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(strChars)));
+            if (!pairItBool.second)
+            {
+                throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+            }
+            ++stringContentCount;
+            CheckSize(thread, lock, handle);
+            return std::make_pair(handle, numChars);
+        }
     }
     else
     {
@@ -490,16 +549,34 @@ ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_stri
     int32_t numChars = int32_t(s.length());
     AllocationHandle handle(nextReferenceValue++);
     uint64_t stringSize = numChars * ValueSize(ValueType::charType);
-    std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
-    memPtrSegmentId.first.SetHashCode(Random64());
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize))));
-    if (!pairItBool.second)
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
+    if (stringSize > 0)
     {
-        throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+        lock.unlock();
+        std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
+        memPtrSegmentId.first.SetHashCode(Random64());
+        StringCharacters* strChars = new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize);
+        lock.lock();
+        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(strChars)));
+        if (!pairItBool.second)
+        {
+            throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+        }
+        MemPtr stringMem = memPtrSegmentId.first;
+        std::memcpy(stringMem.Value(), s.c_str(), stringSize);
+        ++stringContentCount;
+        CheckSize(thread, lock, handle);
     }
-    MemPtr stringMem = memPtrSegmentId.first;
-    std::memcpy(stringMem.Value(), s.c_str(), stringSize);
+    else
+    {
+        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, MemPtr(), notGarbageCollectedSegment, numChars, stringSize))));
+        if (!pairItBool.second)
+        {
+            throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
+        }
+        ++stringContentCount;
+        CheckSize(thread, lock, handle);
+    }
     Object& strObject = GetObject(str);
     ClassData* classDataPtr = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String"));
     strObject.SetField(IntegralValue(classDataPtr), 0);
@@ -634,25 +711,30 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
     Object& a = GetObject(arr);
     AllocationHandle handle(nextReferenceValue++);
     uint64_t arraySize = ValueSize(elementType->GetValueType()) * uint64_t(length);
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
     if (arraySize > 0)
     {
+        lock.unlock();
         std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, arraySize);
         memPtrSegmentId.first.SetHashCode(Random64());
-        std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
+        lock.lock();
         auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, memPtrSegmentId.first, memPtrSegmentId.second, elementType, length, arraySize))));
         if (!pairItBool.second)
         {
             throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
         }
+        ++arrayContentCount;
+        CheckSize(thread, lock, handle);
     }
     else
     {
-        std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
         auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, MemPtr(), notGarbageCollectedSegment, elementType, length, arraySize))));
         if (!pairItBool.second)
         {
             throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
         }
+        ++arrayContentCount;
+        CheckSize(thread, lock, handle);
     }
     a.SetField(handle, 2);
 }
@@ -777,6 +859,43 @@ ManagedAllocation* ManagedMemoryPool::GetAllocation(AllocationHandle handle)
     else
     {
         throw SystemException("allocation with handle " + std::to_string(handle.Value()) + " not found");
+    }
+}
+
+void ManagedMemoryPool::ComputeSize()
+{
+    uint64_t allocationCount = allocations.size();
+    size = allocationCount * allocationSize + objectCount * objectSize + arrayContentCount * arrayContentSize + stringContentCount * stringContentSize;
+}
+
+void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle handle)
+{
+    ComputeSize();
+    uint64_t sizeDiff = size - prevSize;
+    if (sizeDiff >= GetPoolDiffSize())
+    {
+        poolRoot = handle;
+        lock.unlock();
+        thread.SetState(ThreadState::paused);
+#ifdef GC_LOGGING
+        LogMessage(">" + std::to_string(thread.Id()) + " (paused)");
+#endif
+        thread.GetMachine().GetGarbageCollector().RequestGarbageCollection(thread);
+#ifdef GC_LOGGING
+        LogMessage(">" + std::to_string(thread.Id()) + " (collection requested)");
+#endif
+        thread.GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(thread);
+#ifdef GC_LOGGING
+        LogMessage(">" + std::to_string(thread.Id()) + " (collection ended)");
+#endif
+        ComputeSize();
+        prevSize = size;
+        poolRoot = AllocationHandle(0);
+        thread.SetState(ThreadState::running);
+#ifdef GC_LOGGING
+        LogMessage(">" + std::to_string(thread.Id()) + " (running)");
+#endif
+        thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
     }
 }
 

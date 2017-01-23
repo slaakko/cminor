@@ -1,0 +1,98 @@
+using System;
+
+namespace System.Text.Parsing
+{
+    public abstract class ParsingObject
+    {
+        public ParsingObject(string name) : this(name, null)
+        {
+        }
+        public ParsingObject(string name, Scope enclosingScope)
+        {
+            this.name = name;
+            this.enclosingScope = enclosingScope;
+            this.scope = null;
+            this.owner = external;
+        }
+        public string Name
+        {
+            get { return name; }
+            set { name = value; }
+        }
+        public string FullName
+        {
+            get 
+            { 
+                string enclosingScopeFullName = "";
+                if (enclosingScope != null)
+                {
+                    enclosingScopeFullName = enclosingScope.FullName;
+                }
+                if (string.IsNullOrEmpty(enclosingScopeFullName))
+                {
+                    return name;
+                }
+                return enclosingScopeFullName + "." + name;
+            }
+        }
+        public Scope EnclosingScope
+        {
+            get { return enclosingScope; }
+            set { enclosingScope = value; }
+        }
+        public Scope ContainerScope
+        {
+            get { return scope; }
+            set { scope = value; }
+        }
+        public Scope GetScope()
+        {
+            if (scope != null)
+            {
+                return scope;
+            }
+            return enclosingScope;
+        }
+        public Span SpanValue
+        {
+            get { return span; }
+            set { span = value; }
+        }
+        public int Owner
+        {
+            get { return owner; }
+            set { owner = value; }
+        }
+        public bool External
+        {
+            get { return owner == external; }
+            set { owner = external; }
+        }
+        public virtual void AddToScope()
+        {
+            Scope es = enclosingScope;
+            if (es != null)
+            {
+                try
+                {
+                    es.Add(this);
+                }
+                catch (Exception ex)
+                {
+                    ThrowException(ex.Message, span);
+                }
+                if (scope != null)
+                {
+                    scope.EnclosingScope = es;
+                }
+            }
+        }
+        public abstract void Accept(Visitor visitor);
+        private string name;
+        private Scope enclosingScope;
+        private Scope scope;
+        private Span span;
+        private int owner;
+        public const int external = -1;
+    }
+}

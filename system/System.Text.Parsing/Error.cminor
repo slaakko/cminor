@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace System.Text.Parsing
 {
@@ -81,5 +83,82 @@ namespace System.Text.Parsing
         private string fileName;
         private Span span;
         private string content;
+    }
+
+    public class ParsingException : Exception
+    {
+        public ParsingException(string message, string fileName, Span span, string content) : base(message + " in file '" + fileName + "' at line " + span.LineNumber.ToString() + ":\n" + 
+            GetErrorLines(content, span))
+        {
+            this.message = message;
+            this.fileName = fileName;
+            this.span = span;
+            this.content = content;
+        }
+        public string Message
+        {
+            get { return message; }
+        }
+        public string FileName
+        {
+            get { return fileName; }
+        }
+        public Span SpanValue
+        {
+            get { return span; }
+        }
+        public string Content
+        {
+            get { return content; }
+        }
+        private string message;
+        private string fileName;
+        private Span span;
+        private string content;
+    }
+
+    public class FileInfo
+    {
+        static FileInfo()
+        {
+            instance = new FileInfo();
+        }
+        private FileInfo()
+        {
+            files = new List<string>();
+        }
+        public static FileInfo Instance
+        {
+            get { return instance; }
+        }
+        public List<string> Files
+        {
+            get { return files; }
+            set { files = value; }
+        }
+        public string GetFilePath(int index)
+        {
+            if (index >= 0 && index < files.Count)
+            {
+                return files[index];
+            }
+            return string.Empty;
+        }
+        private static FileInfo instance;
+        private List<string> files;
+    }
+
+    public void ThrowException(string message, Span span)
+    {
+        if (span != null)
+        {
+            string filePath = FileInfo.Instance.GetFilePath(span.FileIndex);
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                string content = File.ReadAllText(filePath);
+                throw new ParsingException(message, filePath, span, content);
+            }
+        }
+        throw new Exception(message);
     }
 }

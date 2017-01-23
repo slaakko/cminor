@@ -1,44 +1,27 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 
 namespace System.Text.Parsing
 {
-    public class Grammar
+    public class Grammar : ParsingObject
     {
         public Grammar(string name, Scope enclosingScope) : this(name, enclosingScope, new ParsingDomain())
         {
         }
-        public Grammar(string name, Scope enclosingScope, ParsingDomain parsingDomain)
+        public Grammar(string name, Scope enclosingScope, ParsingDomain parsingDomain) : base(name, enclosingScope)
         {
-            this.name = name;
-            this.enclosingScope = enclosingScope;
             this.parsingDomain = parsingDomain;
+            this.rules = new List<RuleParser>();
+            this.ruleLinks = new List<RuleLink>();
             this.referencedGrammars = new HashSet<Grammar>();
             this.linking = false;
             this.linked = false;
+            ContainerScope = new Scope(name, enclosingScope);
         }
-        public string Name
+        public ParsingDomain Domain
         {
-            get { return name; }
-        }
-        public string FullName
-        {
-            get
-            {
-                string scopeName = "";
-                if (enclosingScope != null)
-                {
-                    scopeName = enclosingScope.FullName;
-                }
-                if (string.IsNullOrEmpty(scopeName))
-                {
-                    return name;
-                }
-                else
-                {
-                    return scopeName + "." + name;
-                }
-            }
+            get { return parsingDomain; }
         }
         public virtual void GetReferencedGrammars()
         {
@@ -46,7 +29,7 @@ namespace System.Text.Parsing
         public virtual void CreateRules()
         {
         }
-        public virtual void Link()
+        public void Link()
         {
             if (!linking && !linked)
             {
@@ -56,26 +39,50 @@ namespace System.Text.Parsing
                 {
                     referencedGrammar.Link();
                 }
-                // todo
+                LinkerVisitor visitor = new LinkerVisitor();
+                Accept(visitor);
                 linking = false;
                 linked = true;
             }
         }
         public void Parse(string content, int fileIndex, string fileName)
         {
-            Scanner scanner = new Scanner(content, fileIndex, fileName, skipRule);
             Stack<object> stack = new Stack<object>();
-            Match match = Parse(scanner, stack);
-            Span stop = scanner.SpanValue;
-            if (!match.Hit || stop.Start != content.Length)
+            Scanner scanner = new Scanner(content, fileIndex, fileName, skipRule);
+            XmlLog xmlLog = null;
+            try
             {
-                if (startRule == null)
+                if (log != null)
                 {
-                    throw new Exception("grammar '" + FullName + "' has no start rule");
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
                 }
-                else
+                Match match = Parse(scanner, stack);
+                Span stop = scanner.SpanValue;
+                if (log != null)
                 {
-                    throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    if (startRule == null)
+                    {
+                        throw new Exception("grammar '" + FullName + "' has no start rule");
+                    }
+                    else
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
                 }
             }
         }
@@ -98,6 +105,98 @@ namespace System.Text.Parsing
             }
             return Match.Nothing;
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.BeginVisit(this);
+            foreach (RuleLink ruleLink in ruleLinks)
+            {
+                ruleLink.Accept(visitor);
+            }
+            foreach (RuleParser rule in rules)
+            {
+                rule.Accept(visitor);
+            }
+            visitor.EndVisit(this);
+        }
+        public void AddRule(RuleParser rule)
+        {
+            rule.GrammarValue = this;
+            rule.GetScope().EnclosingScope = GetScope();
+            rule.EnclosingScope = GetScope();
+            rules.Add(rule);
+            try
+            {
+                GetScope().Add(rule);
+            }
+            catch (Exception ex)
+            {
+                ThrowException(ex.Message, SpanValue);
+            }
+        }
+        public RuleParser GetRule(string ruleName)
+        {
+            ParsingObject o = GetScope().Get(ruleName);
+            if (o == null)
+            {
+                ThrowException("rule '" + ruleName + "' not found in grammar '" + FullName + "'", SpanValue);
+            }
+            if (o is RuleParser)
+            {
+                return cast<RuleParser>(o);
+            }
+            else
+            {
+                if (o is RuleLink)
+                {
+                    RuleLink ruleLink = cast<RuleLink>(o);
+                    RuleParser rule = ruleLink.Rule;
+                    if (rule == null)
+                    {
+                        ThrowException("rule link '" + ruleName + "' not bound in grammar '" + FullName + "'", SpanValue);
+                    }
+                    return rule;
+                }
+                else
+                {
+                    ThrowException("object '" + ruleName + "' (" + o.FullName + ") is not a rule or rule link", SpanValue);
+                }
+            }
+            return null;
+        }
+        public void AddRuleLink(RuleLink ruleLink)
+        {
+            if (ruleLink.AddedToGrammar) return;
+            ruleLinks.Add(ruleLink);
+            ruleLink.AddedToGrammar = true;
+        }
+        public void ResolveStartRule()
+        {
+            if (string.IsNullOrEmpty(startRuleName))
+            {
+                if (rules.Count > 0)
+                {
+                    startRule = rules[0];
+                }
+                else
+                {
+                    ThrowException("cannot resolve start rule because grammar '" + FullName + "' is empty", SpanValue);
+                }
+            }
+            else
+            {
+                startRule = GetRule(startRuleName);
+            }
+        }
+        public void ResolveSkipRule()
+        {
+            if (string.IsNullOrEmpty(skipRuleName)) return;
+            skipRule = GetRule(skipRuleName);
+        }
+        public Namespace Ns
+        {
+            get { return ns; }
+            set { ns = value; }
+        }
         public string StartRuleName
         {
             get { return startRuleName; }
@@ -118,9 +217,29 @@ namespace System.Text.Parsing
             get { return skipRule; }
             set { skipRule = value; }
         }
+        public List<RuleParser> Rules
+        {
+            get { return rules; }
+        }
+        public List<RuleLink> RuleLinks
+        {
+            get { return ruleLinks; }
+        }
+        public HashSet<Grammar> ReferencedGrammars
+        {
+            get { return referencedGrammars; }
+        }
+        public StreamWriter Log
+        {
+            get { return log; }
+            set { log = value; }
+        }
         private string name;
         private Scope enclosingScope;
         private ParsingDomain parsingDomain;
+        private List<RuleParser> rules;
+        private List<RuleLink> ruleLinks;
+        private Namespace ns;
         private string startRuleName;
         private string skipRuleName;
         private Parser contentParser;
@@ -129,5 +248,6 @@ namespace System.Text.Parsing
         private HashSet<Grammar> referencedGrammars;
         private bool linking;
         private bool linked;
+        private StreamWriter log;
     }
 }

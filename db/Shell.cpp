@@ -7,18 +7,20 @@
 #include <cminor/db/Command.hpp>
 #include <cminor/db/CommandGrammar.hpp>
 #include <cminor/symbols/Assembly.hpp>
+#include <cminor/machine/OsInterface.hpp>
 #include <stdexcept>
 #include <iostream>
 
 namespace cminor { namespace db {
 
-Shell::Shell(Machine& machine_) : machine(machine_), exit(false)
+Shell::Shell(Machine& machine_) : machine(machine_), exit(false), numListLines(10), currentLineNumber(0), currentSourceFile(nullptr), ended(false)
 {
 }
 
 void Shell::StartMachine()
 {
     machine.Start(programArguments, argsArrayObjectType);
+    ended = false;
 }
 
 void Shell::Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<utf32_string>& programArguments_, ObjectType* argsArrayObjectType_)
@@ -27,6 +29,14 @@ void Shell::Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<u
     argsArrayObjectType = argsArrayObjectType_;
     StartMachine();
     CommandGrammar* commandGrammar = CommandGrammar::Create();
+    if (!machine.MainThread().Frames().empty())
+    {
+        Frame* frame = machine.MainThread().Frames().back().get();
+        if (frame->Fun().HasSourceFilePath())
+        {
+            currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
+        }
+    }
     while (!exit)
     {
         try
@@ -47,14 +57,19 @@ void Shell::Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<u
             }
             else
             {
-                if (mainFun->ReturnType() == assembly.GetSymbolTable().GetType(U"System.Int32"))
+                if (!ended)
                 {
-                    IntegralValue programReturnValue = machine.MainThread().OpStack().Pop();
-                    codeFormatter.WriteLine("program ended with exit code " + std::to_string(programReturnValue.AsInt()));
-                }
-                else
-                {
-                    codeFormatter.WriteLine("program ended normally");
+                    if (mainFun->ReturnType() == assembly.GetSymbolTable().GetType(U"System.Int32"))
+                    {
+                        IntegralValue programReturnValue = machine.MainThread().OpStack().Pop();
+                        codeFormatter.WriteLine("program ended with exit code " + std::to_string(programReturnValue.AsInt()));
+                        ended = true;
+                    }
+                    else
+                    {
+                        codeFormatter.WriteLine("program ended normally");
+                        ended = true;
+                    }
                 }
             }
             std::cout << "cminordb> ";
@@ -81,17 +96,62 @@ void Shell::Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<u
 
 void Shell::Step()
 {
-    machine.MainThread().Step();
+    if (ended)
+    {
+        std::cout << "program ended" << std::endl;
+    }
+    else
+    {
+        machine.MainThread().Step();
+        if (!machine.MainThread().Frames().empty())
+        {
+            Frame* frame = machine.MainThread().Frames().back().get();
+            if (frame->Fun().HasSourceFilePath())
+            {
+                currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
+            }
+        }
+    }
 }
 
 void Shell::Next()
 {
-    machine.MainThread().Next();
+    if (ended)
+    {
+        std::cout << "program ended" << std::endl;
+    }
+    else
+    {
+        machine.MainThread().Next();
+        if (!machine.MainThread().Frames().empty())
+        {
+            Frame* frame = machine.MainThread().Frames().back().get();
+            if (frame->Fun().HasSourceFilePath())
+            {
+                currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
+            }
+        }
+    }
 }
 
 void Shell::Run()
 {
-    machine.MainThread().RunDebug();
+    if (ended)
+    {
+        std::cout << "program ended" << std::endl;
+    }
+    else
+    {
+        machine.MainThread().RunDebug();
+        if (!machine.MainThread().Frames().empty())
+        {
+            Frame* frame = machine.MainThread().Frames().back().get();
+            if (frame->Fun().HasSourceFilePath())
+            {
+                currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
+            }
+        }
+    }
 }
 
 void Shell::Local(int index)
@@ -109,7 +169,7 @@ void Shell::Local(int index)
     Print(value);
 }
 
-void Shell::Stack(int index)
+void Shell::Operand(int index)
 {
     Frame* frame = machine.MainThread().Frames().back().get();
     int32_t n = int32_t(frame->OpStack().Values().size());
@@ -161,12 +221,174 @@ void Shell::RepeatLastCommand()
 {
     if (prevCommand)
     {
+        if (ListCommand* listCommand = dynamic_cast<ListCommand*>(prevCommand.get()))
+        {
+            listCommand->SetLine(currentLineNumber);
+        }
         prevCommand->Execute(*this);
     }
     else
     {
         throw std::runtime_error("no previous command to execute");
     }
+}
+
+void Shell::PrintAllocation(int handle)
+{
+    Frame* frame = machine.MainThread().Frames().back().get();
+    AllocationHandle allocationHandle(handle);
+    ManagedAllocation* allocation = frame->GetManagedMemoryPool().GetAllocation(allocationHandle);
+    Object* o = dynamic_cast<Object*>(allocation);
+    if (o)
+    {
+        ObjectType* type = o->GetType();
+        utf32_string us = type->Name().Value();
+        std::string s = ToUtf8(us);
+        std::cout << "object " << s << " : " << o->FieldCount() << std::endl;
+    }
+    else
+    {
+        ArrayElements* a = dynamic_cast<ArrayElements*>(allocation);
+        if (a)
+        {
+            Type* type = a->GetElementType();
+            std::cout << "array of " << ToUtf8(type->Name().Value()) << " : " << a->NumElements() << std::endl;
+        }
+        else
+        {
+            StringCharacters* s = dynamic_cast<StringCharacters*>(allocation);
+            if (s)
+            {
+                std::cout << "string \"";
+                std::string str;
+                int n = s->NumChars();
+                for (int i = 0; i < n; ++i)
+                {
+                    IntegralValue v = s->GetChar(i);
+                    char32_t c = v.AsChar();
+                    char d = static_cast<char>(c);
+                    str.append(1, d);
+                }
+                std::cout << str << "\"" << std::endl;
+            }
+            else
+            {
+                throw std::runtime_error("invalid allocation " + std::to_string(handle));
+            }
+        }
+    }
+}
+
+void Shell::PrintField(int handle, int index)
+{
+    Frame* frame = machine.MainThread().Frames().back().get();
+    AllocationHandle allocationHandle(handle);
+    ManagedAllocation* allocation = frame->GetManagedMemoryPool().GetAllocation(allocationHandle);
+    Object* o = dynamic_cast<Object*>(allocation);
+    if (o)
+    {
+        IntegralValue value = o->GetField(index);
+        Print(value);
+    }
+    else
+    {
+        ArrayElements* a = dynamic_cast<ArrayElements*>(allocation);
+        if (a)
+        {
+            IntegralValue value = a->GetElement(index);
+            Print(value);
+        }
+        else
+        {
+            throw std::runtime_error("handle does not denote an object or an array " + std::to_string(handle));
+        }
+    }
+}
+
+void Shell::List(const std::string& sourceFileName, int line)
+{
+    SourceFile* sourceFile = nullptr;
+    if (sourceFileName.empty())
+    {
+        if (currentSourceFile)
+        {
+            Constant sourceFilePath = currentSourceFile->SourceFilePath();
+            sourceFile = SourceFileTable::Instance()->GetSourceFile(sourceFilePath);
+        }
+        else
+        {
+            throw std::runtime_error("current source file not set");
+        }
+    }
+    else
+    {
+        sourceFile = SourceFileTable::Instance()->GetSourceFile(sourceFileName);
+    }
+    if (line == -1)
+    {
+        Frame* frame = machine.MainThread().Frames().back().get();
+        uint32_t pc = frame->PC();
+        line = frame->Fun().GetSourceLine(pc);
+        while (line == -1 && pc != -1)
+        {
+            --pc;
+            line = frame->Fun().GetSourceLine(pc);
+        }
+    }
+    if (line <= 0)
+    {
+        line = 1;
+    }
+    std::string sfp = ToUtf8(sourceFile->SourceFilePath().Value().AsStringLiteral());
+    WriteInGreenToConsole(sfp + ":");
+    sourceFile->List(line, numListLines);
+    currentSourceFile = sourceFile;
+    currentLineNumber = line + numListLines;
+}
+
+void Shell::Break(const std::string& sourceFileName, int line)
+{
+    Constant sourceFilePath;
+    if (sourceFileName.empty())
+    {
+        if (currentSourceFile)
+        {
+            sourceFilePath = currentSourceFile->SourceFilePath();
+        }
+        else
+        {
+            throw std::runtime_error("current source file not set");
+        }
+    }
+    else
+    {
+        sourceFilePath = SourceFileTable::Instance()->GetSourceFilePath(sourceFileName);
+    }
+    int bp = SourceFileTable::Instance()->SetBreakPoint(sourceFilePath, line);
+    std::cout << "breakpoint number " << bp << " set" << std::endl;
+    breakpoints.insert(bp);
+}
+
+void Shell::Clear(int bp)
+{
+    SourceFileTable::Instance()->RemoveBreakPoint(bp);
+    breakpoints.erase(bp);
+}
+
+void Shell::ShowBreakpoints()
+{
+    for (int bp : breakpoints)
+    {
+        const BreakPoint* breakPoint = SourceFileTable::Instance()->GetBreakPoint(bp);
+        std::cout << "breakpoint " << bp << " at " << ToUtf8(breakPoint->GetFunction()->CallName().Value().AsStringLiteral()) << " line " << breakPoint->Line() << " pc " << breakPoint->PC() << std::endl;
+    }
+}
+
+void Shell::Stack()
+{
+    Frame* frame = machine.MainThread().Frames().back().get();
+    std::string stackTrace = ToUtf8(frame->GetThread().GetStackTrace());
+    std::cout << stackTrace << std::endl;
 }
 
 } } // namespace cminor::db

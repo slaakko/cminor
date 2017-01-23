@@ -207,6 +207,7 @@ void TypeResolverVisitor::Visit(TemplateIdNode& templateIdNode)
 
 void TypeResolverVisitor::Visit(DotNode& dotNode)
 {
+    dotNode.Child()->Accept(*this);
     Scope* scope = nullptr;
     if (NamespaceTypeSymbol* nsType = dynamic_cast<NamespaceTypeSymbol*>(type))
     {

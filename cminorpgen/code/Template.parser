@@ -1,0 +1,22 @@
+using System.Text.Parsing.CodeDom;
+
+namespace Code
+{
+    grammar TemplateGrammar
+    {
+        using IdentifierGrammar.QualifiedId;
+        using TypeExprGrammar.TypeExpr;
+
+        TemplateId(ParsingContext ctx) : TemplateId
+                ::= (   QualifiedId 
+                        { 
+                            value = new TemplateId(QualifiedId.Name);
+                        }
+                        '<'
+                        (TypeExpr(ctx){ value.AddTemplateArg(TypeExpr); } % ',') 
+                        '>'
+                    )
+                ;
+        
+    }
+}

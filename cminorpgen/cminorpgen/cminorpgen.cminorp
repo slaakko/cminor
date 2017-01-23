@@ -1,0 +1,4 @@
+project cminorpgen;
+reference <../code/Code.cminorp>;
+reference <../syntax/Syntax.cminorp>;
+source <Main.cminor>;

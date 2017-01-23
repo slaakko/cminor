@@ -8,6 +8,7 @@
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/db/Command.hpp>
+#include <set>
 
 namespace cminor { namespace db {
 
@@ -27,15 +28,27 @@ public:
     void Next();
     void Run();
     void Local(int index);
-    void Stack(int index);
+    void Operand(int index);
     void Print(IntegralValue value);
     void RepeatLastCommand();
+    void PrintAllocation(int handle);
+    void PrintField(int handle, int index);
+    void List(const std::string& sourceFileName, int line);
+    void Break(const std::string& sourceFileName, int line);
+    void Clear(int bp);
+    void ShowBreakpoints();
+    void Stack();
 private:
     Machine& machine;
     bool exit;
     std::unique_ptr<Command> prevCommand;
     std::vector<utf32_string> programArguments;
     ObjectType* argsArrayObjectType;
+    int numListLines;
+    int currentLineNumber;
+    SourceFile* currentSourceFile;
+    std::set<int> breakpoints;
+    bool ended;
 };
 
 } } // namespace cminor::db

@@ -40,6 +40,7 @@ public:
     void RemoveSegment(int32_t segmentId);
     Segment* GetSegment(int32_t segmentId) const;
     std::atomic_bool& ThreadAllocating() { return threadAllocating; }
+    void Compact();
 private:
     ContainerInst rootInst;
     std::unordered_map<std::string, Instruction*> instructionMap;

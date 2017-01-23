@@ -1,0 +1,72 @@
+using System;
+using System.Collections.Generic;
+
+namespace Code
+{
+    public class ParsingContext
+    {
+        public ParsingContext()
+        {
+            parsingLvalueStack = new Stack<bool>();
+            parsingSimpleStatementStack = new Stack<bool>();
+            parsingArgumentsStack = new Stack<bool>();
+            parsingIsOrAsStack = new Stack<bool>();
+        }
+        public bool ParsingLvalue() 
+        {
+            return parsingLvalue;
+        }
+        public void PushParsingLvalue(bool value)
+        {
+            parsingLvalueStack.Push(parsingLvalue);
+            parsingLvalue = value;
+        }
+        public void PopParsingLvalue()
+        {
+            parsingLvalue = parsingLvalueStack.Pop();
+        }
+        public bool ParsingSimpleStatement()
+        {
+            return parsingSimpleStatement;
+        }
+        public void PushParsingSimpleStatement(bool value)
+        {
+            parsingSimpleStatementStack.Push(parsingSimpleStatement);
+            parsingSimpleStatement = value;
+        }
+        public void PopParsingSimpleStatement()
+        {
+            parsingSimpleStatement = parsingSimpleStatementStack.Pop();
+        }
+        public bool ParsingArguments()
+        {
+            return parsingArguments;
+        }
+        public void BeginParsingArguments()
+        {
+            parsingArgumentsStack.Push(parsingArguments);
+            parsingArguments = true;
+        }
+        public void EndParsingArguments()
+        {
+            parsingArguments = parsingArgumentsStack.Pop();
+        }
+        public bool ParsingIsOrAs() 
+        {
+            return parsingIsOrAs;
+        }
+        public void PushParsingIsOrAs(bool value)
+        {
+            parsingIsOrAsStack.Push(parsingIsOrAs);
+            parsingIsOrAs = value;
+        }
+        private bool parsingLvalue;
+        private Stack<bool> parsingLvalueStack;
+        private bool parsingSimpleStatement;
+        private Stack<bool> parsingSimpleStatementStack;
+        private bool parsingArguments;
+        private Stack<bool> parsingArgumentsStack;
+        private bool parsingIsOrAs;
+        private Stack<bool> parsingIsOrAsStack;
+    }
+}

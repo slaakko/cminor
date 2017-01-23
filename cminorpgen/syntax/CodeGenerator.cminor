@@ -1,0 +1,158 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.Parsing;
+
+namespace Syntax
+{
+    internal class NamespaceContent
+    {
+        public NamespaceContent()
+        {
+            usingObjects = new List<UsingObject>();
+            grammars = new List<Grammar>();
+        }
+        public List<UsingObject> UsingObjects
+        {
+            get { return usingObjects; }
+        }
+        public List<Grammar> Grammars
+        {
+            get { return grammars; }
+        }
+        private List<UsingObject> usingObjects;
+        private List<Grammar> grammars;
+    }
+
+    internal class ObjectSelectorVisitor : Visitor
+    {
+        public ObjectSelectorVisitor(int id)
+        {
+            this.id = id;
+            this.nsContentMap = new HashMap<Namespace, NamespaceContent>();
+        }
+        public override void Visit(UsingObject usingObject)
+        {
+            if (usingObject.Owner == id)
+            {
+                Namespace ns = usingObject.EnclosingScope.Ns;
+                NamespaceContent nsContent;
+                if (nsContentMap.ContainsKey(ns))
+                {
+                    nsContent = nsContentMap[ns];
+                }
+                else
+                {
+                    nsContent = new NamespaceContent();
+                    nsContentMap.Add(new KeyValuePair<Namespace, NamespaceContent>(ns, nsContent));
+                }
+                nsContent.UsingObjects.Add(usingObject);
+            }
+        }
+        public override void BeginVisit(Grammar grammar)
+        {
+            if (grammar.Owner == id)
+            {
+                Namespace ns = grammar.Ns;
+                NamespaceContent nsContent;
+                if (nsContentMap.ContainsKey(ns))
+                {
+                    nsContent = nsContentMap[ns];
+                }
+                else
+                {
+                    nsContent = new NamespaceContent();
+                    nsContentMap.Add(new KeyValuePair<Namespace, NamespaceContent>(ns, nsContent));
+                }
+                nsContent.Grammars.Add(grammar);
+            }
+        }
+        public HashMap<Namespace, NamespaceContent> NsContentMap
+        {
+            get { return nsContentMap; }
+        }
+        private int id;
+        private HashMap<Namespace, NamespaceContent> nsContentMap;
+    }
+
+    internal bool Changed(string parserFilePath, string cminorFilePath)
+    {
+        if (!File.Exists(cminorFilePath))
+        {
+            return true;
+        }
+        if (File.LastWriteTimeLess(cminorFilePath, parserFilePath))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    internal void GenerateCode(ParserFileContent parserFileContent)
+    {
+        string parserFilePath = parserFileContent.FilePath;
+        string cminorFilePath = Path.ChangeExtension(parserFilePath, ".cminor");
+        if (!Flags.ForceCodeGen && !Changed(parserFilePath, cminorFilePath))
+        {
+            return;
+        }
+        using (CodeFormatter formatter = new CodeFormatter(File.CreateText(cminorFilePath)))
+        {
+            formatter.WriteLine("using System;");
+            formatter.WriteLine("using System.Collections.Generic;");
+            formatter.WriteLine("using System.Text.Parsing;");
+            ObjectSelectorVisitor selectorVisitor = new ObjectSelectorVisitor(parserFileContent.Id);
+            foreach (UsingObject usingObject in parserFileContent.UsingObjects)
+            {
+                if (usingObject.Name != "System" && usingObject.Name != "System.Collections.Generic" && usingObject.Name != "System.Text.Parsing")
+                {
+                    selectorVisitor.Visit(usingObject);
+                }
+            }
+            parserFileContent.Domain.GlobalNamespace.Accept(selectorVisitor);
+            HashMap<Namespace, NamespaceContent> nsContentMap = selectorVisitor.NsContentMap;
+            foreach (KeyValuePair<Namespace, NamespaceContent> c in nsContentMap)
+            {
+                Namespace ns = c.Key;
+                NamespaceContent content = c.Value;
+                foreach (UsingObject usingObject in content.UsingObjects)
+                {
+                    usingObject.Subject.Print(formatter);
+                }
+            }
+            formatter.WriteLine();
+            foreach (KeyValuePair<Namespace, NamespaceContent> c in nsContentMap)
+            {
+                Namespace ns = c.Key;
+                NamespaceContent content = c.Value;
+                string nsFullName = ns.FullName;
+                if (!string.IsNullOrEmpty(nsFullName))
+                {
+                    formatter.WriteLine("namespace " + nsFullName);
+                    formatter.WriteLine("{");
+                    formatter.IncIndent();
+                }
+                foreach (Grammar grammar in content.Grammars)
+                {
+                    CodeGeneratorVisitor codeGeneratorVisitor = new CodeGeneratorVisitor(formatter);
+                    grammar.Accept(codeGeneratorVisitor);
+                }
+                if (!string.IsNullOrEmpty(nsFullName))
+                {
+                    formatter.DecIndent();
+                    formatter.WriteLine("}");
+                }
+            }
+        }
+        Console.WriteLine("=> " + cminorFilePath);
+    }
+
+    internal void GenerateCode(List<ParserFileContent> parserFiles)
+    {
+        foreach (ParserFileContent parserFileContent in parserFiles)
+        {
+            GenerateCode(parserFileContent);
+        }
+    }
+}

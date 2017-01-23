@@ -1,0 +1,51 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+namespace Syntax
+{
+    public class Project
+    {
+        public Project(string name, string filePath)
+        {
+            this.name = name;
+            this.filePath = filePath;
+            this.basePath = GetFullPath(Path.GetDirectoryName(filePath));
+            this.sourceFiles = new List<string>();
+            this.referenceFiles = new List<string>();
+        }
+        public void AddSourceFile(string sourceFilePath)
+        {
+            sourceFiles.Add(GetFullPath(Path.Combine(basePath, sourceFilePath)));
+        }
+        public void AddReferenceFile(string referenceFilePath)
+        {
+            referenceFiles.Add(referenceFilePath);
+        }
+        public string Name
+        {
+            get { return name; }
+        }
+        public string FilePath
+        {
+            get { return filePath; }
+        }
+        public string BasePath
+        {
+            get { return basePath; }
+        }
+        public List<string> SourceFiles
+        {
+            get { return sourceFiles; }
+        }
+        public List<string> ReferenceFiles
+        {
+            get { return referenceFiles; }
+        }
+        private string name;
+        private string filePath;
+        private string basePath;
+        private List<string> sourceFiles;
+        private List<string> referenceFiles;
+    }
+}

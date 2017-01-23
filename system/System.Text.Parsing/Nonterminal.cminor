@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Parsing.CodeDom;
 
 namespace System.Text.Parsing
 {
@@ -7,11 +8,39 @@ namespace System.Text.Parsing
 
     public class delegate void PostCall(Stack<object> stack, bool matched);
 
+    public class NonterminalArgumentAdder : DomObject
+    {
+        public NonterminalArgumentAdder(NonterminalParser parser)
+        {
+            this.parser = parser;
+        }
+        public override void AddArgument(DomObject argument)
+        {
+            parser.AddArgument(argument);
+        }
+        public override void Accept(System.Text.Parsing.CodeDom.Visitor visitor)
+        {
+        }
+        private NonterminalParser parser;
+    }
+
     public class NonterminalParser : Parser
     {
-        public NonterminalParser(string name, string ruleName) : base(name, "<" + name + ">")
+        public NonterminalParser() : this("nonterminal", "rule")
+        {
+        }
+        public NonterminalParser(string name, string ruleName) : this(name, ruleName, 0)
+        {
+        }
+        public NonterminalParser(string name, string ruleName, int numberOfArguments) : base(name, "<" + name + ">")
         {
             this.ruleName = ruleName;
+            this.numberOfArguments = numberOfArguments;
+            this.arguments = new List<DomObject>();
+        }
+        public void AddArgument(DomObject argument)
+        {
+            arguments.Add(argument);
         }
         public override Match Parse(Scanner scanner, Stack<object> stack)
         {
@@ -37,6 +66,15 @@ namespace System.Text.Parsing
         public string RuleName
         {
             get { return ruleName; }
+            set { ruleName = value; }
+        }
+        public int NumberOfArguments
+        {
+            get { return numberOfArguments; }
+        }
+        public List<DomObject> Arguments
+        {
+            get { return arguments; }
         }
         public RuleParser Rule
         {
@@ -53,7 +91,36 @@ namespace System.Text.Parsing
             get { return postCall; }
             set { postCall = value; }
         }
+        public string PreCallMethodName
+        {
+            get { return "Pre" + Name; }
+        }
+        public string PostCallMethodName
+        {
+            get { return "Post" + Name; }
+        }
+        public string ValueFieldName
+        {
+            get { return "from" + Name; }
+        }
+        public string VariableName
+        {
+            get 
+            { 
+                if (string.IsNullOrEmpty(Name))
+                {
+                    return "NonterminalParser";
+                }
+                return new string(char.ToLower(Name[0]), 1) + Name.Substring(1) + "NonterminalParser";
+            }
+        }
+        public bool Specialized
+        {
+            get { return numberOfArguments > 0 || arguments.Count > 0 || rule != null && rule.TakesOrReturnsValuesOrHasLocals; }
+        }
         private string ruleName;
+        private int numberOfArguments;
+        private List<DomObject> arguments;
         private RuleParser rule;
         private PreCall preCall;
         private PostCall postCall;

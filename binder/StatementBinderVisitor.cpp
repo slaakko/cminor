@@ -568,6 +568,8 @@ void StatementBinderVisitor::Visit(CompoundStatementNode& compoundStatementNode)
     ContainerScope* prevContainerScope = containerScope;
     containerScope = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(compoundStatementNode)->GetContainerScope();
     std::unique_ptr<BoundCompoundStatement> boundCompoundStatement(new BoundCompoundStatement(boundCompileUnit.GetAssembly()));
+    boundCompoundStatement->SetBeginBraceSpan(compoundStatementNode.BeginBraceSpan());
+    boundCompoundStatement->SetEndBraceSpan(compoundStatementNode.EndBraceSpan());
     boundCompoundStatement->SetSpan(compoundStatementNode.GetSpan());
     int n = compoundStatementNode.Statements().Count();
     for (int i = 0; i < n; ++i)

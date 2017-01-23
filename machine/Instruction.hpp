@@ -848,6 +848,22 @@ public:
     void Execute(Frame& frame) override;
 };
 
+class BeginTryInst : public Instruction
+{
+public:
+    BeginTryInst();
+    Instruction* Clone() const override { return new BeginTryInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
+class EndTryInst : public Instruction
+{
+public:
+    EndTryInst();
+    Instruction* Clone() const override { return new EndTryInst(*this); }
+    void Execute(Frame& frame) override;
+};
+
 class ThrowInst : public Instruction
 {
 public:

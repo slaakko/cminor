@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Program Arguments</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+
+    <h2>
+        4 Printing Program Arguments
+    </h2>
+
+    <p>
+        Here's the contents of <span class="code">arguments.cminor</span> that prints each 
+        given program argument in its own line:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/arguments/arguments.cminor.html" height="170px" width="400px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="running">
+        4.1 Running the Program
+    </h3>
+
+    <div class="commands">
+        > cminor run assembly/debug/arguments.cminora foo bar<br />
+        foo<br/>
+        bar
+    </div>
+
+    <h3 id="signatures">
+        4.2 Possible Signatures of the Main Function
+    </h3>
+
+    <p>
+        Here are possible signatures of the main function:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/signatures/signatures.cminor.html" height="100px" width="400px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        <ul>
+            <li>If <span class="code">void</span> return type is declared, the program implicitly returns exit code 0 to its caller.</li>
+            <li>If <span class="code">int</span> return type is declared, the <span class="code">main</span> function must return an exit code explicitly
+            by using a <span class="code">return</span> statement.</li>
+        </ul>
+    </p>
+</body>
+</html>

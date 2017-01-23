@@ -33,7 +33,7 @@ public:
     void Visit(ConstructionStatementNode& constructionStatementNode) override;
 private:
     Assembly& targetAssembly;
-    Assembly& sourceAssembly;
+    Assembly* sourceAssembly;
     std::vector<InterfaceTypeSymbol*>* implementedInterfaces;
 };
 

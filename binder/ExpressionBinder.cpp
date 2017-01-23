@@ -757,7 +757,7 @@ void ExpressionBinder::Visit(TemplateIdNode& templateIdNode)
 void ExpressionBinder::Visit(DotNode& dotNode)
 {
     ContainerScope* prevContainerScope = containerScope;
-    dotNode.Child()->Accept(*this);
+    expression = std::move(BindExpression(boundCompileUnit, boundFunction, containerScope, dotNode.Child(), false, true, true, true));
     if (BoundNamespaceExpression* bns = dynamic_cast<BoundNamespaceExpression*>(expression.get()))
     {
         containerScope = bns->Ns()->GetContainerScope();
@@ -921,8 +921,7 @@ void ExpressionBinder::Visit(IndexingNode& indexingNode)
     indexingNode.Child()->Accept(*this);
     BoundExpression* subject = expression.release();
     TypeSymbol* subjectType = subject->GetType();
-    indexingNode.Index()->Accept(*this);
-    BoundExpression* index = expression.release();
+    std::unique_ptr<BoundExpression> index = BindExpression(boundCompileUnit, boundFunction, containerScope, indexingNode.Index());
     if (ArrayTypeSymbol* arrayTypeSymbol = dynamic_cast<ArrayTypeSymbol*>(subjectType))
     {
         TypeSymbol* intType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int32");
@@ -931,14 +930,14 @@ void ExpressionBinder::Visit(IndexingNode& indexingNode)
             FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(index->GetType(), intType);
             if (conversionFun)
             {
-                index = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(index), conversionFun);
+                index.reset(new BoundConversion(boundCompileUnit.GetAssembly(), std::move(index), conversionFun));
             }
             else
             {
                 throw Exception("no implicit conversion from '" + ToUtf8(index->GetType()->FullName()) + "' to '" + ToUtf8(intType->FullName()) + " exists for array index", indexingNode.Index()->GetSpan());
             }
         }
-        expression.reset(new BoundArrayElement(boundCompileUnit.GetAssembly(), arrayTypeSymbol, std::unique_ptr<BoundExpression>(subject), std::unique_ptr<BoundExpression>(index)));
+        expression.reset(new BoundArrayElement(boundCompileUnit.GetAssembly(), arrayTypeSymbol, std::unique_ptr<BoundExpression>(subject), std::move(index)));
     }
     else if (ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(subjectType))
     {
@@ -954,7 +953,7 @@ void ExpressionBinder::Visit(IndexingNode& indexingNode)
                 FunctionSymbol* conversionFun = boundCompileUnit.GetConversion(index->GetType(), intType);
                 if (conversionFun)
                 {
-                    index = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(index), conversionFun);
+                    index.reset(new BoundConversion(boundCompileUnit.GetAssembly(), std::move(index), conversionFun));
                 }
                 else
                 {
@@ -962,7 +961,7 @@ void ExpressionBinder::Visit(IndexingNode& indexingNode)
                 }
             }
             TypeSymbol* charType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Char");
-            expression.reset(new BoundStringChar(boundCompileUnit.GetAssembly(), charType, std::unique_ptr<BoundExpression>(subject), std::unique_ptr<BoundExpression>(index)));
+            expression.reset(new BoundStringChar(boundCompileUnit.GetAssembly(), charType, std::unique_ptr<BoundExpression>(subject), std::move(index)));
         }
         else
         {
@@ -1043,10 +1042,9 @@ void ExpressionBinder::Visit(IndexingNode& indexingNode)
                     FunctionSymbol* conversionFun = conversions[0];
                     if (conversionFun)
                     {
-                        index = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(index), conversionFun);
+                        index.reset(new BoundConversion(boundCompileUnit.GetAssembly(), std::move(index), conversionFun));
                     }
-                    BoundIndexer* bi = new BoundIndexer(boundCompileUnit.GetAssembly(), indexerSymbol->GetValueType(), indexerSymbol, std::unique_ptr<BoundExpression>(subject),
-                        std::unique_ptr<BoundExpression>(index));
+                    BoundIndexer* bi = new BoundIndexer(boundCompileUnit.GetAssembly(), indexerSymbol->GetValueType(), indexerSymbol, std::unique_ptr<BoundExpression>(subject), std::move(index));
                     if (indexerSymbol->IsStatic())
                     {
                         bool accessFromOwnScope = false;
@@ -1503,8 +1501,14 @@ std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUn
     return BindExpression(boundCompileUnit, boundFunction, containerScope, node, lvalue, false, false);
 }
 
-std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue, 
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue,
     bool acceptFunctionGroup, bool acceptMemberExpression)
+{
+    return BindExpression(boundCompileUnit, boundFunction, containerScope, node, lvalue, acceptFunctionGroup, acceptMemberExpression, false);
+}
+
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue,
+    bool acceptFunctionGroup, bool acceptMemberExpression, bool acceptIncomplete)
 {
     ExpressionBinder expressionBinder(boundCompileUnit, boundFunction, containerScope, node->GetSpan(), lvalue);
     node->Accept(expressionBinder);
@@ -1517,9 +1521,12 @@ std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUn
     {
         return expression;
     }
-    if (!expression->IsComplete())
+    if (!acceptIncomplete)
     {
-        throw Exception("incomplete expression", node->GetSpan());
+        if (!expression->IsComplete())
+        {
+            throw Exception("incomplete expression", node->GetSpan());
+        }
     }
     if (lvalue && !expression->IsLvalueExpression())
     {

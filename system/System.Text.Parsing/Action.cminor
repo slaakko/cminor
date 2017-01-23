@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Parsing.CodeDom;
 
 namespace System.Text.Parsing
 {
@@ -38,6 +39,16 @@ namespace System.Text.Parsing
             get { return failureAction; }
             set { failureAction = value; }
         }
+        public CompoundStatement SuccessCode
+        {
+            get { return successCode; }
+            set { successCode = value; }
+        }
+        public CompoundStatement FailureCode
+        {
+            get { return failureCode; }
+            set { failureCode = value; }
+        }
         public override Match Parse(Scanner scanner, Stack<object> stack)
         {
             Span actionSpan = scanner.SpanValue;
@@ -64,9 +75,13 @@ namespace System.Text.Parsing
         }
         public override void Accept(Visitor visitor)
         {
-            visitor.Visit(this);
+            visitor.BeginVisit(this);
+            base.Accept(visitor);
+            visitor.EndVisit(this);
         }
         private ParsingAction action;
         private FailureAction failureAction;
+        private CompoundStatement successCode;
+        private CompoundStatement failureCode;
     }
 }

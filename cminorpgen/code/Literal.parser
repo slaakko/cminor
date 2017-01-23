@@ -1,0 +1,136 @@
+using System.Text.Parsing.CodeDom;
+
+namespace Code
+{
+    grammar LiteralGrammar
+    {
+        Literal : Literal
+            ::= BooleanLiteral{ value = BooleanLiteral; }
+            |   FloatingLiteral{ value = FloatingLiteral; }
+            |   IntegerLiteral{ value = IntegerLiteral; }
+            |   CharLiteral{ value = CharLiteral; }
+            |   StringLiteral{ value = StringLiteral; }
+            |   NullLiteral{ value = NullLiteral; }
+            ;
+
+        BooleanLiteral : Literal
+            ::= keyword("true"){ value = new Literal(match); }
+            |   keyword("false"){ value = new Literal(match); }
+            ;
+
+        FloatingLiteral : Literal
+            ::= token(
+                    FloatingLiteralValue
+                    (   [fF]{ value = new Literal(FloatingLiteralValue + match); }
+                    |   empty{ value = new Literal(FloatingLiteralValue); }
+                    )
+                )
+            ;
+
+        FloatingLiteralValue : string
+            ::= token(FractionalFloatingLiteral | ExponentFloatingLiteral){ value = match; }
+            ;
+
+        FractionalFloatingLiteral
+            ::= token(DecDigitSequence:s0? '.' DecDigitSequence:m ExponentPart?)
+            |   token(DecDigitSequence:s1 '.')
+            ;
+
+        ExponentFloatingLiteral
+            ::= token(DecDigitSequence ExponentPart)
+            ;
+
+        ExponentPart
+            ::= token([eE] Sign? DecDigitSequence)
+            ;
+
+        IntegerLiteral : Literal
+            ::= token(
+                    IntegerLiteralValue
+                    (   [uU]{ value = new Literal(IntegerLiteralValue + match); }
+                    |   empty{ value = new Literal(IntegerLiteralValue); }
+                    )
+                )
+            ;
+
+        IntegerLiteralValue : string
+            ::= token(HexIntegerLiteral | DecIntegerLiteral){ value = match; }
+            ;
+
+        HexIntegerLiteral 
+            ::= token(
+                    ("0x" | "0X")
+                    HexDigitSequence
+                )
+            ;
+
+        DecIntegerLiteral 
+            ::= DecDigitSequence
+            ;
+
+        CharLiteral : Literal
+            ::= token(  '\'' 
+                        (   ([^'\\\r\n]+) 
+                        |   CharEscape
+                        ) 
+                        '\''!
+                    ){ value = new Literal(match); }
+            ;
+
+        StringLiteral : Literal
+            ::= '@' token('"' ([^"]*)){ value = new Literal(match); }
+            |   token('"' 
+                    (   ([^"\\\r\n]+)
+                    |   CharEscape
+                    )*
+                    '"'!
+                ){ value = new Literal(match); }
+            ;
+
+        NullLiteral : Literal
+            ::= keyword("null"){ value = new Literal(match); }
+            ;
+
+        CharEscape 
+            ::= token('\\' 
+                (   [xX] HexDigitSequence
+                |   [dD] DecDigitSequence
+                |   OctalDigitSequence
+                |   'u' HexDigit4
+                |   'U' HexDigit8
+                |   'a'
+                |   'b'
+                |   'f'
+                |   'n'
+                |   'r'
+                |   't'
+                |   'v'
+                |   anychar
+                ))
+                ;
+
+        DecDigitSequence 
+            ::= token(digit+)
+            ;
+
+        HexDigitSequence 
+            ::= token(hexdigit+)
+            ;
+
+        HexDigit4 
+            ::= token(hexdigit hexdigit hexdigit hexdigit)
+            ;
+
+        HexDigit8 
+            ::= token(hexdigit hexdigit hexdigit hexdigit hexdigit hexdigit hexdigit hexdigit)
+            ;
+
+        OctalDigitSequence 
+            ::= token([0-7])+
+            ;
+
+        Sign
+            ::= '+' | '-'
+            ;
+    }
+}

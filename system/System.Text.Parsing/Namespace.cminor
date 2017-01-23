@@ -1,0 +1,36 @@
+using System;
+using System.Text.Parsing.CodeDom;
+
+namespace System.Text.Parsing
+{
+    public class Namespace : ParsingObject
+    {
+        public Namespace(string qualifiedName, Scope enclosingScope) : base(qualifiedName, enclosingScope)
+        {
+            ContainerScope = new Scope(Name, EnclosingScope);
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.BeginVisit(this);
+            GetScope().Accept(visitor);
+            visitor.EndVisit(this);
+        }
+    }
+
+    public class UsingObject : ParsingObject
+    {
+        public UsingObject(DomObject subject, Scope enclosingScope) : base(subject.Name, enclosingScope)
+        {
+            this.subject = subject;
+        }
+        public DomObject Subject
+        {
+            get { return subject; }
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+        private DomObject subject;
+    }
+}

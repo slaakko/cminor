@@ -1,0 +1,47 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Source File Character Encoding</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2>
+        5 Source File Character Encoding
+    </h2>
+
+    <p>
+        The Cminor compiler assumes that source files have implicit UTF-8 encoding.
+        UTF-8 byte order mark EF BB BF can be used in the start of a source file,
+        but it's not required.
+    </p>
+
+    <p>
+        All the string literals contained in source files are converted from UTF-8 to 
+        UTF-32 representation internally. The Cminor string and character types have internal UTF-32 encoding.
+    </p>
+
+    <p>
+        The output encoding of strings and characters is UTF-8.
+    </p>
+
+    <h3 id="chinese">
+        5.1 Hello World in Chinese
+    </h3>
+
+    <p>
+        Here's the contents of program <span class="code">encoding.cminor</span> that prints 
+        word "Hello" followed by the word "world" in chinese:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/encoding/encoding.cminor.html" height="320px" width="600px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        It is good practice that programs containing I/O or other code that can fail handle exceptions by using <span class="code">try</span> statements.
+    </p>
+
+</body>
+</html>

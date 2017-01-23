@@ -54,4 +54,19 @@ void Frame::SetPC(int32_t pc_)
     }
 }
 
+bool Frame::HasBreakpointAt(int32_t pc) const
+{
+    return breakpoints.find(pc) != breakpoints.cend();
+}
+
+void Frame::SetBreakpointAt(int32_t pc)
+{
+    breakpoints.insert(pc);
+}
+
+void Frame::RemoveBreakpointAt(int32_t pc)
+{
+    breakpoints.erase(pc);
+}
+
 } } // namespace cminor::machine

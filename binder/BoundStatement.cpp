@@ -69,6 +69,16 @@ void BoundCompoundStatement::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
+void BoundCompoundStatement::SetBeginBraceSpan(const Span& beginBraceSpan_)
+{
+    beginBraceSpan = beginBraceSpan_;
+}
+
+void BoundCompoundStatement::SetEndBraceSpan(const Span& endBraceSpan_)
+{
+    endBraceSpan = endBraceSpan_;
+}
+
 BoundReturnStatement::BoundReturnStatement(Assembly& assembly_, std::unique_ptr<BoundFunctionCall>&& returnFunctionCall_) : BoundStatement(assembly_), returnFunctionCall(std::move(returnFunctionCall_))
 {
 }

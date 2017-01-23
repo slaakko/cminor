@@ -68,7 +68,7 @@ namespace System.Text.Parsing
         }
         public Span SpanValue
         {
-            get { return span; }
+            get { return span.Clone(); }
             set { span = value; }
         }
         public string FileName
@@ -91,6 +91,31 @@ namespace System.Text.Parsing
         {
             get { return tokenCounter; }
         }
+        public XmlLog Log
+        {
+            get { return log; }
+            set { log = value; }
+        }
+        public int LineEndIndex
+        {
+            get 
+            { 
+                int lineEndIndex = span.Start;
+                int contentLength = content.Length;
+                while (lineEndIndex < contentLength && content[lineEndIndex] != '\r' && content[lineEndIndex] != '\n')
+                {
+                    ++lineEndIndex;
+                }
+                return lineEndIndex;
+            }
+        }
+        public string RestOfLine
+        {
+            get 
+            {
+                return content.Substring(span.Start, LineEndIndex - span.Start);
+            }
+        }
         private string content;
         private Span span;
         private string fileName;
@@ -98,5 +123,6 @@ namespace System.Text.Parsing
         private bool skipping;
         private bool atBeginningOfLine;
         private int tokenCounter;
+        private XmlLog log;
     }
 }

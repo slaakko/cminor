@@ -14,19 +14,35 @@ namespace cminor.db
 
         Command : Command*
             ::= ("start"){ value = new StartCommand(); }
+            |   ("show" "breakpoints"){ value = new ShowBreakpointsCommand(); }
+            |   ("stack" | "k"){ value = new StackCommand(); }
             |   ("help" | "h"){ value = new HelpCommand(); }
             |   ("exit" | "e"){ value = new ExitCommand(); }
             |   ("quit" | "q"){ value = new ExitCommand(); }
             |   ("step" | "s"){ value = new StepCommand(); }
             |   ("next" | "n"){ value = new NextCommand(); }
             |   ("run"  | "r"){ value = new RunCommand(); }
+            |   (("list" | "t") token(FilePath:lfp ':' int:line)){ value = new ListCommand(lfp, line); }
+            |   (("list" | "t") int:lline){ value = new ListCommand("", lline); }
+            |   ("list" | "t"){ value = new ListCommand("", -1); }
             |   (("local" | "l") int:ln){ value = new LocalCommand(ln); }
-            |   (("stack" | "k") int:sn){ value = new StackCommand(sn); }
+            |   (("operand" | "o") int:sn){ value = new OperandCommand(sn); }
+            |   (("allocation" | "a") int:ah){ value = new AllocationCommand(ah); }
+            |   (("field" | "f") int:o int:f){ value = new FieldCommand(o, f); }
+            |   (("break" | "b") token(FilePath:bfp ':' int:bpline)){ value = new BreakCommand(bfp, bpline); }
+            |   (("break" | "b") token(int:bpline2)){ value = new BreakCommand("", bpline2); }
+            |   (("clear" | "c") int:bpnum){ value = new ClearCommand(bpnum); }
             |   empty{ value = new PrevCommand(); }
             ;
 
         Spaces
             ::= [ \t]+
+            ;
+
+        FilePath : std::string
+            ::= token((([a-zA-Z] ':')? [^: ]+){ value = std::string(matchBegin, matchEnd); } | 
+                ('"' ([^"]+){ value = std::string(matchBegin, matchEnd); } '"') | 
+                ('<' ([^>]+){ value = std::string(matchBegin, matchEnd); } '>'))
             ;
     }
 }

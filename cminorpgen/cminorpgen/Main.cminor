@@ -1,0 +1,107 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+internal string CminorRoot()
+{
+    string root = GetEnvironmentVariable("CMINOR_ROOT");
+    if (string.IsNullOrEmpty(root))
+    {
+        throw new Exception("CMINOR_ROOT environment variable not set");
+    }
+    return root;
+}
+
+internal string SystemTextParsingDir()
+{
+    string root = CminorRoot();
+    return Path.Combine(Path.Combine(root, "system"), "System.Text.Parsing");
+}
+
+internal void AddToLibraryDirectories(string paths, List<string> libraryDirectories)
+{
+    char pathSeparator = GetPathSeparatorChar();
+    List<string> p = paths.Split(pathSeparator);
+    foreach (string s in p)
+    {
+        libraryDirectories.Add(s);
+    }
+}
+
+internal string Version()
+{
+    return "1.0.0";
+}
+
+internal void PrintHelp()
+{
+    Console.WriteLine("Cminor Parser Generator version " + Version());
+    Console.WriteLine("Usage: cminorpgen [options] { projectfile.pp }");
+    Console.WriteLine("options:");
+    Console.WriteLine("-d | --debug         : debug parsing to stdout");
+    Console.WriteLine("-F | --force         : force code generation");
+    Console.WriteLine("-h | --help          : print help");
+    Console.WriteLine("(-L | --lib) <paths> : add paths to library directories");
+    Console.WriteLine("paths separated by \";\" (Windows) or \":\" (Linux)");
+}
+
+internal int main(string[] args)
+{
+    string pfp;
+    try
+    {
+        if (args.Length == 0)
+        {
+            PrintHelp();
+            return 0;
+        }
+        bool prevWasL = false;
+        List<string> projectFilePaths = new List<string>();
+        List<string> libraryDirectories = new List<string>();;
+        libraryDirectories.Add(SystemTextParsingDir());
+        foreach (string arg in args)
+        {
+            if (arg.StartsWith("-"))
+            {
+                if (arg == "-d" || arg == "--debug")
+                {
+                    Syntax.Flags.Debug = true;
+                }
+                else if (arg == "-F" || arg == "--force")
+                {
+                    Syntax.Flags.ForceCodeGen = true;
+                }
+                else if (arg == "-L" || arg == "--lib")
+                {
+                    prevWasL = true;
+                }
+                else if (arg == "-h" || arg == "--help")
+                {
+                    PrintHelp();
+                    return 0;
+                }
+            }
+            else if (prevWasL)
+            {
+                prevWasL = false;
+                AddToLibraryDirectories(arg, libraryDirectories);
+            }
+            else
+            {
+                projectFilePaths.Add(arg);
+            }
+        }
+        foreach (string projectFilePath in projectFilePaths)
+        {
+            pfp = projectFilePath;
+            Syntax.Generate(projectFilePath, libraryDirectories);
+            pfp = null;
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+        return 1;
+    }
+    return 0;
+}

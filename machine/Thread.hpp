@@ -48,6 +48,8 @@ public:
     void WaitPaused();
     void WaitRunning();
     void SetState(ThreadState state_);
+    void BeginTry();
+    void EndTry();
     void HandleException(ObjectReference exception_);
     void EndCatch();
     void EndFinally();
@@ -61,6 +63,7 @@ public:
     VariableReference* GetVariableReference(int32_t variableReferenceId) const;
     void RemoveVariableReference(int32_t variableReferenceId);
     int32_t GetNextVariableReferenceId();
+    void Compact();
 private:
     int32_t id;
     Machine& machine;
@@ -70,8 +73,8 @@ private:
     std::vector<std::unique_ptr<Frame>> frames;
     std::unordered_map<int32_t, Frame*> frameMap;
     std::unordered_map<int32_t, VariableReference*> variableReferenceMap;
-    std::unordered_set<std::pair<int32_t, int32_t>, IntPairHash> breakPoints;
     bool handlingException;
+    std::stack<bool> handlingExceptionStack;
     ObjectReference exception;
     ExceptionBlock* currentExceptionBlock;
     ObjectType* exceptionObjectType;

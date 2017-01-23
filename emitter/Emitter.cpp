@@ -119,32 +119,32 @@ void EmitterVisitor::Merge(std::vector<Instruction*>& fromSet, std::vector<Instr
 void EmitterVisitor::ExitBlocks(BoundCompoundStatement* targetBlock)
 {
     BoundCompoundStatement* block = nullptr;
-    int n = int(blockStack.size());
+int n = int(blockStack.size());
+if (n > 0)
+{
+    block = blockStack[n - 1];
+}
+while (block && block != targetBlock)
+{
+    std::unique_ptr<Instruction> exitBlockInst = machine.CreateInst("exitblock");
+    int32_t exceptionBlockId = block->ExceptionBlockId();
+    if (exceptionBlockId != -1)
+    {
+        ExitBlockInst* exit = dynamic_cast<ExitBlockInst*>(exitBlockInst.get());
+        Assert(exit, "exit block instruction expected");
+        exit->SetExceptionBlockId(exceptionBlockId);
+    }
+    function->AddInst(std::move(exitBlockInst));
+    --n;
     if (n > 0)
     {
         block = blockStack[n - 1];
     }
-    while (block && block != targetBlock)
+    else
     {
-        std::unique_ptr<Instruction> exitBlockInst = machine.CreateInst("exitblock");
-        int32_t exceptionBlockId = block->ExceptionBlockId();
-        if (exceptionBlockId != -1)
-        {
-            ExitBlockInst* exit = dynamic_cast<ExitBlockInst*>(exitBlockInst.get());
-            Assert(exit, "exit block instruction expected");
-            exit->SetExceptionBlockId(exceptionBlockId);
-        }
-        function->AddInst(std::move(exitBlockInst));
-        --n;
-        if (n > 0)
-        {
-            block = blockStack[n - 1];
-        }
-        else
-        {
-            block = nullptr;
-        }
+        block = nullptr;
     }
+}
 }
 
 void EmitterVisitor::AddNextInst(std::unique_ptr<Instruction>&& nextInst)
@@ -240,6 +240,7 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
     AddIndexRequest(&enterBlock);
     function->AddInst(std::move(enterBlockInst));
     boundCompoundStatement.SetFirstInstIndex(enterBlock.Index());
+    function->MapPCToSourceLine(enterBlock.Index(), boundCompoundStatement.BeginBraceSpan().LineNumber());
     int n = int(boundCompoundStatement.Statements().size());
     std::vector<Instruction*> prevNext;
     for (int i = 0; i < n; ++i)
@@ -251,6 +252,7 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
         InstIndexRequest startStatement;
         AddIndexRequest(&startStatement);
         boundStatement->Accept(*this);
+        function->MapPCToSourceLine(startStatement.Index(), boundStatement->GetSpan().LineNumber());
         int32_t statementTarget = startStatement.Index();
         boundStatement->SetFirstInstIndex(statementTarget);
         if (statementTarget != endOfFunction)
@@ -268,6 +270,7 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
     AddIndexRequest(&exitBlock);
     std::unique_ptr<Instruction> exitBlockInst = machine.CreateInst("exitblock");
     function->AddInst(std::move(exitBlockInst));
+    function->MapPCToSourceLine(exitBlock.Index(), boundCompoundStatement.EndBraceSpan().LineNumber());
     int32_t exitBlockTarget = exitBlock.Index();
     Backpatch(prevNext, exitBlockTarget);
     blockStack.pop_back();
@@ -307,6 +310,7 @@ void EmitterVisitor::Visit(BoundIfStatement& boundIfStatement)
     InstIndexRequest startThen;
     AddIndexRequest(&startThen);
     boundIfStatement.ThenS()->Accept(*this);
+    function->MapPCToSourceLine(startThen.Index(), boundIfStatement.ThenS()->GetSpan().LineNumber());
     int32_t thenTarget = startThen.Index();
     boundIfStatement.ThenS()->SetFirstInstIndex(thenTarget);
     Backpatch(true_, thenTarget);
@@ -318,6 +322,7 @@ void EmitterVisitor::Visit(BoundIfStatement& boundIfStatement)
         InstIndexRequest startElse;
         AddIndexRequest(&startElse);
         boundIfStatement.ElseS()->Accept(*this);
+        function->MapPCToSourceLine(startElse.Index(), boundIfStatement.ElseS()->GetSpan().LineNumber());
         int32_t elseTarget = startElse.Index();
         boundIfStatement.ElseS()->SetFirstInstIndex(elseTarget);
         Backpatch(false_, elseTarget);
@@ -355,11 +360,13 @@ void EmitterVisitor::Visit(BoundWhileStatement& boundWhileStatement)
     InstIndexRequest startCond;
     AddIndexRequest(&startCond);
     boundWhileStatement.Condition()->Accept(*this);
+    function->MapPCToSourceLine(startCond.Index(), boundWhileStatement.GetSpan().LineNumber());
     int32_t conditionTarget = startCond.Index();
     genJumpingBoolCode = prevGenJumpingBoolCode;
     InstIndexRequest startStatement;
     AddIndexRequest(&startStatement);
     boundWhileStatement.Statement()->Accept(*this);
+    function->MapPCToSourceLine(startStatement.Index(), boundWhileStatement.Statement()->GetSpan().LineNumber());
     boundWhileStatement.Statement()->SetFirstInstIndex(startStatement.Index());
     Backpatch(true_, startStatement.Index());
     std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
@@ -397,6 +404,7 @@ void EmitterVisitor::Visit(BoundDoStatement& boundDoStatement)
     InstIndexRequest startStatement;
     AddIndexRequest(&startStatement);
     boundDoStatement.Statement()->Accept(*this);
+    function->MapPCToSourceLine(startStatement.Index(), boundDoStatement.GetSpan().LineNumber());
     int32_t statementTarget = startStatement.Index();
     boundDoStatement.Statement()->SetFirstInstIndex(statementTarget);
     trueSet = &true_;
@@ -439,6 +447,7 @@ void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
     InstIndexRequest startInitS;
     AddIndexRequest(&startInitS);
     boundForStatement.InitS()->Accept(*this);
+    function->MapPCToSourceLine(startInitS.Index(), boundForStatement.GetSpan().LineNumber());
     boundForStatement.InitS()->SetFirstInstIndex(startInitS.Index());
     trueSet = &true_;
     falseSet = &false_;
@@ -454,6 +463,7 @@ void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
     InstIndexRequest startAction;
     AddIndexRequest(&startAction);
     boundForStatement.ActionS()->Accept(*this);
+    function->MapPCToSourceLine(startAction.Index(), boundForStatement.ActionS()->GetSpan().LineNumber());
     int32_t actionTarget = startAction.Index();
     boundForStatement.ActionS()->SetFirstInstIndex(actionTarget);
     Backpatch(true_, actionTarget);
@@ -485,7 +495,10 @@ void EmitterVisitor::Visit(BoundSwitchStatement& boundSwitchStatement)
     std::vector<Instruction*>* prevBreakSet = breakSet;
     std::vector<Instruction*> break_;
     breakSet = &break_;
+    InstIndexRequest startCond;
+    AddIndexRequest(&startCond);
     boundSwitchStatement.Condition()->Accept(*this);
+    function->MapPCToSourceLine(startCond.Index(), boundSwitchStatement.GetSpan().LineNumber());
     std::unique_ptr<Instruction> inst = machine.CreateInst("cswitch");
     ContinuousSwitchInst* switchInst = dynamic_cast<ContinuousSwitchInst*>(inst.get());
     int instIndex = function->NumInsts();
@@ -601,6 +614,7 @@ void EmitterVisitor::Visit(BoundCaseStatement& boundCaseStatement)
     InstIndexRequest startCase;
     AddIndexRequest(&startCase);
     boundCaseStatement.CompoundStatement()->Accept(*this);
+    function->MapPCToSourceLine(startCase.Index(), boundCaseStatement.GetSpan().LineNumber());
     int32_t caseTarget = startCase.Index();
     boundCaseStatement.SetFirstInstIndex(caseTarget);
     for (IntegralValue caseValue : boundCaseStatement.CaseValues())
@@ -615,6 +629,7 @@ void EmitterVisitor::Visit(BoundDefaultStatement& boundDefaultStatement)
     InstIndexRequest startDefault;
     AddIndexRequest(&startDefault);
     boundDefaultStatement.CompoundStatement()->Accept(*this);
+    function->MapPCToSourceLine(startDefault.Index(), boundDefaultStatement.GetSpan().LineNumber());
     boundDefaultStatement.SetFirstInstIndex(startDefault.Index());
 }
 
@@ -743,6 +758,11 @@ void EmitterVisitor::Visit(BoundThrowStatement& boundThrowStatement)
 void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
 {
     SetCurrentSourceLine(boundTryStatement.GetSpan().LineNumber());
+    InstIndexRequest startTry;
+    AddIndexRequest(&startTry);
+    std::unique_ptr<Instruction> beginTryInst = machine.CreateInst("begintry");
+    function->AddInst(std::move(beginTryInst));
+    function->MapPCToSourceLine(startTry.Index(), CurrentSourceLine());
     bool prevCreatePCRange = createPCRange;
     bool prevSetPCRangeEnd = setPCRangeEnd;
     createPCRange = true;
@@ -762,6 +782,7 @@ void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
         InstIndexRequest startFinally;
         AddIndexRequest(&startFinally);
         boundTryStatement.FinallyBlock()->Accept(*this);
+        function->MapPCToSourceLine(startFinally.Index(), boundTryStatement.FinallyBlock()->GetSpan().LineNumber());
         int32_t finallyBlockStart = startFinally.Index();
         currentExceptionBlock->SetFinallyStart(finallyBlockStart);
         std::unique_ptr<Instruction> inst = machine.CreateInst("endfinally");
@@ -789,6 +810,13 @@ void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
         createPCRange = true;
         setPCRangeEnd = true;
     }
+    else
+    {
+        createPCRange = false;
+        setPCRangeEnd = false;
+    }
+    std::unique_ptr<Instruction> endTryInst = machine.CreateInst("endtry");
+    function->AddInst(std::move(endTryInst));
 }
 
 void EmitterVisitor::Visit(BoundCatchStatement& boundCatchStatement)
@@ -805,6 +833,7 @@ void EmitterVisitor::Visit(BoundCatchStatement& boundCatchStatement)
     InstIndexRequest startCatch;
     AddIndexRequest(&startCatch);
     boundCatchStatement.CatchBlock()->Accept(*this);
+    function->MapPCToSourceLine(startCatch.Index(), boundCatchStatement.GetSpan().LineNumber());
     int32_t catchBlockStart = startCatch.Index();
     catchBlock->SetCatchBlockStart(catchBlockStart);
     std::unique_ptr<Instruction> inst = machine.CreateInst("endcatch");

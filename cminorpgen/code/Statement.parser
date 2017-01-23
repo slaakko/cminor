@@ -1,0 +1,277 @@
+using System.Text.Parsing.CodeDom;
+
+namespace Code
+{
+    grammar StatementGrammar
+    {
+        using stdlib.identifier;
+        using IdentifierGrammar.Identifier;
+        using KeywordGrammar.Keyword;
+        using ExpressionGrammar.Expression;
+        using TypeExprGrammar.TypeExpr;
+        using ExpressionGrammar.ExpressionList;
+        using ExpressionGrammar.ArgumentList;
+
+        Statement(ParsingContext ctx) : Statement
+            ::= 
+            (   LabeledStatement(ctx){ value = LabeledStatement; }
+            |   ControlStatement(ctx){ value = ControlStatement; }
+            |   IncrementStatement(ctx){ value = IncrementStatement; }
+            |   DecrementStatement(ctx){ value = DecrementStatement; }
+            |   ExpressionStatement(ctx){ value = ExpressionStatement; }
+            |   AssignmentStatement(ctx){ value = AssignmentStatement; }
+            |   ConstructionStatement(ctx){ value = ConstructionStatement; }
+            |   EmptyStatement(ctx){ value = EmptyStatement; }
+            |   ThrowStatement(ctx){ value = ThrowStatement; }
+            |   TryStatement(ctx){ value = TryStatement; }
+            |   UsingStatement(ctx){ value = UsingStatement; }
+            )
+            ;
+
+        Label : string
+            ::= (identifier - Keyword){ value = match; }
+            ;
+
+        LabeledStatement(ParsingContext ctx) : Statement
+            ::= (Label ':' Statement(ctx):stmt){ stmt.Label = Label; value = stmt; }
+            ;
+
+        ControlStatement(ParsingContext ctx) : Statement
+            ::= CompoundStatement(ctx){ value = CompoundStatement; }
+            |   ReturnStatement(ctx){ value = ReturnStatement; }
+            |   IfStatement(ctx){ value = IfStatement; }
+            |   WhileStatement(ctx){ value = WhileStatement; }
+            |   DoStatement(ctx){ value = DoStatement; }
+            |   ForStatement(ctx){ value = ForStatement; }
+            |   ForEachStatement(ctx){ value = ForEachStatement; }
+            |   BreakStatement(ctx){ value = BreakStatement; }
+            |   ContinueStatement(ctx){ value = ContinueStatement; }
+            |   GotoStatement(ctx){ value = GotoStatement; }
+            |   SwitchStatement(ctx){ value = SwitchStatement; }
+            |   GotoCaseStatement(ctx){ value = GotoCaseStatement; }
+            |   GotoDefaultStatement(ctx){ value = GotoDefaultStatement; }
+            ;
+                                   
+        CompoundStatement(ParsingContext ctx) : CompoundStatement
+            ::= '{'{ value = new CompoundStatement(); }
+                (Statement(ctx){ value.AddStatement(Statement); })*
+                '}'!
+            ;
+
+        ReturnStatement(ParsingContext ctx) : Statement
+            ::= (keyword("return") 
+                (Expression(ctx)?)!
+                ';'!)
+            {
+                value = new ReturnStatement(Expression);
+            }
+            ;
+                
+        IfStatement(ParsingContext ctx) : Statement
+            ::= 
+            (   keyword("if")
+                '('!
+                Expression(ctx)!
+                ')'!
+                Statement(ctx):thenS!
+                (
+                    keyword("else")
+                    Statement(ctx):elseS!
+                )?
+            )
+            {
+                value = new IfStatement(Expression, thenS, elseS);
+            }
+            ;
+
+        WhileStatement(ParsingContext ctx) : Statement
+            ::= (keyword("while")
+                '('!
+                Expression(ctx)!
+                ')'!
+                Statement(ctx)!
+            )
+            {
+                value = new WhileStatement(Expression, Statement);
+            }
+            ;
+                
+        DoStatement(ParsingContext ctx) : Statement
+            ::= (keyword("do")
+                Statement(ctx)!
+                keyword("while")!
+                '('!
+                Expression(ctx)!
+                ')'!
+                ';'!
+            )
+            {
+                value = new DoStatement(Expression, Statement);
+            }
+            ;
+
+        ForStatement(ParsingContext ctx) : ForStatement
+            ::= (keyword("for")
+                '('!
+                ForInitStatement(ctx):init!
+                Expression(ctx):condition?
+                ';'!
+                ForLoopExpressionStatement(ctx):loop
+                ')'!
+                Statement(ctx):action!
+            )
+            {
+                value = new ForStatement(init, condition, loop, action);
+            }
+            ;
+
+        ForInitStatement(ParsingContext ctx) : Statement
+            ::= AssignmentStatement(ctx){ value = AssignmentStatement; }
+            |   ConstructionStatement(ctx){ value = ConstructionStatement; }
+            |   EmptyStatement(ctx){ value = EmptyStatement; }
+            ;
+
+        ForLoopExpressionStatement(ParsingContext ctx) : Statement
+            ::= IncrementExpressionStatement(ctx){ value = IncrementExpressionStatement; }
+            |   DecrementExpressionStatement(ctx){ value = DecrementExpressionStatement; }
+            |   AssignmentExpressionStatement(ctx){ value = AssignmentExpressionStatement; }
+            |   empty{ value = new EmptyStatement(); }
+            ;
+
+        ForEachStatement(ParsingContext ctx) : Statement
+            ::= (keyword("foreach") '('! TypeExpr(ctx)! Identifier! keyword("in")! Expression(ctx)! ')'! Statement(ctx))
+            {
+                value = new ForEachStatement(TypeExpr, Identifier, Expression, Statement);
+            }
+            ;
+
+        BreakStatement(ParsingContext ctx) : Statement
+            ::= (keyword("break") ';'!){ value = new BreakStatement(); }
+            ;
+
+        ContinueStatement(ParsingContext ctx) : Statement
+            ::= (keyword("continue") ';'!){ value = new ContinueStatement(); }
+            ;
+
+        GotoStatement(ParsingContext ctx) : Statement
+            ::= (keyword("goto") Identifier! ';'!){ value = new GotoStatement(Identifier); }
+            ;
+
+        SwitchStatement(ParsingContext ctx) : SwitchStatement
+            ::= (keyword("switch")
+                '('!
+                Expression(ctx)!){ value = new SwitchStatement(Expression); }
+                ')'!
+                '{'!
+                    (   CaseStatement(ctx){ value.AddCase(CaseStatement); }
+                    |   DefaultStatement(ctx){ value.Default = DefaultStatement; }
+                    )*
+                '}'!
+            ;
+
+        CaseStatement(ParsingContext ctx) : CaseStatement
+            ::= empty{ value = new CaseStatement(); } (keyword("case") Expression(ctx)!{ value.AddCaseExpr(Expression); } ':'!)+
+                (   
+                    Statement(ctx){ value.AddStatement(Statement); }
+                )*
+                ;
+                    
+        DefaultStatement(ParsingContext ctx) : DefaultStatement
+            ::= (keyword("default") ':'!){ value = new DefaultStatement(); }
+            (   
+                Statement(ctx){ value.AddStatement(Statement); }
+            )*
+            ;
+                
+        GotoCaseStatement(ParsingContext ctx) : Statement
+            ::= (keyword("goto") keyword("case") Expression(ctx)! ';'!)
+            {   
+                value = new GotoCaseStatement(Expression);
+            }
+            ;
+
+        GotoDefaultStatement(ParsingContext ctx) : Statement
+            ::= (keyword("goto") keyword("default") ';'!)
+            {
+                value = new GotoDefaultStatement();
+            }
+            ;
+
+        AssignmentExpressionStatement(ParsingContext ctx) : AssignmentStatement
+            ::= empty{ ctx.PushParsingLvalue(true); } (Expression(ctx):target{ ctx.PopParsingLvalue(); } / { ctx.PopParsingLvalue(); } '=' Expression(ctx):source)
+                {
+                    value = new AssignmentStatement(target, source);
+                }
+            ;
+                
+        AssignmentStatement(ParsingContext ctx) : AssignmentStatement
+            ::= (AssignmentExpressionStatement(ctx) ';'){ value = AssignmentExpressionStatement; value.Semicolon = true; }
+            ;
+
+        ConstructionExpressionStatement(ParsingContext ctx) : ConstructionStatement
+            ::= TypeExpr(ctx) Identifier!{ value = new ConstructionStatement(TypeExpr, Identifier); } 
+                ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value.AddArgument(Expression); value.EqualSign = true; })?
+            ;
+
+        ConstructionStatement(ParsingContext ctx) : ConstructionStatement
+            ::= (ConstructionExpressionStatement(ctx) ';'){ value = ConstructionExpressionStatement; value.Semicolon = true; }
+            ;
+
+        IncrementExpressionStatement(ParsingContext ctx) : IncrementStatement
+            ::= 
+            (   ("++" Expression(ctx):left!){ value = new IncrementStatement(left); } 
+            |   (Expression(ctx):right "++"){ value = new IncrementStatement(right); value.Postfix = true; }
+            ) 
+            ;
+
+        IncrementStatement(ParsingContext ctx) : IncrementStatement
+            ::= IncrementExpressionStatement(ctx){ value = IncrementExpressionStatement; value.Semicolon = true; }
+            ;
+
+        DecrementExpressionStatement(ParsingContext ctx) : DecrementStatement
+            ::= 
+            (   ("--" Expression(ctx):left!){ value = new DecrementStatement(left); } 
+            |   (Expression(ctx):right "--"){ value = new DecrementStatement(right); value.Postfix = true; }
+            )
+            ;
+
+        DecrementStatement(ParsingContext ctx) : DecrementStatement
+            ::= DecrementExpressionStatement(ctx){ value = DecrementExpressionStatement; value.Semicolon = true; }
+            ;
+
+        ExpressionStatement(ParsingContext ctx): Statement
+            ::= (   empty{ ctx.PushParsingSimpleStatement(true); }
+                    (Expression(ctx):e{ ctx.PopParsingSimpleStatement(); } / {  ctx.PopParsingSimpleStatement(); } ';')
+                    { 
+                        value = new ExpressionStatement(e); 
+                    }
+                )
+            ;
+
+        EmptyStatement(ParsingContext ctx) : Statement
+            ::= ';'{ value = new EmptyStatement(); } 
+            ;
+                                                    
+        ThrowStatement(ParsingContext ctx) : Statement
+            ::= (keyword("throw") Expression(ctx)? ';'!){ value = new ThrowStatement(Expression); }
+            ;
+
+        TryStatement(ParsingContext ctx) : TryStatement
+            ::= keyword("try") CompoundStatement(ctx):tryBlock{ value = new TryStatement(tryBlock); } 
+                ((Catch(ctx){ value.AddCatch(Catch); })+ (Finally(ctx){ value.SetFinally(Finally); })? | Finally(ctx):fin{ value.SetFinally(fin); })
+            ;
+
+        Catch(ParsingContext ctx) : Catch
+            ::= (keyword("catch") '('! TypeExpr(ctx)! Identifier! ')'! CompoundStatement(ctx):catchBlock1){ value = new Catch(TypeExpr, Identifier, catchBlock1); }
+            |   (keyword("catch") CompoundStatement(ctx):catchBlock2){ value = new Catch(catchBlock2); }
+            ;
+
+        Finally(ParsingContext ctx) : Finally
+            ::= (keyword("finally") CompoundStatement(ctx)){ value = new Finally(CompoundStatement); }
+            ;
+
+        UsingStatement(ParsingContext ctx) : Statement
+            ::= (keyword("using") '('! ConstructionExpressionStatement(ctx)! ')'! Statement(ctx)!){ value = new UsingStatement(ConstructionExpressionStatement, Statement); }
+            ;
+    }
+}

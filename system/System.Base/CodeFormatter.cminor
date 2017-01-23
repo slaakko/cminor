@@ -3,7 +3,7 @@ using System.IO;
 
 namespace System.Text
 {
-    public class CodeFormatter
+    public class CodeFormatter : Closable
     {
         public CodeFormatter(StreamWriter writer)
         {
@@ -12,6 +12,10 @@ namespace System.Text
             this.indentSize = 4;
             this.atBeginningOfLine = true;
             this.line = 1;
+        }
+        public void Close()
+        {
+            writer.Close();
         }
         public void Write(string text)
         {

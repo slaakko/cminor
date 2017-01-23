@@ -1021,6 +1021,7 @@ Instruction* ContinuousSwitchInst::Decode(Reader& reader)
     begin.Read(reader);
     end.Read(reader);
     uint32_t numTargets = reader.GetEncodedUInt();
+    targets.clear();
     for (uint32_t i = 0; i < numTargets; ++i)
     {
         int32_t target = reader.GetInt();
@@ -1101,6 +1102,7 @@ Instruction* BinarySearchSwitchInst::Decode(Reader& reader)
 {
     Instruction::Decode(reader);
     uint32_t n = reader.GetEncodedUInt();
+    targets.clear();
     for (uint32_t i = 0; i < n; ++i)
     {
         IntegralValue value;
@@ -1609,7 +1611,7 @@ void CopyObjectInst::Execute(Frame& frame)
         IntegralValue value = frame.OpStack().Pop();
         Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
         ObjectReference objectReference(value.Value());
-        ObjectReference copy = frame.GetManagedMemoryPool().CopyObject(objectReference);
+        ObjectReference copy = frame.GetManagedMemoryPool().CopyObject(frame.GetThread(), objectReference);
         frame.OpStack().Push(copy);
     }
     catch (const NullReferenceException& ex)
@@ -1639,7 +1641,7 @@ void StrLitToStringInst::Execute(Frame& frame)
         Assert(objectType, "object type expected");
         ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
         Object& o = frame.GetManagedMemoryPool().GetObject(objectReference);
-        AllocationHandle charsHandle = frame.GetManagedMemoryPool().CreateStringCharsFromLiteral(strLit, len);
+        AllocationHandle charsHandle = frame.GetManagedMemoryPool().CreateStringCharsFromLiteral(frame.GetThread(), strLit, len);
         ClassData* classData = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String"));
         o.SetField(IntegralValue(classData), 0);
         o.SetField(IntegralValue(static_cast<int32_t>(len), ValueType::intType), 1);
@@ -1737,7 +1739,7 @@ void UpCastInst::Execute(Frame& frame)
             Type* type = GetType();
             ObjectType* objectType = dynamic_cast<ObjectType*>(type);
             Assert(objectType, "object type expected");
-            ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(objectReference);
+            ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(frame.GetThread(), objectReference);
             frame.OpStack().Push(casted);
         }
     }
@@ -1780,7 +1782,7 @@ void DownCastInst::Execute(Frame& frame)
             {
                 throw InvalidCastException("invalid cast from '" + ToUtf8(classData->Type()->Name().Value()) + "' to '" + ToUtf8(type->Name().Value()));
             }
-            ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(objectReference);
+            ObjectReference casted = frame.GetManagedMemoryPool().CopyObject(frame.GetThread(), objectReference);
             frame.OpStack().Push(casted);
         }
     }
@@ -1796,6 +1798,24 @@ void DownCastInst::Execute(Frame& frame)
     {
         ThrowSystemException(ex, frame);
     }
+}
+
+BeginTryInst::BeginTryInst() : Instruction("begintry")
+{
+}
+
+void BeginTryInst::Execute(Frame& frame)
+{
+    frame.GetThread().BeginTry();
+}
+
+EndTryInst::EndTryInst() : Instruction("endtry")
+{
+}
+
+void EndTryInst::Execute(Frame& frame)
+{
+    frame.GetThread().EndTry();
 }
 
 ThrowInst::ThrowInst() : Instruction("throw")
@@ -1879,7 +1899,7 @@ void StaticInitInst::Execute(Frame& frame)
         Assert(objectType, "object type expected");
         ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
         StaticClassData* staticClassData = classData->GetStaticClassData();
-        Assert(staticClassData, "class has no static data");
+        if (!staticClassData) return;
         if (staticClassData->Initialized()) return;
         staticClassData->Lock();
         if (!staticClassData->Initialized() && !staticClassData->Initializing())

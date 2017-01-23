@@ -188,6 +188,37 @@ int main(int argc, const char** argv)
                     }
                     break;
                 }
+                case State::debugOptions:
+                {
+                    if (!arg.empty() && arg[0] == '-')
+                    {
+                        if (arg.find('=', 0) != std::string::npos)
+                        {
+                            std::vector<std::string> components = Split(arg, '=');
+                            if (components.size() != 2)
+                            {
+                                throw std::runtime_error("invalid argument '" + arg + "'");
+                            }
+                            else
+                            {
+                                if (components[0] == "-s" || components[0] == "--segment-size")
+                                {
+                                    debugOptions.push_back(arg);
+                                }
+                                else
+                                {
+                                    throw std::runtime_error("unknown run option '" + arg + "'");
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        runProgram = arg;
+                        state = State::programArguments;
+                    }
+                    break;
+                }
                 case State::programArguments:
                 {
                     programArguments.push_back(arg);
@@ -379,13 +410,20 @@ int main(int argc, const char** argv)
                 commandLine.append(" ").append(QuotedPath(projectOrSolution));
             }
         }
-        else if (command == "run")
+        else if (command == "run" || command == "debug")
         {
             if (runProgram.empty())
             {
-                throw std::runtime_error("incomplete run command: program assembly missing");
+                throw std::runtime_error("incomplete run/debug command: program assembly missing");
             }
-            commandLine = "cminorvm";
+            if (command == "run")
+            {
+                commandLine = "cminorvm";
+            }
+            else if (command == "debug")
+            {
+                commandLine = "cminordb";
+            }
             for (const std::string& globalOption : globalOptions)
             {
                 commandLine.append(" ").append(globalOption);

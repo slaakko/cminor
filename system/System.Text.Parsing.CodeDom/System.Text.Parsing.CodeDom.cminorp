@@ -5,4 +5,7 @@ source <BasicType.cminor>;
 source <Expression.cminor>;
 source <Identifier.cminor>;
 source <Literal.cminor>;
+source <Namespace.cminor>;
 source <Object.cminor>;
+source <Statement.cminor>;
+source <Visitor.cminor>;

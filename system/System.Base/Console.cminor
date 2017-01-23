@@ -7,8 +7,11 @@ namespace System
         static Console()
         {
             inStream = new StreamReader(new FileStream(stdin, FileAccess.read));
+            inStream.DoClose = false;
             outStream = new StreamWriter(new FileStream(stdout, FileAccess.write));
+            outStream.DoClose = false;
             errStream = new StreamWriter(new FileStream(stderr, FileAccess.write));
+            errStream.DoClose = false;
         }
         public static int Read()
         {

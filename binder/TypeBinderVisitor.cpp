@@ -870,13 +870,16 @@ void TypeBinderVisitor::Visit(CatchNode& catchNode)
     TypeSymbol* exceptionVarType = ResolveType(boundCompileUnit, containerScope, catchNode.TypeExpr());
     if (ClassTypeSymbol* exceptionVarClassType = dynamic_cast<ClassTypeSymbol*>(exceptionVarType))
     {
-        Node* exceptionVarNode = boundCompileUnit.GetAssembly().GetSymbolTable().GetNode(exceptionVarClassType);
-        ClassNode* exceptionVarClassNode = dynamic_cast<ClassNode*>(exceptionVarNode);
-        Assert(exceptionVarClassNode, "class node expected");
-        BindClass(exceptionVarClassType, *exceptionVarClassNode);
         TypeSymbol* systemExceptionType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Exception");
         ClassTypeSymbol* systemExceptionClassType = dynamic_cast<ClassTypeSymbol*>(systemExceptionType);
         Assert(systemExceptionClassType, "class type symbol expected");
+        if (exceptionVarClassType->IsProject())
+        {
+            Node* exceptionVarNode = boundCompileUnit.GetAssembly().GetSymbolTable().GetNode(exceptionVarClassType);
+            ClassNode* exceptionVarClassNode = dynamic_cast<ClassNode*>(exceptionVarNode);
+            Assert(exceptionVarClassNode, "class node expected");
+            BindClass(exceptionVarClassType, *exceptionVarClassNode);
+        }
         if (exceptionVarClassType == systemExceptionClassType || exceptionVarClassType->HasBaseClass(systemExceptionClassType))
         {
             exceptionVar->SetType(exceptionVarClassType);

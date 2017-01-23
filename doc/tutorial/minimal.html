@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Minimal</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2>
+        2 Creating a Minimal Cminor Program
+    </h2>
+
+    <p>
+        To create a minimal Cminor program:
+        <ol>
+            <li>Create a directory for the project.</li>
+            <li>Create a source code file with an extension <span class="code">.cminor</span> and put it to the created directory.</li>
+            <li>Create a project file with an extension <span class="code">.cminorp</span> and put it to the created directory.</li>
+        </ol>
+    </p>
+
+    <p>
+        Here's the contents of the source file <span class="code">minimal.cminor</span>:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/minimal/minimal.cminor.html" height="50px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        Every valid Cminor program has a non-member function called <span class="code">main</span>
+        where the execution begins.
+    </p>
+
+    <p>
+        Here's the contents of the project file <span class="code">minimal.cminorp</span>:
+    </p>
+
+    <div class="project">
+        <iframe src="../code/minimal/minimal.cminorp.html" height="60px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        The <span class="projectFileKeyword">project</span> declaration names the project.
+        The <span class="projectFileKeyword">source</span> declarations list path to each source file contained by the project.
+    </p>
+
+    <h3 id="building">
+        2.1 Building a Cminor Project
+    </h3>
+
+    <div class="commands">
+        > cminor build minimal.cminorp
+    </div>
+
+    <p>
+        If the build succeeds the compiler outputs by default nothing.
+        On successful build the compiler creates a directory named <span class="code">assembly</span> under the project directory.
+        Under the <span class="code">assembly</span> directory, there's a <span class="code">debug</span> directory
+        for debug builds and <span class="code">release</span> directory for release builds.
+        That directory contains an assembly file with extension <span class="code">.cminora</span> that can be executed using the Cminor virtual machine.
+    </p>
+
+    <p>
+        Here's the directory structure of the program:
+        <pre class="code">
+        |
+        +--minimal
+           |
+           +--minimal.cminor
+           |
+           +--minimal.cminorp
+           |
+           +--assembly
+              |
+              +--debug
+              |  |
+              |  +--minimal.cminora
+              |
+              +--release
+                 |
+                 +--minimal.cminora
+        </pre>
+    </p>
+
+        <h3 id="running">
+        2.2 Running a Cminor Program
+    </h3>
+        <div class="commands">
+        > cminor run assembly/debug/minimal.cminora
+    </div>
+
+    <p>
+        The minimal program does nothing so there's also no output. If no error occurs, an exit code value 0 is returned to the caller of the program.
+    </p>
+
+</body>
+</html>

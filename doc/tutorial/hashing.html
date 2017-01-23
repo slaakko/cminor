@@ -1,0 +1,23 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Hashing</title>
+</head>
+<body>
+
+    <p>
+        In garbage-collected environment object's memory address cannot be used as a hash code, 
+        because an object might move to a different memory addess due to GC. 
+        This means that the same object might hash to different locations before and after GC 
+        is performed.
+    </p>
+
+    <p>
+        This problem is solved in Cminor by giving each object a 64-bit random hash code when the object
+        is created and ensuring that the given hash code follows the object even when GC is performed.
+    </p>
+
+</body>
+</html>

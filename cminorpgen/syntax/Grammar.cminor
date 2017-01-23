@@ -1,0 +1,348 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Parsing;
+using Code;
+
+namespace Syntax
+{
+    public class GrammarGrammar : System.Text.Parsing.Grammar
+    {
+        public GrammarGrammar() : this(new ParsingDomain())
+        {
+        }
+        public GrammarGrammar(ParsingDomain parsingDomain) : base("GrammarGrammar", parsingDomain.GetNamespaceScope("Syntax"), parsingDomain)
+        {
+            Owner = 0;
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public Grammar Parse(string content, int fileIndex, string fileName, Scope enclosingScope, ParsingContext ctx)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                stack.Push(enclosingScope);
+                stack.Push(ctx);
+                Match match = Parse(scanner, stack);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+            Grammar result = cast<Grammar>(stack.Pop());
+            return result;
+        }
+        public class GrammarRule : System.Text.Parsing.RuleParser
+        {
+            public GrammarRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("Scope", "enclosingScope"));
+                InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
+                ValueTypeName = "Grammar";
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.ctx = cast<ParsingContext>(stack.Pop());
+                context.enclosingScope = cast<Scope>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser nameNonterminalParser = GetNonterminal("name");
+                nameNonterminalParser.Post = Postname;
+                NonterminalParser grammarContentNonterminalParser = GetNonterminal("GrammarContent");
+                grammarContentNonterminalParser.Pre = PreGrammarContent;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new Grammar(context.fromname, context.enclosingScope);
+                context.value.SpanValue = span;
+                context.value.Ns = context.enclosingScope.Ns;
+            }
+            public void Postname(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromname = cast<string>(stack.Pop());
+                }
+            }
+            public void PreGrammarContent(Stack<object> stack)
+            {
+                stack.Push(context.value);
+                stack.Push(context.ctx);
+            }
+            public class Context
+            {
+                public Scope enclosingScope;
+                public ParsingContext ctx;
+                public Grammar value;
+                public string fromname;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class GrammarContentRule : System.Text.Parsing.RuleParser
+        {
+            public GrammarContentRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("Grammar", "grammar"));
+                InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.ctx = cast<ParsingContext>(stack.Pop());
+                context.grammar = cast<Grammar>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser startClauseNonterminalParser = GetNonterminal("StartClause");
+                startClauseNonterminalParser.Pre = PreStartClause;
+                NonterminalParser skipClauseNonterminalParser = GetNonterminal("SkipClause");
+                skipClauseNonterminalParser.Pre = PreSkipClause;
+                NonterminalParser ruleLinkNonterminalParser = GetNonterminal("RuleLink");
+                ruleLinkNonterminalParser.Pre = PreRuleLink;
+                NonterminalParser ruleNonterminalParser = GetNonterminal("Rule");
+                ruleNonterminalParser.Pre = PreRule;
+                ruleNonterminalParser.Post = PostRule;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.grammar.AddRule(context.fromRule);
+            }
+            public void PreStartClause(Stack<object> stack)
+            {
+                stack.Push(context.grammar);
+            }
+            public void PreSkipClause(Stack<object> stack)
+            {
+                stack.Push(context.grammar);
+            }
+            public void PreRuleLink(Stack<object> stack)
+            {
+                stack.Push(context.grammar);
+            }
+            public void PreRule(Stack<object> stack)
+            {
+                stack.Push(context.grammar.GetScope());
+                stack.Push(context.ctx);
+            }
+            public void PostRule(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromRule = cast<RuleParser>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public Grammar grammar;
+                public ParsingContext ctx;
+                public RuleParser fromRule;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class StartClauseRule : System.Text.Parsing.RuleParser
+        {
+            public StartClauseRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("Grammar", "grammar"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.grammar = cast<Grammar>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser strtNonterminalParser = GetNonterminal("strt");
+                strtNonterminalParser.Post = Poststrt;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.grammar.StartRuleName = context.fromstrt;
+            }
+            public void Poststrt(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromstrt = cast<string>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public Grammar grammar;
+                public string fromstrt;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class SkipClauseRule : System.Text.Parsing.RuleParser
+        {
+            public SkipClauseRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("Grammar", "grammar"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.grammar = cast<Grammar>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser skpNonterminalParser = GetNonterminal("skp");
+                skpNonterminalParser.Post = Postskp;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.grammar.SkipRuleName = context.fromskp;
+            }
+            public void Postskp(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromskp = cast<string>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public Grammar grammar;
+                public string fromskp;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("Syntax.ElementGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = new Syntax.ElementGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+            Grammar grammar1 = parsingDomain.GetGrammar("Syntax.RuleGrammar");
+            if (grammar1 == null)
+            {
+                grammar1 = new Syntax.RuleGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar1);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
+            AddRuleLink(new RuleLink("Rule", this, "RuleGrammar.Rule"));
+            AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
+            AddRule(new GrammarRule("Grammar", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("grammar"),
+                                new ActionParser("A0",
+                                    new ExpectationParser(
+                                        new NonterminalParser("name", "Identifier", 0)))),
+                            new ExpectationParser(
+                                new CharParser('{'))),
+                        new NonterminalParser("GrammarContent", "GrammarContent", 2)),
+                    new ExpectationParser(
+                        new CharParser('}')))));
+            AddRule(new GrammarContentRule("GrammarContent", GetScope(),
+                new KleeneStarParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new NonterminalParser("StartClause", "StartClause", 1),
+                                new NonterminalParser("SkipClause", "SkipClause", 1)),
+                            new NonterminalParser("RuleLink", "RuleLink", 1)),
+                        new ActionParser("A0",
+                            new NonterminalParser("Rule", "Rule", 2))))));
+            AddRule(new StartClauseRule("StartClause", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new KeywordParser("start"),
+                        new ExpectationParser(
+                            new NonterminalParser("strt", "Identifier", 0))),
+                    new ActionParser("A0",
+                        new CharParser(';')))));
+            AddRule(new SkipClauseRule("SkipClause", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new KeywordParser("skip"),
+                        new ExpectationParser(
+                            new NonterminalParser("skp", "QualifiedId", 0))),
+                    new ActionParser("A0",
+                        new CharParser(';')))));
+        }
+    }
+}

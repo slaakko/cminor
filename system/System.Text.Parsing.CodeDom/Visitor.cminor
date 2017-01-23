@@ -1,0 +1,87 @@
+using System;
+
+namespace System.Text.Parsing.CodeDom
+{
+    public class Visitor
+    {
+        public virtual void Visit(BoolType boolType) {}
+        public virtual void Visit(CharType charType) {}
+        public virtual void Visit(VoidType voidType) {}
+        public virtual void Visit(SByteType sbyteType) {}
+        public virtual void Visit(ByteType byteType) {}
+        public virtual void Visit(ShortType shortType) {}
+        public virtual void Visit(UShortType ushortType) {}
+        public virtual void Visit(IntType intType) {}
+        public virtual void Visit(UIntType uintType) {}
+        public virtual void Visit(LongType longType) {}
+        public virtual void Visit(ULongType ulongType) {}
+        public virtual void Visit(FloatType floatType) {}
+        public virtual void Visit(DoubleType doubleType) {}
+        public virtual void Visit(ObjectType objectType) {}
+        public virtual void Visit(StringType stringType) {}
+        public virtual void Visit(TypeExpr typeExpr) {}
+        public virtual void Visit(Identifier identifier) {}
+        public virtual void Visit(TemplateId templateId) {}
+        public virtual void Visit(NamespaceImport namespaceImport) {}
+        public virtual void Visit(Alias alias) {}
+        public virtual void Visit(Literal literal) {}
+        public virtual void Visit(Disjunction disjunction) {}
+        public virtual void Visit(Conjunction conjunction) {}
+        public virtual void Visit(BitOr bitOr) {}
+        public virtual void Visit(BitXor bitXor) {}
+        public virtual void Visit(BitAnd bitAnd) {}
+        public virtual void Visit(Equal equal) {}
+        public virtual void Visit(NotEqual notEqual) {}
+        public virtual void Visit(Less less) {}
+        public virtual void Visit(Greater greater) {}
+        public virtual void Visit(LessOrEqual lessOrEqual) {}
+        public virtual void Visit(GreaterOrEqual greaterOrEqual) {}
+        public virtual void Visit(ShiftLeft shiftLeft) {}
+        public virtual void Visit(ShiftRight shiftRight) {}
+        public virtual void Visit(Add add) {}
+        public virtual void Visit(Sub sub) {}
+        public virtual void Visit(Mul mul) {}
+        public virtual void Visit(Div div) {}
+        public virtual void Visit(Rem rem) {}
+        public virtual void Visit(Not not_) {}
+        public virtual void Visit(UnaryPlus unaryPlus) {}
+        public virtual void Visit(UnaryMinus unaryMinus) {}
+        public virtual void Visit(Complement complement) {}
+        public virtual void Visit(IsExpression isExpression) {}
+        public virtual void Visit(AsExpression asExpression) {}
+        public virtual void Visit(DotExpression dotExpression) {}
+        public virtual void Visit(IndexExpression indexExpression) {}
+        public virtual void Visit(InvokeExpression invokeExpression) {}
+        public virtual void Visit(CastExpression castExpression) {}
+        public virtual void Visit(NewExpression newExpression) {}
+        public virtual void Visit(This this_) {}
+        public virtual void Visit(Base base_) {}
+        public virtual void Visit(RefExpression refExpression) {}
+        public virtual void Visit(CompoundStatement compoundStatement) {}
+        public virtual void Visit(ReturnStatement returnStatement) {}
+        public virtual void Visit(IfStatement ifStatement) {}
+        public virtual void Visit(WhileStatement whileStatement) {}
+        public virtual void Visit(DoStatement doStatement) {}
+        public virtual void Visit(ForStatement forStatement) {}
+        public virtual void Visit(BreakStatement breakStatement) {}
+        public virtual void Visit(ContinueStatement continueStatement) {}
+        public virtual void Visit(GotoStatement gotoStatement) {}
+        public virtual void Visit(ConstructionStatement constructionStatement) {}
+        public virtual void Visit(AssignmentStatement assignmentStatement) {}
+        public virtual void Visit(ExpressionStatement expressionStatement) {}
+        public virtual void Visit(EmptyStatement emptyStatement) {}
+        public virtual void Visit(IncrementStatement incrementStatement) {}
+        public virtual void Visit(DecrementStatement decrementStatement) {}
+        public virtual void Visit(ForEachStatement forEachStatement) {}
+        public virtual void Visit(SwitchStatement switchStatement) {}
+        public virtual void Visit(CaseStatement caseStatement) {}
+        public virtual void Visit(DefaultStatement defaultStatement) {}
+        public virtual void Visit(GotoCaseStatement gotoCaseStatement) {}
+        public virtual void Visit(GotoDefaultStatement gotoDefaultStatement) {}
+        public virtual void Visit(ThrowStatement throwStatement ) {}
+        public virtual void Visit(TryStatement tryStatement ) {}
+        public virtual void Visit(Catch catchS) {}
+        public virtual void Visit(Finally finallyS) {}
+        public virtual void Visit(UsingStatement usingStatement) {}
+    }
+}

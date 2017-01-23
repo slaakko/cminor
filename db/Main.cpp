@@ -30,6 +30,7 @@ struct InitDone
 {
     InitDone()
     {
+        SourceFileTable::Init();
         FileRegistry::Init();
         FunctionTable::Init();
         ClassDataTable::Init();
@@ -56,6 +57,7 @@ struct InitDone
         TypeDone();
         ClassDataTable::Done();
         FunctionTable::Done();
+        SourceFileTable::Done();
     }
     ConstantPool vmFunctionNamePool;
 };

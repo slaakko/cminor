@@ -59,6 +59,10 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::indexerGetterSymbol; }
     std::string TypeString() const override { return "getter"; }
     ParameterSymbol* GetThisParam() const override { return Parameters()[0]; }
+    void SetOriginalSourceAssembly(Assembly* originalSourceAssembly_) { originalSourceAssembly = originalSourceAssembly_; }
+    Assembly* GetOriginalSourceAssembly() const { return originalSourceAssembly; }
+private:
+    Assembly* originalSourceAssembly;
 };
 
 class IndexerSetterFunctionSymbol : public FunctionSymbol
@@ -68,6 +72,10 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::indexerSetterSymbol; }
     std::string TypeString() const override { return "setter"; }
     ParameterSymbol* GetThisParam() const override { return Parameters()[0]; }
+    void SetOriginalSourceAssembly(Assembly* originalSourceAssembly_) { originalSourceAssembly = originalSourceAssembly_; }
+    Assembly* GetOriginalSourceAssembly() const { return originalSourceAssembly; }
+private:
+    Assembly* originalSourceAssembly;
 };
 
 

@@ -324,6 +324,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     std::vector<Assembly*> finishReadOrder = CreateFinishReadOrder(assemblies, dependencyMap, rootAssembly);
     assembly.FinishReads(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, 
         int(finishReadOrder.size() - 2), finishReadOrder, false);
+    assembly.GetSymbolTable().MergeClassTemplateSpecializations();
     callInstructions.clear();
     fun2DlgInstructions.clear();
     memFun2ClassDlgInstructions.clear();

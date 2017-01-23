@@ -1,0 +1,45 @@
+using Code;
+
+namespace Syntax
+{
+    grammar LibraryFileGrammar
+    {
+        using stdlib.identifier;
+        using stdlib.qualified_id;
+        using stdlib.spaces_and_comments;
+        using ElementGrammar.Identifier;
+        using ElementGrammar.Signature;
+
+        skip spaces_and_comments;
+
+        LibraryFile(ParsingDomain parsingDomain, var ParsingContext ctx)
+                        ::= empty{ ctx = new ParsingContext(); }
+                            NamespaceContent(parsingDomain, ctx)
+                        ;
+
+        NamespaceContent(ParsingDomain parsingDomain, ParsingContext ctx)
+                        ::=
+                        (   Grammar(parsingDomain.CurrentNamespace.GetScope(), ctx){ parsingDomain.AddGrammar(Grammar); }
+                        |   Namespace(parsingDomain, ctx)
+                        )*
+                        ;
+
+        Namespace(ParsingDomain parsingDomain, ParsingContext ctx)
+                        ::= keyword("namespace") qualified_id:ns!{ parsingDomain.BeginNamespace(ns); } '{'! NamespaceContent(parsingDomain, ctx) '}'!{ parsingDomain.EndNamespace(); }
+                        ;
+
+        Grammar(Scope enclosingScope, ParsingContext ctx) : Grammar
+                        ::= keyword("grammar")
+                            Identifier:grammarName!{ value = new Grammar(grammarName, enclosingScope); value.Ns = enclosingScope.Ns; }
+                            '{'! GrammarContent(value, ctx) '}'!
+                        ;
+
+        GrammarContent(Grammar grammar, ParsingContext ctx)
+                        ::= (Rule(grammar.GetScope(), ctx){ grammar.AddRule(Rule); })*
+                        ;
+
+        Rule(Scope enclosingScope, ParsingContext ctx) : RuleParser
+                        ::= Identifier:ruleName{ value = new RuleParser(ruleName, enclosingScope); } Signature(value, ctx) ';'
+                        ;
+    }
+}

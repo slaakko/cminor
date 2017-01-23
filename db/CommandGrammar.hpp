@@ -1,5 +1,5 @@
-#ifndef CommandGrammar_hpp_22339
-#define CommandGrammar_hpp_22339
+#ifndef CommandGrammar_hpp_6217
+#define CommandGrammar_hpp_6217
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -18,8 +18,9 @@ private:
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class CommandRule;
+    class FilePathRule;
 };
 
 } } // namespace cminor.db
 
-#endif // CommandGrammar_hpp_22339
+#endif // CommandGrammar_hpp_6217

@@ -13,6 +13,10 @@ namespace System.Text.Parsing
         {
             get { return child; }
         }
+        public override void Accept(Visitor visitor)
+        {
+            child.Accept(visitor);
+        }
         private Parser child;
     }
 
@@ -48,11 +52,14 @@ namespace System.Text.Parsing
             {
                 return match;
             }
+            scanner.SpanValue = save;
             return Match.Empty;
         }
         public override void Accept(Visitor visitor)
         {
-            visitor.Visit(this);
+            visitor.BeginVisit(this);
+            base.Accept(visitor);
+            visitor.EndVisit(this);
         }
     }
 
@@ -86,7 +93,9 @@ namespace System.Text.Parsing
         }
         public override void Accept(Visitor visitor)
         {
-            visitor.Visit(this);
+            visitor.BeginVisit(this);
+            base.Accept(visitor);
+            visitor.EndVisit(this);
         }
     }
 
@@ -125,7 +134,9 @@ namespace System.Text.Parsing
         }
         public override void Accept(Visitor visitor)
         {
-            visitor.Visit(this);
+            visitor.BeginVisit(this);
+            base.Accept(visitor);
+            visitor.EndVisit(this);
         }
     }
 
@@ -157,7 +168,9 @@ namespace System.Text.Parsing
         }
         public override void Accept(Visitor visitor)
         {
-            visitor.Visit(this);
+            visitor.BeginVisit(this);
+            base.Accept(visitor);
+            visitor.EndVisit(this);
         }
     }
 
@@ -175,7 +188,9 @@ namespace System.Text.Parsing
         }
         public override void Accept(Visitor visitor)
         {
-            visitor.Visit(this);
+            visitor.BeginVisit(this);
+            base.Accept(visitor);
+            visitor.EndVisit(this);
         }
     }
 
@@ -201,7 +216,11 @@ namespace System.Text.Parsing
         }
         public override void Accept(Visitor visitor)
         {
+            visitor.BeginVisit(this);
+            Left.Accept(visitor);
             visitor.Visit(this);
+            Right.Accept(visitor);
+            visitor.EndVisit(this);
         }
     }
 
@@ -223,7 +242,11 @@ namespace System.Text.Parsing
         }
         public override void Accept(Visitor visitor)
         {
+            visitor.BeginVisit(this);
+            Left.Accept(visitor);
             visitor.Visit(this);
+            Right.Accept(visitor);
+            visitor.EndVisit(this);
         }
     }
 
@@ -252,7 +275,11 @@ namespace System.Text.Parsing
         }
         public override void Accept(Visitor visitor)
         {
+            visitor.BeginVisit(this);
+            Left.Accept(visitor);
             visitor.Visit(this);
+            Right.Accept(visitor);
+            visitor.EndVisit(this);
         }
     }
 
@@ -287,7 +314,11 @@ namespace System.Text.Parsing
         }
         public override void Accept(Visitor visitor)
         {
+            visitor.BeginVisit(this);
+            Left.Accept(visitor);
             visitor.Visit(this);
+            Right.Accept(visitor);
+            visitor.EndVisit(this);
         }
     }
 
@@ -313,7 +344,11 @@ namespace System.Text.Parsing
         }
         public override void Accept(Visitor visitor)
         {
+            visitor.BeginVisit(this);
+            Left.Accept(visitor);
             visitor.Visit(this);
+            Right.Accept(visitor);
+            visitor.EndVisit(this);
         }
     }
 
@@ -321,6 +356,8 @@ namespace System.Text.Parsing
     {
         public ListParser(Parser left, Parser right) : base("list", new SequenceParser(left, new KleeneStarParser(new SequenceParser(right, left))), left.Info + " % " + right.Info)
         {
+            this.left = left;
+            this.right = right;
         }
         public override Match Parse(Scanner scanner, Stack<object> stack)
         {
@@ -328,7 +365,13 @@ namespace System.Text.Parsing
         }
         public override void Accept(Visitor visitor)
         {
+            visitor.BeginVisit(this);
+            left.Accept(visitor);
             visitor.Visit(this);
+            right.Accept(visitor);
+            visitor.EndVisit(this);
         }
+        private Parser left;
+        private Parser right;
     }
 }

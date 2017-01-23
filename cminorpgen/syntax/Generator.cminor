@@ -1,0 +1,90 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Parsing;
+
+namespace Syntax
+{
+    public static class Flags
+    {
+        public static bool ForceCodeGen
+        {
+            get { return forceCodeGen; }
+            set { forceCodeGen = value; }
+        }
+        public static bool Debug
+        {
+            get { return debug; }
+            set { debug = value; }
+        }
+        private static bool forceCodeGen;
+        private static bool debug;
+    }
+
+    internal string ResolveReferenceFilePath(string relativeReferenceFilePath, string projectBasePath, List<string> libraryDirectories)
+    {
+        string referenceFilePath = GetFullPath(Path.Combine(projectBasePath, relativeReferenceFilePath));
+        if (File.Exists(referenceFilePath))
+        {
+            return referenceFilePath;
+        }
+        foreach (string libraryDir in libraryDirectories)
+        {
+            referenceFilePath = GetFullPath(Path.Combine(libraryDir, relativeReferenceFilePath));
+            if (File.Exists(referenceFilePath))
+            {
+                return referenceFilePath;
+            }
+        }
+        throw new Exception("library file '" + relativeReferenceFilePath + "' not found");
+    }
+
+    public void Generate(string projectFilePath, List<string> libraryDirectories)
+    {
+        Console.WriteLine("Parsing project file '" + projectFilePath + "'...");
+        ParsingDomain projectParsingDomain = new ParsingDomain();
+        ProjectFileGrammar projectFileGrammar = new ProjectFileGrammar(projectParsingDomain);
+        LibraryFileGrammar libraryFileGrammar = new LibraryFileGrammar(projectParsingDomain);
+        ParserFileGrammar parserFileGrammar = new ParserFileGrammar(projectParsingDomain);
+        if (Flags.Debug)
+        {
+            parserFileGrammar.Log = Console.Out;
+        }
+        string projectFileContent = File.ReadAllText(projectFilePath);
+        Project project = projectFileGrammar.Parse(projectFileContent, 0, projectFilePath);
+        Console.WriteLine("Generating parsers for project '" + project.Name + "'...");
+        Console.WriteLine("Parsing library files...");
+        int libraryFileIndex = 0;
+        ParsingDomain parsingDomain = new ParsingDomain();
+        foreach (string relativeReferenceFilePath in project.ReferenceFiles)
+        {
+            string referenceFilePath = ResolveReferenceFilePath(relativeReferenceFilePath, project.BasePath, libraryDirectories);
+            Console.WriteLine("> " + referenceFilePath);
+            string libraryFileContent = File.ReadAllText(referenceFilePath);
+            libraryFileGrammar.Parse(libraryFileContent, libraryFileIndex, referenceFilePath, parsingDomain);
+            ++libraryFileIndex;
+        }
+        Console.WriteLine("Parsing source files...");
+        List<ParserFileContent> parserFiles = new List<ParserFileContent>();
+        List<string> sourceFilePaths = project.SourceFiles;
+        FileInfo.Instance.Files = sourceFilePaths;
+        int sourceFileIndex = 0;
+        foreach (string sourceFilePath in sourceFilePaths)
+        {
+            Console.WriteLine("> " + sourceFilePath);
+            string sourceFileContent = File.ReadAllText(sourceFilePath);
+            ParserFileContent parserFileContent = parserFileGrammar.Parse(sourceFileContent, sourceFileIndex, sourceFilePath, sourceFileIndex, parsingDomain);
+            parserFiles.Add(parserFileContent);
+            ++sourceFileIndex;
+        }
+        Console.WriteLine("Linking...");
+        System.Text.Parsing.Link(parsingDomain);
+        return;
+        Console.WriteLine("Expanding code...");
+        System.Text.Parsing.ExpandCode(parsingDomain);
+        Console.WriteLine("Generating source code...");
+        GenerateCode(parserFiles);
+        Console.WriteLine("Generating library file...");
+        GenerateLibraryFile(project, parsingDomain);
+    }
+}

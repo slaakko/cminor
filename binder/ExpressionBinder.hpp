@@ -20,6 +20,8 @@ std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUn
 std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue);
 std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue, 
     bool acceptFunctionGroup, bool acceptMemberExpression);
+std::unique_ptr<BoundExpression> BindExpression(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ContainerScope* containerScope, Node* node, bool lvalue,
+    bool acceptFunctionGroup, bool acceptMemberExpression, bool acceptIncomplete);
 
 } } // namespace cminor::binder
 

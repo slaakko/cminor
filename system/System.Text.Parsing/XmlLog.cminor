@@ -1,0 +1,104 @@
+using System;
+using System.IO;
+using System.Text;
+
+namespace System.Text.Parsing
+{
+    public class XmlLog : Closable
+    {
+        public XmlLog(StreamWriter writer)
+        {
+            this.writer = writer;
+            this.indent = 0;
+        }
+        public void Close()
+        {
+            if (writer.DoClose)
+            {
+                writer.Close();
+            }
+        }
+        public void IncIndent()
+        {
+            ++indent;
+        }
+        public void DecIndent()
+        {
+            --indent;
+        }
+        public void WriteBeginRule(string ruleName)
+        {
+            Write("<" + ruleName + ">");
+        }
+        public void WriteEndRule(string ruleName)
+        {
+            Write("</" + ruleName + ">");
+        }
+        public void WriteTry(string s)
+        {
+            WriteElement("try", s);
+        }
+        public void WriteSuccess(string match)
+        {
+            WriteElement("success", match);
+        }
+        public void WriteFail()
+        {
+            Write("<fail/>");
+        }
+        public void WriteElement(string elementName, string elementContent)
+        {
+            string converted = XmlEscape(elementContent);
+            Write("<" + elementName + ">" + converted + "</" + elementName + ">");
+        }
+        public void Write(string s)
+        {
+            if (indent > 0)
+            {
+                writer.Write(new string(' ', indent));
+            }
+            writer.WriteLine(s);
+        }
+        private StreamWriter writer;
+        private int indent;
+    }
+
+    public string XmlCharStr(char c)
+    {
+        switch (c)
+        {
+            case '&': return "&amp;";
+            case '<': return "&lt;";
+            case '>': return "&gt;";
+            case '\a': return "\\a";
+            case '\b': return "\\b";
+            case '\f': return "\\f";
+            case '\n': return "\\n";
+            case '\r': return "\\r";
+            case '\t': return "\\t";
+            case '\v': return "\\v";
+            default:
+            {
+                if (char.IsPrintable(c))
+                {
+                    return c.ToString();
+                }
+                else
+                {
+                    return HexEscape(c);
+                }
+            }
+        }
+        return c.ToString();
+    }
+
+    public string XmlEscape(string s)
+    {
+        StringBuilder result = new StringBuilder();
+        foreach (char c in s)
+        {
+            result.Append(XmlCharStr(c));
+        }
+        return result.ToString();
+    }
+}

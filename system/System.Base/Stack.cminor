@@ -16,6 +16,7 @@ namespace System.Collections.Generic
         {
             T item = Top();
             items.RemoveAt(items.Count - 1);
+            return item;
         }
         public T Top()
         {

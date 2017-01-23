@@ -103,12 +103,20 @@ void Thread::RunDebug()
     SetState(ThreadState::running);
     ExitSetter exitSetter(*this);
     Assert(!frames.empty(), "thread got no frame");
+    bool first = true;
     while (true)
     {
         CheckPause();
         Frame* frame = frames.back().get();
-        std::pair<int32_t, int32_t> point = std::make_pair(frame->Id(), frame->PC());
-        if (breakPoints.find(point) != breakPoints.cend())
+        if (frame->HasBreakpointAt(frame->PC()))
+        {
+            return;
+        }
+        if (first)
+        {
+            first = false;
+        }
+        else if (frame->Fun().HasBreakPointAt(frame->PC()))
         {
             return;
         }
@@ -124,8 +132,7 @@ void Thread::RunDebug()
                 inst = frame->GetNextInst();
                 if (inst)
                 {
-                    std::pair<int32_t, int32_t> point = std::make_pair(frame->Id(), frame->PC() - 1);
-                    if (breakPoints.find(point) != breakPoints.cend())
+                    if (frame->HasBreakpointAt(frame->PC() - 1))
                     {
                         frame->SetPC(frame->PC() - 1);
                         return;
@@ -181,16 +188,26 @@ void Thread::Next()
                 Step();
                 return;
             }
-            int32_t frameId = frame->Id();
-            int32_t nextPc = frame->PC() + 1;
-            std::pair<int32_t, int32_t> bp = std::make_pair(frameId, nextPc);
-            breakPoints.insert(bp);
+            int32_t nextPC = frame->PC() + 1;
+            frame->SetBreakpointAt(nextPC);
             RunDebug();
-            breakPoints.erase(bp);
+            frame->RemoveBreakpointAt(nextPC);
             return;
         }
     }
     RunDebug();
+}
+
+void Thread::BeginTry()
+{
+    handlingExceptionStack.push(handlingException);
+    handlingException = false;
+}
+
+void Thread::EndTry()
+{
+    handlingException = handlingExceptionStack.top();
+    handlingExceptionStack.pop();
 }
 
 void Thread::HandleException(ObjectReference exception_)
@@ -416,6 +433,11 @@ void Thread::RemoveVariableReference(int32_t variableReferenceId)
 int32_t Thread::GetNextVariableReferenceId()
 {
     return nextVariableReferenceId++;
+}
+
+void Thread::Compact()
+{
+    frames.shrink_to_fit();
 }
 
 } } // namespace cminor::machine

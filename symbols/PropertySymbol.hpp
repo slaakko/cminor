@@ -43,6 +43,10 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::propertyGetterSymbol; }
     std::string TypeString() const override { return "getter"; }
     ParameterSymbol* GetThisParam() const override { return Parameters()[0]; }
+    void SetOriginalSourceAssembly(Assembly* originalSourceAssembly_) { originalSourceAssembly = originalSourceAssembly_; }
+    Assembly* GetOriginalSourceAssembly() const { return originalSourceAssembly; }
+private:
+    Assembly* originalSourceAssembly;
 };
 
 class PropertySetterFunctionSymbol : public FunctionSymbol
@@ -52,6 +56,10 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::propertySetterSymbol; }
     std::string TypeString() const override { return "setter"; }
     ParameterSymbol* GetThisParam() const override { return Parameters()[0]; }
+    void SetOriginalSourceAssembly(Assembly* originalSourceAssembly_) { originalSourceAssembly = originalSourceAssembly_; }
+    Assembly* GetOriginalSourceAssembly() const { return originalSourceAssembly; }
+private:
+    Assembly* originalSourceAssembly;
 };
 
 } } // namespace cminor::symbols

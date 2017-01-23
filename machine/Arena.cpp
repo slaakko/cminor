@@ -30,7 +30,7 @@ Segment::Segment(int32_t id_, ArenaId arenaId_, uint64_t pageSize_, uint64_t siz
 
 Segment::~Segment()
 {
-    FreeMemory(mem);
+    FreeMemory(mem, size);
 }
 
 MemPtr Segment::Allocate(uint64_t blockSize)
@@ -119,6 +119,11 @@ void Arena::RemoveEmptySegments(const std::unordered_set<int32_t>& liveSegments)
     {
         RemoveSegment(emptySegmentId);
     }
+}
+
+void Arena::Compact()
+{
+    segments.shrink_to_fit();
 }
 
 GenArena1::GenArena1(Machine& machine_, uint64_t size_) : Arena(machine_, ArenaId::gen1Arena, size_)

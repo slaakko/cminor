@@ -1,0 +1,18 @@
+project Syntax;
+target=library;
+reference <../code/Code.cminorp>;
+source <CodeGenerator.cminor>;
+source <CodeGeneratorVisitor.cminor>;
+source <Composite.cminor>;
+source <Element.cminor>;
+source <Generator.cminor>;
+source <Grammar.cminor>;
+source <Library.cminor>;
+source <LibraryFile.cminor>;
+source <ParserFile.cminor>;
+source <ParserFileContent.cminor>;
+source <Primary.cminor>;
+source <Primitive.cminor>;
+source <Project.cminor>;
+source <ProjectFile.cminor>;
+source <Rule.cminor>;

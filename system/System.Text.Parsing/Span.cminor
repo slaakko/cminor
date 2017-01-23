@@ -25,6 +25,10 @@ namespace System.Text.Parsing
             this.start = start;
             this.end = end;
         }
+        public Span Clone()
+        {
+            return new Span(fileIndex, lineNumber, start, end);
+        }
         public bool Valid
         {
             get { return start != -1; }

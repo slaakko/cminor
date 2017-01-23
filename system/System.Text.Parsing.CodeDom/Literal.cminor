@@ -7,5 +7,9 @@ namespace System.Text.Parsing.CodeDom
         public Literal(string text) : base(text)
         {
         }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 }

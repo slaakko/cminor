@@ -16,9 +16,8 @@ class Thread;
 void SetSegmentSize(uint64_t segmentSize_);
 uint64_t GetSegmentSize();
 
-const uint64_t defaultSegmentSize = static_cast<uint64_t>(16) * 1024 * 1024; // 16 MB
-const uint64_t defaultLargeObjectThresholdSize = static_cast<uint64_t>(64) * 1024; // 64 K
-
+constexpr uint64_t defaultSegmentSize = static_cast<uint64_t>(16) * 1024 * 1024; // 16 MB
+constexpr uint64_t defaultLargeObjectThresholdSize = static_cast<uint64_t>(64) * 1024; // 64 K
 
 const int32_t notGarbageCollectedSegment = -1;
 
@@ -59,6 +58,7 @@ public:
     uint64_t SegmentSize() const { return segmentSize; }
     void RemoveSegment(int32_t segmentId);
     void RemoveEmptySegments(const std::unordered_set<int32_t>& liveSegments);
+    void Compact();
 private:
     Machine& machine;
     ArenaId id;
