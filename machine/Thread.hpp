@@ -64,6 +64,7 @@ public:
     void RemoveVariableReference(int32_t variableReferenceId);
     int32_t GetNextVariableReferenceId();
     void Compact();
+    ObjectReference Exception() const { return exception; }
 private:
     int32_t id;
     Machine& machine;

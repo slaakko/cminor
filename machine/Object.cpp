@@ -9,6 +9,8 @@
 #include <cminor/machine/String.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Random.hpp>
+#include <cminor/machine/Log.hpp>
+#include <iostream>
 
 namespace cminor { namespace machine {
 
@@ -343,16 +345,16 @@ void StringCharacters::Set(ManagedMemoryPool* pool)
     pool->Set(this);
 }
 
-uint64_t poolDiffSize = defaultPoolDiffSize;
+uint64_t poolThreshold = defaultPoolThreshold;
 
-void SetPoolDiffSize(uint64_t poolDiffSize_)
+void SetPoolThreshold(uint64_t poolThreshold_)
 {
-    poolDiffSize = poolDiffSize_;
+    poolThreshold = poolThreshold_;
 }
 
-uint64_t GetPoolDiffSize()
+uint64_t GetPoolThreshold()
 {
-    return poolDiffSize;
+    return poolThreshold;
 }
 
 ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextReferenceValue(1), object(nullptr), arrayElements(nullptr), stringCharacters(nullptr),
@@ -443,6 +445,39 @@ Object& ManagedMemoryPool::GetObject(ObjectReference reference)
         allocation->Set(this);
         Assert(object, "object expected");
         return *object;
+    }
+    auto dit = deletedAllocations.find(reference);
+    if (dit != deletedAllocations.cend())
+    {
+        ManagedAllocation* allocation = dit->second;
+        if (Object* o = dynamic_cast<Object*>(allocation))
+        {
+            Type* type = o->GetType();
+            std::cout << ToUtf8(type->Name().Value()) << std::endl;
+            if (o->FieldCount() >= 3)
+            {
+                IntegralValue f = o->GetField(2);
+                if (f.GetType() == ValueType::allocationHandle)
+                {
+                    AllocationHandle h(f.AsULong());
+                    auto t = allocations.find(h);
+                    if (t != allocations.cend())
+                    {
+                        ManagedAllocation* a = t->second.get();
+                        if (StringCharacters* s = dynamic_cast<StringCharacters*>(a))
+                        {
+                            int n = s->NumChars();
+                            for (int i = 0; i < n; ++i)
+                            {
+                                IntegralValue v = s->GetChar(i);
+                                char c = char(v.AsChar());
+                                std::cout << c;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     throw SystemException("object with reference " + std::to_string(reference.Value()) + " not found");
 }
@@ -872,28 +907,34 @@ void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursiv
 {
     ComputeSize();
     uint64_t sizeDiff = size - prevSize;
-    if (sizeDiff >= GetPoolDiffSize())
+    if (sizeDiff >= GetPoolThreshold())
     {
         poolRoot = handle;
         lock.unlock();
         thread.SetState(ThreadState::paused);
 #ifdef GC_LOGGING
-        LogMessage(">" + std::to_string(thread.Id()) + " (paused)");
+        LogMessage("pool>" + std::to_string(thread.Id()) + " (paused)");
+        LogMessage("pool> allocations=" + std::to_string(allocations.size()) + " objects=" + std::to_string(objectCount) + " arraycontents=" + std::to_string(arrayContentCount) +
+            " stringContents=" + std::to_string(stringContentCount) + " size=" + std::to_string(size/(1024ull*1024ull)));
 #endif
         thread.GetMachine().GetGarbageCollector().RequestGarbageCollection(thread);
 #ifdef GC_LOGGING
-        LogMessage(">" + std::to_string(thread.Id()) + " (collection requested)");
+        LogMessage("pool>" + std::to_string(thread.Id()) + " (collection requested)");
 #endif
         thread.GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(thread);
 #ifdef GC_LOGGING
-        LogMessage(">" + std::to_string(thread.Id()) + " (collection ended)");
+        LogMessage("pool>" + std::to_string(thread.Id()) + " (collection ended)");
 #endif
         ComputeSize();
         prevSize = size;
+#ifdef GC_LOGGING
+        LogMessage("pool> allocations=" + std::to_string(allocations.size()) + " objects=" + std::to_string(objectCount) + " arraycontents=" + std::to_string(arrayContentCount) +
+            " stringContents=" + std::to_string(stringContentCount) + " size=" + std::to_string(size / (1024ull * 1024ull)));
+#endif
         poolRoot = AllocationHandle(0);
         thread.SetState(ThreadState::running);
 #ifdef GC_LOGGING
-        LogMessage(">" + std::to_string(thread.Id()) + " (running)");
+        LogMessage("pool>" + std::to_string(thread.Id()) + " (running)");
 #endif
         thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
     }
@@ -941,7 +982,7 @@ void ManagedMemoryPool::MoveLiveAllocationsToArena(ArenaId fromArenaId, Arena& t
                         allocation->SetSegmentId(segmentId);
                     }
                 }
-                else
+                else if (!allocation->IsPinned())
                 {
                     toBeDestroyed.push_back(allocation->Handle());
                 }
@@ -1010,7 +1051,7 @@ void ManagedMemoryPool::MoveLiveAllocationsToNewSegments(Arena& arena)
                     liveAllocations.push_back(allocation);
                     liveSegments.insert(allocation->SegmentId());
                 }
-                else
+                else if (!allocation->IsPinned())
                 {
                     toBeDestroyed.push_back(allocation->Handle());
                 }

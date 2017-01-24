@@ -194,6 +194,13 @@ inline void GarbageCollector::MarkLiveAllocations(ObjectReference objectReferenc
 void GarbageCollector::MarkLiveAllocations()
 {
     std::unordered_set<AllocationHandle, AllocationHandleHash> checked;
+    AllocationHandle handle = machine.GetManagedMemoryPool().PoolRoot();
+    if (handle.Value() != 0)
+    {
+        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocation(handle);
+        allocation->SetLive();
+        allocation->MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
+    }
     for (const auto& p : ClassDataTable::Instance().ClassDataMap())
     {
         ClassData* classData = p.second;
@@ -221,17 +228,19 @@ void GarbageCollector::MarkLiveAllocations()
     }
     for (const std::unique_ptr<Thread>& thread : machine.Threads())
     {
+        ObjectReference exceptionReference = thread->Exception();
+        MarkLiveAllocations(exceptionReference, checked);
+        const OperandStack& operandStack = thread->OpStack();
+        for (IntegralValue value : operandStack.Values())
+        {
+            if (value.GetType() == ValueType::objectReference)
+            {
+                ObjectReference objectReference(value.Value());
+                MarkLiveAllocations(objectReference, checked);
+            }
+        }
         for (const std::unique_ptr<Frame>& frame : thread->Frames())
         {
-            const OperandStack& operandStack = frame->OpStack();
-            for (IntegralValue value : operandStack.Values())
-            {
-                if (value.GetType() == ValueType::objectReference)
-                {
-                    ObjectReference objectReference(value.Value());
-                    MarkLiveAllocations(objectReference, checked);
-                }
-            }
             const LocalVariableVector& locals = frame->Locals();
             for (const LocalVariable& local : locals.Variables())
             {
@@ -243,13 +252,6 @@ void GarbageCollector::MarkLiveAllocations()
                 }
             }
         }
-    }
-    AllocationHandle handle = machine.GetManagedMemoryPool().PoolRoot();
-    if (handle.Value() != 0)
-    {
-        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocation(handle);
-        allocation->SetLive();
-        allocation->MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
     }
 }
 

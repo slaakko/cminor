@@ -425,6 +425,15 @@ private:
     int32_t memberVarIndex;
 };
 
+class BoundDefaultExpression : public BoundExpression
+{
+public:
+    BoundDefaultExpression(Assembly& assembly_, TypeSymbol* type_);
+    void GenLoad(Machine& machine, Function& function) override;
+    void GenStore(Machine& machine, Function& function) override;
+    void Accept(BoundNodeVisitor& visitor) override;
+};
+
 } } // namespace cminor::binder
 
 #endif // CMINOR_BINDER_BOUND_EXPRESSION_INCLUDED

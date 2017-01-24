@@ -81,6 +81,9 @@ void PrintHelp()
         "-s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE:\n" <<
         "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
         "       segment in megabytes. The default is 16 MB.\n" << 
+        "-p=POOL-THRESHOLD | --pool-threshold=POOL-THRESHOLD:\n" <<
+        "       POOL-THRESHOLD is the grow threshold of the managed\n" <<
+        "       memory pool in megabytes. The default is 16 MB.\n" <<
         std::endl;
 }
 
@@ -103,6 +106,7 @@ int main(int argc, const char** argv)
         std::string programName;
         std::vector<std::string> arguments;
         uint64_t segmentSizeMB = 0;
+        uint64_t poolThresholdMB = 0;
         for (int i = 1; i < argc; ++i)
         {
             std::string arg = argv[i];
@@ -135,6 +139,19 @@ int main(int argc, const char** argv)
                                 else
                                 {
                                     SetSegmentSize(segmentSizeMB * 1024 * 1024);
+                                }
+                            }
+                            else if (components[0] == "-p" || components[0] == "--pool-threshold")
+                            {
+                                std::stringstream s;
+                                s.str(components[1]);
+                                if (!(s >> poolThresholdMB))
+                                {
+                                    throw std::runtime_error("pool threshold not of an integer type: " + arg);
+                                }
+                                else
+                                {
+                                    SetPoolThreshold(poolThresholdMB * 1024 * 1024);
                                 }
                             }
                             else

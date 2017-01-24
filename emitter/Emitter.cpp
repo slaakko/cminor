@@ -61,6 +61,7 @@ public:
     void Visit(BoundIsExpression& boundIsExpression) override;
     void Visit(BoundAsExpression& boundAsExpression) override;
     void Visit(BoundLocalRefExpression& boundLocalRefExpression) override;
+    void Visit(BoundDefaultExpression& boundDefaultExpression) override;
     void Visit(GenObject& genObject) override;
     bool CreatePCRange() const override;
     bool SetPCRangeEnd() const override;
@@ -1128,6 +1129,12 @@ void EmitterVisitor::Visit(BoundAsExpression& boundAsExpression)
 void EmitterVisitor::Visit(BoundLocalRefExpression& boundLocalRefExpression)
 {
     boundLocalRefExpression.GenLoad(machine, *function);
+    GenJumpingBoolCode();
+}
+
+void EmitterVisitor::Visit(BoundDefaultExpression& boundDefaultExpression)
+{
+    boundDefaultExpression.GenLoad(machine, *function);
     GenJumpingBoolCode();
 }
 

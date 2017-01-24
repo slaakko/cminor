@@ -1641,12 +1641,14 @@ void StrLitToStringInst::Execute(Frame& frame)
         Assert(objectType, "object type expected");
         ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
         Object& o = frame.GetManagedMemoryPool().GetObject(objectReference);
+        o.Pin();
         AllocationHandle charsHandle = frame.GetManagedMemoryPool().CreateStringCharsFromLiteral(frame.GetThread(), strLit, len);
         ClassData* classData = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String"));
         o.SetField(IntegralValue(classData), 0);
         o.SetField(IntegralValue(static_cast<int32_t>(len), ValueType::intType), 1);
         o.SetField(charsHandle, 2);
         frame.OpStack().Push(objectReference);
+        o.Unpin();
     }
     catch (const NullReferenceException& ex)
     {
@@ -1830,10 +1832,12 @@ void ThrowInst::Execute(Frame& frame)
         Assert(exceptionValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference exception(exceptionValue.Value());
         Object& exceptionObject = frame.GetManagedMemoryPool().GetObject(exception);
+        exceptionObject.Pin();
         utf32_string stackTraceStr = frame.GetThread().GetStackTrace();
         ObjectReference stackTrace = frame.GetManagedMemoryPool().CreateString(frame.GetThread(), stackTraceStr);
         exceptionObject.SetField(stackTrace, 2);
         frame.GetThread().HandleException(exception);
+        exceptionObject.Unpin();
     }
     catch (const NullReferenceException& ex)
     {
@@ -2500,6 +2504,7 @@ void ThrowException(const std::string& message, Frame& frame, const utf32_string
     ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
     ClassData* classData = ClassDataTable::Instance().GetClassData(StringPtr(exceptionTypeName.c_str()));
     Object& o = frame.GetManagedMemoryPool().GetObject(objectReference);
+    o.Pin();
     IntegralValue classDataValue(classData);
     o.SetField(classDataValue, 0);
     ObjectReference messageStr = frame.GetManagedMemoryPool().CreateString(frame.GetThread(), ToUtf32(message));
@@ -2507,6 +2512,7 @@ void ThrowException(const std::string& message, Frame& frame, const utf32_string
     frame.OpStack().Push(objectReference);
     ThrowInst throwInst;
     throwInst.Execute(frame);
+    o.Unpin();
 }
 
 void ThrowSystemException(const SystemException& ex, Frame& frame)

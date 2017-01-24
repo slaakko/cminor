@@ -1553,6 +1553,11 @@ public:
         a4ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PostfixRule>(this, &PostfixRule::A4Action));
         cminor::parsing::ActionParser* a5ActionParser = GetAction("A5");
         a5ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PostfixRule>(this, &PostfixRule::A5Action));
+        a5ActionParser->SetFailureAction(new cminor::parsing::MemberFailureAction<PostfixRule>(this, &PostfixRule::A5ActionFail));
+        cminor::parsing::ActionParser* a6ActionParser = GetAction("A6");
+        a6ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PostfixRule>(this, &PostfixRule::A6Action));
+        cminor::parsing::ActionParser* a7ActionParser = GetAction("A7");
+        a7ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PostfixRule>(this, &PostfixRule::A7Action));
         cminor::parsing::NonterminalParser* primaryNonterminalParser = GetNonterminal("Primary");
         primaryNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<PostfixRule>(this, &PostfixRule::PrePrimary));
         primaryNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PostfixRule>(this, &PostfixRule::PostPrimary));
@@ -1585,9 +1590,24 @@ public:
     }
     void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.expr->GetSpan().SetEnd(span.End());
+        context.ctx->PushParsingLvalue(false);
+        context.ctx->PushParsingSimpleStatement(false);
     }
     void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.ctx->PopParsingLvalue();
+        context.ctx->PopParsingSimpleStatement();
+    }
+    void A5ActionFail()
+    {
+        context.ctx->PopParsingLvalue();
+        context.ctx->PopParsingSimpleStatement();
+    }
+    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.expr->GetSpan().SetEnd(span.End());
+    }
+    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.expr.reset(new InvokeNode(context.s, context.expr.release()));
     }
@@ -1693,6 +1713,8 @@ public:
         a7ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PrimaryRule>(this, &PrimaryRule::A7Action));
         cminor::parsing::ActionParser* a8ActionParser = GetAction("A8");
         a8ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PrimaryRule>(this, &PrimaryRule::A8Action));
+        cminor::parsing::ActionParser* a9ActionParser = GetAction("A9");
+        a9ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PrimaryRule>(this, &PrimaryRule::A9Action));
         cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<PrimaryRule>(this, &PrimaryRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PrimaryRule>(this, &PrimaryRule::PostExpression));
@@ -1705,6 +1727,9 @@ public:
         templateIdNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PrimaryRule>(this, &PrimaryRule::PostTemplateId));
         cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PrimaryRule>(this, &PrimaryRule::PostIdentifier));
+        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+        typeExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<PrimaryRule>(this, &PrimaryRule::PreTypeExpr));
+        typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PrimaryRule>(this, &PrimaryRule::PostTypeExpr));
         cminor::parsing::NonterminalParser* castExprNonterminalParser = GetNonterminal("CastExpr");
         castExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<PrimaryRule>(this, &PrimaryRule::PreCastExpr));
         castExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PrimaryRule>(this, &PrimaryRule::PostCastExpr));
@@ -1742,9 +1767,13 @@ public:
     }
     void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = context.fromCastExpr;
+        context.value = new DefaultNode(span, context.fromTypeExpr);
     }
     void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromCastExpr;
+    }
+    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = context.fromNewExpr;
     }
@@ -1801,6 +1830,19 @@ public:
             stack.pop();
         }
     }
+    void PreTypeExpr(cminor::parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+    }
+    void PostTypeExpr(cminor::parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<cminor::parsing::Object> fromTypeExpr_value = std::move(stack.top());
+            context.fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
+            stack.pop();
+        }
+    }
     void PreCastExpr(cminor::parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
@@ -1830,7 +1872,7 @@ public:
 private:
     struct Context
     {
-        Context(): ctx(), value(), fromExpression(), fromLiteral(), fromBasicType(), fromTemplateId(), fromIdentifier(), fromCastExpr(), fromNewExpr() {}
+        Context(): ctx(), value(), fromExpression(), fromLiteral(), fromBasicType(), fromTemplateId(), fromIdentifier(), fromTypeExpr(), fromCastExpr(), fromNewExpr() {}
         ParsingContext* ctx;
         Node* value;
         Node* fromExpression;
@@ -1838,6 +1880,7 @@ private:
         Node* fromBasicType;
         Node* fromTemplateId;
         IdentifierNode* fromIdentifier;
+        Node* fromTypeExpr;
         Node* fromCastExpr;
         Node* fromNewExpr;
     };
@@ -2152,16 +2195,16 @@ private:
 void ExpressionGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.LiteralGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::LiteralGrammar::Create(pd);
+        grammar0 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar1 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
     cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.BasicTypeGrammar");
@@ -2170,33 +2213,33 @@ void ExpressionGrammar::GetReferencedGrammars()
         grammar2 = cminor::parser::BasicTypeGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar3)
     {
-        grammar3 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar3 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.TemplateGrammar");
+    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.LiteralGrammar");
     if (!grammar4)
     {
-        grammar4 = cminor::parser::TemplateGrammar::Create(pd);
+        grammar4 = cminor::parser::LiteralGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    cminor::parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parsing.stdlib");
+    cminor::parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parser.TemplateGrammar");
     if (!grammar5)
     {
-        grammar5 = cminor::parsing::stdlib::Create(pd);
+        grammar5 = cminor::parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
 }
 
 void ExpressionGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("Literal", this, "LiteralGrammar.Literal"));
-    AddRuleLink(new cminor::parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
-    AddRuleLink(new cminor::parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
-    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("Literal", this, "LiteralGrammar.Literal"));
+    AddRuleLink(new cminor::parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+    AddRuleLink(new cminor::parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRule(new ExpressionRule("Expression", GetScope(),
         new cminor::parsing::ActionParser("A0",
@@ -2407,14 +2450,16 @@ void ExpressionGrammar::CreateRules()
                             new cminor::parsing::ActionParser("A3",
                                 new cminor::parsing::SequenceParser(
                                     new cminor::parsing::SequenceParser(
-                                        new cminor::parsing::CharParser('['),
-                                        new cminor::parsing::NonterminalParser("index", "Expression", 1)),
+                                        new cminor::parsing::ActionParser("A4",
+                                            new cminor::parsing::CharParser('[')),
+                                        new cminor::parsing::ActionParser("A5",
+                                            new cminor::parsing::NonterminalParser("index", "Expression", 1))),
                                     new cminor::parsing::ExpectationParser(
                                         new cminor::parsing::CharParser(']'))))),
-                        new cminor::parsing::ActionParser("A4",
+                        new cminor::parsing::ActionParser("A6",
                             new cminor::parsing::SequenceParser(
                                 new cminor::parsing::SequenceParser(
-                                    new cminor::parsing::ActionParser("A5",
+                                    new cminor::parsing::ActionParser("A7",
                                         new cminor::parsing::CharParser('(')),
                                     new cminor::parsing::NonterminalParser("ArgumentList", "ArgumentList", 2)),
                                 new cminor::parsing::ExpectationParser(
@@ -2428,27 +2473,38 @@ void ExpressionGrammar::CreateRules()
                             new cminor::parsing::AlternativeParser(
                                 new cminor::parsing::AlternativeParser(
                                     new cminor::parsing::AlternativeParser(
-                                        new cminor::parsing::ActionParser("A0",
-                                            new cminor::parsing::SequenceParser(
+                                        new cminor::parsing::AlternativeParser(
+                                            new cminor::parsing::ActionParser("A0",
                                                 new cminor::parsing::SequenceParser(
-                                                    new cminor::parsing::CharParser('('),
-                                                    new cminor::parsing::NonterminalParser("Expression", "Expression", 1)),
-                                                new cminor::parsing::CharParser(')'))),
-                                        new cminor::parsing::ActionParser("A1",
-                                            new cminor::parsing::NonterminalParser("Literal", "Literal", 0))),
-                                    new cminor::parsing::ActionParser("A2",
-                                        new cminor::parsing::NonterminalParser("BasicType", "BasicType", 0))),
-                                new cminor::parsing::ActionParser("A3",
-                                    new cminor::parsing::NonterminalParser("TemplateId", "TemplateId", 1))),
-                            new cminor::parsing::ActionParser("A4",
-                                new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0))),
-                        new cminor::parsing::ActionParser("A5",
-                            new cminor::parsing::KeywordParser("this", "identifier"))),
-                    new cminor::parsing::ActionParser("A6",
-                        new cminor::parsing::KeywordParser("base", "identifier"))),
-                new cminor::parsing::ActionParser("A7",
+                                                    new cminor::parsing::SequenceParser(
+                                                        new cminor::parsing::CharParser('('),
+                                                        new cminor::parsing::NonterminalParser("Expression", "Expression", 1)),
+                                                    new cminor::parsing::CharParser(')'))),
+                                            new cminor::parsing::ActionParser("A1",
+                                                new cminor::parsing::NonterminalParser("Literal", "Literal", 0))),
+                                        new cminor::parsing::ActionParser("A2",
+                                            new cminor::parsing::NonterminalParser("BasicType", "BasicType", 0))),
+                                    new cminor::parsing::ActionParser("A3",
+                                        new cminor::parsing::NonterminalParser("TemplateId", "TemplateId", 1))),
+                                new cminor::parsing::ActionParser("A4",
+                                    new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                            new cminor::parsing::ActionParser("A5",
+                                new cminor::parsing::KeywordParser("this", "identifier"))),
+                        new cminor::parsing::ActionParser("A6",
+                            new cminor::parsing::KeywordParser("base", "identifier"))),
+                    new cminor::parsing::ActionParser("A7",
+                        new cminor::parsing::SequenceParser(
+                            new cminor::parsing::SequenceParser(
+                                new cminor::parsing::SequenceParser(
+                                    new cminor::parsing::KeywordParser("default"),
+                                    new cminor::parsing::CharParser('(')),
+                                new cminor::parsing::ExpectationParser(
+                                    new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1))),
+                            new cminor::parsing::ExpectationParser(
+                                new cminor::parsing::CharParser(')'))))),
+                new cminor::parsing::ActionParser("A8",
                     new cminor::parsing::NonterminalParser("CastExpr", "CastExpr", 1))),
-            new cminor::parsing::ActionParser("A8",
+            new cminor::parsing::ActionParser("A9",
                 new cminor::parsing::NonterminalParser("NewExpr", "NewExpr", 1)))));
     AddRule(new CastExprRule("CastExpr", GetScope(),
         new cminor::parsing::ActionParser("A0",

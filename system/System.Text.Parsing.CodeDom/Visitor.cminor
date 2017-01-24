@@ -57,6 +57,7 @@ namespace System.Text.Parsing.CodeDom
         public virtual void Visit(This this_) {}
         public virtual void Visit(Base base_) {}
         public virtual void Visit(RefExpression refExpression) {}
+        public virtual void Visit(DefaultExpression defaultExpression) {}
         public virtual void Visit(CompoundStatement compoundStatement) {}
         public virtual void Visit(ReturnStatement returnStatement) {}
         public virtual void Visit(IfStatement ifStatement) {}

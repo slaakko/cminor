@@ -811,4 +811,34 @@ void BaseNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+DefaultNode::DefaultNode(const Span& span_) : Node(span_)
+{
+}
+
+DefaultNode::DefaultNode(const Span& span_, Node* typeExpr_) : Node(span_), typeExpr(typeExpr_)
+{
+}
+
+Node* DefaultNode::Clone(CloneContext& cloneContext) const
+{
+    return new DefaultNode(GetSpan(), typeExpr->Clone(cloneContext));
+}
+
+void DefaultNode::Write(AstWriter& writer)
+{
+    Node::Write(writer);
+    writer.Put(typeExpr.get());
+}
+
+void DefaultNode::Read(AstReader& reader)
+{
+    Node::Read(reader);
+    typeExpr.reset(reader.GetNode());
+}
+
+void DefaultNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 } } // namespace cminor::ast

@@ -92,7 +92,7 @@ namespace System.Collections.Generic
             {
                 items[i] = items[i + 1];
             }
-            //items[n] = null;
+            items[n] = default(T);
             --count;
         }
         public void Resize(int newCount)

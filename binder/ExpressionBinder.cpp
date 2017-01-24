@@ -93,6 +93,7 @@ public:
     void Visit(NewNode& newNode) override;
     void Visit(ThisNode& thisNode) override;
     void Visit(BaseNode& baseNode) override;
+    void Visit(DefaultNode& defaultNode) override;
 
     void Visit(IsNode& isNode) override;
     void Visit(AsNode& asNode) override;
@@ -1431,6 +1432,12 @@ void ExpressionBinder::Visit(BaseNode& baseNode)
     {
         throw Exception("class '" + ToUtf8(classType->FullName()) + "' does not have a base class", baseNode.GetSpan(), classType->GetSpan());
     }
+}
+
+void ExpressionBinder::Visit(DefaultNode& defaultNode)
+{
+    TypeSymbol* type = ResolveType(boundCompileUnit, containerScope, defaultNode.TypeExpr());
+    expression.reset(new BoundDefaultExpression(boundCompileUnit.GetAssembly(), type));
 }
 
 void ExpressionBinder::Visit(IsNode& isNode)

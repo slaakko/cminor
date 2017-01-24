@@ -697,7 +697,7 @@ namespace System.Text.Parsing.CodeDom
         }
     }
 
-    public class Base: DomObject
+    public class Base : DomObject
     {
         public Base() : base("base")
         {
@@ -710,6 +710,37 @@ namespace System.Text.Parsing.CodeDom
         {
             visitor.Visit(this);
         }
+    }
+
+    public class DefaultExpression : DomObject
+    {
+        public DefaultExpression(DomObject type)
+        {
+            this.type = type;
+        }
+        public override int GetRank()
+        {
+            return 20;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+        public override void Print(CodeFormatter formatter)
+        {
+            if (Parens)
+            {
+                formatter.Write("(");
+            }
+            formatter.Write("default(");
+            type.Print(formatter);
+            formatter.Write(")");
+            if (Parens)
+            {
+                formatter.Write(")");
+            }
+        }
+        private DomObject type;
     }
 
     public class RefExpression : Expression

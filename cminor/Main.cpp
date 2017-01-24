@@ -51,6 +51,9 @@ void PrintHelp()
         "   -s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE\n" <<
         "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
         "       segment in megabytes. The default is 16 MB.\n" <<
+        "   -p=POOL-THRESHOLD | --pool-threshold=POOL-THRESHOLD:\n" <<
+        "       POOL-THRESHOLD is the grow threshold of the managed\n" <<
+        "       memory pool in megabytes. The default is 16 MB.\n" <<
         "---------------------------------------------------------------------\n" <<
         "cminor dump [dump-options] assembly.cminora [outputfile]\n\n" <<
         "Dump information in assembly.cminora to standard output or given file.\n\n" <<
@@ -65,6 +68,9 @@ void PrintHelp()
         "   -s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE\n" <<
         "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
         "       segment in megabytes. The default is 16 MB.\n" <<
+        "   -p=POOL-THRESHOLD | --pool-threshold=POOL-THRESHOLD:\n" <<
+        "       POOL-THRESHOLD is the grow threshold of the managed\n" <<
+        "       memory pool in megabytes. The default is 16 MB.\n" <<
         "---------------------------------------------------------------------\n" <<
         std::endl;
 }
@@ -174,6 +180,10 @@ int main(int argc, const char** argv)
                                 {
                                     runOptions.push_back(arg);
                                 }
+                                else if (components[0] == "-p" || components[0] == "--pool-threshold")
+                                {
+                                    runOptions.push_back(arg);
+                                }
                                 else
                                 {
                                     throw std::runtime_error("unknown run option '" + arg + "'");
@@ -204,6 +214,10 @@ int main(int argc, const char** argv)
                                 if (components[0] == "-s" || components[0] == "--segment-size")
                                 {
                                     debugOptions.push_back(arg);
+                                }
+                                else if (components[0] == "-p" || components[0] == "--pool-threshold")
+                                {
+                                    runOptions.push_back(arg);
                                 }
                                 else
                                 {

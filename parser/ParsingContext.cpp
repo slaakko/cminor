@@ -4,6 +4,7 @@
 // =================================
 
 #include <cminor/parser/ParsingContext.hpp>
+#include <iostream>
 
 namespace cminor { namespace parser {
 

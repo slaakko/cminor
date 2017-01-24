@@ -95,6 +95,7 @@ class CastNode;
 class NewNode;
 class ThisNode;
 class BaseNode;
+class DefaultNode;
 
 class CompoundStatementNode;
 class ReturnStatementNode;
@@ -219,6 +220,7 @@ public:
     virtual void Visit(NewNode& newNode) {}
     virtual void Visit(ThisNode& thisNode) {}
     virtual void Visit(BaseNode& baseNode) {}
+    virtual void Visit(DefaultNode& defaultNode) {}
 
     virtual void Visit(CompoundStatementNode& compoundStatementNode) {}
     virtual void Visit(ReturnStatementNode& returnStatementNode) {}

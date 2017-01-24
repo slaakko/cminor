@@ -403,6 +403,21 @@ public:
     void Accept(Visitor& visitor) override;
 };
 
+class DefaultNode : public Node
+{
+public:
+    DefaultNode(const Span& span_);
+    DefaultNode(const Span& span_, Node* typeExpr_);
+    NodeType GetNodeType() const override { return NodeType::defaultNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
+    void Accept(Visitor& visitor) override;
+    Node* TypeExpr() const { return typeExpr.get(); }
+private:
+    std::unique_ptr<Node> typeExpr;
+};
+
 } } // namespace cminor::ast
 
 #endif // CMINOR_AST_EXPRESSION_INCLUDED

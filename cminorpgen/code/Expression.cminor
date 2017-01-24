@@ -1404,8 +1404,11 @@ namespace Code
                 a2ActionParser.Action = A2Action;
                 ActionParser a3ActionParser = GetAction("A3");
                 a3ActionParser.Action = A3Action;
+                a3ActionParser.Failure = A3ActionFail;
                 ActionParser a4ActionParser = GetAction("A4");
                 a4ActionParser.Action = A4Action;
+                ActionParser a5ActionParser = GetAction("A5");
+                a5ActionParser.Action = A5Action;
                 NonterminalParser primaryNonterminalParser = GetNonterminal("Primary");
                 primaryNonterminalParser.Pre = PrePrimary;
                 primaryNonterminalParser.Post = PostPrimary;
@@ -1434,9 +1437,17 @@ namespace Code
             {
                 context.ctx.PopParsingLvalue();
                 context.ctx.PopParsingSimpleStatement();
-                context.value = new IndexExpression(context.value, context.fromindex);
+            }
+            public void A3ActionFail()
+            {
+                context.ctx.PopParsingLvalue();
+                context.ctx.PopParsingSimpleStatement();
             }
             public void A4Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new IndexExpression(context.value, context.fromindex);
+            }
+            public void A5Action(string match, Span span, string fileName, ref bool pass)
             {
                 context.value = new InvokeExpression(context.value);
             }
@@ -1527,6 +1538,8 @@ namespace Code
                 a7ActionParser.Action = A7Action;
                 ActionParser a8ActionParser = GetAction("A8");
                 a8ActionParser.Action = A8Action;
+                ActionParser a9ActionParser = GetAction("A9");
+                a9ActionParser.Action = A9Action;
                 NonterminalParser expressionNonterminalParser = GetNonterminal("Expression");
                 expressionNonterminalParser.Pre = PreExpression;
                 expressionNonterminalParser.Post = PostExpression;
@@ -1539,6 +1552,9 @@ namespace Code
                 templateIdNonterminalParser.Post = PostTemplateId;
                 NonterminalParser idNonterminalParser = GetNonterminal("id");
                 idNonterminalParser.Post = Postid;
+                NonterminalParser typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser.Pre = PreTypeExpr;
+                typeExprNonterminalParser.Post = PostTypeExpr;
                 NonterminalParser castExprNonterminalParser = GetNonterminal("CastExpr");
                 castExprNonterminalParser.Pre = PreCastExpr;
                 castExprNonterminalParser.Post = PostCastExpr;
@@ -1577,9 +1593,13 @@ namespace Code
             }
             public void A7Action(string match, Span span, string fileName, ref bool pass)
             {
-                context.value = context.fromCastExpr;
+                context.value = new DefaultExpression(context.fromTypeExpr);
             }
             public void A8Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = context.fromCastExpr;
+            }
+            public void A9Action(string match, Span span, string fileName, ref bool pass)
             {
                 context.value = context.fromNewExpr;
             }
@@ -1626,6 +1646,17 @@ namespace Code
                     context.fromid = cast<Identifier>(stack.Pop());
                 }
             }
+            public void PreTypeExpr(Stack<object> stack)
+            {
+                stack.Push(context.ctx);
+            }
+            public void PostTypeExpr(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromTypeExpr = cast<DomObject>(stack.Pop());
+                }
+            }
             public void PreCastExpr(Stack<object> stack)
             {
                 stack.Push(context.ctx);
@@ -1657,6 +1688,7 @@ namespace Code
                 public Type fromBasicType;
                 public TemplateId fromTemplateId;
                 public Identifier fromid;
+                public DomObject fromTypeExpr;
                 public DomObject fromCastExpr;
                 public DomObject fromNewExpr;
             }
@@ -2163,12 +2195,13 @@ namespace Code
                                     new SequenceParser(
                                         new ActionParser("A2",
                                             new CharParser('[')),
-                                        new NonterminalParser("index", "Expression", 1)),
-                                    new ActionParser("A3",
+                                        new ActionParser("A3",
+                                            new NonterminalParser("index", "Expression", 1))),
+                                    new ActionParser("A4",
                                         new CharParser(']')))),
                             new SequenceParser(
                                 new SequenceParser(
-                                    new ActionParser("A4",
+                                    new ActionParser("A5",
                                         new CharParser('(')),
                                     new NonterminalParser("ArgumentList", "ArgumentList", 2)),
                                 new CharParser(')')))))));
@@ -2181,27 +2214,38 @@ namespace Code
                                     new AlternativeParser(
                                         new AlternativeParser(
                                             new AlternativeParser(
-                                                new ActionParser("A0",
-                                                    new SequenceParser(
+                                                new AlternativeParser(
+                                                    new ActionParser("A0",
                                                         new SequenceParser(
-                                                            new CharParser('('),
-                                                            new NonterminalParser("Expression", "Expression", 1)),
-                                                        new CharParser(')'))),
-                                                new ActionParser("A1",
-                                                    new NonterminalParser("Literal", "Literal", 0))),
-                                            new ActionParser("A2",
-                                                new NonterminalParser("BasicType", "BasicType", 0))),
-                                        new ActionParser("A3",
-                                            new NonterminalParser("TemplateId", "TemplateId", 1))),
-                                    new ActionParser("A4",
-                                        new NonterminalParser("id", "Identifier", 0))),
-                                new ActionParser("A5",
-                                    new KeywordParser("this"))),
-                            new ActionParser("A6",
-                                new KeywordParser("base"))),
-                        new ActionParser("A7",
+                                                            new SequenceParser(
+                                                                new CharParser('('),
+                                                                new NonterminalParser("Expression", "Expression", 1)),
+                                                            new CharParser(')'))),
+                                                    new ActionParser("A1",
+                                                        new NonterminalParser("Literal", "Literal", 0))),
+                                                new ActionParser("A2",
+                                                    new NonterminalParser("BasicType", "BasicType", 0))),
+                                            new ActionParser("A3",
+                                                new NonterminalParser("TemplateId", "TemplateId", 1))),
+                                        new ActionParser("A4",
+                                            new NonterminalParser("id", "Identifier", 0))),
+                                    new ActionParser("A5",
+                                        new KeywordParser("this"))),
+                                new ActionParser("A6",
+                                    new KeywordParser("base"))),
+                            new ActionParser("A7",
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new KeywordParser("default"),
+                                            new CharParser('(')),
+                                        new ExpectationParser(
+                                            new NonterminalParser("TypeExpr", "TypeExpr", 1))),
+                                    new ExpectationParser(
+                                        new CharParser(')'))))),
+                        new ActionParser("A8",
                             new NonterminalParser("CastExpr", "CastExpr", 1))),
-                    new ActionParser("A8",
+                    new ActionParser("A9",
                         new NonterminalParser("NewExpr", "NewExpr", 1)))));
             AddRule(new CastExprRule("CastExpr", GetScope(),
                 new ActionParser("A0",

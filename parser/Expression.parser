@@ -248,8 +248,8 @@ namespace cminor.parser
             ::=
             (   Primary(ctx){ s = span; expr.reset(Primary); }
                 (   '.' Identifier:dotMemberId{ s.SetEnd(span.End()); expr.reset(new DotNode(s, expr.release(), dotMemberId)); } 
-                |   ('['{ ctx->PushParsingLvalue(false); ctx->PushParsingSimpleStatement(false); } Expression(ctx):index ']'!)
-                    { ctx->PopParsingLvalue(); ctx->PopParsingSimpleStatement(); s.SetEnd(span.End()); expr.reset(new IndexingNode(s, expr.release(), index)); }
+                |   ('['{ ctx->PushParsingLvalue(false); ctx->PushParsingSimpleStatement(false); } Expression(ctx):index{ ctx->PopParsingLvalue(); ctx->PopParsingSimpleStatement(); } /
+                    { ctx->PopParsingLvalue(); ctx->PopParsingSimpleStatement(); } ']'!){ s.SetEnd(span.End()); expr.reset(new IndexingNode(s, expr.release(), index)); }
                 |   ('('{ expr.reset(new InvokeNode(s, expr.release())); } ArgumentList(ctx, expr.get()) ')'!){ expr->GetSpan().SetEnd(span.End());  }
                 )*
             )
@@ -266,6 +266,7 @@ namespace cminor.parser
             |   Identifier{ value = Identifier; }
             |   keyword("this", identifier){ value = new ThisNode(span); }
             |   keyword("base", identifier){ value = new BaseNode(span); }
+            |   (keyword("default") '(' TypeExpr(ctx)! ')'!){ value = new DefaultNode(span, TypeExpr); }
             |   CastExpr(ctx){ value = CastExpr; }
             |   NewExpr(ctx){ value = NewExpr; }
             ;

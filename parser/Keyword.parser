@@ -9,11 +9,11 @@ namespace cminor.parser
     {
         using stdlib.identifier;
 
-        Keyword 
+        Keyword
             ::= keyword_list(identifier,
                 [
                     "bool", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "char", "string", "void", "object",
-                    "true", "false", "null", "operator", "namespace", "public", "protected", "private", "internal", "static", "virtual", "override", "abstract", "inline", 
+                    "true", "false", "null", "operator", "namespace", "public", "protected", "private", "internal", "static", "virtual", "override", "abstract", "inline",
                     "return", "if", "else", "while", "do", "for", "foreach", "in", "break", "continue", "switch", "case", "default", "goto", "as", "is", "ref",
                     "using", "cast", "class", "interface", "delegate", "new", "this", "base", "enum", "const", "throw", "try", "catch", "finally"
                 ])

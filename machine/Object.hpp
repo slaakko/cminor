@@ -153,7 +153,8 @@ uint64_t ValueSize(ValueType type);
 enum class AllocationFlags : uint8_t
 {
     none = 0,
-    live = 1 << 0
+    live = 1 << 0,
+    pinned = 1 << 1
 };
 
 inline AllocationFlags operator|(AllocationFlags left, AllocationFlags right)
@@ -187,6 +188,9 @@ public:
     bool IsLive() const { return GetFlag(AllocationFlags::live); }
     void SetLive() { SetFlag(AllocationFlags::live); }
     void ResetLive() { ResetFlag(AllocationFlags::live); }
+    void Pin() { SetFlag(AllocationFlags::pinned); }
+    void Unpin() { ResetFlag(AllocationFlags::pinned); }
+    bool IsPinned() const { return GetFlag(AllocationFlags::pinned); }
     virtual void MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool);
 private:
     AllocationHandle handle;
@@ -245,10 +249,10 @@ constexpr uint64_t allocationSize = sizeof(std::unordered_map<AllocationHandle, 
 constexpr uint64_t objectSize = sizeof(Object);
 constexpr uint64_t arrayContentSize = sizeof(ArrayElements);
 constexpr uint64_t stringContentSize = sizeof(StringCharacters);
-constexpr uint64_t defaultPoolDiffSize = static_cast<uint64_t>(16) * 1024 * 1024;
+constexpr uint64_t defaultPoolThreshold = static_cast<uint64_t>(16) * 1024 * 1024;
 
-void SetPoolDiffSize(uint64_t poolDiffSize_);
-uint64_t GetPoolDiffSize();
+void SetPoolThreshold(uint64_t poolThreshold_);
+uint64_t GetPoolThreshold();
 
 class ManagedMemoryPool
 {
@@ -296,7 +300,8 @@ private:
     uint64_t stringContentCount;
     uint64_t prevSize;
     uint64_t size;
-    AllocationHandle poolRoot;
+    std::atomic<AllocationHandle> poolRoot;
+    std::unordered_map<AllocationHandle, ManagedAllocation*, AllocationHandleHash> deletedAllocations;
 };
 
 } } // namespace cminor::machine

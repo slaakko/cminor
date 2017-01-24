@@ -1120,4 +1120,29 @@ void BoundMemberVarRefExpression::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
+BoundDefaultExpression::BoundDefaultExpression(Assembly& assembly_, TypeSymbol* type_) : BoundExpression(assembly_, type_)
+{
+}
+
+void BoundDefaultExpression::GenLoad(Machine& machine, Function& function)
+{
+    std::string typeName = "object";
+    if (!GetType()->IsClassType())
+    {
+        typeName = ToUtf8(GetType()->FullName());
+    }
+    std::unique_ptr<Instruction> inst = machine.CreateInst("def", typeName);
+    function.AddInst(std::move(inst));
+}
+
+void BoundDefaultExpression::GenStore(Machine& machine, Function& function)
+{
+    throw std::runtime_error("cannot store to bound defalt expression");
+}
+
+void BoundDefaultExpression::Accept(BoundNodeVisitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 } } // namespace cminor::binder

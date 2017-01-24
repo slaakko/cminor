@@ -151,8 +151,8 @@ namespace Code
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRule(new TemplateIdRule("TemplateId", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

@@ -235,6 +235,7 @@ void Thread::EndCatch()
 {
     Assert(handlingException, "not handling exception");
     handlingException = false;
+    exception = ObjectReference(0);
     Assert(!frames.empty(), "got no frame");
     Frame* frame = frames.back().get();
     Assert(currentExceptionBlock, "got no exception block");

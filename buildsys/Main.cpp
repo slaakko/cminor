@@ -70,6 +70,7 @@ void PrintHelp()
         "Compile system library solution.\n" <<
         "Options:\n" <<
         "-v | --verbose : verbose output\n" <<
+        "-d | --dparse  : debug parsing to stdout\n" <<
         "-h | --help    : print this help message\n" <<
         std::endl;
 }
@@ -87,6 +88,10 @@ int main(int argc, const char** argv)
                 if (arg == "-v" || arg == "--verbose")
                 {
                     SetGlobalFlag(GlobalFlags::verbose);
+                }
+                else if (arg == "-d" || arg == "--dparse")
+                {
+                    SetGlobalFlag(GlobalFlags::debugParsing);
                 }
                 else if (arg == "-h" || arg == "--help")
                 {

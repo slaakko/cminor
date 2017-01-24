@@ -346,8 +346,8 @@ namespace Code
                 ::= 
                 (   Primary(ctx){ value = Primary; }
                     (   '.' Identifier:dotMemberId{ value = new DotExpression(value, dotMemberId); }
-                    |   '['{ ctx.PushParsingLvalue(false); ctx.PushParsingSimpleStatement(false); } Expression(ctx):index ']'
-                        { ctx.PopParsingLvalue(); ctx.PopParsingSimpleStatement(); value = new IndexExpression(value, index); }
+                    |   '['{ ctx.PushParsingLvalue(false); ctx.PushParsingSimpleStatement(false); } Expression(ctx):index{ ctx.PopParsingLvalue(); ctx.PopParsingSimpleStatement(); } / 
+                        { ctx.PopParsingLvalue(); ctx.PopParsingSimpleStatement(); } ']'{ value = new IndexExpression(value, index); }
                     |   '('{ value = new InvokeExpression(value); } ArgumentList(ctx, value) ')'
                     )*
                 )
@@ -361,6 +361,7 @@ namespace Code
                 |   Identifier:id{ value = id; }
                 |   keyword("this"){ value = new This(); }
                 |   keyword("base"){ value = new Base(); }
+                |   (keyword("default") '(' TypeExpr(ctx)! ')'!){ value = new DefaultExpression(TypeExpr); }
                 |   CastExpr(ctx){ value = CastExpr; }
                 |   NewExpr(ctx){ value = NewExpr; }
                 ;

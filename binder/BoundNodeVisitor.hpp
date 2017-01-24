@@ -56,6 +56,7 @@ class BoundAsExpression;
 class BoundClassDelegateClassObjectPair;
 class BoundLocalRefExpression;
 class BoundMemberVarRefExpression;
+class BoundDefaultExpression;
 
 class BoundNodeVisitor
 {
@@ -109,6 +110,7 @@ public:
     virtual void Visit(BoundClassDelegateClassObjectPair& boundClassDelegateClassObjectPair) {}
     virtual void Visit(BoundLocalRefExpression& boundLocalRefExpression) {}
     virtual void Visit(BoundMemberVarRefExpression& boundMemberVarRefExpression) {}
+    virtual void Visit(BoundDefaultExpression& boundDefaultExpression) {}
 };
 
 } } // namespace cminor::binder
