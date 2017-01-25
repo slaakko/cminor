@@ -210,12 +210,12 @@ public:
     void Accept(Visitor& visitor) override;
     Node* TypeExpr() const { return typeExpr.get(); }
     IdentifierNode* Id() const { return id.get(); }
-    void AddArgument(Node* argument) override;
-    NodeList<Node>& Arguments() { return arguments; }
+    void SetInitializer(Node* initializer_);
+    Node* Initializer() const { return initializer.get(); }
 private:
     std::unique_ptr<Node> typeExpr;
     std::unique_ptr<IdentifierNode> id;
-    NodeList<Node> arguments;
+    std::unique_ptr<Node> initializer;
 };
 
 class AssignmentStatementNode : public StatementNode

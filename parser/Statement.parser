@@ -163,12 +163,12 @@ namespace cminor.parser
 
         ConstructionStatement(ParsingContext* ctx) : ConstructionStatementNode*
             ::= TypeExpr(ctx) Identifier!{ value = new ConstructionStatementNode(span, TypeExpr, Identifier); }
-                ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value->AddArgument(Expression); })? ';'!{ value->GetSpan().SetEnd(span.End()); }
+                ('=' Expression(ctx)!{ value->SetInitializer(Expression); })? ';'!{ value->GetSpan().SetEnd(span.End()); }
             ;
 
         ConstructionStatementExpression(ParsingContext* ctx) : ConstructionStatementNode*
             ::= (TypeExpr(ctx) Identifier!{ value = new ConstructionStatementNode(span, TypeExpr, Identifier); }
-                ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value->AddArgument(Expression); })?){ value->GetSpan().SetEnd(span.End()); }
+                ('=' Expression(ctx)!{ value->SetInitializer(Expression); })?){ value->GetSpan().SetEnd(span.End()); }
             ;
 
         IncrementExpressionStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr) : StatementNode*

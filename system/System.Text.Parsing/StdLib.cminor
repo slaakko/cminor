@@ -1187,8 +1187,7 @@ namespace System.Text.Parsing
                                     new NonterminalParser("char", "char", 0)),
                                 new DifferenceParser(
                                     new AnyCharParser(),
-                                    new StringParser("*/"))
-                                ))),
+                                    new StringParser("*/"))))),
                     new StringParser("*/"))));
             AddRule(new RuleParser("spaces_and_comments", GetScope(),
                 new PositiveParser(

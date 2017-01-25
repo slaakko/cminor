@@ -407,7 +407,7 @@ namespace Code
             }
             public void A0Action(string match, Span span, string fileName, ref bool pass)
             {
-                context.fromstmt.Label = context.fromLabel;
+                context.fromstmt.SetLabel(context.fromLabel);
                 context.value = context.fromstmt;
             }
             public void PostLabel(Stack<object> stack, bool matched)
@@ -2102,8 +2102,6 @@ namespace Code
                 typeExprNonterminalParser.Post = PostTypeExpr;
                 NonterminalParser identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser.Post = PostIdentifier;
-                NonterminalParser argumentListNonterminalParser = GetNonterminal("ArgumentList");
-                argumentListNonterminalParser.Pre = PreArgumentList;
                 NonterminalParser expressionNonterminalParser = GetNonterminal("Expression");
                 expressionNonterminalParser.Pre = PreExpression;
                 expressionNonterminalParser.Post = PostExpression;
@@ -2114,8 +2112,7 @@ namespace Code
             }
             public void A1Action(string match, Span span, string fileName, ref bool pass)
             {
-                context.value.AddArgument(context.fromExpression);
-                context.value.EqualSign = true;
+                context.value.Initializer = context.fromExpression;
             }
             public void PreTypeExpr(Stack<object> stack)
             {
@@ -2134,11 +2131,6 @@ namespace Code
                 {
                     context.fromIdentifier = cast<Identifier>(stack.Pop());
                 }
-            }
-            public void PreArgumentList(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-                stack.Push(context.value);
             }
             public void PreExpression(Stack<object> stack)
             {
@@ -2986,34 +2978,34 @@ namespace Code
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.KeywordGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
+                grammar0 = new Code.KeywordGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("Code.ExpressionGrammar");
+            Grammar grammar1 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
             if (grammar1 == null)
             {
-                grammar1 = new Code.ExpressionGrammar(parsingDomain);
+                grammar1 = new Code.TypeExprGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
-            Grammar grammar2 = parsingDomain.GetGrammar("Code.KeywordGrammar");
+            Grammar grammar2 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
             if (grammar2 == null)
             {
-                grammar2 = new Code.KeywordGrammar(parsingDomain);
+                grammar2 = new Code.IdentifierGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar2);
-            Grammar grammar3 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
+            Grammar grammar3 = parsingDomain.GetGrammar("Code.ExpressionGrammar");
             if (grammar3 == null)
             {
-                grammar3 = new Code.IdentifierGrammar(parsingDomain);
+                grammar3 = new Code.ExpressionGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar3);
-            Grammar grammar4 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
+            Grammar grammar4 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
             if (grammar4 == null)
             {
-                grammar4 = new Code.TypeExprGrammar(parsingDomain);
+                grammar4 = new System.Text.Parsing.stdlib(parsingDomain);
             }
             ReferencedGrammars.Add(grammar4);
         }
@@ -3063,8 +3055,7 @@ namespace Code
                 new ActionParser("A0",
                     new DifferenceParser(
                         new NonterminalParser("identifier", "identifier", 0),
-                        new NonterminalParser("Keyword", "Keyword", 0))
-                    )));
+                        new NonterminalParser("Keyword", "Keyword", 0)))));
             AddRule(new LabeledStatementRule("LabeledStatement", GetScope(),
                 new ActionParser("A0",
                     new SequenceParser(
@@ -3371,18 +3362,11 @@ namespace Code
                             new ExpectationParser(
                                 new NonterminalParser("Identifier", "Identifier", 0)))),
                     new OptionalParser(
-                        new AlternativeParser(
-                            new SequenceParser(
-                                new SequenceParser(
-                                    new CharParser('('),
-                                    new NonterminalParser("ArgumentList", "ArgumentList", 2)),
+                        new SequenceParser(
+                            new CharParser('='),
+                            new ActionParser("A1",
                                 new ExpectationParser(
-                                    new CharParser(')'))),
-                            new SequenceParser(
-                                new CharParser('='),
-                                new ActionParser("A1",
-                                    new ExpectationParser(
-                                        new NonterminalParser("Expression", "Expression", 1)))))))));
+                                    new NonterminalParser("Expression", "Expression", 1))))))));
             AddRule(new ConstructionStatementRule("ConstructionStatement", GetScope(),
                 new ActionParser("A0",
                     new SequenceParser(

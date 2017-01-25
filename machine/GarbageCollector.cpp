@@ -12,7 +12,7 @@ namespace cminor { namespace machine {
 
 std::mutex garbageCollectorMutex;
 
-GarbageCollector::GarbageCollector(Machine& machine_) : machine(machine_), state(GarbageCollectorState::idle), started(false), collectionRequested(false), fullCollectionRequested(false)
+GarbageCollector::GarbageCollector(Machine& machine_) : machine(machine_), state(GarbageCollectorState::idle), started(false), collectionRequested(false), fullCollectionRequested(false), error(false)
 {
 }
 
@@ -166,6 +166,7 @@ void GarbageCollector::Run()
 
 void GarbageCollector::CollectGarbage()
 {
+    //auto start = std::chrono::system_clock::now();
     machine.GetManagedMemoryPool().ResetLiveFlags();
     MarkLiveAllocations();
     machine.GetManagedMemoryPool().MoveLiveAllocationsToArena(ArenaId::gen1Arena, machine.Gen2Arena());
@@ -178,6 +179,10 @@ void GarbageCollector::CollectGarbage()
 #ifdef GC_LOGGING
     std::cout << ".";
 #endif
+    //auto end = std::chrono::system_clock::now();
+    //auto duration = end - start;
+    //long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+    //std::cout << "gc " << ms << " " << fullCollectionRequested << std::endl;
 }
 
 inline void GarbageCollector::MarkLiveAllocations(ObjectReference objectReference, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked)
@@ -185,9 +190,12 @@ inline void GarbageCollector::MarkLiveAllocations(ObjectReference objectReferenc
     if (!objectReference.IsNull() && checked.find(objectReference) == checked.cend())
     {
         checked.insert(objectReference);
-        Object& object = machine.GetManagedMemoryPool().GetObject(objectReference);
-        object.SetLive();
-        object.MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
+        Object* object = machine.GetManagedMemoryPool().GetObjectNothrow(objectReference);
+        if (object)
+        {
+            object->SetLive();
+            object->MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
+        }
     }
 }
 
@@ -197,9 +205,12 @@ void GarbageCollector::MarkLiveAllocations()
     AllocationHandle handle = machine.GetManagedMemoryPool().PoolRoot();
     if (handle.Value() != 0)
     {
-        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocation(handle);
-        allocation->SetLive();
-        allocation->MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
+        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocationNothrow(handle);
+        if (allocation)
+        {
+            allocation->SetLive();
+            allocation->MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
+        }
     }
     for (const auto& p : ClassDataTable::Instance().ClassDataMap())
     {

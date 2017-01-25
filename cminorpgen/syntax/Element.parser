@@ -35,15 +35,15 @@ namespace Syntax
                             ;
 
         Variable(RuleParser rule, ParsingContext ctx)
-                            ::= keyword("var") TypeExpr(ctx) Declarator{ rule.LocalVariables.Add(new AttrOrVar(TypeExpr.ToString(), Declarator.Name)); }
+                            ::= keyword("var") TypeExpr(ctx) Declarator{ rule.LocalVariables.Add(new AttrOrVar(TypeExpr.Name, Declarator.Name)); }
                             ;
 
         Parameter(RuleParser rule, ParsingContext ctx)
-                            ::= TypeExpr(ctx) Declarator{ rule.InheritedAttributes.Add(new AttrOrVar(TypeExpr.ToString(), Declarator.Name)); }
+                            ::= TypeExpr(ctx) Declarator{ rule.InheritedAttributes.Add(new AttrOrVar(TypeExpr.Name, Declarator.Name)); }
                             ;
 
         ReturnType(RuleParser rule, ParsingContext ctx)
-                            ::= ':' TypeExpr(ctx){ rule.ValueTypeName = TypeExpr.ToString(); }
+                            ::= ':' TypeExpr(ctx){ rule.ValueTypeName = TypeExpr.Name; }
                             ;
 
         Keyword             ::= keyword_list(identifier,

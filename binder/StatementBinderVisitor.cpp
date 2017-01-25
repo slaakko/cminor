@@ -807,12 +807,10 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, localVariableSymbol->GetType()->ClassInterfaceOrNsScope()));
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::this_and_base_and_parent, containerScope));
     functionScopeLookups.push_back(FunctionScopeLookup(ScopeLookup::fileScopes, nullptr));
-    int n = constructionStatementNode.Arguments().Count();
-    for (int i = 0; i < n; ++i)
+    if (constructionStatementNode.Initializer())
     {
-        Node* argumentNode = constructionStatementNode.Arguments()[i];
-        std::unique_ptr<BoundExpression> argument = BindExpression(boundCompileUnit, function, containerScope, argumentNode, false, constructDelegateType || constructClassDelegateType, 
-            constructClassDelegateType);
+        std::unique_ptr<BoundExpression> argument = BindExpression(boundCompileUnit, function, containerScope, constructionStatementNode.Initializer(), false, 
+            constructDelegateType || constructClassDelegateType, constructClassDelegateType);
         arguments.push_back(std::move(argument));
     }
     std::unique_ptr<BoundFunctionCall> constructorCall = ResolveOverload(boundCompileUnit, U"@init", functionScopeLookups, arguments, constructionStatementNode.GetSpan());
@@ -899,16 +897,16 @@ void StatementBinderVisitor::Visit(ForEachStatementNode& forEachStatementNode)
     }
     ConstructionStatementNode* constructEnumerable = new ConstructionStatementNode(span, new IdentifierNode(span, "System.Enumerable"), new IdentifierNode(span, "@enumerable"));
     CloneContext cloneContext;
-    constructEnumerable->AddArgument(forEachStatementNode.Container()->Clone(cloneContext));
+    constructEnumerable->SetInitializer(forEachStatementNode.Container()->Clone(cloneContext));
     forEachBlock.AddStatement(constructEnumerable);
     ConstructionStatementNode* constructEnumerator = new ConstructionStatementNode(span, new IdentifierNode(span, "System.Enumerator"), new IdentifierNode(span, "@enumerator"));
-    constructEnumerator->AddArgument(new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerable"), new IdentifierNode(span, "GetEnumerator"))));
+    constructEnumerator->SetInitializer(new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerable"), new IdentifierNode(span, "GetEnumerator"))));
     forEachBlock.AddStatement(constructEnumerator);
     CompoundStatementNode* loopBody = new CompoundStatementNode(span);
     ConstructionStatementNode* constructLoopVar = new ConstructionStatementNode(span, 
         forEachStatementNode.TypeExpr()->Clone(cloneContext), 
         static_cast<IdentifierNode*>(forEachStatementNode.Id()->Clone(cloneContext)));
-    constructLoopVar->AddArgument(new CastNode(span, forEachStatementNode.TypeExpr()->Clone(cloneContext),
+    constructLoopVar->SetInitializer(new CastNode(span, forEachStatementNode.TypeExpr()->Clone(cloneContext),
         new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "GetCurrent")))));
     loopBody->AddStatement(constructLoopVar);
     loopBody->AddStatement(static_cast<StatementNode*>(forEachStatementNode.Action()->Clone(cloneContext)));
@@ -1258,7 +1256,7 @@ void StatementBinderVisitor::Visit(UsingStatementNode& usingStatementNode)
     tryBlock->AddStatement(static_cast<StatementNode*>(usingStatementNode.Statement()->Clone(cloneContext)));
     CompoundStatementNode* finallyBlock = new CompoundStatementNode(span);
     ConstructionStatementNode* constructClosable = new ConstructionStatementNode(span, new IdentifierNode(span, "System.Closable"), new IdentifierNode(span, "@closable"));
-    constructClosable->AddArgument(usingStatementNode.ConstructionStatement()->Id()->Clone(cloneContext));
+    constructClosable->SetInitializer(usingStatementNode.ConstructionStatement()->Id()->Clone(cloneContext));
     finallyBlock->AddStatement(constructClosable);
     ExpressionStatementNode* closeClosableStatement = new ExpressionStatementNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@closable"), new IdentifierNode(span, "Close"))));
     finallyBlock->AddStatement(closeClosableStatement);

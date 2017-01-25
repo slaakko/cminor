@@ -753,12 +753,18 @@ namespace Syntax
             {
                 ActionParser a0ActionParser = GetAction("A0");
                 a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
                 NonterminalParser selectorNonterminalParser = GetNonterminal("selector");
                 selectorNonterminalParser.Post = Postselector;
                 NonterminalParser stringArrayNonterminalParser = GetNonterminal("StringArray");
                 stringArrayNonterminalParser.Pre = PreStringArray;
             }
             public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.keywords = new List<string>();
+            }
+            public void A1Action(string match, Span span, string fileName, ref bool pass)
             {
                 context.value = new KeywordListParser(context.fromselector, context.keywords);
             }
@@ -1052,11 +1058,11 @@ namespace Syntax
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
-            AddRuleLink(new RuleLink("StringArray", this, "ElementGrammar.StringArray"));
             AddRuleLink(new RuleLink("char", this, "System.Text.Parsing.stdlib.char"));
             AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
             AddRuleLink(new RuleLink("escape", this, "System.Text.Parsing.stdlib.escape"));
+            AddRuleLink(new RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("StringArray", this, "ElementGrammar.StringArray"));
             AddRule(new PrimitiveRule("Primitive", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(
@@ -1171,11 +1177,12 @@ namespace Syntax
             AddRule(new KeywordListBodyRule("KeywordListBody", GetScope(),
                 new SequenceParser(
                     new SequenceParser(
-                        new ExpectationParser(
-                            new NonterminalParser("selector", "QualifiedId", 0)),
+                        new ActionParser("A0",
+                            new ExpectationParser(
+                                new NonterminalParser("selector", "QualifiedId", 0))),
                         new ExpectationParser(
                             new CharParser(','))),
-                    new ActionParser("A0",
+                    new ActionParser("A1",
                         new ExpectationParser(
                             new NonterminalParser("StringArray", "StringArray", 1))))));
             AddRule(new EmptyRule("Empty", GetScope(),

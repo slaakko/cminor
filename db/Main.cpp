@@ -212,8 +212,8 @@ int main(int argc, const char** argv)
         std::vector<Assembly*> finishReadOrder = CreateFinishReadOrder(assemblies, dependencyMap, rootAssembly);
         assembly.FinishReads(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, 
             int(finishReadOrder.size() - 2), finishReadOrder, true);
-        Link(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes);
         assembly.GetSymbolTable().MergeClassTemplateSpecializations();
+        Link(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes);
         callInstructions.clear();
         fun2DlgInstructions.clear();
         memFun2ClassDlgInstructions.clear();

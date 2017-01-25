@@ -24,6 +24,10 @@ namespace System.Text.Parsing.CodeDom
             get { return label; }
             set { label = value; }
         }
+        public void SetLabel(string label)
+        {
+            this.label = label;
+        }
         public bool NoNewLine
         {
             get { return noNewLine; }
@@ -124,16 +128,23 @@ namespace System.Text.Parsing.CodeDom
             {
                 if (elseS is CompoundStatement)
                 {
-                    formatter.WriteLine();
+                    if (thenS.NoNewLine)
+                    {
+                        formatter.WriteLine();
+                    }
+                    formatter.WriteLine("else");
                 }
                 else
                 {
-                    formatter.Write(" ");
+                    if (thenS.NoNewLine)
+                    {
+                        formatter.Write(" ");
+                    }
+                    formatter.Write("else ");
                 }
-                formatter.Write("else ");
                 elseS.Print(formatter);
             }
-            else
+            else if (thenS.NoNewLine)
             {
                 formatter.WriteLine();
             }
@@ -342,43 +353,23 @@ namespace System.Text.Parsing.CodeDom
         {
             this.type = type;
             this.id = id;
-            this.arguments = new List<DomObject>();
-            this.equalSign = false;
+            this.initializer = null;
             this.semicolon = false;
         }
-        public void AddArgument(DomObject argument)
+        public DomObject Initializer
         {
-            arguments.Add(argument);
+            get { return initializer; }
+            set { initializer = value; }
         }
         public override void Print(CodeFormatter formatter)
         {
             type.Print(formatter);
             formatter.Write(" ");
             id.Print(formatter);
-            if (equalSign)
+            if (initializer != null)
             {
                 formatter.Write(" = ");
-            }
-            else 
-            {
-                formatter.Write("(");
-            }
-            bool first = true;
-            foreach (DomObject argument in arguments)
-            {
-                if (first)
-                {
-                    first = false;
-                }
-                else
-                {
-                    formatter.Write(", ");
-                }
-                argument.Print(formatter);
-            }
-            if (!equalSign)
-            {
-                formatter.Write(")");
+                initializer.Print(formatter);
             }
             if (NoNewLine)
             {
@@ -395,11 +386,6 @@ namespace System.Text.Parsing.CodeDom
                 }
             }
         }
-        public bool EqualSign
-        {
-            get { return equalSign; }
-            set { equalSign = value; }
-        }
         public bool Semicolon
         {
             get { return semicolon; }
@@ -410,16 +396,15 @@ namespace System.Text.Parsing.CodeDom
             visitor.Visit(this);
             type.Accept(visitor);
             id.Accept(visitor);
-            foreach (DomObject argument in arguments)
+            if (initializer != null)
             {
-                argument.Accept(visitor);
+                initializer.Accept(visitor);
             }
         }
         private DomObject type;
         private Identifier id;
-        private bool equalSign;
         private bool semicolon;
-        private List<DomObject> arguments;
+        private DomObject initializer;
     }
 
     public class AssignmentStatement : Statement
@@ -724,6 +709,7 @@ namespace System.Text.Parsing.CodeDom
                 caseExpr.Print(formatter);
                 formatter.Write(":");
             }
+            formatter.WriteLine();
             formatter.WriteLine("{");
             formatter.IncIndent();
             foreach (Statement statement in statements)
@@ -761,7 +747,7 @@ namespace System.Text.Parsing.CodeDom
         }
         public override void Print(CodeFormatter formatter)
         {
-            formatter.Write("default:");
+            formatter.WriteLine("default:");
             formatter.WriteLine("{");
             formatter.IncIndent();
             foreach (Statement statement in statements)

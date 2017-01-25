@@ -35,12 +35,17 @@ public:
     void WaitUntilGarbageCollected(Thread& thread);
     void Run();
     bool Started() const { return started; }
+    bool Error() const { return error; }
+    std::exception_ptr Exception() const { return exception; }
+    void SetException(std::exception_ptr exception_) { exception = exception_; error = true; }
 private:
     Machine& machine;
     std::atomic<GarbageCollectorState> state;
     std::atomic_bool collectionRequested;
     std::condition_variable collectionRequestedCond;
     bool started;
+    bool error;
+    std::exception_ptr exception;
     bool fullCollectionRequested;
     void WaitForGarbageCollection();
     void WaitForThreadsPaused();

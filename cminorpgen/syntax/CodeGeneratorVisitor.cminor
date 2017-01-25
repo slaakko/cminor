@@ -16,6 +16,8 @@ namespace Syntax
         public override void Visit(KeywordListParser keywordList)
         {
             string keywordListName = "keywords" + keywordListNumber.ToString();
+            formatter.WriteLine(keywordListName + " = new List<string>();");
+            keywordListNames.Add(keywordListName);
             ++keywordListNumber;
             foreach (string keyword in keywordList.Keywords)
             {

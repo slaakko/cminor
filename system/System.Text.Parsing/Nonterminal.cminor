@@ -70,7 +70,14 @@ namespace System.Text.Parsing
         }
         public int NumberOfArguments
         {
-            get { return numberOfArguments; }
+            get 
+            { 
+                if (numberOfArguments != 0)
+                {
+                    return numberOfArguments; 
+                }
+                return arguments.Count;
+            }
         }
         public List<DomObject> Arguments
         {

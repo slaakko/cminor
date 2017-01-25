@@ -33,7 +33,7 @@ namespace Code
             ;
 
         LabeledStatement(ParsingContext ctx) : Statement
-            ::= (Label ':' Statement(ctx):stmt){ stmt.Label = Label; value = stmt; }
+            ::= (Label ':' Statement(ctx):stmt){ stmt.SetLabel(Label); value = stmt; }
             ;
 
         ControlStatement(ParsingContext ctx) : Statement
@@ -210,7 +210,7 @@ namespace Code
 
         ConstructionExpressionStatement(ParsingContext ctx) : ConstructionStatement
             ::= TypeExpr(ctx) Identifier!{ value = new ConstructionStatement(TypeExpr, Identifier); } 
-                ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value.AddArgument(Expression); value.EqualSign = true; })?
+                ('=' Expression(ctx)!{ value.Initializer = Expression; })?
             ;
 
         ConstructionStatement(ParsingContext ctx) : ConstructionStatement

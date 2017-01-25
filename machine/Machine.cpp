@@ -7,6 +7,8 @@
 #include <cminor/machine/String.hpp>
 #include <cminor/machine/Function.hpp>
 #include <functional>
+#include <iostream>
+#include <stdexcept>
 
 namespace cminor { namespace machine {
 
@@ -631,10 +633,15 @@ void DoRunGarbageCollector(GarbageCollector* garbageCollector)
     {
         garbageCollector->Run();
     }
+    catch (const std::exception& ex)
+    {
+        std::cerr << "exception from garbage collector: " << ex.what() << std::endl;
+        garbageCollector->SetException(std::current_exception());
+    }
     catch (...)
     {
-        int y = 0;
-        int x = 0;
+        std::cerr << "unknown exception from garbage collector" << std::endl;
+        garbageCollector->SetException(std::current_exception());
     }
 }
 

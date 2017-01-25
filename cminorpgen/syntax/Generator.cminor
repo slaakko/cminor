@@ -79,7 +79,6 @@ namespace Syntax
         }
         Console.WriteLine("Linking...");
         System.Text.Parsing.Link(parsingDomain);
-        return;
         Console.WriteLine("Expanding code...");
         System.Text.Parsing.ExpandCode(parsingDomain);
         Console.WriteLine("Generating source code...");

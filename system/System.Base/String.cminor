@@ -158,6 +158,20 @@ namespace System
             }
             return result;
         }
+        public string Trim()
+        {
+            int b = 0;
+            while (b < length && char.IsSpace(this[b])) 
+            {
+                ++b;
+            }
+            int e = length - 1;
+            while (e >= b && char.IsSpace(this[e]))
+            {
+                --e;
+            }
+            return Substring(b, e - b + 1);
+        }
         private const ulong hashOffset = 14695981039346656037u;
         private const ulong hashPrime = 1099511628211u;
         public override ulong GetHashCode()

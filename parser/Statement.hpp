@@ -1,5 +1,5 @@
-#ifndef Statement_hpp_22687
-#define Statement_hpp_22687
+#ifndef Statement_hpp_13768
+#define Statement_hpp_13768
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -60,4 +60,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Statement_hpp_22687
+#endif // Statement_hpp_13768

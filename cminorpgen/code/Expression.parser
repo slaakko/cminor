@@ -261,7 +261,7 @@ namespace Code
                         switch (op)
                         {
                             case Operator.add: value = new Add(value, right); break;
-                            case Operator.sub: value = new Add(value, right); break;
+                            case Operator.sub: value = new Sub(value, right); break;
                         }
                     }
                 )*

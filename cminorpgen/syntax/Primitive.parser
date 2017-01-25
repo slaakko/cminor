@@ -79,7 +79,7 @@ namespace Syntax
                             ;
 
         KeywordListBody(var List<string> keywords) : Parser
-                            ::= QualifiedId:selector! ','! StringArray(keywords)!{ value = new KeywordListParser(selector, keywords); }
+                            ::= QualifiedId:selector!{ keywords = new List<string>(); } ','! StringArray(keywords)!{ value = new KeywordListParser(selector, keywords); }
                             ;
 
         Empty : Parser      ::= keyword("empty"){ value = new EmptyParser(); }

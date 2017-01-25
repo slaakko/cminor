@@ -284,25 +284,25 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Syntax.ElementGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("Syntax.RuleGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new Syntax.ElementGrammar(parsingDomain);
+                grammar0 = new Syntax.RuleGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("Syntax.RuleGrammar");
+            Grammar grammar1 = parsingDomain.GetGrammar("Syntax.ElementGrammar");
             if (grammar1 == null)
             {
-                grammar1 = new Syntax.RuleGrammar(parsingDomain);
+                grammar1 = new Syntax.ElementGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
             AddRuleLink(new RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
             AddRuleLink(new RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
             AddRuleLink(new RuleLink("Rule", this, "RuleGrammar.Rule"));
-            AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
             AddRule(new GrammarRule("Grammar", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

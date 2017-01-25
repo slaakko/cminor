@@ -508,11 +508,9 @@ void ConstantPoolInstallerVisitor::Visit(ConstructionStatementNode& construction
 {
     constructionStatementNode.TypeExpr()->Accept(*this);
     constructionStatementNode.Id()->Accept(*this);
-    int n = constructionStatementNode.Arguments().Count();
-    for (int i = 0; i < n; ++i)
+    if (constructionStatementNode.Initializer())
     {
-        Node* argument = constructionStatementNode.Arguments()[i];
-        argument->Accept(*this);
+        constructionStatementNode.Initializer()->Accept(*this);
     }
 }
 

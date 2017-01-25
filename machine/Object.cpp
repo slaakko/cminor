@@ -208,9 +208,12 @@ void Object::MarkLiveAllocations(std::unordered_set<AllocationHandle, Allocation
             if (!objectRef.IsNull() && checked.find(objectRef) == checked.cend())
             {
                 checked.insert(objectRef);
-                Object& object = managedMemoryPool.GetObject(objectRef);
-                object.SetLive();
-                object.MarkLiveAllocations(checked, managedMemoryPool);
+                Object* object = managedMemoryPool.GetObjectNothrow(objectRef);
+                if (object)
+                {
+                    object->SetLive();
+                    object->MarkLiveAllocations(checked, managedMemoryPool);
+                }
             }
         }
         else if (value.GetType() == ValueType::allocationHandle)
@@ -221,9 +224,12 @@ void Object::MarkLiveAllocations(std::unordered_set<AllocationHandle, Allocation
                 if (checked.find(allocationHandle) == checked.cend())
                 {
                     checked.insert(allocationHandle);
-                    ManagedAllocation* allocation = managedMemoryPool.GetAllocation(allocationHandle);
-                    allocation->SetLive();
-                    allocation->MarkLiveAllocations(checked, managedMemoryPool);
+                    ManagedAllocation* allocation = managedMemoryPool.GetAllocationNothrow(allocationHandle);
+                    if (allocation)
+                    {
+                        allocation->SetLive();
+                        allocation->MarkLiveAllocations(checked, managedMemoryPool);
+                    }
                 }
             }
         }
@@ -321,9 +327,12 @@ void ArrayElements::MarkLiveAllocations(std::unordered_set<AllocationHandle, All
             if (!objectReference.IsNull() && checked.find(objectReference) == checked.cend())
             {
                 checked.insert(objectReference);
-                Object& object = managedMemoryPool.GetObject(objectReference);
-                object.SetLive();
-                object.MarkLiveAllocations(checked, managedMemoryPool);
+                Object* object = managedMemoryPool.GetObjectNothrow(objectReference);
+                if (object)
+                {
+                    object->SetLive();
+                    object->MarkLiveAllocations(checked, managedMemoryPool);
+                }
             }
         }
     }
@@ -480,6 +489,21 @@ Object& ManagedMemoryPool::GetObject(ObjectReference reference)
         }
     }
     throw SystemException("object with reference " + std::to_string(reference.Value()) + " not found");
+}
+
+Object* ManagedMemoryPool::GetObjectNothrow(ObjectReference reference)
+{
+    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
+    auto it = allocations.find(reference);
+    if (it != allocations.cend())
+    {
+        ManagedAllocation* allocation = it->second.get();
+        object = nullptr;
+        allocation->Set(this);
+        Assert(object, "object expected");
+        return object;
+    }
+    return nullptr;
 }
 
 IntegralValue ManagedMemoryPool::GetField(ObjectReference reference, int32_t fieldIndex)
@@ -884,6 +908,19 @@ MemPtr ManagedMemoryPool::GetMemPtr(AllocationHandle handle)
 
 ManagedAllocation* ManagedMemoryPool::GetAllocation(AllocationHandle handle)
 {
+    ManagedAllocation* allocation = GetAllocationNothrow(handle);
+    if (allocation)
+    {
+        return allocation;
+    }
+    else
+    {
+        throw SystemException("allocation with handle " + std::to_string(handle.Value()) + " not found");
+    }
+}
+
+ManagedAllocation* ManagedMemoryPool::GetAllocationNothrow(AllocationHandle handle)
+{
     std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
     auto it = allocations.find(handle);
     if (it != allocations.cend())
@@ -893,7 +930,7 @@ ManagedAllocation* ManagedMemoryPool::GetAllocation(AllocationHandle handle)
     }
     else
     {
-        throw SystemException("allocation with handle " + std::to_string(handle.Value()) + " not found");
+        return nullptr;
     }
 }
 

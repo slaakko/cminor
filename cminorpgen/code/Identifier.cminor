@@ -157,29 +157,28 @@ namespace Code
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.KeywordGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
+                grammar0 = new Code.KeywordGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("Code.KeywordGrammar");
+            Grammar grammar1 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
             if (grammar1 == null)
             {
-                grammar1 = new Code.KeywordGrammar(parsingDomain);
+                grammar1 = new System.Text.Parsing.stdlib(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRuleLink(new RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
             AddRule(new IdentifierRule("Identifier", GetScope(),
                 new ActionParser("A0",
                     new DifferenceParser(
                         new NonterminalParser("identifier", "identifier", 0),
-                        new NonterminalParser("Keyword", "Keyword", 0))
-                    )));
+                        new NonterminalParser("Keyword", "Keyword", 0)))));
             AddRule(new QualifiedIdRule("QualifiedId", GetScope(),
                 new ActionParser("A0",
                     new TokenParser(

@@ -91,20 +91,18 @@ ConstructionStatementNode::ConstructionStatementNode(const Span& span_, Node* ty
     id->SetParent(this);
 }
 
-void ConstructionStatementNode::AddArgument(Node* argument)
-{
-    argument->SetParent(this);
-    arguments.Add(argument);
+void ConstructionStatementNode::SetInitializer(Node* initializer_) 
+{ 
+    initializer.reset(initializer_); 
+    initializer->SetParent(this);
 }
 
 Node* ConstructionStatementNode::Clone(CloneContext& cloneContext) const
 {
     ConstructionStatementNode* clone = new ConstructionStatementNode(GetSpan(), typeExpr->Clone(cloneContext), static_cast<IdentifierNode*>(id->Clone(cloneContext)));
-    int n = arguments.Count();
-    for (int i = 0; i < n; ++i)
+    if (initializer)
     {
-        Node* argument = arguments[i];
-        clone->AddArgument(argument->Clone(cloneContext));
+        clone->SetInitializer(initializer->Clone(cloneContext));
     }
     CloneLabelTo(clone, cloneContext);
     return clone;
@@ -115,7 +113,12 @@ void ConstructionStatementNode::Write(AstWriter& writer)
     StatementNode::Write(writer);
     writer.Put(typeExpr.get());
     writer.Put(id.get());
-    arguments.Write(writer);
+    bool hasInitializer = initializer != nullptr;
+    writer.AsMachineWriter().Put(hasInitializer);
+    if (hasInitializer)
+    {
+        writer.Put(initializer.get());
+    }
 }
 
 void ConstructionStatementNode::Read(AstReader& reader)
@@ -125,8 +128,12 @@ void ConstructionStatementNode::Read(AstReader& reader)
     typeExpr->SetParent(this);
     id.reset(reader.GetIdentifierNode());
     id->SetParent(this);
-    arguments.Read(reader);
-    arguments.SetParent(this);
+    bool hasInitializer = reader.GetBool();
+    if (hasInitializer)
+    {
+        initializer.reset(reader.GetNode());
+        initializer->SetParent(this);
+    }
 }
 
 void ConstructionStatementNode::Accept(Visitor& visitor)

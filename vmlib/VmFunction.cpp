@@ -817,6 +817,28 @@ void VmSystemGetPathSeparatorChar::Execute(Frame& frame)
     frame.OpStack().Push(IntegralValue(s, ValueType::charType));
 }
 
+class VmSystemIOInternalGetCurrentWorkingDirectory : public VmFunction
+{
+public:
+    VmSystemIOInternalGetCurrentWorkingDirectory(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIOInternalGetCurrentWorkingDirectory::VmSystemIOInternalGetCurrentWorkingDirectory(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IO.InternalGetCurrentWorkingDirectory"));
+    SetName(name);
+    VmFunctionTable::Instance().RegisterVmFunction(this);
+}
+
+void VmSystemIOInternalGetCurrentWorkingDirectory::Execute(Frame& frame)
+{
+    std::string workingDirectory = boost::filesystem::current_path().generic_string();
+    utf32_string s = ToUtf32(workingDirectory);
+    ObjectReference reference = frame.GetManagedMemoryPool().CreateString(frame.GetThread(), s);
+    frame.OpStack().Push(reference);
+}
+
 class VmFunctionPool
 {
 public:
@@ -871,6 +893,7 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOLastWriteTimeLess(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemGetEnvironmentVariable(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemGetPathSeparatorChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOInternalGetCurrentWorkingDirectory(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool)

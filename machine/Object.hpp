@@ -262,6 +262,7 @@ public:
     ObjectReference CopyObject(Thread& thread, ObjectReference from);
     void DestroyAllocation(AllocationHandle handle);
     Object& GetObject(ObjectReference reference);
+    Object* GetObjectNothrow(ObjectReference reference);
     IntegralValue GetField(ObjectReference reference, int32_t fieldIndex);
     void SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue);
     AllocationHandle CreateStringCharsFromLiteral(Thread& thread, const char32_t* strLit, uint32_t len);
@@ -284,6 +285,7 @@ public:
     void Set(ArrayElements* arrayElements_) { arrayElements = arrayElements_; }
     void Set(StringCharacters* stringCharacters_) { stringCharacters = stringCharacters_;  }
     ManagedAllocation* GetAllocation(AllocationHandle handle);
+    ManagedAllocation* GetAllocationNothrow(AllocationHandle handle);
     AllocationHandle PoolRoot() const { return poolRoot; }
 private:
     Machine& machine;

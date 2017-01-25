@@ -15,21 +15,21 @@ namespace Syntax
         {
             Owner = 0;
             keywords0 = new List<string>();
-            keywords0.Add("anychar");
+            keywords0.Add("var");
+            keywords0.Add("skip");
+            keywords0.Add("token");
+            keywords0.Add("grammar");
+            keywords0.Add("letter");
+            keywords0.Add("keyword");
+            keywords0.Add("start");
+            keywords0.Add("punctuation");
+            keywords0.Add("hexdigit");
             keywords0.Add("digit");
             keywords0.Add("empty");
-            keywords0.Add("grammar");
-            keywords0.Add("hexdigit");
-            keywords0.Add("keyword");
             keywords0.Add("keyword_list");
-            keywords0.Add("letter");
-            keywords0.Add("punctuation");
-            keywords0.Add("skip");
-            keywords0.Add("space");
-            keywords0.Add("start");
-            keywords0.Add("token");
+            keywords0.Add("anychar");
             keywords0.Add("using");
-            keywords0.Add("var");
+            keywords0.Add("space");
             parsingDomain.AddGrammar(this);
             CreateRules();
             Link();
@@ -270,7 +270,7 @@ namespace Syntax
             }
             public void A0Action(string match, Span span, string fileName, ref bool pass)
             {
-                context.rule.LocalVariables.Add(new AttrOrVar(context.fromTypeExpr.ToString(), context.fromDeclarator.Name));
+                context.rule.LocalVariables.Add(new AttrOrVar(context.fromTypeExpr.Name, context.fromDeclarator.Name));
             }
             public void PreTypeExpr(Stack<object> stack)
             {
@@ -331,7 +331,7 @@ namespace Syntax
             }
             public void A0Action(string match, Span span, string fileName, ref bool pass)
             {
-                context.rule.InheritedAttributes.Add(new AttrOrVar(context.fromTypeExpr.ToString(), context.fromDeclarator.Name));
+                context.rule.InheritedAttributes.Add(new AttrOrVar(context.fromTypeExpr.Name, context.fromDeclarator.Name));
             }
             public void PreTypeExpr(Stack<object> stack)
             {
@@ -390,7 +390,7 @@ namespace Syntax
             }
             public void A0Action(string match, Span span, string fileName, ref bool pass)
             {
-                context.rule.ValueTypeName = context.fromTypeExpr.ToString();
+                context.rule.ValueTypeName = context.fromTypeExpr.Name;
             }
             public void PreTypeExpr(Stack<object> stack)
             {
@@ -560,10 +560,10 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
+                grammar0 = new Code.TypeExprGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
             Grammar grammar1 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
@@ -572,10 +572,10 @@ namespace Syntax
                 grammar1 = new Code.IdentifierGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
-            Grammar grammar2 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
+            Grammar grammar2 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
             if (grammar2 == null)
             {
-                grammar2 = new Code.TypeExprGrammar(parsingDomain);
+                grammar2 = new System.Text.Parsing.stdlib(parsingDomain);
             }
             ReferencedGrammars.Add(grammar2);
         }
@@ -644,8 +644,7 @@ namespace Syntax
                 new ActionParser("A0",
                     new DifferenceParser(
                         new NonterminalParser("identifier", "identifier", 0),
-                        new NonterminalParser("Keyword", "Keyword", 0))
-                    )));
+                        new NonterminalParser("Keyword", "Keyword", 0)))));
             AddRule(new QualifiedIdRule("QualifiedId", GetScope(),
                 new ActionParser("A0",
                     new TokenParser(

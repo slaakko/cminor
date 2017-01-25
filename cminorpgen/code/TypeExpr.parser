@@ -14,8 +14,8 @@ namespace Code
             ;
             
         PrefixTypeExpr(ParsingContext ctx) : DomObject
-            ::= (keyword("ref") PostfixTypeExpr(ctx):refExpr){ value = new TypeExpr(match); }
-            |   PostfixTypeExpr(ctx):pf{ value = new TypeExpr(match); }
+            ::= (keyword("ref") PostfixTypeExpr(ctx):refExpr){ value = new TypeExpr(match.Trim()); }
+            |   PostfixTypeExpr(ctx):pf{ value = new TypeExpr(match.Trim()); }
             ;
             
         PostfixTypeExpr(ParsingContext ctx)
@@ -28,7 +28,7 @@ namespace Code
         PrimaryTypeExpr(ParsingContext ctx)
             ::= BasicType
             |   TemplateId(ctx)
-            |   Identifier:id
+            |   Identifier
             ;
     }
 }

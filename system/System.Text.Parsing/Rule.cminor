@@ -16,7 +16,7 @@ namespace System.Text.Parsing
         }
         public string Name
         {
-            get { return Name; }
+            get { return name; }
         }
         private string type;
         private string name;
@@ -266,13 +266,13 @@ namespace System.Text.Parsing
         }
         public RuleLink(string name, Grammar grammar, string linkedRuleName) : base(name, grammar.GetScope())
         {
-            this.linkedRuleName =  linkedRuleName;
+            this.linkedRuleName = linkedRuleName;
             this.grammar = grammar;
             string prefix = GetPrefix(linkedRuleName);
             this.addedToGrammar = false;
             if (prefix == "stdlib")
             {
-                linkedRuleName = "System.Text.Parsing.stdlib." + GetCommonName(linkedRuleName);
+                this.linkedRuleName = "System.Text.Parsing.stdlib." + GetCommonName(linkedRuleName);
             }
         }
         public string LinkedRuleName

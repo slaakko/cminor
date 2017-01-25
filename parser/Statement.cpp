@@ -2489,8 +2489,6 @@ public:
         typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PostTypeExpr));
         cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PostIdentifier));
-        cminor::parsing::NonterminalParser* argumentListNonterminalParser = GetNonterminal("ArgumentList");
-        argumentListNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PreArgumentList));
         cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PostExpression));
@@ -2501,7 +2499,7 @@ public:
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value->AddArgument(context.fromExpression);
+        context.value->SetInitializer(context.fromExpression);
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -2528,11 +2526,6 @@ public:
             context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
-    }
-    void PreArgumentList(cminor::parsing::ObjectStack& stack)
-    {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
     }
     void PreExpression(cminor::parsing::ObjectStack& stack)
     {
@@ -2600,8 +2593,6 @@ public:
         typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PostTypeExpr));
         cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PostIdentifier));
-        cminor::parsing::NonterminalParser* argumentListNonterminalParser = GetNonterminal("ArgumentList");
-        argumentListNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PreArgumentList));
         cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PostExpression));
@@ -2616,7 +2607,7 @@ public:
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value->AddArgument(context.fromExpression);
+        context.value->SetInitializer(context.fromExpression);
     }
     void PreTypeExpr(cminor::parsing::ObjectStack& stack)
     {
@@ -2639,11 +2630,6 @@ public:
             context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
-    }
-    void PreArgumentList(cminor::parsing::ObjectStack& stack)
-    {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Node*>(context.value)));
     }
     void PreExpression(cminor::parsing::ObjectStack& stack)
     {
@@ -3561,22 +3547,22 @@ private:
 void StatementGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parsing::stdlib::Create(pd);
+        grammar0 = cminor::parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.KeywordGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::KeywordGrammar::Create(pd);
+        grammar1 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar1);
-    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.KeywordGrammar");
     if (!grammar2)
     {
-        grammar2 = cminor::parser::ExpressionGrammar::Create(pd);
+        grammar2 = cminor::parser::KeywordGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
     cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
@@ -3595,12 +3581,12 @@ void StatementGrammar::GetReferencedGrammars()
 
 void StatementGrammar::CreateRules()
 {
+    AddRuleLink(new cminor::parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
     AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
-    AddRuleLink(new cminor::parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new cminor::parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
     AddRule(new StatementRule("Statement", GetScope(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
@@ -3946,18 +3932,11 @@ void StatementGrammar::CreateRules()
                         new cminor::parsing::ExpectationParser(
                             new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0)))),
                 new cminor::parsing::OptionalParser(
-                    new cminor::parsing::AlternativeParser(
-                        new cminor::parsing::SequenceParser(
-                            new cminor::parsing::SequenceParser(
-                                new cminor::parsing::CharParser('('),
-                                new cminor::parsing::NonterminalParser("ArgumentList", "ArgumentList", 2)),
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::CharParser('='),
+                        new cminor::parsing::ActionParser("A1",
                             new cminor::parsing::ExpectationParser(
-                                new cminor::parsing::CharParser(')'))),
-                        new cminor::parsing::SequenceParser(
-                            new cminor::parsing::CharParser('='),
-                            new cminor::parsing::ActionParser("A1",
-                                new cminor::parsing::ExpectationParser(
-                                    new cminor::parsing::NonterminalParser("Expression", "Expression", 1))))))),
+                                new cminor::parsing::NonterminalParser("Expression", "Expression", 1)))))),
             new cminor::parsing::ActionParser("A2",
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
@@ -3970,18 +3949,11 @@ void StatementGrammar::CreateRules()
                         new cminor::parsing::ExpectationParser(
                             new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0)))),
                 new cminor::parsing::OptionalParser(
-                    new cminor::parsing::AlternativeParser(
-                        new cminor::parsing::SequenceParser(
-                            new cminor::parsing::SequenceParser(
-                                new cminor::parsing::CharParser('('),
-                                new cminor::parsing::NonterminalParser("ArgumentList", "ArgumentList", 2)),
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::CharParser('='),
+                        new cminor::parsing::ActionParser("A2",
                             new cminor::parsing::ExpectationParser(
-                                new cminor::parsing::CharParser(')'))),
-                        new cminor::parsing::SequenceParser(
-                            new cminor::parsing::CharParser('='),
-                            new cminor::parsing::ActionParser("A2",
-                                new cminor::parsing::ExpectationParser(
-                                    new cminor::parsing::NonterminalParser("Expression", "Expression", 1))))))))));
+                                new cminor::parsing::NonterminalParser("Expression", "Expression", 1)))))))));
     AddRule(new IncrementExpressionStatementRule("IncrementExpressionStatement", GetScope(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::ActionParser("A0",

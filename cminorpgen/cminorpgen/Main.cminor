@@ -24,7 +24,7 @@ internal void AddToLibraryDirectories(string paths, List<string> libraryDirector
     List<string> p = paths.Split(pathSeparator);
     foreach (string s in p)
     {
-        libraryDirectories.Add(s);
+        libraryDirectories.Add(GetFullPath(s));
     }
 }
 
@@ -88,7 +88,7 @@ internal int main(string[] args)
             }
             else
             {
-                projectFilePaths.Add(arg);
+                projectFilePaths.Add(GetFullPath(arg));
             }
         }
         foreach (string projectFilePath in projectFilePaths)
