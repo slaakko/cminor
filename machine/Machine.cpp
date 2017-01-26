@@ -14,6 +14,8 @@ namespace cminor { namespace machine {
 
 Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this), garbageCollector(*this), exiting(), exited(), nextFrameId(0), nextSegmentId(0), threadAllocating(false)
 {
+    SetMachine(this);
+    SetManagedMemoryPool(&managedMemoryPool);
     gen1Arena.reset(new GenArena1(*this, GetSegmentSize()));
     gen2Arena.reset(new GenArena2(*this, GetSegmentSize()));
     // no operation:
@@ -553,8 +555,8 @@ void Machine::Start(const std::vector<utf32_string>& programArguments, ObjectTyp
     if (argsArrayObjectType)
     {
         Thread& mainThread = MainThread();
-        Frame* frame = mainThread.Frames().back().get();
-        ObjectReference args = frame->GetManagedMemoryPool().CreateStringArray(mainThread, programArguments, argsArrayObjectType);
+        Frame* frame = mainThread.GetStack().CurrentFrame();
+        ObjectReference args = managedMemoryPool.CreateStringArray(mainThread, programArguments, argsArrayObjectType);
         frame->OpStack().Push(args);
     }
 }
@@ -650,11 +652,6 @@ void Machine::RunGarbageCollector()
     garbageCollectorThread = std::thread(DoRunGarbageCollector, &garbageCollector);
 }
 
-int32_t Machine::GetNextFrameId()
-{
-    return nextFrameId++;
-}
-
 int32_t Machine::GetNextSegmentId()
 {
     return nextSegmentId++;
@@ -703,10 +700,6 @@ Segment* Machine::GetSegment(int32_t segmentId) const
 void Machine::Compact()
 {
     threads.shrink_to_fit();
-    for (const std::unique_ptr<Thread>& thread : threads)
-    {
-        thread->Compact();
-    }
     gen1Arena->Compact();
     gen2Arena->Compact();
 }

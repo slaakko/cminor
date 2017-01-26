@@ -236,7 +236,7 @@ void VmSystemObjectToString::Execute(Frame& frame)
         IntegralValue value = frame.Local(0).GetValue();
         Assert(value.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference reference(value.Value());
-        IntegralValue classDataValue = frame.GetManagedMemoryPool().GetField(reference, 0);
+        IntegralValue classDataValue = GetManagedMemoryPool().GetField(reference, 0);
         Assert(classDataValue.GetType() == ValueType::classDataPtr, "class data pointer expected");
         ClassData* classData = classDataValue.AsClassDataPtr();
         StringPtr name = classData->Type()->Name();
@@ -280,7 +280,7 @@ void VmSystemObjectGetHashCode::Execute(Frame& frame)
     }
     else
     {
-        MemPtr memPtr = frame.GetManagedMemoryPool().GetMemPtr(reference);
+        MemPtr memPtr = GetManagedMemoryPool().GetMemPtr(reference);
         uint64_t hashCode = memPtr.HashCode();
         frame.OpStack().Push(IntegralValue(hashCode, ValueType::ulongType));
     }
@@ -321,9 +321,9 @@ void VmSystemObjectEqual::Execute(Frame& frame)
         }
         else
         {
-            Object& left = frame.GetManagedMemoryPool().GetObject(leftRef);
+            Object& left = GetManagedMemoryPool().GetObject(leftRef);
             MemPtr leftMem = left.GetMemPtr();
-            Object& right = frame.GetManagedMemoryPool().GetObject(rightRef);
+            Object& right = GetManagedMemoryPool().GetObject(rightRef);
             MemPtr rightMem = right.GetMemPtr();
             result = leftMem == rightMem;
         }
@@ -378,9 +378,9 @@ void VmSystemObjectLess::Execute(Frame& frame)
         }
         else
         {
-            Object& left = frame.GetManagedMemoryPool().GetObject(leftRef);
+            Object& left = GetManagedMemoryPool().GetObject(leftRef);
             MemPtr leftMem = left.GetMemPtr();
-            Object& right = frame.GetManagedMemoryPool().GetObject(rightRef);
+            Object& right = GetManagedMemoryPool().GetObject(rightRef);
             MemPtr rightMem = right.GetMemPtr();
             result = leftMem < rightMem;
         }
@@ -420,10 +420,10 @@ void VmSystemStringConstructorCharArray::Execute(Frame& frame)
         IntegralValue charArrayValue = frame.Local(1).GetValue();
         Assert(charArrayValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference charArrayRef(charArrayValue.Value());
-        std::pair<AllocationHandle, int32_t> stringCharactersHandleStringSLengthPair = frame.GetManagedMemoryPool().CreateStringCharsFromCharArray(frame.GetThread(), charArrayRef);
+        std::pair<AllocationHandle, int32_t> stringCharactersHandleStringSLengthPair = GetManagedMemoryPool().CreateStringCharsFromCharArray(frame.GetThread(), charArrayRef);
         AllocationHandle stringCharactersHandle = stringCharactersHandleStringSLengthPair.first;
         int32_t stringLength = stringCharactersHandleStringSLengthPair.second;
-        Object& str = frame.GetManagedMemoryPool().GetObject(stringRef);
+        Object& str = GetManagedMemoryPool().GetObject(stringRef);
         str.SetField(IntegralValue(stringLength, ValueType::intType), 1);
         str.SetField(IntegralValue(stringCharactersHandle.Value(), ValueType::allocationHandle), 2);
     }
@@ -458,7 +458,7 @@ void VmSystemIOOpenFile::Execute(Frame& frame)
         IntegralValue filePathValue = frame.Local(0).GetValue();
         Assert(filePathValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference filePathStr(filePathValue.Value());
-        std::string filePath = frame.GetManagedMemoryPool().GetUtf8String(filePathStr);
+        std::string filePath = GetManagedMemoryPool().GetUtf8String(filePathStr);
         IntegralValue modeValue = frame.Local(1).GetValue();
         Assert(modeValue.GetType() == ValueType::byteType, "byte expected");
         FileMode mode = static_cast<FileMode>(modeValue.AsByte());
@@ -575,7 +575,7 @@ void VmSystemIOWriteFile::Execute(Frame& frame)
         IntegralValue bufferValue = frame.Local(1).GetValue();
         Assert(bufferValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference buffer(bufferValue.Value());
-        std::vector<uint8_t> bytes = frame.GetManagedMemoryPool().GetBytes(buffer);
+        std::vector<uint8_t> bytes = GetManagedMemoryPool().GetBytes(buffer);
         IntegralValue countValue = frame.Local(2).GetValue();
         Assert(countValue.GetType() == ValueType::intType, "int expected");
         int32_t count = countValue.AsInt();
@@ -658,11 +658,11 @@ void VmSystemIOReadFile::Execute(Frame& frame)
         Assert(bufferValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference buffer(bufferValue.Value());
         std::vector<uint8_t> bytes;
-        bytes.resize(frame.GetManagedMemoryPool().GetNumArrayElements(buffer));
+        bytes.resize(GetManagedMemoryPool().GetNumArrayElements(buffer));
         int32_t result = ReadFile(fileHandle, &bytes[0], int32_t(bytes.size()));
         if (result > 0)
         {
-            frame.GetManagedMemoryPool().SetBytes(buffer, bytes, result);
+            GetManagedMemoryPool().SetBytes(buffer, bytes, result);
         }
         frame.OpStack().Push(IntegralValue(result, ValueType::intType));
     }
@@ -705,7 +705,7 @@ void VmSystemIOFileExists::Execute(Frame& frame)
         IntegralValue filePathValue = frame.Local(0).GetValue();
         Assert(filePathValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference filePathStr(filePathValue.Value());
-        std::string filePath = frame.GetManagedMemoryPool().GetUtf8String(filePathStr);
+        std::string filePath = GetManagedMemoryPool().GetUtf8String(filePathStr);
         bool exists = boost::filesystem::exists(filePath);
         frame.OpStack().Push(IntegralValue(exists, ValueType::boolType));
     }
@@ -740,11 +740,11 @@ void VmSystemIOLastWriteTimeLess::Execute(Frame& frame)
         IntegralValue firstFilePathValue = frame.Local(0).GetValue();
         Assert(firstFilePathValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference firstFilePathStr(firstFilePathValue.Value());
-        std::string firstFilePath = frame.GetManagedMemoryPool().GetUtf8String(firstFilePathStr);
+        std::string firstFilePath = GetManagedMemoryPool().GetUtf8String(firstFilePathStr);
         IntegralValue secondFilePathValue = frame.Local(1).GetValue();
         Assert(secondFilePathValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference secondFilePathStr(secondFilePathValue.Value());
-        std::string secondFilePath = frame.GetManagedMemoryPool().GetUtf8String(secondFilePathStr);
+        std::string secondFilePath = GetManagedMemoryPool().GetUtf8String(secondFilePathStr);
         bool less = boost::filesystem::last_write_time(firstFilePath) < boost::filesystem::last_write_time(secondFilePath);
         frame.OpStack().Push(IntegralValue(less, ValueType::boolType));
     }
@@ -777,13 +777,13 @@ void VmSystemGetEnvironmentVariable::Execute(Frame& frame)
     IntegralValue environmentVarNameValue = frame.Local(0).GetValue();
     Assert(environmentVarNameValue.GetType() == ValueType::objectReference, "object reference expected");
     ObjectReference environmentVarName(environmentVarNameValue.Value());
-    std::string envVarName = frame.GetManagedMemoryPool().GetUtf8String(environmentVarName);
+    std::string envVarName = GetManagedMemoryPool().GetUtf8String(environmentVarName);
     char* value = std::getenv(envVarName.c_str());
     if (value)
     {
         std::string s(value);
         utf32_string us = ToUtf32(s);
-        ObjectReference envVarValue = frame.GetManagedMemoryPool().CreateString(frame.GetThread(), us);
+        ObjectReference envVarValue = GetManagedMemoryPool().CreateString(frame.GetThread(), us);
         frame.OpStack().Push(envVarValue);
     }
     else
@@ -835,7 +835,7 @@ void VmSystemIOInternalGetCurrentWorkingDirectory::Execute(Frame& frame)
 {
     std::string workingDirectory = boost::filesystem::current_path().generic_string();
     utf32_string s = ToUtf32(workingDirectory);
-    ObjectReference reference = frame.GetManagedMemoryPool().CreateString(frame.GetThread(), s);
+    ObjectReference reference = GetManagedMemoryPool().CreateString(frame.GetThread(), s);
     frame.OpStack().Push(reference);
 }
 

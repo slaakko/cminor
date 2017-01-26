@@ -10,12 +10,30 @@
 
 namespace cminor { namespace machine {
 
-Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
-    id(id_), machine(machine_), fun(fun_), instructionCount(0), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), exceptionObjectType(nullptr), exitBlockNext(-1),
-    nextVariableReferenceId(1)
+DebugContext::DebugContext()
 {
-    frames.push_back(std::unique_ptr<Frame>(new Frame(machine, *this, fun)));
-    MapFrame(frames.back().get());
+}
+
+bool DebugContext::HasBreakpointAt(int32_t pc) const
+{
+    return breakpoints.find(pc) != breakpoints.cend();
+}
+
+void DebugContext::SetBreakpointAt(int32_t pc)
+{
+    breakpoints.insert(pc);
+}
+
+void DebugContext::RemoveBreakpointAt(int32_t pc)
+{
+    breakpoints.erase(pc);
+}
+
+Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
+    stack(*this), id(id_), machine(machine_), fun(fun_), instructionCount(0), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), exceptionObjectType(nullptr), 
+    exitBlockNext(-1), nextVariableReferenceId(1)
+{
+    stack.AllocateFrame(fun);
 }
 
 inline void Thread::CheckPause()
@@ -61,20 +79,19 @@ void Thread::RunToEnd()
 {
     SetState(ThreadState::running);
     ExitSetter exitSetter(*this);
-    Assert(!frames.empty(), "thread got no frame");
+    Assert(!stack.IsEmpty(), "stack is empty");
     while (true)
     {
         CheckPause();
-        Frame* frame = frames.back().get();
+        Frame* frame = stack.CurrentFrame();
         Instruction* inst = frame->GetNextInst();
         while (!inst)
         {
-            Assert(!frames.empty(), "thread got no frame");
-            RemoveFrame(frames.back()->Id());
-            frames.pop_back();
-            if (!frames.empty())
+            Assert(!stack.IsEmpty(), "stack is empty");
+            stack.FreeFrame();
+            if (!stack.IsEmpty())
             {
-                frame = frames.back().get();
+                frame = stack.CurrentFrame();
                 inst = frame->GetNextInst();
             }
             else
@@ -89,10 +106,10 @@ void Thread::RunToEnd()
 
 void Thread::Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
 {
-    Frame* frame = frames.back().get();
+    Frame* frame = stack.CurrentFrame();
     if (argsArrayObjectType)
     {
-        ObjectReference args = frame->GetManagedMemoryPool().CreateStringArray(*this, programArguments, argsArrayObjectType);
+        ObjectReference args = GetManagedMemoryPool().CreateStringArray(*this, programArguments, argsArrayObjectType);
         frame->OpStack().Push(args);
     }
     RunToEnd();
@@ -102,12 +119,12 @@ void Thread::RunDebug()
 {
     SetState(ThreadState::running);
     ExitSetter exitSetter(*this);
-    Assert(!frames.empty(), "thread got no frame");
+    Assert(!stack.IsEmpty(), "stack is empty");
     bool first = true;
     while (true)
     {
         CheckPause();
-        Frame* frame = frames.back().get();
+        Frame* frame = stack.CurrentFrame();
         if (frame->HasBreakpointAt(frame->PC()))
         {
             return;
@@ -123,12 +140,11 @@ void Thread::RunDebug()
         Instruction* inst = frame->GetNextInst();
         while (!inst)
         {
-            Assert(!frames.empty(), "thread got no frame");
-            RemoveFrame(frames.back()->Id());
-            frames.pop_back();
-            if (!frames.empty())
+            Assert(!stack.IsEmpty(), "stack is empty");
+            stack.FreeFrame();
+            if (!stack.IsEmpty())
             {
-                frame = frames.back().get();
+                frame = stack.CurrentFrame();
                 inst = frame->GetNextInst();
                 if (inst)
                 {
@@ -151,19 +167,18 @@ void Thread::RunDebug()
 
 void Thread::Step()
 {
-    Frame* frame = frames.back().get();
+    Frame* frame = stack.CurrentFrame();
     Instruction* inst = frame->GetNextInst();
     while (!inst)
     {
-        if (frames.empty())
+        if (stack.IsEmpty())
         {
             return;
         }
-        RemoveFrame(frames.back()->Id());
-        frames.pop_back();
-        if (!frames.empty())
+        stack.FreeFrame();
+        if (!stack.IsEmpty())
         {
-            frame = frames.back().get();
+            frame = stack.CurrentFrame();
             inst = frame->GetNextInst();
         }
         else
@@ -176,10 +191,10 @@ void Thread::Step()
 
 void Thread::Next()
 {
-    int n = int(machine.MainThread().Frames().size());
+    int n = int(stack.Frames().size());
     for (int i = n - 1; i >= 0; --i)
     {
-        Frame* frame = machine.MainThread().Frames()[i].get();
+        Frame* frame = stack.Frames()[i];
         if (frame->PC() < frame->Fun().NumInsts())
         {
             Instruction* inst = frame->Fun().GetInst(frame->PC());
@@ -214,20 +229,20 @@ void Thread::HandleException(ObjectReference exception_)
 {
     try
     {
-        if (frames.empty())
+        if (stack.IsEmpty())
         {
             throw std::runtime_error("unhandled exception escaped from main");
         }
         handlingException = true;
         exception = exception_;
-        Frame* frame = frames.back().get();
-        Object& exceptionObject = frame->GetManagedMemoryPool().GetObject(exception);
+        Frame* frame = stack.CurrentFrame();
+        Object& exceptionObject = GetManagedMemoryPool().GetObject(exception);
         exceptionObjectType = exceptionObject.GetType();
         FindExceptionBlock(frame);
     }
     catch (const NullReferenceException& ex)
     {
-        ThrowNullReferenceException(ex, *frames.back());
+        ThrowNullReferenceException(ex, *stack.CurrentFrame());
     }
 }
 
@@ -236,8 +251,8 @@ void Thread::EndCatch()
     Assert(handlingException, "not handling exception");
     handlingException = false;
     exception = ObjectReference(0);
-    Assert(!frames.empty(), "got no frame");
-    Frame* frame = frames.back().get();
+    Assert(!stack.IsEmpty(), "stack is empty");
+    Frame* frame = stack.CurrentFrame();
     Assert(currentExceptionBlock, "got no exception block");
     if (currentExceptionBlock->HasFinally())
     {
@@ -251,8 +266,8 @@ void Thread::EndCatch()
 
 void Thread::EndFinally()
 {
-    Assert(!frames.empty(), "got no frame");
-    Frame* frame = frames.back().get();
+    Assert(!stack.IsEmpty(), "stack is empty");
+    Frame* frame = stack.CurrentFrame();
     if (exitBlockNext != -1)
     {
         int32_t next = exitBlockNext;
@@ -276,11 +291,10 @@ void Thread::EndFinally()
         }
     }
     frame = nullptr;
-    RemoveFrame(frames.back()->Id());
-    frames.pop_back();
-    if (!frames.empty())
+    stack.FreeFrame();
+    if (!stack.IsEmpty())
     {
-        frame = frames.back().get();
+        frame = stack.CurrentFrame();
     }
     FindExceptionBlock(frame);
 }
@@ -309,15 +323,14 @@ void Thread::FindExceptionBlock(Frame* frame)
                 exceptionBlock = nullptr;
             }
         }
-        RemoveFrame(frames.back()->Id());
-        frames.pop_back();
-        if (frames.empty())
+        stack.FreeFrame();
+        if (stack.IsEmpty())
         {
             frame = nullptr;
         }
         else
         {
-            frame = frames.back().get();
+            frame = stack.CurrentFrame();
         }
     }
     throw std::runtime_error("unhandled exception escaped from main");
@@ -363,7 +376,7 @@ void Thread::PopExitBlock()
 utf32_string Thread::GetStackTrace() const
 {
     utf32_string stackTrace;
-    int n = int(frames.size());
+    int n = int(stack.Frames().size());
     bool first = true;
     for (int i = n - 1; i >= 0; --i)
     {
@@ -375,7 +388,7 @@ utf32_string Thread::GetStackTrace() const
         {
             stackTrace.append(1, U'\n');
         }
-        Frame* frame = frames[i].get();
+        Frame* frame = stack.Frames()[i];
         utf32_string fun = U"at ";
         fun.append(frame->Fun().FriendlyName().Value().AsStringLiteral());
         if (frame->Fun().HasSourceFilePath())
@@ -436,9 +449,22 @@ int32_t Thread::GetNextVariableReferenceId()
     return nextVariableReferenceId++;
 }
 
-void Thread::Compact()
+int Thread::AllocateDebugContext()
 {
-    frames.shrink_to_fit();
+    int debugContextId = int(debugContexts.size());
+    debugContexts.push_back(std::unique_ptr<DebugContext>(new DebugContext()));
+    return debugContextId;
+}
+
+DebugContext* Thread::GetDebugContext(int debugContextId)
+{
+    Assert(debugContextId >= 0 && debugContextId < int(debugContexts.size()), "invalid debug context id");
+    return debugContexts[debugContextId].get();
+}
+
+void Thread::FreeDebugContext()
+{
+    debugContexts.pop_back();
 }
 
 } } // namespace cminor::machine

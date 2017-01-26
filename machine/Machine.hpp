@@ -32,7 +32,7 @@ public:
     void RunGarbageCollector();
     Arena& Gen1Arena() { return *gen1Arena; }
     Arena& Gen2Arena() { return *gen2Arena; }
-    int32_t GetNextFrameId();
+    int32_t GetNextFrameId() { return nextFrameId++; }
     int32_t GetNextSegmentId();
     bool Exiting();
     void Exit();

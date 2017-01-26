@@ -250,11 +250,12 @@ void GarbageCollector::MarkLiveAllocations()
                 MarkLiveAllocations(objectReference, checked);
             }
         }
-        for (const std::unique_ptr<Frame>& frame : thread->Frames())
+        for (Frame* frame : thread->GetStack().Frames())
         {
-            const LocalVariableVector& locals = frame->Locals();
-            for (const LocalVariable& local : locals.Variables())
+            int n = frame->NumLocals();
+            for (int i = 0; i < n; ++i)
             {
+                const LocalVariable& local = frame->Local(i);
                 IntegralValue value = local.GetValue();
                 if (value.GetType() == ValueType::objectReference)
                 {

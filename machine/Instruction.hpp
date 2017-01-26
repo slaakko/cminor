@@ -29,6 +29,14 @@ void ThrowArgumentOutOfRangeException(const ArgumentOutOfRangeException& ex, Fra
 void ThrowInvalidCastException(const InvalidCastException& ex, Frame& frame);
 void ThrowFileSystemException(const FileSystemError& ex, Frame& frame);
 
+extern Machine* machine;
+extern ManagedMemoryPool* managedMemoryPool;
+
+inline Machine& GetMachine() { Assert(machine, "machine not set"); return *machine; }
+void SetMachine(Machine* machine_);
+inline ManagedMemoryPool& GetManagedMemoryPool() { Assert(managedMemoryPool, "managed memory pool not set"); return *managedMemoryPool; }
+void SetManagedMemoryPool(ManagedMemoryPool* managedMemoryPool_);
+
 class Instruction
 {
 public:
@@ -983,13 +991,13 @@ public:
         try
         {
             ObjectType* objectType = GetBoxedType(valueType);
-            ObjectReference objectReference = frame.GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
+            ObjectReference objectReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
             ClassData* classData = GetClassDataForBoxedType(valueType);
             IntegralValue classDataValue(classData);
-            frame.GetManagedMemoryPool().SetField(objectReference, 0, classDataValue);
+            GetManagedMemoryPool().SetField(objectReference, 0, classDataValue);
             IntegralValue value = frame.OpStack().Pop();
             Assert(value.GetType() == valueType, "value type mismatch");
-            frame.GetManagedMemoryPool().SetField(objectReference, 1, value);
+            GetManagedMemoryPool().SetField(objectReference, 1, value);
             frame.OpStack().Push(objectReference);
         }
         catch (const NullReferenceException& ex)
@@ -1022,7 +1030,7 @@ public:
             }
             else
             {
-                IntegralValue value = frame.GetManagedMemoryPool().GetField(objectReference, 1);
+                IntegralValue value = GetManagedMemoryPool().GetField(objectReference, 1);
                 if (value.GetType() != valueType)
                 {
                     throw SystemException("invalid unbox operation: value type does not match");

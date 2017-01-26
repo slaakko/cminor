@@ -6,13 +6,34 @@
 #include <cminor/machine/Frame.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Function.hpp>
+#include <cminor/machine/Util.hpp>
 
 namespace cminor { namespace machine {
 
-Frame::Frame(Machine& machine_, Thread& thread_, Function& fun_) :
-    machine(machine_), id(machine.GetNextFrameId()), thread(thread_), fun(fun_), managedMemoryPool(machine.GetManagedMemoryPool()), constantPool(fun.GetConstantPool()), opStack(thread.OpStack()), 
-    locals(fun.NumLocals()), pc(0), prevPC(0)
+bool debugging = false;
+
+inline bool Debugging()
 {
+    return debugging;
+}
+
+void SetDebugging()
+{
+    debugging = true;
+}
+
+Frame::Frame(uint64_t size_, Thread& thread_, Function& fun_) : size(size_), thread(thread_), fun(fun_), id(GetMachine().GetNextFrameId()), pc(0), prevPC(0)
+{
+    if (Debugging())
+    {
+        debugContextId = thread.AllocateDebugContext();
+    }
+    else
+    {
+        debugContextId = -1;
+    }
+    uint8_t* end = reinterpret_cast<uint8_t*>(this) + Align(sizeof(*this), 8);
+    locals = reinterpret_cast<LocalVariable*>(end);
 }
 
 Frame::~Frame()
@@ -21,12 +42,36 @@ Frame::~Frame()
     {
         thread.RemoveVariableReference(variableReference->Id());
     }
+    if (debugContextId != -1)
+    {
+        thread.FreeDebugContext();
+    }
 }
 
 void Frame::AddVariableReference(VariableReference* variableReference)
 {
     variableReferences.push_back(std::unique_ptr<VariableReference>(variableReference));
     thread.AddVariableReference(variableReference);
+}
+
+ConstantPool& Frame::GetConstantPool() 
+{ 
+    return fun.GetConstantPool(); 
+}
+
+OperandStack& Frame::OpStack() 
+{ 
+    return thread.OpStack();
+}
+
+const OperandStack& Frame::OpStack() const
+{ 
+    return thread.OpStack();
+}
+
+int Frame::NumLocals() const
+{ 
+    return fun.NumLocals(); 
 }
 
 Instruction* Frame::GetNextInst()
@@ -56,17 +101,33 @@ void Frame::SetPC(int32_t pc_)
 
 bool Frame::HasBreakpointAt(int32_t pc) const
 {
-    return breakpoints.find(pc) != breakpoints.cend();
+    if (Debugging())
+    {
+        DebugContext* debugContext = thread.GetDebugContext(debugContextId);
+        return debugContext->HasBreakpointAt(pc);
+    }
+    else
+    {
+        return false;
+    }
 }
 
 void Frame::SetBreakpointAt(int32_t pc)
 {
-    breakpoints.insert(pc);
+    if (Debugging())
+    {
+        DebugContext* debugContext = thread.GetDebugContext(debugContextId);
+        debugContext->SetBreakpointAt(pc);
+    }
 }
 
 void Frame::RemoveBreakpointAt(int32_t pc)
 {
-    breakpoints.erase(pc);
+    if (Debugging())
+    {
+        DebugContext* debugContext = thread.GetDebugContext(debugContextId);
+        debugContext->RemoveBreakpointAt(pc);
+    }
 }
 
 } } // namespace cminor::machine

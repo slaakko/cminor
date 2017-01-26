@@ -34,6 +34,11 @@ std::vector<StringT> Split(const StringT& s, typename StringT::value_type c)
     return v;
 }
 
+inline uint64_t Align(uint64_t n, uint64_t alignment)
+{
+    return (n + alignment - 1u) & -alignment;
+}
+
 } } // namespace cminor::machine
 
 #endif // CMINOR_MACHINE_UTIL_INCLUDED

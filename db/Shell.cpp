@@ -29,9 +29,9 @@ void Shell::Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<u
     argsArrayObjectType = argsArrayObjectType_;
     StartMachine();
     CommandGrammar* commandGrammar = CommandGrammar::Create();
-    if (!machine.MainThread().Frames().empty())
+    if (!machine.MainThread().GetStack().IsEmpty())
     {
-        Frame* frame = machine.MainThread().Frames().back().get();
+        Frame* frame = machine.MainThread().GetStack().CurrentFrame();
         if (frame->Fun().HasSourceFilePath())
         {
             currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
@@ -42,12 +42,12 @@ void Shell::Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<u
         try
         {
             CodeFormatter codeFormatter(std::cout);
-            if (!machine.MainThread().Frames().empty())
+            if (!machine.MainThread().GetStack().IsEmpty())
             {
-                int n = int(machine.MainThread().Frames().size());
+                int n = int(machine.MainThread().GetStack().Frames().size());
                 for (int i = n - 1; i >= 0; --i)
                 {
-                    Frame* frame = machine.MainThread().Frames()[i].get();
+                    Frame* frame = machine.MainThread().GetStack().Frames()[i];
                     if (frame->PC() < frame->Fun().NumInsts())
                     {
                         frame->Fun().Dump(codeFormatter, frame->PC());
@@ -103,9 +103,9 @@ void Shell::Step()
     else
     {
         machine.MainThread().Step();
-        if (!machine.MainThread().Frames().empty())
+        if (!machine.MainThread().GetStack().IsEmpty())
         {
-            Frame* frame = machine.MainThread().Frames().back().get();
+            Frame* frame = machine.MainThread().GetStack().CurrentFrame();
             if (frame->Fun().HasSourceFilePath())
             {
                 currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
@@ -123,9 +123,9 @@ void Shell::Next()
     else
     {
         machine.MainThread().Next();
-        if (!machine.MainThread().Frames().empty())
+        if (!machine.MainThread().GetStack().IsEmpty())
         {
-            Frame* frame = machine.MainThread().Frames().back().get();
+            Frame* frame = machine.MainThread().GetStack().CurrentFrame();
             if (frame->Fun().HasSourceFilePath())
             {
                 currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
@@ -143,9 +143,9 @@ void Shell::Run()
     else
     {
         machine.MainThread().RunDebug();
-        if (!machine.MainThread().Frames().empty())
+        if (!machine.MainThread().GetStack().IsEmpty())
         {
-            Frame* frame = machine.MainThread().Frames().back().get();
+            Frame* frame = machine.MainThread().GetStack().CurrentFrame();
             if (frame->Fun().HasSourceFilePath())
             {
                 currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
@@ -156,7 +156,7 @@ void Shell::Run()
 
 void Shell::Local(int index)
 {
-    Frame* frame = machine.MainThread().Frames().back().get();
+    Frame* frame = machine.MainThread().GetStack().CurrentFrame();
     if (index < 0)
     {
         throw std::runtime_error("invalid local index");
@@ -171,7 +171,7 @@ void Shell::Local(int index)
 
 void Shell::Operand(int index)
 {
-    Frame* frame = machine.MainThread().Frames().back().get();
+    Frame* frame = machine.MainThread().GetStack().CurrentFrame();
     int32_t n = int32_t(frame->OpStack().Values().size());
     if (index < 0)
     {
@@ -235,9 +235,9 @@ void Shell::RepeatLastCommand()
 
 void Shell::PrintAllocation(int handle)
 {
-    Frame* frame = machine.MainThread().Frames().back().get();
+    Frame* frame = machine.MainThread().GetStack().CurrentFrame();
     AllocationHandle allocationHandle(handle);
-    ManagedAllocation* allocation = frame->GetManagedMemoryPool().GetAllocation(allocationHandle);
+    ManagedAllocation* allocation = GetManagedMemoryPool().GetAllocation(allocationHandle);
     Object* o = dynamic_cast<Object*>(allocation);
     if (o)
     {
@@ -281,9 +281,9 @@ void Shell::PrintAllocation(int handle)
 
 void Shell::PrintField(int handle, int index)
 {
-    Frame* frame = machine.MainThread().Frames().back().get();
+    Frame* frame = machine.MainThread().GetStack().CurrentFrame();
     AllocationHandle allocationHandle(handle);
-    ManagedAllocation* allocation = frame->GetManagedMemoryPool().GetAllocation(allocationHandle);
+    ManagedAllocation* allocation = GetManagedMemoryPool().GetAllocation(allocationHandle);
     Object* o = dynamic_cast<Object*>(allocation);
     if (o)
     {
@@ -326,7 +326,7 @@ void Shell::List(const std::string& sourceFileName, int line)
     }
     if (line == -1)
     {
-        Frame* frame = machine.MainThread().Frames().back().get();
+        Frame* frame = machine.MainThread().GetStack().CurrentFrame();
         uint32_t pc = frame->PC();
         line = frame->Fun().GetSourceLine(pc);
         while (line == -1 && pc != -1)
@@ -386,7 +386,7 @@ void Shell::ShowBreakpoints()
 
 void Shell::Stack()
 {
-    Frame* frame = machine.MainThread().Frames().back().get();
+    Frame* frame = machine.MainThread().GetStack().CurrentFrame();
     std::string stackTrace = ToUtf8(frame->GetThread().GetStackTrace());
     std::cout << stackTrace << std::endl;
 }

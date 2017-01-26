@@ -185,6 +185,7 @@ int main(int argc, const char** argv)
         {
             throw std::runtime_error("program assembly file '" + assemblyFilePath + "' not found");
         }
+        SetDebugging();
         Machine machine;
         Assembly assembly(machine);
         const Assembly* rootAssembly = &assembly;

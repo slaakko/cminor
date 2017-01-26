@@ -11,9 +11,4 @@ LocalVariable::LocalVariable() : value()
 {
 }
 
-LocalVariableVector::LocalVariableVector(int32_t numVars)
-{
-    variables.resize(numVars);
-}
-
 } } // namespace cminor::machine

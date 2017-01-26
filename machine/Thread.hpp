@@ -5,8 +5,11 @@
 
 #ifndef CMINOR_MACHINE_THREAD_INCLUDED
 #define CMINOR_MACHINE_THREAD_INCLUDED
-#include <cminor/machine/Frame.hpp>
-#include <vector>
+#include <cminor/machine/Stack.hpp>
+#include <cminor/machine/Object.hpp>
+#include <cminor/machine/OperandStack.hpp>
+#include <cminor/machine/VariableReference.hpp>
+#include <unordered_set>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -30,15 +33,26 @@ enum class ThreadState
     paused, running, exited
 };
 
+class DebugContext
+{
+public:
+    DebugContext();
+    bool HasBreakpointAt(int32_t pc) const;
+    void SetBreakpointAt(int32_t pc);
+    void RemoveBreakpointAt(int32_t pc);
+private:
+    std::unordered_set<int32_t> breakpoints;
+};
+
 class Thread
 {
 public:
     Thread(int32_t id_, Machine& machine_, Function& fun_);
+    const Stack& GetStack() const { return stack; }
+    Stack& GetStack() { return stack; }
     int32_t Id() const { return id; }
     Machine& GetMachine() { return machine; }
     OperandStack& OpStack() { return opStack; }
-    std::vector<std::unique_ptr<Frame>>& Frames() { return frames; }
-    const std::vector<std::unique_ptr<Frame>>& Frames() const { return frames; }
     void IncInstructionCount() { ++instructionCount;  }
     void Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void Step();
@@ -63,15 +77,17 @@ public:
     VariableReference* GetVariableReference(int32_t variableReferenceId) const;
     void RemoveVariableReference(int32_t variableReferenceId);
     int32_t GetNextVariableReferenceId();
-    void Compact();
     ObjectReference Exception() const { return exception; }
+    int AllocateDebugContext();
+    DebugContext* GetDebugContext(int debugContextId);
+    void FreeDebugContext();
 private:
+    Stack stack;
     int32_t id;
     Machine& machine;
     Function& fun;
     OperandStack opStack;
     uint64_t instructionCount;
-    std::vector<std::unique_ptr<Frame>> frames;
     std::unordered_map<int32_t, Frame*> frameMap;
     std::unordered_map<int32_t, VariableReference*> variableReferenceMap;
     bool handlingException;
@@ -83,6 +99,7 @@ private:
     std::stack<int32_t> exitBlockStack;
     std::atomic<ThreadState> state;
     int32_t nextVariableReferenceId;
+    std::vector<std::unique_ptr<DebugContext>> debugContexts;
     void RunToEnd();
     void FindExceptionBlock(Frame* frame);
     bool DispatchToHandlerOrFinally(Frame* frame);

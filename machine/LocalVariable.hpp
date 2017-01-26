@@ -22,17 +22,6 @@ private:
     IntegralValue value;
 };
 
-class LocalVariableVector
-{
-public:
-    LocalVariableVector(int32_t numVars);
-    int32_t Size() const { return int32_t(variables.size()); }
-    LocalVariable& operator[](int32_t index) { Assert(index >= 0 && index < variables.size(), "invalid local variable index " + std::to_string(index)); return variables[index]; }
-    const std::vector<LocalVariable>& Variables() const { return variables; }
-private:
-    std::vector<LocalVariable> variables;
-};
-
 } } // namespace cminor::machine
 
 #endif // CMINOR_MACHINE_LOCAL_VARIABLE_INCLUDED

@@ -21,6 +21,7 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Class.hpp>
+#include <cminor/machine/Util.hpp>
 #include <cminor/pl/InitDone.hpp>
 #include <cminor/machine/Path.hpp>
 #include <boost/filesystem.hpp>
@@ -69,9 +70,12 @@ void PrintHelp()
         "Usage: cminorbuildsys [options]\n" <<
         "Compile system library solution.\n" <<
         "Options:\n" <<
-        "-v | --verbose : verbose output\n" <<
-        "-d | --dparse  : debug parsing to stdout\n" <<
-        "-h | --help    : print this help message\n" <<
+        "-c=CONFIG | --config=CONFIG : set configuration to CONFIG.\n" <<
+        "                              CONFIG can be debug or release.\n" <<
+        "                              The default is debug.\n" <<
+        "-d | --dparse               : debug parsing to stdout\n" <<
+        "-h | --help                 : print this help message\n" <<
+        "-v | --verbose              : verbose output\n" <<
         std::endl;
 }
 
@@ -98,6 +102,32 @@ int main(int argc, const char** argv)
                     PrintHelp();
                     return 0;
                 }
+                else if (arg.find('=', 0) != std::string::npos)
+                {
+                    std::vector<std::string> components = Split(arg, '=');
+                    if (components.size() != 2)
+                    {
+                        throw std::runtime_error("invalid argument '" + arg + "'");
+                    }
+                    else
+                    {
+                        if (components[0] == "-c" || components[0] == "--config")
+                        {
+                            if (components[1] == "release")
+                            {
+                                SetGlobalFlag(GlobalFlags::release);
+                            }
+                            else if (components[1] != "debug")
+                            {
+                                throw std::runtime_error("invalid configuration argument '" + arg + "'");
+                            }
+                        }
+                        else
+                        {
+                            throw std::runtime_error("unknown argument '" + arg + "'");
+                        }
+                    }
+                }
                 else
                 {
                     throw std::runtime_error("unknown argument '" + arg + "'");
@@ -110,7 +140,7 @@ int main(int argc, const char** argv)
         }
         Machine machine;
         {
-            std::unique_ptr<Assembly> systemCoreAssembly = CreateSystemCoreAssembly(machine, "debug");
+            std::unique_ptr<Assembly> systemCoreAssembly = CreateSystemCoreAssembly(machine, GetConfig());
             boost::filesystem::path obp(systemCoreAssembly->FilePath());
             obp.remove_filename();
             boost::filesystem::create_directories(obp);

@@ -11,6 +11,8 @@
 
 namespace cminor { namespace machine {
 
+void SetDebugging();
+
 class Machine;
 class ManagedMemoryPool;
 class ConstantPool;
@@ -20,19 +22,16 @@ class Instruction;
 class Frame
 {
 public:
-    Frame(Machine& machine_, Thread& thread_, Function& fun_);
+    Frame(uint64_t size_, Thread& thread_, Function& fun_);
     ~Frame();
-    Frame(Frame&&) = default;
-    Machine& GetMachine() { return machine; }
-    int32_t Id() const { return id; }
     Thread& GetThread() { return thread; }
     Function& Fun() { return fun; }
-    ManagedMemoryPool& GetManagedMemoryPool() { return managedMemoryPool; }
-    ConstantPool& GetConstantPool() { return constantPool; }
-    OperandStack& OpStack() { return opStack; }
-    const OperandStack& OpStack() const { return opStack; }
-    const LocalVariableVector& Locals() const { return locals; }
-    LocalVariable& Local(int32_t index) { return locals[index];  }
+    ConstantPool& GetConstantPool();
+    OperandStack& OpStack();
+    const OperandStack& OpStack() const;
+    int NumLocals() const;
+    LocalVariable& Local(int32_t index) { Assert(index >= 0 && index <= NumLocals(), "invalid local variable index"); return locals[index]; }
+    uint32_t Id() const { return id; }
     Instruction* GetNextInst();
     int32_t PC() const { return pc; }
     void SetPC(int32_t pc_);
@@ -41,19 +40,17 @@ public:
     bool HasBreakpointAt(int32_t pc) const;
     void SetBreakpointAt(int32_t pc);
     void RemoveBreakpointAt(int32_t pc);
+    uint64_t Size() const { return size; }
 private:
-    Machine& machine;
-    int32_t id;
+    uint64_t size;
     Thread& thread;
     Function& fun;
-    ManagedMemoryPool& managedMemoryPool;
-    ConstantPool& constantPool;
-    OperandStack& opStack;
-    LocalVariableVector locals;
-    std::vector<std::unique_ptr<VariableReference>> variableReferences;
+    int32_t id;
+    int32_t debugContextId;
     int32_t pc;
     int32_t prevPC;
-    std::unordered_set<int32_t> breakpoints;
+    std::vector<std::unique_ptr<VariableReference>> variableReferences;
+    LocalVariable* locals;
 };
 
 } } // namespace cminor::machine

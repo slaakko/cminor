@@ -42,6 +42,7 @@
     <ClInclude Include="Prime.hpp" />
     <ClInclude Include="Random.hpp" />
     <ClInclude Include="Reader.hpp" />
+    <ClInclude Include="Stack.hpp" />
     <ClInclude Include="String.hpp" />
     <ClInclude Include="System.hpp" />
     <ClInclude Include="TextUtils.hpp" />
@@ -74,6 +75,7 @@
     <ClCompile Include="Prime.cpp" />
     <ClCompile Include="Random.cpp" />
     <ClCompile Include="Reader.cpp" />
+    <ClCompile Include="Stack.cpp" />
     <ClCompile Include="System.cpp" />
     <ClCompile Include="TextUtils.cpp" />
     <ClCompile Include="Thread.cpp" />
