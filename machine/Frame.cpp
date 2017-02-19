@@ -6,7 +6,7 @@
 #include <cminor/machine/Frame.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Function.hpp>
-#include <cminor/machine/Util.hpp>
+#include <cminor/util/Util.hpp>
 
 namespace cminor { namespace machine {
 
@@ -17,7 +17,7 @@ inline bool Debugging()
     return debugging;
 }
 
-void SetDebugging()
+MACHINE_API void SetDebugging()
 {
     debugging = true;
 }
@@ -38,9 +38,10 @@ Frame::Frame(uint64_t size_, Thread& thread_, Function& fun_) : size(size_), thr
 
 Frame::~Frame()
 {
-    for (const std::unique_ptr<VariableReference>& variableReference : variableReferences)
+    for (VariableReference* variableReference : variableReferences)
     {
         thread.RemoveVariableReference(variableReference->Id());
+        delete variableReference;
     }
     if (debugContextId != -1)
     {
@@ -50,7 +51,7 @@ Frame::~Frame()
 
 void Frame::AddVariableReference(VariableReference* variableReference)
 {
-    variableReferences.push_back(std::unique_ptr<VariableReference>(variableReference));
+    variableReferences.push_back(variableReference);
     thread.AddVariableReference(variableReference);
 }
 

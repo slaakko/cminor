@@ -20,9 +20,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Build.hpp" />
+    <ClInclude Include="NativeCompiler.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Build.cpp" />
+    <ClCompile Include="NativeCompiler.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{832C864C-F397-4F8E-8C3C-6AF6DC71227E}</ProjectGuid>
@@ -85,7 +87,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -98,9 +100,9 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0;C:\Programming\llvm-3.9.1.src\include;C:\Programming\llvm-3.9.1.src\tools\lld\include;C:\Programming\llvm-3.9.1\build\include</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -116,7 +118,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -133,8 +135,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0;C:\Programming\llvm-3.9.1.src\include;C:\Programming\llvm-3.9.1.src\tools\lld\include;C:\Programming\llvm-3.9.1-release\build\include</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

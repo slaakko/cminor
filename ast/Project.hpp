@@ -72,6 +72,10 @@ public:
     const std::string& FilePath() const { return filePath; }
     const boost::filesystem::path& BasePath() const { return basePath; }
     const std::string& AssemblyFilePath() const { return assemblyFilePath; }
+    void SetNativeImportLibraryFilePath(const std::string& nativeImportLibraryFilePath_) { nativeImportLibraryFilePath = nativeImportLibraryFilePath_; }
+    const std::string& NativeImportLibraryFilePath() const { return nativeImportLibraryFilePath; }
+    void SetNativeSharedLibraryFilePath(const std::string& nativeSharedLibraryFilePath_) { nativeSharedLibraryFilePath = nativeSharedLibraryFilePath_; }
+    const std::string& NativeSharedLibraryFilePath() const { return nativeSharedLibraryFilePath; }
     const std::vector<std::string>& AssemblyReferences() const { return assemblyReferences; }
     const std::vector<std::string>& SourceFilePaths() const { return sourceFilePaths; }
     Target GetTarget() const { return target; }
@@ -88,12 +92,15 @@ private:
     boost::filesystem::path systemAssemblyDir;
     std::vector<std::unique_ptr<ProjectDeclaration>> declarations;
     std::string assemblyFilePath;
+    std::string nativeImportLibraryFilePath;
+    std::string nativeSharedLibraryFilePath;
     std::vector<std::string> assemblyReferences;
     std::vector<std::string> sourceFilePaths;
     bool isSystemProject;
 };
 
 std::string CminorRootDir();
+std::string CminorLibDir();
 std::string CminorSystemDir();
 std::string CminorSystemAssemblyDir(const std::string& config);
 std::string CminorSystemAssemblyFilePath(const std::string& config);

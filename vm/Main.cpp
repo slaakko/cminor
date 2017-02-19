@@ -17,19 +17,23 @@
 #include <cminor/ast/Project.hpp>
 #include <cminor/vmlib/VmFunction.hpp>
 #include <cminor/vmlib/File.hpp>
-#include <cminor/machine/Path.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/Path.hpp>
+#include <cminor/util/TextUtils.hpp>
+#include <cminor/jit/JitCompiler.hpp>
+#include <llvm/Support/TargetSelect.h>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
 #include <chrono>
-#include <cminor/machine/Unicode.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cminor/machine/Log.hpp>
 #include <sstream>
 
 using namespace cminor::machine;
+using namespace cminor::jit;
 using namespace cminor::symbols;
 using namespace cminor::ast;
 using namespace cminor::vmlib;
+using namespace llvm;
 
 struct InitDone
 {
@@ -77,7 +81,8 @@ void PrintHelp()
         "Usage: cminorvm [options] program.cminora [arguments]\n" <<
         "Run program.cminora with given arguments.\n" <<
         "Options:\n" <<
-        "-h | --help     : print this help message" <<
+        "-h | --help     : print this help message\n" <<
+        "-j | --jit      : use just in time compilation\n" <<
         "-s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE:\n" <<
         "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
         "       segment in megabytes. The default is 16 MB.\n" << 
@@ -107,6 +112,7 @@ int main(int argc, const char** argv)
         std::vector<std::string> arguments;
         uint64_t segmentSizeMB = 0;
         uint64_t poolThresholdMB = 0;
+        bool jit = false;
         for (int i = 1; i < argc; ++i)
         {
             std::string arg = argv[i];
@@ -120,6 +126,10 @@ int main(int argc, const char** argv)
                         {
                             PrintHelp();
                             return 0;
+                        }
+                        else if (arg == "-j" || arg == "--jit")
+                        {
+                            jit = true;
                         }
                         else if (arg.find('=', 0) != std::string::npos)
                         {
@@ -194,71 +204,30 @@ int main(int argc, const char** argv)
         }
         Machine machine;
         Assembly assembly(machine);
-        const Assembly* rootAssembly = &assembly;
-        SymbolReader symbolReader(assemblyFilePath);
-        std::vector<CallInst*> callInstructions;
-        std::vector<Fun2DlgInst*> fun2DlgInstructions;
-        std::vector<MemFun2ClassDlgInst*> memFun2ClassDlgInstructions;
-        std::vector<TypeInstruction*> typeInstructions;
-        std::vector<SetClassDataInst*> setClassDataInstructions;
-        std::vector<ClassTypeSymbol*> classTypes;
-        std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(assemblyFilePath).remove_filename().generic_string());
-        std::unordered_set<std::string> importSet;
-        std::unordered_set<utf32_string> classTemplateSpecializationNames;
-        std::vector<Assembly*> assemblies;
-        std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
-        assembly.BeginRead(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, 
-            setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
-        auto it = std::unique(assemblies.begin(), assemblies.end());
-        assemblies.erase(it, assemblies.end());
-        std::unordered_map<Assembly*, AssemblyDependency*> dependencyMap;
-        for (const auto& p : assemblyDependencyMap)
-        {
-            dependencyMap[p.second->GetAssembly()] = p.second;
-        }
-        std::vector<Assembly*> finishReadOrder = CreateFinishReadOrder(assemblies, dependencyMap, rootAssembly);
-        assembly.FinishReads(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, 
-            int(finishReadOrder.size() - 2), finishReadOrder, true);
-        assembly.GetSymbolTable().MergeClassTemplateSpecializations();
-        Link(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes);
-        callInstructions.clear();
-        fun2DlgInstructions.clear();
-        memFun2ClassDlgInstructions.clear();
-        typeInstructions.clear();
-        setClassDataInstructions.clear();
-        classTypes.clear();
-        classTemplateSpecializationNames.clear();
+        assembly.Load(assemblyFilePath);
         std::vector<utf32_string> programArguments;
         for (const std::string& arg : arguments)
         {
             programArguments.push_back(ToUtf32(arg));
         }
-        FunctionSymbol* mainFun = assembly.GetSymbolTable().GetMainFunction();
-        if (!mainFun)
+        if (!jit)
         {
-            throw std::runtime_error("program has no main function");
+            return assembly.RunIntermediateCode(programArguments);
         }
-        ObjectType* argsArrayObjectType = nullptr;
-        if (mainFun->Arity() == 1)
+        if (jit)
         {
-            TypeSymbol* argsParamType = mainFun->Parameters()[0]->GetType();
-            ArrayTypeSymbol* argsArrayType = dynamic_cast<ArrayTypeSymbol*>(argsParamType);
-            if (argsArrayType && argsArrayType->ElementType() == assembly.GetSymbolTable().GetType(U"System.String"))
-            {
-                argsArrayObjectType = argsArrayType->GetObjectType();
-            }
-            else
-            {
-                throw Exception("parameter type of program main function is not string[]", mainFun->GetSpan());
-            }
+            InitializeNativeTarget();
+            InitializeNativeTargetAsmPrinter();
+            InitializeNativeTargetAsmParser();
+            Function* main = FunctionTable::GetMain();
+            JitCompiler jitCompiler(*main);
+            return jitCompiler.ProgramReturnValue();
         }
-        machine.Run(programArguments, argsArrayObjectType);
-        if (mainFun->ReturnType() == assembly.GetSymbolTable().GetType(U"System.Int32"))
-        {
-            IntegralValue programReturnValue = machine.MainThread().OpStack().Pop();
-            return programReturnValue.AsInt();
-        }
-        return 0;
+    }
+    catch (const Exception& ex)
+    {
+        std::cerr << ex.What() << std::endl;
+        return 1;
     }
     catch (const std::exception& ex)
     {

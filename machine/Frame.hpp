@@ -5,13 +5,14 @@
 
 #ifndef CMINOR_MACHINE_FRAME_INCLUDED
 #define CMINOR_MACHINE_FRAME_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/OperandStack.hpp>
 #include <cminor/machine/LocalVariable.hpp>
 #include <cminor/machine/VariableReference.hpp>
 
 namespace cminor { namespace machine {
 
-void SetDebugging();
+MACHINE_API void SetDebugging();
 
 class Machine;
 class ManagedMemoryPool;
@@ -19,7 +20,7 @@ class ConstantPool;
 class Function;
 class Instruction;
 
-class Frame
+class MACHINE_API Frame
 {
 public:
     Frame(uint64_t size_, Thread& thread_, Function& fun_);
@@ -49,7 +50,7 @@ private:
     int32_t debugContextId;
     int32_t pc;
     int32_t prevPC;
-    std::vector<std::unique_ptr<VariableReference>> variableReferences;
+    std::vector<VariableReference*> variableReferences;
     LocalVariable* locals;
 };
 

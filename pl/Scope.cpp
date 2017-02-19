@@ -6,7 +6,7 @@
 #include <cminor/pl/Scope.hpp>
 #include <cminor/pl/Namespace.hpp>
 #include <cminor/pl/Utility.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <stdexcept>
 
 namespace cminor { namespace parsing {
@@ -67,7 +67,7 @@ void Scope::AddNamespace(Namespace* nsToAdd)
 {
     Own(nsToAdd);
     Namespace* parent = GetGlobalScope()->Ns();
-    std::vector<std::string> nameComponents = cminor::machine::Split(nsToAdd->FullName(), '.');
+    std::vector<std::string> nameComponents = cminor::util::Split(nsToAdd->FullName(), '.');
     if (nameComponents.empty())
     {
         throw std::runtime_error("namespace components empty");
@@ -108,7 +108,7 @@ void Scope::AddNamespace(Namespace* nsToAdd)
 
 ParsingObject* Scope::GetQualifiedObject(const std::string& qualifiedObjectName) const
 {
-    std::vector<std::string> components = cminor::machine::Split(qualifiedObjectName, '.');
+    std::vector<std::string> components = cminor::util::Split(qualifiedObjectName, '.');
     int n = int(components.size());
     Scope* s = const_cast<Scope*>(this);
     while (s)

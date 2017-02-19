@@ -3,12 +3,12 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_UNICODE_INCLUDED
-#define CMINOR_MACHINE_UNICODE_INCLUDED
+#ifndef CMINOR_UTIL_UNICODE_INCLUDED
+#define CMINOR_UTIL_UNICODE_INCLUDED
 #include <string>
 #include <vector>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 typedef char32_t utf32_char;
 typedef char16_t utf16_char;
@@ -24,6 +24,6 @@ std::string ToUtf8(const utf16_string& utf16Str);
 std::vector<uint8_t> EncodeUInt(uint32_t x);
 uint32_t DecodeUInt(const std::vector<uint8_t>& bytes);
 
-} } // namespace cminor::machine
+} } // namespace cminor::util
 
-#endif // CMINOR_MACHINE_UNICODE_INCLUDED
+#endif // CMINOR_UTIL_UNICODE_INCLUDED

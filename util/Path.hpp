@@ -3,11 +3,11 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_PATH_INCLUDED
-#define CMINOR_MACHINE_PATH_INCLUDED
+#ifndef CMINOR_UTIL_PATH_INCLUDED
+#define CMINOR_UTIL_PATH_INCLUDED
 #include <stdexcept>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 class InvalidPathException: public std::runtime_error
 {
@@ -36,6 +36,6 @@ public:
     static bool IsRelative(const std::string& path);
 };
 
-} } // namespace cminor::machine
+} } // namespace cminor::util
 
-#endif // CMINOR_MACHINE_PATH_INCLUDED
+#endif // CMINOR_UTIL_PATH_INCLUDED

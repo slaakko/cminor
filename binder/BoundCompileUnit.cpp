@@ -96,6 +96,7 @@ FunctionSymbol* BoundCompileUnit::GetConversion(TypeSymbol* sourceType, TypeSymb
             {
                 ConstantPool& constantPool = assembly.GetConstantPool();
                 utf32_string fullFunctionName = viableFunction->FullName();
+                viableFunction->SetExported();
                 Constant functionNameContant = constantPool.GetConstant(constantPool.Install(StringPtr(fullFunctionName.c_str())));
                 Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
                 utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();

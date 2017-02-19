@@ -46,7 +46,7 @@ namespace System.Text.Parsing
         }
         int lineLength = lineEnd - lineStart;
         string lines = content.Substring(lineStart, lineLength);
-        int spanCols = Max(1, Min(span.End - span.Start, lineLength - cols));
+        int spanCols = Math.Max(1, Math.Min(span.End - span.Start, lineLength - cols));
         string spaces = new string(' ', cols);
         string hats = new string('^', spanCols);
         lines = lines + "\n" + spaces + hats;

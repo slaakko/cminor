@@ -12,7 +12,7 @@
 
 namespace cminor { namespace parser {
 
-using namespace cminor::machine;
+using namespace cminor::util;
 using namespace cminor::parsing;
 
 LiteralGrammar* LiteralGrammar::Create()

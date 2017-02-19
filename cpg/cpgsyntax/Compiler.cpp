@@ -9,8 +9,8 @@
 #include <cminor/cpg/cpgsyntax/ParserFile.hpp>
 #include <cminor/cpg/cpgsyntax/Library.hpp>
 #include <cminor/cpg/cpgsyntax/CodeGenerator.hpp>
-#include <cminor/machine/TextUtils.hpp>
-#include <cminor/machine/MappedInputFile.hpp>
+#include <cminor/util/TextUtils.hpp>
+#include <cminor/util/MappedInputFile.hpp>
 #include <cminor/pl/Linking.hpp>
 #include <cminor/pl/ParsingDomain.hpp>
 #include <cminor/pl/Exception.hpp>
@@ -19,7 +19,7 @@
 
 namespace cpg { namespace syntax {
 
-using namespace cminor::machine;
+using namespace cminor::util;
 using namespace boost::filesystem;
 
 std::string ResolveReferenceFilePath(const std::string& relativeReferenceFilePath, const std::string& projectBasePath, const std::vector<std::string>& libraryDirectories)
@@ -52,7 +52,7 @@ void Compile(const std::string& projectFilePath, const std::vector<std::string>&
     ProjectFileGrammar* projectFileGrammar = ProjectFileGrammar::Create(projectParsingDomain.get());
     LibraryFileGrammar* libraryFileGrammar = LibraryFileGrammar::Create(projectParsingDomain.get());
     ParserFileGrammar* parserFileGrammar = ParserFileGrammar::Create(projectParsingDomain.get());
-    cminor::machine::MappedInputFile projectFile(projectFilePath);
+    cminor::util::MappedInputFile projectFile(projectFilePath);
     std::unique_ptr<Project> project(projectFileGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath));
     std::cout << "Compiling project '" << project->Name() << "'...\n";
     std::unique_ptr<cminor::parsing::ParsingDomain> parsingDomain(new cminor::parsing::ParsingDomain());
@@ -65,7 +65,7 @@ void Compile(const std::string& projectFilePath, const std::vector<std::string>&
         std::string relativeReferenceFilePath = referenceFiles[i];
         std::string referenceFilePath = ResolveReferenceFilePath(relativeReferenceFilePath, project->BasePath(), libraryDirectories);
         std::cout << "> " << referenceFilePath << "\n";
-        cminor::machine::MappedInputFile libraryFile(referenceFilePath);
+        cminor::util::MappedInputFile libraryFile(referenceFilePath);
         libraryFileGrammar->Parse(libraryFile.Begin(), libraryFile.End(), i, referenceFilePath, parsingDomain.get());
     }
     std::cout << "Parsing source files...\n";
@@ -77,7 +77,7 @@ void Compile(const std::string& projectFilePath, const std::vector<std::string>&
     {
         std::string sourceFilePath = sourceFiles[i];
         std::cout << "> " << sourceFilePath << "\n";
-        cminor::machine::MappedInputFile sourceFile(sourceFilePath);
+        cminor::util::MappedInputFile sourceFile(sourceFilePath);
         std::unique_ptr<ParserFileContent> parserFileContent(parserFileGrammar->Parse(sourceFile.Begin(), sourceFile.End(), i, sourceFilePath, i, parsingDomain.get()));
         parserFiles.push_back(std::move(parserFileContent));
     }

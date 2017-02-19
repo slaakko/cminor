@@ -3,7 +3,8 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/TextUtils.hpp>
+#include <cminor/util/Util.hpp>
 #include <cctype>
 #include <sstream>
 #include <fstream>
@@ -11,7 +12,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 std::string Trim(const std::string& s)
 {
@@ -357,4 +358,49 @@ std::string ToString(double x, int minNumDecimals, int maxNumDecimals)
     return result;
 }
 
-} } // namespace cminor::machine
+inline char HexNibble(uint8_t n)
+{
+    static const char* h = "0123456789ABCDEF";
+    return h[n];
+}
+
+inline std::string ToHexString(uint8_t x)
+{
+    std::string s;
+    s.append(1, HexNibble(x >> 4)).append(1, HexNibble(x & 0x0F));
+    return s;
+}
+
+std::string ToHexString(uint16_t x)
+{
+    std::string s;
+    s.append(ToHexString(uint8_t((x >> 8) & 0xFF)));
+    s.append(ToHexString(uint8_t((x & 0xFF))));
+    return s;
+}
+
+std::string ToHexString(uint32_t x)
+{
+    std::string s;
+    s.append(ToHexString(uint8_t((x >> 24) & 0xFF)));
+    s.append(ToHexString(uint8_t((x >> 16) & 0xFF)));
+    s.append(ToHexString(uint8_t((x >> 8) & 0xFF)));
+    s.append(ToHexString(uint8_t((x & 0xFF))));
+    return s;
+}
+
+std::string ToHexString(uint64_t x)
+{
+    std::string s;
+    s.append(ToHexString(uint8_t((x >> 56) & 0xFF)));
+    s.append(ToHexString(uint8_t((x >> 48) & 0xFF)));
+    s.append(ToHexString(uint8_t((x >> 40) & 0xFF)));
+    s.append(ToHexString(uint8_t((x >> 32) & 0xFF)));
+    s.append(ToHexString(uint8_t((x >> 24) & 0xFF)));
+    s.append(ToHexString(uint8_t((x >> 16) & 0xFF)));
+    s.append(ToHexString(uint8_t((x >> 8) & 0xFF)));
+    s.append(ToHexString(uint8_t((x & 0xFF))));
+    return s;
+}
+
+} } // namespace cminor::util

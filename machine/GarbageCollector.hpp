@@ -5,6 +5,7 @@
 
 #ifndef CMINOR_MACHINE_GARBAGE_COLLECTOR_INCLUDED
 #define CMINOR_MACHINE_GARBAGE_COLLECTOR_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Object.hpp>
 #include <atomic>
 #include <condition_variable>
@@ -23,11 +24,12 @@ enum class GarbageCollectorState
     idle, requested, collecting, collected
 };
 
+extern MACHINE_API bool wantToCollectGarbage;
+
 class GarbageCollector
 {
 public:
     GarbageCollector(Machine& machine_);
-    bool WantToCollectGarbage();
     void WaitForIdle(Thread& thread);
     void RequestGarbageCollection(Thread& thread);
     void RequestFullCollection(Thread& thread);

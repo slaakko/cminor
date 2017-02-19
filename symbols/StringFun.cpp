@@ -25,6 +25,7 @@ BasicTypeConversion* CreateStringLiteralToStringConversion(Assembly& assembly, C
     strLit2String->SetSourceType(stringType);
     strLit2String->SetTargetType(stringType);
     strLit2String->SetConversionInstructionName("slit2s");
+    strLit2String->SetCreatesObject();
     return strLit2String;
 }
 

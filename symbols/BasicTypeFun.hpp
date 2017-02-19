@@ -80,6 +80,8 @@ public:
     void SetTargetType(TypeSymbol* targetType_) { targetType = targetType_; SetType(targetType); }
     TypeSymbol* ConversionTargetType() const override { return targetType; }
     void SetConversionInstructionName(const std::string& conversionInstructionName_) { conversionInstructionName = conversionInstructionName_; }
+    bool CreatesObject() { return createsObject; }
+    void SetCreatesObject() { createsObject = true; }
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
     void EmplaceType(TypeSymbol* type, int index) override;
 private:
@@ -88,6 +90,7 @@ private:
     TypeSymbol* sourceType;
     TypeSymbol* targetType;
     std::string conversionInstructionName;
+    bool createsObject;
 };
 
 class BasicTypeUnaryOpFun : public BasicTypeFun

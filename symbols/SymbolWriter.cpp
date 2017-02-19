@@ -9,7 +9,7 @@
 
 namespace cminor { namespace symbols {
 
-SymbolWriter::SymbolWriter(const std::string& fileName_) : AstWriter(fileName_), assembly(nullptr)
+SymbolWriter::SymbolWriter(const std::string& fileName_) : AstWriter(fileName_), assembly(nullptr), keepProjectBitForSymbols(false)
 {
 }
 

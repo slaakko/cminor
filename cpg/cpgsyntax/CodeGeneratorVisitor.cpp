@@ -4,7 +4,7 @@
 // =================================
 
 #include <cminor/cpg/cpgsyntax/CodeGeneratorVisitor.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <cminor/pl/Keyword.hpp>
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Rule.hpp>
@@ -15,9 +15,9 @@
 namespace cpg { namespace syntax {
 
 using namespace cminor::parsing;
-using cminor::machine::StringStr;
-using cminor::machine::CharStr;
-using cminor::machine::Replace;
+using cminor::util::StringStr;
+using cminor::util::CharStr;
+using cminor::util::Replace;
 
 class KeywordListCreator : public cminor::parsing::Visitor
 {

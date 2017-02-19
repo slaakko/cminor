@@ -6,21 +6,35 @@
 #include <cminor/machine/Instruction.hpp>
 #include <cminor/machine/Error.hpp>
 #include <cminor/machine/Machine.hpp>
-#include <cminor/machine/Util.hpp>
-#include <cminor/machine/String.hpp>
+#include <cminor/util/Util.hpp>
+#include <cminor/util/String.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <cminor/machine/Constant.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Type.hpp>
+#include <cminor/machine/MachineFunctionVisitor.hpp>
 
 namespace cminor { namespace machine {
 
 Machine* machine = nullptr;
 ManagedMemoryPool* managedMemoryPool = nullptr;
 
+MACHINE_API Machine& GetMachine() 
+{ 
+    Assert(machine, "machine not set"); 
+    return *machine; 
+}
+
 void SetMachine(Machine* machine_)
 {
     machine = machine_;
+}
+
+MACHINE_API ManagedMemoryPool& GetManagedMemoryPool()
+{ 
+    Assert(managedMemoryPool, "managed memory pool not set"); 
+    return *managedMemoryPool; 
 }
 
 void SetManagedMemoryPool(ManagedMemoryPool* managedMemoryPool_)
@@ -110,6 +124,10 @@ void Instruction::DispatchTo(InstAdder& adder)
 {
 }
 
+void Instruction::Accept(MachineFunctionVisitor& visitor)
+{
+}
+
 InvalidInst::InvalidInst() : Instruction("<invalid_instruction>", "", "")
 {
 }
@@ -129,8 +147,18 @@ void InvalidInst::Execute(Frame& frame)
     throw std::runtime_error("invalid instruction " + std::to_string(OpCode()));
 }
 
+void InvalidInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitInvalidInst(*this);
+}
+
 NopInst::NopInst() : Instruction("nop", "", "")
 {
+}
+
+void NopInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitNopInst(*this);
 }
 
 ContainerInst::ContainerInst(Machine& machine_, const std::string& name_, bool root_) : Instruction(name_, "", ""), machine(machine_), root(root_)
@@ -192,6 +220,42 @@ std::unique_ptr<Instruction> InstructionTypeGroup::CreateInst(const std::string&
     throw std::runtime_error("instruction for type '" + typeName + "' not found in instruction group '" + instGroupName + "'");
 }
 
+LoadDefaultValueBaseInst::LoadDefaultValueBaseInst(const std::string& name_, const std::string& groupName_, const std::string& typeName_) : Instruction(name_, groupName_, typeName_)
+{
+}
+
+void LoadDefaultValueBaseInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadDefaultValueBaseInst(*this);
+}
+
+UnaryOpBaseInst::UnaryOpBaseInst(const std::string& name_, const std::string& groupName_, const std::string& typeName_) : Instruction(name_, groupName_, typeName_)
+{
+}
+
+void UnaryOpBaseInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitUnaryOpBaseInst(*this);
+}
+
+BinaryOpBaseInst::BinaryOpBaseInst(const std::string& name_, const std::string& groupName_, const std::string& typeName_) : Instruction(name_, groupName_, typeName_)
+{
+}
+
+void BinaryOpBaseInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitBinaryOpBaseInst(*this);
+}
+
+BinaryPredBaseInst::BinaryPredBaseInst(const std::string& name_, const std::string& groupName_, const std::string& typeName_) : Instruction(name_, groupName_, typeName_)
+{
+}
+
+void BinaryPredBaseInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitBinaryPredBaseInst(*this);
+}
+
 LogicalNotInst::LogicalNotInst() : Instruction("not", "not", "System.Boolean")
 {
 }
@@ -202,6 +266,11 @@ void LogicalNotInst::Execute(Frame& frame)
     Assert(value.GetType() == ValueType::boolType, "bool operand expected");
     bool operand = value.AsBool();
     frame.OpStack().Push(IntegralValue(!operand, ValueType::boolType));
+}
+
+void LogicalNotInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLogicalNotInst(*this);
 }
 
 IndexParamInst::IndexParamInst(const std::string& name_) : Instruction(name_, "", ""), index(-1)
@@ -297,6 +366,11 @@ void LoadLocalInst::Execute(Frame& frame)
     frame.OpStack().Push(frame.Local(Index()).GetValue());
 }
 
+void LoadLocalInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadLocalInst(Index());
+}
+
 LoadLocal0Inst::LoadLocal0Inst() : Instruction("loadlocal.0")
 {
 }
@@ -304,6 +378,11 @@ LoadLocal0Inst::LoadLocal0Inst() : Instruction("loadlocal.0")
 void LoadLocal0Inst::Execute(Frame& frame)
 {
     frame.OpStack().Push(frame.Local(0).GetValue());
+}
+
+void LoadLocal0Inst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadLocalInst(0);
 }
 
 LoadLocal1Inst::LoadLocal1Inst() : Instruction("loadlocal.1")
@@ -315,6 +394,11 @@ void LoadLocal1Inst::Execute(Frame& frame)
     frame.OpStack().Push(frame.Local(1).GetValue());
 }
 
+void LoadLocal1Inst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadLocalInst(1);
+}
+
 LoadLocal2Inst::LoadLocal2Inst() : Instruction("loadlocal.2")
 {
 }
@@ -322,6 +406,11 @@ LoadLocal2Inst::LoadLocal2Inst() : Instruction("loadlocal.2")
 void LoadLocal2Inst::Execute(Frame& frame)
 {
     frame.OpStack().Push(frame.Local(2).GetValue());
+}
+
+void LoadLocal2Inst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadLocalInst(2);
 }
 
 LoadLocal3Inst::LoadLocal3Inst() : Instruction("loadlocal.3")
@@ -333,6 +422,11 @@ void LoadLocal3Inst::Execute(Frame& frame)
     frame.OpStack().Push(frame.Local(3).GetValue());
 }
 
+void LoadLocal3Inst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadLocalInst(3);
+}
+
 LoadLocalBInst::LoadLocalBInst() : ByteParamInst("loadlocal.b")
 {
 }
@@ -340,6 +434,11 @@ LoadLocalBInst::LoadLocalBInst() : ByteParamInst("loadlocal.b")
 void LoadLocalBInst::Execute(Frame& frame)
 {
     frame.OpStack().Push(frame.Local(Index()).GetValue());
+}
+
+void LoadLocalBInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadLocalInst(Index());
 }
 
 LoadLocalSInst::LoadLocalSInst() : UShortParamInst("loadlocal.s")
@@ -351,6 +450,11 @@ void LoadLocalSInst::Execute(Frame& frame)
     frame.OpStack().Push(frame.Local(Index()).GetValue());
 }
 
+void LoadLocalSInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadLocalInst(Index());
+}
+
 StoreLocalInst::StoreLocalInst() : IndexParamInst("storelocal")
 {
 }
@@ -358,6 +462,11 @@ StoreLocalInst::StoreLocalInst() : IndexParamInst("storelocal")
 void StoreLocalInst::Execute(Frame& frame)
 {
     frame.Local(Index()).SetValue(frame.OpStack().Pop());
+}
+
+void StoreLocalInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitStoreLocalInst(Index());
 }
 
 StoreLocal0Inst::StoreLocal0Inst() : Instruction("storelocal.0")
@@ -369,6 +478,11 @@ void StoreLocal0Inst::Execute(Frame& frame)
     frame.Local(0).SetValue(frame.OpStack().Pop());
 }
 
+void StoreLocal0Inst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitStoreLocalInst(0);
+}
+
 StoreLocal1Inst::StoreLocal1Inst() : Instruction("storelocal.1")
 {
 }
@@ -376,6 +490,11 @@ StoreLocal1Inst::StoreLocal1Inst() : Instruction("storelocal.1")
 void StoreLocal1Inst::Execute(Frame& frame)
 {
     frame.Local(1).SetValue(frame.OpStack().Pop());
+}
+
+void StoreLocal1Inst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitStoreLocalInst(1);
 }
 
 StoreLocal2Inst::StoreLocal2Inst() : Instruction("storelocal.2")
@@ -387,6 +506,11 @@ void StoreLocal2Inst::Execute(Frame& frame)
     frame.Local(2).SetValue(frame.OpStack().Pop());
 }
 
+void StoreLocal2Inst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitStoreLocalInst(2);
+}
+
 StoreLocal3Inst::StoreLocal3Inst() : Instruction("storelocal.3")
 {
 }
@@ -394,6 +518,11 @@ StoreLocal3Inst::StoreLocal3Inst() : Instruction("storelocal.3")
 void StoreLocal3Inst::Execute(Frame& frame)
 {
     frame.Local(3).SetValue(frame.OpStack().Pop());
+}
+
+void StoreLocal3Inst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitStoreLocalInst(3);
 }
 
 StoreLocalBInst::StoreLocalBInst() : ByteParamInst("storelocal.b")
@@ -405,6 +534,11 @@ void StoreLocalBInst::Execute(Frame& frame)
     frame.Local(Index()).SetValue(frame.OpStack().Pop());
 }
 
+void StoreLocalBInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitStoreLocalInst(Index());
+}
+
 StoreLocalSInst::StoreLocalSInst() : UShortParamInst("storelocal.s")
 {
 }
@@ -414,8 +548,26 @@ void StoreLocalSInst::Execute(Frame& frame)
     frame.Local(Index()).SetValue(frame.OpStack().Pop());
 }
 
-LoadFieldInst::LoadFieldInst() : IndexParamInst("loadfield")
+void StoreLocalSInst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitStoreLocalInst(Index());
+}
+
+LoadFieldInst::LoadFieldInst() : IndexParamInst("loadfield"), fieldType(ValueType::none)
+{
+}
+
+void LoadFieldInst::Encode(Writer& writer)
+{
+    IndexParamInst::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* LoadFieldInst::Decode(Reader& reader)
+{
+    IndexParamInst::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void LoadFieldInst::Execute(Frame& frame)
@@ -438,8 +590,26 @@ void LoadFieldInst::Execute(Frame& frame)
     }
 }
 
-LoadField0Inst::LoadField0Inst() : Instruction("loadfield.0")
+void LoadFieldInst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitLoadFieldInst(Index(), fieldType);
+}
+
+LoadField0Inst::LoadField0Inst() : Instruction("loadfield.0"), fieldType(ValueType::none)
+{
+}
+
+void LoadField0Inst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* LoadField0Inst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void LoadField0Inst::Execute(Frame& frame)
@@ -462,8 +632,26 @@ void LoadField0Inst::Execute(Frame& frame)
     }
 }
 
-LoadField1Inst::LoadField1Inst() : Instruction("loadfield.1")
+void LoadField0Inst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitLoadFieldInst(0, fieldType);
+}
+
+LoadField1Inst::LoadField1Inst() : Instruction("loadfield.1"), fieldType(ValueType::none)
+{
+}
+
+void LoadField1Inst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* LoadField1Inst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void LoadField1Inst::Execute(Frame& frame)
@@ -486,8 +674,26 @@ void LoadField1Inst::Execute(Frame& frame)
     }
 }
 
-LoadField2Inst::LoadField2Inst() : Instruction("loadfield.2")
+void LoadField1Inst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitLoadFieldInst(1, fieldType);
+}
+
+LoadField2Inst::LoadField2Inst() : Instruction("loadfield.2"), fieldType(ValueType::none)
+{
+}
+
+void LoadField2Inst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* LoadField2Inst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void LoadField2Inst::Execute(Frame& frame)
@@ -510,8 +716,26 @@ void LoadField2Inst::Execute(Frame& frame)
     }
 }
 
-LoadField3Inst::LoadField3Inst() : Instruction("loadfield.3")
+void LoadField2Inst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitLoadFieldInst(2, fieldType);
+}
+
+LoadField3Inst::LoadField3Inst() : Instruction("loadfield.3"), fieldType(ValueType::none)
+{
+}
+
+void LoadField3Inst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* LoadField3Inst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void LoadField3Inst::Execute(Frame& frame)
@@ -534,8 +758,26 @@ void LoadField3Inst::Execute(Frame& frame)
     }
 }
 
-LoadFieldBInst::LoadFieldBInst() : ByteParamInst("loadfield.b")
+void LoadField3Inst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitLoadFieldInst(3, fieldType);
+}
+
+LoadFieldBInst::LoadFieldBInst() : ByteParamInst("loadfield.b"), fieldType(ValueType::none)
+{
+}
+
+void LoadFieldBInst::Encode(Writer& writer)
+{
+    ByteParamInst::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* LoadFieldBInst::Decode(Reader& reader)
+{
+    ByteParamInst::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void LoadFieldBInst::Execute(Frame& frame)
@@ -558,8 +800,26 @@ void LoadFieldBInst::Execute(Frame& frame)
     }
 }
 
-LoadFieldSInst::LoadFieldSInst() : UShortParamInst("loadfield.s")
+void LoadFieldBInst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitLoadFieldInst(Index(), fieldType);
+}
+
+LoadFieldSInst::LoadFieldSInst() : UShortParamInst("loadfield.s"), fieldType(ValueType::none)
+{
+}
+
+void LoadFieldSInst::Encode(Writer& writer)
+{
+    UShortParamInst::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* LoadFieldSInst::Decode(Reader& reader)
+{
+    UShortParamInst::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void LoadFieldSInst::Execute(Frame& frame)
@@ -582,8 +842,26 @@ void LoadFieldSInst::Execute(Frame& frame)
     }
 }
 
-StoreFieldInst::StoreFieldInst() : IndexParamInst("storefield")
+void LoadFieldSInst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitLoadFieldInst(Index(), fieldType);
+}
+
+StoreFieldInst::StoreFieldInst() : IndexParamInst("storefield"), fieldType(ValueType::none)
+{
+}
+
+void StoreFieldInst::Encode(Writer& writer)
+{
+    IndexParamInst::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* StoreFieldInst::Decode(Reader& reader)
+{
+    IndexParamInst::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void StoreFieldInst::Execute(Frame& frame)
@@ -606,8 +884,26 @@ void StoreFieldInst::Execute(Frame& frame)
     }
 }
 
-StoreField0Inst::StoreField0Inst() : Instruction("storefield.0")
+void StoreFieldInst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitStoreFieldInst(Index(), fieldType);
+}
+
+StoreField0Inst::StoreField0Inst() : Instruction("storefield.0"), fieldType(ValueType::none)
+{
+}
+
+void StoreField0Inst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* StoreField0Inst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void StoreField0Inst::Execute(Frame& frame)
@@ -630,8 +926,26 @@ void StoreField0Inst::Execute(Frame& frame)
     }
 }
 
-StoreField1Inst::StoreField1Inst() : Instruction("storefield.1")
+void StoreField0Inst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitStoreFieldInst(0, fieldType);
+}
+
+StoreField1Inst::StoreField1Inst() : Instruction("storefield.1"), fieldType(ValueType::none)
+{
+}
+
+void StoreField1Inst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* StoreField1Inst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void StoreField1Inst::Execute(Frame& frame)
@@ -654,8 +968,26 @@ void StoreField1Inst::Execute(Frame& frame)
     }
 }
 
-StoreField2Inst::StoreField2Inst() : Instruction("storefield.2")
+void StoreField1Inst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitStoreFieldInst(1, fieldType);
+}
+
+StoreField2Inst::StoreField2Inst() : Instruction("storefield.2"), fieldType(ValueType::none)
+{
+}
+
+void StoreField2Inst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* StoreField2Inst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void StoreField2Inst::Execute(Frame& frame)
@@ -678,8 +1010,26 @@ void StoreField2Inst::Execute(Frame& frame)
     }
 }
 
-StoreField3Inst::StoreField3Inst() : Instruction("storefield.3")
+void StoreField2Inst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitStoreFieldInst(2, fieldType);
+}
+
+StoreField3Inst::StoreField3Inst() : Instruction("storefield.3"), fieldType(ValueType::none)
+{
+}
+
+void StoreField3Inst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* StoreField3Inst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void StoreField3Inst::Execute(Frame& frame)
@@ -702,8 +1052,26 @@ void StoreField3Inst::Execute(Frame& frame)
     }
 }
 
-StoreFieldBInst::StoreFieldBInst() : ByteParamInst("storefield.b")
+void StoreField3Inst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitStoreFieldInst(3, fieldType);
+}
+
+StoreFieldBInst::StoreFieldBInst() : ByteParamInst("storefield.b"), fieldType(ValueType::none)
+{
+}
+
+void StoreFieldBInst::Encode(Writer& writer)
+{
+    ByteParamInst::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* StoreFieldBInst::Decode(Reader& reader)
+{
+    ByteParamInst::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void StoreFieldBInst::Execute(Frame& frame)
@@ -726,8 +1094,26 @@ void StoreFieldBInst::Execute(Frame& frame)
     }
 }
 
-StoreFieldSInst::StoreFieldSInst() : UShortParamInst("storefield.s")
+void StoreFieldBInst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitStoreFieldInst(Index(), fieldType);
+}
+
+StoreFieldSInst::StoreFieldSInst() : UShortParamInst("storefield.s"), fieldType(ValueType::none)
+{
+}
+
+void StoreFieldSInst::Encode(Writer& writer)
+{
+    UShortParamInst::Encode(writer);
+    writer.Put(uint8_t(fieldType));
+}
+
+Instruction* StoreFieldSInst::Decode(Reader& reader)
+{
+    UShortParamInst::Decode(reader);
+    fieldType = ValueType(reader.GetByte());
+    return this;
 }
 
 void StoreFieldSInst::Execute(Frame& frame)
@@ -750,8 +1136,26 @@ void StoreFieldSInst::Execute(Frame& frame)
     }
 }
 
-LoadElemInst::LoadElemInst() : Instruction("loadarrayelem")
+void StoreFieldSInst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitStoreFieldInst(Index(), fieldType);
+}
+
+LoadElemInst::LoadElemInst() : Instruction("loadarrayelem"), elemType(ValueType::none)
+{
+}
+
+void LoadElemInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(uint8_t(elemType));
+}
+
+Instruction* LoadElemInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    elemType = ValueType(reader.GetByte());
+    return this;
 }
 
 void LoadElemInst::Execute(Frame& frame)
@@ -779,8 +1183,26 @@ void LoadElemInst::Execute(Frame& frame)
     }
 }
 
-StoreElemInst::StoreElemInst() : Instruction("storearrayelem")
+void LoadElemInst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitLoadElemInst(*this);
+}
+
+StoreElemInst::StoreElemInst() : Instruction("storearrayelem"), elemType(ValueType::none)
+{
+}
+
+void StoreElemInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    writer.Put(uint8_t(elemType));
+}
+
+Instruction* StoreElemInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    elemType = ValueType(reader.GetByte());
+    return this;
 }
 
 void StoreElemInst::Execute(Frame& frame)
@@ -809,6 +1231,11 @@ void StoreElemInst::Execute(Frame& frame)
     }
 }
 
+void StoreElemInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitStoreElemInst(*this);
+}
+
 LoadConstantInst::LoadConstantInst() : IndexParamInst("loadconstant")
 {
 }
@@ -817,6 +1244,11 @@ void LoadConstantInst::Execute(Frame& frame)
 {
     ConstantId constantId(Index());
     frame.OpStack().Push(frame.GetConstantPool().GetConstant(constantId).Value());
+}
+
+void LoadConstantInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadConstantInst(Index());
 }
 
 LoadConstantBInst::LoadConstantBInst() : ByteParamInst("loadconstant.b")
@@ -829,6 +1261,11 @@ void LoadConstantBInst::Execute(Frame& frame)
     frame.OpStack().Push(frame.GetConstantPool().GetConstant(constantId).Value());
 }
 
+void LoadConstantBInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadConstantInst(Index());
+}
+
 LoadConstantSInst::LoadConstantSInst() : UShortParamInst("loadconstant.s")
 {
 }
@@ -837,6 +1274,11 @@ void LoadConstantSInst::Execute(Frame& frame)
 {
     ConstantId constantId(Index());
     frame.OpStack().Push(frame.GetConstantPool().GetConstant(constantId).Value());
+}
+
+void LoadConstantSInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadConstantInst(Index());
 }
 
 ReceiveInst::ReceiveInst() : Instruction("receive")
@@ -851,6 +1293,20 @@ void ReceiveInst::Execute(Frame& frame)
         IntegralValue argument = frame.OpStack().Pop();
         frame.Local(i).SetValue(argument);
     }
+}
+
+void ReceiveInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitReceiveInst(*this);
+}
+
+ConversionBaseInst::ConversionBaseInst(const std::string& name_) : Instruction(name_)
+{
+}
+
+void ConversionBaseInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitConversionBaseInst(*this);
 }
 
 JumpInst::JumpInst() : IndexParamInst("jump")
@@ -879,6 +1335,11 @@ void JumpInst::Dump(CodeFormatter& formatter)
     {
         formatter.Write(" " + std::to_string(Index()));
     }
+}
+
+void JumpInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitJumpInst(*this);
 }
 
 JumpTrueInst::JumpTrueInst() : IndexParamInst("jumptrue")
@@ -914,6 +1375,11 @@ void JumpTrueInst::Dump(CodeFormatter& formatter)
     }
 }
 
+void JumpTrueInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitJumpTrueInst(*this);
+}
+
 JumpFalseInst::JumpFalseInst() : IndexParamInst("jumpfalse")
 {
     SetIndex(endOfFunction);
@@ -947,12 +1413,22 @@ void JumpFalseInst::Dump(CodeFormatter& formatter)
     }
 }
 
+void JumpFalseInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitJumpFalseInst(*this);
+}
+
 EnterBlockInst::EnterBlockInst() : Instruction("enterblock")
 {
 }
 
 void EnterBlockInst::Execute(Frame& frame)
 {
+}
+
+void EnterBlockInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitEnterBlockInst(*this);
 }
 
 ExitBlockInst::ExitBlockInst() : Instruction("exitblock"), exceptionBlockId(-1)
@@ -1001,7 +1477,12 @@ void ExitBlockInst::Dump(CodeFormatter& formatter)
     }
 }
 
-ContinuousSwitchInst::ContinuousSwitchInst() : Instruction("cswitch"), begin(), end(), defaultTarget(-1)
+void ExitBlockInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitExitBlockInst(*this);
+}
+
+ContinuousSwitchInst::ContinuousSwitchInst() : Instruction("cswitch"), condType(ValueType::none), begin(), end(), defaultTarget(-1)
 {
 }
 
@@ -1017,6 +1498,7 @@ void ContinuousSwitchInst::Clear()
 void ContinuousSwitchInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
+    writer.Put(uint8_t(condType));
     begin.Write(writer);
     end.Write(writer);
     uint32_t numTargets = uint32_t(targets.size());
@@ -1031,6 +1513,7 @@ void ContinuousSwitchInst::Encode(Writer& writer)
 Instruction* ContinuousSwitchInst::Decode(Reader& reader)
 {
     Instruction::Decode(reader);
+    condType = ValueType(reader.GetByte());
     begin.Read(reader);
     end.Read(reader);
     uint32_t numTargets = reader.GetEncodedUInt();
@@ -1087,7 +1570,34 @@ void ContinuousSwitchInst::Execute(Frame& frame)
     }
 }
 
-BinarySearchSwitchInst::BinarySearchSwitchInst() : Instruction("bswitch"), targets(), defaultTarget(-1)
+void ContinuousSwitchInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    std::string targetsStr(" [");
+    bool first = true;
+    for (int32_t target : targets)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            targetsStr.append(", ");
+        }
+        targetsStr.append(std::to_string(target));
+    }
+    targetsStr.append(" : ").append(std::to_string(defaultTarget));
+    targetsStr.append("]");
+    formatter.Write(targetsStr);
+}
+
+void ContinuousSwitchInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitContinuousSwitchInst(*this);
+}
+
+BinarySearchSwitchInst::BinarySearchSwitchInst() : Instruction("bswitch"), condType(ValueType::none), targets(), defaultTarget(-1)
 {
 }
 
@@ -1100,6 +1610,7 @@ void BinarySearchSwitchInst::Clear()
 void BinarySearchSwitchInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
+    writer.Put(uint8_t(condType));
     uint32_t n = uint32_t(targets.size());
     writer.PutEncodedUInt(n);
     for (const std::pair<IntegralValue, int32_t>& p : targets)
@@ -1114,6 +1625,7 @@ void BinarySearchSwitchInst::Encode(Writer& writer)
 Instruction* BinarySearchSwitchInst::Decode(Reader& reader)
 {
     Instruction::Decode(reader);
+    condType = ValueType(reader.GetByte());
     uint32_t n = reader.GetEncodedUInt();
     targets.clear();
     for (uint32_t i = 0; i < n; ++i)
@@ -1155,6 +1667,33 @@ void BinarySearchSwitchInst::SetTarget(int32_t target)
     }
 }
 
+void BinarySearchSwitchInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    std::string targetsStr(" [");
+    bool first = true;
+    for (auto target : targets)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            targetsStr.append(", ");
+        }
+        targetsStr.append(std::to_string(target.second));
+    }
+    targetsStr.append(" : ").append(std::to_string(defaultTarget));
+    targetsStr.append("]");
+    formatter.Write(targetsStr);
+}
+
+void BinarySearchSwitchInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitBinarySearchSwitchInst(*this);
+}
+
 CallInst::CallInst() : Instruction("call")
 {
 }
@@ -1181,10 +1720,21 @@ void CallInst::SetFunction(Function* fun)
     function.SetValue(IntegralValue(fun));
 }
 
+Function* CallInst::GetFunction() const
+{
+    Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
+    return function.Value().AsFunctionPtr();
+}
+
 void CallInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
-    ConstantId id = writer.GetConstantPool()->GetIdFor(function);
+    Constant funNameConstant = function;
+    if (function.Value().GetType() == ValueType::functionPtr)
+    {
+        funNameConstant = function.Value().AsFunctionPtr()->CallName();
+    }
+    ConstantId id = writer.GetConstantPool()->GetIdFor(funNameConstant);
     Assert(id != noConstantId, "id for call inst not found");
     id.Write(writer);
 }
@@ -1203,20 +1753,40 @@ void CallInst::Execute(Frame& frame)
     Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
     Function* fun = function.Value().AsFunctionPtr();
     Thread& thread = frame.GetThread();
-    thread.GetStack().AllocateFrame(*fun);
+    try
+    {
+        thread.GetStack().AllocateFrame(*fun);
+    }
+    catch (const StackOverflowException& ex)
+    {
+        ThrowStackOverflowException(ex, frame);
+    }
 }
 
 void CallInst::Dump(CodeFormatter& formatter)
 {
     Instruction::Dump(formatter);
-    Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
-    Function* fun = function.Value().AsFunctionPtr();
+    Function* fun = nullptr;
+    if (function.Value().GetType() == ValueType::stringLiteral)
+    {
+        fun = FunctionTable::GetFunction(function.Value().AsStringLiteral());
+    }
+    else
+    {
+        Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
+        fun = function.Value().AsFunctionPtr();
+    }
     formatter.Write(" " + ToUtf8(fun->CallName().Value().AsStringLiteral()));
 }
 
 void CallInst::DispatchTo(InstAdder& adder)
 {
     adder.Add(this);
+}
+
+void CallInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitCallInst(*this);
 }
 
 VirtualCallInst::VirtualCallInst() : Instruction("callv"), numArgs(0), vmtIndex(-1)
@@ -1229,6 +1799,11 @@ void VirtualCallInst::Clear()
     vmtIndex = -1;
 }
 
+void VirtualCallInst::SetFunctionType(const FunctionType& functionType_)
+{
+    functionType = functionType_;
+}
+
 void VirtualCallInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
@@ -1236,6 +1811,7 @@ void VirtualCallInst::Encode(Writer& writer)
     writer.PutEncodedUInt(numArgs);
     Assert(vmtIndex != -1, "invalid vmt index");
     writer.PutEncodedUInt(vmtIndex);
+    functionType.Write(writer);
 }
 
 Instruction* VirtualCallInst::Decode(Reader& reader)
@@ -1243,6 +1819,7 @@ Instruction* VirtualCallInst::Decode(Reader& reader)
     Instruction::Decode(reader);
     numArgs = reader.GetEncodedUInt();
     vmtIndex = reader.GetEncodedUInt();
+    functionType.Read(reader);
     return this;
 }
 
@@ -1262,7 +1839,14 @@ void VirtualCallInst::Execute(Frame& frame)
             if (method)
             {
                 Thread& thread = frame.GetThread();
-                thread.GetStack().AllocateFrame(*method);
+                try
+                {
+                    thread.GetStack().AllocateFrame(*method);
+                }
+                catch (const StackOverflowException& ex)
+                {
+                    ThrowStackOverflowException(ex, frame);
+                }
             }
             else
             {
@@ -1290,6 +1874,11 @@ void VirtualCallInst::Dump(CodeFormatter& formatter)
     formatter.Write(" " + std::to_string(numArgs) + " " + std::to_string(vmtIndex));
 }
 
+void VirtualCallInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitVirtualCallInst(*this);
+}
+
 InterfaceCallInst::InterfaceCallInst() : Instruction("calli"), numArgs(0), imtIndex(-1)
 {
 }
@@ -1300,6 +1889,11 @@ void InterfaceCallInst::Clear()
     imtIndex = -1;
 }
 
+void InterfaceCallInst::SetFunctionType(const FunctionType& functionType_)
+{
+    functionType = functionType_;
+}
+
 void InterfaceCallInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
@@ -1307,6 +1901,7 @@ void InterfaceCallInst::Encode(Writer& writer)
     writer.PutEncodedUInt(numArgs);
     Assert(imtIndex != -1, "invalid imt index");
     writer.PutEncodedUInt(imtIndex);
+    functionType.Write(writer);
 }
 
 Instruction* InterfaceCallInst::Decode(Reader& reader)
@@ -1314,6 +1909,7 @@ Instruction* InterfaceCallInst::Decode(Reader& reader)
     Instruction::Decode(reader);
     numArgs = reader.GetEncodedUInt();
     imtIndex = reader.GetEncodedUInt();
+    functionType.Read(reader);
     return this;
 }
 
@@ -1340,7 +1936,14 @@ void InterfaceCallInst::Execute(Frame& frame)
             {
                 frame.OpStack().SetValue(numArgs, receiver);
                 Thread& thread = frame.GetThread();
-                thread.GetStack().AllocateFrame(*method);
+                try
+                {
+                    thread.GetStack().AllocateFrame(*method);
+                }
+                catch (const StackOverflowException& ex)
+                {
+                    ThrowStackOverflowException(ex, frame);
+                }
             }
             else
             {
@@ -1368,6 +1971,11 @@ void InterfaceCallInst::Dump(CodeFormatter& formatter)
     formatter.Write(" " + std::to_string(numArgs) + " " + std::to_string(imtIndex));
 }
 
+void InterfaceCallInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitInterfaceCallInst(*this);
+}
+
 VmCallInst::VmCallInst() : IndexParamInst("callvm")
 {
 }
@@ -1379,7 +1987,7 @@ void VmCallInst::Execute(Frame& frame)
         ConstantId vmFunctionId(Index());
         Constant vmFunctionName = frame.GetConstantPool().GetConstant(vmFunctionId);
         Assert(vmFunctionName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
-        VmFunction* vmFunction = VmFunctionTable::Instance().GetVmFunction(StringPtr(vmFunctionName.Value().AsStringLiteral()));
+        VmFunction* vmFunction = VmFunctionTable::GetVmFunction(StringPtr(vmFunctionName.Value().AsStringLiteral()));
         vmFunction->Execute(frame);
     }
     catch (const NullReferenceException& ex)
@@ -1400,8 +2008,31 @@ void VmCallInst::Execute(Frame& frame)
     }
 }
 
+void VmCallInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitVmCallInst(*this);
+}
+
 DelegateCallInst::DelegateCallInst() : Instruction("calld")
 {
+}
+
+void DelegateCallInst::SetFunctionType(const FunctionType& functionType_)
+{
+    functionType = functionType_;
+}
+
+void DelegateCallInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    functionType.Write(writer);
+}
+
+Instruction* DelegateCallInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    functionType.Read(reader);
+    return this;
 }
 
 void DelegateCallInst::Execute(Frame& frame)
@@ -1417,12 +2048,42 @@ void DelegateCallInst::Execute(Frame& frame)
     else
     {
         Thread& thread = frame.GetThread();
-        thread.GetStack().AllocateFrame(*fun);
+        try
+        {
+            thread.GetStack().AllocateFrame(*fun);
+        }
+        catch (const StackOverflowException& ex)
+        {
+            ThrowStackOverflowException(ex, frame);
+        }
     }
+}
+
+void DelegateCallInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitDelegateCallInst(*this);
 }
 
 ClassDelegateCallInst::ClassDelegateCallInst() : Instruction("callcd")
 {
+}
+
+void ClassDelegateCallInst::SetFunctionType(const FunctionType& functionType_)
+{
+    functionType = functionType_;
+}
+
+void ClassDelegateCallInst::Encode(Writer& writer)
+{
+    Instruction::Encode(writer);
+    functionType.Write(writer);
+}
+
+Instruction* ClassDelegateCallInst::Decode(Reader& reader)
+{
+    Instruction::Decode(reader);
+    functionType.Read(reader);
+    return this;
 }
 
 void ClassDelegateCallInst::Execute(Frame& frame)
@@ -1445,10 +2106,21 @@ void ClassDelegateCallInst::Execute(Frame& frame)
     {
         frame.OpStack().Insert(fun->NumParameters() - 1, classObjectValue);
         Thread& thread = frame.GetThread();
-        thread.GetStack().AllocateFrame(*fun);
+        try
+        {
+            thread.GetStack().AllocateFrame(*fun);
+        }
+        catch (const StackOverflowException& ex)
+        {
+            ThrowStackOverflowException(ex, frame);
+        }
     }
 }
 
+void ClassDelegateCallInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitClassDelegateCallInst(*this);
+}
 
 SetClassDataInst::SetClassDataInst() : Instruction("setclassdata")
 {
@@ -1479,7 +2151,12 @@ void SetClassDataInst::SetClassData(ClassData* classDataPtr)
 void SetClassDataInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
-    ConstantId id = writer.GetConstantPool()->GetIdFor(classData);
+    Constant classNameConstant = classData;
+    if (classData.Value().GetType() == ValueType::classDataPtr)
+    {
+        classNameConstant = classData.Value().AsClassDataPtr()->Type()->NameConstant();
+    }
+    ConstantId id = writer.GetConstantPool()->GetIdFor(classNameConstant);
     Assert(id != noConstantId, "id for call inst not found");
     id.Write(writer);
 }
@@ -1523,14 +2200,27 @@ void SetClassDataInst::Execute(Frame& frame)
 void SetClassDataInst::Dump(CodeFormatter& formatter)
 {
     Instruction::Dump(formatter);
-    Assert(classData.Value().GetType() == ValueType::classDataPtr, "class data pointer expected");
-    ClassData* cd = classData.Value().AsClassDataPtr();
+    ClassData* cd = nullptr;
+    if (classData.Value().GetType() == ValueType::stringLiteral)
+    {
+        cd = ClassDataTable::GetClassData(classData.Value().AsStringLiteral());
+    }
+    else
+    {
+        Assert(classData.Value().GetType() == ValueType::classDataPtr, "class data pointer expected");
+        cd = classData.Value().AsClassDataPtr();
+    }
     formatter.Write(" " + ToUtf8(cd->Type()->Name().Value()) + " " + std::to_string(cd->Type()->Id()));
 }
 
 void SetClassDataInst::DispatchTo(InstAdder& adder)
 {
     adder.Add(this);
+}
+
+void SetClassDataInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitSetClassDataInst(*this);
 }
 
 TypeInstruction::TypeInstruction(const std::string& name_) : Instruction(name_)
@@ -1568,7 +2258,12 @@ Type* TypeInstruction::GetType()
 void TypeInstruction::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
-    ConstantId id = writer.GetConstantPool()->GetIdFor(type);
+    Constant typeNameConstant = type;
+    if (type.Value().GetType() == ValueType::typePtr)
+    {
+        typeNameConstant = type.Value().AsTypePtr()->NameConstant();
+    }
+    ConstantId id = writer.GetConstantPool()->GetIdFor(typeNameConstant);
     Assert(id != noConstantId, "id for type inst not found");
     id.Write(writer);
 }
@@ -1608,6 +2303,11 @@ void CreateObjectInst::Execute(Frame& frame)
     frame.OpStack().Push(objectReference);
 }
 
+void CreateObjectInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitCreateObjectInst(*this);
+}
+
 CopyObjectInst::CopyObjectInst() : Instruction("copyo", "copy", "object")
 {
 }
@@ -1632,6 +2332,11 @@ void CopyObjectInst::Execute(Frame& frame)
     }
 }
 
+void CopyObjectInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitCopyObjectInst(*this);
+}
+
 StrLitToStringInst::StrLitToStringInst() : Instruction("slit2s")
 {
 }
@@ -1644,14 +2349,11 @@ void StrLitToStringInst::Execute(Frame& frame)
         Assert(value.GetType() == ValueType::stringLiteral, "string literal expected");
         const char32_t* strLit = value.AsStringLiteral();
         uint32_t len = static_cast<uint32_t>(StringLen(strLit));
-        Type* type = TypeTable::Instance().GetType(StringPtr(U"System.String"));
-        ObjectType* objectType = dynamic_cast<ObjectType*>(type);
-        Assert(objectType, "object type expected");
-        ObjectReference objectReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
+        ClassData* classData = ClassDataTable::GetSystemStringClassData();
+        ObjectReference objectReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), classData->Type());
         Object& o = GetManagedMemoryPool().GetObject(objectReference);
         o.Pin();
         AllocationHandle charsHandle = GetManagedMemoryPool().CreateStringCharsFromLiteral(frame.GetThread(), strLit, len);
-        ClassData* classData = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String"));
         o.SetField(IntegralValue(classData), 0);
         o.SetField(IntegralValue(static_cast<int32_t>(len), ValueType::intType), 1);
         o.SetField(charsHandle, 2);
@@ -1666,6 +2368,11 @@ void StrLitToStringInst::Execute(Frame& frame)
     {
         ThrowSystemException(ex, frame);
     }
+}
+
+void StrLitToStringInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitStrLitToStringInst(*this);
 }
 
 LoadStringCharInst::LoadStringCharInst() : Instruction("loadstringchar")
@@ -1693,6 +2400,11 @@ void LoadStringCharInst::Execute(Frame& frame)
     }
 }
 
+void LoadStringCharInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadStringCharInst(*this);
+}
+
 DupInst::DupInst() : Instruction("dup")
 {
 }
@@ -1700,6 +2412,11 @@ DupInst::DupInst() : Instruction("dup")
 void DupInst::Execute(Frame& frame)
 {
     frame.OpStack().Dup();
+}
+
+void DupInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitDupInst(*this);
 }
 
 SwapInst::SwapInst() : Instruction("swap")
@@ -1711,6 +2428,11 @@ void SwapInst::Execute(Frame& frame)
     frame.OpStack().Swap();
 }
 
+void SwapInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitSwapInst(*this);
+}
+
 RotateInst::RotateInst() : Instruction("rotate")
 {
 }
@@ -1718,6 +2440,11 @@ RotateInst::RotateInst() : Instruction("rotate")
 void RotateInst::Execute(Frame& frame)
 {
     frame.OpStack().Rotate();
+}
+
+void RotateInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitRotateInst(*this);
 }
 
 PopInst::PopInst() : Instruction("pop")
@@ -1729,38 +2456,9 @@ void PopInst::Execute(Frame& frame)
     frame.OpStack().Pop();
 }
 
-UpCastInst::UpCastInst() : TypeInstruction("upcast")
+void PopInst::Accept(MachineFunctionVisitor& visitor)
 {
-}
-
-void UpCastInst::Execute(Frame& frame)
-{
-    try
-    {
-        IntegralValue value = frame.OpStack().Pop();
-        Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
-        ObjectReference objectReference(value.Value());
-        if (objectReference.IsNull())
-        {
-            frame.OpStack().Push(ObjectReference(0));
-        }
-        else
-        {
-            Type* type = GetType();
-            ObjectType* objectType = dynamic_cast<ObjectType*>(type);
-            Assert(objectType, "object type expected");
-            ObjectReference casted = GetManagedMemoryPool().CopyObject(frame.GetThread(), objectReference);
-            frame.OpStack().Push(casted);
-        }
-    }
-    catch (const NullReferenceException& ex)
-    {
-        ThrowNullReferenceException(ex, frame);
-    }
-    catch (const SystemException& ex)
-    {
-        ThrowSystemException(ex, frame);
-    }
+    visitor.VisitPopInst(*this);
 }
 
 DownCastInst::DownCastInst() : TypeInstruction("downcast")
@@ -1792,7 +2490,7 @@ void DownCastInst::Execute(Frame& frame)
             {
                 throw InvalidCastException("invalid cast from '" + ToUtf8(classData->Type()->Name().Value()) + "' to '" + ToUtf8(type->Name().Value()));
             }
-            ObjectReference casted = GetManagedMemoryPool().CopyObject(frame.GetThread(), objectReference);
+            ObjectReference casted = objectReference;
             frame.OpStack().Push(casted);
         }
     }
@@ -1810,6 +2508,11 @@ void DownCastInst::Execute(Frame& frame)
     }
 }
 
+void DownCastInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitDownCastInst(*this);
+}
+
 BeginTryInst::BeginTryInst() : Instruction("begintry")
 {
 }
@@ -1819,6 +2522,11 @@ void BeginTryInst::Execute(Frame& frame)
     frame.GetThread().BeginTry();
 }
 
+void BeginTryInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitBeginTryInst(*this);
+}
+
 EndTryInst::EndTryInst() : Instruction("endtry")
 {
 }
@@ -1826,6 +2534,11 @@ EndTryInst::EndTryInst() : Instruction("endtry")
 void EndTryInst::Execute(Frame& frame)
 {
     frame.GetThread().EndTry();
+}
+
+void EndTryInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitEndTryInst(*this);
 }
 
 ThrowInst::ThrowInst() : Instruction("throw")
@@ -1857,6 +2570,11 @@ void ThrowInst::Execute(Frame& frame)
     }
 }
 
+void ThrowInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitThrowInst(*this);
+}
+
 RethrowInst::RethrowInst() : Instruction("rethrow")
 {
 }
@@ -1864,6 +2582,11 @@ RethrowInst::RethrowInst() : Instruction("rethrow")
 void RethrowInst::Execute(Frame& frame)
 {
     throw std::runtime_error("exception"); // todo
+}
+
+void RethrowInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitRethrowInst(*this);
 }
 
 EndCatchInst::EndCatchInst() : Instruction("endcatch")
@@ -1875,6 +2598,11 @@ void EndCatchInst::Execute(Frame& frame)
     frame.GetThread().EndCatch();
 }
 
+void EndCatchInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitEndCatchInst(*this);
+}
+
 EndFinallyInst::EndFinallyInst() : Instruction("endfinally")
 {
 }
@@ -1882,6 +2610,11 @@ EndFinallyInst::EndFinallyInst() : Instruction("endfinally")
 void EndFinallyInst::Execute(Frame& frame)
 {
     frame.GetThread().EndFinally();
+}
+
+void EndFinallyInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitEndFinallyInst(*this);
 }
 
 NextInst::NextInst() : Instruction("next"), exceptionBlock(nullptr)
@@ -1898,6 +2631,11 @@ void NextInst::SetTarget(int32_t target)
     exceptionBlock->SetNextTarget(target);
 }
 
+void NextInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitNextInst(*this);
+}
+
 StaticInitInst::StaticInitInst() : TypeInstruction("staticinit")
 {
 }
@@ -1909,7 +2647,7 @@ void StaticInitInst::Execute(Frame& frame)
         Type* type = GetType();
         ObjectType* objectType = dynamic_cast<ObjectType*>(type);
         Assert(objectType, "object type expected");
-        ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+        ClassData* classData = ClassDataTable::GetClassData(objectType->Name());
         StaticClassData* staticClassData = classData->GetStaticClassData();
         if (!staticClassData) return;
         if (staticClassData->Initialized()) return;
@@ -1921,9 +2659,16 @@ void StaticInitInst::Execute(Frame& frame)
             StringPtr staticConstructorName = staticClassData->StaticConstructorName().Value().AsStringLiteral();
             if (staticConstructorName.Value())
             {
-                Function* staticConstructor = FunctionTable::Instance().GetFunction(staticConstructorName);
+                Function* staticConstructor = FunctionTable::GetFunction(staticConstructorName);
                 Thread& thread = frame.GetThread();
-                thread.GetStack().AllocateFrame(*staticConstructor);
+                try
+                {
+                    thread.GetStack().AllocateFrame(*staticConstructor);
+                }
+                catch (const StackOverflowException& ex)
+                {
+                    ThrowStackOverflowException(ex, frame);
+                }
             }
             else
             {
@@ -1943,6 +2688,11 @@ void StaticInitInst::Execute(Frame& frame)
     }
 }
 
+void StaticInitInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitStaticInitInst(*this);
+}
+
 DoneStaticInitInst::DoneStaticInitInst() : TypeInstruction("donestaticinit")
 {
 }
@@ -1954,7 +2704,7 @@ void DoneStaticInitInst::Execute(Frame& frame)
         Type* type = GetType();
         ObjectType* objectType = dynamic_cast<ObjectType*>(type);
         Assert(objectType, "object type expected");
-        ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+        ClassData* classData = ClassDataTable::GetClassData(objectType->Name());
         StaticClassData* staticClassData = classData->GetStaticClassData();
         Assert(staticClassData, "class has no static data");
         staticClassData->ResetInitializing();
@@ -1967,7 +2717,12 @@ void DoneStaticInitInst::Execute(Frame& frame)
     }
 }
 
-LoadStaticFieldInst::LoadStaticFieldInst() : TypeInstruction("loadstaticfield"), index(-1)
+void DoneStaticInitInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitDoneStaticInitInst(*this);
+}
+
+LoadStaticFieldInst::LoadStaticFieldInst() : TypeInstruction("loadstaticfield"), index(-1), fieldType(ValueType::none)
 {
 }
 
@@ -1986,12 +2741,14 @@ void LoadStaticFieldInst::Encode(Writer& writer)
 {
     TypeInstruction::Encode(writer);
     writer.Put(index);
+    writer.Put(uint8_t(fieldType));
 }
 
 Instruction* LoadStaticFieldInst::Decode(Reader& reader)
 {
     TypeInstruction::Decode(reader);
     index = reader.GetInt();
+    fieldType = ValueType(reader.GetByte());
     return this;
 }
 
@@ -2002,7 +2759,7 @@ void LoadStaticFieldInst::Execute(Frame& frame)
         Type* type = GetType();
         ObjectType* objectType = dynamic_cast<ObjectType*>(type);
         Assert(objectType, "object type expected");
-        ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+        ClassData* classData = ClassDataTable::GetClassData(objectType->Name());
         StaticClassData* staticData = classData->GetStaticClassData();
         Assert(staticData, "class has no static data");
         Assert(index != -1, "index not set");
@@ -2014,7 +2771,18 @@ void LoadStaticFieldInst::Execute(Frame& frame)
     }
 }
 
-StoreStaticFieldInst::StoreStaticFieldInst() : TypeInstruction("storestaticfield"), index(-1)
+void LoadStaticFieldInst::Dump(CodeFormatter& formatter)
+{
+    TypeInstruction::Dump(formatter);
+    formatter.Write(" " + std::to_string(index));
+}
+
+void LoadStaticFieldInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitLoadStaticFieldInst(*this);
+}
+
+StoreStaticFieldInst::StoreStaticFieldInst() : TypeInstruction("storestaticfield"), index(-1), fieldType(ValueType::none)
 {
 }
 
@@ -2033,13 +2801,21 @@ void StoreStaticFieldInst::Encode(Writer& writer)
 {
     TypeInstruction::Encode(writer);
     writer.Put(index);
+    writer.Put(uint8_t(fieldType));
 }
 
 Instruction* StoreStaticFieldInst::Decode(Reader& reader)
 {
     TypeInstruction::Decode(reader);
     index = reader.GetInt();
+    fieldType = ValueType(reader.GetByte());
     return this;
+}
+
+void StoreStaticFieldInst::Dump(CodeFormatter& formatter)
+{
+    TypeInstruction::Dump(formatter);
+    formatter.Write(" " + std::to_string(index));
 }
 
 void StoreStaticFieldInst::Execute(Frame& frame)
@@ -2050,7 +2826,7 @@ void StoreStaticFieldInst::Execute(Frame& frame)
         Type* type = GetType();
         ObjectType* objectType = dynamic_cast<ObjectType*>(type);
         Assert(objectType, "object type expected");
-        ClassData* classData = ClassDataTable::Instance().GetClassData(objectType->Name());
+        ClassData* classData = ClassDataTable::GetClassData(objectType->Name());
         StaticClassData* staticData = classData->GetStaticClassData();
         Assert(staticData, "class has no static data");
         Assert(index != -1, "index not set");
@@ -2060,6 +2836,11 @@ void StoreStaticFieldInst::Execute(Frame& frame)
     {
         ThrowSystemException(ex, frame);
     }
+}
+
+void StoreStaticFieldInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitStoreStaticFieldInst(*this);
 }
 
 EqualObjectNullInst::EqualObjectNullInst() : Instruction("equalonull")
@@ -2076,6 +2857,11 @@ void EqualObjectNullInst::Execute(Frame& frame)
     frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
 }
 
+void EqualObjectNullInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitEqualObjectNullInst(*this);
+}
+
 EqualNullObjectInst::EqualNullObjectInst() : Instruction("equalnullo")
 {
 }
@@ -2088,6 +2874,29 @@ void EqualNullObjectInst::Execute(Frame& frame)
     ObjectReference right(rightValue.Value());
     bool result = right.IsNull();
     frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
+}
+
+void EqualNullObjectInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitEqualNullObjectInst(*this);
+}
+
+BoxBaseInst::BoxBaseInst(const std::string& name_) : Instruction(name_)
+{
+}
+
+void BoxBaseInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitBoxBaseInst(*this);
+}
+
+UnboxBaseInst::UnboxBaseInst(const std::string& name_) : Instruction(name_)
+{
+}
+
+void UnboxBaseInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitUnboxBaseInst(*this);
 }
 
 AllocateArrayElementsInst::AllocateArrayElementsInst() : TypeInstruction("allocelems")
@@ -2118,6 +2927,11 @@ void AllocateArrayElementsInst::Execute(Frame& frame)
     {
         ThrowSystemException(ex, frame);
     }
+}
+
+void AllocateArrayElementsInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitAllocateArrayElementsInst(*this);
 }
 
 IsInst::IsInst() : TypeInstruction("is")
@@ -2157,6 +2971,11 @@ void IsInst::Execute(Frame& frame)
     {
         ThrowSystemException(ex, frame);
     }
+}
+
+void IsInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitIsInst(*this);
 }
 
 AsInst::AsInst() : TypeInstruction("as")
@@ -2205,6 +3024,11 @@ void AsInst::Execute(Frame& frame)
     }
 }
 
+void AsInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitAsInst(*this);
+}
+
 Fun2DlgInst::Fun2DlgInst() : Instruction("fun2dlg")
 {
 }
@@ -2230,10 +3054,21 @@ void Fun2DlgInst::SetFunction(Function* fun)
     function.SetValue(IntegralValue(fun));
 }
 
+Function* Fun2DlgInst::GetFunction()
+{
+    Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
+    return function.Value().AsFunctionPtr();
+}
+
 void Fun2DlgInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
-    ConstantId id = writer.GetConstantPool()->GetIdFor(function);
+    Constant functionNameConstant = function;
+    if (function.Value().GetType() == ValueType::functionPtr)
+    {
+        functionNameConstant = function.Value().AsFunctionPtr()->CallName();
+    }
+    ConstantId id = writer.GetConstantPool()->GetIdFor(functionNameConstant);
     Assert(id != noConstantId, "id for call inst not found");
     id.Write(writer);
 }
@@ -2256,14 +3091,27 @@ void Fun2DlgInst::Execute(Frame& frame)
 void Fun2DlgInst::Dump(CodeFormatter& formatter)
 {
     Instruction::Dump(formatter);
-    Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
-    Function* fun = function.Value().AsFunctionPtr();
+    Function* fun = nullptr;
+    if (function.Value().GetType() == ValueType::stringLiteral)
+    {
+        fun = FunctionTable::GetFunction(function.Value().AsStringLiteral());
+    }
+    else
+    {
+        Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
+        fun = function.Value().AsFunctionPtr();
+    }
     formatter.Write(" " + ToUtf8(fun->CallName().Value().AsStringLiteral()));
 }
 
 void Fun2DlgInst::DispatchTo(InstAdder& adder)
 {
     adder.Add(this);
+}
+
+void Fun2DlgInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitFun2DlgInst(*this);
 }
 
 MemFun2ClassDlgInst::MemFun2ClassDlgInst() : Instruction("memfun2classdlg")
@@ -2291,10 +3139,21 @@ void MemFun2ClassDlgInst::SetFunction(Function* fun)
     function.SetValue(IntegralValue(fun));
 }
 
+Function* MemFun2ClassDlgInst::GetFunction() const
+{
+    Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
+    return function.Value().AsFunctionPtr();
+}
+
 void MemFun2ClassDlgInst::Encode(Writer& writer)
 {
     Instruction::Encode(writer);
-    ConstantId id = writer.GetConstantPool()->GetIdFor(function);
+    Constant functionNameConstant = function;
+    if (function.Value().GetType() == ValueType::functionPtr)
+    {
+        functionNameConstant = function.Value().AsFunctionPtr()->CallName();
+    }
+    ConstantId id = writer.GetConstantPool()->GetIdFor(functionNameConstant);
     Assert(id != noConstantId, "id for call inst not found");
     id.Write(writer);
 }
@@ -2332,14 +3191,27 @@ void MemFun2ClassDlgInst::Execute(Frame& frame)
 void MemFun2ClassDlgInst::Dump(CodeFormatter& formatter)
 {
     Instruction::Dump(formatter);
-    Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
-    Function* fun = function.Value().AsFunctionPtr();
+    Function* fun = nullptr;
+    if (function.Value().GetType() == ValueType::stringLiteral)
+    {
+        fun = FunctionTable::GetFunction(function.Value().AsStringLiteral());
+    }
+    else
+    {
+        Assert(function.Value().GetType() == ValueType::functionPtr, "function pointer expected");
+        fun = function.Value().AsFunctionPtr();
+    }
     formatter.Write(" " + ToUtf8(fun->CallName().Value().AsStringLiteral()));
 }
 
 void MemFun2ClassDlgInst::DispatchTo(InstAdder& adder)
 {
     adder.Add(this);
+}
+
+void MemFun2ClassDlgInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitMemFun2ClassDlgInst(*this);
 }
 
 CreateLocalVariableReferenceInst::CreateLocalVariableReferenceInst() : Instruction("createlocalref"), localIndex(-1)
@@ -2369,6 +3241,11 @@ void CreateLocalVariableReferenceInst::Execute(Frame& frame)
     int32_t variableReferenceId = frame.GetThread().GetNextVariableReferenceId();
     frame.AddVariableReference(new LocalVariableReference(variableReferenceId, frame.Id(), localIndex));
     frame.OpStack().Push(IntegralValue(variableReferenceId, ValueType::variableReference));
+}
+
+void CreateLocalVariableReferenceInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitCreateLocalVariableReferenceInst(*this);
 }
 
 CreateMemberVariableReferenceInst::CreateMemberVariableReferenceInst() : Instruction("createfieldref"), memberVarIndex(-1)
@@ -2403,8 +3280,26 @@ void CreateMemberVariableReferenceInst::Execute(Frame& frame)
     frame.OpStack().Push(IntegralValue(variableReferenceId, ValueType::variableReference));
 }
 
-LoadVariableReferenceInst::LoadVariableReferenceInst() : IndexParamInst("loadref")
+void CreateMemberVariableReferenceInst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitCreateMemberVariableReferenceInst(*this);
+}
+
+LoadVariableReferenceInst::LoadVariableReferenceInst() : IndexParamInst("loadref"), type(ValueType::none)
+{
+}
+
+void LoadVariableReferenceInst::Encode(Writer& writer)
+{
+    IndexParamInst::Encode(writer);
+    writer.Put(uint8_t(type));
+}
+
+Instruction* LoadVariableReferenceInst::Decode(Reader& reader)
+{
+    IndexParamInst::Decode(reader);
+    type = ValueType(reader.GetByte());
+    return this;
 }
 
 void LoadVariableReferenceInst::Execute(Frame& frame)
@@ -2452,8 +3347,26 @@ void LoadVariableReferenceInst::Handle(Frame& frame, MemberVariableReference* me
     }
 }
 
-StoreVariableReferenceInst::StoreVariableReferenceInst() : IndexParamInst("storeref")
+void LoadVariableReferenceInst::Accept(MachineFunctionVisitor& visitor)
 {
+    visitor.VisitLoadVariableReferenceInst(*this);
+}
+
+StoreVariableReferenceInst::StoreVariableReferenceInst() : IndexParamInst("storeref"), type(ValueType::none)
+{
+}
+
+void StoreVariableReferenceInst::Encode(Writer& writer)
+{
+    IndexParamInst::Encode(writer);
+    writer.Put(uint8_t(type));
+}
+
+Instruction* StoreVariableReferenceInst::Decode(Reader& reader)
+{
+    IndexParamInst::Decode(reader);
+    type = ValueType(reader.GetByte());
+    return this;
 }
 
 void StoreVariableReferenceInst::Execute(Frame& frame)
@@ -2503,13 +3416,34 @@ void StoreVariableReferenceInst::Handle(Frame& frame, MemberVariableReference* m
     }
 }
 
+void StoreVariableReferenceInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitStoreVariableReferenceInst(*this);
+}
+
+GcPointInst::GcPointInst() : Instruction("gcpoint")
+{
+}
+
+void GcPointInst::Execute(Frame& frame)
+{
+    GetCurrentThread().CheckPause();
+}
+
+void GcPointInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitGcPointInst(*this);
+}
+
 void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName)
 {
-    Type* type = TypeTable::Instance().GetType(StringPtr(exceptionTypeName.c_str()));
+    Type* type = TypeTable::GetType(StringPtr(exceptionTypeName.c_str()));
     ObjectType* objectType = dynamic_cast<ObjectType*>(type);
     Assert(objectType, "object type expected");
+    GcPointInst gcPoint;
+    gcPoint.Execute(frame);
     ObjectReference objectReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
-    ClassData* classData = ClassDataTable::Instance().GetClassData(StringPtr(exceptionTypeName.c_str()));
+    ClassData* classData = ClassDataTable::GetClassData(StringPtr(exceptionTypeName.c_str()));
     Object& o = GetManagedMemoryPool().GetObject(objectReference);
     o.Pin();
     IntegralValue classDataValue(classData);
@@ -2522,34 +3456,39 @@ void ThrowException(const std::string& message, Frame& frame, const utf32_string
     o.Unpin();
 }
 
-void ThrowSystemException(const SystemException& ex, Frame& frame)
+MACHINE_API void ThrowSystemException(const SystemException& ex, Frame& frame)
 {
-    ThrowException(ex.what(), frame, U"System.SystemException");
+    ThrowException(ex.Message(), frame, U"System.SystemException");
 }
 
-void ThrowNullReferenceException(const NullReferenceException& ex, Frame& frame)
+MACHINE_API void ThrowNullReferenceException(const NullReferenceException& ex, Frame& frame)
 {
-    ThrowException(ex.what(), frame, U"System.NullReferenceException");
+    ThrowException(ex.Message(), frame, U"System.NullReferenceException");
 }
 
-void ThrowIndexOutOfRangeException(const IndexOutOfRangeException& ex, Frame& frame)
+MACHINE_API void ThrowIndexOutOfRangeException(const IndexOutOfRangeException& ex, Frame& frame)
 {
-    ThrowException(ex.what(), frame, U"System.IndexOutOfRangeException");
+    ThrowException(ex.Message(), frame, U"System.IndexOutOfRangeException");
 }
 
-void ThrowArgumentOutOfRangeException(const ArgumentOutOfRangeException& ex, Frame& frame)
+MACHINE_API void ThrowArgumentOutOfRangeException(const ArgumentOutOfRangeException& ex, Frame& frame)
 {
-    ThrowException(ex.what(), frame, U"System.ArgumentOutOfRangeException");
+    ThrowException(ex.Message(), frame, U"System.ArgumentOutOfRangeException");
 }
 
-void ThrowInvalidCastException(const InvalidCastException& ex, Frame& frame)
+MACHINE_API void ThrowInvalidCastException(const InvalidCastException& ex, Frame& frame)
 {
-    ThrowException(ex.what(), frame, U"System.InvalidCastException");
+    ThrowException(ex.Message(), frame, U"System.InvalidCastException");
 }
 
-void ThrowFileSystemException(const FileSystemError& ex, Frame& frame)
+MACHINE_API void ThrowFileSystemException(const FileSystemError& ex, Frame& frame)
 {
-    ThrowException(ex.what(), frame, U"System.FileSystemException");
+    ThrowException(ex.Message(), frame, U"System.FileSystemException");
+}
+
+MACHINE_API void ThrowStackOverflowException(const StackOverflowException& ex, Frame& frame)
+{
+    ThrowException(ex.Message(), frame, U"System.StackOverflowException");
 }
 
 } } // namespace cminor::machine

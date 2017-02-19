@@ -5,6 +5,7 @@
 
 #ifndef CMINOR_MACHINE_CLASS_INCLUDED
 #define CMINOR_MACHINE_CLASS_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Function.hpp>
 #include <mutex>
 
@@ -12,7 +13,7 @@ namespace cminor { namespace machine {
 
 class ObjectType;
 
-class MethodTable
+class MACHINE_API MethodTable
 {
 public:
     int32_t Count() const { return int32_t(methods.size()); }
@@ -27,7 +28,7 @@ private:
     std::vector<Constant> methods;
 };
 
-class StaticClassData
+class MACHINE_API StaticClassData
 {
 public:
     StaticClassData();
@@ -57,7 +58,7 @@ private:
     MemPtr staticData;
 };
 
-class ClassData
+class MACHINE_API ClassData
 {
 public:
     ClassData(ObjectType* type_);
@@ -80,19 +81,15 @@ private:
 class ClassDataTable
 {
 public:
-    static void Init();
-    static void Done();
-    static ClassDataTable& Instance();
-    ClassData* GetClassData(StringPtr fullClassName);
-    void SetClassData(ClassData* classData);
-    std::unordered_map<StringPtr, ClassData*, StringPtrHash>& ClassDataMap() { return classDataMap; }
-private:
-    static std::unique_ptr<ClassDataTable> instance;
-    ClassDataTable();
-    std::unordered_map<StringPtr, ClassData*, StringPtrHash> classDataMap;
+    MACHINE_API static void Init();
+    MACHINE_API static void Done();
+    MACHINE_API static ClassData* GetClassData(StringPtr fullClassName);
+    MACHINE_API static ClassData* GetSystemStringClassData();
+    MACHINE_API static void SetClassData(ClassData* classData);
+    MACHINE_API static std::unordered_map<StringPtr, ClassData*, StringPtrHash>& ClassDataMap();
 };
 
-ClassData* GetClassDataForBoxedType(ValueType valueType);
+MACHINE_API ClassData* GetClassDataForBoxedType(ValueType valueType);
 
 } } // namespace cminor::machine
 

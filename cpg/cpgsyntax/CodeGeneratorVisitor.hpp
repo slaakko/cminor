@@ -10,11 +10,11 @@
 #include <cminor/pl/Composite.hpp>
 #include <cminor/pl/Keyword.hpp>
 #include <cminor/pl/Visitor.hpp>
-#include <cminor/machine/CodeFormatter.hpp>
+#include <cminor/util/CodeFormatter.hpp>
 
 namespace cpg { namespace syntax {
 
-using cminor::machine::CodeFormatter;
+using cminor::util::CodeFormatter;
 using namespace cminor::parsing;
 
 class CodeGeneratorVisitor : public cminor::parsing::Visitor

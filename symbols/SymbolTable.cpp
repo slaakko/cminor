@@ -857,6 +857,11 @@ Node* SymbolTable::GetNodeNothrow(Symbol* symbol) const
     return nullptr;
 }
 
+void SymbolTable::MapNodeSetNoIds(Node& node, Symbol* symbol)
+{
+    symbolNodeMap[symbol] = &node;
+}
+
 void SymbolTable::MapNode(Node& node, Symbol* symbol)
 {
     nodeSymbolMap[&node] = symbol;
@@ -1013,7 +1018,10 @@ void SymbolTable::MergeClassTemplateSpecializations()
 
 void SymbolTable::Dump(CodeFormatter& codeFormatter)
 {
+    codeFormatter.WriteLine("SYMBOL TABLE");
+    codeFormatter.WriteLine();
     globalNs.Dump(codeFormatter, assembly);
+    codeFormatter.WriteLine();
 }
 
 SymbolCreator::~SymbolCreator()
@@ -1153,6 +1161,7 @@ void DoneSymbol()
 std::unique_ptr<Assembly> CreateSystemCoreAssembly(Machine& machine, const std::string& config)
 {
     std::unique_ptr<Assembly> systemCoreAssembly(new Assembly(machine, U"System.Core", CminorSystemCoreAssemblyFilePath(config)));
+    systemCoreAssembly->SetCore();
     systemCoreAssembly->GetSymbolTable().BeginNamespace(StringPtr(U"System"), Span());
     BasicTypeSymbol* boolTypeSymbol = new BoolTypeSymbol(Span(), systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"Boolean")));
     boolTypeSymbol->SetAssembly(systemCoreAssembly.get());

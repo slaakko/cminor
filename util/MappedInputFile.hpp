@@ -3,12 +3,12 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_MAPPED_INPUT_FILE_INCLUDED
-#define CMINOR_MACHINE_MAPPED_INPUT_FILE_INCLUDED
+#ifndef CMINOR_UTIL_MAPPED_INPUT_FILE_INCLUDED
+#define CMINOR_UTIL_MAPPED_INPUT_FILE_INCLUDED
 #include <string>
 #include <stdint.h>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 class MappedInputFileImpl;
 
@@ -23,6 +23,6 @@ private:
     MappedInputFileImpl* impl;
 };
 
-} } // namespace cminor::machine
+} } // namespace cminor::util
 
-#endif // CMINOR_MACHINE_MAPPED_INPUT_FILE_INCLUDED
+#endif // CMINOR_UTIL_MAPPED_INPUT_FILE_INCLUDED

@@ -5,6 +5,7 @@
 
 #ifndef CMINOR_MACHINE_ARENA_INCLUDED
 #define CMINOR_MACHINE_ARENA_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Object.hpp>
 #include <atomic>
 #include <mutex>
@@ -13,8 +14,8 @@ namespace cminor { namespace machine {
 
 class Thread;
 
-void SetSegmentSize(uint64_t segmentSize_);
-uint64_t GetSegmentSize();
+MACHINE_API void SetSegmentSize(uint64_t segmentSize_);
+MACHINE_API uint64_t GetSegmentSize();
 
 constexpr uint64_t defaultSegmentSize = static_cast<uint64_t>(16) * 1024 * 1024; // 16 MB
 constexpr uint64_t defaultLargeObjectThresholdSize = static_cast<uint64_t>(64) * 1024; // 64 K

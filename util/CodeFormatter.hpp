@@ -3,11 +3,11 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_CODE_FORMATTER_INCLUDED
-#define CMINOR_MACHINE_CODE_FORMATTER_INCLUDED
+#ifndef CMINOR_UTIL_CODE_FORMATTER_INCLUDED
+#define CMINOR_UTIL_CODE_FORMATTER_INCLUDED
 #include <ostream>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 class CodeFormatter
 {
@@ -39,6 +39,6 @@ private:
     int line;
 };
 
-} } // namespace cminor::machine
+} } // namespace cminor::util
 
-#endif // CMINOR_MACHINE_CODE_FORMATTER_INCLUDED
+#endif // CMINOR_UTIL_CODE_FORMATTER_INCLUDED

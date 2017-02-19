@@ -3,9 +3,9 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/machine/System.hpp>
-#include <cminor/machine/Handle.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/System.hpp>
+#include <cminor/util/Handle.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <stdexcept>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -22,7 +22,7 @@
 #include <sys/select.h>
 #endif
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 #ifdef _WIN32
 
@@ -373,4 +373,4 @@ void RestoreStdHandles(const std::vector<int>& oldHandles)
     }
 }
 
-} } // namespace cminor::machine
+} } // namespace cminor::util

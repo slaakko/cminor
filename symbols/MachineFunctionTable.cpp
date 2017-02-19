@@ -16,13 +16,14 @@ Function* MachineFunctionTable::CreateFunction(FunctionSymbol* functionSymbol)
 {
     utf32_string functionCallName = functionSymbol->FullName();
     ConstantPool& constantPool = functionSymbol->GetAssembly()->GetConstantPool();
+    Constant functionGroupNameConstant = constantPool.GetConstant(constantPool.Install(functionSymbol->GroupName()));
     Constant functionCallNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(functionCallName.c_str())));
-    utf32_string functionFriendlyName = functionSymbol->FriendlyName();
-    Constant functionFriendlyNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(functionFriendlyName.c_str())));
-    Function* function = new Function(functionCallNameConstant, functionFriendlyNameConstant, int32_t(machineFunctions.size()), &constantPool);
+    utf32_string functionFullNameWithSpecifiers = functionSymbol->FullNameWithSpecifiers();
+    Constant functionFullNameWithSpecifiersConstant = constantPool.GetConstant(constantPool.Install(StringPtr(functionFullNameWithSpecifiers.c_str())));
+    Function* function = new Function(functionGroupNameConstant, functionCallNameConstant, functionFullNameWithSpecifiersConstant, int32_t(machineFunctions.size()), &constantPool);
     if (functionSymbol->GetSpan().Valid())
     {
-        utf32_string sfp = ToUtf32(FileRegistry::Instance()->GetParsedFileName(functionSymbol->GetSpan().FileIndex()));
+        utf32_string sfp = ToUtf32(FileRegistry::GetParsedFileName(functionSymbol->GetSpan().FileIndex()));
         Constant sourceFilePath = constantPool.GetConstant(constantPool.Install(StringPtr(sfp.c_str())));
         function->SetSourceFilePath(sourceFilePath);
     }
@@ -60,11 +61,15 @@ void MachineFunctionTable::Read(SymbolReader& reader)
 
 void MachineFunctionTable::Dump(CodeFormatter& formatter)
 {
+    formatter.WriteLine("FUNCTION TABLE");
+    formatter.WriteLine();
     int32_t n = int32_t(machineFunctions.size());
     for (int32_t i = 0; i < n; ++i)
     {
         Function* function = machineFunctions[i].get();
         function->Dump(formatter);
     }
+    formatter.WriteLine();
 }
+
 } } // namespace cminor::symbols

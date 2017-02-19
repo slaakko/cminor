@@ -26,8 +26,11 @@ public:
     void Put(Symbol* symbol);
     void Put(Value* value);
     AstWriter& AsAstWriter() { return *this; }
+    void SetKeepProjectBitForSymbols(bool keep) { keepProjectBitForSymbols = keep; }
+    bool KeepProjectBitForSymbols() const { return keepProjectBitForSymbols; }
 private:
     Assembly* assembly;
+    bool keepProjectBitForSymbols;
 };
 
 } } // namespace cminor::symbols

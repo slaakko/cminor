@@ -23,6 +23,8 @@ public:
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader);
     void Dump(CodeFormatter& formatter);
+    const std::vector<std::unique_ptr<Function>>& MachineFunctions() const { return machineFunctions; }
+    std::vector<std::unique_ptr<Function>>& MachineFunctions() { return machineFunctions; }
 private:
     std::vector<std::unique_ptr<Function>> machineFunctions;
 };

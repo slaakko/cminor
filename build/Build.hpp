@@ -12,15 +12,18 @@ namespace cminor { namespace build {
 
 struct AssemblyReferenceInfo
 {
-    AssemblyReferenceInfo(const std::string& filePath_, bool isSystemAssembly_) : filePath(filePath_), isSystemAssembly(isSystemAssembly_) {}
-    std::string filePath;
+    AssemblyReferenceInfo(const std::string& assemblyFilePath_, const std::string& nativeImportLibraryFilePath_, const std::string& nativeSharedLibraryFilePath_, bool isSystemAssembly_) : 
+        assemblyFilePath(assemblyFilePath_), nativeImportLibraryFilePath(nativeImportLibraryFilePath_), nativeSharedLibraryFilePath(nativeSharedLibraryFilePath_), isSystemAssembly(isSystemAssembly_) {}
+    std::string assemblyFilePath;
+    std::string nativeImportLibraryFilePath;
+    std::string nativeSharedLibraryFilePath;
     bool isSystemAssembly;
 };
 
 inline bool operator<(const AssemblyReferenceInfo& left, const AssemblyReferenceInfo& right)
 {
-    if (left.filePath < right.filePath) return true;
-    if (right.filePath < left.filePath) return false;
+    if (left.assemblyFilePath < right.assemblyFilePath) return true;
+    if (right.assemblyFilePath < left.assemblyFilePath) return false;
     if (left.isSystemAssembly && !right.isSystemAssembly) return true;
     return false;
 }

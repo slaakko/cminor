@@ -8,15 +8,17 @@
 namespace cminor { namespace symbols {
 
 GlobalFlags globalFlags;
+int optimizationLevel = -1;
+std::string debugPassValue;
 
 inline GlobalFlags operator|(GlobalFlags flags, GlobalFlags flag)
 {
-    return GlobalFlags(uint8_t(flags) | uint8_t(flag));
+    return GlobalFlags(uint16_t(flags) | uint16_t(flag));
 }
 
 inline GlobalFlags operator&(GlobalFlags flags, GlobalFlags flag)
 {
-    return GlobalFlags(uint8_t(flags) & uint8_t(flag));
+    return GlobalFlags(uint16_t(flags) & uint16_t(flag));
 }
 
 void SetGlobalFlag(GlobalFlags flag)
@@ -37,6 +39,37 @@ std::string GetConfig()
         config = "release";
     }
     return config;
+}
+
+int GetOptimizationLevel()
+{
+    if (optimizationLevel == -1)
+    {
+        if (GetGlobalFlag(GlobalFlags::release))
+        {
+            return 2;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    return optimizationLevel;
+}
+
+void SetOptimizationLevel(int level)
+{
+    optimizationLevel = level;
+}
+
+void SetDebugPassValue(const std::string& value)
+{
+    debugPassValue = value;
+}
+
+const std::string& GetDebugPassValue()
+{
+    return debugPassValue;
 }
 
 } } // namespace cminor::symbols

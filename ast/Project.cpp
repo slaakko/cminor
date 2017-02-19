@@ -4,12 +4,12 @@
 // =================================
 
 #include <cminor/ast/Project.hpp>
-#include <cminor/machine/Path.hpp>
+#include <cminor/util/Path.hpp>
 #include <algorithm>
 
 namespace cminor { namespace ast {
 
-using namespace cminor::machine;
+using namespace cminor::util;
 
 ProjectFormatter::~ProjectFormatter()
 {
@@ -167,6 +167,13 @@ std::string CminorRootDir()
         throw std::runtime_error("CMINOR_ROOT environment variable not set");
     }
     return std::string(e);
+}
+
+std::string CminorLibDir()
+{
+    boost::filesystem::path s(CminorRootDir());
+    s /= "lib";
+    return GetFullPath(s.generic_string());
 }
 
 std::string CminorSystemDir()

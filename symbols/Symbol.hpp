@@ -7,7 +7,7 @@
 #define CMINOR_SYMBOLS_SYMBOL_INCLUDED
 #include <cminor/machine/Constant.hpp>
 #include <cminor/machine/Type.hpp>
-#include <cminor/machine/CodeFormatter.hpp>
+#include <cminor/util/CodeFormatter.hpp>
 #include <cminor/ast/Function.hpp>
 #include <cminor/ast/Class.hpp>
 #include <cminor/ast/Statement.hpp>
@@ -123,6 +123,7 @@ public:
     StringPtr Name() const;
     void SetName(StringPtr newName);
     virtual utf32_string FullName() const;
+    virtual utf32_string SimpleName() const { return Name().Value(); }
     Constant NameConstant() const { return name; }
     SymbolAccess Access() const { return SymbolAccess(flags & SymbolFlags::access); }
     virtual SymbolAccess DeclaredAccess() const { return Access(); }
@@ -663,6 +664,7 @@ public:
     ArrayTypeSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::arrayTypeSymbol; }
     std::string TypeString() const override { return "array"; }
+    utf32_string SimpleName() const override;
     void SetElementType(TypeSymbol* elementType_) { elementType = elementType_; }
     TypeSymbol* ElementType() const { return elementType; }
     void Write(SymbolWriter& writer) override;
@@ -677,6 +679,7 @@ class InterfaceTypeSymbol : public TypeSymbol
 {
 public:
     InterfaceTypeSymbol(const Span& span_, Constant name_);
+    ValueType GetValueType() const override { return ValueType::objectReference; }
     SymbolType GetSymbolType() const override { return SymbolType::interfaceTypeSymbol; }
     std::string TypeString() const override { return "interface"; }
     const std::vector<MemberFunctionSymbol*>& MemberFunctions() const { return memberFunctions; }
@@ -684,10 +687,12 @@ public:
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
     ObjectType* GetObjectType() const { return objectType.get(); }
+    ClassData* GetClassData() const { return classData.get(); }
     Type* GetMachineType() const override { return objectType.get(); }
     void SetSpecifiers(Specifiers specifiers);
 private:
     std::unique_ptr<ObjectType> objectType; 
+    std::unique_ptr<ClassData> classData;
     std::vector<MemberFunctionSymbol*> memberFunctions;
 };
 
@@ -745,6 +750,7 @@ public:
     void SetKey(const ClassTemplateSpecializationKey& key_);
     const ClassTemplateSpecializationKey& Key() const { return key; }
     ClassTypeSymbol* PrimaryClassTemplate() const { return key.classTypeSymbol; }
+    utf32_string SimpleName() const override;
     int NumTypeArguments() const { return int(key.typeArguments.size()); }
     TypeSymbol* TypeArgument(int index) const { Assert(index >= 0 && index < key.typeArguments.size(), "invalid type argument index"); return key.typeArguments[index]; }
     void SetGlobalNs(std::unique_ptr<NamespaceNode>&& globalNs_);

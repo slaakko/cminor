@@ -5,6 +5,7 @@
 
 #ifndef CMINOR_MACHINE_FUNCTION_INCLUDED
 #define CMINOR_MACHINE_FUNCTION_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Constant.hpp>
 #include <cminor/machine/Instruction.hpp>
 #include <ostream>
@@ -14,7 +15,7 @@ namespace cminor { namespace machine {
 
 class GenObject;
 
-class InstIndexRequest
+class MACHINE_API InstIndexRequest
 {
 public:
     InstIndexRequest();
@@ -24,7 +25,7 @@ private:
     int32_t index;
 };
 
-class Emitter
+class MACHINE_API Emitter
 {
 public:
     Emitter();
@@ -44,7 +45,7 @@ private:
     int32_t currentSourceLine;
 };
 
-class PCRange
+class MACHINE_API PCRange
 {
 public:
     PCRange();
@@ -53,15 +54,19 @@ public:
     bool InRange(int32_t pc) const { return pc >= start && pc <= end; }
     void Write(Writer& writer);
     void Read(Reader& reader);
+    void Adjust(const std::vector<int32_t>& instructionOffsets);
+    void Dump(CodeFormatter& formatter);
 private:
     int32_t start;
     int32_t end;
 };
 
-class CatchBlock
+class MACHINE_API CatchBlock
 {
 public:
     CatchBlock();
+    CatchBlock(const CatchBlock&) = delete;
+    CatchBlock& operator=(const CatchBlock&) = delete;
     void Write(Writer& writer);
     void Read(Reader& reader);
     void SetExceptionVarClassTypeFullName(Constant exceptionVarClassTypeFullName_) { exceptionVarClassTypeFullName = exceptionVarClassTypeFullName_; }
@@ -71,6 +76,8 @@ public:
     uint32_t GetExceptionVarIndex() const { return exceptionVarIndex; }
     void SetCatchBlockStart(int32_t catchBlockStart_) { catchBlockStart = catchBlockStart_; }
     int32_t CatchBlockStart() const { return catchBlockStart; }
+    void Adjust(const std::vector<int32_t>& instructionOffsets, std::unordered_set<int32_t>& jumpTargets);
+    void Dump(CodeFormatter& formatter);
 private:
     Constant exceptionVarClassTypeFullName;
     ObjectType* exceptionVarType;
@@ -78,10 +85,12 @@ private:
     int32_t catchBlockStart;
 };
 
-class ExceptionBlock
+class MACHINE_API ExceptionBlock
 {
 public:
     ExceptionBlock(int id_);
+    ExceptionBlock(const ExceptionBlock&) = delete;
+    ExceptionBlock operator=(const ExceptionBlock&) = delete;
     int Id() const { return id; }
     bool HasParent() const { return parentId != -1; }
     void SetParentId(int parentId_) { parentId = parentId_; }
@@ -99,6 +108,8 @@ public:
     int32_t FinallyStart() const { return finallyStart; }
     void SetNextTarget(int32_t nextTarget_) { nextTarget = nextTarget_; }
     int32_t NextTarget() const { return nextTarget; }
+    void Adjust(const std::vector<int32_t>& instructionOffsets, std::unordered_set<int32_t>& jumpTargets);
+    void Dump(CodeFormatter& formatter);
 private:
     int id;
     int parentId;
@@ -108,14 +119,40 @@ private:
     int32_t nextTarget;
 };
 
-class Function
+class MachineFunctionVisitor;
+
+enum class FunctionFlags : uint8_t
+{
+    none = 0, 
+    exported = 1 << 0, 
+    canThrow = 1 << 1
+};
+
+inline FunctionFlags operator&(FunctionFlags left, FunctionFlags right)
+{
+    return FunctionFlags(uint8_t(left) & uint8_t(right));
+}
+
+inline FunctionFlags operator|(FunctionFlags left, FunctionFlags right)
+{
+    return FunctionFlags(uint8_t(left) | uint8_t(right));
+}
+
+std::string FunctionFlagsStr(FunctionFlags flags);
+
+class MACHINE_API Function
 {
 public:
     Function();
-    Function(Constant callName_, Constant friendlyName_, uint32_t id_, ConstantPool* constantPool_);
+    Function(Constant groupName_, Constant callName_, Constant fullName_, uint32_t id_, ConstantPool* constantPool_);
+    Function(const Function&) = delete;
+    Function& operator=(const Function&) = delete;
+    Constant GroupName() const { return groupName; }
     Constant CallName() const { return callName; }
-    Constant FriendlyName() const { return friendlyName; }
+    Constant FullName() const { return fullName; }
     Constant SourceFilePath() const { return sourceFilePath; }
+    const std::string& MangledName() const { return mangledName; }
+    void SetMangedName(const std::string& mangledName_);
     void SetSourceFilePath(Constant sourceFilePath_) { sourceFilePath = sourceFilePath_; }
     bool HasSourceFilePath() const;
     uint32_t Id() const { return id; }
@@ -125,8 +162,16 @@ public:
     void Read(Reader& reader);
     uint32_t NumLocals() const { return numLocals; }
     void SetNumLocals(uint32_t numLocals_);
+    const std::vector<ValueType>& LocalTypes() const { return localTypes; }
+    std::vector<ValueType>& LocalTypes() { return localTypes; }
     uint32_t NumParameters() const { return numParameters; }
     void SetNumParameters(uint32_t numParameters_);
+    const std::vector<ValueType>& ParameterTypes() const { return parameterTypes; }
+    std::vector<ValueType>& ParameterTypes() { return parameterTypes; }
+    bool ReturnsValue() const { return returnsValue; }
+    void SetReturnsValue() { returnsValue = true; }
+    ValueType ReturnType() const { return returnType; }
+    void SetReturnType(ValueType returnType_) { returnType = returnType_; }
     int NumInsts() const { return int(instructions.size()); }
     Instruction* GetInst(int index) const { return instructions[index].get(); }
     void AddInst(std::unique_ptr<Instruction>&& inst);
@@ -137,6 +182,7 @@ public:
     void SetMain() { isMain = true; }
     void SetEmitter(Emitter* emitter_) { emitter = emitter_; }
     Emitter* GetEmitter() const { return emitter; }
+    bool HasExceptionBlocks() const { return !exceptionBlocks.empty(); }
     int GetNextExeptionBlockId() const { return int(exceptionBlocks.size()); }
     void AddExceptionBlock(std::unique_ptr<ExceptionBlock>&& exceptionBlock);
     ExceptionBlock* GetExceptionBlock(int id) const;
@@ -148,15 +194,35 @@ public:
     bool HasBreakPointAt(uint32_t pc) const;
     void SetBreakPointAt(uint32_t pc);
     void RemoveBreakPointAt(uint32_t pc);
+    void RemoveUnreachableInstructions(std::unordered_set<int32_t>& jumpTargets);
+    void Accept(MachineFunctionVisitor& visitor);
+    bool IsExported() const { return GetFlag(FunctionFlags::exported); }
+    void SetExported() { SetFlag(FunctionFlags::exported); }
+    bool CanThrow() const { return GetFlag(FunctionFlags::canThrow); }
+    void SetCanThrow() { SetFlag(FunctionFlags::canThrow); }
+    void* Address() const { return address; }
+    void SetAddress(void* address_) { address = address_; }
+    void* GetAssembly() const { return assembly; }
+    void SetAssembly(void* assembly_) { assembly = assembly_; }
+    void* FunctionSymbol() const { return functionSymbol; }
+    void SetFunctionSymbol(void* functionSymbol_) { functionSymbol = functionSymbol_; }
+    void SetAlreadyGenerated() { alreadyGenerated = true; }
+    bool AlreadyGenerated() const { return alreadyGenerated; }
 private:
+    Constant groupName;
     Constant callName;
-    Constant friendlyName;
+    Constant fullName;
     Constant sourceFilePath;
     uint32_t id;
+    std::string mangledName;
     ConstantPool* constantPool;
     std::vector<std::unique_ptr<Instruction>> instructions;
     uint32_t numLocals;
+    std::vector<ValueType> localTypes;
     uint32_t numParameters;
+    std::vector<ValueType> parameterTypes;
+    bool returnsValue;
+    ValueType returnType;
     bool isMain;
     std::vector<std::unique_ptr<ExceptionBlock>> exceptionBlocks;
     std::map<uint32_t, uint32_t> pcSourceLineMap;
@@ -164,26 +230,30 @@ private:
     std::unordered_set<uint32_t> mappedSourceLines;
     std::unordered_set<uint32_t> breakPoints;
     Emitter* emitter;
+    FunctionFlags flags;
+    void* address;
+    void* assembly;
+    void* functionSymbol;
+    bool alreadyGenerated;
+    bool GetFlag(FunctionFlags flag) const { return (flags & flag) != FunctionFlags::none; }
+    void SetFlag(FunctionFlags flag) { flags = flags | flag; }
+    void AdjustPCSourceLineMap(const std::vector<int32_t>& instructionOffsets);
+    void AdjustSourceLinePCMap(const std::vector<int32_t>& instructionOffsets);
 };
 
 class FunctionTable
 {
 public:
-    static void Init();
-    static void Done();
-    FunctionTable();
-    static FunctionTable& Instance() { Assert(instance, "function table not initialized"); return *instance; }
-    void AddFunction(Function* fun, bool memberOfClassTemplateSpecialization);
-    Function* GetFunction(StringPtr functionCallName) const;
-    Function* GetMain() const { return main; }
-    void ResolveExceptionVarTypes();
-private:
-    static std::unique_ptr<FunctionTable> instance;
-    std::unordered_map<StringPtr, Function*, StringPtrHash> functionMap;
-    Function* main;
+    MACHINE_API static void Init();
+    MACHINE_API static void Done();
+    MACHINE_API static void AddFunction(Function* fun, bool memberOfClassTemplateSpecialization);
+    MACHINE_API static Function* GetFunction(StringPtr functionCallName);
+    MACHINE_API static Function* GetFunctionNothrow(StringPtr functionCallName);
+    MACHINE_API static Function* GetMain();
+    MACHINE_API static void ResolveExceptionVarTypes();
 };
 
-class VmFunction
+class MACHINE_API VmFunction
 {
 public:
     void SetName(Constant name_) { name = name_; }
@@ -197,17 +267,13 @@ private:
 class VmFunctionTable
 {
 public:
-    static void Init();
-    static void Done();
-    static VmFunctionTable& Instance() { Assert(instance, "virtual machine function table not initialized"); return *instance; }
-    void RegisterVmFunction(VmFunction* vmFunction);
-    VmFunction* GetVmFunction(StringPtr vmFuntionName) const;
-private:
-    static std::unique_ptr<VmFunctionTable> instance;
-    std::unordered_map<StringPtr, VmFunction*, StringPtrHash> vmFunctionMap;
+    MACHINE_API static void Init();
+    MACHINE_API static void Done();
+    MACHINE_API static void RegisterVmFunction(VmFunction* vmFunction);
+    MACHINE_API static VmFunction* GetVmFunction(StringPtr vmFunctionName);
 };
 
-class LineFunctionTable
+class MACHINE_API LineFunctionTable
 {
 public:
     LineFunctionTable();
@@ -217,7 +283,7 @@ private:
     std::unordered_map<uint32_t, Function*> lineFunctionMap;
 };
 
-class BreakPoint
+class MACHINE_API BreakPoint
 {
 public:
     BreakPoint();
@@ -232,7 +298,7 @@ private:
     uint32_t pc;
 };
 
-class SourceFile
+class MACHINE_API SourceFile
 {
 public:
     SourceFile(Constant sourceFilePath_);
@@ -248,24 +314,17 @@ private:
 class SourceFileTable
 {
 public:
-    static SourceFileTable* Instance();
-    static void Init();
-    static void Done();
-    Constant GetSourceFilePath(const std::string& sourceFileName) const;
-    SourceFile* GetSourceFile(Constant sourceFilePath);
-    SourceFile* GetSourceFile(const std::string& sourceFileName);
-    void MapSourceFileLine(Constant sourceFilePath, uint32_t sourceLine, Function* function);
-    int SetBreakPoint(Constant sourceFilePath, uint32_t sourceLine);
-    int SetBreakPoint(const std::string& sourceFileName, uint32_t sourceLine);
-    void RemoveBreakPoint(int bp);
-    const BreakPoint* GetBreakPoint(int bp) const;
-private:
-    SourceFileTable();
-    static std::unique_ptr<SourceFileTable> instance;
-    std::unordered_map<Constant, LineFunctionTable, ConstantHash> sourceFileLineFunctionMap;
-    std::unordered_map<Constant, std::unique_ptr<SourceFile>, ConstantHash> sourceFileMap;
-    std::unordered_map<int, BreakPoint> breakPoints;
-    int nextBp;
+    MACHINE_API static bool Initialized();
+    MACHINE_API static void Init();
+    MACHINE_API static void Done();
+    MACHINE_API static Constant GetSourceFilePath(const std::string& sourceFileName);
+    MACHINE_API static SourceFile* GetSourceFile(Constant sourceFilePath);
+    MACHINE_API static SourceFile* GetSourceFile(const std::string& sourceFileName);
+    MACHINE_API static void MapSourceFileLine(Constant sourceFilePath, uint32_t sourceLine, Function* function);
+    MACHINE_API static int SetBreakPoint(Constant sourceFilePath, uint32_t sourceLine);
+    MACHINE_API static int SetBreakPoint(const std::string& sourceFileName, uint32_t sourceLine);
+    MACHINE_API static void RemoveBreakPoint(int bp);
+    MACHINE_API static const BreakPoint* GetBreakPoint(int bp);
 };
 
 } } // namespace cminor::machine

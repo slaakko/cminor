@@ -7,14 +7,14 @@
 [cpp]#include <cminor/cpg/cpgcpp/Declarator.hpp>
 [cpp]#include <cminor/cpg/cpgcpp/Literal.hpp>
 [cpp]#include <cminor/cpg/cpgcpp/Identifier.hpp>
-[cpp]#include <cminor/machine/TextUtils.hpp>
+[cpp]#include <cminor/util/TextUtils.hpp>
 [hpp]#include <cminor/pom/Expression.hpp>
 [cpp]#include <cminor/pom/Type.hpp>
 
 namespace cpg.cpp
 {
     [cpp]using namespace cminor::pom;
-    [cpp]using cminor::machine::Trim;
+    [cpp]using cminor::util::Trim;
 
     grammar ExpressionGrammar
     {

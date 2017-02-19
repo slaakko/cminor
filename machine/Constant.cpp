@@ -34,7 +34,36 @@ void Constant::Read(Reader& reader)
     // string literals not read yet
 }
 
-ConstantPool::ConstantPool() : emptyStringConstantId()
+void Constant::Dump(CodeFormatter& formatter)
+{
+    value.Dump(formatter);
+}
+
+class ConstantPoolImpl
+{
+public:
+    ConstantPoolImpl();
+    ConstantId Install(Constant constant);
+    ConstantId Install(StringPtr s);
+    ConstantId GetIdFor(Constant constant);
+    ConstantId GetIdFor(const utf32_string& s);
+    Constant GetConstant(ConstantId id) const { Assert(id.Value() < constants.size(), "invalid constant id " + std::to_string(id.Value())); return constants[ConstantIndex(id)]; }
+    Constant GetEmptyStringConstant() const { return GetConstant(emptyStringConstantId); }
+    ConstantId GetEmptyStringConstantId() const { return emptyStringConstantId; }
+    void Write(Writer& writer);
+    void Read(Reader& reader);
+    void Dump(CodeFormatter& formatter);
+private:
+    ConstantId emptyStringConstantId;
+    std::vector<Constant> constants;
+    std::unordered_map<Constant, ConstantId, ConstantHash> constantIdMap;
+    std::list<utf32_string> strings;
+    std::unordered_map<StringPtr, ConstantId, StringPtrHash> stringIdMap;
+    ConstantId NextFreeConstantId() { return int32_t(constants.size()); }
+    int32_t ConstantIndex(ConstantId id) const { return id.Value(); }
+};
+
+ConstantPoolImpl::ConstantPoolImpl() : emptyStringConstantId()
 {
     utf32_string emptyString;
     strings.push_back(std::move(emptyString));
@@ -45,7 +74,7 @@ ConstantPool::ConstantPool() : emptyStringConstantId()
     stringIdMap[StringPtr(u.c_str())] = emptyStringConstantId;
 }
 
-ConstantId ConstantPool::GetIdFor(Constant constant)
+ConstantId ConstantPoolImpl::GetIdFor(Constant constant)
 {
     if (constant.Value().GetType() != ValueType::stringLiteral)
     {
@@ -73,7 +102,7 @@ ConstantId ConstantPool::GetIdFor(Constant constant)
     }
 }
 
-ConstantId ConstantPool::GetIdFor(const utf32_string& s)
+ConstantId ConstantPoolImpl::GetIdFor(const utf32_string& s)
 {
     auto it = stringIdMap.find(StringPtr(s.c_str()));
     if (it != stringIdMap.cend())
@@ -86,7 +115,7 @@ ConstantId ConstantPool::GetIdFor(const utf32_string& s)
     }
 }
 
-ConstantId ConstantPool::Install(Constant constant)
+ConstantId ConstantPoolImpl::Install(Constant constant)
 {
     if (constant.Value().GetType() != ValueType::stringLiteral)
     {
@@ -125,13 +154,13 @@ ConstantId ConstantPool::Install(Constant constant)
     }
 }
 
-ConstantId ConstantPool::Install(StringPtr s)
+ConstantId ConstantPoolImpl::Install(StringPtr s)
 {
     Constant constant(s.Value());
     return Install(constant);
 }
 
-void ConstantPool::Write(Writer& writer)
+void ConstantPoolImpl::Write(Writer& writer)
 {
     uint32_t n = static_cast<uint32_t>(constants.size());
     Assert(n > 0, "positive value expected");
@@ -143,7 +172,7 @@ void ConstantPool::Write(Writer& writer)
     }
 }
 
-void ConstantPool::Read(Reader& reader)
+void ConstantPoolImpl::Read(Reader& reader)
 {
     uint32_t n = reader.GetEncodedUInt();
     for (uint32_t i = 0; i < n; ++i)
@@ -166,6 +195,79 @@ void ConstantPool::Read(Reader& reader)
         }
         constants.push_back(constant);
     }
+}
+
+void ConstantPoolImpl::Dump(CodeFormatter& formatter)
+{
+    formatter.WriteLine("CONSTANT POOL");
+    formatter.WriteLine();
+    uint32_t n = uint32_t(constants.size());
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        formatter.Write("id: " + std::to_string(i) + ", ");
+        Constant constant = constants[i];
+        constant.Dump(formatter);
+    }
+    formatter.WriteLine();
+}
+
+ConstantPool::ConstantPool() : impl(new ConstantPoolImpl())
+{
+}
+
+ConstantPool::~ConstantPool()
+{
+    delete impl;
+}
+
+ConstantId ConstantPool::Install(Constant constant)
+{
+    return impl->Install(constant);
+}
+
+ConstantId ConstantPool::Install(StringPtr s)
+{
+    return impl->Install(s);
+}
+
+ConstantId ConstantPool::GetIdFor(Constant constant)
+{
+    return impl->GetIdFor(constant);
+}
+
+ConstantId ConstantPool::GetIdFor(const utf32_string& s)
+{
+    return impl->GetIdFor(s);
+}
+
+Constant ConstantPool::GetConstant(ConstantId id) const 
+{ 
+    return impl->GetConstant(id);
+}
+
+Constant ConstantPool::GetEmptyStringConstant() const
+{
+    return impl->GetEmptyStringConstant();
+}
+
+ConstantId ConstantPool::GetEmptyStringConstantId() const 
+{ 
+    return impl->GetEmptyStringConstantId();
+}
+
+void ConstantPool::Write(Writer& writer)
+{
+    impl->Write(writer);
+}
+
+void ConstantPool::Read(Reader& reader)
+{
+    impl->Read(reader);
+}
+
+void ConstantPool::Dump(CodeFormatter& formatter)
+{
+    impl->Dump(formatter);
 }
 
 } } // namespace cminor::machine

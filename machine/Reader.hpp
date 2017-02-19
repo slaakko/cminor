@@ -5,21 +5,25 @@
 
 #ifndef CMINOR_MACHINE_READER_INCLUDED
 #define CMINOR_MACHINE_READER_INCLUDED
-#include <cminor/machine/MappedInputFile.hpp>
+#include <cminor/machine/MachineApi.hpp>
+#include <cminor/util/MappedInputFile.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cminor/machine/Error.hpp>
 
 namespace cminor { namespace machine {
 
+using namespace cminor::util;
+
 class Machine;
 class CallInst;
+class VirtualCallInst;
 class Fun2DlgInst;
 class MemFun2ClassDlgInst;
 class TypeInstruction;
 class SetClassDataInst;
 class ConstantPool;
-typedef std::basic_string<char32_t> utf32_string;
 
-class Reader
+class MACHINE_API Reader
 {
 public:
     Reader(const std::string& filePath_);
@@ -29,6 +33,8 @@ public:
     void SetMachine(Machine& machine_) { machine = &machine_; }
     ConstantPool* GetConstantPool() const { return constantPool; }
     void SetConstantPool(ConstantPool* constantPool_) { constantPool = constantPool_; }
+    void* GetAssemblyAddress() const { return assemblyAddress; }
+    void SetAssemblyAddress(void* assemblyAddress_) { assemblyAddress = assemblyAddress_; }
     void AddCallInst(CallInst* callInst);
     void AddFun2DlgInst(Fun2DlgInst* fun2DlgInst);
     void AddMemFun2ClassDlgInst(MemFun2ClassDlgInst* memFun2ClassDlgInst);
@@ -70,6 +76,7 @@ private:
     const uint8_t* begin;
     const uint8_t* end;
     ConstantPool* constantPool;
+    void* assemblyAddress;
     uint32_t pos;
     std::vector<CallInst*> callInstructions;
     std::vector<Fun2DlgInst*> fun2DlgInstructions;

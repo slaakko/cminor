@@ -4,7 +4,7 @@
 // =================================
 
 #include <cminor/pl/Exception.hpp>
-#include <cminor/machine/MappedInputFile.hpp>
+#include <cminor/util/MappedInputFile.hpp>
 #include <algorithm>
 
 namespace cminor { namespace parsing {
@@ -68,7 +68,7 @@ void ThrowException(const std::string& message, const Span& span)
     if (span.FileIndex() >= 0 && span.FileIndex() < int(files.size()))
     {
         const std::string& filePath = files[span.FileIndex()];
-        cminor::machine::MappedInputFile file(filePath);
+        cminor::util::MappedInputFile file(filePath);
         throw ParsingException(message, filePath, span, file.Begin(), file.End());
     }
     throw std::runtime_error(message);

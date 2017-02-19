@@ -6,78 +6,153 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
-#include <cminor/machine/System.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/System.hpp>
+#include <cminor/util/TextUtils.hpp>
 
 const char* version = "0.0.1";
 
-void PrintHelp()
+enum class HelpTopics : uint8_t
 {
-    std::cout <<
-        "Cminor programming language commander version " << version << "\n\n" <<
-        "Usage: cminor [global-options]\n" <<
-        "(      build [build-options] { solution.cminors | project.cminorp }\n" <<
-        "|      clean [clean-options] { solution.cminors | project.cminorp }\n" <<
-        "|      debug [debug-options] program.cminora [program-arguments]\n" <<
-        "|      dump [dump-options] assembly.cminora [outputfile]\n" <<
-        "|      run [run-options] program.cminora [program-arguments]\n" <<
-        ")\n" <<
-        "---------------------------------------------------------------------\n" <<
-        "global-options:\n" <<
-        "   -v | --verbose : verbose output\n" <<
-        "   -h | --help    : print this help\n" << 
-        "---------------------------------------------------------------------\n" <<
-        "cminor build [build-options] { solution.cminors | project.cminorp }\n\n" <<
-        "Build each given solution.cminors and project.cminorp.\n\n" <<
-        "build-options:\n" <<
-        "   -c=CONFIG | --config=CONFIG\n" <<
-        "       Use CONFIG configuration. CONFIG can be debug or release.\n" <<
-        "       The default is debug.\n" <<
-        "   -d | --dparse\n" <<
-        "       Debug parsing to standard output.\n"
-        "   -n | --clean\n" <<
-        "       Clean given projects and solutions.\n" <<
-        "---------------------------------------------------------------------\n" <<
-        "cminor clean [clean-options] { solution.cminors | project.cminorp }\n\n" <<
-        "Clean each given solution.cminors and project.cminorp.\n\n" <<
-        "clean-options:\n" <<
-        "   -c=CONFIG | --config=CONFIG\n" <<
-        "       Use CONFIG configuration. CONFIG can be debug or release.\n" <<
-        "       The default is debug.\n" <<
-        "---------------------------------------------------------------------\n" <<
-        "cminor debug [debug-options] program.cminora [program-arguments]\n\n" <<
-        "Debug program.cminora with given program arguments.\n\n"
-        "debug-options:\n" <<
-        "   -s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE\n" <<
-        "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
-        "       segment in megabytes. The default is 16 MB.\n" <<
-        "   -p=POOL-THRESHOLD | --pool-threshold=POOL-THRESHOLD:\n" <<
-        "       POOL-THRESHOLD is the grow threshold of the managed\n" <<
-        "       memory pool in megabytes. The default is 16 MB.\n" <<
-        "---------------------------------------------------------------------\n" <<
-        "cminor dump [dump-options] assembly.cminora [outputfile]\n\n" <<
-        "Dump information in assembly.cminora to standard output or given file.\n\n" <<
-        "dump-options:\n" <<
-        "   -a | --all       : dump all (default)\n" <<
-        "   -f | --functions : dump functions\n" <<
-        "   -s | --symbols   : dump symbols\n" <<
-        "---------------------------------------------------------------------\n" <<
-        "cminor run [run-options] program.cminora [program-arguments]\n\n" <<
-        "Run program.cminora with given program-arguments in virtual machine.\n\n" <<
-        "run-options:\n" <<
-        "   -s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE\n" <<
-        "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
-        "       segment in megabytes. The default is 16 MB.\n" <<
-        "   -p=POOL-THRESHOLD | --pool-threshold=POOL-THRESHOLD:\n" <<
-        "       POOL-THRESHOLD is the grow threshold of the managed\n" <<
-        "       memory pool in megabytes. The default is 16 MB.\n" <<
-        "---------------------------------------------------------------------\n" <<
-        std::endl;
+    none = 0,
+    abstract_ = 1 << 0,
+    build = 1 << 1,
+    clean = 1 << 2,
+    run = 1 << 3,
+    debug = 1 << 4,
+    dump = 1 << 5,
+    all = abstract_ | build | clean | run | debug | dump
+};
+
+inline HelpTopics operator|(HelpTopics left, HelpTopics right)
+{
+    return HelpTopics(uint8_t(left) | uint8_t(right));
+}
+
+inline HelpTopics operator&(HelpTopics left, HelpTopics right)
+{
+    return HelpTopics(uint8_t(left) & uint8_t(right));
+}
+
+void PrintHelp(HelpTopics helpTopics)
+{
+    if (helpTopics == HelpTopics::none)
+    {
+        helpTopics = HelpTopics::all;
+    }
+    if ((helpTopics & HelpTopics::abstract_) != HelpTopics::none)
+    {
+        std::cout <<
+            "Cminor programming language commander version " << version << "\n\n" <<
+            "Usage: cminor [global-options]\n" <<
+            "(      build [build-options] { solution.cminors | project.cminorp } | system\n" <<
+            "|      clean [clean-options] { solution.cminors | project.cminorp } | system\n" <<
+            "|      run [run-options] program.cminora [program-arguments]\n" <<
+            "|      debug [debug-options] program.cminora [program-arguments]\n" <<
+            "|      dump [dump-options] assembly.cminora [output-file]\n" <<
+            ")\n" <<
+            "---------------------------------------------------------------------\n" <<
+            "global-options:\n" <<
+            "   -v | --verbose : verbose output\n" <<
+            "   -h | --help [abstract | build | clean | run | debug | dump] :\n" <<
+            "       print help about specified topic(s)\n" <<
+            "---------------------------------------------------------------------\n" <<
+            std::endl;
+    }
+    if ((helpTopics & HelpTopics::build) != HelpTopics::none)
+    {
+        std::cout <<
+            "cminor build [build-options] { solution.cminors | project.cminorp } | system\n\n" <<
+            "Build each given solution.cminors and project.cminorp, or build system libraries.\n\n" <<
+            "build-options:\n" <<
+            "   -c=CONFIG | --config=CONFIG\n" <<
+            "       Use CONFIG configuration. CONFIG can be debug or release.\n" <<
+            "       The default is debug.\n" <<
+            "   -e | --clean\n" <<
+            "       Clean given projects and solutions, or clean system libraries.\n" <<
+            "   -d | --debug-parse\n" <<
+            "       Debug parsing to standard output.\n"
+            "   -n | --native\n" <<
+            "       Compile to native object code.\n" <<
+            "   -O=LEVEL | --optimization-level=LEVEL\n" <<
+            "       Set optimization level to LEVEL=0-3 (used with --native).\n" <<
+            "       Defaults: debug 0, release 2.\n" <<
+            "   -p=VALUE | --debug-pass=VALUE\n" <<
+            "       Generate debug output for LLVM passes (used with --native).\n" <<
+            "       VALUE can be Arguments, Structure, Executions or Details.\n" <<
+            "   -l | --list\n" <<
+            "       Generate listing to ASSEMBLY_NAME.list (used with --native).\n" <<
+            "   -m | --emit-llvm\n" <<
+            "       Emit LLVM intermediate code to ASSEMBLY_NAME.ll (used with --native)\n" <<
+            "   -t | --emit-opt-llvm\n" <<
+            "       Emit optimized LLVM intermediate code to ASSEMBLY_NAME.opt.ll (used with --native)\n" <<
+            "   -a | --emit-asm\n" <<
+            "       Generate assembly code listing to ASSEMBLY_NAME.asm or ASSEMBLY_NAME.s.\n" <<
+            "       (used with --native).\n" <<
+            "---------------------------------------------------------------------\n" <<
+            std::endl;
+    }
+    if ((helpTopics & HelpTopics::clean) != HelpTopics::none)
+    {
+        std::cout <<
+            "cminor clean [clean-options] { solution.cminors | project.cminorp } | system\n\n" <<
+            "Clean each given solution.cminors and project.cminorp, or clean system libraries.\n\n" <<
+            "clean-options:\n" <<
+            "   -c=CONFIG | --config=CONFIG\n" <<
+            "       Use CONFIG configuration. CONFIG can be debug or release.\n" <<
+            "       The default is debug.\n" <<
+            "---------------------------------------------------------------------\n" <<
+            std::endl;
+    }
+    if ((helpTopics & HelpTopics::run) != HelpTopics::none)
+    {
+        std::cout <<
+            "cminor run [run-options] program.cminora [program-arguments]\n\n" <<
+            "Run program.cminora with given program-arguments in virtual machine.\n\n" <<
+            "run-options:\n" <<
+            "   -s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE\n" <<
+            "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
+            "       segment in megabytes. The default is 16 MB.\n" <<
+            "   -p=POOL-THRESHOLD | --pool-threshold=POOL-THRESHOLD:\n" <<
+            "       POOL-THRESHOLD is the grow threshold of the managed\n" <<
+            "       memory pool in megabytes. The default is 16 MB.\n" <<
+            "---------------------------------------------------------------------\n" <<
+            std::endl;
+    }
+    if ((helpTopics & HelpTopics::debug) != HelpTopics::none)
+    {
+        std::cout <<
+            "cminor debug [debug-options] program.cminora [program-arguments]\n\n" <<
+            "Debug program.cminora with given program arguments.\n\n"
+            "debug-options:\n" <<
+            "   -s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE\n" <<
+            "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
+            "       segment in megabytes. The default is 16 MB.\n" <<
+            "   -p=POOL-THRESHOLD | --pool-threshold=POOL-THRESHOLD:\n" <<
+            "       POOL-THRESHOLD is the grow threshold of the managed\n" <<
+            "       memory pool in megabytes. The default is 16 MB.\n" <<
+            "---------------------------------------------------------------------\n" <<
+            std::endl;
+    }
+    if ((helpTopics & HelpTopics::dump) != HelpTopics::none)
+    {
+        std::cout <<
+            "cminor dump [dump-options] assembly.cminora [output-file]\n\n" <<
+            "Dump information in assembly.cminora to standard output or to given file.\n\n" <<
+            "dump-options:\n" <<
+            "   -a | --all       : dump all (default)\n" <<
+            "   -e | --header    : dump assembly header\n" <<
+            "   -c | --constants : dump constant pool\n" <<
+            "   -f | --functions : dump function table\n" <<
+            "   -s | --symbols   : dump symbol table\n" <<
+            "   -m | --mappings  : dump assembly mappings\n" <<
+            "---------------------------------------------------------------------\n" <<
+            std::endl;
+    }
 }
 
 enum class State
 {
-    globalOptions, 
+    globalOptions, helpTopic,
     runOptions, runProgram, programArguments,
     buildOptions, projectsAndSolutions,
     cleanOptions,
@@ -85,7 +160,7 @@ enum class State
     dumpOptions, dumpAssemblyName, dumpOutputFile, dumpEnd
 };
 
-using namespace cminor::machine;
+using namespace cminor::util;
 
 int main(int argc, const char** argv)
 {
@@ -93,11 +168,12 @@ int main(int argc, const char** argv)
     {
         if (argc < 2)
         {
-            PrintHelp();
+            PrintHelp(HelpTopics::abstract_);
             return 0;
         }
         State state = State::globalOptions;
-        std::string command = "run";
+        std::string command = "help";
+        HelpTopics helpTopics = HelpTopics::none;
         std::vector<std::string> runOptions;
         std::string runProgram;
         std::vector<std::string> programArguments;
@@ -108,6 +184,8 @@ int main(int argc, const char** argv)
         std::vector<std::string> dumpOptions;
         std::string dumpAssemblyName;
         std::string dumpOutputFile;
+        bool buildSystem = false;
+        bool cleanSystem = false;
         for (int i = 1; i < argc; ++i)
         {
             std::string arg = argv[i];
@@ -123,15 +201,15 @@ int main(int argc, const char** argv)
                         }
                         else if (arg == "-h" || arg == "--help")
                         {
-                            PrintHelp();
-                            return 0;
+                            command = "help";
+                            state = State::helpTopic;
                         }
                         else
                         {
                             throw std::runtime_error("unknown argument '" + arg + "'");
                         }
                     }
-                    else
+                    else 
                     {
                         command = arg;
                         if (command == "run")
@@ -157,9 +235,41 @@ int main(int argc, const char** argv)
                         }
                         else
                         {
-                            PrintHelp();
-                            return 0;
+                            PrintHelp(HelpTopics::abstract_);
+                            return 1;
                         }
+                    }
+                    break;
+                }
+                case State::helpTopic:
+                {
+                    if (arg == "abstract")
+                    {
+                        helpTopics = helpTopics | HelpTopics::abstract_;
+                    }
+                    else if (arg == "build")
+                    {
+                        helpTopics = helpTopics | HelpTopics::build;
+                    }
+                    else if (arg == "clean")
+                    {
+                        helpTopics = helpTopics | HelpTopics::clean;
+                    }
+                    else if (arg == "run")
+                    {
+                        helpTopics = helpTopics | HelpTopics::run;
+                    }
+                    else if (arg == "debug")
+                    {
+                        helpTopics = helpTopics | HelpTopics::debug;
+                    }
+                    else if (arg == "dump")
+                    {
+                        helpTopics = helpTopics | HelpTopics::dump;
+                    }
+                    else
+                    {
+                        helpTopics = HelpTopics::all;
                     }
                     break;
                 }
@@ -244,7 +354,19 @@ int main(int argc, const char** argv)
                     {
                         if (!arg.empty() && arg[0] == '-')
                         {
-                            if (arg == "-f" || arg == "--functions")
+                            if (arg == "-a" || arg == "--all")
+                            {
+                                dumpOptions.push_back(arg);
+                            }
+                            else if (arg == "-e" || arg == "--header")
+                            {
+                                dumpOptions.push_back(arg);
+                            }
+                            else if (arg == "-c" || arg == "--constants")
+                            {
+                                dumpOptions.push_back(arg);
+                            }
+                            else if (arg == "-f" || arg == "--functions")
                             {
                                 dumpOptions.push_back(arg);
                             }
@@ -252,7 +374,7 @@ int main(int argc, const char** argv)
                             {
                                 dumpOptions.push_back(arg);
                             }
-                            else if (arg == "-a" || arg == "--all")
+                            else if (arg == "-m" || arg == "--mappings")
                             {
                                 dumpOptions.push_back(arg);
                             }
@@ -286,11 +408,31 @@ int main(int argc, const char** argv)
                 {
                     if (!arg.empty() && arg[0] == '-')
                     {
-                        if (arg == "-d" || arg == "--dparse")
+                        if (arg == "-e" || arg == "--clean")
                         {
                             buildOptions.push_back(arg);
                         }
-                        else if (arg == "-n" || arg == "--clean")
+                        else if (arg == "-d" || arg == "--debug-parse")
+                        {
+                            buildOptions.push_back(arg);
+                        }
+                        else if (arg == "-n" || arg == "--native")
+                        {
+                            buildOptions.push_back(arg);
+                        }
+                        else if (arg == "-l" || arg == "--list")
+                        {
+                            buildOptions.push_back(arg);
+                        }
+                        else if (arg == "-m" || arg == "--emit-llvm")
+                        {
+                            buildOptions.push_back(arg);
+                        }
+                        else if (arg == "-t" || arg == "--emit-opt-llvm")
+                        {
+                            buildOptions.push_back(arg);
+                        }
+                        else if (arg == "-a" || arg == "--emit-asm")
                         {
                             buildOptions.push_back(arg);
                         }
@@ -318,6 +460,30 @@ int main(int argc, const char** argv)
                                         throw std::runtime_error("unknown configuration argument '" + arg + "'");
                                     }
                                 }
+                                else if (components[0] == "-O" || components[0] == "--optimization-level")
+                                {
+                                    const std::string& levelStr = components[1];
+                                    if (levelStr != "0" && levelStr != "1" && levelStr != "2" && levelStr != "3")
+                                    {
+                                        throw std::runtime_error("unknown optimization level " + levelStr);
+                                    }
+                                    else
+                                    {
+                                        buildOptions.push_back(arg);
+                                    }
+                                }
+                                else if (components[0] == "-p" || components[0] == "--debug-pass")
+                                {
+                                    const std::string& value = components[1];
+                                    if (value != "Arguments" &&  value != "Structure" && value != "Executions" && value != "Details")
+                                    {
+                                        throw std::runtime_error("unknown LLVM debug pass value " + value);
+                                    }
+                                    else
+                                    {
+                                        buildOptions.push_back(arg);
+                                    }
+                                }
                                 else
                                 {
                                     throw std::runtime_error("unknown argument '" + arg + "'");
@@ -331,7 +497,14 @@ int main(int argc, const char** argv)
                     }
                     else
                     {
-                        projectsAndSolutions.push_back(arg);
+                        if (arg == "system")
+                        {
+                            buildSystem = true;
+                        }
+                        else
+                        {
+                            projectsAndSolutions.push_back(arg);
+                        }
                     }
                     break;
                 }
@@ -376,14 +549,30 @@ int main(int argc, const char** argv)
                     }
                     else
                     {
-                        projectsAndSolutions.push_back(arg);
+                        if (arg == "system")
+                        {
+                            cleanSystem = true;
+                        }
+                        else
+                        {
+                            projectsAndSolutions.push_back(arg);
+                        }
                     }
                     break;
                 }
             }
         }
         std::string commandLine;
-        if (command == "dump")
+        if (command == "help")
+        {
+            if (helpTopics == HelpTopics::none)
+            {
+                helpTopics = HelpTopics::all;
+            }
+            PrintHelp(helpTopics);
+            return 0;
+        }
+        else if (command == "dump")
         {
             if (state != State::dumpOutputFile && state != State::dumpEnd)
             {
@@ -406,11 +595,25 @@ int main(int argc, const char** argv)
         }
         else if (command == "build" || command == "clean")
         {
-            if (projectsAndSolutions.empty())
+            if (projectsAndSolutions.empty() && !buildSystem && !cleanSystem)
             {
                 throw std::runtime_error("incomplete build/clean command: no project or solution given");
             }
-            commandLine = "cminorc";
+            else if (buildSystem || cleanSystem)
+            {
+                if (!projectsAndSolutions.empty())
+                {
+                    throw std::runtime_error("system libraries cannot be built/cleaned at the same time as other projects or solutions");
+                }
+            }
+            if (buildSystem || cleanSystem)
+            {
+                commandLine = "cminorbuildsys";
+            }
+            else
+            {
+                commandLine = "cminorc";
+            }
             for (const std::string& globalOption : globalOptions)
             {
                 commandLine.append(" ").append(globalOption);

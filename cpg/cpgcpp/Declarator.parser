@@ -5,7 +5,7 @@
 
 [cpp]#include <cminor/cpg/cpgcpp/Expression.hpp>
 [cpp]#include <cminor/cpg/cpgcpp/Declaration.hpp>
-[cpp]#include <cminor/machine/TextUtils.hpp>
+[cpp]#include <cminor/util/TextUtils.hpp>
 [hpp]#include <cminor/pom/Declaration.hpp>
 [cpp]#include <cminor/pom/Type.hpp>
 

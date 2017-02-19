@@ -12,13 +12,13 @@
 #include <cminor/cpg/cpgcpp/Declarator.hpp>
 #include <cminor/cpg/cpgcpp/Literal.hpp>
 #include <cminor/cpg/cpgcpp/Identifier.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <cminor/pom/Type.hpp>
 
 namespace cpg { namespace cpp {
 
 using namespace cminor::pom;
-using cminor::machine::Trim;
+using cminor::util::Trim;
 using namespace cminor::parsing;
 
 ExpressionGrammar* ExpressionGrammar::Create()

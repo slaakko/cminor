@@ -87,7 +87,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -102,7 +102,7 @@
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -118,7 +118,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -136,7 +136,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

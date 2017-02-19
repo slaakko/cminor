@@ -7,26 +7,42 @@
 #include <cminor/db/Command.hpp>
 #include <cminor/db/CommandGrammar.hpp>
 #include <cminor/symbols/Assembly.hpp>
+#include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/machine/OsInterface.hpp>
 #include <stdexcept>
 #include <iostream>
 
 namespace cminor { namespace db {
 
-Shell::Shell(Machine& machine_) : machine(machine_), exit(false), numListLines(10), currentLineNumber(0), currentSourceFile(nullptr), ended(false)
+Shell::Shell(Machine& machine_) : machine(machine_), exit(false), numListLines(10), currentLineNumber(0), currentSourceFile(nullptr), ended(false), argsArrayObjectType(nullptr)
 {
 }
 
 void Shell::StartMachine()
 {
-    machine.Start(programArguments, argsArrayObjectType);
+    bool startWithArguments = mainFun->Arity() == 1;
+    machine.Start(startWithArguments, programArguments, argsArrayObjectType);
     ended = false;
 }
 
-void Shell::Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<utf32_string>& programArguments_, ObjectType* argsArrayObjectType_)
+void Shell::Run(FunctionSymbol* mainFun_, Assembly& assembly, const std::vector<utf32_string>& programArguments_)
 {
+    mainFun = mainFun_;
     programArguments = programArguments_;
-    argsArrayObjectType = argsArrayObjectType_;
+    argsArrayObjectType = nullptr;
+    if (mainFun->Arity() == 1)
+    {
+        TypeSymbol* argsParamType = mainFun->Parameters()[0]->GetType();
+        ArrayTypeSymbol* argsArrayType = dynamic_cast<ArrayTypeSymbol*>(argsParamType);
+        if (argsArrayType && argsArrayType->ElementType() == assembly.GetSymbolTable().GetType(U"System.String"))
+        {
+            argsArrayObjectType = argsArrayType->GetObjectType();
+        }
+        else
+        {
+            throw Exception("parameter type of program main function is not string[]", mainFun->GetSpan());
+        }
+    }
     StartMachine();
     CommandGrammar* commandGrammar = CommandGrammar::Create();
     if (!machine.MainThread().GetStack().IsEmpty())
@@ -34,7 +50,7 @@ void Shell::Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<u
         Frame* frame = machine.MainThread().GetStack().CurrentFrame();
         if (frame->Fun().HasSourceFilePath())
         {
-            currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
+            currentSourceFile = SourceFileTable::GetSourceFile(frame->Fun().SourceFilePath());
         }
     }
     while (!exit)
@@ -86,6 +102,10 @@ void Shell::Run(FunctionSymbol* mainFun, Assembly& assembly, const std::vector<u
                 break;
             }
         }
+        catch (const Exception& ex)
+        {
+            std::cerr << ex.What() << std::endl;
+        }
         catch (const std::exception& ex)
         {
             std::cout << ex.what() << std::endl;
@@ -108,7 +128,7 @@ void Shell::Step()
             Frame* frame = machine.MainThread().GetStack().CurrentFrame();
             if (frame->Fun().HasSourceFilePath())
             {
-                currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
+                currentSourceFile = SourceFileTable::GetSourceFile(frame->Fun().SourceFilePath());
             }
         }
     }
@@ -128,7 +148,7 @@ void Shell::Next()
             Frame* frame = machine.MainThread().GetStack().CurrentFrame();
             if (frame->Fun().HasSourceFilePath())
             {
-                currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
+                currentSourceFile = SourceFileTable::GetSourceFile(frame->Fun().SourceFilePath());
             }
         }
     }
@@ -148,7 +168,7 @@ void Shell::Run()
             Frame* frame = machine.MainThread().GetStack().CurrentFrame();
             if (frame->Fun().HasSourceFilePath())
             {
-                currentSourceFile = SourceFileTable::Instance()->GetSourceFile(frame->Fun().SourceFilePath());
+                currentSourceFile = SourceFileTable::GetSourceFile(frame->Fun().SourceFilePath());
             }
         }
     }
@@ -187,29 +207,8 @@ void Shell::Operand(int index)
 
 void Shell::Print(IntegralValue value)
 {
-    switch (value.GetType())
-    {
-        case ValueType::stringLiteral:
-        {
-            std::cout << "string literal \"" + ToUtf8(value.AsStringLiteral()) + "\"" << std::endl;
-            break;
-        }
-        case ValueType::boolType:
-        {
-            std::string s = "true";
-            if (!value.AsBool())
-            {
-                s = "false";
-            }
-            std::cout << ValueTypeStr(value.GetType()) << " " << s << std::endl;
-            break;
-        }
-        default:
-        {
-            std::cout << ValueTypeStr(value.GetType()) << " " << value.AsULong() << std::endl;
-            break;
-        }
-    }
+    CodeFormatter formatter(std::cout);
+    value.Dump(formatter);
 }
 
 void Shell::Exit()
@@ -313,7 +312,7 @@ void Shell::List(const std::string& sourceFileName, int line)
         if (currentSourceFile)
         {
             Constant sourceFilePath = currentSourceFile->SourceFilePath();
-            sourceFile = SourceFileTable::Instance()->GetSourceFile(sourceFilePath);
+            sourceFile = SourceFileTable::GetSourceFile(sourceFilePath);
         }
         else
         {
@@ -322,7 +321,7 @@ void Shell::List(const std::string& sourceFileName, int line)
     }
     else
     {
-        sourceFile = SourceFileTable::Instance()->GetSourceFile(sourceFileName);
+        sourceFile = SourceFileTable::GetSourceFile(sourceFileName);
     }
     if (line == -1)
     {
@@ -362,16 +361,16 @@ void Shell::Break(const std::string& sourceFileName, int line)
     }
     else
     {
-        sourceFilePath = SourceFileTable::Instance()->GetSourceFilePath(sourceFileName);
+        sourceFilePath = SourceFileTable::GetSourceFilePath(sourceFileName);
     }
-    int bp = SourceFileTable::Instance()->SetBreakPoint(sourceFilePath, line);
+    int bp = SourceFileTable::SetBreakPoint(sourceFilePath, line);
     std::cout << "breakpoint number " << bp << " set" << std::endl;
     breakpoints.insert(bp);
 }
 
 void Shell::Clear(int bp)
 {
-    SourceFileTable::Instance()->RemoveBreakPoint(bp);
+    SourceFileTable::RemoveBreakPoint(bp);
     breakpoints.erase(bp);
 }
 
@@ -379,7 +378,7 @@ void Shell::ShowBreakpoints()
 {
     for (int bp : breakpoints)
     {
-        const BreakPoint* breakPoint = SourceFileTable::Instance()->GetBreakPoint(bp);
+        const BreakPoint* breakPoint = SourceFileTable::GetBreakPoint(bp);
         std::cout << "breakpoint " << bp << " at " << ToUtf8(breakPoint->GetFunction()->CallName().Value().AsStringLiteral()) << " line " << breakPoint->Line() << " pc " << breakPoint->PC() << std::endl;
     }
 }

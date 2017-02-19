@@ -5,14 +5,14 @@
 
 #ifndef CMINOR_POM_OBJECT_INCLUDED
 #define CMINOR_POM_OBJECT_INCLUDED
-#include <cminor/machine/CodeFormatter.hpp>
+#include <cminor/util/CodeFormatter.hpp>
 #include <string>
 #include <vector>
 #include <memory>
 
 namespace cminor { namespace pom {
 
-using cminor::machine::CodeFormatter;
+using cminor::util::CodeFormatter;
 class Visitor;
 
 class CppObject

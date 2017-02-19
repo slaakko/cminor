@@ -3,8 +3,8 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_HANDLE_INCLUDED
-#define CMINOR_MACHINE_HANDLE_INCLUDED
+#ifndef CMINOR_UTIL_HANDLE_INCLUDED
+#define CMINOR_UTIL_HANDLE_INCLUDED
 #if defined(_WIN32)
 #include <io.h>
 #elif defined(__linux) || defined(__posix) || defined(__unix)
@@ -13,7 +13,7 @@
 #error unknown platform
 #endif
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 class Handle
 {
@@ -47,6 +47,6 @@ private:
     int handle;
 };
 
-} } // namespace cminor::machine
+} } // namespace cminor::util
 
-#endif // CMINOR_MACHINE_HANDLE_INCLUDED
+#endif // CMINOR_UTIL_HANDLE_INCLUDED

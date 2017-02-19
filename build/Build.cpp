@@ -4,6 +4,7 @@
 // =================================
 
 #include <cminor/build/Build.hpp>
+#include <cminor/build/NativeCompiler.hpp>
 #include <cminor/parser/ProjectFile.hpp>
 #include <cminor/parser/SolutionFile.hpp>
 #include <cminor/parser/CompileUnit.hpp>
@@ -21,10 +22,10 @@
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/Warning.hpp>
 #include <cminor/machine/FileRegistry.hpp>
-#include <cminor/machine/MappedInputFile.hpp>
+#include <cminor/util/MappedInputFile.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Class.hpp>
-#include <cminor/machine/Path.hpp>
+#include <cminor/util/Path.hpp>
 #include <iostream>
 
 namespace cminor { namespace build {
@@ -48,7 +49,7 @@ std::vector<std::unique_ptr<CompileUnitNode>> ParseSources(const std::vector<std
     for (const std::string& sourceFilePath : sourceFilePaths)
     {
         MappedInputFile sourceFile(sourceFilePath);
-        int fileIndex = FileRegistry::Instance()->RegisterParsedFile(sourceFilePath);
+        int fileIndex = FileRegistry::RegisterParsedFile(sourceFilePath);
         ParsingContext parsingContext;
         if (GetGlobalFlag(GlobalFlags::debugParsing))
         {
@@ -97,7 +98,7 @@ void BindStatements(BoundCompileUnit& boundCompileUnit)
     boundCompileUnit.GetCompileUnitNode()->Accept(statementBinderVisitor);
 }
 
-void CopyAssemblyFile(const std::string& from, const std::string& to, std::unordered_set<std::string>& copied)
+void CopyFile(const std::string& from, const std::string& to, std::unordered_set<std::string>& copied)
 {
     if (copied.find(from) == copied.cend())
     {
@@ -254,11 +255,24 @@ void CheckValidityOfMainFunction(Target target, Assembly& assembly)
             throw Exception("main function should either have no parameters or have one string[] parameter", mainFunctionSymbol->GetSpan());
         }
     }
+    mainFunctionSymbol->SetExported();
 }
 
 void GetAssemblyReferenceClosureFor(Assembly* referencedAssembly, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
 {
-    assemblyReferenceInfos.insert(AssemblyReferenceInfo(referencedAssembly->FilePath(), referencedAssembly->IsSystemAssembly()));
+    std::string assemblyFilePath = referencedAssembly->OriginalFilePath();
+    if (!boost::filesystem::exists(assemblyFilePath))
+    {
+        assemblyFilePath = referencedAssembly->FilePathReadFrom();
+    }
+    std::string nativeImportLibraryFilePath;
+    std::string nativeSharedLibraryFilePath;
+    if (referencedAssembly->IsNative())
+    {
+        nativeImportLibraryFilePath = Path::Combine(Path::GetDirectoryName(assemblyFilePath), referencedAssembly->NativeImportLibraryFileName());
+        nativeSharedLibraryFilePath = Path::Combine(Path::GetDirectoryName(assemblyFilePath), referencedAssembly->NativeSharedLibraryFileName());
+    }
+    assemblyReferenceInfos.insert(AssemblyReferenceInfo(assemblyFilePath, nativeImportLibraryFilePath, nativeSharedLibraryFilePath, referencedAssembly->IsSystemAssembly()));
     for (const std::unique_ptr<Assembly>& childReferencedAssembly : referencedAssembly->ReferencedAssemblies())
     {
         GetAssemblyReferenceClosureFor(childReferencedAssembly.get(), assemblyReferenceInfos);
@@ -281,7 +295,7 @@ void CleanProject(Project* project)
     }
 }
 
-void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
+void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos, bool keepProjectBitForSymbols)
 {
     FunctionTable::Init();
     ClassDataTable::Init();
@@ -297,41 +311,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     Machine machine;
     AssemblyTable::Init();
     Assembly assembly(machine, assemblyName, project->AssemblyFilePath());
-    AssemblyTable::Instance().AddAssembly(&assembly);
-    const Assembly* rootAssembly = &assembly;
-    std::vector<CallInst*> callInstructions;
-    std::vector<Fun2DlgInst*> fun2DlgInstructions;
-    std::vector<MemFun2ClassDlgInst*> memFun2ClassDlgInstructions;
-    std::vector<TypeInstruction*> typeInstructions;
-    std::vector<SetClassDataInst*> setClassDataInstructions;
-    std::vector<ClassTypeSymbol*> classTypes;
-    std::unordered_set<utf32_string> classTemplateSpecializationNames;
-    std::vector<Assembly*> assemblies;
-    std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
-    std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(project->AssemblyFilePath()).remove_filename().generic_string());
-    std::unordered_set<std::string> importSet;
-    assembly.ImportAssemblies(project->AssemblyReferences(), LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions,
-        typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
-    assemblies.push_back(&assembly);
-    auto it = std::unique(assemblies.begin(), assemblies.end());
-    assemblies.erase(it, assemblies.end());
-    assemblyDependencyMap[project->AssemblyFilePath()] = assembly.GetAssemblyDependency();
-    std::unordered_map<Assembly*, AssemblyDependency*> dependencyMap;
-    for (const auto& p : assemblyDependencyMap)
-    {
-        dependencyMap[p.second->GetAssembly()] = p.second;
-    }
-    std::vector<Assembly*> finishReadOrder = CreateFinishReadOrder(assemblies, dependencyMap, rootAssembly);
-    assembly.FinishReads(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, 
-        int(finishReadOrder.size() - 2), finishReadOrder, false);
-    assembly.GetSymbolTable().MergeClassTemplateSpecializations();
-    callInstructions.clear();
-    fun2DlgInstructions.clear();
-    memFun2ClassDlgInstructions.clear();
-    typeInstructions.clear();
-    setClassDataInstructions.clear();
-    classTypes.clear();
-    classTemplateSpecializationNames.clear();
+    assembly.PrepareForCompilation(project->AssemblyReferences());
     BuildSymbolTable(assembly, compileUnits);
     std::vector<std::unique_ptr<BoundCompileUnit>> boundCompileUnits = BindTypes(assembly, compileUnits);
     std::unordered_set<ClassTemplateSpecializationSymbol*> classTemplateSpecializations;
@@ -353,7 +333,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     GenerateCodeForCreatedArrays(assembly, classTemplateSpecializations);
     GenerateCodeForClassTemplateSpecializations(assembly, std::move(classTemplateSpecializations));
     CheckValidityOfMainFunction(project->GetTarget(), assembly);
-    boost::filesystem::path obp(assembly.FilePath());
+    boost::filesystem::path obp(assembly.OriginalFilePath());
     obp.remove_filename();
     boost::filesystem::create_directories(obp);
     if (!CompileWarningCollection::Instance().Warnings().empty())
@@ -364,12 +344,13 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
             std::cerr << warningMessage << std::endl;
         }
     }
-    SymbolWriter writer(assembly.FilePath());
+    SymbolWriter writer(assembly.OriginalFilePath());
+    writer.SetKeepProjectBitForSymbols(keepProjectBitForSymbols);
     assembly.Write(writer);
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
         std::cout << "Project '" << project->Name() << "' built successfully." << std::endl;
-        std::cout << "=> " << assembly.FilePath() << std::endl;
+        std::cout << "=> " << assembly.OriginalFilePath() << std::endl;
     }
     if (assembly.IsSystemAssembly())
     {
@@ -390,24 +371,60 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
         {
             for (const AssemblyReferenceInfo& assemblyReferenceInfo : assemblyReferenceInfos)
             {
-                boost::filesystem::path afp = assemblyReferenceInfo.filePath;
+                boost::filesystem::path afp = assemblyReferenceInfo.assemblyFilePath;
                 boost::filesystem::path pafp = projectAssemblyDir;
                 pafp /= afp.filename();
                 std::string from = GetFullPath(afp.generic_string());
                 std::string to = GetFullPath(pafp.generic_string());
-                CopyAssemblyFile(from, to, copied);
+                CopyFile(from, to, copied);
+                if (!assemblyReferenceInfo.nativeImportLibraryFilePath.empty())
+                {
+                    boost::filesystem::path ifp = assemblyReferenceInfo.nativeImportLibraryFilePath;
+                    boost::filesystem::path pifp = projectAssemblyDir;
+                    pifp /= ifp.filename();
+                    std::string from = GetFullPath(ifp.generic_string());
+                    std::string to = GetFullPath(pifp.generic_string());
+                    CopyFile(from, to, copied);
+                }
+                if (!assemblyReferenceInfo.nativeSharedLibraryFilePath.empty())
+                {
+                    boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
+                    boost::filesystem::path psfp = projectAssemblyDir;
+                    psfp /= sfp.filename();
+                    std::string from = GetFullPath(sfp.generic_string());
+                    std::string to = GetFullPath(psfp.generic_string());
+                    CopyFile(from, to, copied);
+                }
             }
         }
         else
         {
             if (!assemblyReferenceInfo.isSystemAssembly)
             {
-                boost::filesystem::path afp = assemblyReferenceInfo.filePath;
+                boost::filesystem::path afp = assemblyReferenceInfo.assemblyFilePath;
                 boost::filesystem::path pafp = projectAssemblyDir;
                 pafp /= afp.filename();
                 std::string from = GetFullPath(afp.generic_string());
                 std::string to = GetFullPath(pafp.generic_string());
-                CopyAssemblyFile(from, to, copied);
+                CopyFile(from, to, copied);
+                if (!assemblyReferenceInfo.nativeImportLibraryFilePath.empty())
+                {
+                    boost::filesystem::path ifp = assemblyReferenceInfo.nativeImportLibraryFilePath;
+                    boost::filesystem::path pifp = projectAssemblyDir;
+                    pifp /= ifp.filename();
+                    std::string from = GetFullPath(ifp.generic_string());
+                    std::string to = GetFullPath(pifp.generic_string());
+                    CopyFile(from, to, copied);
+                }
+                if (!assemblyReferenceInfo.nativeSharedLibraryFilePath.empty())
+                {
+                    boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
+                    boost::filesystem::path psfp = projectAssemblyDir;
+                    psfp /= sfp.filename();
+                    std::string from = GetFullPath(sfp.generic_string());
+                    std::string to = GetFullPath(psfp.generic_string());
+                    CopyFile(from, to, copied);
+                }
             }
         }
     }
@@ -415,6 +432,24 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     TypeDone();
     ClassDataTable::Done();
     FunctionTable::Done();
+}
+
+void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
+{
+    bool keepProjectBitForSymbols = false;
+    BuildProject(project, assemblyReferenceInfos, keepProjectBitForSymbols);
+}
+
+void BuildNativeProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyReferenceInfos)
+{
+    bool keepProjectBitForSymbols = true;
+    BuildProject(project, assemblyReferenceInfos, keepProjectBitForSymbols);
+    NativeCompiler nativeCompiler;
+    std::string nativeImportLibraryFilePath;
+    std::string nativeSharedLibraryFilePath;
+    nativeCompiler.Compile(project->AssemblyFilePath(), nativeImportLibraryFilePath, nativeSharedLibraryFilePath);
+    project->SetNativeImportLibraryFilePath(nativeImportLibraryFilePath);
+    project->SetNativeSharedLibraryFilePath(nativeSharedLibraryFilePath);
 }
 
 ProjectGrammar* projectGrammar = nullptr;
@@ -435,7 +470,14 @@ void BuildProject(const std::string& projectFilePath, std::set<AssemblyReference
     }
     else
     {
-        BuildProject(project.get(), assemblyReferenceInfos);
+        if (GetGlobalFlag(GlobalFlags::native))
+        {
+            BuildNativeProject(project.get(), assemblyReferenceInfos);
+        }
+        else
+        {
+            BuildProject(project.get(), assemblyReferenceInfos);
+        }
     }
 }
 
@@ -484,7 +526,14 @@ void BuildSolution(const std::string& solutionFilePath)
         }
         else
         {
-            BuildProject(project, assemblyReferenceInfos);
+            if (GetGlobalFlag(GlobalFlags::native))
+            {
+                BuildNativeProject(project, assemblyReferenceInfos);
+            }
+            else
+            {
+                BuildProject(project, assemblyReferenceInfos);
+            }
             if (project->IsSystemProject())
             {
                 buildingSystemProjects = true;
@@ -509,12 +558,30 @@ void BuildSolution(const std::string& solutionFilePath)
     {
         for (const AssemblyReferenceInfo& assemblyReferenceInfo : assemblyReferenceInfos)
         {
-            boost::filesystem::path afp = assemblyReferenceInfo.filePath;
+            boost::filesystem::path afp = assemblyReferenceInfo.assemblyFilePath;
             boost::filesystem::path safp = solutionAssemblyDir;
             safp /= afp.filename();
             std::string from = GetFullPath(afp.generic_string());
             std::string to = GetFullPath(safp.generic_string());
-            CopyAssemblyFile(from, to, copied);
+            CopyFile(from, to, copied);
+            if (!assemblyReferenceInfo.nativeImportLibraryFilePath.empty())
+            {
+                boost::filesystem::path ifp = assemblyReferenceInfo.nativeImportLibraryFilePath;
+                boost::filesystem::path sifp = solutionAssemblyDir;
+                sifp /= ifp.filename();
+                std::string from = GetFullPath(ifp.generic_string());
+                std::string to = GetFullPath(sifp.generic_string());
+                CopyFile(from, to, copied);
+            }
+            if (!assemblyReferenceInfo.nativeSharedLibraryFilePath.empty())
+            {
+                boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
+                boost::filesystem::path ssfp = solutionAssemblyDir;
+                ssfp /= sfp.filename();
+                std::string from = GetFullPath(sfp.generic_string());
+                std::string to = GetFullPath(ssfp.generic_string());
+                CopyFile(from, to, copied);
+            }
         }
     }
     else
@@ -523,12 +590,30 @@ void BuildSolution(const std::string& solutionFilePath)
         {
             if (!assemblyReferenceInfo.isSystemAssembly)
             {
-                boost::filesystem::path afp = assemblyReferenceInfo.filePath;
+                boost::filesystem::path afp = assemblyReferenceInfo.assemblyFilePath;
                 boost::filesystem::path safp = solutionAssemblyDir;
                 safp /= afp.filename();
                 std::string from = GetFullPath(afp.generic_string());
                 std::string to = GetFullPath(safp.generic_string());
-                CopyAssemblyFile(from, to, copied);
+                CopyFile(from, to, copied);
+                if (!assemblyReferenceInfo.nativeImportLibraryFilePath.empty())
+                {
+                    boost::filesystem::path ifp = assemblyReferenceInfo.nativeImportLibraryFilePath;
+                    boost::filesystem::path sifp = solutionAssemblyDir;
+                    sifp /= ifp.filename();
+                    std::string from = GetFullPath(ifp.generic_string());
+                    std::string to = GetFullPath(sifp.generic_string());
+                    CopyFile(from, to, copied);
+                }
+                if (!assemblyReferenceInfo.nativeSharedLibraryFilePath.empty())
+                {
+                    boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
+                    boost::filesystem::path ssfp = solutionAssemblyDir;
+                    ssfp /= sfp.filename();
+                    std::string from = GetFullPath(sfp.generic_string());
+                    std::string to = GetFullPath(ssfp.generic_string());
+                    CopyFile(from, to, copied);
+                }
             }
         }
     }
@@ -539,7 +624,25 @@ void BuildSolution(const std::string& solutionFilePath)
         safp /= afp.filename();
         std::string from = GetFullPath(afp.generic_string());
         std::string to = GetFullPath(safp.generic_string());
-        CopyAssemblyFile(from, to, copied);
+        CopyFile(from, to, copied);
+        if (!project->NativeImportLibraryFilePath().empty())
+        {
+            boost::filesystem::path ifp = project->NativeImportLibraryFilePath();
+            boost::filesystem::path sifp = solutionAssemblyDir;
+            sifp /= ifp.filename();
+            std::string from = GetFullPath(ifp.generic_string());
+            std::string to = GetFullPath(sifp.generic_string());
+            CopyFile(from, to, copied);
+        }
+        if (!project->NativeSharedLibraryFilePath().empty())
+        {
+            boost::filesystem::path sfp = project->NativeSharedLibraryFilePath();
+            boost::filesystem::path ssfp = solutionAssemblyDir;
+            ssfp /= sfp.filename();
+            std::string from = GetFullPath(sfp.generic_string());
+            std::string to = GetFullPath(ssfp.generic_string());
+            CopyFile(from, to, copied);
+        }
     }
     if (GetGlobalFlag(GlobalFlags::verbose))
     {

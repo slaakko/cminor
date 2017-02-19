@@ -8,8 +8,8 @@
 namespace cminor { namespace machine {
 
 Reader::Reader(const std::string& filePath_) :
-    machine(nullptr), filePath(filePath_), file(filePath), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End())), constantPool(nullptr), pos(0),
-    newFileIndex(-1)
+    machine(nullptr), filePath(filePath_), file(filePath), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End())), constantPool(nullptr), 
+    assemblyAddress(nullptr), pos(0), newFileIndex(-1)
 {
 }
 

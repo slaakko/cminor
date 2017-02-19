@@ -4,7 +4,7 @@
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Class.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/Value.hpp>
 #include <cminor/symbols/Assembly.hpp>
@@ -16,7 +16,7 @@
 #include <cminor/vmlib/File.hpp>
 #include <cminor/db/Shell.hpp>
 #include <cminor/pl/InitDone.hpp>
-#include <cminor/machine/Path.hpp>
+#include <cminor/util/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <sstream>
 
@@ -188,40 +188,7 @@ int main(int argc, const char** argv)
         SetDebugging();
         Machine machine;
         Assembly assembly(machine);
-        const Assembly* rootAssembly = &assembly;
-        SymbolReader symbolReader(assemblyFilePath);
-        std::vector<CallInst*> callInstructions;
-        std::vector<Fun2DlgInst*> fun2DlgInstructions;
-        std::vector<MemFun2ClassDlgInst*> memFun2ClassDlgInstructions;
-        std::vector<TypeInstruction*> typeInstructions;
-        std::vector<SetClassDataInst*> setClassDataInstructions;
-        std::vector<ClassTypeSymbol*> classTypes;
-        std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(assemblyFilePath).remove_filename().generic_string());
-        std::unordered_set<std::string> importSet;
-        std::unordered_set<utf32_string> classTemplateSpecializationNames;
-        std::vector<Assembly*> assemblies;
-        std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
-        assembly.BeginRead(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, 
-            setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
-        auto it = std::unique(assemblies.begin(), assemblies.end());
-        assemblies.erase(it, assemblies.end());
-        std::unordered_map<Assembly*, AssemblyDependency*> dependencyMap;
-        for (const auto& p : assemblyDependencyMap)
-        {
-            dependencyMap[p.second->GetAssembly()] = p.second;
-        }
-        std::vector<Assembly*> finishReadOrder = CreateFinishReadOrder(assemblies, dependencyMap, rootAssembly);
-        assembly.FinishReads(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, 
-            int(finishReadOrder.size() - 2), finishReadOrder, true);
-        assembly.GetSymbolTable().MergeClassTemplateSpecializations();
-        Link(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes);
-        callInstructions.clear();
-        fun2DlgInstructions.clear();
-        memFun2ClassDlgInstructions.clear();
-        typeInstructions.clear();
-        setClassDataInstructions.clear();
-        classTypes.clear();
-        classTemplateSpecializationNames.clear();
+        assembly.Load(assemblyFilePath);
         std::vector<utf32_string> programArguments;
         for (const std::string& arg : arguments)
         {
@@ -232,23 +199,14 @@ int main(int argc, const char** argv)
         {
             throw std::runtime_error("program has no main function");
         }
-        ObjectType* argsArrayObjectType = nullptr;
-        if (mainFun->Arity() == 1)
-        {
-            TypeSymbol* argsParamType = mainFun->Parameters()[0]->GetType();
-            ArrayTypeSymbol* argsArrayType = dynamic_cast<ArrayTypeSymbol*>(argsParamType);
-            if (argsArrayType && argsArrayType->ElementType() == assembly.GetSymbolTable().GetType(U"System.String"))
-            {
-                argsArrayObjectType = argsArrayType->GetObjectType();
-            }
-            else
-            {
-                throw Exception("parameter type of program main function is not string[]", mainFun->GetSpan());
-            }
-        }
         Shell shell(machine);
-        shell.Run(mainFun, assembly, programArguments, argsArrayObjectType);
+        shell.Run(mainFun, assembly, programArguments);
         return 0;
+    }
+    catch (const Exception& ex)
+    {
+        std::cerr << ex.What() << std::endl;
+        return 1;
     }
     catch (const std::exception& ex)
     {

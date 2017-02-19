@@ -536,7 +536,7 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
                         {
                             if (Overrides(memberFunctionSymbol, f))
                             {
-                                std::string warningMessage = "member function '" + ToUtf8(memberFunctionSymbol->FriendlyName()) + "' hides base class virtual function '" + ToUtf8(f->FriendlyName()) + "'. " +
+                                std::string warningMessage = "member function '" + ToUtf8(memberFunctionSymbol->FullNameWithSpecifiers()) + "' hides base class virtual function '" + ToUtf8(f->FullNameWithSpecifiers()) + "'. " +
                                     "To get rid of this warning declare the function either 'override' or 'new'.";
                                 Warning warning(CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage);
                                 warning.SetDefined(memberFunctionSymbol->GetSpan());

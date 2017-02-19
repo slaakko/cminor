@@ -6,7 +6,7 @@
 #include <cminor/cpg/cpgsyntax/Compiler.hpp>
 #include <cminor/cpg/cpgsyntax/CodeGenerator.hpp>
 #include <cminor/pl/InitDone.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <iostream>
 #include <string>
 #include <stdlib.h>
@@ -30,7 +30,7 @@ public:
     }
 };
 
-using cminor::machine::Split;
+using cminor::util::Split;
 
 void AddToLibraryDirectories(const std::string& libraryPath, std::vector<std::string>& libraryDirectories)
 {

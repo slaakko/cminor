@@ -13,7 +13,7 @@
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/Value.hpp>
-#include <cminor/machine/Path.hpp>
+#include <cminor/util/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
 
@@ -52,14 +52,17 @@ const char* version = "0.0.1";
 void PrintHelp()
 {
     std::cout << "Cminor assembly dump version " << version << "\n\n" <<
-        "Usage: cminordump [options] assembly.cminora [outputfile]\n" <<
-        "Dump information in assembly.cminora.\n" <<
+        "Usage: cminordump [options] assembly.cminora [output-file]\n" <<
+        "Dump information in assembly.cminora to standard output, or to given output file.\n" <<
         "Options:\n" <<
-        "-a | --all       : dump all (default)\n" <<
-        "-f | --functions : dump functions\n" <<
         "-h | --help      : print this help message" <<
-        "-s | --symbols   : dump symbols\n" <<
         "-v | --verbose   : verbose output\n" <<
+        "-a | --all       : dump all (default)\n" <<
+        "-e | --header    : dump assembly header\n" <<
+        "-c | --constants : dump constant pool\n" <<
+        "-f | --functions : dump function table\n" <<
+        "-s | --symbols   : dump symbol table\n" <<
+        "-m | --mappings  : dump mappings\n" <<
         std::endl;
 }
 
@@ -87,6 +90,22 @@ int main(int argc, const char** argv)
                     PrintHelp();
                     return 0;
                 }
+                else if (arg == "-v" || arg == "--verbose")
+                {
+                    verbose = true;
+                }
+                else if (arg == "-a" || arg == "--all")
+                {
+                    dumpOptions = DumpOptions::all;
+                }
+                else if (arg == "-e" || arg == "--header")
+                {
+                    dumpOptions = dumpOptions | DumpOptions::header;
+                }
+                else if (arg == "-c" || arg == "--constants")
+                {
+                    dumpOptions = dumpOptions | DumpOptions::constants;
+                }
                 else if (arg == "-f" || arg == "--functions")
                 {
                     dumpOptions = dumpOptions | DumpOptions::functions;
@@ -95,13 +114,9 @@ int main(int argc, const char** argv)
                 {
                     dumpOptions = dumpOptions | DumpOptions::symbols;
                 }
-                else if (arg == "-a" || arg == "--all")
+                else if (arg == "-m" || arg == "--mappings")
                 {
-                    dumpOptions = dumpOptions | DumpOptions::functions | DumpOptions::symbols;
-                }
-                else if (arg == "-v" || arg == "--verbose")
-                {
-                    verbose = true;
+                    dumpOptions = dumpOptions | DumpOptions::mappings;
                 }
                 else
                 {
@@ -136,40 +151,7 @@ int main(int argc, const char** argv)
         }
         Machine machine;
         Assembly assembly(machine);
-        const Assembly* rootAssembly = &assembly;
-        SymbolReader symbolReader(assemblyFilePath);
-        std::vector<CallInst*> callInstructions;
-        std::vector<Fun2DlgInst*> fun2DlgInstructions;
-        std::vector<MemFun2ClassDlgInst*> memFun2ClassDlgInstructions;
-        std::vector<TypeInstruction*> typeInstructions;
-        std::vector<SetClassDataInst*> setClassDataInstructions;
-        std::vector<ClassTypeSymbol*> classTypes;
-        std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(assemblyFilePath).remove_filename().generic_string());
-        std::unordered_set<std::string> importSet;
-        std::unordered_set<utf32_string> classTemplateSpecializationNames;
-        std::vector<Assembly*> assemblies;
-        std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
-        assembly.BeginRead(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, 
-            setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
-        auto it = std::unique(assemblies.begin(), assemblies.end());
-        assemblies.erase(it, assemblies.end());
-        std::unordered_map<Assembly*, AssemblyDependency*> dependencyMap;
-        for (const auto& p : assemblyDependencyMap)
-        {
-            dependencyMap[p.second->GetAssembly()] = p.second;
-        }
-        std::vector<Assembly*> finishReadOrder = CreateFinishReadOrder(assemblies, dependencyMap, rootAssembly);
-        assembly.FinishReads(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, 
-            int(finishReadOrder.size() - 2), finishReadOrder, true);
-        assembly.GetSymbolTable().MergeClassTemplateSpecializations();
-        Link(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes);
-        callInstructions.clear();
-        fun2DlgInstructions.clear();
-        memFun2ClassDlgInstructions.clear();
-        typeInstructions.clear();
-        setClassDataInstructions.clear();
-        classTypes.clear();
-        classTemplateSpecializationNames.clear();
+        assembly.Load(assemblyFilePath);
         FunctionTable::Done();
         ClassDataTable::Done();
         TypeTable::Done();
@@ -182,32 +164,61 @@ int main(int argc, const char** argv)
         }
         if (dumpOptions == DumpOptions::none)
         {
-            dumpOptions = DumpOptions::functions | DumpOptions::symbols;
+            dumpOptions = DumpOptions::all;
         }
         if (verbose)
         {
             std::string description;
-            if (dumpOptions == DumpOptions::functions)
+            if ((dumpOptions & DumpOptions::header) != DumpOptions::none)
             {
+                description = "header";
+            }
+            if ((dumpOptions & DumpOptions::constants) != DumpOptions::none)
+            {
+                if (!description.empty())
+                {
+                    description.append(" and ");
+                }
+                description = "constants";
+            }
+            if ((dumpOptions & DumpOptions::functions) != DumpOptions::none)
+            {
+                if (!description.empty())
+                {
+                    description.append(" and ");
+                }
                 description = "functions";
             }
-            else if (dumpOptions == DumpOptions::symbols)
+            if ((dumpOptions & DumpOptions::symbols) != DumpOptions::none)
             {
+                if (!description.empty())
+                {
+                    description.append(" and ");
+                }
                 description = "symbols";
             }
-            else 
+            if ((dumpOptions & DumpOptions::mappings) != DumpOptions::none)
             {
-                description = "functions and symbols";
+                if (!description.empty())
+                {
+                    description.append(" and ");
+                }
+                description = "mappings";
             }
             std::string target = "standard output";
             if (!outputFileName.empty())
             {
                 target = "file " + outputFileName;
             }
-            std::cout << "Dumping " << description << " to " << target << std::endl;
+            std::cout << "dumping " << description << " to " << target << std::endl;
         }
         CodeFormatter codeFormatter(*outputStream);
         assembly.Dump(codeFormatter, dumpOptions);
+    }
+    catch (const Exception& ex)
+    {
+        std::cerr << ex.What() << std::endl;
+        return 1;
     }
     catch (const std::exception& ex)
     {

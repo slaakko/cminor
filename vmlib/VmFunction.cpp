@@ -24,7 +24,7 @@ VmSystemPowDoubleInt::VmSystemPowDoubleInt(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Pow.Double.Int"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemPowDoubleInt::Execute(Frame& frame)
@@ -50,7 +50,7 @@ VmSystemIsSpaceChar::VmSystemIsSpaceChar(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsSpace.Char"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIsSpaceChar::Execute(Frame& frame)
@@ -72,7 +72,7 @@ VmSystemIsLetterChar::VmSystemIsLetterChar(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsLetter.Char"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIsLetterChar::Execute(Frame& frame)
@@ -94,7 +94,7 @@ VmSystemIsDigitChar::VmSystemIsDigitChar(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsDigit.Char"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIsDigitChar::Execute(Frame& frame)
@@ -116,7 +116,7 @@ VmSystemIsHexDigitChar::VmSystemIsHexDigitChar(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsHexDigit.Char"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIsHexDigitChar::Execute(Frame& frame)
@@ -138,7 +138,7 @@ VmSystemIsPunctuationChar::VmSystemIsPunctuationChar(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsPunctuation.Char"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIsPunctuationChar::Execute(Frame& frame)
@@ -160,7 +160,7 @@ VmSystemIsPrintableChar::VmSystemIsPrintableChar(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsPrintable.Char"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIsPrintableChar::Execute(Frame& frame)
@@ -182,7 +182,7 @@ VmSystemToLowerChar::VmSystemToLowerChar(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.ToLower.Char"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemToLowerChar::Execute(Frame& frame)
@@ -204,7 +204,7 @@ VmSystemToUpperChar::VmSystemToUpperChar(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.ToUpper.Char"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemToUpperChar::Execute(Frame& frame)
@@ -226,7 +226,7 @@ VmSystemObjectToString::VmSystemObjectToString(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Object.ToString"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemObjectToString::Execute(Frame& frame)
@@ -266,7 +266,7 @@ VmSystemObjectGetHashCode::VmSystemObjectGetHashCode(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Object.GetHashCode"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemObjectGetHashCode::Execute(Frame& frame)
@@ -297,7 +297,7 @@ VmSystemObjectEqual::VmSystemObjectEqual(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Object.Equal"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemObjectEqual::Execute(Frame& frame)
@@ -350,7 +350,7 @@ VmSystemObjectLess::VmSystemObjectLess(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Object.Less"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemObjectLess::Execute(Frame& frame)
@@ -407,7 +407,7 @@ VmSystemStringConstructorCharArray::VmSystemStringConstructorCharArray(ConstantP
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"System.String.Constructor.CharArray"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemStringConstructorCharArray::Execute(Frame& frame)
@@ -448,7 +448,7 @@ VmSystemIOOpenFile::VmSystemIOOpenFile(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.OpenFile"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIOOpenFile::Execute(Frame& frame)
@@ -493,7 +493,7 @@ VmSystemIOCloseFile::VmSystemIOCloseFile(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.CloseFile"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIOCloseFile::Execute(Frame& frame)
@@ -526,7 +526,7 @@ VmSystemIOWriteByteToFile::VmSystemIOWriteByteToFile(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.WriteByteToFile"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIOWriteByteToFile::Execute(Frame& frame)
@@ -562,7 +562,7 @@ VmSystemIOWriteFile::VmSystemIOWriteFile(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.WriteFile"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIOWriteFile::Execute(Frame& frame)
@@ -610,7 +610,7 @@ VmSystemIOReadByteFromFile::VmSystemIOReadByteFromFile(ConstantPool& constantPoo
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.ReadByteFromFile"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIOReadByteFromFile::Execute(Frame& frame)
@@ -644,7 +644,7 @@ VmSystemIOReadFile::VmSystemIOReadFile(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.ReadFile"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIOReadFile::Execute(Frame& frame)
@@ -695,7 +695,7 @@ VmSystemIOFileExists::VmSystemIOFileExists(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.File.Exists"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIOFileExists::Execute(Frame& frame)
@@ -730,7 +730,7 @@ VmSystemIOLastWriteTimeLess::VmSystemIOLastWriteTimeLess(ConstantPool& constantP
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.File.LastWriteTimeLess"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIOLastWriteTimeLess::Execute(Frame& frame)
@@ -769,7 +769,7 @@ VmSystemGetEnvironmentVariable::VmSystemGetEnvironmentVariable(ConstantPool& con
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.GetEnvironmentVariable"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemGetEnvironmentVariable::Execute(Frame& frame)
@@ -804,7 +804,7 @@ VmSystemGetPathSeparatorChar::VmSystemGetPathSeparatorChar(ConstantPool& constan
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.GetPathSeparatorChar"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemGetPathSeparatorChar::Execute(Frame& frame)
@@ -828,7 +828,7 @@ VmSystemIOInternalGetCurrentWorkingDirectory::VmSystemIOInternalGetCurrentWorkin
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IO.InternalGetCurrentWorkingDirectory"));
     SetName(name);
-    VmFunctionTable::Instance().RegisterVmFunction(this);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIOInternalGetCurrentWorkingDirectory::Execute(Frame& frame)

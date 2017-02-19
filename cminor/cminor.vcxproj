@@ -92,7 +92,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -110,14 +110,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>machine.lib</AdditionalDependencies>
+      <AdditionalDependencies>util.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -130,7 +130,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -151,7 +151,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -159,7 +159,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>pl.lib;pom.lib;machine.lib</AdditionalDependencies>
+      <AdditionalDependencies>util.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

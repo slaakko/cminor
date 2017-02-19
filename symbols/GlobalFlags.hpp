@@ -10,19 +10,30 @@
 
 namespace cminor { namespace symbols {
 
-enum class GlobalFlags : uint8_t
+enum class GlobalFlags : uint16_t
 {
     none = 0,
     verbose = 1 << 0,
     release = 1 << 1,
     debugParsing = 1 << 2,
-    clean = 1 << 3
+    clean = 1 << 3,
+    list = 1 << 4,
+    native = 1 << 5,
+    emitLlvm = 1 << 6,
+    emitOptLlvm = 1 << 7,
+    emitAsm = 1 << 8
 };
 
 void SetGlobalFlag(GlobalFlags flag);
 bool GetGlobalFlag(GlobalFlags flag);
 
 std::string GetConfig();
+
+int GetOptimizationLevel();
+void SetOptimizationLevel(int level);
+
+void SetDebugPassValue(const std::string& value);
+const std::string& GetDebugPassValue();
 
 } } // namespace cminor::symbols
 

@@ -5,6 +5,7 @@
 
 #ifndef CMINOR_MACHINE_MACHINE_INCLUDED
 #define CMINOR_MACHINE_MACHINE_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Instruction.hpp>
 #include <cminor/machine/Arena.hpp>
 #include <cminor/machine/GarbageCollector.hpp>
@@ -12,13 +13,13 @@
 
 namespace cminor { namespace machine {
 
-class Machine
+class MACHINE_API Machine
 {
 public:
     Machine();
     ~Machine();
-    void Start(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
-    void Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
+    void Start(bool startWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
+    void Run(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void AddInst(Instruction* inst);
     std::unique_ptr<Instruction> CreateInst(const std::string& instName) const;
     std::unique_ptr<Instruction> CreateInst(const std::string& instGroupName, const std::string& typeName) const;
@@ -57,6 +58,7 @@ private:
     std::atomic_int32_t nextFrameId;
     std::atomic_int32_t nextSegmentId;
     std::unordered_map<int32_t, Segment*> segmentMap;
+    uint64_t startThreadHandle;
 };
 
 } } // namespace cminor::machine

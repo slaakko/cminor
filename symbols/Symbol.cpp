@@ -16,7 +16,7 @@
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/ast/Project.hpp>
-#include <cminor/machine/Util.hpp>
+#include <cminor/util/Util.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <boost/filesystem.hpp>
 
@@ -85,7 +85,14 @@ bool Symbol::IsExportSymbol() const
 
 void Symbol::Write(SymbolWriter& writer)
 {
-    writer.AsMachineWriter().Put(uint8_t(flags & ~(SymbolFlags::project | SymbolFlags::bound | SymbolFlags::instantiationRequested | SymbolFlags::typesResolved)));
+    if (writer.KeepProjectBitForSymbols())
+    {
+        writer.AsMachineWriter().Put(uint8_t(flags & ~(SymbolFlags::bound | SymbolFlags::instantiationRequested | SymbolFlags::typesResolved)));
+    }
+    else
+    {
+        writer.AsMachineWriter().Put(uint8_t(flags & ~(SymbolFlags::project | SymbolFlags::bound | SymbolFlags::instantiationRequested | SymbolFlags::typesResolved)));
+    }
     writer.AsMachineWriter().PutEncodedUInt(id);
 }
 
@@ -1126,7 +1133,7 @@ void BasicTypeSymbol::Read(SymbolReader& reader)
 {
     TypeSymbol::Read(reader);
     machineType->Read(reader);
-    TypeTable::Instance().SetType(machineType.get());
+    TypeTable::SetType(machineType.get());
 }
 
 BoolTypeSymbol::BoolTypeSymbol(const Span& span_, Constant name_) : BasicTypeSymbol(span_, name_)
@@ -1402,10 +1409,21 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
     }
     if (IsClassTemplate())
     {
-        uint32_t classNodeSize = reader.GetUInt();
-        assemblyId = reader.GetAssembly()->Id();
-        classNodePos = reader.Pos();
-        reader.Skip(classNodeSize);
+        if (GetAssembly()->ReadClassNodes())
+        {
+            uint32_t classNodeSize = reader.GetUInt();
+            usingNodes.Read(reader);
+            Node* node = reader.GetNode();
+            classNode.reset(node);
+            GetAssembly()->GetSymbolTable().MapNodeSetNoIds(*node, this);
+        }
+        else
+        {
+            uint32_t classNodeSize = reader.GetUInt();
+            assemblyId = reader.GetAssembly()->Id();
+            classNodePos = reader.Pos();
+            reader.Skip(classNodeSize);
+        }
         ConstantId sfpId;
         sfpId.Read(reader);
         sourceFilePathConstant = GetAssembly()->GetConstantPool().GetConstant(sfpId);
@@ -1428,9 +1446,9 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
         }
         Assert(objectType, "object type not set");
         objectType->Read(reader);
-        TypeTable::Instance().SetType(objectType.get());
+        TypeTable::SetType(objectType.get());
         classData->Read(reader);
-        ClassDataTable::Instance().SetClassData(classData.get());
+        ClassDataTable::SetClassData(classData.get());
         reader.AddClassTypeSymbol(this);
         if (!IsArrayType())
         {
@@ -1446,11 +1464,11 @@ void ClassTypeSymbol::ReadClassNode(Assembly& assembly)
     Assert(IsClassTemplate(), "class template expected");
     Assert(assemblyId != -1, "assembly id not valid");
     Assembly* nodeAssembly = AssemblyTable::Instance().GetAssembly(assemblyId);
-    AstReader reader(nodeAssembly->FilePath());
+    AstReader reader(nodeAssembly->FilePathReadFrom());
     Constant sourceFilePathConstant = GetSourceFilePathConstant();
     if (sourceFilePathConstant.Value().AsStringLiteral())
     {
-        int fileIndex = FileRegistry::Instance()->RegisterParsedFile(ToUtf8(sourceFilePathConstant.Value().AsStringLiteral()));
+        int fileIndex = FileRegistry::RegisterParsedFile(ToUtf8(sourceFilePathConstant.Value().AsStringLiteral()));
         reader.ReplaceFileIndex(fileIndex);
     }
     reader.SetConstantPool(&nodeAssembly->GetConstantPool());
@@ -1736,7 +1754,7 @@ void ClassTypeSymbol::LinkVmt()
         }
         else
         {
-            Function* method = FunctionTable::Instance().GetFunction(methodName);
+            Function* method = FunctionTable::GetFunction(methodName);
             vmt.SetMethod(i, method);
         }
     }
@@ -1790,6 +1808,7 @@ void ClassTypeSymbol::InitImts()
                 MemberFunctionSymbol* intfMemFun = intf->MemberFunctions()[k];
                 if (Implements(classMemFun, intfMemFun))
                 {
+                    classMemFun->SetExported();
                     utf32_string fullName = classMemFun->FullName();
                     Constant fullMethodNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
                     imt.SetMethodName(intfMemFun->ImtIndex(), fullMethodNameConstant);
@@ -1834,7 +1853,7 @@ void ClassTypeSymbol::LinkImts()
             }
             else
             {
-                Function* method = FunctionTable::Instance().GetFunction(methodName);
+                Function* method = FunctionTable::GetFunction(methodName);
                 imt.SetMethod(j, method);
             }
         }
@@ -1843,6 +1862,11 @@ void ClassTypeSymbol::LinkImts()
 
 ArrayTypeSymbol::ArrayTypeSymbol(const Span& span_, Constant name_) : ClassTypeSymbol(span_, name_), elementType(nullptr)
 {
+}
+
+utf32_string ArrayTypeSymbol::SimpleName() const
+{
+    return U"array_of_" + elementType->SimpleName();
 }
 
 void ArrayTypeSymbol::Write(SymbolWriter& writer)
@@ -1873,7 +1897,7 @@ void ArrayTypeSymbol::EmplaceType(TypeSymbol* type, int index)
     }
 }
 
-InterfaceTypeSymbol::InterfaceTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), objectType(new ObjectType())
+InterfaceTypeSymbol::InterfaceTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), objectType(new ObjectType()), classData(new ClassData(objectType.get()))
 {
 }
 
@@ -1893,6 +1917,7 @@ void InterfaceTypeSymbol::Write(SymbolWriter& writer)
     TypeSymbol::Write(writer);
     Assert(objectType, "object type not set");
     objectType->Write(writer);
+    classData->Write(writer);
 }
 
 void InterfaceTypeSymbol::Read(SymbolReader& reader)
@@ -1900,7 +1925,9 @@ void InterfaceTypeSymbol::Read(SymbolReader& reader)
     TypeSymbol::Read(reader);
     Assert(objectType, "object type not set");
     objectType->Read(reader);
-    TypeTable::Instance().SetType(objectType.get());
+    TypeTable::SetType(objectType.get());
+    classData->Read(reader);
+    ClassDataTable::SetClassData(classData.get());
 }
 
 void InterfaceTypeSymbol::SetSpecifiers(Specifiers specifiers)
@@ -2007,10 +2034,21 @@ void ClassTemplateSpecializationSymbol::Read(SymbolReader& reader)
         typeArgumentId.Read(reader);
         reader.EmplaceTypeRequest(this, typeArgumentId, i + 1);
     }
-    uint32_t globalNsSize = reader.GetUInt();
-    assemblyId = reader.GetAssembly()->Id();
-    globalNsPos = reader.Pos();
-    reader.Skip(globalNsSize);
+    if (GetAssembly()->ReadClassNodes())
+    {
+        uint32_t globalNsSize = reader.GetUInt();
+        Node* node = reader.GetNode();
+        NamespaceNode* ns = dynamic_cast<NamespaceNode*>(node);
+        Assert(ns, "namespace node expected");
+        globalNs.reset(ns);
+    }
+    else
+    {
+        uint32_t globalNsSize = reader.GetUInt();
+        assemblyId = reader.GetAssembly()->Id();
+        globalNsPos = reader.Pos();
+        reader.Skip(globalNsSize);
+    }
     SetBound();
     reader.EndReadingClassTemplateSpecialization();
 }
@@ -2049,6 +2087,17 @@ void ClassTemplateSpecializationSymbol::SetKey(const ClassTemplateSpecialization
         utf32_string typeArgumentFullName = typeArgument->FullName();
         GetAssembly()->GetConstantPool().Install(StringPtr(typeArgumentFullName.c_str()));
     }
+}
+
+utf32_string ClassTemplateSpecializationSymbol::SimpleName() const
+{
+    utf32_string simpleName = PrimaryClassTemplate()->Name().Value();
+    int n = NumTypeArguments();
+    for (int i = 0; i < n; ++i)
+    {
+        simpleName.append(U"_").append(TypeArgument(i)->SimpleName());
+    }
+    return simpleName;
 }
 
 void ClassTemplateSpecializationSymbol::SetGlobalNs(std::unique_ptr<NamespaceNode>&& globalNs_)
@@ -2172,11 +2221,11 @@ void ClassTemplateSpecializationSymbol::ReadGlobalNs()
     Assert(assemblyId != -1, "assembly id not valid");
     Assert(globalNsPos != -1, "global ns pos not valid");
     Assembly* nodeAssembly = AssemblyTable::Instance().GetAssembly(assemblyId);
-    AstReader reader(nodeAssembly->FilePath());
+    AstReader reader(nodeAssembly->FilePathReadFrom());
     Constant sourceFilePathConstant = GetSourceFilePathConstant();
     if (sourceFilePathConstant.Value().AsStringLiteral())
     {
-        int fileIndex = FileRegistry::Instance()->RegisterParsedFile(ToUtf8(sourceFilePathConstant.Value().AsStringLiteral()));
+        int fileIndex = FileRegistry::RegisterParsedFile(ToUtf8(sourceFilePathConstant.Value().AsStringLiteral()));
         reader.ReplaceFileIndex(fileIndex);
     }
     reader.SetConstantPool(&nodeAssembly->GetConstantPool());

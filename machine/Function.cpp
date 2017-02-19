@@ -5,9 +5,11 @@
 
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Machine.hpp>
-#include <cminor/machine/Unicode.hpp>
-#include <cminor/machine/Util.hpp>
+#include <cminor/util/Unicode.hpp>
+#include <cminor/util/Util.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <cminor/machine/OsInterface.hpp>
+#include <cminor/machine/MachineFunctionVisitor.hpp>
 #include <iostream>
 #include <iomanip>
 
@@ -55,6 +57,23 @@ void PCRange::Read(Reader& reader)
     end = reader.GetInt();
 }
 
+void PCRange::Adjust(const std::vector<int32_t>& instructionOffsets)
+{
+    if (start != endOfFunction)
+    {
+        start = start - instructionOffsets[start];
+    }
+    if (end != endOfFunction)
+    {
+        end = end - instructionOffsets[end];
+    }
+}
+
+void PCRange::Dump(CodeFormatter& formatter)
+{
+    formatter.WriteLine("[" + std::to_string(start) + ":" + std::to_string(end) + "]");
+}
+
 CatchBlock::CatchBlock() : exceptionVarClassTypeFullName(), exceptionVarType(nullptr), exceptionVarIndex(-1), catchBlockStart(-1)
 {
 }
@@ -79,8 +98,22 @@ void CatchBlock::Read(Reader& reader)
 
 void CatchBlock::ResolveExceptionVarType()
 {
-    ClassData* classData = ClassDataTable::Instance().GetClassData(exceptionVarClassTypeFullName.Value().AsStringLiteral());
+    ClassData* classData = ClassDataTable::GetClassData(exceptionVarClassTypeFullName.Value().AsStringLiteral());
     exceptionVarType = classData->Type();
+}
+
+void CatchBlock::Adjust(const std::vector<int32_t>& instructionOffsets, std::unordered_set<int32_t>& jumpTargets)
+{
+    if (catchBlockStart != endOfFunction)
+    {
+        catchBlockStart = catchBlockStart - instructionOffsets[catchBlockStart];
+        jumpTargets.insert(catchBlockStart);
+    }
+}
+
+void CatchBlock::Dump(CodeFormatter& formatter)
+{
+    formatter.WriteLine("catch " + ToUtf8(exceptionVarClassTypeFullName.Value().AsStringLiteral()) + " : " + std::to_string(catchBlockStart));
 }
 
 ExceptionBlock::ExceptionBlock(int id_) : id(id_), parentId(-1), finallyStart(-1), nextTarget(-1)
@@ -157,13 +190,94 @@ void ExceptionBlock::ResolveExceptionVarTypes()
     }
 }
 
-Function::Function() : callName(), friendlyName(), sourceFilePath(), id(-1), numLocals(0), numParameters(0), constantPool(nullptr), isMain(false), emitter(nullptr)
+void ExceptionBlock::Adjust(const std::vector<int32_t>& instructionOffsets, std::unordered_set<int32_t>& jumpTargets)
+{
+    for (PCRange& pcRange : pcRanges)
+    {
+        pcRange.Adjust(instructionOffsets);
+    }
+    for (const std::unique_ptr<CatchBlock>& catchBlock : catchBlocks)
+    {
+        catchBlock->Adjust(instructionOffsets, jumpTargets);
+    }
+    if (finallyStart != endOfFunction)
+    {
+        finallyStart = finallyStart - instructionOffsets[finallyStart];
+        jumpTargets.insert(finallyStart);
+    }
+    if (nextTarget != endOfFunction)
+    {
+        nextTarget = nextTarget - instructionOffsets[nextTarget];
+        jumpTargets.insert(nextTarget);
+    }
+}
+
+void ExceptionBlock::Dump(CodeFormatter& formatter)
+{
+    std::string parent;
+    if (parentId != -1)
+    {
+        parent = " (parent=" + std::to_string(parentId) + ")";
+    }
+    formatter.WriteLine("exception block " + std::to_string(id) + parent);
+    formatter.WriteLine("PC ranges:");
+    for (PCRange& range : pcRanges)
+    {
+        range.Dump(formatter);
+    }
+    for (const std::unique_ptr<CatchBlock>& catchBlock : catchBlocks)
+    {
+        catchBlock->Dump(formatter);
+    }
+    if (finallyStart != endOfFunction)
+    {
+        formatter.WriteLine("finally " + std::to_string(finallyStart));
+    }
+    if (nextTarget != endOfFunction)
+    {
+        formatter.WriteLine("next " + std::to_string(nextTarget));
+    }
+}
+
+std::string FunctionFlagsStr(FunctionFlags flags)
+{
+    if (flags == FunctionFlags::none)
+    {
+        return "none";
+    }
+    else
+    {
+        std::string s;
+        if ((flags & FunctionFlags::exported) != FunctionFlags::none)
+        {
+            s.append("exported");
+        }
+        if ((flags & FunctionFlags::canThrow) != FunctionFlags::none)
+        {
+            if (!s.empty())
+            {
+                s.append(" ");
+            }
+            s.append("canThrow");
+        }
+        return s;
+    }
+}
+
+Function::Function() : groupName(), callName(), fullName(), sourceFilePath(), id(-1), numLocals(0), numParameters(0), constantPool(nullptr), isMain(false), emitter(nullptr), returnsValue(false),
+    returnType(ValueType::none), flags(FunctionFlags::none), address(nullptr), assembly(nullptr), functionSymbol(nullptr), alreadyGenerated(false)
 {
 }
 
-Function::Function(Constant callName_, Constant friendlyName_, uint32_t id_, ConstantPool* constantPool_) : 
-    callName(callName_), friendlyName(friendlyName_), sourceFilePath(), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false), emitter(nullptr)
+Function::Function(Constant groupName_, Constant callName_, Constant friendlyName_, uint32_t id_, ConstantPool* constantPool_) :
+    groupName(groupName_), callName(callName_), fullName(friendlyName_), sourceFilePath(), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false), emitter(nullptr),
+    returnsValue(false), returnType(ValueType::none), flags(FunctionFlags::none), address(nullptr), assembly(nullptr), functionSymbol(nullptr), alreadyGenerated(false)
 {
+}
+
+void Function::SetMangedName(const std::string& mangledName_)
+{
+    mangledName = mangledName_;
 }
 
 bool Function::HasSourceFilePath() const
@@ -173,12 +287,16 @@ bool Function::HasSourceFilePath() const
 
 void Function::Write(Writer& writer)
 {
+    writer.Put(uint8_t(flags));
+    ConstantId groupNameId = constantPool->GetIdFor(groupName);
+    Assert(groupNameId != noConstantId, "got no constant id");
+    groupNameId.Write(writer);
     ConstantId callNameId = constantPool->GetIdFor(callName);
     Assert(callNameId != noConstantId, "got no constant id");
     callNameId.Write(writer);
-    ConstantId friendlyNameId = constantPool->GetIdFor(friendlyName);
-    Assert(friendlyNameId != noConstantId, "got no constant id");
-    friendlyNameId.Write(writer);
+    ConstantId fullNameId = constantPool->GetIdFor(fullName);
+    Assert(fullNameId != noConstantId, "got no constant id");
+    fullNameId.Write(writer);
     bool hasSourceFilePath = sourceFilePath.Value().AsStringLiteral() != nullptr;
     writer.Put(hasSourceFilePath);
     if (hasSourceFilePath)
@@ -188,6 +306,7 @@ void Function::Write(Writer& writer)
         sourceFilePathId.Write(writer);
     }
     writer.PutEncodedUInt(id);
+    writer.Put(mangledName);
     uint32_t n = static_cast<uint32_t>(instructions.size());
     writer.PutEncodedUInt(n);
     for (uint32_t i = 0; i < n; ++i)
@@ -196,7 +315,19 @@ void Function::Write(Writer& writer)
         inst->Encode(writer);
     }
     writer.PutEncodedUInt(numLocals);
+    for (uint32_t i = 0; i < numLocals; ++i)
+    {
+        ValueType valueType = localTypes[i];
+        writer.Put(uint8_t(valueType));
+    }
     writer.PutEncodedUInt(numParameters);
+    for (uint32_t i = 0; i < numParameters; ++i)
+    {
+        ValueType valueType = parameterTypes[i];
+        writer.Put(uint8_t(valueType));
+    }
+    writer.Put(returnsValue);
+    writer.Put(uint8_t(returnType));
     uint32_t ne = uint32_t(exceptionBlocks.size());
     writer.PutEncodedUInt(ne);
     for (const std::unique_ptr<ExceptionBlock>& exceptionBlock : exceptionBlocks)
@@ -214,13 +345,18 @@ void Function::Write(Writer& writer)
 
 void Function::Read(Reader& reader)
 {
+    flags = FunctionFlags(reader.GetByte());
     constantPool = reader.GetConstantPool();
+    assembly = reader.GetAssemblyAddress();
+    ConstantId groupNameId;
+    groupNameId.Read(reader);
+    groupName = constantPool->GetConstant(groupNameId);
     ConstantId callNameId;
     callNameId.Read(reader);
     callName = constantPool->GetConstant(callNameId);
-    ConstantId friendlyNameId;
-    friendlyNameId.Read(reader);
-    friendlyName = constantPool->GetConstant(friendlyNameId);
+    ConstantId fullNameId;
+    fullNameId.Read(reader);
+    fullName = constantPool->GetConstant(fullNameId);
     bool hasSourceFilePath = reader.GetBool();
     if (hasSourceFilePath)
     {
@@ -228,15 +364,27 @@ void Function::Read(Reader& reader)
         sourceFilePathId.Read(reader);
         sourceFilePath = constantPool->GetConstant(sourceFilePathId);
     }
-    ConstantId 
     id = reader.GetEncodedUInt();
+    mangledName = reader.GetUtf8String();
     uint32_t n = reader.GetEncodedUInt();
     for (uint32_t i = 0; i < n; ++i)
     {
         AddInst(reader.GetMachine().DecodeInst(reader));
     }
     numLocals = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < numLocals; ++i)
+    {
+        ValueType valueType = static_cast<ValueType>(reader.GetByte());
+        localTypes.push_back(valueType);
+    }
     numParameters = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < numParameters; ++i)
+    {
+        ValueType valueType = static_cast<ValueType>(reader.GetByte());
+        parameterTypes.push_back(valueType);
+    }
+    returnsValue = reader.GetBool();
+    returnType = static_cast<ValueType>(reader.GetByte());
     uint32_t ne = reader.GetEncodedUInt();
     for (uint32_t i = 0; i < ne; ++i)
     {
@@ -250,10 +398,9 @@ void Function::Read(Reader& reader)
         uint32_t pc = reader.GetEncodedUInt();
         uint32_t sourceLine = reader.GetEncodedUInt();
         MapPCToSourceLine(pc, sourceLine);
-        SourceFileTable* sourceFileTable = SourceFileTable::Instance();
-        if (sourceFileTable && HasSourceFilePath() && sourceFilePath.Value().AsStringLiteral() != U"")
+        if (SourceFileTable::Initialized() && HasSourceFilePath() && sourceFilePath.Value().AsStringLiteral() != U"")
         {
-            sourceFileTable->MapSourceFileLine(sourceFilePath, sourceLine, this);
+            SourceFileTable::MapSourceFileLine(sourceFilePath, sourceLine, this);
         }
     }
 }
@@ -261,11 +408,13 @@ void Function::Read(Reader& reader)
 void Function::SetNumLocals(uint32_t numLocals_)
 {
     numLocals = numLocals_;
+    localTypes.resize(numLocals);
 }
 
 void Function::SetNumParameters(uint32_t numParameters_)
 {
     numParameters = numParameters_;
+    parameterTypes.resize(numParameters);
 }
 
 void Function::AddInst(std::unique_ptr<Instruction>&& inst)
@@ -293,7 +442,46 @@ void Function::SetInst(int32_t index, std::unique_ptr<Instruction>&& inst)
 
 void Function::Dump(CodeFormatter& formatter)
 {
-    formatter.WriteLine(ToUtf8(callName.Value().AsStringLiteral()) + " [" + ToUtf8(friendlyName.Value().AsStringLiteral()) + "]");
+    formatter.WriteLine("FUNCTION #" + std::to_string(id));
+    formatter.WriteLine("call name: " + ToUtf8(callName.Value().AsStringLiteral()));
+    formatter.WriteLine("group name: " + ToUtf8(groupName.Value().AsStringLiteral()));
+    formatter.WriteLine("full name: " + ToUtf8(fullName.Value().AsStringLiteral()));
+    if (!mangledName.empty())
+    {
+        formatter.WriteLine("mangled name: " + mangledName);
+    }
+    formatter.WriteLine("flags: " + FunctionFlagsStr(flags));
+    if (sourceFilePath.Value().AsStringLiteral())
+    {
+        formatter.WriteLine("source file path: " + ToUtf8(sourceFilePath.Value().AsStringLiteral()));
+    }
+    formatter.WriteLine(std::to_string(numParameters) + " parameters:");
+    int np = int(parameterTypes.size());
+    for (int i = 0; i < np; ++i)
+    {
+        formatter.WriteLine("parameter " + std::to_string(i) + ": " + ValueTypeStr(parameterTypes[i]));
+    }
+    formatter.WriteLine(std::to_string(numLocals) + " locals:");
+    int nl = int(localTypes.size());
+    for (int i = 0; i < nl; ++i)
+    {
+        std::string kind;
+        if (i < np)
+        {
+            kind.append(" for parameter " + std::to_string(i));
+        }
+        formatter.WriteLine("local " + std::to_string(i) + ": " + ValueTypeStr(localTypes[i]) + kind);
+    }
+    formatter.WriteLine("returns: " + ValueTypeStr(returnType));
+    if (!exceptionBlocks.empty())
+    {
+        formatter.WriteLine("exception blocks:");
+        for (const std::unique_ptr<ExceptionBlock>& exceptionBlock : exceptionBlocks)
+        {
+            exceptionBlock->Dump(formatter);
+        }
+    }
+    formatter.WriteLine("code:");
     formatter.WriteLine("{");
     formatter.IncIndent();
     int32_t n = static_cast<int32_t>(instructions.size());
@@ -311,6 +499,7 @@ void Function::Dump(CodeFormatter& formatter)
     }
     formatter.DecIndent();
     formatter.WriteLine("}");
+    formatter.WriteLine();
 }
 
 void Function::Dump(CodeFormatter& formatter, int32_t pc)
@@ -322,7 +511,7 @@ void Function::Dump(CodeFormatter& formatter, int32_t pc)
             std::string sfp = ToUtf8(sourceFilePath.Value().AsStringLiteral());
             WriteInGreenToConsole(sfp + ":");
         }
-        formatter.WriteLine(ToUtf8(callName.Value().AsStringLiteral()) + " [" + ToUtf8(friendlyName.Value().AsStringLiteral()) + "]");
+        formatter.WriteLine(ToUtf8(callName.Value().AsStringLiteral()) + " [" + ToUtf8(fullName.Value().AsStringLiteral()) + "]");
         formatter.WriteLine("{");
         formatter.IncIndent();
     }
@@ -334,13 +523,12 @@ void Function::Dump(CodeFormatter& formatter, int32_t pc)
     int32_t end = std::min(NumInsts(), pc + 4);
     for (int32_t i = start; i < end; ++i)
     {
-        SourceFileTable* sourceFileTable = SourceFileTable::Instance();
-        if (sourceFileTable)
+        if (SourceFileTable::Initialized())
         {
             uint32_t sline = GetSourceLine(i);
             if (sline != -1)
             {
-                SourceFile* sourceFile = sourceFileTable->GetSourceFile(sourceFilePath);
+                SourceFile* sourceFile = SourceFileTable::GetSourceFile(sourceFilePath);
                 std::string line = sourceFile->GetLine(sline);
                 if (!line.empty())
                 {
@@ -450,23 +638,272 @@ void Function::RemoveBreakPointAt(uint32_t pc)
     breakPoints.erase(pc);
 }
 
-std::unique_ptr<FunctionTable> FunctionTable::instance;
-
-void FunctionTable::Init()
+enum class JumpTargetType : uint8_t
 {
-    instance.reset(new FunctionTable());
+    weak, strong
+};
+
+void Function::RemoveUnreachableInstructions(std::unordered_set<int32_t>& jumpTargets)
+{
+    std::unordered_map<int32_t, JumpTargetType> jumpTargetMap;
+    std::unordered_set<int32_t> toBeRemoved;
+    for (const std::unique_ptr<ExceptionBlock>& exceptionBlock : exceptionBlocks)
+    {
+        for (const std::unique_ptr<CatchBlock>& catchBlock : exceptionBlock->CatchBlocks())
+        {
+            jumpTargetMap[catchBlock->CatchBlockStart()] = JumpTargetType::strong;
+        }
+        if (exceptionBlock->HasFinally())
+        {
+            jumpTargetMap[exceptionBlock->FinallyStart()] = JumpTargetType::strong;
+        }
+        if (exceptionBlock->NextTarget() != endOfFunction)
+        {
+            jumpTargetMap[exceptionBlock->NextTarget()] = JumpTargetType::strong;
+        }
+    }
+    int32_t n = int32_t(instructions.size());
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Instruction* inst = instructions[i].get();
+        if (inst->IsJumpingInst())
+        {
+            IndexParamInst* indexParamInst = static_cast<IndexParamInst*>(inst);
+            int32_t jumpTarget = indexParamInst->Index();
+            if (jumpTarget != endOfFunction)
+            {
+                auto it = jumpTargetMap.find(jumpTarget);
+                if (it == jumpTargetMap.cend())
+                {
+                    jumpTargetMap[jumpTarget] = JumpTargetType::weak;
+                }
+            }
+        }
+        else if (inst->IsContinuousSwitchInst())
+        {
+            ContinuousSwitchInst* cswitch = static_cast<ContinuousSwitchInst*>(inst);
+            for (int32_t target : cswitch->Targets())
+            {
+                jumpTargetMap[target] = JumpTargetType::strong;
+            }
+            jumpTargetMap[cswitch->DefaultTarget()] = JumpTargetType::strong;
+        }
+        else if (inst->IsBinarySearchSwitchInst())
+        {
+            BinarySearchSwitchInst* bswitch = static_cast<BinarySearchSwitchInst*>(inst);
+            for (const auto t : bswitch->Targets())
+            {
+                int32_t target = t.second;
+                jumpTargetMap[target] = JumpTargetType::strong;
+            }
+            jumpTargetMap[bswitch->DefaultTarget()] = JumpTargetType::strong;
+        }
+    }
+    bool prevEndsBasicBlock = false;
+    bool removeInst = false;
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Instruction* inst = instructions[i].get();
+        if (prevEndsBasicBlock)
+        {
+            if (jumpTargetMap.find(i) == jumpTargetMap.cend())
+            {
+                removeInst = true;
+            }
+        }
+        if (removeInst)
+        {
+            if (inst->IsJumpingInst())
+            {
+                IndexParamInst* indexParamInst = static_cast<IndexParamInst*>(inst);
+                int32_t jumpTarget = indexParamInst->Index();
+                if (jumpTarget != endOfFunction)
+                {
+                    auto it = jumpTargetMap.find(jumpTarget);
+                    if (it != jumpTargetMap.cend())
+                    {
+                        if (it->second == JumpTargetType::weak)
+                        {
+                            jumpTargetMap.erase(jumpTarget);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (inst->IsJumpingInst())
+            {
+                IndexParamInst* indexParamInst = static_cast<IndexParamInst*>(inst);
+                int32_t jumpTarget = indexParamInst->Index();
+                if (jumpTarget != endOfFunction)
+                {
+                    jumpTargetMap[jumpTarget] = JumpTargetType::strong;
+                }
+            }
+        }
+        if (jumpTargetMap.find(i) != jumpTargetMap.cend())
+        {
+            removeInst = false;
+        }
+        if (removeInst)
+        {
+            toBeRemoved.insert(i);
+        }
+        prevEndsBasicBlock = inst->EndsBasicBlock();
+    }
+    if (!toBeRemoved.empty())
+    {
+        std::vector<std::unique_ptr<Instruction>> cleanedInsts;
+        std::vector<int32_t> instructionOffsets;
+        int32_t offset = 0;
+        for (int32_t i = 0; i < n; ++i)
+        {
+            instructionOffsets.push_back(offset);
+            if (toBeRemoved.find(i) != toBeRemoved.cend())
+            {
+                ++offset;
+            }
+            else
+            {
+                cleanedInsts.push_back(std::unique_ptr<Instruction>(instructions[i].release()));
+            }
+        }
+        for (const std::unique_ptr<ExceptionBlock>& exceptionBlock : exceptionBlocks)
+        {
+            exceptionBlock->Adjust(instructionOffsets, jumpTargets);
+        }
+        AdjustPCSourceLineMap(instructionOffsets);
+        AdjustSourceLinePCMap(instructionOffsets);
+        int32_t m = int32_t(cleanedInsts.size());
+        for (int32_t i = 0; i < m; ++i)
+        {
+            Instruction* inst = cleanedInsts[i].get();
+            if (inst->IsJumpingInst())
+            {
+                IndexParamInst* indexParamInst = static_cast<IndexParamInst*>(inst);
+                int32_t jumpTarget = indexParamInst->Index();
+                if (jumpTarget != endOfFunction)
+                {
+                    int32_t newTarget = jumpTarget - instructionOffsets[jumpTarget];
+                    indexParamInst->SetIndex(newTarget);
+                    jumpTargets.insert(newTarget);
+                }
+            }
+            else if (inst->IsContinuousSwitchInst())
+            {
+                ContinuousSwitchInst* cswitch = static_cast<ContinuousSwitchInst*>(inst);
+                std::vector<int32_t>& targets = cswitch->Targets();
+                for (int32_t& target : targets)
+                {
+                    target = target - instructionOffsets[target];
+                    jumpTargets.insert(target);
+                }
+                cswitch->SetDefaultTarget(cswitch->DefaultTarget() - instructionOffsets[cswitch->DefaultTarget()]);
+                jumpTargets.insert(cswitch->DefaultTarget());
+            }
+            else if (inst->IsBinarySearchSwitchInst())
+            {
+                BinarySearchSwitchInst* bswitch = static_cast<BinarySearchSwitchInst*>(inst);
+                std::vector<std::pair<IntegralValue, int32_t>>& targets = bswitch->Targets();
+                for (std::pair<IntegralValue, int32_t>& t : targets)
+                {
+                    int32_t& target = t.second;
+                    target = target - instructionOffsets[target];
+                    jumpTargets.insert(target);
+                }
+                bswitch->SetDefaultTarget(bswitch->DefaultTarget() - instructionOffsets[bswitch->DefaultTarget()]);
+                jumpTargets.insert(bswitch->DefaultTarget());
+            }
+        }
+        std::swap(instructions, cleanedInsts);
+    }
+    else
+    {
+        for (const std::pair<int32_t, JumpTargetType>& p : jumpTargetMap)
+        {
+            jumpTargets.insert(p.first);
+        }
+    }
 }
 
-void FunctionTable::Done()
+void Function::AdjustPCSourceLineMap(const std::vector<int32_t>& instructionOffsets)
 {
-    instance.reset();
+    std::vector<std::pair<int32_t, int32_t>> pcLine;
+    for (const std::pair<int32_t, int32_t>& p : pcSourceLineMap)
+    {
+        pcLine.push_back(p);
+    }
+    for (std::pair<int32_t, int32_t>& p : pcLine)
+    {
+        int32_t& pc = p.first;
+        pc = pc - instructionOffsets[pc];
+    }
+    pcSourceLineMap.clear();
+    for (const std::pair<int32_t, int32_t>& p : pcLine)
+    {
+        pcSourceLineMap[p.first] = p.second;
+    }
 }
 
-FunctionTable::FunctionTable() : main(nullptr)
+void Function::AdjustSourceLinePCMap(const std::vector<int32_t>& instructionOffsets)
+{
+    std::vector<std::pair<int32_t, int32_t>> linePC;
+    for (const std::pair<int32_t, int32_t>& p : sourceLinePCMap)
+    {
+        linePC.push_back(p);
+    }
+    for (std::pair<int32_t, int32_t>& p : linePC)
+    {
+        int32_t& pc = p.second;
+        pc = pc - instructionOffsets[pc];
+    }
+    sourceLinePCMap.clear();
+    for (const std::pair<int32_t, int32_t>& p : linePC)
+    {
+        sourceLinePCMap[p.first] = p.second;
+    }
+}
+
+void Function::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.BeginVisitFunction(*this);
+    int currentInstructionIndex = 0;
+    bool prevEndsBasicBlock = false;
+    for (const std::unique_ptr<Instruction>& instruction : instructions)
+    {
+        visitor.SetCurrentInstructionIndex(currentInstructionIndex);
+        visitor.BeginVisitInstruction(currentInstructionIndex, prevEndsBasicBlock);
+        instruction->Accept(visitor);
+        prevEndsBasicBlock = instruction->EndsBasicBlock();
+        ++currentInstructionIndex;
+    }
+    visitor.EndVisitFunction(*this);
+}
+
+class FunctionTableImpl
+{
+public:
+    FunctionTableImpl();
+    static void Init();
+    static void Done();
+    static FunctionTableImpl& Instance() { Assert(instance, "function table impl not initialized");  return *instance; }
+    void AddFunction(Function* fun, bool memberOfClassTemplateSpecialization);
+    Function* GetFunction(StringPtr functionCallName) const;
+    Function* GetFunctionNothrow(StringPtr functionCallName) const;
+    Function* GetMain() const { return main; }
+    void ResolveExceptionVarTypes();
+private:
+    static std::unique_ptr<FunctionTableImpl> instance;
+    std::unordered_map<StringPtr, Function*, StringPtrHash> functionMap;
+    Function* main;
+};
+
+FunctionTableImpl::FunctionTableImpl() : main(nullptr)
 {
 }
 
-void FunctionTable::AddFunction(Function* fun, bool memberOfClassTemplateSpecialization)
+void FunctionTableImpl::AddFunction(Function* fun, bool memberOfClassTemplateSpecialization)
 {
     StringPtr functionCallName = fun->CallName().Value().AsStringLiteral();
     auto it = functionMap.find(functionCallName);
@@ -494,7 +931,20 @@ void FunctionTable::AddFunction(Function* fun, bool memberOfClassTemplateSpecial
     }
 }
 
-Function* FunctionTable::GetFunction(StringPtr functionCallName) const
+Function* FunctionTableImpl::GetFunction(StringPtr functionCallName) const
+{
+    Function* function = GetFunctionNothrow(functionCallName);
+    if (function)
+    {
+        return function;
+    }
+    else
+    {
+        throw std::runtime_error("function '" + ToUtf8(functionCallName.Value()) + "' not found from function table");
+    }
+}
+
+Function* FunctionTableImpl::GetFunctionNothrow(StringPtr functionCallName) const
 {
     auto it = functionMap.find(functionCallName);
     if (it != functionMap.cend())
@@ -503,11 +953,11 @@ Function* FunctionTable::GetFunction(StringPtr functionCallName) const
     }
     else
     {
-        throw std::runtime_error("function '" + ToUtf8(functionCallName.Value()) + "' not found from function table");
+        return nullptr;
     }
 }
 
-void FunctionTable::ResolveExceptionVarTypes()
+void FunctionTableImpl::ResolveExceptionVarTypes()
 {
     for (const auto& p : functionMap)
     {
@@ -515,23 +965,81 @@ void FunctionTable::ResolveExceptionVarTypes()
     }
 }
 
-VmFunction::~VmFunction()
+std::unique_ptr<FunctionTableImpl> FunctionTableImpl::instance;
+
+void FunctionTableImpl::Init()
 {
+    instance.reset(new FunctionTableImpl());
 }
 
-std::unique_ptr<VmFunctionTable> VmFunctionTable::instance;
-
-void VmFunctionTable::Init()
-{
-    instance.reset(new VmFunctionTable());
-}
-
-void VmFunctionTable::Done()
+void FunctionTableImpl::Done()
 {
     instance.reset();
 }
 
-void VmFunctionTable::RegisterVmFunction(VmFunction* vmFunction)
+MACHINE_API void FunctionTable::Init()
+{
+    FunctionTableImpl::Init();
+}
+
+MACHINE_API void FunctionTable::Done()
+{
+    FunctionTableImpl::Done();
+}
+
+MACHINE_API void FunctionTable::AddFunction(Function* fun, bool memberOfClassTemplateSpecialization)
+{
+    FunctionTableImpl::Instance().AddFunction(fun, memberOfClassTemplateSpecialization);
+}
+
+MACHINE_API Function* FunctionTable::GetFunction(StringPtr functionCallName)
+{
+    return FunctionTableImpl::Instance().GetFunction(functionCallName);
+}
+
+MACHINE_API Function* FunctionTable::GetFunctionNothrow(StringPtr functionCallName)
+{
+    return FunctionTableImpl::Instance().GetFunctionNothrow(functionCallName);
+}
+
+MACHINE_API Function* FunctionTable::GetMain()
+{
+    return FunctionTableImpl::Instance().GetMain();
+}
+
+MACHINE_API void FunctionTable::ResolveExceptionVarTypes()
+{
+    FunctionTableImpl::Instance().ResolveExceptionVarTypes();
+}
+
+VmFunction::~VmFunction()
+{
+}
+
+class VmFunctionTableImpl
+{
+public:
+    static void Init();
+    static void Done();
+    static VmFunctionTableImpl& Instance() { Assert(instance, "virtual machine function table impl not initialized"); return *instance; }
+    void RegisterVmFunction(VmFunction* vmFunction);
+    VmFunction* GetVmFunction(StringPtr vmFuntionName) const;
+private:
+    static std::unique_ptr<VmFunctionTableImpl> instance;
+    std::unordered_map<StringPtr, VmFunction*, StringPtrHash> vmFunctionMap;
+};
+
+void VmFunctionTableImpl::Init()
+{
+    instance.reset(new VmFunctionTableImpl());
+}
+
+void VmFunctionTableImpl::Done()
+{
+    instance.reset();
+}
+
+void VmFunctionTableImpl::RegisterVmFunction(VmFunction* vmFunction)
 {
     Constant vmFuntionName = vmFunction->Name();
     Assert(vmFuntionName.Value().GetType() == ValueType::stringLiteral, "string literal expected");
@@ -546,7 +1054,7 @@ void VmFunctionTable::RegisterVmFunction(VmFunction* vmFunction)
     }
 }
 
-VmFunction* VmFunctionTable::GetVmFunction(StringPtr vmFuntionName) const
+VmFunction* VmFunctionTableImpl::GetVmFunction(StringPtr vmFuntionName) const
 {
     auto it = vmFunctionMap.find(vmFuntionName);
     if (it != vmFunctionMap.cend())
@@ -557,6 +1065,28 @@ VmFunction* VmFunctionTable::GetVmFunction(StringPtr vmFuntionName) const
     {
         throw std::runtime_error("virtual machine function '" + ToUtf8(vmFuntionName.Value()) + "' not found from virtual machine function table");
     }
+}
+
+std::unique_ptr<VmFunctionTableImpl> VmFunctionTableImpl::instance;
+
+MACHINE_API void VmFunctionTable::Init()
+{
+    VmFunctionTableImpl::Init();
+}
+
+MACHINE_API void VmFunctionTable::Done()
+{
+    VmFunctionTableImpl::Done();
+}
+
+MACHINE_API void VmFunctionTable::RegisterVmFunction(VmFunction* vmFunction)
+{
+    VmFunctionTableImpl::Instance().RegisterVmFunction(vmFunction);
+}
+
+MACHINE_API VmFunction* VmFunctionTable::GetVmFunction(StringPtr vmFunctionName)
+{
+    return VmFunctionTableImpl::Instance().GetVmFunction(vmFunctionName);
 }
 
 LineFunctionTable::LineFunctionTable()
@@ -649,28 +1179,57 @@ std::string SourceFile::GetLine(int lineNumber) const
     }
 }
 
-std::unique_ptr<SourceFileTable> SourceFileTable::instance;
+class SourceFileTableImpl
+{
+public:
+    static bool Initialized();
+    static SourceFileTableImpl* Instance();
+    static void Init();
+    static void Done();
+    Constant GetSourceFilePath(const std::string& sourceFileName) const;
+    SourceFile* GetSourceFile(Constant sourceFilePath);
+    SourceFile* GetSourceFile(const std::string& sourceFileName);
+    void MapSourceFileLine(Constant sourceFilePath, uint32_t sourceLine, Function* function);
+    int SetBreakPoint(Constant sourceFilePath, uint32_t sourceLine);
+    int SetBreakPoint(const std::string& sourceFileName, uint32_t sourceLine);
+    void RemoveBreakPoint(int bp);
+    const BreakPoint* GetBreakPoint(int bp) const;
+private:
+    SourceFileTableImpl();
+    static std::unique_ptr<SourceFileTableImpl> instance;
+    std::unordered_map<Constant, LineFunctionTable, ConstantHash> sourceFileLineFunctionMap;
+    std::unordered_map<Constant, std::unique_ptr<SourceFile>, ConstantHash> sourceFileMap;
+    std::unordered_map<int, BreakPoint> breakPoints;
+    int nextBp;
+};
 
-SourceFileTable::SourceFileTable() : nextBp(1)
+std::unique_ptr<SourceFileTableImpl> SourceFileTableImpl::instance;
+
+SourceFileTableImpl::SourceFileTableImpl() : nextBp(1)
 {
 }
 
-SourceFileTable* SourceFileTable::Instance()
+bool SourceFileTableImpl::Initialized() 
+{ 
+    return Instance() != nullptr; 
+}
+
+SourceFileTableImpl* SourceFileTableImpl::Instance()
 {
     return instance.get();
 }
 
-void SourceFileTable::Init()
+void SourceFileTableImpl::Init()
 {
-    instance.reset(new SourceFileTable());
+    instance.reset(new SourceFileTableImpl());
 }
 
-void SourceFileTable::Done()
+void SourceFileTableImpl::Done()
 {
     instance.reset();
 }
 
-Constant SourceFileTable::GetSourceFilePath(const std::string& sourceFileName) const
+Constant SourceFileTableImpl::GetSourceFilePath(const std::string& sourceFileName) const
 {
     utf32_string sfp = ToUtf32(sourceFileName);
     std::vector<utf32_string> components = Split(sfp, char32_t('/'));
@@ -715,7 +1274,7 @@ Constant SourceFileTable::GetSourceFilePath(const std::string& sourceFileName) c
     }
 }
 
-SourceFile* SourceFileTable::GetSourceFile(Constant sourceFilePath)
+SourceFile* SourceFileTableImpl::GetSourceFile(Constant sourceFilePath)
 {
     auto it = sourceFileMap.find(sourceFilePath);
     if (it != sourceFileMap.cend())
@@ -729,18 +1288,18 @@ SourceFile* SourceFileTable::GetSourceFile(Constant sourceFilePath)
     return sf;
 }
 
-SourceFile* SourceFileTable::GetSourceFile(const std::string& sourceFileName)
+SourceFile* SourceFileTableImpl::GetSourceFile(const std::string& sourceFileName)
 {
     return GetSourceFile(GetSourceFilePath(sourceFileName));
 }
 
-void SourceFileTable::MapSourceFileLine(Constant sourceFilePath, uint32_t sourceLine, Function* function)
+void SourceFileTableImpl::MapSourceFileLine(Constant sourceFilePath, uint32_t sourceLine, Function* function)
 {
     LineFunctionTable& lineFunctionTable = sourceFileLineFunctionMap[sourceFilePath];
     lineFunctionTable.MapSourceLineToFunction(sourceLine, function);
 }
 
-int SourceFileTable::SetBreakPoint(Constant sourceFilePath, uint32_t sourceLine)
+int SourceFileTableImpl::SetBreakPoint(Constant sourceFilePath, uint32_t sourceLine)
 {
     const LineFunctionTable& lineFunctionTable = sourceFileLineFunctionMap[sourceFilePath];
     Function* function = lineFunctionTable.GetFunction(sourceLine);
@@ -759,13 +1318,13 @@ int SourceFileTable::SetBreakPoint(Constant sourceFilePath, uint32_t sourceLine)
     return bp;
 }
 
-int SourceFileTable::SetBreakPoint(const std::string& sourceFileName, uint32_t sourceLine)
+int SourceFileTableImpl::SetBreakPoint(const std::string& sourceFileName, uint32_t sourceLine)
 {
     Constant sourceFilePath = GetSourceFilePath(sourceFileName);
     return SetBreakPoint(sourceFilePath, sourceLine);
 }
 
-void SourceFileTable::RemoveBreakPoint(int bp)
+void SourceFileTableImpl::RemoveBreakPoint(int bp)
 {
     auto it = breakPoints.find(bp);
     if (it != breakPoints.cend())
@@ -780,7 +1339,7 @@ void SourceFileTable::RemoveBreakPoint(int bp)
     }
 }
 
-const BreakPoint* SourceFileTable::GetBreakPoint(int bp) const
+const BreakPoint* SourceFileTableImpl::GetBreakPoint(int bp) const
 {
     auto it = breakPoints.find(bp);
     if (it != breakPoints.cend())
@@ -791,6 +1350,61 @@ const BreakPoint* SourceFileTable::GetBreakPoint(int bp) const
     {
         throw std::runtime_error("breakpoint number " + std::to_string(bp) + " not found");
     }
+}
+
+MACHINE_API bool SourceFileTable::Initialized()
+{
+    return SourceFileTableImpl::Initialized();
+}
+
+MACHINE_API void SourceFileTable::Init()
+{
+    SourceFileTableImpl::Init();
+}
+
+MACHINE_API void SourceFileTable::Done()
+{
+    SourceFileTableImpl::Done();
+}
+
+MACHINE_API Constant SourceFileTable::GetSourceFilePath(const std::string& sourceFileName)
+{
+    return SourceFileTableImpl::Instance()->GetSourceFilePath(sourceFileName);
+}
+
+MACHINE_API SourceFile* SourceFileTable::GetSourceFile(Constant sourceFilePath)
+{
+    return SourceFileTableImpl::Instance()->GetSourceFile(sourceFilePath);
+}
+
+MACHINE_API SourceFile* SourceFileTable::GetSourceFile(const std::string& sourceFileName)
+{
+    return SourceFileTableImpl::Instance()->GetSourceFile(sourceFileName);
+}
+
+MACHINE_API void SourceFileTable::MapSourceFileLine(Constant sourceFilePath, uint32_t sourceLine, Function* function)
+{
+    SourceFileTableImpl::Instance()->MapSourceFileLine(sourceFilePath, sourceLine, function);
+}
+
+MACHINE_API int SourceFileTable::SetBreakPoint(Constant sourceFilePath, uint32_t sourceLine)
+{
+    return SourceFileTableImpl::Instance()->SetBreakPoint(sourceFilePath, sourceLine);
+}
+
+MACHINE_API int SourceFileTable::SetBreakPoint(const std::string& sourceFileName, uint32_t sourceLine)
+{
+    return SourceFileTableImpl::Instance()->SetBreakPoint(sourceFileName, sourceLine);
+}
+
+MACHINE_API void SourceFileTable::RemoveBreakPoint(int bp)
+{
+    return SourceFileTableImpl::Instance()->RemoveBreakPoint(bp);
+}
+
+MACHINE_API const BreakPoint* SourceFileTable::GetBreakPoint(int bp)
+{
+    return SourceFileTableImpl::Instance()->GetBreakPoint(bp);
 }
 
 } } // namespace cminor::machine

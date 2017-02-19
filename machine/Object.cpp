@@ -6,9 +6,10 @@
 #include <cminor/machine/Object.hpp>
 #include <cminor/machine/Type.hpp>
 #include <cminor/machine/Machine.hpp>
-#include <cminor/machine/String.hpp>
+#include <cminor/util/String.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <cminor/machine/Class.hpp>
-#include <cminor/machine/Random.hpp>
+#include <cminor/util/Random.hpp>
 #include <cminor/machine/Log.hpp>
 #include <iostream>
 
@@ -18,6 +19,7 @@ std::string ValueTypeStr(ValueType type)
 {
     switch (type)
     {
+        case ValueType::none: return "System.Void";
         case ValueType::boolType: return "System.Boolean";
         case ValueType::sbyteType: return "System.Int8";
         case ValueType::byteType: return "System.UInt8";
@@ -34,6 +36,10 @@ std::string ValueTypeStr(ValueType type)
         case ValueType::stringLiteral: return "string literal";
         case ValueType::allocationHandle: return "allocation handle";
         case ValueType::objectReference: return "object reference";
+        case ValueType::functionPtr: return "function pointer";
+        case ValueType::classDataPtr: return "class data pointer";
+        case ValueType::typePtr: return "type pointer";
+        case ValueType::variableReference: return "variable reference";
     }
     return "no type";
 }
@@ -86,6 +92,41 @@ void IntegralValue::Read(Reader& reader)
         case ValueType::objectReference: value = reader.GetULong(); if (value != 0) throw SystemException("read nonull object reference"); break;
         default: throw SystemException("invalid integral value type to read");
     }
+}
+
+void IntegralValue::Dump(CodeFormatter& formatter)
+{
+    formatter.WriteLine("type: " + ValueTypeStr(type) + ", value: " + ValueStr());
+}
+
+std::string IntegralValue::ValueStr()
+{
+    switch (type)
+    {
+        case ValueType::boolType: if (AsBool()) return "true";  else return "false";
+        case ValueType::sbyteType: return std::to_string(AsSByte());
+        case ValueType::byteType: return std::to_string(AsByte());
+        case ValueType::shortType: return std::to_string(AsShort());
+        case ValueType::ushortType: return std::to_string(AsUShort());
+        case ValueType::intType: return std::to_string(AsInt());
+        case ValueType::uintType: return std::to_string(AsUInt());
+        case ValueType::longType: return std::to_string(AsLong());
+        case ValueType::ulongType: return std::to_string(AsULong());
+    #pragma warning(disable : 4244)
+        case ValueType::floatType: return std::to_string(AsFloat());
+        case ValueType::doubleType: return std::to_string(AsDouble());
+    #pragma warning(default : 4244)
+        case ValueType::charType: return "'" + UCharStr(AsChar()) + "'";
+        case ValueType::memPtr: return ToHexString(AsULong());
+        case ValueType::stringLiteral: return "\"" + StringStr(ToUtf8(AsStringLiteral())) + "\"";
+        case ValueType::allocationHandle: return std::to_string(AsULong());
+        case ValueType::objectReference: return std::to_string(AsULong());
+        case ValueType::functionPtr: return ToUtf8(AsFunctionPtr()->CallName().Value().AsStringLiteral());
+        case ValueType::classDataPtr: return ToUtf8(AsClassDataPtr()->Type()->Name().Value());
+        case ValueType::typePtr: return ToUtf8(AsTypePtr()->Name().Value());
+        case ValueType::variableReference: return std::to_string(AsULong());
+    }
+    return "";
 }
 
 uint64_t ValueSize(ValueType type)
@@ -601,10 +642,8 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
 
 ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_string& s)
 {
-    Type* type = TypeTable::Instance().GetType(StringPtr(U"System.String"));
-    ObjectType* stringType = dynamic_cast<ObjectType*>(type);
-    Assert(stringType, "object type expected");
-    ObjectReference str = CreateObject(thread, stringType);
+    ClassData* classData = ClassDataTable::GetSystemStringClassData();
+    ObjectReference str = CreateObject(thread, classData->Type());
     int32_t numChars = int32_t(s.length());
     AllocationHandle handle(nextReferenceValue++);
     uint64_t stringSize = numChars * ValueSize(ValueType::charType);
@@ -637,7 +676,7 @@ ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_stri
         CheckSize(thread, lock, handle);
     }
     Object& strObject = GetObject(str);
-    ClassData* classDataPtr = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String"));
+    ClassData* classDataPtr = ClassDataTable::GetSystemStringClassData();
     strObject.SetField(IntegralValue(classDataPtr), 0);
     strObject.SetField(IntegralValue(numChars, ValueType::intType), 1);
     strObject.SetField(handle, 2);
@@ -718,7 +757,7 @@ std::vector<uint8_t> ManagedMemoryPool::GetBytes(ObjectReference arr)
         ManagedAllocation* allocation = it->second.get();
         ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
         Assert(elements, "array elements expected");
-        Assert(elements->GetElementType() == TypeTable::Instance().GetType(StringPtr(U"System.UInt8")), "byte array expected");
+        Assert(elements->GetElementType() == TypeTable::GetType(StringPtr(U"System.UInt8")), "byte array expected");
         int32_t n = elements->NumElements();
         for (int32_t i = 0; i < n; ++i)
         {
@@ -749,7 +788,7 @@ void ManagedMemoryPool::SetBytes(ObjectReference arr, const std::vector<uint8_t>
         ManagedAllocation* allocation = it->second.get();
         ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
         Assert(elements, "array elements expected");
-        Assert(elements->GetElementType() == TypeTable::Instance().GetType(StringPtr(U"System.UInt8")), "byte array expected");
+        Assert(elements->GetElementType() == TypeTable::GetType(StringPtr(U"System.UInt8")), "byte array expected");
         for (int32_t i = 0; i < count; ++i)
         {
             elements->SetElement(IntegralValue(bytes[i], ValueType::byteType), i);
@@ -877,11 +916,11 @@ ObjectReference ManagedMemoryPool::CreateStringArray(Thread& thread, const std::
 {
     ObjectReference arrayReference = CreateObject(thread, argsArrayObjectType);
     Object& object = GetObject(arrayReference);
-    ClassData* classData = ClassDataTable::Instance().GetClassData(StringPtr(U"System.String[]"));
+    ClassData* classData = ClassDataTable::GetSystemStringClassData();
     object.SetField(IntegralValue(classData), 0);
     int32_t length = int32_t(programArguments.size());
     object.SetField(IntegralValue(length, ValueType::intType), 1);
-    AllocateArrayElements(thread, arrayReference, TypeTable::Instance().GetType(U"System.String"), length);
+    AllocateArrayElements(thread, arrayReference, classData->Type(), length);
     for (int32_t i = 0; i < length; ++i)
     {
         const utf32_string& arg = programArguments[i];

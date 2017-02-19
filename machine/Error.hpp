@@ -5,46 +5,40 @@
 
 #ifndef CMINOR_MACHINE_ERROR_INCLUDED
 #define CMINOR_MACHINE_ERROR_INCLUDED
-#include <cminor/machine/Unicode.hpp>
+#include <cminor/machine/MachineApi.hpp>
+#include <cminor/util/Error.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cminor/pl/Scanner.hpp>
-#include <stdexcept>
 
 namespace cminor { namespace machine {
 
 using cminor::parsing::Span;
 
-#ifdef NDEBUG
+MACHINE_API std::string Expand(const std::string& errorMessage, const Span& span);
+MACHINE_API std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan);
+MACHINE_API std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan, const std::string& title);
+MACHINE_API std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references);
+MACHINE_API std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references, const std::string& title);
 
-#define Assert(expression, message) ((void)0)
-
-#else
-
-#define Assert(expression, message) if (!(expression)) throw std::runtime_error(std::string("assertion failed: ") + message)
-
-#endif
-
-std::string Expand(const std::string& errorMessage, const Span& span);
-std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan);
-std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan, const std::string& title);
-std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references);
-std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references, const std::string& title);
-
-class Exception : public std::runtime_error
+class MACHINE_API Exception
 {
 public:
     Exception(const std::string& message_, const Span& defined_);
     Exception(const std::string& message_, const Span& defined_, const Span& referenced_);
     Exception(const std::string& message_, const Span& defined_, const std::vector<Span>& references_);
+    virtual ~Exception();
+    const std::string& What() const { return what; }
     const std::string& Message() const { return message; }
     const Span& Defined() const { return defined; }
     const std::vector<Span>& References() const { return references; }
 private:
+    std::string what;
     std::string message;
     Span defined;
     std::vector<Span> references;
 };
 
-class CastOverloadException : public Exception
+class MACHINE_API CastOverloadException : public Exception
 {
 public:
     CastOverloadException(const std::string& message_, const Span& defined_);
@@ -52,7 +46,7 @@ public:
     CastOverloadException(const std::string& message_, const Span& defined_, const std::vector<Span>& references_);
 };
 
-class RefOverloadException : public Exception
+class MACHINE_API RefOverloadException : public Exception
 {
 public:
     RefOverloadException(const std::string& message_, const Span& defined_);
@@ -60,7 +54,7 @@ public:
     RefOverloadException(const std::string& message_, const Span& defined_, const std::vector<Span>& references_);
 };
 
-class CastException : public Exception
+class MACHINE_API CastException : public Exception
 {
 public:
     CastException(const std::string& message_, const Span& defined_);
@@ -68,52 +62,62 @@ public:
     CastException(const std::string& message_, const Span& defined_, const std::vector<Span>& references_);
 };
 
-class MachineException : public std::runtime_error
+class MACHINE_API MachineException 
 {
 public:
     MachineException(const std::string& message_);
+    virtual ~MachineException();
+    const std::string& Message() const { return message; }
+private:
+    std::string message;
 };
 
-class SystemException : public MachineException
+class MACHINE_API SystemException : public MachineException
 {
 public:
     SystemException(const std::string& message_);
 };
 
-class NullReferenceException : public SystemException
+class MACHINE_API NullReferenceException : public SystemException
 {
 public:
     NullReferenceException(const std::string& message_);
 };
 
-class IndexOutOfRangeException : public SystemException
+class MACHINE_API IndexOutOfRangeException : public SystemException
 {
 public:
     IndexOutOfRangeException(const std::string& message_);
 };
 
-class ArgumentException : public SystemException
+class MACHINE_API ArgumentException : public SystemException
 {
 public:
     ArgumentException(const std::string& message_);
 };
 
-class ArgumentOutOfRangeException : public ArgumentException
+class MACHINE_API ArgumentOutOfRangeException : public ArgumentException
 {
 public:
     ArgumentOutOfRangeException(const std::string& message_);
 };
 
-class InvalidCastException : public SystemException
+class MACHINE_API InvalidCastException : public SystemException
 {
 public:
     InvalidCastException(const std::string& message_);
 };
 
-class FileSystemError : public SystemException
+class MACHINE_API FileSystemError : public SystemException
 {
 public:
     FileSystemError(const std::string& errorMessage);
+};
+
+class MACHINE_API StackOverflowException : public SystemException
+{
+public:
+    StackOverflowException();
 };
 
 } } // namespace cminor::machine

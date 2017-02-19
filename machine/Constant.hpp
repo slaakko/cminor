@@ -5,12 +5,15 @@
 
 #ifndef CMINOR_MACHINE_CONSTANT_INCLUDED
 #define CMINOR_MACHINE_CONSTANT_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Object.hpp>
-#include <cminor/machine/String.hpp>
+#include <cminor/util/String.hpp>
+#include <cminor/util/Unicode.hpp>
+#include <cminor/util/CodeFormatter.hpp>
 
 namespace cminor { namespace machine {
 
-class ConstantId
+class MACHINE_API ConstantId
 {
 public:
     constexpr ConstantId() : value(-1) {}
@@ -34,7 +37,7 @@ inline bool operator!=(ConstantId left, ConstantId right)
     return !(left == right);
 }
 
-class Constant
+class MACHINE_API Constant
 {
 public:
     Constant() : value() {}
@@ -43,6 +46,7 @@ public:
     void SetValue(IntegralValue value_) { value = value_; }
     void Write(Writer& writer);
     void Read(Reader& reader);
+    void Dump(CodeFormatter& formatter);
 private:
     IntegralValue value;
 };
@@ -60,29 +64,25 @@ struct ConstantHash
     }
 };
 
-typedef std::basic_string<char32_t> utf32_string;
+class ConstantPoolImpl;
 
-class ConstantPool
+class MACHINE_API ConstantPool
 {
 public:
     ConstantPool();
+    ~ConstantPool();
     ConstantId Install(Constant constant);
     ConstantId Install(StringPtr s);
     ConstantId GetIdFor(Constant constant);
     ConstantId GetIdFor(const utf32_string& s);
-    Constant GetConstant(ConstantId id) const { Assert(id.Value() < constants.size(), "invalid constant id " + std::to_string(id.Value())); return constants[ConstantIndex(id)]; }
-    Constant GetEmptyStringConstant() const { return GetConstant(emptyStringConstantId); }
-    ConstantId GetEmptyStringConstantId() const { return emptyStringConstantId; }
+    Constant GetConstant(ConstantId id) const;
+    Constant GetEmptyStringConstant() const;
+    ConstantId GetEmptyStringConstantId() const;
     void Write(Writer& writer);
     void Read(Reader& reader);
+    void Dump(CodeFormatter& formatter);
 private:
-    ConstantId emptyStringConstantId;
-    std::vector<Constant> constants;
-    std::unordered_map<Constant, ConstantId, ConstantHash> constantIdMap;
-    std::list<utf32_string> strings;
-    std::unordered_map<StringPtr, ConstantId, StringPtrHash> stringIdMap;
-    ConstantId NextFreeConstantId() { return int32_t(constants.size()); }
-    int32_t ConstantIndex(ConstantId id) const { return id.Value(); }
+    ConstantPoolImpl* impl;
 };
 
 } } // namespace cminor::machine

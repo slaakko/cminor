@@ -10,12 +10,12 @@
 #include <cminor/pl/XmlLog.hpp>
 #include <cminor/cpg/cpgcpp/Expression.hpp>
 #include <cminor/cpg/cpgcpp/Declaration.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <cminor/pom/Type.hpp>
 
 namespace cpg { namespace cpp {
 
-using cminor::machine::Trim;
+using cminor::util::Trim;
 using namespace cminor::pom;
 using namespace cminor::parsing;
 

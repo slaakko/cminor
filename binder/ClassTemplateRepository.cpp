@@ -9,7 +9,7 @@
 #include <cminor/binder/StatementBinderVisitor.hpp>
 #include <cminor/binder/ConstantPoolInstallerVisitor.hpp>
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
-#include <cminor/machine/Util.hpp>
+#include <cminor/util/Util.hpp>
 
 namespace cminor { namespace binder {
 

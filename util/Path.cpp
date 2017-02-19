@@ -3,8 +3,8 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/machine/Path.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/Path.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -17,7 +17,7 @@
     #include <unistd.h>
 #endif
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 std::string GetCurrentWorkingDirectory()
 {

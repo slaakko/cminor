@@ -4,15 +4,17 @@
 // =================================
 
 #include <cminor/machine/Machine.hpp>
-#include <cminor/machine/String.hpp>
+#include <cminor/util/String.hpp>
 #include <cminor/machine/Function.hpp>
+#include <cminor/machine/OsInterface.hpp>
 #include <functional>
 #include <iostream>
 #include <stdexcept>
 
 namespace cminor { namespace machine {
 
-Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this), garbageCollector(*this), exiting(), exited(), nextFrameId(0), nextSegmentId(0), threadAllocating(false)
+Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this), garbageCollector(*this), exiting(), exited(), nextFrameId(0), nextSegmentId(0), threadAllocating(false),
+    startThreadHandle(0)
 {
     SetMachine(this);
     SetManagedMemoryPool(&managedMemoryPool);
@@ -290,21 +292,20 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     rootInst.SetInst(0xCE, new CreateObjectInst());
     rootInst.SetInst(0xCF, new CopyObjectInst());
     rootInst.SetInst(0xD0, new SetClassDataInst());
-    rootInst.SetInst(0xD1, new UpCastInst());
-    rootInst.SetInst(0xD2, new DownCastInst());
-    rootInst.SetInst(0xD3, new BeginTryInst());
-    rootInst.SetInst(0xD4, new EndTryInst());
-    rootInst.SetInst(0xD5, new ThrowInst());
-    rootInst.SetInst(0xD6, new RethrowInst());
-    rootInst.SetInst(0xD7, new EndCatchInst());
-    rootInst.SetInst(0xD8, new EndFinallyInst());
-    rootInst.SetInst(0xD9, new NextInst());
-    rootInst.SetInst(0xDA, new StaticInitInst());
-    rootInst.SetInst(0xDB, new DoneStaticInitInst());
-    rootInst.SetInst(0xDC, new LoadStaticFieldInst());
-    rootInst.SetInst(0xDD, new StoreStaticFieldInst());
-    rootInst.SetInst(0xDE, new IsInst());
-    rootInst.SetInst(0xDF, new AsInst());
+    rootInst.SetInst(0xD1, new DownCastInst());
+    rootInst.SetInst(0xD2, new BeginTryInst());
+    rootInst.SetInst(0xD3, new EndTryInst());
+    rootInst.SetInst(0xD4, new ThrowInst());
+    rootInst.SetInst(0xD5, new RethrowInst());
+    rootInst.SetInst(0xD6, new EndCatchInst());
+    rootInst.SetInst(0xD7, new EndFinallyInst());
+    rootInst.SetInst(0xD8, new NextInst());
+    rootInst.SetInst(0xD9, new StaticInitInst());
+    rootInst.SetInst(0xDA, new DoneStaticInitInst());
+    rootInst.SetInst(0xDB, new LoadStaticFieldInst());
+    rootInst.SetInst(0xDC, new StoreStaticFieldInst());
+    rootInst.SetInst(0xDD, new IsInst());
+    rootInst.SetInst(0xDE, new AsInst());
 
     // strings:
     // --------
@@ -336,6 +337,10 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     // -------
 
     rootInst.SetInst(0xF0, new VmCallInst());
+
+    // gc:
+    // ---
+    rootInst.SetInst(0xF1, new GcPointInst());
 
     //  conversion group instruction:
     //  -----------------------------
@@ -536,41 +541,68 @@ Machine::~Machine()
     try
     {
         Exit();
+        if (startThreadHandle != 0)
+        {
+            CloseThreadHandle(startThreadHandle);
+        }
     }
     catch (...)
     {
     }
 }
 
-void Machine::Start(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
+void Machine::Start(bool startWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
 {
     threads.clear();
-    Function* mainFun = FunctionTable::Instance().GetMain();
+    Function* mainFun = FunctionTable::GetMain();
     if (!mainFun)
     {
-        throw std::runtime_error("no main function set");
+        throw std::runtime_error("machine.start: no main function set");
     }
-    RunGarbageCollector();
     threads.push_back(std::unique_ptr<Thread>(new Thread(0, *this, *mainFun)));
-    if (argsArrayObjectType)
+    if (startWithArgs)
     {
+        if (!argsArrayObjectType)
+        {
+            throw std::runtime_error("machine.start: args array object type not set");
+        }
+        if (mainFun->NumParameters() != 1)
+        {
+            throw std::runtime_error("machine.start: program main function does not take arguments");
+        }
         Thread& mainThread = MainThread();
         Frame* frame = mainThread.GetStack().CurrentFrame();
         ObjectReference args = managedMemoryPool.CreateStringArray(mainThread, programArguments, argsArrayObjectType);
         frame->OpStack().Push(args);
     }
+    else
+    {
+        if (mainFun->NumParameters() != 0)
+        {
+            throw std::runtime_error("machine.start: program main function takes arguments but machine started without arguments");
+        }
+    }
+    uint64_t currentThreadHandle = GetCurrentThreadHandle();
+    MainThread().SetThreadHandle(currentThreadHandle);
+    SetCurrentThread(&MainThread());
+    RunGarbageCollector();
+    startThreadHandle = currentThreadHandle;
 }
 
-void Machine::Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
+void Machine::Run(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
 {
-    Function* mainFun = FunctionTable::Instance().GetMain();
+    Function* mainFun = FunctionTable::GetMain();
     if (!mainFun)
     {
-        throw std::runtime_error("no main function set");
+        throw std::runtime_error("machine.run: no main function set");
     }
-    RunGarbageCollector();
     threads.push_back(std::unique_ptr<Thread>(new Thread(0, *this, *mainFun)));
-    MainThread().Run(programArguments, argsArrayObjectType);
+    uint64_t currentThreadHandle = GetCurrentThreadHandle();
+    MainThread().SetThreadHandle(currentThreadHandle);
+    SetCurrentThread(&MainThread());
+    RunGarbageCollector();
+    startThreadHandle = currentThreadHandle;
+    MainThread().Run(runWithArgs, programArguments, argsArrayObjectType);
 }
 
 void Machine::AddInst(Instruction* inst)
@@ -634,6 +666,11 @@ void DoRunGarbageCollector(GarbageCollector* garbageCollector)
     try
     {
         garbageCollector->Run();
+    }
+    catch (const Exception& ex)
+    {
+        std::cerr << "exception from garbage collector: " << ex.What() << std::endl;
+        garbageCollector->SetException(std::current_exception());
     }
     catch (const std::exception& ex)
     {

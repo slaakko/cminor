@@ -5,10 +5,14 @@
 
 #ifndef CMINOR_MACHINE_WRITER_INCLUDED
 #define CMINOR_MACHINE_WRITER_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Error.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <stdint.h>
 
 namespace cminor { namespace machine {
+
+using namespace cminor::util;
 
 class ConstantPool;
 
@@ -30,9 +34,7 @@ private:
     FILE* fp;
 };
 
-typedef std::basic_string<char32_t> utf32_string;
-
-class Writer
+class MACHINE_API Writer
 {
 public:
     Writer(const std::string& fileName_);

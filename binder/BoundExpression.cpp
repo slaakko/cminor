@@ -271,6 +271,7 @@ void BoundMemberVariable::GenLoad(Machine& machine, Function& function)
             loadFieldInst = std::move(machine.CreateInst("loadstaticfield"));
             loadFieldInst->SetIndex(index);
             LoadStaticFieldInst* loadStaticField = dynamic_cast<LoadStaticFieldInst*>(loadFieldInst.get());
+            loadStaticField->SetFieldType(GetType()->GetValueType());
             loadStaticField->SetTypeName(fullClassNameConstant);
         }
         else
@@ -278,32 +279,36 @@ void BoundMemberVariable::GenLoad(Machine& machine, Function& function)
             classObject->GenLoad(machine, function);
             switch (index)
             {
-                case 0:  loadFieldInst = std::move(machine.CreateInst("loadfield.0")); break;
-                case 1:  loadFieldInst = std::move(machine.CreateInst("loadfield.1")); break;
-                case 2:  loadFieldInst = std::move(machine.CreateInst("loadfield.2")); break;
-                case 3:  loadFieldInst = std::move(machine.CreateInst("loadfield.3")); break;
+                case 0:  loadFieldInst = std::move(machine.CreateInst("loadfield.0")); static_cast<LoadField0Inst*>(loadFieldInst.get())->SetFieldType(GetType()->GetValueType());  break;
+                case 1:  loadFieldInst = std::move(machine.CreateInst("loadfield.1")); static_cast<LoadField1Inst*>(loadFieldInst.get())->SetFieldType(GetType()->GetValueType());   break;
+                case 2:  loadFieldInst = std::move(machine.CreateInst("loadfield.2")); static_cast<LoadField2Inst*>(loadFieldInst.get())->SetFieldType(GetType()->GetValueType());  break;
+                case 3:  loadFieldInst = std::move(machine.CreateInst("loadfield.3")); static_cast<LoadField3Inst*>(loadFieldInst.get())->SetFieldType(GetType()->GetValueType());  break;
                 default:
                 {
                     if (index < 256)
                     {
                         loadFieldInst = std::move(machine.CreateInst("loadfield.b"));
                         loadFieldInst->SetIndex(static_cast<uint8_t>(index));
+                        static_cast<LoadFieldBInst*>(loadFieldInst.get())->SetFieldType(GetType()->GetValueType());
                     }
                     else if (index < 65536)
                     {
                         loadFieldInst = std::move(machine.CreateInst("loadfield.s"));
                         loadFieldInst->SetIndex(static_cast<uint16_t>(index));
+                        static_cast<LoadFieldSInst*>(loadFieldInst.get())->SetFieldType(GetType()->GetValueType());
                     }
                     else
                     {
                         loadFieldInst = std::move(machine.CreateInst("loadfield"));
                         loadFieldInst->SetIndex(index);
+                        static_cast<LoadFieldInst*>(loadFieldInst.get())->SetFieldType(GetType()->GetValueType());
                     }
                     break;
                 }
             }
         }
         function.AddInst(std::move(loadFieldInst));
+        function.SetCanThrow();
     }
     else
     {
@@ -314,7 +319,7 @@ void BoundMemberVariable::GenLoad(Machine& machine, Function& function)
 void BoundMemberVariable::GenStore(Machine& machine, Function& function)
 {
     int32_t index = memberVariableSymbol->Index();
-    std::unique_ptr<Instruction> storeFieldlInst;
+    std::unique_ptr<Instruction> storeFieldInst;
     if (index != -1)
     {
         if (memberVariableSymbol->IsStatic())
@@ -332,9 +337,10 @@ void BoundMemberVariable::GenStore(Machine& machine, Function& function)
                 staticInitInst->SetTypeName(fullClassNameConstant);
                 function.AddInst(std::move(inst));
             }
-            storeFieldlInst = std::move(machine.CreateInst("storestaticfield"));
-            storeFieldlInst->SetIndex(index);
-            StoreStaticFieldInst* storeStaticField = dynamic_cast<StoreStaticFieldInst*>(storeFieldlInst.get());
+            storeFieldInst = std::move(machine.CreateInst("storestaticfield"));
+            storeFieldInst->SetIndex(index);
+            StoreStaticFieldInst* storeStaticField = dynamic_cast<StoreStaticFieldInst*>(storeFieldInst.get());
+            storeStaticField->SetFieldType(GetType()->GetValueType());
             storeStaticField->SetTypeName(fullClassNameConstant);
         }
         else
@@ -342,32 +348,36 @@ void BoundMemberVariable::GenStore(Machine& machine, Function& function)
             classObject->GenLoad(machine, function);
             switch (index)
             {
-                case 0:  storeFieldlInst = std::move(machine.CreateInst("storefield.0")); break;
-                case 1:  storeFieldlInst = std::move(machine.CreateInst("storefield.1")); break;
-                case 2:  storeFieldlInst = std::move(machine.CreateInst("storefield.2")); break;
-                case 3:  storeFieldlInst = std::move(machine.CreateInst("storefield.3")); break;
+                case 0:  storeFieldInst = std::move(machine.CreateInst("storefield.0")); static_cast<StoreField0Inst*>(storeFieldInst.get())->SetFieldType(GetType()->GetValueType()); break;
+                case 1:  storeFieldInst = std::move(machine.CreateInst("storefield.1")); static_cast<StoreField1Inst*>(storeFieldInst.get())->SetFieldType(GetType()->GetValueType()); break;
+                case 2:  storeFieldInst = std::move(machine.CreateInst("storefield.2")); static_cast<StoreField2Inst*>(storeFieldInst.get())->SetFieldType(GetType()->GetValueType()); break;
+                case 3:  storeFieldInst = std::move(machine.CreateInst("storefield.3")); static_cast<StoreField3Inst*>(storeFieldInst.get())->SetFieldType(GetType()->GetValueType()); break;
                 default:
                 {
                     if (index < 256)
                     {
-                        storeFieldlInst = std::move(machine.CreateInst("storefield.b"));
-                        storeFieldlInst->SetIndex(static_cast<uint8_t>(index));
+                        storeFieldInst = std::move(machine.CreateInst("storefield.b"));
+                        storeFieldInst->SetIndex(static_cast<uint8_t>(index));
+                        static_cast<StoreFieldBInst*>(storeFieldInst.get())->SetFieldType(GetType()->GetValueType());
                     }
                     else if (index < 65536)
                     {
-                        storeFieldlInst = std::move(machine.CreateInst("storefield.s"));
-                        storeFieldlInst->SetIndex(static_cast<uint16_t>(index));
+                        storeFieldInst = std::move(machine.CreateInst("storefield.s"));
+                        storeFieldInst->SetIndex(static_cast<uint16_t>(index));
+                        static_cast<StoreFieldSInst*>(storeFieldInst.get())->SetFieldType(GetType()->GetValueType());
                     }
                     else
                     {
-                        storeFieldlInst = std::move(machine.CreateInst("storefield"));
-                        storeFieldlInst->SetIndex(index);
+                        storeFieldInst = std::move(machine.CreateInst("storefield"));
+                        storeFieldInst->SetIndex(index);
+                        static_cast<StoreFieldInst*>(storeFieldInst.get())->SetFieldType(GetType()->GetValueType());
                     }
                     break;
                 }
             }
         }
-        function.AddInst(std::move(storeFieldlInst));
+        function.AddInst(std::move(storeFieldInst));
+        function.SetCanThrow();
     }
     else
     {
@@ -409,6 +419,7 @@ void BoundProperty::GenLoad(Machine& machine, Function& function)
             StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
             staticInitInst->SetTypeName(fullClassNameConstant);
             function.AddInst(std::move(inst));
+            function.SetCanThrow();
         }
     }
     std::vector<GenObject*> emptyObjects;
@@ -436,6 +447,7 @@ void BoundProperty::GenStore(Machine& machine, Function& function)
             StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
             staticInitInst->SetTypeName(fullClassNameConstant);
             function.AddInst(std::move(inst));
+            function.SetCanThrow();
         }
     }
     else
@@ -478,6 +490,7 @@ void BoundIndexer::GenLoad(Machine& machine, Function& function)
             StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
             staticInitInst->SetTypeName(fullClassNameConstant);
             function.AddInst(std::move(inst));
+            function.SetCanThrow();
         }
     }
     index->GenLoad(machine, function);
@@ -506,6 +519,7 @@ void BoundIndexer::GenStore(Machine& machine, Function& function)
             StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
             staticInitInst->SetTypeName(fullClassNameConstant);
             function.AddInst(std::move(inst));
+            function.SetCanThrow();
         }
     }
     index->GenLoad(machine, function);
@@ -538,6 +552,9 @@ void BoundParameter::GenLoad(Machine& machine, Function& function)
         {
             loadLocalInst = std::move(machine.CreateInst("loadref"));
             loadLocalInst->SetIndex(index);
+            LoadVariableReferenceInst* loadRefInst = static_cast<LoadVariableReferenceInst*>(loadLocalInst.get());
+            RefTypeSymbol* refType = static_cast<RefTypeSymbol*>(parameterSymbol->GetType());
+            loadRefInst->SetType(refType->GetBaseType()->GetValueType());
         }
         else
         {
@@ -586,6 +603,9 @@ void BoundParameter::GenStore(Machine& machine, Function& function)
         {
             storeLocalInst = std::move(machine.CreateInst("storeref"));
             storeLocalInst->SetIndex(index);
+            StoreVariableReferenceInst* storeRefInst = static_cast<StoreVariableReferenceInst*>(storeLocalInst.get());
+            RefTypeSymbol* refType = static_cast<RefTypeSymbol*>(parameterSymbol->GetType());
+            storeRefInst->SetType(refType->GetBaseType()->GetValueType());
         }
         else
         {
@@ -639,7 +659,10 @@ void BoundArrayElement::GenLoad(Machine& machine, Function& function)
     arr->GenLoad(machine, function);
     index->GenLoad(machine, function);
     std::unique_ptr<Instruction> loadElemInst = machine.CreateInst("loadarrayelem");
+    LoadElemInst* inst = static_cast<LoadElemInst*>(loadElemInst.get());
+    inst->SetElemType(GetType()->GetValueType());
     function.AddInst(std::move(loadElemInst));
+    function.SetCanThrow();
 }
 
 void BoundArrayElement::GenStore(Machine& machine, Function& function)
@@ -647,7 +670,10 @@ void BoundArrayElement::GenStore(Machine& machine, Function& function)
     arr->GenLoad(machine, function);
     index->GenLoad(machine, function);
     std::unique_ptr<Instruction> storeElemInst = machine.CreateInst("storearrayelem");
+    StoreElemInst* inst = static_cast<StoreElemInst*>(storeElemInst.get());
+    inst->SetElemType(GetType()->GetValueType());
     function.AddInst(std::move(storeElemInst));
+    function.SetCanThrow();
 }
 
 void BoundArrayElement::Accept(BoundNodeVisitor& visitor)
@@ -666,6 +692,7 @@ void BoundStringChar::GenLoad(Machine& machine, Function& function)
     index->GenLoad(machine, function);
     std::unique_ptr<Instruction> loadStringCharInst = machine.CreateInst("loadstringchar");
     function.AddInst(std::move(loadStringCharInst));
+    function.SetCanThrow();
 }
 
 void BoundStringChar::GenStore(Machine& machine, Function& function)
@@ -884,9 +911,19 @@ void BoundDelegateCall::GenLoad(Machine& machine, Function& function)
     InstIndexRequest startDelegateCall;
     function.GetEmitter()->AddIndexRequest(&startDelegateCall);
     std::unique_ptr<Instruction> inst = machine.CreateInst("calld");
+    DelegateCallInst* dlgCallInst = static_cast<DelegateCallInst*>(inst.get());
+    FunctionType functionType;
+    functionType.SetReturnType(delegateTypeSymbol->GetReturnType()->GetValueType());
+    for (ParameterSymbol* param : delegateTypeSymbol->Parameters())
+    {
+        TypeSymbol* paramType = param->GetType();
+        functionType.AddParamType(paramType->GetValueType());
+    }
+    dlgCallInst->SetFunctionType(functionType);
     function.AddInst(std::move(inst));
     function.GetEmitter()->BackpatchConDisSet(startDelegateCall.Index());
     function.MapPCToSourceLine(startDelegateCall.Index(), function.GetEmitter()->CurrentSourceLine());
+    function.SetCanThrow();
 }
 
 void BoundDelegateCall::GenStore(Machine& machine, Function& function)
@@ -915,9 +952,19 @@ void BoundClassDelegateCall::GenLoad(Machine& machine, Function& function)
     InstIndexRequest startClassDelegateCall;
     function.GetEmitter()->AddIndexRequest(&startClassDelegateCall);
     std::unique_ptr<Instruction> inst = machine.CreateInst("callcd");
+    ClassDelegateCallInst* classDlgCallInst = static_cast<ClassDelegateCallInst*>(inst.get());
+    FunctionType functionType;
+    functionType.SetReturnType(classDelegateTypeSymbol->GetReturnType()->GetValueType());
+    for (ParameterSymbol* param : classDelegateTypeSymbol->Parameters())
+    {
+        TypeSymbol* paramType = param->GetType();
+        functionType.AddParamType(paramType->GetValueType());
+    }
+    classDlgCallInst->SetFunctionType(functionType);
     function.AddInst(std::move(inst));
     function.GetEmitter()->BackpatchConDisSet(startClassDelegateCall.Index());
     function.MapPCToSourceLine(startClassDelegateCall.Index(), function.GetEmitter()->CurrentSourceLine());
+    function.SetCanThrow();
 }
 
 void BoundClassDelegateCall::GenStore(Machine& machine, Function& function)
@@ -937,6 +984,7 @@ BoundNewExpression::BoundNewExpression(BoundFunctionCall* boundFunctionCall_, Ty
 
 void BoundNewExpression::GenLoad(Machine& machine, Function& function) 
 {
+    function.AddInst(machine.CreateInst("gcpoint"));
     std::unique_ptr<Instruction> createInst;
     createInst = machine.CreateInst("createo");
     ConstantPool& constantPool = GetAssembly().GetConstantPool();

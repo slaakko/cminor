@@ -12,8 +12,8 @@
 #include <cminor/pl/Rule.hpp>
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Namespace.hpp>
-#include <cminor/machine/CodeFormatter.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/CodeFormatter.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <unordered_map>
 #include <iostream>
 #include <fstream>
@@ -21,7 +21,7 @@
 namespace cpg { namespace syntax {
 
 using namespace cminor::parsing;
-using cminor::machine::CodeFormatter;
+using cminor::util::CodeFormatter;
 
 class LibraryFileGeneratorVisitor : public Visitor
 {

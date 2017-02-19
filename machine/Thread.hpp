@@ -5,6 +5,7 @@
 
 #ifndef CMINOR_MACHINE_THREAD_INCLUDED
 #define CMINOR_MACHINE_THREAD_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Stack.hpp>
 #include <cminor/machine/Object.hpp>
 #include <cminor/machine/OperandStack.hpp>
@@ -19,6 +20,12 @@ namespace cminor { namespace machine {
 class Machine;
 class Function;
 class ExceptionBlock;
+class Thread;
+
+extern MACHINE_API bool wantToCollectGarbage;
+
+Thread& GetCurrentThread();
+void SetCurrentThread(Thread* currentThread_);
 
 struct IntPairHash
 {
@@ -44,7 +51,7 @@ private:
     std::unordered_set<int32_t> breakpoints;
 };
 
-class Thread
+class MACHINE_API Thread
 {
 public:
     Thread(int32_t id_, Machine& machine_, Function& fun_);
@@ -54,11 +61,18 @@ public:
     Machine& GetMachine() { return machine; }
     OperandStack& OpStack() { return opStack; }
     void IncInstructionCount() { ++instructionCount;  }
-    void Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
+    void Run(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void Step();
     void Next();
     void RunDebug();
-    void CheckPause();
+    void CheckPause()
+    {
+        if (wantToCollectGarbage)
+        {
+            WaitUntilGarbageCollected();
+        }
+    }
+    void WaitUntilGarbageCollected();
     void WaitPaused();
     void WaitRunning();
     void SetState(ThreadState state_);
@@ -81,6 +95,8 @@ public:
     int AllocateDebugContext();
     DebugContext* GetDebugContext(int debugContextId);
     void FreeDebugContext();
+    uint64_t GetThreadHandle() const { return threadHandle; }
+    void SetThreadHandle(uint64_t threadHandle_) { threadHandle = threadHandle_; }
 private:
     Stack stack;
     int32_t id;
@@ -100,6 +116,7 @@ private:
     std::atomic<ThreadState> state;
     int32_t nextVariableReferenceId;
     std::vector<std::unique_ptr<DebugContext>> debugContexts;
+    uint64_t threadHandle;
     void RunToEnd();
     void FindExceptionBlock(Frame* frame);
     bool DispatchToHandlerOrFinally(Frame* frame);

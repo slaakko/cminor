@@ -80,7 +80,7 @@ namespace System.IO
                 FillBuf();
             }
             int bytesRead = 0;
-            int n = Min(bytesAvailable, buffer.Length);
+            int n = Math.Min(bytesAvailable, buffer.Length);
             for (int i = 0; i < n; ++i)
             {
                 buffer[i] = buf[pos];

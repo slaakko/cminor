@@ -3,10 +3,10 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/machine/CodeFormatter.hpp>
+#include <cminor/util/CodeFormatter.hpp>
 #include <string>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 void CodeFormatter::Write(const std::string& text)
 {
@@ -34,4 +34,4 @@ void CodeFormatter::NewLine()
     ++line;
 }
 
-} } // namespace cminor::machine
+} } // namespace cminor::util

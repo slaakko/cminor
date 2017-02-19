@@ -45,6 +45,7 @@ public:
     ParameterSymbol* GetThisParam() const override { return Parameters()[0]; }
     void SetOriginalSourceAssembly(Assembly* originalSourceAssembly_) { originalSourceAssembly = originalSourceAssembly_; }
     Assembly* GetOriginalSourceAssembly() const { return originalSourceAssembly; }
+    bool IsPropertyGetterOrSetter() const override { return true; }
 private:
     Assembly* originalSourceAssembly;
 };
@@ -58,6 +59,7 @@ public:
     ParameterSymbol* GetThisParam() const override { return Parameters()[0]; }
     void SetOriginalSourceAssembly(Assembly* originalSourceAssembly_) { originalSourceAssembly = originalSourceAssembly_; }
     Assembly* GetOriginalSourceAssembly() const { return originalSourceAssembly; }
+    bool IsPropertyGetterOrSetter() const override { return true; }
 private:
     Assembly* originalSourceAssembly;
 };

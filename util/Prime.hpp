@@ -3,18 +3,18 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_PRIME_INCLUDED
-#define CMINOR_MACHINE_PRIME_INCLUDED
+#ifndef CMINOR_UTIL_PRIME_INCLUDED
+#define CMINOR_UTIL_PRIME_INCLUDED
 #include <stdint.h>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 // Returns smallest prime greater than or equal to x
 
 uint64_t NextPrime(uint64_t x);
 
-} } // namespace cminor::machine
+} } // namespace cminor::util
 
-#endif // CMINOR_MACHINE_PRIME_INCLUDED
+#endif // CMINOR_UTIL_PRIME_INCLUDED
 
 

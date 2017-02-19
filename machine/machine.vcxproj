@@ -19,45 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Arena.hpp" />
-    <ClInclude Include="Class.hpp" />
-    <ClInclude Include="CodeFormatter.hpp" />
-    <ClInclude Include="Constant.hpp" />
-    <ClInclude Include="Error.hpp" />
-    <ClInclude Include="FileRegistry.hpp" />
-    <ClInclude Include="Frame.hpp" />
-    <ClInclude Include="Function.hpp" />
-    <ClInclude Include="GarbageCollector.hpp" />
-    <ClInclude Include="GenObject.hpp" />
-    <ClInclude Include="Handle.hpp" />
-    <ClInclude Include="Instruction.hpp" />
-    <ClInclude Include="LocalVariable.hpp" />
-    <ClInclude Include="Log.hpp" />
-    <ClInclude Include="Machine.hpp" />
-    <ClInclude Include="MappedInputFile.hpp" />
-    <ClInclude Include="Object.hpp" />
-    <ClInclude Include="OperandStack.hpp" />
-    <ClInclude Include="OsInterface.hpp" />
-    <ClInclude Include="Path.hpp" />
-    <ClInclude Include="Prime.hpp" />
-    <ClInclude Include="Random.hpp" />
-    <ClInclude Include="Reader.hpp" />
-    <ClInclude Include="Stack.hpp" />
-    <ClInclude Include="String.hpp" />
-    <ClInclude Include="System.hpp" />
-    <ClInclude Include="TextUtils.hpp" />
-    <ClInclude Include="Thread.hpp" />
-    <ClInclude Include="Type.hpp" />
-    <ClInclude Include="Unicode.hpp" />
-    <ClInclude Include="Util.hpp" />
-    <ClInclude Include="VariableReference.hpp" />
-    <ClInclude Include="Writer.hpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="Arena.cpp" />
     <ClCompile Include="Class.cpp" />
-    <ClCompile Include="CodeFormatter.cpp" />
     <ClCompile Include="Constant.cpp" />
+    <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Error.cpp" />
     <ClCompile Include="FileRegistry.cpp" />
     <ClCompile Include="Frame.cpp" />
@@ -68,51 +33,72 @@
     <ClCompile Include="LocalVariable.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Machine.cpp" />
-    <ClCompile Include="MappedInputFile.cpp" />
+    <ClCompile Include="MachineFunctionVisitor.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="OsInterface.cpp" />
-    <ClCompile Include="Path.cpp" />
-    <ClCompile Include="Prime.cpp" />
-    <ClCompile Include="Random.cpp" />
     <ClCompile Include="Reader.cpp" />
+    <ClCompile Include="RunTime.cpp" />
     <ClCompile Include="Stack.cpp" />
-    <ClCompile Include="System.cpp" />
-    <ClCompile Include="TextUtils.cpp" />
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="Type.cpp" />
-    <ClCompile Include="Unicode.cpp" />
-    <ClCompile Include="Util.cpp" />
     <ClCompile Include="VariableReference.cpp" />
     <ClCompile Include="Writer.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Arena.hpp" />
+    <ClInclude Include="Class.hpp" />
+    <ClInclude Include="Constant.hpp" />
+    <ClInclude Include="Error.hpp" />
+    <ClInclude Include="FileRegistry.hpp" />
+    <ClInclude Include="Frame.hpp" />
+    <ClInclude Include="Function.hpp" />
+    <ClInclude Include="GarbageCollector.hpp" />
+    <ClInclude Include="GenObject.hpp" />
+    <ClInclude Include="Instruction.hpp" />
+    <ClInclude Include="LocalVariable.hpp" />
+    <ClInclude Include="Log.hpp" />
+    <ClInclude Include="Machine.hpp" />
+    <ClInclude Include="MachineApi.hpp" />
+    <ClInclude Include="MachineFunctionVisitor.hpp" />
+    <ClInclude Include="Object.hpp" />
+    <ClInclude Include="OperandStack.hpp" />
+    <ClInclude Include="OsInterface.hpp" />
+    <ClInclude Include="Reader.hpp" />
+    <ClInclude Include="RunTime.hpp" />
+    <ClInclude Include="Stack.hpp" />
+    <ClInclude Include="Thread.hpp" />
+    <ClInclude Include="Type.hpp" />
+    <ClInclude Include="VariableReference.hpp" />
+    <ClInclude Include="Writer.hpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{DC73A9E2-DE6D-476D-A36B-1F9BE152E5A6}</ProjectGuid>
+    <ProjectGuid>{F7DE9EBE-8650-4FD5-936E-E89932AEE5BB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>machine</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -136,20 +122,35 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>cminormachine</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>cminormachine</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MACHINE_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0;C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\um</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4146;4800;4996;4251;4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Programming\boost32;$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>util.lib;pom.lib;pl.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -158,13 +159,17 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;MACHINE_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0;C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\um</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4146;4800;4996;4251;4244</DisableSpecificWarnings>
+      <ExceptionHandling>SyncCThrow</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>util.lib;pom.lib;pl.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -175,14 +180,17 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MACHINE_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0;C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\um</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4146;4800;4996;4251;4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Programming\boost32;$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>util.lib;pom.lib;pl.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -193,14 +201,18 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996</DisableSpecificWarnings>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;MACHINE_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0;C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\um</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4146;4800;4996;4251;4244</DisableSpecificWarnings>
+      <ExceptionHandling>SyncCThrow</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>util.lib;pom.lib;pl.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

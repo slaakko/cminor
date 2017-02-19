@@ -98,7 +98,7 @@ namespace System.Collections.Generic
         public void Resize(int newCount)
         {
             T[] newItems = new T[newCount];
-            int n = Min(count, newCount);
+            int n = Math.Min(count, newCount);
             for (int i = 0; i < n; ++i)
             {
                 newItems[i] = items[i];

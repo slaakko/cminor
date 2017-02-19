@@ -3,13 +3,13 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_SYSTEM_INCLUDED
-#define CMINOR_MACHINE_SYSTEM_INCLUDED
+#ifndef CMINOR_UTIL_SYSTEM_INCLUDED
+#define CMINOR_UTIL_SYSTEM_INCLUDED
 #include <string>
 #include <vector>
 #include <map>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 void System(const std::string& command);
 void System(const std::string& command, bool ignoreReturnValue);
@@ -23,6 +23,6 @@ int WriteToPipe(int pipeHandle, void* buffer, unsigned int count);
 void RedirectStdHandlesToPipes(std::vector<int>& oldHandles, std::vector<int>& pipeHandles);
 void RestoreStdHandles(const std::vector<int>& oldHandles);
 
-} } // namespace cminor::machine
+} } // namespace cminor::util
 
-#endif // CMINOR_MACHINE_SYSTEM_INCLUDED
+#endif // CMINOR_UTIL_SYSTEM_INCLUDED

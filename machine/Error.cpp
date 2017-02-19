@@ -5,75 +5,77 @@
 
 #include <cminor/machine/Error.hpp>
 #include <cminor/machine/FileRegistry.hpp>
-#include <cminor/machine/MappedInputFile.hpp>
+#include <cminor/util/MappedInputFile.hpp>
 #include <cminor/pl/Exception.hpp>
 
 namespace cminor {namespace machine {
 
-std::string Expand(const std::string& errorMessage, const Span& span)
+using namespace cminor::util;
+
+MACHINE_API std::string Expand(const std::string& errorMessage, const Span& span)
 {
     std::vector<Span> references;
     return Expand(errorMessage, span, references);
 }
 
-std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan)
+MACHINE_API std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan)
 {
     std::vector<Span> references(1, referenceSpan);
     return Expand(errorMessage, primarySpan, references, "Error");
 }
 
-std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan, const std::string& title)
+MACHINE_API std::string Expand(const std::string& errorMessage, const Span& primarySpan, const Span& referenceSpan, const std::string& title)
 {
     std::vector<Span> references(1, referenceSpan);
     return Expand(errorMessage, primarySpan, references, title);
 }
 
-std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references)
+MACHINE_API std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references)
 {
     return Expand(errorMessage, span, references, "Error");
 }
 
-std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references, const std::string& title)
+MACHINE_API std::string Expand(const std::string& errorMessage, const Span& span, const std::vector<Span>& references, const std::string& title)
 {
     std::string expandedMessage = title + ": " + errorMessage;
     if (span.Valid())
     {
-        FileRegistry* currentFileRegistry = FileRegistry::Instance();
-        if (currentFileRegistry)
+        const std::string& fileName = FileRegistry::GetParsedFileName(span.FileIndex());
+        if (!fileName.empty())
         {
-            const std::string& fileName = currentFileRegistry->GetParsedFileName(span.FileIndex());
+            expandedMessage.append(" (file '" + fileName + "', line " + std::to_string(span.LineNumber()) + ")");
+            MappedInputFile file(fileName);
+            expandedMessage.append(":\n").append(cminor::parsing::GetErrorLines(file.Begin(), file.End(), span));
+        }
+        for (const Span& referenceSpan : references)
+        {
+            const std::string& fileName = FileRegistry::GetParsedFileName(referenceSpan.FileIndex());
             if (!fileName.empty())
             {
-                expandedMessage.append(" (file '" + fileName + "', line " + std::to_string(span.LineNumber()) + ")");
+                expandedMessage.append("\nsee reference to file '" + fileName + "', line " + std::to_string(referenceSpan.LineNumber()));
                 MappedInputFile file(fileName);
-                expandedMessage.append(":\n").append(cminor::parsing::GetErrorLines(file.Begin(), file.End(), span));
-            }
-            for (const Span& referenceSpan : references)
-            {
-                const std::string& fileName = currentFileRegistry->GetParsedFileName(referenceSpan.FileIndex());
-                if (!fileName.empty())
-                {
-                    expandedMessage.append("\nsee reference to file '" + fileName + "', line " + std::to_string(referenceSpan.LineNumber()));
-                    MappedInputFile file(fileName);
-                    expandedMessage.append(":\n").append(cminor::parsing::GetErrorLines(file.Begin(), file.End(), referenceSpan));
-                }
+                expandedMessage.append(":\n").append(cminor::parsing::GetErrorLines(file.Begin(), file.End(), referenceSpan));
             }
         }
     }
     return expandedMessage;
 }
 
-Exception::Exception(const std::string& message_, const Span& defined_) : std::runtime_error(Expand(message_, defined_)), message(message_), defined(defined_)
+Exception::Exception(const std::string& message_, const Span& defined_) : what(Expand(message_, defined_)), message(message_), defined(defined_)
 {
 }
 
-Exception::Exception(const std::string& message_, const Span& defined_, const Span& referenced_) : std::runtime_error(Expand(message_, defined_, referenced_)), message(message_), defined(defined_)
+Exception::Exception(const std::string& message_, const Span& defined_, const Span& referenced_) : what(Expand(message_, defined_, referenced_)), message(message_), defined(defined_)
 {
     references.push_back(referenced_);
 }
 
-Exception::Exception(const std::string& message_, const Span& defined_, const std::vector<Span>& references_) : std::runtime_error(Expand(message_, defined_, references_)), message(message_),
-    defined(defined_), references(references_)
+Exception::Exception(const std::string& message_, const Span& defined_, const std::vector<Span>& references_) : 
+    what(Expand(message_, defined_, references_)), message(message_), defined(defined_), references(references_)
+{
+}
+
+Exception::~Exception()
 {
 }
 
@@ -101,7 +103,23 @@ RefOverloadException::RefOverloadException(const std::string& message_, const Sp
 {
 }
 
-MachineException::MachineException(const std::string& message_) : std::runtime_error(message_)
+CastException::CastException(const std::string& message_, const Span& defined_) : Exception(message_, defined_)
+{
+}
+
+CastException::CastException(const std::string& message_, const Span& defined_, const Span& referenced_) : Exception(message_, defined_, referenced_)
+{
+}
+
+CastException::CastException(const std::string& message_, const Span& defined_, const std::vector<Span>& references_) : Exception(message_, defined_, references_)
+{
+}
+
+MachineException::MachineException(const std::string& message_) : message(message_)
+{
+}
+
+MachineException::~MachineException()
 {
 }
 
@@ -130,6 +148,10 @@ InvalidCastException::InvalidCastException(const std::string& message_) : System
 }
 
 FileSystemError::FileSystemError(const std::string& errorMessage) : SystemException(errorMessage)
+{
+}
+
+StackOverflowException::StackOverflowException() : SystemException("stack overflow")
 {
 }
 

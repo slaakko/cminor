@@ -6,11 +6,11 @@
 #ifndef CMINOR_AST_LITERAL_INCLUDED
 #define CMINOR_AST_LITERAL_INCLUDED
 #include <cminor/ast/Node.hpp>
-#include <cminor/machine/Unicode.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace ast {
 
-using cminor::machine::utf32_string;
+using cminor::util::utf32_string;
 
 class BooleanLiteralNode : public Node
 {

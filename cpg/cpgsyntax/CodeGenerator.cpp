@@ -9,7 +9,7 @@
 #include <cminor/pl/Namespace.hpp>
 #include <cminor/pl/Visitor.hpp>
 #include <cminor/pl/Scope.hpp>
-#include <cminor/machine/TextUtils.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <boost/filesystem.hpp>
 #include <unordered_map>
 #include <fstream>
@@ -19,7 +19,7 @@
 namespace cpg { namespace syntax {
 
 using namespace cminor::parsing;
-using namespace cminor::machine;
+using namespace cminor::util;
 using boost::filesystem::path;
 
 class NamespaceContent

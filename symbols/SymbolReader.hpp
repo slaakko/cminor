@@ -29,7 +29,7 @@ class SymbolReader : public AstReader
 public:
     SymbolReader(const std::string& fileName_);
     Assembly* GetAssembly() const { Assert(assembly, "assembly not set"); return assembly; }
-    void SetAssembly(Assembly* assembly_) { assembly = assembly_; }
+    void SetAssembly(Assembly* assembly_) { assembly = assembly_; SetAssemblyAddress(assembly); }
     Symbol* GetSymbol();
     Value* GetValue();
     void AddLocalVariable(LocalVariableSymbol* localVariable) { localVariables.push_back(localVariable); }

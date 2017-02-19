@@ -81,6 +81,7 @@ public:
     Node* GetNode(Symbol* symbol) const;
     Node* GetNodeNothrow(Symbol* symbol) const;
     void MapNode(Node& node, Symbol* symbol);
+    void MapNodeSetNoIds(Node& node, Symbol* symbol);
     void AddConversion(FunctionSymbol* conversionFun);
     const ConversionTable& GetConversionTable() const { return conversionTable; }
     TypeSymbol* CreateArrayType(ArrayNode& arrayNode, TypeSymbol* elementType);

@@ -4,12 +4,12 @@
 // =================================
 
 #include <cminor/ast/Solution.hpp>
-#include <cminor/machine/Path.hpp>
+#include <cminor/util/Path.hpp>
 #include <unordered_set>
 
 namespace cminor { namespace ast {
 
-using namespace cminor::machine;
+using namespace cminor::util;
 
 SolutionDeclaration::~SolutionDeclaration()
 {
@@ -120,14 +120,14 @@ void Visit(std::vector<std::string>& order, const std::string& projectName, std:
             else
             {
                 throw std::runtime_error("project '" + projectName + "' not found in dependencies of solution '" + solution->Name() + "' (" +
-                    cminor::machine::GetFullPath(solution->FilePath()) + ")");
+                    cminor::util::GetFullPath(solution->FilePath()) + ")");
             }
         }
     }
     else
     {
         throw std::runtime_error("circular project dependency '" + projectName + "' detected in dependencies of solution '" + solution->Name() + "' (" +
-            cminor::machine::GetFullPath(solution->FilePath()) + ")");
+            cminor::util::GetFullPath(solution->FilePath()) + ")");
     }
 }
 
@@ -192,7 +192,7 @@ std::vector<Project*> Solution::CreateBuildOrder()
         }
         else
         {
-            throw std::runtime_error("project name '" + projectName + "' not found in solution '" + Name() + "' (" + cminor::machine::GetFullPath(FilePath()) + ")");
+            throw std::runtime_error("project name '" + projectName + "' not found in solution '" + Name() + "' (" + cminor::util::GetFullPath(FilePath()) + ")");
         }
     }
     return buildOrder;

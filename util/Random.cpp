@@ -1,4 +1,4 @@
-#include <cminor/machine/Random.hpp>
+#include <cminor/util/Random.hpp>
 #if defined(_WIN32)
 #define _CRT_RAND_S
 #define WIN32_LEAN_AND_MEAN
@@ -50,7 +50,7 @@ unsigned int get_random_seed_from_system()
 
 #endif
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 class MT
 {
@@ -139,4 +139,4 @@ uint64_t Random64()
     return static_cast<uint64_t>(Random()) << 32 | static_cast<uint64_t>(Random());
 }
 
-} } // namespace cminor::machine
+} } // namespace cminor::util

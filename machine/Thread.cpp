@@ -10,6 +10,23 @@
 
 namespace cminor { namespace machine {
 
+#ifdef _WIN32
+    __declspec(thread) Thread* currentThread = nullptr;
+#else
+    __thread Thread* currentThread = nullptr;
+#endif
+
+Thread& GetCurrentThread()
+{
+    Assert(currentThread, "current thread not set");
+    return *currentThread;
+}
+
+void SetCurrentThread(Thread* currentThread_)
+{
+    currentThread = currentThread_;
+}
+
 DebugContext::DebugContext()
 {
 }
@@ -31,20 +48,17 @@ void DebugContext::RemoveBreakpointAt(int32_t pc)
 
 Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
     stack(*this), id(id_), machine(machine_), fun(fun_), instructionCount(0), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), exceptionObjectType(nullptr), 
-    exitBlockNext(-1), nextVariableReferenceId(1)
+    exitBlockNext(-1), nextVariableReferenceId(1), threadHandle(0)
 {
     stack.AllocateFrame(fun);
 }
 
-inline void Thread::CheckPause()
+void Thread::WaitUntilGarbageCollected()
 {
-    if (GetMachine().GetGarbageCollector().WantToCollectGarbage())
-    {
-        SetState(ThreadState::paused);
-        GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(*this);
-        SetState(ThreadState::running);
-        GetMachine().GetGarbageCollector().WaitForIdle(*this);
-    }
+    SetState(ThreadState::paused);
+    GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(*this);
+    SetState(ThreadState::running);
+    GetMachine().GetGarbageCollector().WaitForIdle(*this);
 }
 
 void Thread::SetState(ThreadState state_)
@@ -82,7 +96,6 @@ void Thread::RunToEnd()
     Assert(!stack.IsEmpty(), "stack is empty");
     while (true)
     {
-        CheckPause();
         Frame* frame = stack.CurrentFrame();
         Instruction* inst = frame->GetNextInst();
         while (!inst)
@@ -104,13 +117,28 @@ void Thread::RunToEnd()
     }
 }
 
-void Thread::Run(const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
+void Thread::Run(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
 {
     Frame* frame = stack.CurrentFrame();
-    if (argsArrayObjectType)
+    if (runWithArgs)
     {
+        if (!argsArrayObjectType)
+        {
+            throw std::runtime_error("thread.run: args array object type not set");
+        }
+        if (fun.NumParameters() != 1)
+        {
+            throw std::runtime_error("thread.run: function does not take arguments");
+        }
         ObjectReference args = GetManagedMemoryPool().CreateStringArray(*this, programArguments, argsArrayObjectType);
         frame->OpStack().Push(args);
+    }
+    else
+    {
+        if (fun.NumParameters() != 0)
+        {
+            throw std::runtime_error("thread.run: function takes arguments but thread run without arguments");
+        }
     }
     RunToEnd();
 }
@@ -123,7 +151,6 @@ void Thread::RunDebug()
     bool first = true;
     while (true)
     {
-        CheckPause();
         Frame* frame = stack.CurrentFrame();
         if (frame->HasBreakpointAt(frame->PC()))
         {
@@ -390,7 +417,7 @@ utf32_string Thread::GetStackTrace() const
         }
         Frame* frame = stack.Frames()[i];
         utf32_string fun = U"at ";
-        fun.append(frame->Fun().FriendlyName().Value().AsStringLiteral());
+        fun.append(frame->Fun().FullName().Value().AsStringLiteral());
         if (frame->Fun().HasSourceFilePath())
         {
             uint32_t line = frame->Fun().GetSourceLine(frame->PrevPC());

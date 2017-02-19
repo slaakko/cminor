@@ -3,10 +3,10 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/machine/Unicode.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <stdexcept>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 utf32_string ToUtf32(const std::string& utf8Str)
 {
@@ -570,4 +570,4 @@ uint32_t DecodeUInt(const std::vector<uint8_t>& bytes)
     return result; 
 }
 
-} } // namespace cminor::machine
+} } // namespace cminor::util

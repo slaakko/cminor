@@ -3,10 +3,10 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/machine/MappedInputFile.hpp>
+#include <cminor/util/MappedInputFile.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 class MappedInputFileImpl
 {
@@ -51,4 +51,4 @@ const char* MappedInputFile::End() const
     return impl->Data() + impl->Size();
 }
 
-} } // namespace cminor::machine
+} } // namespace cminor::util

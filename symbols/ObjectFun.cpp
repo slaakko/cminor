@@ -69,6 +69,7 @@ void ObjectCopyInit::GenerateCall(Machine& machine, Assembly& assembly, Function
     Assert(objects.size() == 2, "init needs two objects");
     GenObject* source = objects[1];
     source->GenLoad(machine, function);
+    function.AddInst(machine.CreateInst("gcpoint"));
     std::unique_ptr<Instruction> inst = machine.CreateInst("copy", "object");
     function.AddInst(std::move(inst));
     GenObject* target = objects[0];
@@ -96,6 +97,7 @@ void ObjectAssignment::GenerateCall(Machine& machine, Assembly& assembly, Functi
     Assert(objects.size() == 2, "assign needs two objects");
     GenObject* source = objects[1];
     source->GenLoad(machine, function);
+    function.AddInst(machine.CreateInst("gcpoint"));
     std::unique_ptr<Instruction> inst = machine.CreateInst("copy", "object");
     function.AddInst(std::move(inst));
     GenObject* target = objects[0];
@@ -298,6 +300,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         sbyte2object->SetSourceType(sbyteType);
         sbyte2object->SetTargetType(objectType);
         sbyte2object->SetConversionInstructionName("sb2o");
+        sbyte2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(sbyte2object));
         assembly.GetSymbolTable().AddConversion(sbyte2object);
 
@@ -322,6 +325,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         byte2object->SetSourceType(byteType);
         byte2object->SetTargetType(objectType);
         byte2object->SetConversionInstructionName("by2o");
+        byte2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(byte2object));
         assembly.GetSymbolTable().AddConversion(byte2object);
 
@@ -346,6 +350,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         short2object->SetSourceType(shortType);
         short2object->SetTargetType(objectType);
         short2object->SetConversionInstructionName("sh2o");
+        short2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(short2object));
         assembly.GetSymbolTable().AddConversion(short2object);
 
@@ -370,6 +375,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         ushort2object->SetSourceType(ushortType);
         ushort2object->SetTargetType(objectType);
         ushort2object->SetConversionInstructionName("us2o");
+        ushort2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ushort2object));
         assembly.GetSymbolTable().AddConversion(ushort2object);
 
@@ -394,6 +400,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         int2object->SetSourceType(intType);
         int2object->SetTargetType(objectType);
         int2object->SetConversionInstructionName("in2o");
+        int2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(int2object));
         assembly.GetSymbolTable().AddConversion(int2object);
 
@@ -418,6 +425,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         uint2object->SetSourceType(uintType);
         uint2object->SetTargetType(objectType);
         uint2object->SetConversionInstructionName("ui2o");
+        uint2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(uint2object));
         assembly.GetSymbolTable().AddConversion(uint2object);
 
@@ -442,6 +450,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         long2object->SetSourceType(longType);
         long2object->SetTargetType(objectType);
         long2object->SetConversionInstructionName("lo2o");
+        long2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(long2object));
         assembly.GetSymbolTable().AddConversion(long2object);
 
@@ -466,6 +475,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         ulong2object->SetSourceType(ulongType);
         ulong2object->SetTargetType(objectType);
         ulong2object->SetConversionInstructionName("ul2o");
+        ulong2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(ulong2object));
         assembly.GetSymbolTable().AddConversion(ulong2object);
 
@@ -490,6 +500,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         float2object->SetSourceType(floatType);
         float2object->SetTargetType(objectType);
         float2object->SetConversionInstructionName("fl2o");
+        float2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(float2object));
         assembly.GetSymbolTable().AddConversion(float2object);
 
@@ -514,6 +525,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         double2object->SetSourceType(doubleType);
         double2object->SetTargetType(objectType);
         double2object->SetConversionInstructionName("do2o");
+        double2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(double2object));
         assembly.GetSymbolTable().AddConversion(double2object);
 
@@ -538,6 +550,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         char2object->SetSourceType(charType);
         char2object->SetTargetType(objectType);
         char2object->SetConversionInstructionName("ch2o");
+        char2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(char2object));
         assembly.GetSymbolTable().AddConversion(char2object);
 
@@ -562,6 +575,7 @@ void CreateBasicTypeObjectFun(Assembly& assembly, TypeSymbol* classOrInterfaceTy
         bool2object->SetSourceType(boolType);
         bool2object->SetTargetType(objectType);
         bool2object->SetConversionInstructionName("bo2o");
+        bool2object->SetCreatesObject();
         assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(bool2object));
         assembly.GetSymbolTable().AddConversion(bool2object);
 

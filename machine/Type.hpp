@@ -5,17 +5,33 @@
 
 #ifndef CMINOR_MACHINE_TYPE_INCLUDED
 #define CMINOR_MACHINE_TYPE_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Constant.hpp>
 #include <algorithm>
 
 namespace cminor { namespace machine {
+
+class MACHINE_API FunctionType
+{
+public:
+    FunctionType();
+    void SetReturnType(ValueType returnType_) { returnType = returnType_; }
+    ValueType ReturnType() const { return returnType; }
+    void AddParamType(ValueType paramType);
+    const std::vector<ValueType>& ParameterTypes() const { return parameterTypes; }
+    void Write(Writer& writer);
+    void Read(Reader& reader);
+private:
+    ValueType returnType;
+    std::vector<ValueType> parameterTypes;
+};
 
 inline MemPtr ElementPtr(MemPtr memPtr, ValueType valueType, int32_t index)
 {
     return MemPtr(static_cast<uint8_t*>(memPtr.Value()) + ValueSize(valueType) * index);
 }
 
-class FieldOffset
+class MACHINE_API FieldOffset
 {
 public:
     FieldOffset() : value(0) {}
@@ -32,7 +48,7 @@ inline MemPtr operator+(MemPtr memPtr, FieldOffset offset)
     return MemPtr(static_cast<uint8_t*>(memPtr.Value()) + offset.Value());
 }
 
-class Field
+class MACHINE_API Field
 {
 public:
     Field();
@@ -46,7 +62,7 @@ private:
     FieldOffset offset;
 };
 
-class Layout
+class MACHINE_API Layout
 {
 public:
     Layout();
@@ -63,7 +79,7 @@ private:
     uint64_t size;
 };
 
-class Type
+class MACHINE_API Type
 {
 public:
     Type();
@@ -78,107 +94,107 @@ private:
     Constant name;
 };
 
-class BasicType : public Type
+class MACHINE_API BasicType : public Type
 {
 };
 
-class SByte : public BasicType
+class MACHINE_API SByte : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::sbyteType; }
 };
 
-class Byte : public BasicType
+class MACHINE_API Byte : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::byteType; }
 };
 
-class Short : public BasicType
+class MACHINE_API Short : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::shortType; }
 };
 
-class UShort : public BasicType
+class MACHINE_API UShort : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::ushortType; }
 };
 
-class Int : public BasicType
+class MACHINE_API Int : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::intType; }
 };
 
-class UInt : public BasicType
+class MACHINE_API UInt : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::uintType; }
 };
 
-class Long : public BasicType
+class MACHINE_API Long : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::longType; }
 };
 
-class ULong : public BasicType
+class MACHINE_API ULong : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::ulongType; }
 };
 
-class Float : public BasicType
+class MACHINE_API Float : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::floatType; }
 };
 
-class Double : public BasicType
+class MACHINE_API Double : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::doubleType; }
 };
 
-class Char : public BasicType
+class MACHINE_API Char : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::charType; }
 };
 
-class Bool : public BasicType
+class MACHINE_API Bool : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::boolType; }
 };
 
-class Void : public BasicType
+class MACHINE_API Void : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::none; }
 };
 
-class Null : public BasicType
+class MACHINE_API Null : public BasicType
 {
 public:
     ValueType GetValueType() const override { return ValueType::ulongType; }
 };
 
-class DelegateType : public Type
+class MACHINE_API DelegateType : public Type
 {
 public:
     ValueType GetValueType() const override { return ValueType::functionPtr; }
 };
 
-class RefType : public Type
+class MACHINE_API RefType : public Type
 {
 public:
     ValueType GetValueType() const override { return ValueType::variableReference; };
 };
 
-class ObjectType : public Type
+class MACHINE_API ObjectType : public Type
 {
 public:
     ObjectType();
@@ -201,21 +217,16 @@ private:
 class TypeTable
 {
 public:
-    static void Init();
-    static void Done();
-    static TypeTable& Instance();
-    Type* GetType(StringPtr fullTypeName);
-    void SetType(Type* type);
-private:
-    static std::unique_ptr<TypeTable> instance;
-    TypeTable();
-    std::unordered_map<StringPtr, Type*, StringPtrHash> typeMap;
+    MACHINE_API static void Init();
+    MACHINE_API static void Done();
+    MACHINE_API static Type* GetType(StringPtr fullTypeName);
+    MACHINE_API static void SetType(Type* type);
 };
 
-ObjectType* GetBoxedType(ValueType valueType);
+MACHINE_API ObjectType* GetBoxedType(ValueType valueType);
 
-void TypeInit();
-void TypeDone();
+MACHINE_API void TypeInit();
+MACHINE_API void TypeDone();
 
 } } // namespace cminor::machine
 

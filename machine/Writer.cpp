@@ -7,6 +7,8 @@
 
 namespace cminor { namespace machine {
 
+using namespace cminor::util;
+
 Writer::Writer(const std::string& fileName_) : fileName(fileName_), file(std::fopen(fileName.c_str(), "wb")), bufp(buffer), bufend(buffer + N), constantPool(nullptr), pos(0)
 {
     if (!file)

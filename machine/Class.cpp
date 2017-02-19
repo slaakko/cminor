@@ -49,6 +49,17 @@ void MethodTable::Write(Writer& writer)
     for (uint32_t i = 0; i < n; ++i)
     {
         Constant method = methods[i];
+        if (method.Value().GetType() == ValueType::functionPtr)
+        {
+            if (method.Value().AsFunctionPtr())
+            {
+                method = method.Value().AsFunctionPtr()->CallName();
+            }
+            else
+            {
+                method = writer.GetConstantPool()->GetEmptyStringConstant();
+            }
+        }
         ConstantId constantId = writer.GetConstantPool()->GetIdFor(method);
         if (constantId != noConstantId)
         {
@@ -224,29 +235,46 @@ void ClassData::CreateStaticClassData()
     staticClassData.reset(new StaticClassData());
 }
 
-std::unique_ptr<ClassDataTable> ClassDataTable::instance;
+class ClassDataTableImpl
+{
+public:
+    static void Init();
+    static void Done();
+    static ClassDataTableImpl& Instance();
+    ClassData* GetClassData(StringPtr fullClassName);
+    ClassData* GetSystemStringClassData();
+    void SetClassData(ClassData* classData);
+    std::unordered_map<StringPtr, ClassData*, StringPtrHash>& ClassDataMap() { return classDataMap; }
+private:
+    static std::unique_ptr<ClassDataTableImpl> instance;
+    ClassDataTableImpl();
+    std::unordered_map<StringPtr, ClassData*, StringPtrHash> classDataMap;
+    ClassData* systemStringClassData;
+};
 
-ClassDataTable::ClassDataTable()
+std::unique_ptr<ClassDataTableImpl> ClassDataTableImpl::instance;
+
+ClassDataTableImpl::ClassDataTableImpl() : systemStringClassData(nullptr)
 {
 }
 
-void ClassDataTable::Init()
+void ClassDataTableImpl::Init()
 {
-    instance.reset(new ClassDataTable());
+    instance.reset(new ClassDataTableImpl());
 }
 
-void ClassDataTable::Done()
+void ClassDataTableImpl::Done()
 {
     instance.reset();
 }
 
-ClassDataTable& ClassDataTable::Instance()
+ClassDataTableImpl& ClassDataTableImpl::Instance()
 {
     Assert(instance, "class data table instance not set");
     return *instance;
 }
 
-ClassData* ClassDataTable::GetClassData(StringPtr fullClassName)
+ClassData* ClassDataTableImpl::GetClassData(StringPtr fullClassName)
 {
     auto it = classDataMap.find(fullClassName);
     if (it != classDataMap.cend())
@@ -259,7 +287,16 @@ ClassData* ClassDataTable::GetClassData(StringPtr fullClassName)
     }
 }
 
-void ClassDataTable::SetClassData(ClassData* classData)
+ClassData* ClassDataTableImpl::GetSystemStringClassData()
+{
+    if (!systemStringClassData)
+    {
+        systemStringClassData = GetClassData(StringPtr(U"System.String"));
+    }
+    return systemStringClassData;
+}
+
+void ClassDataTableImpl::SetClassData(ClassData* classData)
 {
     auto it = classDataMap.find(classData->Type()->Name());
     if (it != classDataMap.cend())
@@ -269,22 +306,52 @@ void ClassDataTable::SetClassData(ClassData* classData)
     classDataMap[classData->Type()->Name()] = classData;
 }
 
-ClassData* GetClassDataForBoxedType(ValueType valueType)
+MACHINE_API void ClassDataTable::Init()
+{
+    ClassDataTableImpl::Init();
+}
+
+MACHINE_API void ClassDataTable::Done()
+{
+    ClassDataTableImpl::Done();
+}
+
+MACHINE_API ClassData* ClassDataTable::GetClassData(StringPtr fullClassName)
+{
+    return ClassDataTableImpl::Instance().GetClassData(fullClassName);
+}
+
+MACHINE_API ClassData* ClassDataTable::GetSystemStringClassData()
+{
+    return ClassDataTableImpl::Instance().GetSystemStringClassData();
+}
+
+MACHINE_API void ClassDataTable::SetClassData(ClassData* classData)
+{
+    ClassDataTableImpl::Instance().SetClassData(classData);
+}
+
+MACHINE_API std::unordered_map<StringPtr, ClassData*, StringPtrHash>& ClassDataTable::ClassDataMap()
+{
+    return ClassDataTableImpl::Instance().ClassDataMap();
+}
+
+MACHINE_API ClassData* GetClassDataForBoxedType(ValueType valueType)
 {
     switch (valueType)
     {
-        case cminor::machine::ValueType::boolType: return ClassDataTable::Instance().GetClassData(U"System.BoxedBoolean");
-        case cminor::machine::ValueType::sbyteType: return ClassDataTable::Instance().GetClassData(U"System.BoxedInt8");
-        case cminor::machine::ValueType::byteType: return ClassDataTable::Instance().GetClassData(U"System.BoxedUInt8");
-        case cminor::machine::ValueType::shortType: return ClassDataTable::Instance().GetClassData(U"System.BoxedInt16");
-        case cminor::machine::ValueType::ushortType: return ClassDataTable::Instance().GetClassData(U"System.BoxedUInt16");
-        case cminor::machine::ValueType::intType: return ClassDataTable::Instance().GetClassData(U"System.BoxedInt32");
-        case cminor::machine::ValueType::uintType: return ClassDataTable::Instance().GetClassData(U"System.BoxedUInt32");
-        case cminor::machine::ValueType::longType: return ClassDataTable::Instance().GetClassData(U"System.BoxedInt64");
-        case cminor::machine::ValueType::ulongType: return ClassDataTable::Instance().GetClassData(U"System.BoxedUInt64");
-        case cminor::machine::ValueType::floatType: return ClassDataTable::Instance().GetClassData(U"System.BoxedFloat");
-        case cminor::machine::ValueType::doubleType: return ClassDataTable::Instance().GetClassData(U"System.BoxedDouble");
-        case cminor::machine::ValueType::charType: return ClassDataTable::Instance().GetClassData(U"System.BoxedChar");
+        case cminor::machine::ValueType::boolType: return ClassDataTable::GetClassData(U"System.BoxedBoolean");
+        case cminor::machine::ValueType::sbyteType: return ClassDataTable::GetClassData(U"System.BoxedInt8");
+        case cminor::machine::ValueType::byteType: return ClassDataTable::GetClassData(U"System.BoxedUInt8");
+        case cminor::machine::ValueType::shortType: return ClassDataTable::GetClassData(U"System.BoxedInt16");
+        case cminor::machine::ValueType::ushortType: return ClassDataTable::GetClassData(U"System.BoxedUInt16");
+        case cminor::machine::ValueType::intType: return ClassDataTable::GetClassData(U"System.BoxedInt32");
+        case cminor::machine::ValueType::uintType: return ClassDataTable::GetClassData(U"System.BoxedUInt32");
+        case cminor::machine::ValueType::longType: return ClassDataTable::GetClassData(U"System.BoxedInt64");
+        case cminor::machine::ValueType::ulongType: return ClassDataTable::GetClassData(U"System.BoxedUInt64");
+        case cminor::machine::ValueType::floatType: return ClassDataTable::GetClassData(U"System.BoxedFloat");
+        case cminor::machine::ValueType::doubleType: return ClassDataTable::GetClassData(U"System.BoxedDouble");
+        case cminor::machine::ValueType::charType: return ClassDataTable::GetClassData(U"System.BoxedChar");
     }
     Assert(false, "unknown value type");
     return nullptr;

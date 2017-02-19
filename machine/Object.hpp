@@ -5,7 +5,9 @@
 
 #ifndef CMINOR_MACHINE_OBJECT_INCLUDED
 #define CMINOR_MACHINE_OBJECT_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Error.hpp>
+#include <cminor/util/CodeFormatter.hpp>
 #include <stdint.h>
 #include <atomic>
 #include <mutex>
@@ -13,6 +15,8 @@
 #include <unordered_set>
 
 namespace cminor { namespace machine {
+
+using namespace cminor::util;
 
 class Machine;
 class Thread;
@@ -36,9 +40,9 @@ enum class ValueType : uint8_t
     memPtr = 'M', stringLiteral = 'S', allocationHandle = 'H', objectReference = 'O', functionPtr = 'F', classDataPtr = 'C', typePtr = 'T', variableReference = 'V'
 };
 
-std::string ValueTypeStr(ValueType type);
+MACHINE_API std::string ValueTypeStr(ValueType type);
 
-class IntegralValue
+class MACHINE_API IntegralValue
 {
 public:
     IntegralValue() : value(0), type(ValueType::none) {}
@@ -69,6 +73,8 @@ public:
     Type* AsTypePtr() const { return typePtr; }
     void Write(Writer& writer);
     void Read(Reader& reader);
+    void Dump(CodeFormatter& formatter);
+    std::string ValueStr();
 private:
     union { uint64_t value; uint8_t* memPtr; const char32_t* strValue; Function* funPtr; ClassData* classDataPtr; Type* typePtr;  };
     ValueType type;
@@ -172,7 +178,7 @@ inline AllocationFlags operator~(AllocationFlags flag)
     return AllocationFlags(~uint8_t(flag));
 }
 
-class ManagedAllocation
+class MACHINE_API ManagedAllocation
 {
 public:
     ManagedAllocation(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, uint64_t size_);
@@ -203,7 +209,7 @@ private:
     void ResetFlag(AllocationFlags flag) { flags = flags & (~flag); }
 };
 
-class Object : public ManagedAllocation
+class MACHINE_API Object : public ManagedAllocation
 {
 public:
     Object(ObjectReference reference_, MemPtr memPtr_, int32_t segmentId_, ObjectType* type_, uint64_t size_);
@@ -219,7 +225,7 @@ private:
     ObjectType* type;
 };
 
-class ArrayElements : public ManagedAllocation
+class MACHINE_API ArrayElements : public ManagedAllocation
 {
 public:
     ArrayElements(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, Type* elementType_, int32_t numElements_, uint64_t size_);
@@ -234,7 +240,7 @@ private:
     int32_t numElements;
 };
 
-class StringCharacters : public ManagedAllocation
+class MACHINE_API StringCharacters : public ManagedAllocation
 {
 public:
     StringCharacters(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, int32_t numChars_, uint64_t size_);
@@ -251,10 +257,10 @@ constexpr uint64_t arrayContentSize = sizeof(ArrayElements);
 constexpr uint64_t stringContentSize = sizeof(StringCharacters);
 constexpr uint64_t defaultPoolThreshold = static_cast<uint64_t>(16) * 1024 * 1024;
 
-void SetPoolThreshold(uint64_t poolThreshold_);
-uint64_t GetPoolThreshold();
+MACHINE_API void SetPoolThreshold(uint64_t poolThreshold_);
+MACHINE_API uint64_t GetPoolThreshold();
 
-class ManagedMemoryPool
+class MACHINE_API ManagedMemoryPool
 {
 public:
     ManagedMemoryPool(Machine& machine_);

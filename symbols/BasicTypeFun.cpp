@@ -137,7 +137,7 @@ void BasicTypeReturn::GenerateCall(Machine& machine, Assembly& assembly, Functio
 }
 
 BasicTypeConversion::BasicTypeConversion(const Span& span_, Constant name_) : 
-    BasicTypeFun(span_, name_), conversionType(ConversionType::implicit_), conversionDistance(0), sourceType(nullptr), targetType(nullptr), conversionInstructionName()
+    BasicTypeFun(span_, name_), conversionType(ConversionType::implicit_), conversionDistance(0), sourceType(nullptr), targetType(nullptr), conversionInstructionName(), createsObject(false)
 {
     SetConversionFun();
 }
@@ -156,6 +156,7 @@ void BasicTypeConversion::Write(SymbolWriter& writer)
     Assert(targetTypeId != noConstantId, "got no id");
     targetTypeId.Write(writer);
     writer.AsMachineWriter().Put(conversionInstructionName);
+    writer.AsMachineWriter().Put(createsObject);
 }
 
 void BasicTypeConversion::Read(SymbolReader& reader)
@@ -170,6 +171,7 @@ void BasicTypeConversion::Read(SymbolReader& reader)
     targetTypeId.Read(reader);
     reader.EmplaceTypeRequest(this, targetTypeId, 3);
     conversionInstructionName = reader.GetUtf8String();
+    createsObject = reader.GetBool();
 }
 
 void BasicTypeConversion::EmplaceType(TypeSymbol* type, int index)
@@ -190,6 +192,10 @@ void BasicTypeConversion::EmplaceType(TypeSymbol* type, int index)
 
 void BasicTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
+    if (createsObject)
+    {
+        function.AddInst(machine.CreateInst("gcpoint"));
+    }
     std::unique_ptr<Instruction> inst =  machine.CreateInst(conversionInstructionName);
     function.AddInst(std::move(inst));
 }

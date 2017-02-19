@@ -96,4 +96,11 @@ namespace System
         {
         }
     }
+
+    public class StackOverflowException : SystemException
+    {
+        public StackOverflowException(string message) : base(message)
+        {
+        }
+    }
 }

@@ -13,7 +13,7 @@ class LocalVariableReference;
 class MemberVariableReference;
 class Frame;
 
-class VariableReferenceHandler
+class MACHINE_API VariableReferenceHandler
 {
 public:
     virtual ~VariableReferenceHandler();
@@ -21,7 +21,7 @@ public:
     virtual void Handle(Frame& frame, MemberVariableReference* memberVariableReference) = 0;
 };
 
-class VariableReference
+class MACHINE_API VariableReference
 {
 public:
     VariableReference(int32_t id_);
@@ -32,7 +32,7 @@ private:
     int32_t id;
 };
 
-class LocalVariableReference : public VariableReference
+class MACHINE_API LocalVariableReference : public VariableReference
 {
 public:
     LocalVariableReference(int32_t id_, int32_t frameId_, int32_t localIndex_);
@@ -44,7 +44,7 @@ private:
     int32_t localIndex;
 };
 
-class MemberVariableReference : public VariableReference
+class MACHINE_API MemberVariableReference : public VariableReference
 {
 public:
     MemberVariableReference(int32_t id_, ObjectReference objectReference_, int32_t memberVarIndex_);

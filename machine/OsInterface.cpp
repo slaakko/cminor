@@ -10,6 +10,7 @@
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <Windows.h>
+    #include <winnt.h>
 #else
     #include <unistd.h>
     #include <sys/mman.h>
@@ -51,7 +52,7 @@ void FreeMemory(uint8_t* baseAddress, uint64_t size)
     BOOL result = VirtualFree(baseAddress, NULL, MEM_RELEASE);
 }
 
-void WriteInGreenToConsole(const std::string& line)
+MACHINE_API void WriteInGreenToConsole(const std::string& line)
 {
     bool written = false;
     HANDLE consoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -70,6 +71,52 @@ void WriteInGreenToConsole(const std::string& line)
     {
         std::cout << line << std::endl;
     }
+}
+
+void InspectStack(uint64_t threadHandle)
+{
+    HANDLE thread = reinterpret_cast<HANDLE>(threadHandle);
+    DWORD suspendResult = SuspendThread(thread);
+    if (suspendResult == (DWORD)-1)
+    {
+        throw std::runtime_error("suspend thread failed");
+    }
+    CONTEXT context;
+    context.ContextFlags = CONTEXT_INTEGER;
+    BOOL getThreadContextResult = GetThreadContext(thread, &context);
+    if (!getThreadContextResult)
+    {
+        DWORD resumeResult = ResumeThread(thread);
+        if (resumeResult == (DWORD)-1)
+        {
+            // resume thread failed
+        }
+        throw std::runtime_error("get thread context failed");
+    }
+    DWORD resumeResult = ResumeThread(thread);
+    if (resumeResult == (DWORD)-1)
+    {
+        // resume thread failed
+    }
+}
+
+uint64_t GetCurrentThreadHandle()
+{
+    HANDLE threadPseudoHandle = GetCurrentThread();
+    HANDLE threadHandle;
+    HANDLE processHandle = GetCurrentProcess();
+    BOOL duplicateHandleResult = DuplicateHandle(processHandle, threadPseudoHandle, processHandle, &threadHandle, 0, false, DUPLICATE_SAME_ACCESS);
+    if (!duplicateHandleResult)
+    {
+        throw std::runtime_error("duplicate handle failed");
+    }
+    return reinterpret_cast<uint64_t>(threadHandle);
+}
+
+void CloseThreadHandle(uint64_t threadHandle)
+{
+    HANDLE thread = reinterpret_cast<HANDLE>(threadHandle);
+    CloseHandle(thread);
 }
 
 #else

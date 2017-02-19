@@ -9,7 +9,7 @@
 namespace cminor.parser
 {
     [hpp]using namespace cminor::ast;
-    [cpp]using namespace cminor::machine;
+    [cpp]using namespace cminor::util;
 
     grammar LiteralGrammar
     {

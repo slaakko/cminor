@@ -6,7 +6,7 @@
 #include <cminor/machine/Stack.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Thread.hpp>
-#include <cminor/machine/Util.hpp>
+#include <cminor/util/Util.hpp>
 #include <cminor/machine/OsInterface.hpp>
 
 namespace cminor { namespace machine {
@@ -56,10 +56,6 @@ void SetStackGrowSize(uint64_t stackGrowSize_)
     stackGrowSize = stackGrowSize_;
 }
 
-StackOverflow::StackOverflow() : std::runtime_error("stack overflow")
-{
-}
-
 Stack::Stack(Thread& thread_) : 
     thread(thread_), pageSize(GetSystemPageSize()), size(GetStackReserveSize()), mem(ReserveMemory(size)), free(mem), end(mem + size)
 {
@@ -89,7 +85,7 @@ void Stack::AllocateFrame(Function& fun)
         }
         else
         {
-            throw StackOverflow();
+            throw StackOverflowException();
         }
     }
     if (free + frameSize <= commit)
@@ -102,7 +98,7 @@ void Stack::AllocateFrame(Function& fun)
     }
     else
     {
-        throw StackOverflow();
+        throw StackOverflowException();
     }
 }
 

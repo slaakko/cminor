@@ -39,6 +39,14 @@ std::string FunctionSymbolFlagStr(FunctionSymbolFlags flags)
         }
         s.append("conversion");
     }
+    if ((flags & FunctionSymbolFlags::exported) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("export");
+    }
     return s;
 }
 
@@ -101,16 +109,21 @@ void FunctionSymbol::Read(SymbolReader& reader)
         reader.EmplaceTypeRequest(this, returnTypeNameId, 0);
     }
     flags = FunctionSymbolFlags(reader.GetByte());
+    if (Name() == U"UnsignedConversion<System.UInt64>.@static_constructor()")
+    {
+        int x = 0;
+    }
     bool hasMachineFunction = reader.GetBool();
     if (hasMachineFunction)
     {
         uint32_t machineFunctionId = reader.GetEncodedUInt();
         machineFunction = GetAssembly()->GetMachineFunctionTable().GetFunction(machineFunctionId);
+        machineFunction->SetFunctionSymbol(this);
         if (StringPtr(groupName.Value().AsStringLiteral()) == StringPtr(U"main"))
         {
             machineFunction->SetMain();
         }
-        FunctionTable::Instance().AddFunction(machineFunction, reader.ReadingClassTemplateSpecialization());
+        FunctionTable::AddFunction(machineFunction, reader.ReadingClassTemplateSpecialization());
     }
     std::vector<LocalVariableSymbol*> readLocalVariables = reader.GetLocalVariables();
     int n = int(readLocalVariables.size());
@@ -148,6 +161,7 @@ void FunctionSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::external_) != Specifiers::none)
     {
         SetExternal();
+        SetCanThrow();
     }
     if ((specifiers & Specifiers::new_) != Specifiers::none)
     {
@@ -238,60 +252,73 @@ utf32_string FunctionSymbol::FullParsingName() const
     return fullParsingName;
 }
 
-utf32_string FunctionSymbol::FriendlyName() const
+utf32_string FunctionSymbol::FullNameWithSpecifiers() const
 {
-    utf32_string friendlyName;
-    friendlyName.append(ToUtf32(SymbolFlagStr(Symbol::Flags())));
+    utf32_string fullName;
+    fullName.append(ToUtf32(SymbolFlagStr(Symbol::Flags())));
     std::string functionSymbolFlagStr = FunctionSymbolFlagStr(flags);
     if (!functionSymbolFlagStr.empty())
     {
-        if (!friendlyName.empty())
+        if (!fullName.empty())
         {
-            friendlyName.append(1, U' ');
+            fullName.append(1, U' ');
         }
-        friendlyName.append(ToUtf32(functionSymbolFlagStr));
+        fullName.append(ToUtf32(functionSymbolFlagStr));
     }
     if (returnType)
     {
-        if (!friendlyName.empty())
+        if (!fullName.empty())
         {
-            friendlyName.append(1, U' ');
+            fullName.append(1, U' ');
         }
-        friendlyName.append(returnType->FullName());
+        fullName.append(returnType->FullName());
     }
     utf32_string parentFullName = Parent()->FullName();
     if (!parentFullName.empty())
     {
-        if (!friendlyName.empty())
+        if (!fullName.empty())
         {
-            friendlyName.append(1, U' ');
+            fullName.append(1, U' ');
         }
-        friendlyName.append(parentFullName);
-        friendlyName.append(1, U'.');
+        fullName.append(parentFullName);
+        fullName.append(1, U'.');
     }
     else
     {
-        if (!friendlyName.empty())
+        if (!fullName.empty())
         {
-            friendlyName.append(1, U' ');
+            fullName.append(1, U' ');
         }
     }
-    friendlyName.append(GroupName().Value());
-    friendlyName.append(1, U'(');
-    int n = int(Parameters().size());
-    for (int i = 0; i < n; ++i)
+    fullName.append(GroupName().Value());
+    fullName.append(1, U'(');
+    int start = 0;
+    if (IsPropertyGetterOrSetter() || IsIndexerGetterOrSetter())
     {
-        if (i > 0)
+        if (!IsStatic())
         {
-            friendlyName.append(U", ");
+            start = 1;
+        }
+    }
+    bool first = true;
+    int n = int(Parameters().size());
+    for (int i = start; i < n; ++i)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            fullName.append(U", ");
         }
         ParameterSymbol* parameter = Parameters()[i];
-        friendlyName.append(parameter->GetType()->FullName());
-        friendlyName.append(1, U' ');
-        friendlyName.append(utf32_string(parameter->Name().Value()));
+        fullName.append(parameter->GetType()->FullName());
+        fullName.append(1, U' ');
+        fullName.append(utf32_string(parameter->Name().Value()));
     }
-    friendlyName.append(1, U')');
-    return friendlyName;
+    fullName.append(1, U')');
+    return fullName;
 }
 
 void FunctionSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
@@ -330,16 +357,67 @@ void FunctionSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function
     function.AddInst(std::move(inst));
     function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
     function.MapPCToSourceLine(startFunctionCall.Index(), function.GetEmitter()->CurrentSourceLine());
+    if (CanThrow())
+    {
+        function.SetCanThrow();
+    }
 }
 
 void FunctionSymbol::CreateMachineFunction()
 {
+    SymbolAccess access = Access();
+    if (access == SymbolAccess::public_ || access == SymbolAccess::protected_)
+    {
+        SetExported();
+    }
+    bool memberOfClassTemplateSpecialization = false;
+    if (Parent()->GetSymbolType() == SymbolType::classTemplateSpecializationSymbol)
+    {
+        memberOfClassTemplateSpecialization = true;
+        utf32_string fullName = FullName();
+        Function* prevMachineFunction = FunctionTable::GetFunctionNothrow(StringPtr(fullName.c_str()));
+        if (prevMachineFunction)
+        {
+            machineFunction = prevMachineFunction;
+            machineFunction->SetAlreadyGenerated();
+            return;
+        }
+    }
     machineFunction = GetAssembly()->GetMachineFunctionTable().CreateFunction(this);
+    FunctionTable::AddFunction(machineFunction, memberOfClassTemplateSpecialization);
+    if (IsExported())
+    {
+        machineFunction->SetExported();
+    }
+    if (CanThrow())
+    {
+        machineFunction->SetCanThrow();
+    }
     int32_t numLocals = int32_t(parameters.size() + localVariables.size());
     machineFunction->SetNumLocals(numLocals);
     int32_t numParameters = int32_t(parameters.size());
     machineFunction->SetNumParameters(numParameters);
+    for (int32_t i = 0; i < numParameters; ++i)
+    {
+        ParameterSymbol* parameter = parameters[i];
+        ValueType valueType = parameter->GetType()->GetValueType();
+        machineFunction->LocalTypes()[i] = valueType;
+        machineFunction->ParameterTypes()[i] = valueType;
+    }
+    int n = int(localVariables.size());
+    for (int32_t i = 0; i < n; ++i)
+    {
+        VariableSymbol* variable = localVariables[i];
+        ValueType valueType = variable->GetType()->GetValueType();
+        machineFunction->LocalTypes()[numParameters + i] = valueType;
+    }
+    if (ReturnType() && !ReturnType()->IsVoidType())
+    {
+        machineFunction->SetReturnsValue();
+        machineFunction->SetReturnType(ReturnType()->GetValueType());
+    }
     machineFunction->AddInst(GetAssembly()->GetMachine().CreateInst("receive"));
+    machineFunction->AddInst(GetAssembly()->GetMachine().CreateInst("gcpoint"));
     if (IsExternal() && !IsDerived())
     {
         Assert(vmFunctionName.Value().AsStringLiteral() != nullptr, "vm function name not set");
@@ -349,6 +427,10 @@ void FunctionSymbol::CreateMachineFunction()
         Assert(vmFunctionNameId != noConstantId, "got no constant id");
         vmCallInst->SetIndex(int32_t(vmFunctionNameId.Value()));
         machineFunction->AddInst(std::move(vmCallInst));
+        std::unique_ptr<Instruction> jmpEofInst = GetAssembly()->GetMachine().CreateInst("jump");
+        jmpEofInst->SetTarget(endOfFunction);
+        machineFunction->AddInst(std::move(jmpEofInst));
+        machineFunction->SetCanThrow();
     }
 }
 
@@ -370,6 +452,7 @@ void FunctionSymbol::DumpHeader(CodeFormatter& formatter)
 
 StaticConstructorSymbol::StaticConstructorSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
 {
+    SetExported();
 }
 
 void StaticConstructorSymbol::SetSpecifiers(Specifiers specifiers)
@@ -417,7 +500,7 @@ utf32_string StaticConstructorSymbol::FullParsingName() const
     return fullParsingName;
 }
 
-utf32_string StaticConstructorSymbol::FriendlyName() const
+utf32_string StaticConstructorSymbol::FullNameWithSpecifiers() const
 {
     return FullParsingName();
 }
@@ -454,6 +537,7 @@ void ConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::external_) != Specifiers::none)
     {
         SetExternal();
+        SetCanThrow();
     }
     if ((specifiers & Specifiers::new_) != Specifiers::none)
     {
@@ -486,45 +570,45 @@ utf32_string ConstructorSymbol::FullParsingName() const
     return fullParsingName;
 }
 
-utf32_string ConstructorSymbol::FriendlyName() const
+utf32_string ConstructorSymbol::FullNameWithSpecifiers() const
 {
-    utf32_string friendlyName;
-    friendlyName.append(ToUtf32(SymbolFlagStr(Symbol::Flags())));
+    utf32_string fullName;
+    fullName.append(ToUtf32(SymbolFlagStr(Symbol::Flags())));
     std::string functionSymbolFlagStr = FunctionSymbolFlagStr(GetFlags());
     if (!functionSymbolFlagStr.empty())
     {
-        if (!friendlyName.empty())
+        if (!fullName.empty())
         {
-            friendlyName.append(1, U' ');
+            fullName.append(1, U' ');
         }
-        friendlyName.append(ToUtf32(functionSymbolFlagStr));
+        fullName.append(ToUtf32(functionSymbolFlagStr));
     }
     utf32_string parentFullName = Parent()->FullName();
     if (!parentFullName.empty())
     {
-        if (!friendlyName.empty())
+        if (!fullName.empty())
         {
-            friendlyName.append(1, U' ');
+            fullName.append(1, U' ');
         }
-        friendlyName.append(parentFullName);
-        friendlyName.append(1, U'.');
+        fullName.append(parentFullName);
+        fullName.append(1, U'.');
     }
-    friendlyName.append(Parent()->Name().Value());
-    friendlyName.append(1, U'(');
+    fullName.append(Parent()->Name().Value());
+    fullName.append(1, U'(');
     int n = int(Parameters().size());
     for (int i = 1; i < n; ++i)
     {
         if (i > 1)
         {
-            friendlyName.append(U", ");
+            fullName.append(U", ");
         }
         ParameterSymbol* parameter = Parameters()[i];
-        friendlyName.append(parameter->GetType()->FullName());
-        friendlyName.append(1, U' ');
-        friendlyName.append(utf32_string(parameter->Name().Value()));
+        fullName.append(parameter->GetType()->FullName());
+        fullName.append(1, U' ');
+        fullName.append(utf32_string(parameter->Name().Value()));
     }
-    friendlyName.append(1, U')');
-    return friendlyName;
+    fullName.append(1, U')');
+    return fullName;
 }
 
 void ConstructorSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
@@ -553,6 +637,10 @@ void ConstructorSymbol::GenerateCall(Machine& machine, Assembly& assembly, Funct
         function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
         function.MapPCToSourceLine(startFunctionCall.Index(), function.GetEmitter()->CurrentSourceLine());
     }
+    if (CanThrow())
+    {
+        function.SetCanThrow();
+    }
 }
 
 void ConstructorSymbol::CreateMachineFunction()
@@ -570,6 +658,8 @@ void ConstructorSymbol::CreateMachineFunction()
         Constant classFullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
         staticInitInst->SetTypeName(classFullNameConstant);
         MachineFunction()->AddInst(std::move(inst));
+        SetCanThrow();
+        MachineFunction()->SetCanThrow();
     }
     std::unique_ptr<Instruction> loadLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.0");
     MachineFunction()->AddInst(std::move(loadLocal));
@@ -588,13 +678,6 @@ void ConstructorSymbol::CreateMachineFunction()
         Assert(containingClass->BaseClass()->DefaultConstructorSymbol(), "base class has no default constructor");
         std::unique_ptr<Instruction> loadLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.0");
         MachineFunction()->AddInst(std::move(loadLocal));
-        std::unique_ptr<Instruction> upCast = GetAssembly()->GetMachine().CreateInst("upcast");
-        UpCastInst* upCastInst = dynamic_cast<UpCastInst*>(upCast.get());
-        Assert(upCastInst, "up cast inst expected");
-        utf32_string baseClassFullName = containingClass->BaseClass()->FullName();
-        Constant baseClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(baseClassFullName.c_str())));
-        upCastInst->SetTypeName(baseClassNameConstant);
-        MachineFunction()->AddInst(std::move(upCast));
         std::vector<GenObject*> objects;
         containingClass->BaseClass()->DefaultConstructorSymbol()->GenerateCall(GetAssembly()->GetMachine(), *GetAssembly(), *MachineFunction(), objects, 1);
     }
@@ -607,6 +690,11 @@ void ConstructorSymbol::CreateMachineFunction()
         Assert(vmFunctionNameId != noConstantId, "got no constant id");
         vmCallInst->SetIndex(int32_t(vmFunctionNameId.Value()));
         MachineFunction()->AddInst(std::move(vmCallInst));
+        std::unique_ptr<Instruction> jmpEofInst = GetAssembly()->GetMachine().CreateInst("jump");
+        jmpEofInst->SetTarget(endOfFunction);
+        MachineFunction()->AddInst(std::move(jmpEofInst));
+        SetCanThrow();
+        MachineFunction()->SetCanThrow();
     }
 }
 
@@ -656,15 +744,6 @@ void ArraySizeConstructorSymbol::CreateMachineFunction()
             std::unique_ptr<Instruction> loadArrayLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.0");
             MachineFunction()->AddInst(std::move(loadArrayLocal));
 
-            std::unique_ptr<Instruction> upCast = GetAssembly()->GetMachine().CreateInst("upcast");
-            UpCastInst* upCastInst = dynamic_cast<UpCastInst*>(upCast.get());
-            Assert(upCastInst, "up cast inst expected");
-            utf32_string baseClassFullName = containingClass->BaseClass()->FullName();
-            ConstantPool& constantPool = GetAssembly()->GetConstantPool();
-            Constant baseClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(baseClassFullName.c_str())));
-            upCastInst->SetTypeName(baseClassNameConstant);
-            MachineFunction()->AddInst(std::move(upCast));
-
             std::unique_ptr<Instruction> loadSizeLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.1");
             MachineFunction()->AddInst(std::move(loadSizeLocal));
 
@@ -682,6 +761,7 @@ void ArraySizeConstructorSymbol::CreateMachineFunction()
     std::unique_ptr<Instruction> loadSizeLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.1");
     MachineFunction()->AddInst(std::move(loadSizeLocal));
 
+    MachineFunction()->AddInst(GetAssembly()->GetMachine().CreateInst("gcpoint"));
     std::unique_ptr<Instruction> allocElems = GetAssembly()->GetMachine().CreateInst("allocelems");
     AllocateArrayElementsInst* allocElemsInst = dynamic_cast<AllocateArrayElementsInst*>(allocElems.get());
 
@@ -734,9 +814,9 @@ MemberFunctionSymbol::MemberFunctionSymbol(const Span& span_, Constant name_) : 
 {
 }
 
-utf32_string MemberFunctionSymbol::FriendlyName() const
+utf32_string MemberFunctionSymbol::FullNameWithSpecifiers() const
 {
-    utf32_string friendlyName;
+    utf32_string fullName;
     std::string flagStr = SymbolFlagStr(Symbol::Flags());
     std::string functionSymbolFlagStr = FunctionSymbolFlagStr(GetFlags());
     if (!functionSymbolFlagStr.empty())
@@ -758,49 +838,59 @@ utf32_string MemberFunctionSymbol::FriendlyName() const
     }
     if (!flagStr.empty())
     {
-        friendlyName.append(ToUtf32(flagStr));
+        fullName.append(ToUtf32(flagStr));
     }
     if (ReturnType())
     {
-        if (!friendlyName.empty())
+        if (!fullName.empty())
         {
-            friendlyName.append(1, U' ');
+            fullName.append(1, U' ');
         }
-        friendlyName.append(ReturnType()->FullName());
+        fullName.append(ReturnType()->FullName());
     }
     utf32_string parentFullName = Parent()->FullName();
     if (!parentFullName.empty())
     {
-        if (!friendlyName.empty())
+        if (!fullName.empty())
         {
-            friendlyName.append(1, U' ');
+            fullName.append(1, U' ');
         }
-        friendlyName.append(parentFullName);
-        friendlyName.append(1, U'.');
+        fullName.append(parentFullName);
+        fullName.append(1, U'.');
     }
     else
     {
-        if (!friendlyName.empty())
+        if (!fullName.empty())
         {
-            friendlyName.append(1, U' ');
+            fullName.append(1, U' ');
         }
     }
-    friendlyName.append(GroupName().Value());
-    friendlyName.append(1, U'(');
-    int n = int(Parameters().size());
-    for (int i = 1; i < n; ++i)
+    fullName.append(GroupName().Value());
+    fullName.append(1, U'(');
+    int start = 1;
+    if (IsStatic())
     {
-        if (i > 1)
+        start = 0;
+    }
+    bool first = true;
+    int n = int(Parameters().size());
+    for (int i = start; i < n; ++i)
+    {
+        if (first)
         {
-            friendlyName.append(U", ");
+            first = false;
+        }
+        else
+        {
+            fullName.append(U", ");
         }
         ParameterSymbol* parameter = Parameters()[i];
-        friendlyName.append(parameter->GetType()->FullName());
-        friendlyName.append(1, U' ');
-        friendlyName.append(utf32_string(parameter->Name().Value()));
+        fullName.append(parameter->GetType()->FullName());
+        fullName.append(1, U' ');
+        fullName.append(utf32_string(parameter->Name().Value()));
     }
-    friendlyName.append(1, U')');
-    return friendlyName;
+    fullName.append(1, U')');
+    return fullName;
 
 }
 void MemberFunctionSymbol::Write(SymbolWriter& writer)
@@ -835,6 +925,15 @@ void MemberFunctionSymbol::Read(SymbolReader& reader)
         imtIndex = reader.GetEncodedUInt();
     }
     flags = MemberFunctionSymbolFlags(reader.GetByte());
+}
+
+void MemberFunctionSymbol::CreateMachineFunction()
+{
+    if (IsVirtualAbstractOrOverride())
+    {
+        SetExported();
+    }
+    FunctionSymbol::CreateMachineFunction();
 }
 
 void MemberFunctionSymbol::SetSpecifiers(Specifiers specifiers)
@@ -888,6 +987,7 @@ void MemberFunctionSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::external_) != Specifiers::none)
     {
         SetExternal();
+        SetCanThrow();
     }
     if ((specifiers & Specifiers::new_) != Specifiers::none)
     {
@@ -931,13 +1031,28 @@ void MemberFunctionSymbol::GenerateVirtualCall(Machine& machine, Assembly& assem
     std::unique_ptr<Instruction> inst = machine.CreateInst("callv");
     VirtualCallInst* vcall = dynamic_cast<VirtualCallInst*>(inst.get());
     Assert(vcall, "virtual call instruction expected");
+    utf32_string callName = FullName();
+    ConstantPool& constantPool = assembly.GetConstantPool();
+    Constant callNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(callName.c_str())));
     vcall->SetNumArgs(n);
     vcall->SetVmtIndex(vmtIndex);
+    FunctionType functionType;
+    if (ReturnType())
+    {
+        functionType.SetReturnType(ReturnType()->GetValueType());
+    }
+    for (ParameterSymbol* param : Parameters())
+    {
+        functionType.AddParamType(param->GetType()->GetValueType());
+    }
+    vcall->SetFunctionType(functionType);
     InstIndexRequest startFunctionCall;
     function.GetEmitter()->AddIndexRequest(&startFunctionCall);
     function.AddInst(std::move(inst));
     function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
     function.MapPCToSourceLine(startFunctionCall.Index(), function.GetEmitter()->CurrentSourceLine());
+    SetCanThrow();
+    function.SetCanThrow();
 }
 
 void MemberFunctionSymbol::GenerateInterfaceCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects)
@@ -953,11 +1068,23 @@ void MemberFunctionSymbol::GenerateInterfaceCall(Machine& machine, Assembly& ass
     Assert(icall, "interface call instruction expected");
     icall->SetNumArgs(n);
     icall->SetImtIndex(imtIndex);
+    FunctionType functionType;
+    if (ReturnType())
+    {
+        functionType.SetReturnType(ReturnType()->GetValueType());
+    }
+    for (ParameterSymbol* param : Parameters())
+    {
+        functionType.AddParamType(param->GetType()->GetValueType());
+    }
+    icall->SetFunctionType(functionType);
     InstIndexRequest startFunctionCall;
     function.GetEmitter()->AddIndexRequest(&startFunctionCall);
     function.AddInst(std::move(inst));
     function.GetEmitter()->BackpatchConDisSet(startFunctionCall.Index());
     function.MapPCToSourceLine(startFunctionCall.Index(), function.GetEmitter()->CurrentSourceLine());
+    SetCanThrow();
+    function.SetCanThrow();
 }
 
 void MemberFunctionSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
@@ -998,17 +1125,20 @@ void ClassTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Fun
     std::unique_ptr<Instruction> inst;
     switch (conversionType)
     {
-        case ConversionType::implicit_: inst = std::move(machine.CreateInst("upcast")); break;
-        case ConversionType::explicit_: inst = std::move(machine.CreateInst("downcast")); break;
+        case ConversionType::implicit_: break;
+        case ConversionType::explicit_: inst = std::move(machine.CreateInst("downcast")); function.SetCanThrow(); break;
         default: throw std::runtime_error("invalid conversion type");
     }
-    TypeInstruction* typeInstruction = dynamic_cast<TypeInstruction*>(inst.get());
-    Assert(typeInstruction, "type instruction expected");
-    utf32_string targetTypeClassName = targetType->FullName();
-    ConstantPool& constantPool = assembly.GetConstantPool();
-    Constant targetTypeClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(targetTypeClassName.c_str())));
-    typeInstruction->SetTypeName(targetTypeClassNameConstant);
-    function.AddInst(std::move(inst));
+    if (inst)
+    {
+        TypeInstruction* typeInstruction = dynamic_cast<TypeInstruction*>(inst.get());
+        Assert(typeInstruction, "type instruction expected");
+        utf32_string targetTypeClassName = targetType->FullName();
+        ConstantPool& constantPool = assembly.GetConstantPool();
+        Constant targetTypeClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(targetTypeClassName.c_str())));
+        typeInstruction->SetTypeName(targetTypeClassNameConstant);
+        function.AddInst(std::move(inst));
+    }
 }
 
 ClassToInterfaceConversion::ClassToInterfaceConversion(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), itabIndex(-1)
@@ -1018,6 +1148,7 @@ ClassToInterfaceConversion::ClassToInterfaceConversion(const Span& span_, Consta
 
 void ClassToInterfaceConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
+    function.AddInst(machine.CreateInst("gcpoint"));
     std::unique_ptr<Instruction> createInst;
     createInst = machine.CreateInst("createo");
     ConstantPool& constantPool = assembly.GetConstantPool();
@@ -1054,6 +1185,8 @@ void ClassToInterfaceConversion::GenerateCall(Machine& machine, Assembly& assemb
     function.AddInst(std::move(swap));
     std::unique_ptr<Instruction> storeField;
     storeField = machine.CreateInst("storefield.1");
+    StoreField1Inst* storeField1Inst = static_cast<StoreField1Inst*>(storeField.get());
+    storeField1Inst->SetFieldType(ValueType::intType);
     function.AddInst(std::move(storeField));
     std::unique_ptr<Instruction> dupInst2;
     dupInst2 = machine.CreateInst("dup");
@@ -1066,6 +1199,8 @@ void ClassToInterfaceConversion::GenerateCall(Machine& machine, Assembly& assemb
     function.AddInst(std::move(swap2));
     std::unique_ptr<Instruction> storeField2;
     storeField2 = machine.CreateInst("storefield.0");
+    StoreField0Inst* storeField0Inst = static_cast<StoreField0Inst*>(storeField2.get());
+    storeField0Inst->SetFieldType(ValueType::objectReference);
     function.AddInst(std::move(storeField2));
 }
 
@@ -1171,6 +1306,7 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
     {
         ClassTypeSymbol* stringClassType = dynamic_cast<ClassTypeSymbol*>(stringType);
         BasicTypeConversion* strlitToString = CreateStringLiteralToStringConversion(assembly, stringClassType);
+        strlitToString->SetCreatesObject();
         conversionMap[std::make_pair(sourceType, targetType)] = strlitToString;
         stringConversions.push_back(std::unique_ptr<FunctionSymbol>(strlitToString));
         return strlitToString;
@@ -1330,7 +1466,8 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
             {
                 ConstantPool& constantPool = assembly.GetConstantPool();
                 utf32_string fullFunctionName = viableFunction->FullName();
-                Constant functionNameContant = constantPool.GetConstant(constantPool.Install(StringPtr(fullFunctionName.c_str())));
+                viableFunction->SetExported();
+                Constant functionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullFunctionName.c_str())));
                 Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
                 utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
                 Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
@@ -1339,7 +1476,7 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
                 fun2DlgConversion->SetGroupNameConstant(groupName);
                 fun2DlgConversion->SetSourceType(sourceType);
                 fun2DlgConversion->SetTargetType(targetType);
-                fun2DlgConversion->SetFunctionName(functionNameContant);
+                fun2DlgConversion->SetFunctionName(functionNameConstant);
                 FunctionSymbol* conversionFun = fun2DlgConversion.get();
                 conversionMap[std::make_pair(sourceType, targetType)] = conversionFun;
                 delegateConversions.push_back(std::move(fun2DlgConversion));

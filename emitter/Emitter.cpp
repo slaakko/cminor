@@ -225,14 +225,27 @@ void EmitterVisitor::Visit(BoundClass& boundClass)
 
 void EmitterVisitor::Visit(BoundFunction& boundFunction)
 {
+    if (boundFunction.GetFunctionSymbol()->GroupName() == U"ReadByte")
+    {
+        int x = 0;
+    }
     boundFunction.GetFunctionSymbol()->CreateMachineFunction();
     Function* prevFunction = function;
     function = boundFunction.GetFunctionSymbol()->MachineFunction();
+    if (function->AlreadyGenerated())
+    {
+        function = prevFunction;
+        return;
+    }
     Emitter* prevEmitter = function->GetEmitter();
     function->SetEmitter(this);
     if (boundFunction.Body())
     {
         boundFunction.Body()->Accept(*this);
+    }
+    if (function->CanThrow())
+    {
+        boundFunction.GetFunctionSymbol()->SetCanThrow();
     }
     function->SetEmitter(prevEmitter);
     function = prevFunction;
@@ -296,6 +309,13 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
         function->MapPCToSourceLine(exitBlock.Index(), boundCompoundStatement.EndBraceSpan().LineNumber());
         int32_t exitBlockTarget = exitBlock.Index();
         Backpatch(prevNext, exitBlockTarget);
+    }
+    else
+    {
+        if (nextSet)
+        {
+            nextSet->insert(nextSet->end(), prevNext.cbegin(), prevNext.cend());
+        }
     }
     blockStack.pop_back();
 }
@@ -393,6 +413,8 @@ void EmitterVisitor::Visit(BoundWhileStatement& boundWhileStatement)
     function->MapPCToSourceLine(startStatement.Index(), boundWhileStatement.Statement()->GetSpan().LineNumber());
     boundWhileStatement.Statement()->SetFirstInstIndex(startStatement.Index());
     Backpatch(true_, startStatement.Index());
+    std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
+    function->AddInst(std::move(gcpoint));
     std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
     inst->SetTarget(conditionTarget);
     function->AddInst(std::move(inst));
@@ -437,6 +459,8 @@ void EmitterVisitor::Visit(BoundDoStatement& boundDoStatement)
     genJumpingBoolCode = true;
     InstIndexRequest startCond;
     AddIndexRequest(&startCond);
+    std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
+    function->AddInst(std::move(gcpoint));
     boundDoStatement.Condition()->Accept(*this);
     int32_t conditionTarget = startCond.Index();
     genJumpingBoolCode = prevGenJumpingBoolCode;
@@ -497,6 +521,8 @@ void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
     int32_t loopTarget = startLoop.Index();
     boundForStatement.LoopS()->SetFirstInstIndex(loopTarget);
     Backpatch(continue_, loopTarget);
+    std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
+    function->AddInst(std::move(gcpoint));
     std::unique_ptr<Instruction> jumpToCond = machine.CreateInst("jump");
     jumpToCond->SetTarget(conditionTarget);
     function->AddInst(std::move(jumpToCond));
@@ -525,6 +551,7 @@ void EmitterVisitor::Visit(BoundSwitchStatement& boundSwitchStatement)
     function->MapPCToSourceLine(startCond.Index(), boundSwitchStatement.GetSpan().LineNumber());
     std::unique_ptr<Instruction> inst = machine.CreateInst("cswitch");
     ContinuousSwitchInst* switchInst = dynamic_cast<ContinuousSwitchInst*>(inst.get());
+    switchInst->SetCondType(boundSwitchStatement.Condition()->GetType()->GetValueType());
     int instIndex = function->NumInsts();
     function->AddInst(std::move(inst));
     std::vector<std::pair<IntegralValue, int32_t>>* prevCaseTargets = caseTargets;
@@ -612,6 +639,7 @@ void EmitterVisitor::Visit(BoundSwitchStatement& boundSwitchStatement)
         {
             inst = std::move(machine.CreateInst("bswitch"));
             binSearchSwitchInst = dynamic_cast<BinarySearchSwitchInst*>(inst.get());
+            binSearchSwitchInst->SetCondType(boundSwitchStatement.Condition()->GetType()->GetValueType());
             binSearchSwitchInst->SetTargets(caseTargets_);
             binSearchSwitchInst->SetDefaultTarget(defaultStart.Index());
             function->SetInst(instIndex, std::move(inst));
@@ -661,6 +689,11 @@ void EmitterVisitor::Visit(BoundGotoCaseStatement& boundGotoCaseStatement)
 {
     SetCurrentSourceLine(boundGotoCaseStatement.GetSpan().LineNumber());
     ExitBlocks(breakTarget->Block());
+    if (breakTarget->FirstInstIndex() != -1 && breakTarget->FirstInstIndex() < function->NumInsts())
+    {
+        std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
+        function->AddInst(std::move(gcpoint));
+    }
     std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
     Instruction* gotoCaseJump = jump.get();
     function->AddInst(std::move(jump));
@@ -671,6 +704,11 @@ void EmitterVisitor::Visit(BoundGotoDefaultStatement& boundGotoDefaultStatement)
 {
     SetCurrentSourceLine(boundGotoDefaultStatement.GetSpan().LineNumber());
     ExitBlocks(breakTarget->Block());
+    if (breakTarget->FirstInstIndex() != -1 && breakTarget->FirstInstIndex() < function->NumInsts())
+    {
+        std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
+        function->AddInst(std::move(gcpoint));
+    }
     std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
     Instruction* gotoDefaultJump = jump.get();
     function->AddInst(std::move(jump));
@@ -704,6 +742,11 @@ void EmitterVisitor::Visit(BoundGotoStatement& boundGotoStatement)
     SetCurrentSourceLine(boundGotoStatement.GetSpan().LineNumber());
     BoundCompoundStatement* targetBlock = boundGotoStatement.TargetBlock();
     ExitBlocks(targetBlock);
+    if (boundGotoStatement.TargetStatement()->FirstInstIndex() != -1 && boundGotoStatement.TargetStatement()->FirstInstIndex() < function->NumInsts())
+    {
+        std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
+        function->AddInst(std::move(gcpoint));
+    }
     std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
     if (boundGotoStatement.TargetStatement()->FirstInstIndex() != -1)
     {
@@ -767,6 +810,7 @@ void EmitterVisitor::Visit(BoundThrowStatement& boundThrowStatement)
         InstIndexRequest startThrow;
         AddIndexRequest(&startThrow);
         function->AddInst(std::move(throwInst));
+        function->SetCanThrow();
         function->MapPCToSourceLine(startThrow.Index(), CurrentSourceLine());
     }
     else
@@ -873,6 +917,7 @@ void EmitterVisitor::Visit(BoundStaticInitStatement& boundStaticInitStatement)
     Assert(staticInitInst, "static init instruction expected");
     staticInitInst->SetTypeName(boundStaticInitStatement.ClassNameConstant());
     function->AddInst(std::move(inst));
+    function->SetCanThrow();
 }
 
 void EmitterVisitor::Visit(BoundDoneStaticInitStatement& boundDoneStaticInitStatement)
@@ -883,6 +928,7 @@ void EmitterVisitor::Visit(BoundDoneStaticInitStatement& boundDoneStaticInitStat
     Assert(doneStaticInitInst, "done static init instruction expected");
     doneStaticInitInst->SetTypeName(boundDoneStaticInitStatement.ClassNameConstant());
     function->AddInst(std::move(inst));
+    function->SetCanThrow();
 }
 
 void EmitterVisitor::Visit(BoundLiteral& boundLiteral)

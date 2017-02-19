@@ -26,7 +26,9 @@ enum class FunctionSymbolFlags : uint8_t
     none = 0,
     inline_ = 1 << 0,
     external_ = 1 << 1,
-    conversionFun = 1 << 2
+    conversionFun = 1 << 2,
+    exported = 1 << 3,
+    canThrow = 1 << 4
 };
 
 inline FunctionSymbolFlags operator&(FunctionSymbolFlags left, FunctionSymbolFlags right)
@@ -54,12 +56,16 @@ public:
     bool IsInline() const { return GetFlag(FunctionSymbolFlags::inline_); }
     void SetExternal() { SetFlag(FunctionSymbolFlags::external_); }
     bool IsExternal() const { return GetFlag(FunctionSymbolFlags::external_); }
+    bool IsExported() const { return GetFlag(FunctionSymbolFlags::exported); }
+    void SetExported() { SetFlag(FunctionSymbolFlags::exported); }
+    bool CanThrow() const { return GetFlag(FunctionSymbolFlags::canThrow); }
+    void SetCanThrow() { SetFlag(FunctionSymbolFlags::canThrow); }
     virtual bool IsAbstract() const { return false; }
     StringPtr GroupName() const { return StringPtr(groupName.Value().AsStringLiteral()); }
     void SetGroupNameConstant(Constant groupName_) { groupName = groupName_; }
     virtual void ComputeName();
-    virtual utf32_string FriendlyName() const;
     utf32_string FullName() const override;
+    virtual utf32_string FullNameWithSpecifiers() const;
     virtual utf32_string FullParsingName() const;
     int Arity() const { return int(parameters.size()); }
     void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
@@ -89,6 +95,8 @@ public:
     void DumpHeader(CodeFormatter& formatter) override;
     int DeclarationBlockId() const { return declarationBlockId; }
     void SetDeclarationBlockId(int declarationBlockId_) { declarationBlockId = declarationBlockId_; }
+    virtual bool IsPropertyGetterOrSetter() const { return false; }
+    virtual bool IsIndexerGetterOrSetter() const { return false; }
 private:
     Constant groupName;
     Constant vmFunctionName;
@@ -108,7 +116,7 @@ public:
     std::string TypeString() const override { return "static constructor"; }
     void SetSpecifiers(Specifiers specifiers);
     utf32_string FullParsingName() const override;
-    utf32_string FriendlyName() const override;
+    utf32_string FullNameWithSpecifiers() const override;
     bool IsDerived() const override { return true; }
     void AddTo(ClassTypeSymbol* classTypeSymbol) override;
     void SetFullNameConstant(Constant fullNameConstant_) { fullNameConstant = fullNameConstant_; }
@@ -141,7 +149,7 @@ public:
     std::string TypeString() const override { return "constructor"; }
     void SetSpecifiers(Specifiers specifiers);
     utf32_string FullParsingName() const override;
-    utf32_string FriendlyName() const override;
+    utf32_string FullNameWithSpecifiers() const override;
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
     void CreateMachineFunction() override;
     bool IsDefaultConstructorSymbol() const;
@@ -199,7 +207,8 @@ public:
     void Read(SymbolReader& reader) override;
     void SetSpecifiers(Specifiers specifiers);
     utf32_string FullParsingName() const override;
-    utf32_string FriendlyName() const override;
+    utf32_string FullNameWithSpecifiers() const override;
+    void CreateMachineFunction() override;
     bool IsVirtual() const { return GetFlag(MemberFunctionSymbolFlags::virtual_); }
     void SetVirtual() { SetFlag(MemberFunctionSymbolFlags::virtual_); }
     bool IsAbstract() const override { return GetFlag(MemberFunctionSymbolFlags::abstract_); }

@@ -9,6 +9,39 @@
 
 namespace cminor { namespace machine {
 
+FunctionType::FunctionType() : returnType(ValueType::none)
+{
+}
+
+void FunctionType::AddParamType(ValueType paramType)
+{
+    parameterTypes.push_back(paramType);
+}
+
+void FunctionType::Write(Writer& writer)
+{
+    writer.Put(uint8_t(returnType));
+    uint32_t n = uint32_t(parameterTypes.size());
+    writer.PutEncodedUInt(n);
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        ValueType paramType = parameterTypes[i];
+        writer.Put(uint8_t(paramType));
+    }
+}
+
+void FunctionType::Read(Reader& reader)
+{
+    returnType = ValueType(reader.GetByte());
+    uint32_t n = reader.GetEncodedUInt();
+    parameterTypes.clear();
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        ValueType paramType = ValueType(reader.GetByte());
+        parameterTypes.push_back(paramType);
+    }
+}
+
 void FieldOffset::Write(Writer& writer)
 {
     writer.PutEncodedUInt(value);
@@ -117,29 +150,43 @@ void ObjectType::Read(Reader& reader)
     objectLayout.Read(reader);
 }
 
-std::unique_ptr<TypeTable> TypeTable::instance;
-
-void TypeTable::Init()
+class TypeTableImpl
 {
-    instance.reset(new TypeTable());
+public:
+    static void Init();
+    static void Done();
+    static TypeTableImpl& Instance();
+    Type* GetType(StringPtr fullTypeName);
+    void SetType(Type* type);
+private:
+    static std::unique_ptr<TypeTableImpl> instance;
+    TypeTableImpl();
+    std::unordered_map<StringPtr, Type*, StringPtrHash> typeMap;
+};
+
+std::unique_ptr<TypeTableImpl> TypeTableImpl::instance;
+
+void TypeTableImpl::Init()
+{
+    instance.reset(new TypeTableImpl());
 }
 
-void TypeTable::Done()
+void TypeTableImpl::Done()
 {
     instance.reset();
 }
 
-TypeTable::TypeTable()
+TypeTableImpl::TypeTableImpl()
 {
 }
 
-TypeTable& TypeTable::Instance()
+TypeTableImpl& TypeTableImpl::Instance()
 {
     Assert(instance, "object type table instance not set");
     return *instance;
 }
 
-Type* TypeTable::GetType(StringPtr fullTypeName)
+Type* TypeTableImpl::GetType(StringPtr fullTypeName)
 {
     auto it = typeMap.find(fullTypeName);
     if (it != typeMap.cend())
@@ -152,7 +199,7 @@ Type* TypeTable::GetType(StringPtr fullTypeName)
     }
 }
 
-void TypeTable::SetType(Type* type)
+void TypeTableImpl::SetType(Type* type)
 {
     auto it = typeMap.find(type->Name());
     if (it != typeMap.cend())
@@ -162,90 +209,110 @@ void TypeTable::SetType(Type* type)
     typeMap[type->Name()] = type;
 }
 
-ObjectType* GetBoxedType(ValueType valueType)
+MACHINE_API void TypeTable::Init()
+{
+    TypeTableImpl::Init();
+}
+
+MACHINE_API void TypeTable::Done()
+{
+    TypeTableImpl::Done();
+}
+
+MACHINE_API Type* TypeTable::GetType(StringPtr fullTypeName)
+{
+    return TypeTableImpl::Instance().GetType(fullTypeName);
+}
+
+MACHINE_API void TypeTable::SetType(Type* type)
+{
+    TypeTableImpl::Instance().SetType(type);
+}
+
+MACHINE_API ObjectType* GetBoxedType(ValueType valueType)
 {
     switch (valueType)
     {
         case ValueType::sbyteType: 
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedInt8");
+            Type* type = TypeTable::GetType(U"System.BoxedInt8");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
         }
         case ValueType::byteType:
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedUInt8");
+            Type* type = TypeTable::GetType(U"System.BoxedUInt8");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
         }
         case ValueType::shortType:
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedInt16");
+            Type* type = TypeTable::GetType(U"System.BoxedInt16");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
         }
         case ValueType::ushortType:
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedUInt16");
+            Type* type = TypeTable::GetType(U"System.BoxedUInt16");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
         }
         case ValueType::intType:
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedInt32");
+            Type* type = TypeTable::GetType(U"System.BoxedInt32");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
         }
         case ValueType::uintType:
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedUInt32");
+            Type* type = TypeTable::GetType(U"System.BoxedUInt32");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
         }
         case ValueType::longType:
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedInt64");
+            Type* type = TypeTable::GetType(U"System.BoxedInt64");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
         }
         case ValueType::ulongType:
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedUInt64");
+            Type* type = TypeTable::GetType(U"System.BoxedUInt64");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
         }
         case ValueType::floatType:
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedFloat");
+            Type* type = TypeTable::GetType(U"System.BoxedFloat");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
         }
         case ValueType::doubleType:
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedDouble");
+            Type* type = TypeTable::GetType(U"System.BoxedDouble");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
         }
         case ValueType::charType:
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedChar");
+            Type* type = TypeTable::GetType(U"System.BoxedChar");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
         }
         case ValueType::boolType:
         {
-            Type* type = TypeTable::Instance().GetType(U"System.BoxedBoolean");
+            Type* type = TypeTable::GetType(U"System.BoxedBoolean");
             ObjectType* boxedType = dynamic_cast<ObjectType*>(type);
             Assert(boxedType, "object type expected");
             return boxedType;
@@ -255,12 +322,12 @@ ObjectType* GetBoxedType(ValueType valueType)
     return nullptr;
 }
 
-void TypeInit()
+MACHINE_API void TypeInit()
 {
     TypeTable::Init();
 }
 
-void TypeDone()
+MACHINE_API void TypeDone()
 {
     TypeTable::Done();
 }

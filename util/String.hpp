@@ -3,12 +3,12 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_STRING_INCLUDED
-#define CMINOR_MACHINE_STRING_INCLUDED
-#include <cminor/machine/Error.hpp>
-#include <cminor/machine/OsInterface.hpp>
+#ifndef CMINOR_UTIL_STRING_INCLUDED
+#define CMINOR_UTIL_STRING_INCLUDED
+#include <cminor/util/Defines.hpp>
+#include <cminor/util/Error.hpp>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 inline uint64_t StringLen(const char32_t* s)
 {
@@ -70,9 +70,11 @@ struct StringPtrHash
 #if defined(BITS_64)
     const size_t offset = 14695981039346656037ULL;
     const size_t prime = 1099511628211ULL;
-#else
+#elif defined(BITS_32)
     const size_t offset = 2166136261U;
     const size_t prime = 16777619U;
+#else
+    #error either BITS_64 or BITS_32 must be defined
 #endif
     size_t operator()(StringPtr s) const
     {
@@ -89,6 +91,6 @@ struct StringPtrHash
     }
 };
 
-} } // namespace cminor::machine
+} } // namespace cminor::util
 
-#endif // CMINOR_MACHINE_STRING_INCLUDED
+#endif // CMINOR_UTIL_STRING_INCLUDED

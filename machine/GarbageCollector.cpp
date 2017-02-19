@@ -10,15 +10,12 @@
 
 namespace cminor { namespace machine {
 
+MACHINE_API bool wantToCollectGarbage = false;
+
 std::mutex garbageCollectorMutex;
 
 GarbageCollector::GarbageCollector(Machine& machine_) : machine(machine_), state(GarbageCollectorState::idle), started(false), collectionRequested(false), fullCollectionRequested(false), error(false)
 {
-}
-
-bool GarbageCollector::WantToCollectGarbage()
-{
-    return state == GarbageCollectorState::requested;
 }
 
 void GarbageCollector::WaitForIdle(Thread& thread)
@@ -146,11 +143,13 @@ void GarbageCollector::Run()
         {
             collectionRequested = false;
             state = GarbageCollectorState::requested;
+            wantToCollectGarbage = true;
 #ifdef GC_LOGGING
             LogMessage(">gc:Run() (requested)");
 #endif
             WaitForThreadsPaused();
             state = GarbageCollectorState::collecting;
+            wantToCollectGarbage = false;
 #ifdef GC_LOGGING
             LogMessage(">gc:Run() (collecting)");
 #endif
@@ -212,7 +211,7 @@ void GarbageCollector::MarkLiveAllocations()
             allocation->MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
         }
     }
-    for (const auto& p : ClassDataTable::Instance().ClassDataMap())
+    for (const auto& p : ClassDataTable::ClassDataMap())
     {
         ClassData* classData = p.second;
         StaticClassData* staticClassData = classData->GetStaticClassData();

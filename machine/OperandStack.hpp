@@ -5,13 +5,14 @@
 
 #ifndef CMINOR_MACHINE_OPERAND_STACK_INCLUDED
 #define CMINOR_MACHINE_OPERAND_STACK_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Object.hpp>
 #include <stdint.h>
 #include <vector>
 
 namespace cminor { namespace machine {
 
-class OperandStack
+class MACHINE_API OperandStack
 {
 public:
     void Push(IntegralValue value)

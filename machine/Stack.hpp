@@ -5,6 +5,7 @@
 
 #ifndef CMINOR_MACHINE_STACK_INCLUDED
 #define CMINOR_MACHINE_STACK_INCLUDED
+#include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Error.hpp>
 #include <vector>
 #include <stdexcept>
@@ -26,15 +27,12 @@ void SetStackReserveSize(uint64_t stackReserveSize_);
 uint64_t GetStackGrowSize();
 void SetStackGrowSize(uint64_t stackGrowSize_);
 
-class StackOverflow : public std::runtime_error
-{
-public:
-    StackOverflow();
-};
-
 class Thread;
 class Function;
 class Frame;
+
+MACHINE_API void EnterFunction(void* functionStackNode);
+MACHINE_API void LeaveFunction(void* functionStackNode);
 
 class Stack
 {

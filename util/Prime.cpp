@@ -3,9 +3,9 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/machine/Prime.hpp>
+#include <cminor/util/Prime.hpp>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
         
 bool IsPrime(uint64_t x)
 {
@@ -42,4 +42,4 @@ uint64_t NextPrime(uint64_t x)
     return x;
 }
 
-} } // namespace cminor::machine
+} } // namespace cminor::util

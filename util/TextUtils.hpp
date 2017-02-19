@@ -3,13 +3,13 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_TEXTUTILS_INCLUDED
-#define CMINOR_MACHINE_TEXTUTILS_INCLUDED
+#ifndef CMINOR_UTIL_TEXTUTILS_INCLUDED
+#define CMINOR_UTIL_TEXTUTILS_INCLUDED
 #include <string>
 #include <vector>
 #include <stdint.h>
 
-namespace cminor { namespace machine {
+namespace cminor { namespace util {
 
 std::string Trim(const std::string& s);
 std::string TrimAll(const std::string& s);
@@ -34,7 +34,11 @@ std::string ToLower(const std::string& s);
 std::string ToString(double x);
 std::string ToString(double x, int maxNumDecimals);
 std::string ToString(double x, int minNumDecimals, int maxNumDecimals);
+std::string ToHexString(uint8_t x);
+std::string ToHexString(uint16_t x);
+std::string ToHexString(uint32_t x);
+std::string ToHexString(uint64_t x);
 
-} } // namespace cminor::machine
+} } // namespace cminor::util
 
 #endif //

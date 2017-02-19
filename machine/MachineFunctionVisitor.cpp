@@ -3,17 +3,16 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_RANDOM_INCLUDED
-#define CMINOR_MACHINE_RANDOM_INCLUDED
-#include <stdint.h>
+#include <cminor/machine/MachineFunctionVisitor.hpp>
 
 namespace cminor { namespace machine {
 
-void InitMt(uint32_t seed);
+MachineFunctionVisitor::MachineFunctionVisitor() : currentInstructionIndex(-1)
+{
+}
 
-uint32_t Random();
-uint64_t Random64();
+MachineFunctionVisitor::~MachineFunctionVisitor()
+{
+}
 
 } } // namespace cminor::machine
-
-#endif // CMINOR_MACHINE_RANDOM_INCLUDED
