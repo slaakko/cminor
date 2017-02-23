@@ -105,6 +105,7 @@ void SymbolTable::BeginFunction(FunctionNode& functionNode)
         else
         {
             mainFunction = function;
+            mainFunction->SetExported();
         }
     }
     MapNode(functionNode, function);

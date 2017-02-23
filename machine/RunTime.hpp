@@ -10,16 +10,31 @@
 
 namespace cminor { namespace machine {
 
+MACHINE_API void SetTrace();
+
+class MACHINE_API CminorException
+{
+public:
+    CminorException(uint64_t exceptionObjectReference_) : exceptionObjectReference(exceptionObjectReference_) {}
+    uint64_t ExceptionObjectReference() const { return exceptionObjectReference; }
+private:
+    uint64_t exceptionObjectReference;
+};
+
 class Function;
 
 struct FunctionStackEntry
 {
     Function* function;
+    int32_t lineNumber;
     FunctionStackEntry* next;
 };
 
+extern "C" MACHINE_API void RtThrowException(uint64_t exceptionObjectReference);
+
 extern "C" MACHINE_API void RtEnterFunction(void* functionStackEntry);
 extern "C" MACHINE_API void RtLeaveFunction(void* functionStackEntry);
+extern "C" MACHINE_API void RtUnwindFunctionStack(void* functionStackEntry);
 
 extern "C" MACHINE_API int8_t RtLoadFieldSb(uint64_t objectReference, int32_t fieldIndex);
 extern "C" MACHINE_API uint8_t RtLoadFieldBy(uint64_t objectReference, int32_t fieldIndex);

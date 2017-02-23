@@ -11,10 +11,13 @@
 #include <cminor/ast/Project.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/OsInterface.hpp>
 #include <boost/filesystem.hpp>
 #include <cminor/util/Path.hpp>
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/util/Prime.hpp>
+#include <iostream>
 
 namespace cminor { namespace symbols {
 
@@ -223,18 +226,26 @@ std::string AssemblyFlagsStr(AssemblyFlags flags)
 }
 
 Assembly::Assembly(Machine& machine_) : machine(machine_), flags(AssemblyFlags::none), assemblyFormat(currentAssemblyFormat), originalFilePath(), constantPool(), symbolTable(this), name(), id(-1), 
-    finishReadPos(0), assemblyDependency(this), readClassNodes(false)
+    finishReadPos(0), assemblyDependency(this), transientFlags(TransientAssemblyFlags::none), sharedLibraryHandle(nullptr), mainEntryPointAddress(nullptr)
 {
 }
 
 Assembly::Assembly(Machine& machine_, const utf32_string& name_, const std::string& filePath_) : machine(machine_), flags(AssemblyFlags::none), assemblyFormat(currentAssemblyFormat), 
     originalFilePath(filePath_), constantPool(), symbolTable(this), name(constantPool.GetConstant(constantPool.Install(StringPtr(name_.c_str())))), id(-1), finishReadPos(0), 
-    assemblyDependency(this), readClassNodes(false)
+    assemblyDependency(this), transientFlags(TransientAssemblyFlags::none), sharedLibraryHandle(nullptr), mainEntryPointAddress(nullptr)
 {
     bool isSystemAssemblyName = CminorSystemAssemblyNameCollection::Instance().Find(StringPtr(name.Value().AsStringLiteral()));
     if (isSystemAssemblyName)
     {
         SetSystemAssembly();
+    }
+}
+
+Assembly::~Assembly()
+{
+    if (sharedLibraryHandle)
+    {
+        FreeSharedLibrary(sharedLibraryHandle);
     }
 }
 
@@ -253,8 +264,9 @@ void Assembly::Load(const std::string& assemblyFilePath)
     std::unordered_set<utf32_string> classTemplateSpecializationNames;
     std::vector<Assembly*> assemblies;
     std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
+    std::unordered_map<std::string, Assembly*> readMap;
     BeginRead(symbolReader, LoadType::execute, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions,
-        typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
+        typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap, readMap);
     auto it = std::unique(assemblies.begin(), assemblies.end());
     assemblies.erase(it, assemblies.end());
     std::unordered_map<Assembly*, AssemblyDependency*> dependencyMap;
@@ -282,10 +294,11 @@ void Assembly::PrepareForCompilation(const std::vector<std::string>& projectAsse
     std::unordered_set<utf32_string> classTemplateSpecializationNames;
     std::vector<Assembly*> assemblies;
     std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
+    std::unordered_map<std::string, Assembly*> readMap;
     std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(OriginalFilePath()).remove_filename().generic_string());
     std::unordered_set<std::string> importSet;
     ImportAssemblies(projectAssemblyReferences, LoadType::build, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions,
-        memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap);
+        memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes, classTemplateSpecializationNames, assemblies, assemblyDependencyMap, readMap);
     assemblies.push_back(this);
     auto it = std::unique(assemblies.begin(), assemblies.end());
     assemblies.erase(it, assemblies.end());
@@ -311,6 +324,10 @@ int Assembly::RunIntermediateCode(const std::vector<utf32_string>& programArgume
     }
     ObjectType* argsArrayObjectType = nullptr;
     bool runWithArgs = false;
+    if (mainFun->Arity() != 1 && mainFun->Arity() != 0)
+    {
+        throw std::runtime_error("main function has invalid arity " + std::to_string(mainFun->Arity()));
+    }
     if (mainFun->Arity() == 1)
     {
         TypeSymbol* argsParamType = mainFun->Parameters()[0]->GetType();
@@ -325,11 +342,194 @@ int Assembly::RunIntermediateCode(const std::vector<utf32_string>& programArgume
         }
         runWithArgs = true;
     }
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "running intermediate code of program '" + ToUtf8(Name().Value()) + "'..." << std::endl;
+    }
     machine.Run(runWithArgs, programArguments, argsArrayObjectType);
     if (mainFun->ReturnType() == symbolTable.GetType(U"System.Int32"))
     {
         IntegralValue programReturnValue = machine.MainThread().OpStack().Pop();
         returnValue = programReturnValue.AsInt();
+        if (GetGlobalFlag(GlobalFlags::verbose))
+        {
+            std::cout << "program returned exit code " << returnValue << std::endl;
+        }
+    }
+    else
+    {
+        if (GetGlobalFlag(GlobalFlags::verbose))
+        {
+            std::cout << "program exited normally" << std::endl;
+        }
+    }
+    return returnValue;
+}
+
+int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
+{
+    if (!IsNative())
+    {
+        throw std::runtime_error("program '" + ToUtf8(Name().Value()) + "' is not built with --native option");
+    }
+    FunctionSymbol* mainFun = symbolTable.GetMainFunction();
+    if (!mainFun)
+    {
+        throw std::runtime_error("assembly '" + ToUtf8(Name().Value()) + "' has no main function");
+    }
+    PrepareForNativeExecution();
+    if (!mainEntryPointAddress)
+    {
+        throw std::runtime_error("main entry point not resolved");
+    }
+    int returnValue = 0;
+    ObjectType* argsArrayObjectType = nullptr;
+    bool startWithArgs = false;
+    if (mainFun->Arity() != 1 && mainFun->Arity() != 0)
+    {
+        throw std::runtime_error("main function has invalid arity " + std::to_string(mainFun->Arity()));
+    }
+    if (mainFun->Arity() == 1)
+    {
+        TypeSymbol* argsParamType = mainFun->Parameters()[0]->GetType();
+        ArrayTypeSymbol* argsArrayType = dynamic_cast<ArrayTypeSymbol*>(argsParamType);
+        if (argsArrayType && argsArrayType->ElementType() == symbolTable.GetType(U"System.String"))
+        {
+            argsArrayObjectType = argsArrayType->GetObjectType();
+        }
+        else
+        {
+            throw Exception("parameter type of program main function is not string[]", mainFun->GetSpan());
+        }
+        startWithArgs = true;
+    }
+    SetRunningNativeCode();
+    machine.Start(startWithArgs, programArguments, argsArrayObjectType);
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "running native code of program '" + ToUtf8(Name().Value()) + "'..." << std::endl;
+    }
+    try
+    {
+        if (startWithArgs)
+        {
+            IntegralValue argumentArrayValue = machine.MainThread().OpStack().Pop();
+            if (argumentArrayValue.GetType() != ValueType::objectReference)
+            {
+                throw std::runtime_error("object reference expected");
+            }
+            ObjectReference args(argumentArrayValue.Value());
+            if (!mainFun->ReturnType())
+            {
+                throw std::runtime_error("main function has no return type");
+            }
+            if (mainFun->ReturnType()->IsVoidType())
+            {
+                typedef void(*MainFunctionType)(uint64_t);
+                MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                main(args.Value());
+                if (GetGlobalFlag(GlobalFlags::verbose))
+                {
+                    std::cout << "program exited normally" << std::endl;
+                }
+            }
+            else
+            {
+                if (mainFun->ReturnType() == symbolTable.GetType(U"System.Int32"))
+                {
+                    typedef int32_t(*MainFunctionType)(uint64_t);
+                    MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                    returnValue = main(args.Value());
+                    if (GetGlobalFlag(GlobalFlags::verbose))
+                    {
+                        std::cout << "program returned exit code " << returnValue << std::endl;
+                    }
+                }
+                else
+                {
+                    throw std::runtime_error("main function has invalid return type");
+                }
+            }
+        }
+        else
+        {
+            if (!mainFun->ReturnType())
+            {
+                throw std::runtime_error("main function has no return type");
+            }
+            if (mainFun->ReturnType()->IsVoidType())
+            {
+                typedef void(*MainFunctionType)(void);
+                MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                main();
+                if (GetGlobalFlag(GlobalFlags::verbose))
+                {
+                    std::cout << "program exited normally" << std::endl;
+                }
+            }
+            else
+            {
+                if (mainFun->ReturnType() == symbolTable.GetType(U"System.Int32"))
+                {
+                    typedef int32_t(*MainFunctionType)(void);
+                    MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                    returnValue = main();
+                    if (GetGlobalFlag(GlobalFlags::verbose))
+                    {
+                        std::cout << "program returned exit code " << returnValue << std::endl;
+                    }
+                }
+                else
+                {
+                    throw std::runtime_error("main function has invalid return type (not int)");
+                }
+            }
+        }
+    }
+    catch (const CminorException& ex)
+    {
+        std::string errorMessage;
+        ObjectReference exceptionObjectReference(ex.ExceptionObjectReference());
+        if (exceptionObjectReference.IsNull())
+        {
+            throw std::runtime_error("unhandled exception escaped from main (exception object is null)");
+        }
+        Object& exceptionObject = GetManagedMemoryPool().GetObject(exceptionObjectReference);
+        Type* type = exceptionObject.GetType();
+        errorMessage.append(ToUtf8(type->Name().Value()));
+        if (exceptionObject.FieldCount() < 2)
+        {
+            throw std::runtime_error("unhandled exception escaped from main (exception object '" + ToUtf8(type->Name().Value()) + "' has fewer than two fields)");
+        }
+        IntegralValue messageValue = exceptionObject.GetField(1);
+        if (messageValue.GetType() != ValueType::objectReference)
+        {
+            throw std::runtime_error("unhandled exception escaped from main (message field of exception object '" + ToUtf8(type->Name().Value()) + "' not of object type)");
+        }
+        ObjectReference messageReference(messageValue.Value());
+        if (!messageReference.IsNull())
+        {
+            std::string message = GetManagedMemoryPool().GetUtf8String(messageReference);
+            if (!message.empty())
+            {
+                errorMessage.append(": ").append(message);
+            }
+        }
+        IntegralValue stackTraceValue = exceptionObject.GetField(2);
+        if (stackTraceValue.GetType() != ValueType::objectReference)
+        {
+            throw std::runtime_error("unhandled exception escaped from main (stack trace field of exception object '" + ToUtf8(type->Name().Value()) + "' not of object type)");
+        }
+        ObjectReference stackTraceReference(stackTraceValue.Value());
+        if (!stackTraceReference.IsNull())
+        {
+            std::string stackTrace = GetManagedMemoryPool().GetUtf8String(stackTraceReference);
+            if (!stackTrace.empty())
+            {
+                errorMessage.append("\n").append(stackTrace);
+            }
+        }
+        throw std::runtime_error("unhandled exception escaped from main: " + errorMessage);
     }
     return returnValue;
 }
@@ -475,7 +675,7 @@ void Assembly::BeginRead(SymbolReader& reader, LoadType loadType, const Assembly
     std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
     std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
     std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
-    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
+    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap)
 {
     reader.SetMachine(machine);
     AssemblyTag defaultTag;
@@ -517,7 +717,7 @@ void Assembly::BeginRead(SymbolReader& reader, LoadType loadType, const Assembly
     machineFunctionTable.Read(reader);
     finishReadPos = reader.Pos();
     ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, 
-        setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
+        setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap, readMap);
     callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
     fun2DlgInstructions.insert(fun2DlgInstructions.end(), reader.Fun2DlgInstructions().cbegin(), reader.Fun2DlgInstructions().cend());
     memFun2ClassDlgInstructions.insert(memFun2ClassDlgInstructions.end(), reader.MemFun2ClassDlgInstructions().cbegin(), reader.MemFun2ClassDlgInstructions().cend());
@@ -568,7 +768,7 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
     std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
     std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
     std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
-    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
+    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap)
 {
     reader.SetMachine(machine);
     reader.SetClassTemplateSpecializationNames(&classTemplateSpecializationNames);
@@ -610,7 +810,7 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
     name = constantPool.GetConstant(nameId);
     machineFunctionTable.Read(reader);
     ImportAssemblies(loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, 
-        setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
+        setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap, readMap);
     ImportSymbolTables();
     symbolTable.Read(reader);
     ReadSymbolIdMapping(reader);
@@ -636,6 +836,11 @@ void Assembly::SetNativeSharedLibraryFileName(const std::string& nativeSharedLib
     nativeSharedLibraryFileName = nativeSharedLibraryFileName_;
 }
 
+std::string Assembly::NativeSharedLibraryFilePath() const
+{
+    return Path::Combine(Path::GetDirectoryName(filePathReadFrom), nativeSharedLibraryFileName);
+}
+
 void Assembly::SetNativeImportLibraryFileName(const std::string& nativeImportLibraryFileName_)
 {
     nativeImportLibraryFileName = nativeImportLibraryFileName_;
@@ -645,10 +850,10 @@ void Assembly::ImportAssemblies(LoadType loadType, const Assembly* rootAssembly,
     std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
     std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
     std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
-    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
+    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap)
 {
     ImportAssemblies(referenceFilePaths, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, 
-        typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
+        typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap, readMap);
 }
 
 void Assembly::ImportSymbolTables()
@@ -663,7 +868,7 @@ void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferenc
     std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
     std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
     std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
-    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
+    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap)
 {
     std::vector<std::string> allAssemblyReferences;
     allAssemblyReferences.insert(allAssemblyReferences.end(), assemblyReferences.cbegin(), assemblyReferences.cend());
@@ -672,14 +877,14 @@ void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferenc
         allAssemblyReferences.push_back(CminorSystemAssemblyFilePath(GetConfig()));
     }
     Import(allAssemblyReferences, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, 
-        setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
+        setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap, readMap);
 }
 
 void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, 
     const std::string& currentAssemblyDir, std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
     std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
     std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
-    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap)
+    std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap)
 {
     for (const std::string& assemblyReference : assemblyReferences)
     {
@@ -761,16 +966,102 @@ void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadTy
                 }
             }
             std::string assemblyFilePath = GetFullPath(afp.generic_string());
+            readMap[assemblyFilePath] = referencedAssembly.get();
             importSet.insert(assemblyFilePath);
             SymbolReader reader(assemblyFilePath);
             reader.SetMachine(machine);
             referencedAssembly->BeginRead(reader, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, 
-                typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
+                typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap, readMap);
             Assembly* referencedAssemblyPtr = referencedAssembly.get();
             assemblyDependency.AddReferencedAssembly(referencedAssemblyPtr);
             referencedAssemblies.push_back(std::move(referencedAssembly));
             Import(referencedAssemblyPtr->referenceFilePaths, loadType, rootAssembly, importSet, currentAssemblyDir, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, 
-                typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap);
+                typeInstructions, setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap, readMap);
+        }
+        else
+        {
+            std::string config = GetConfig();
+            boost::filesystem::path afn = boost::filesystem::path(assemblyReference).filename();
+            boost::filesystem::path afp;
+            std::string searchedDirectories;
+            if (loadType == LoadType::build)
+            {
+                if (!rootAssembly->IsSystemAssembly())
+                {
+                    afp = CminorSystemAssemblyDir(config);
+                    afp /= afn;
+                    if (!boost::filesystem::exists(afp))
+                    {
+                        afp = assemblyReference;
+                        if (!boost::filesystem::exists(afp))
+                        {
+                            boost::filesystem::path ard = afp;
+                            ard.remove_filename();
+                            searchedDirectories.append("\n").append(ard.generic_string());
+                            throw std::runtime_error("Could not find assembly reference '" + afn.generic_string() + "'.\nDirectories searched:\n" + searchedDirectories);
+                        }
+                    }
+                }
+                else
+                {
+                    afp = assemblyReference;
+                    if (!boost::filesystem::exists(afp))
+                    {
+                        boost::filesystem::path ard = afp;
+                        ard.remove_filename();
+                        searchedDirectories.append(ard.generic_string());
+                        throw std::runtime_error("Could not find assembly reference '" + afn.generic_string() + "'.\nDirectories searched:\n" + searchedDirectories);
+                    }
+                }
+            }
+            else if (loadType == LoadType::execute)
+            {
+                afp = currentAssemblyDir;
+                searchedDirectories = currentAssemblyDir;
+                afp /= afn;
+                if (!boost::filesystem::exists(afp))
+                {
+                    if (!rootAssembly->IsSystemAssembly())
+                    {
+                        afp = CminorSystemAssemblyDir(config);
+                        searchedDirectories.append("\n").append(afp.generic_string());
+                        afp /= afn;
+                        if (!boost::filesystem::exists(afp))
+                        {
+                            afp = assemblyReference;
+                            if (!boost::filesystem::exists(afp))
+                            {
+                                boost::filesystem::path ard = afp;
+                                ard.remove_filename();
+                                searchedDirectories.append("\n").append(ard.generic_string());
+                                throw std::runtime_error("Could not find assembly reference '" + afn.generic_string() + "'.\nDirectories searched:\n" + searchedDirectories);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        afp = assemblyReference;
+                        if (!boost::filesystem::exists(afp))
+                        {
+                            boost::filesystem::path ard = afp;
+                            ard.remove_filename();
+                            searchedDirectories.append("\n").append(ard.generic_string());
+                            throw std::runtime_error("Could not find assembly reference '" + afn.generic_string() + "'.\nDirectories searched:\n" + searchedDirectories);
+                        }
+                    }
+                }
+            }
+            std::string assemblyFilePath = GetFullPath(afp.generic_string());
+            auto it = readMap.find(assemblyFilePath);
+            if (it != readMap.cend())
+            {
+                Assembly* referencedAssembly = it->second;
+                assemblyDependency.AddReferencedAssembly(referencedAssembly);
+            }
+            else
+            {
+                throw std::runtime_error("assembly file path '" + assemblyFilePath + "' not found from assembly read map for assembly " + ToUtf8(Name().Value()));
+            }
         }
     }
 }
@@ -964,9 +1255,221 @@ void Assembly::ReadTypePtrVarMappings(Reader& reader)
     }
 }
 
+void LoadSharedLibrariesIntoMemory(Assembly* assembly)
+{
+    if (assembly->IsCore()) return;
+    if (assembly->SharedLibraryLoaded()) return;
+    assembly->SetSharedLibraryLoaded();
+    if (assembly->NativeSharedLibraryFileName().empty())
+    {
+        throw std::runtime_error("native shared library file name of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") is empty");
+    }
+    for (const std::unique_ptr<Assembly>& referencedAssembly : assembly->ReferencedAssemblies())
+    {
+        LoadSharedLibrariesIntoMemory(referencedAssembly.get());
+    }
+    std::string sharedLibraryFilePath = assembly->NativeSharedLibraryFilePath();
+    try
+    {
+        void* sharedLibraryHandle = LoadSharedLibrary(sharedLibraryFilePath);
+        assembly->SetSharedLibraryHandle(sharedLibraryHandle);
+    }
+    catch (const std::runtime_error& ex)
+    {
+        throw std::runtime_error("loading native shared library of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " + ex.what());
+    }
+}
+
+void ResolveAddressesOfExportedFunctions(Assembly* assembly)
+{
+    if (assembly->IsCore()) return;
+    if (assembly->ExportedFunctionsResolved()) return;
+    assembly->SetExportedFunctionsResolved();
+    for (const std::unique_ptr<Assembly>& referencedAssembly : assembly->ReferencedAssemblies())
+    {
+        ResolveAddressesOfExportedFunctions(referencedAssembly.get());
+    }
+    void* sharedLibraryHandle = assembly->SharedLibraryHandle();
+    if (!sharedLibraryHandle)
+    {
+        throw std::runtime_error("shared library handle of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") is not set");
+    }
+    for (Constant exportedFunctionNameConstant : assembly->ExportedFunctions())
+    {
+        Function* exportedFunction = FunctionTable::GetFunction(StringPtr(exportedFunctionNameConstant.Value().AsStringLiteral()));
+        if (exportedFunction->MangledName().empty())
+        {
+            throw std::runtime_error("mangled name of exported function '" + ToUtf8(exportedFunction->CallName().Value().AsStringLiteral()) + "' of assembly '" +
+                ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") is empty");
+        }
+        try
+        {
+            void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), exportedFunction->MangledName());
+            exportedFunction->SetAddress(symbolAddress);
+        }
+        catch (const std::runtime_error& ex)
+        {
+            throw std::runtime_error("resolving address of exported function '" + ToUtf8(exportedFunction->CallName().Value().AsStringLiteral()) + "' of assembly '" + 
+                ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " + ex.what());
+        }
+    }
+}
+
+void ResolveFunctionPtrVarMappings(Assembly* assembly)
+{
+    if (assembly->IsCore()) return;
+    if (assembly->FunctionPtrVarMappingsResolved()) return;
+    assembly->SetFunctionPtrVarMappingsResolved();
+    for (const std::unique_ptr<Assembly>& referencedAssembly : assembly->ReferencedAssemblies())
+    {
+        ResolveFunctionPtrVarMappings(referencedAssembly.get());
+    }
+    void* sharedLibraryHandle = assembly->SharedLibraryHandle();
+    if (!sharedLibraryHandle)
+    {
+        throw std::runtime_error("shared library handle of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") is not set");
+    }
+    for (const FunctionPtrVarFunctionName& mapping : assembly->FunctionPtrVarMappings())
+    {
+        Constant functionPtrVarName = mapping.functionPtrVarName;
+        Constant functionName = mapping.functionName;
+        Function* function = FunctionTable::GetFunction(StringPtr(functionName.Value().AsStringLiteral()));
+        std::string ptrVarName = ToUtf8(functionPtrVarName.Value().AsStringLiteral());
+        try
+        {
+            void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), ptrVarName);
+            void* functionAddress = static_cast<void*>(function);
+            void** functionVariablePtr = static_cast<void**>(symbolAddress);
+            *functionVariablePtr = functionAddress;
+        }
+        catch (const std::runtime_error& ex)
+        {
+            throw std::runtime_error("resolving address of function pointer variable for function '" + ToUtf8(functionName.Value().AsStringLiteral()) + "' of assembly '" +
+                ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " + ex.what());
+        }
+    }
+}
+
+void ResolveClassDataPtrVarMappings(Assembly* assembly)
+{
+    if (assembly->IsCore()) return;
+    if (assembly->ClassDataPtrVarMappingsResolved()) return;
+    assembly->SetClassDataPtrVarMappingsResolved();
+    for (const std::unique_ptr<Assembly>& referencedAssembly : assembly->ReferencedAssemblies())
+    {
+        ResolveClassDataPtrVarMappings(referencedAssembly.get());
+    }
+    void* sharedLibraryHandle = assembly->SharedLibraryHandle();
+    if (!sharedLibraryHandle)
+    {
+        throw std::runtime_error("shared library handle of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") is not set");
+    }
+    for (const ClassDataPtrVarClassDataName& mapping : assembly->ClassDataPtrVarMappings())
+    {
+        Constant classDataPtrVarName = mapping.classDataPtrVarName;
+        Constant classDataName = mapping.classDataName;
+        ClassData* classData = ClassDataTable::GetClassData(StringPtr(classDataName.Value().AsStringLiteral()));
+        std::string ptrVarName = ToUtf8(classDataPtrVarName.Value().AsStringLiteral());
+        try
+        {
+            void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), ptrVarName);
+            void* classDataAddress = static_cast<void*>(classData);
+            void** classDataVariablePtr = static_cast<void**>(symbolAddress);
+            *classDataVariablePtr = classDataAddress;
+        }
+        catch (const std::runtime_error& ex)
+        {
+            throw std::runtime_error("resolving address of class data pointer variable for class '" + ToUtf8(classDataName.Value().AsStringLiteral()) + "' of assembly '" +
+                ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " + ex.what());
+        }
+    }
+}
+
+void ResolveTypePtrVarMappings(Assembly* assembly)
+{
+    if (assembly->IsCore()) return;
+    if (assembly->TypePtrVarMappingsResolved()) return;
+    assembly->SetTypePtrVarMappingsResolved();
+    for (const std::unique_ptr<Assembly>& referencedAssembly : assembly->ReferencedAssemblies())
+    {
+        ResolveTypePtrVarMappings(referencedAssembly.get());
+    }
+    void* sharedLibraryHandle = assembly->SharedLibraryHandle();
+    if (!sharedLibraryHandle)
+    {
+        throw std::runtime_error("shared library handle of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") is not set");
+    }
+    for (const TypePtrVarTypeName& mapping : assembly->TypePtrVarMappings())
+    {
+        Constant typePtrVarName = mapping.typePtrVarName;
+        Constant typeName = mapping.typeName;
+        Type* type = TypeTable::GetType(StringPtr(typeName.Value().AsStringLiteral()));
+        std::string ptrVarName = ToUtf8(typePtrVarName.Value().AsStringLiteral());
+        try
+        {
+            void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), ptrVarName);
+            void* typeAddress = static_cast<void*>(type);
+            void** typeVariablePtr = static_cast<void**>(symbolAddress);
+            *typeVariablePtr = typeAddress;
+        }
+        catch (const std::runtime_error& ex)
+        {
+            throw std::runtime_error("resolving address of type pointer variable for type '" + ToUtf8(typeName.Value().AsStringLiteral()) + "' of assembly '" +
+                ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " + ex.what());
+        }
+    }
+}
+
+void SetConstantPoolVariable(Assembly* assembly)
+{
+    if (assembly->IsCore()) return;
+    if (assembly->ConstantPoolVariableSet()) return;
+    assembly->SetConstantPoolVariableSet();
+    for (const std::unique_ptr<Assembly>& referencedAssembly : assembly->ReferencedAssemblies())
+    {
+        SetConstantPoolVariable(referencedAssembly.get());
+    }
+    void* sharedLibraryHandle = assembly->SharedLibraryHandle();
+    if (!sharedLibraryHandle)
+    {
+        throw std::runtime_error("shared library handle of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") is not set");
+    }
+    std::string constantPoolVarName = "__constant_pool";
+    try
+    {
+        void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), constantPoolVarName);
+        void* constantPoolAddress = static_cast<void*>(&assembly->GetConstantPool());
+        void** constantPoolVariablePtr = static_cast<void**>(symbolAddress);
+        *constantPoolVariablePtr = constantPoolAddress;
+    }
+    catch (const std::runtime_error& ex)
+    {
+        throw std::runtime_error("resolving address of constant pool variable of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " + ex.what());
+    }
+}
+
+void ResolveMainEntryPointAddress(Assembly* assembly)
+{
+    void* sharedLibraryHandle = assembly->SharedLibraryHandle();
+    if (!sharedLibraryHandle)
+    {
+        throw std::runtime_error("shared library handle of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") is not set");
+    }
+    std::string mainEntryPointName = "main_entry_point";
+    void* mainEntryPointAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), mainEntryPointName);
+    assembly->SetMainEntryPointAddress(mainEntryPointAddress);
+}
+
 void Assembly::PrepareForNativeExecution()
 {
-    // todo
+    Assert(IsNative(), "not native");
+    LoadSharedLibrariesIntoMemory(this);
+    ResolveAddressesOfExportedFunctions(this);
+    ResolveFunctionPtrVarMappings(this);
+    ResolveClassDataPtrVarMappings(this);
+    ResolveTypePtrVarMappings(this);
+    SetConstantPoolVariable(this);
+    ResolveMainEntryPointAddress(this);
 }
 
 int NumberOfAncestors(ClassTypeSymbol* classType)

@@ -11,13 +11,14 @@
 #include <cminor/util/Path.hpp>
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/util/Sha1.hpp>
-#include <boost/filesystem.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/util/System.hpp>
+#include <boost/filesystem.hpp>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #ifdef _WIN32
 #pragma warning(disable:4267)
@@ -26,7 +27,6 @@
 #pragma warning(disable:4624)
 #pragma warning(disable:4291)
 #endif
-#include <llvm/MC/MCAsmInfo.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/FileSystem.h>
@@ -159,11 +159,15 @@ public:
     void VisitRotateInst(RotateInst& instruction) override;
     void VisitPopInst(PopInst& instruction) override;
     void VisitDownCastInst(DownCastInst& instruction) override;
-    void VisitBeginTryInst(BeginTryInst& instruction) override;
-    void VisitEndTryInst(EndTryInst& instruction) override;
     void VisitThrowInst(ThrowInst& instruction) override;
     void VisitRethrowInst(RethrowInst& instruction) override;
+    void VisitBeginTryInst(BeginTryInst& instruction) override;
+    void VisitEndTryInst(EndTryInst& instruction) override;
+    void VisitBeginCatchSectionInst(BeginCatchSectionInst& instruction) override;
+    void VisitEndCatchSectionInst(EndCatchSectionInst& instruction) override;
+    void VisitBeginCatchInst(BeginCatchInst& instruction) override;
     void VisitEndCatchInst(EndCatchInst& instruction) override;
+    void VisitBeginFinallyInst(BeginFinallyInst& instruction) override;
     void VisitEndFinallyInst(EndFinallyInst& instruction) override;
     void VisitStaticInitInst(StaticInitInst& instruction) override;
     void VisitDoneStaticInitInst(DoneStaticInitInst& instruction) override;
@@ -191,6 +195,7 @@ private:
     std::unique_ptr<DataLayout> dataLayout;
     llvm::AttributeSet normalFunctionAttributes;
     llvm::AttributeSet ehFunctionAttributes;
+    int inlineLimit;
     llvm::Function* fun;
     Function* function;
     int32_t nextFunctionVarNumber;
@@ -216,12 +221,16 @@ private:
     std::unordered_map<Type*, llvm::Constant*> typeMap;
     std::unordered_map<Function*, llvm::Constant*> functionPtrMap;
     std::unordered_map<std::string, llvm::Value*> globalStringPtrMap;
+    llvm::TargetOptions GetTargetOptions();
     void ExportGlobalVariable(llvm::Constant* globalVariable);
+    void ExportFunction(llvm::Function* function);
+    void ImportFunction(llvm::Function* function);
     llvm::Constant* GetClassDataPtrVar(ClassData* classData);
     llvm::Constant* GetTypePtrVar(Type* type);
     llvm::Constant* GetFunctionPtrVar(Function* function);
     void CreateEnterFunctionCall();
     void CreateLeaveFunctionCall();
+    void SetCurrentLineNumber(uint32_t lineNumber);
     void InitMaps();
     void InitOpFunMap(ConstantPool& constantPool);
     std::string MangleFunctionName(const Function& function) const;
@@ -237,8 +246,8 @@ private:
     llvm::Value* CreateConversionFromULong(llvm::Value* from, ValueType toType);
 };    
 
-NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), module(), targetMachine(), fun(nullptr), function(nullptr), constantPool(nullptr), constantPoolVariable(nullptr), 
-    nextFunctionVarNumber(0), nextClassDataVarNumber(0), nextTypePtrVarNumber(0), functionStackEntry(nullptr)
+NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), module(), inlineLimit(0), targetMachine(), fun(nullptr), function(nullptr), constantPool(nullptr), 
+    constantPoolVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), nextTypePtrVarNumber(0), functionStackEntry(nullptr)
 {
     InitializeAllTargetInfos();
     InitializeAllTargets();
@@ -332,22 +341,115 @@ std::string NativeCompilerImpl::MangleFunctionName(const Function& function) con
     return mangledName;
 }
 
+llvm::TargetOptions NativeCompilerImpl::GetTargetOptions()
+{
+    llvm::TargetOptions targetOptions = {};
+#ifdef _WIN32
+    targetOptions.ExceptionModel = llvm::ExceptionHandling::WinEH;
+#endif
+    return targetOptions;
+}
+
+void NativeCompilerImpl::ExportGlobalVariable(llvm::Constant* globalVariable)
+{
+#ifdef _WIN32
+    llvm::GlobalValue* globalValue = cast<llvm::GlobalValue>(globalVariable);
+    globalValue->setDLLStorageClass(llvm::GlobalValue::DLLExportStorageClass);
+#endif
+}
+
+void NativeCompilerImpl::ExportFunction(llvm::Function* function)
+{
+    function->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
+#ifdef _WIN32
+    function->setDLLStorageClass(llvm::GlobalValue::DLLExportStorageClass);
+#endif
+}
+
+void NativeCompilerImpl::ImportFunction(llvm::Function* function)
+{
+    function->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
+#ifdef _WIN32
+    function->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
+#endif
+}
+
+llvm::Constant* NativeCompilerImpl::GetClassDataPtrVar(ClassData* classData)
+{
+    auto it = classDataMap.find(classData);
+    if (it != classDataMap.cend())
+    {
+        return it->second;
+    }
+    std::string classDataPtrVarName = "__CD" + std::to_string(nextClassDataVarNumber++);
+    utf32_string classDataPtrVarNameUtf32 = ToUtf32(classDataPtrVarName);
+    Constant classDataPtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(classDataPtrVarNameUtf32.c_str())));
+    Constant classDataNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(classData->Type()->Name()));
+    assembly->AddClassDataVarMapping(classDataPtrVarNameConstant, classDataNameConstant);
+    llvm::Constant* classDataPtrVar = module->getOrInsertGlobal(classDataPtrVarName, PointerType::get(GetType(ValueType::byteType), 0));
+    ExportGlobalVariable(classDataPtrVar);
+    llvm::GlobalVariable* clsDataPtrVar = cast<llvm::GlobalVariable>(classDataPtrVar);
+    clsDataPtrVar->setInitializer(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
+    classDataMap[classData] = classDataPtrVar;
+    return classDataPtrVar;
+}
+
+llvm::Constant* NativeCompilerImpl::GetTypePtrVar(Type* type)
+{
+    auto it = typeMap.find(type);
+    if (it != typeMap.cend())
+    {
+        return it->second;
+    }
+    std::string typePtrVarName = "__T" + std::to_string(nextTypePtrVarNumber++);
+    utf32_string typePtrVarNameUtf32 = ToUtf32(typePtrVarName);
+    Constant typePtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(typePtrVarNameUtf32.c_str())));
+    Constant typeNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(type->Name()));
+    assembly->AddTypePtrVarMapping(typePtrVarNameConstant, typeNameConstant);
+    llvm::Constant* typePtrVar = module->getOrInsertGlobal(typePtrVarName, PointerType::get(GetType(ValueType::byteType), 0));
+    ExportGlobalVariable(typePtrVar);
+    llvm::GlobalVariable* tpPtrVar = cast<llvm::GlobalVariable>(typePtrVar);
+    tpPtrVar->setInitializer(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
+    typeMap[type] = typePtrVar;
+    return typePtrVar;
+}
+
+llvm::Constant* NativeCompilerImpl::GetFunctionPtrVar(Function* function)
+{
+    auto it = functionPtrMap.find(function);
+    if (it != functionPtrMap.cend())
+    {
+        return it->second;
+    }
+    std::string functionPtrVarName = "__F" + std::to_string(nextFunctionVarNumber++);
+    utf32_string functionPtrVarNameUtf32 = ToUtf32(functionPtrVarName);
+    Constant functionPtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(functionPtrVarNameUtf32.c_str())));
+    Constant functionNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(function->CallName()));
+    assembly->AddFunctionVarMapping(functionPtrVarNameConstant, functionNameConstant);
+    llvm::Constant* functionPtrVar = module->getOrInsertGlobal(functionPtrVarName, PointerType::get(GetType(ValueType::byteType), 0));
+    ExportGlobalVariable(functionPtrVar);
+    llvm::GlobalVariable* funPtrVar = cast<llvm::GlobalVariable>(functionPtrVar);
+    funPtrVar->setInitializer(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
+    functionPtrMap[function] = functionPtrVar;
+    return functionPtrVar;
+}
+
 void NativeCompilerImpl::Init(Assembly& assembly)
 {
+    std::string assemblyName = ToUtf8(assembly.Name().Value());
     for (const std::unique_ptr<Assembly>& referencedAssembly : assembly.ReferencedAssemblies())
     {
         if (referencedAssembly->IsCore()) continue;
         if (!referencedAssembly->IsNative())
         {
-            throw std::runtime_error("NativeCompiler: cannot compile assembly '" + ToUtf8(assembly.Name().Value()) + "' (" + assembly.FilePathReadFrom() +
+            throw std::runtime_error("NativeCompiler: cannot compile assembly '" + assemblyName + "' (" + assembly.FilePathReadFrom() +
                 ") to native object code because referenced assembly '" + ToUtf8(referencedAssembly->Name().Value()) + "' (" + referencedAssembly->FilePathReadFrom() +
-                ") is not compiled to native object code");
+                ") is not compiled to native object code (build with --native).");
         }
     }
     this->assembly = &assembly;
     InitOpFunMap(assembly.GetConstantPool());
-    std::string moduleName = ToUtf8(assembly.Name().Value());
-    module.reset(new Module(moduleName, context));
+    module.reset(new Module(assemblyName, context));
     std::string targetTriple = sys::getDefaultTargetTriple();
     module->setTargetTriple(targetTriple);
     assembly.SetNativeTargetTriple(targetTriple);
@@ -357,28 +459,34 @@ void NativeCompilerImpl::Init(Assembly& assembly)
     {
         throw std::runtime_error("NativeCompiler: TargetRegistry::lookupTarget failed: " + error);
     }
-    llvm::TargetOptions targetOptions;
-#ifdef _WIN32
-    targetOptions.ExceptionModel = llvm::ExceptionHandling::WinEH;
-#endif
+    llvm::TargetOptions targetOptions = GetTargetOptions();
     llvm::Optional<Reloc::Model> relocModel;
     llvm::CodeModel::Model codeModel = CodeModel::Default;
     llvm::CodeGenOpt::Level codeGenLevel = CodeGenOpt::None;
     int optLevel = GetOptimizationLevel();
     switch (optLevel)
     {
+        case 0: codeGenLevel = CodeGenOpt::None; break;
         case 1: codeGenLevel = CodeGenOpt::Less; break;
         case 2: codeGenLevel = CodeGenOpt::Default; break;
         case 3: codeGenLevel = CodeGenOpt::Aggressive; break;
     }
+    inlineLimit = GetInlineLimit();
     targetMachine.reset(target->createTargetMachine(targetTriple, "generic", "", targetOptions, relocModel, codeModel, codeGenLevel));
     dataLayout.reset(new llvm::DataLayout(targetMachine->createDataLayout()));
     module->setDataLayout(*dataLayout);
     if (GetGlobalFlag(GlobalFlags::list))
     {
         listFilePath = boost::filesystem::path(assembly.FilePathReadFrom()).replace_extension(".list").generic_string();
+        if (GetGlobalFlag(GlobalFlags::verbose))
+        {
+            std::cout << "Generating listing to " << listFilePath << "..." << std::endl;
+        }
         listStream.reset(new std::ofstream(listFilePath));
-        *listStream << "MODULE " << moduleName << " : " << assembly.FilePathReadFrom() << std::endl;
+        *listStream << "MODULE " << assemblyName << " : " << assembly.FilePathReadFrom() << std::endl;
+        *listStream << "target triple: " << targetTriple << std::endl;
+        *listStream << "optimization level: " << optLevel << std::endl;
+        *listStream << "inline limit: " << inlineLimit << " or fewer intermediate instructions (0 = no inlining)" << std::endl;
     }
     constantPoolVariable = module->getOrInsertGlobal("__constant_pool", PointerType::get(GetType(ValueType::byteType), 0));
     ExportGlobalVariable(constantPoolVariable);
@@ -399,24 +507,25 @@ void NativeCompilerImpl::Done()
 #ifdef _WIN32
     CreateDllMain();
 #endif
-    std::string moduleName = ToUtf8(assembly->Name().Value());
-    std::unique_ptr<llvm::raw_os_ostream> os;
-    if (listStream)
+    std::string assemblyName = ToUtf8(assembly->Name().Value());
+    std::stringstream errorStream;
+    llvm::raw_os_ostream errorOs(errorStream);
+    if (verifyModule(*module, &errorOs))
     {
-        os.reset(new llvm::raw_os_ostream(*listStream));
-    }
-    if (verifyModule(*module, os.get()))
-    {
-        std::string reason = "(Run with --list to see the reason.)";
+        std::string reason = errorStream.str();
         if (listStream)
         {
-            reason = "(Reason can be found in " + listFilePath + ")";
+            *listStream << "NativeCompiler: verification of module '" << assemblyName + "' failed. " << reason << std::endl;
         }
-        throw std::runtime_error("NativeCompiler: verification of module '" + moduleName + "' failed. " + reason);
+        throw std::runtime_error("NativeCompiler: verification of module '" + assemblyName + "' failed. " + reason);
     }
     std::string llFilePath = boost::filesystem::path(assembly->FilePathReadFrom()).replace_extension(".ll").generic_string();
     if (GetGlobalFlag(GlobalFlags::emitLlvm))
     {
+        if (GetGlobalFlag(GlobalFlags::verbose))
+        {
+            std::cout << "Emitting LLVM intermediate code to " << llFilePath << "..." << std::endl;
+        }
         std::ofstream llFile(llFilePath);
         llvm::raw_os_ostream llOs(llFile);
         module->print(llOs, nullptr);
@@ -430,6 +539,10 @@ void NativeCompilerImpl::Done()
     std::string optLlFilePath = boost::filesystem::path(assembly->FilePathReadFrom()).replace_extension(".opt.ll").generic_string();
     if (GetGlobalFlag(GlobalFlags::emitOptLlvm))
     {
+        if (GetGlobalFlag(GlobalFlags::verbose))
+        {
+            std::cout << "Emitting optimized LLVM intermediate code to " << optLlFilePath << "..." << std::endl;
+        }
         std::ofstream optLlFile(optLlFilePath);
         llvm::raw_os_ostream optLlOs(optLlFile);
         module->print(optLlOs, nullptr);
@@ -448,20 +561,23 @@ void NativeCompilerImpl::Done()
 
 void NativeCompilerImpl::CreateDllMain()
 {
-    llvm::Function* dllMain = cast<llvm::Function>(module->getOrInsertFunction("DllMain", GetType(ValueType::intType), 
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "Creating DllMain..." << std::endl;
+    }
+    llvm::Function* dllMain = cast<llvm::Function>(module->getOrInsertFunction("DllMain", GetType(ValueType::intType),
         PointerType::get(GetType(ValueType::byteType), 0), 
         GetType(ValueType::ulongType), 
         PointerType::get(GetType(ValueType::byteType), 0),
         nullptr));
-    dllMain->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
-#ifdef _WIN32
-    dllMain->setDLLStorageClass(GlobalValue::DLLExportStorageClass);
+    ExportFunction(dllMain);
     dllMain->setCallingConv(llvm::CallingConv::X86_64_Win64);
-#endif
     dllMain->setAttributes(normalFunctionAttributes);
     BasicBlock* entryBlock = BasicBlock::Create(context, "entry", dllMain);
     builder.SetInsertPoint(entryBlock);
     builder.CreateRet(builder.getInt32(1));
+    std::stringstream errorStream;
+    llvm::raw_os_ostream errorOs(errorStream);
     std::unique_ptr<llvm::raw_os_ostream> os;
     if (listStream)
     {
@@ -471,42 +587,19 @@ void NativeCompilerImpl::CreateDllMain()
     {
         dllMain->print(*os);
     }
-    if (verifyFunction(*dllMain, os.get()))
+    if (verifyFunction(*dllMain, &errorOs))
     {
-        std::string reason = "(Run with --list to see the reason.)";
-        if (listStream)
-        {
-            reason = "(Reason can be found in " + listFilePath + ").";
-        }
+        std::string reason = errorStream.str();
         throw std::runtime_error("NativeCompiler: verification of function 'DllMain' failed. " + reason);
     }
 }
 
 void NativeCompilerImpl::GenerateObjectFile(const std::string& assemblyObjectFilePath)
 {
-    const int maxArgsPlusNull = 4;
-    const char* argv[maxArgsPlusNull];
-    for (int i = 0; i < maxArgsPlusNull; ++i)
+    if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        argv[i] = nullptr;
+        std::cout << "Generating object code file " << assemblyObjectFilePath << "..." << std::endl;
     }
-    std::vector<std::string> args;
-    args.push_back("cminor");
-    const std::string& debugPassValue = GetDebugPassValue();
-    if (!debugPassValue.empty())
-    {
-        args.push_back("-debug-pass=" + debugPassValue);
-    }
-    int n = int(args.size());
-    if (n >= maxArgsPlusNull)
-    {
-        throw std::runtime_error("NativeCompiler: increase max args");
-    }
-    for (int i = 0; i < n; ++i)
-    {
-        argv[i] = args[i].c_str();
-    }
-    cl::ParseCommandLineOptions(n, argv);
     legacy::PassManager passManager;
     TargetLibraryInfoImpl tlii(Triple(module->getTargetTriple()));
     passManager.add(new TargetLibraryInfoWrapperPass(tlii));
@@ -527,32 +620,10 @@ void NativeCompilerImpl::GenerateObjectFile(const std::string& assemblyObjectFil
 
 void NativeCompilerImpl::GenerateAsmFile(const std::string& asmFilePath)
 {
-    const int maxArgsPlusNull = 4;
-    const char* argv[maxArgsPlusNull];
-    for (int i = 0; i < maxArgsPlusNull; ++i)
+    if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        argv[i] = nullptr;
+        std::cout << "Generating assembly code listing to " << asmFilePath << "..." << std::endl;
     }
-    std::vector<std::string> args;
-    args.push_back("cminor");
-    const std::string& debugPassValue = GetDebugPassValue();
-    if (!debugPassValue.empty())
-    {
-        args.push_back("-debug-pass=" + debugPassValue);
-    }
-#ifdef _WIN32
-    args.push_back("--x86-asm-syntax=intel");
-#endif // _WIN32
-    int n = int(args.size());
-    if (n >= maxArgsPlusNull)
-    {
-        throw std::runtime_error("NativeCompiler: increase max args");
-    }
-    for (int i = 0; i < n; ++i)
-    {
-        argv[i] = args[i].c_str();
-    }
-    cl::ParseCommandLineOptions(n, argv);
     legacy::PassManager passManager;
     TargetLibraryInfoImpl tlii(Triple(module->getTargetTriple()));
     passManager.add(new TargetLibraryInfoWrapperPass(tlii));
@@ -573,35 +644,26 @@ void NativeCompilerImpl::GenerateAsmFile(const std::string& asmFilePath)
 
 void NativeCompilerImpl::Link(const std::string& assemblyObjectFilePath)
 {
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "Linking " << assemblyObjectFilePath << "..." << std::endl;
+    }
 #ifdef _WIN32
     LinkWindows(assemblyObjectFilePath);
 #endif
 }
 
-void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
+void ImportAssemblyReferences(Assembly* assembly, std::vector<std::string>& args, std::ofstream* listStream)
 {
-    std::vector<std::string> args;
-    args.push_back("/dll");
-    args.push_back("/entry:DllMain");
-    std::string importLibraryFilePath = Path::ChangeExtension(assemblyObjectFilePath, ".lib");
-    std::string importLibraryFileName = Path::GetFileName(importLibraryFilePath);
-    args.push_back("/implib:" + QuotedPath(importLibraryFilePath));
-    std::string dllFilePath = Path::ChangeExtension(assemblyObjectFilePath, ".dll");
-    std::string dllFileName = Path::GetFileName(dllFilePath);
-    args.push_back("/out:" + QuotedPath(dllFilePath));
-    args.push_back(QuotedPath(assemblyObjectFilePath));
-    std::string cminorLibDir = CminorLibDir();
-    std::string chkstkObjectFilePath = Path::Combine(cminorLibDir, "chkstk.obj");
-    args.push_back(QuotedPath(chkstkObjectFilePath));
-    std::string cminorMachineImportLibFilePath = Path::Combine(cminorLibDir, "cminormachine.lib");
-    args.push_back(QuotedPath(cminorMachineImportLibFilePath));
     for (const std::unique_ptr<Assembly>& referencedAssembly : assembly->ReferencedAssemblies())
     {
         if (referencedAssembly->IsCore()) continue;
+        if (referencedAssembly->Imported()) continue;
+        referencedAssembly->SetImported();
         if (referencedAssembly->NativeTargetTriple() != assembly->NativeTargetTriple())
         {
             std::string warningMessage = "NativeCompiler: warning: referenced assembly '" + ToUtf8(referencedAssembly->Name().Value()) +
-                "' has different native target triple (" + referencedAssembly->NativeTargetTriple() + ") than assembly '" + ToUtf8(assembly->Name().Value()) + 
+                "' has different native target triple (" + referencedAssembly->NativeTargetTriple() + ") than assembly '" + ToUtf8(assembly->Name().Value()) +
                 "' being compiled (" + assembly->NativeTargetTriple() + ")";
             if (listStream)
             {
@@ -621,7 +683,36 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
         }
         std::string importLibraryFilePath = Path::Combine(Path::GetDirectoryName(referencedAssembly->FilePathReadFrom()), referencedAssembly->NativeImportLibraryFileName());
         args.push_back(QuotedPath(importLibraryFilePath));
+        ImportAssemblyReferences(referencedAssembly.get(), args, listStream);
     }
+}
+
+void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
+{
+    std::vector<std::string> args;
+    args.push_back("/dll");
+    args.push_back("/entry:DllMain");
+    if (!GetGlobalFlag(GlobalFlags::release))
+    {
+        args.push_back("/debug");
+    }
+    std::string importLibraryFilePath = Path::ChangeExtension(assemblyObjectFilePath, ".lib");
+    std::string importLibraryFileName = Path::GetFileName(importLibraryFilePath);
+    args.push_back("/implib:" + QuotedPath(importLibraryFilePath));
+    std::string dllFilePath = Path::ChangeExtension(assemblyObjectFilePath, ".dll");
+    std::string dllFileName = Path::GetFileName(dllFilePath);
+    args.push_back("/out:" + QuotedPath(dllFilePath));
+    args.push_back(QuotedPath(assemblyObjectFilePath));
+    std::string cminorLibDir = CminorLibDir();
+    std::string chkstkObjectFilePath = Path::Combine(cminorLibDir, "chkstk.obj");
+    args.push_back(QuotedPath(chkstkObjectFilePath));
+    std::string cminorMachineImportLibFilePath = Path::Combine(cminorLibDir, "cminormachine.lib");
+    if (GetGlobalFlag(GlobalFlags::linkWithDebugMachine))
+    {
+        cminorMachineImportLibFilePath = Path::Combine(cminorLibDir, "cminormachined.lib");
+    }
+    args.push_back(QuotedPath(cminorMachineImportLibFilePath));
+    ImportAssemblyReferences(assembly, args, listStream.get());
     std::string linkCommandLine = "lld-link";
     for (const std::string& arg : args)
     {
@@ -634,6 +725,12 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
         boost::filesystem::remove(boost::filesystem::path(linkErrorFilePath));
         assembly->SetNativeImportLibraryFileName(importLibraryFileName);
         assembly->SetNativeSharedLibraryFileName(dllFileName);
+        if (GetGlobalFlag(GlobalFlags::verbose))
+        {
+            std::cout << "Linking " << assemblyObjectFilePath << " succeeded." << std::endl;
+            std::cout << "=> " << importLibraryFilePath << std::endl;
+            std::cout << "=> " << dllFilePath << std::endl;
+        }
     }
     catch (const std::exception& ex)
     {
@@ -651,11 +748,7 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     basicBlocks.clear();
     jumpTargets.clear();
     std::string mangledFunctionName = MangleFunctionName(function);
-    if (mangledFunctionName == "AddNamespace_Scope_E1B498854FF41C5AA52B220360C4312092EE1C24")
-    {
-        int x = 0;
-    }
-    function.SetMangedName(mangledFunctionName);
+    function.SetMangledName(mangledFunctionName);
     if (listStream)
     {
         CodeFormatter formatter(*listStream);
@@ -681,11 +774,8 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     fun = cast<llvm::Function>(module->getOrInsertFunction(mangledFunctionName, funType));
     if (function.IsExported())
     {
-        fun->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
+        ExportFunction(fun);
         assembly->AddExportedFunction(function.CallName());
-#ifdef _WIN32
-        fun->setDLLStorageClass(GlobalValue::DLLExportStorageClass);
-#endif
     }
     else
     {
@@ -711,7 +801,11 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     this->function = &function;
     if (function.CanThrow())
     {
-        llvm::StructType* functionStackEntryType = llvm::StructType::get(llvm::PointerType::get(GetType(ValueType::byteType), 0), llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr);
+        llvm::StructType* functionStackEntryType = llvm::StructType::get(
+            llvm::PointerType::get(GetType(ValueType::byteType), 0), 
+            GetType(ValueType::intType), 
+            llvm::PointerType::get(GetType(ValueType::byteType), 0), 
+            nullptr);
         functionStackEntry = builder.CreateAlloca(functionStackEntryType);
     }
     else
@@ -736,6 +830,8 @@ void NativeCompilerImpl::EndVisitFunction(Function& function)
         CreateLeaveFunctionCall();
         builder.CreateRetVoid();
     }
+    std::stringstream errorStream;
+    llvm::raw_os_ostream errorOs(errorStream);
     std::unique_ptr<llvm::raw_os_ostream> os;
     if (listStream)
     {
@@ -745,12 +841,12 @@ void NativeCompilerImpl::EndVisitFunction(Function& function)
     {
         fun->print(*os);
     }
-    if (verifyFunction(*fun, os.get()))
+    if (verifyFunction(*fun, &errorOs))
     {
-        std::string reason = "(Run with --list to see the reason.)";
+        std::string reason = errorStream.str();
         if (listStream)
         {
-            reason = "(Reason can be found in " + listFilePath + ")";
+            *listStream << "NativeCompiler: verification of function '" << ToUtf8(function.CallName().Value().AsStringLiteral()) << "' failed. " << reason << std::endl;
         }
         throw std::runtime_error("NativeCompiler: verification of function '" + ToUtf8(function.CallName().Value().AsStringLiteral()) + "' failed. " + reason);
     }
@@ -768,19 +864,19 @@ void NativeCompilerImpl::BeginVisitInstruction(int instructionNumber, bool prevE
         }
         builder.SetInsertPoint(currentBasicBlock);
     }
-    else if (currentBasicBlock == nullptr)
-    {
-        currentBasicBlock = BasicBlock::Create(context, "continue", fun);
-        builder.SetInsertPoint(currentBasicBlock);
-    }
     else if (jumpTargets.find(instructionNumber) != jumpTargets.cend())
     {
-        currentBasicBlock = BasicBlock::Create(context, "target", fun);
+        currentBasicBlock = BasicBlock::Create(context, "target" + std::to_string(instructionNumber), fun);
         basicBlocks[instructionNumber] = currentBasicBlock;
         if (!prevEndsBasicBlock)
         {
             builder.CreateBr(currentBasicBlock);
         }
+        builder.SetInsertPoint(currentBasicBlock);
+    }
+    else if (currentBasicBlock == nullptr)
+    {
+        currentBasicBlock = BasicBlock::Create(context, "target" + std::to_string(instructionNumber), fun);
         builder.SetInsertPoint(currentBasicBlock);
     }
 }
@@ -997,7 +1093,6 @@ void NativeCompilerImpl::VisitStoreLocalInst(int32_t localIndex)
 
 void NativeCompilerImpl::VisitLoadFieldInst(int32_t fieldIndex, ValueType fieldType)
 {
-    bool store = false;
     llvm::Value* objectReference = valueStack.Pop();
     ArgVector args;
     args.push_back(objectReference);
@@ -1076,9 +1171,7 @@ void NativeCompilerImpl::VisitLoadFieldInst(int32_t fieldIndex, ValueType fieldT
             throw std::runtime_error("NativeCompiler: invalid field type for load field");
         }
     }
-#ifdef _WIN32
-    callee->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(callee);
     valueStack.Push(builder.CreateCall(callee, args));
 }
 
@@ -1164,9 +1257,7 @@ void NativeCompilerImpl::VisitStoreFieldInst(int32_t fieldIndex, ValueType field
             throw std::runtime_error("NativeCompiler: invalid field type for store field");
         }
     }
-#ifdef _WIN32
-    callee->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(callee);
     builder.CreateCall(callee, args);
 }
 
@@ -1250,9 +1341,7 @@ void NativeCompilerImpl::VisitLoadElemInst(LoadElemInst& instruction)
             throw std::runtime_error("NativeCompiler: invalid field type for load element");
         }
     }
-#ifdef _WIN32
-    callee->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(callee);
     valueStack.Push(builder.CreateCall(callee, args));
 }
 
@@ -1338,9 +1427,7 @@ void NativeCompilerImpl::VisitStoreElemInst(StoreElemInst& instruction)
             throw std::runtime_error("NativeCompiler: invalid field type for store element");
         }
     }
-#ifdef _WIN32
-    callee->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(callee);
     builder.CreateCall(callee, args);
 }
 
@@ -1415,9 +1502,7 @@ void NativeCompilerImpl::VisitLoadConstantInst(int32_t constantIndex)
         {
             llvm::Function* rtLoadStringLiteral = cast<llvm::Function>(module->getOrInsertFunction("RtLoadStringLiteral", PointerType::get(GetType(ValueType::uintType), 0), 
                 PointerType::get(GetType(ValueType::byteType), 0), GetType(ValueType::uintType), nullptr));
-#ifdef _WIN32
-            rtLoadStringLiteral->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+            ImportFunction(rtLoadStringLiteral);
             ArgVector args;
             args.push_back(builder.CreateLoad(constantPoolVariable));
             args.push_back(builder.getInt32(constantId.Value()));
@@ -1459,10 +1544,9 @@ void NativeCompilerImpl::CreateEnterFunctionCall()
     Assert(functionPtrVar, "function ptr var not created");
     llvm::Value* functionPtr = builder.CreateLoad(functionPtrVar);
     builder.CreateStore(functionPtr, fseFunctionPtrPtr);
+    SetCurrentLineNumber(function->GetFirstSourceLine());
     llvm::Function* rtEnterFunction = cast<llvm::Function>(module->getOrInsertFunction("RtEnterFunction", GetType(ValueType::none), llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr));
-#ifdef _WIN32
-    rtEnterFunction->setDLLStorageClass(llvm::GlobalValue::DLLStorageClassTypes::DLLImportStorageClass);
-#endif
+    ImportFunction(rtEnterFunction);
     ArgVector args;
     args.push_back(builder.CreateBitCast(functionStackEntry, llvm::PointerType::get(GetType(ValueType::byteType), 0)));
     builder.CreateCall(rtEnterFunction, args);
@@ -1473,80 +1557,21 @@ void NativeCompilerImpl::CreateLeaveFunctionCall()
     if (!function->CanThrow()) return;
     Assert(functionStackEntry, "function stack entry variable not created");
     llvm::Function* rtLeaveFunction = cast<llvm::Function>(module->getOrInsertFunction("RtLeaveFunction", GetType(ValueType::none), llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr));
-#ifdef _WIN32
-    rtLeaveFunction->setDLLStorageClass(llvm::GlobalValue::DLLStorageClassTypes::DLLImportStorageClass);
-#endif
+    ImportFunction(rtLeaveFunction);
     ArgVector args;
     args.push_back(builder.CreateBitCast(functionStackEntry, llvm::PointerType::get(GetType(ValueType::byteType), 0)));
     builder.CreateCall(rtLeaveFunction, args);
 }
 
-void NativeCompilerImpl::ExportGlobalVariable(llvm::Constant* globalVariable)
+void NativeCompilerImpl::SetCurrentLineNumber(uint32_t lineNumber)
 {
-#ifdef _WIN32
-    llvm::GlobalValue* globalValue = cast<llvm::GlobalValue>(globalVariable);
-    globalValue->setDLLStorageClass(llvm::GlobalValue::DLLExportStorageClass);
-#endif
-}
-
-llvm::Constant* NativeCompilerImpl::GetClassDataPtrVar(ClassData* classData)
-{
-    auto it = classDataMap.find(classData);
-    if (it != classDataMap.cend())
-    {
-        return it->second;
-    }
-    std::string classDataPtrVarName = "__CD" + std::to_string(nextClassDataVarNumber++);
-    utf32_string classDataPtrVarNameUtf32 = ToUtf32(classDataPtrVarName);
-    Constant classDataPtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(classDataPtrVarNameUtf32.c_str())));
-    Constant classDataNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(classData->Type()->Name()));
-    assembly->AddClassDataVarMapping(classDataPtrVarNameConstant, classDataNameConstant);
-    llvm::Constant* classDataPtrVar = module->getOrInsertGlobal(classDataPtrVarName, PointerType::get(GetType(ValueType::byteType), 0));
-    ExportGlobalVariable(classDataPtrVar);
-    llvm::GlobalVariable* clsDataPtrVar = cast<llvm::GlobalVariable>(classDataPtrVar);
-    clsDataPtrVar->setInitializer(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
-    classDataMap[classData] = classDataPtrVar;
-    return classDataPtrVar;
-}
-
-llvm::Constant* NativeCompilerImpl::GetTypePtrVar(Type* type)
-{
-    auto it = typeMap.find(type);
-    if (it != typeMap.cend())
-    {
-        return it->second;
-    }
-    std::string typePtrVarName = "__T" + std::to_string(nextTypePtrVarNumber++);
-    utf32_string typePtrVarNameUtf32 = ToUtf32(typePtrVarName);
-    Constant typePtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(typePtrVarNameUtf32.c_str())));
-    Constant typeNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(type->Name()));
-    assembly->AddTypePtrVarMapping(typePtrVarNameConstant, typeNameConstant);
-    llvm::Constant* typePtrVar = module->getOrInsertGlobal(typePtrVarName, PointerType::get(GetType(ValueType::byteType), 0));
-    ExportGlobalVariable(typePtrVar);
-    llvm::GlobalVariable* tpPtrVar = cast<llvm::GlobalVariable>(typePtrVar);
-    tpPtrVar->setInitializer(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
-    typeMap[type] = typePtrVar;
-    return typePtrVar;
-}
-
-llvm::Constant* NativeCompilerImpl::GetFunctionPtrVar(Function* function)
-{
-    auto it = functionPtrMap.find(function);
-    if (it != functionPtrMap.cend())
-    {
-        return it->second;
-    }
-    std::string functionPtrVarName = "__F" + std::to_string(nextFunctionVarNumber++);
-    utf32_string functionPtrVarNameUtf32 = ToUtf32(functionPtrVarName);
-    Constant functionPtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(functionPtrVarNameUtf32.c_str())));
-    Constant functionNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(function->CallName()));
-    assembly->AddFunctionVarMapping(functionPtrVarNameConstant, functionNameConstant);
-    llvm::Constant* functionPtrVar = module->getOrInsertGlobal(functionPtrVarName, PointerType::get(GetType(ValueType::byteType), 0));
-    ExportGlobalVariable(functionPtrVar);
-    llvm::GlobalVariable* funPtrVar = cast<llvm::GlobalVariable>(functionPtrVar);
-    funPtrVar->setInitializer(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
-    functionPtrMap[function] = functionPtrVar;
-    return functionPtrVar;
+    if (!function->CanThrow()) return;
+    if (lineNumber == uint32_t(-1)) return;
+    ArgVector fse01;
+    fse01.push_back(builder.getInt32(0));
+    fse01.push_back(builder.getInt32(1));
+    llvm::Value* fseLineNumberPtr = builder.CreateGEP(nullptr, functionStackEntry, fse01);
+    builder.CreateStore(builder.getInt32(lineNumber), fseLineNumberPtr);
 }
 
 void NativeCompilerImpl::VisitConversionBaseInst(ConversionBaseInst& instruction)
@@ -1637,14 +1662,14 @@ void NativeCompilerImpl::VisitJumpInst(JumpInst& instruction)
     else
     {
         BasicBlock* targetBlock = nullptr;
-        auto it = basicBlocks.find(instruction.Index());
+        auto it = basicBlocks.find(target);
         if (it != basicBlocks.cend())
         {
             targetBlock = it->second;
         }
         else
         {
-            targetBlock = BasicBlock::Create(context, "target", fun);
+            targetBlock = BasicBlock::Create(context, "target" + std::to_string(target), fun);
             basicBlocks[instruction.Index()] = targetBlock;
         }
         builder.CreateBr(targetBlock);
@@ -1655,17 +1680,18 @@ void NativeCompilerImpl::VisitJumpInst(JumpInst& instruction)
 void NativeCompilerImpl::VisitJumpTrueInst(JumpTrueInst& instruction)
 {
     BasicBlock* trueTargetBlock = nullptr;
-    auto it = basicBlocks.find(instruction.Index());
+    int32_t target = instruction.Index();
+    auto it = basicBlocks.find(target);
     if (it != basicBlocks.cend())
     {
         trueTargetBlock = it->second;
     }
     else
     {
-        trueTargetBlock = BasicBlock::Create(context, "trueTarget", fun);
-        basicBlocks[instruction.Index()] = trueTargetBlock;
+        trueTargetBlock = BasicBlock::Create(context, "trueTarget" + std::to_string(target), fun);
+        basicBlocks[target] = trueTargetBlock;
     }
-    BasicBlock* continueBlock = BasicBlock::Create(context, "continueTarget", fun);
+    BasicBlock* continueBlock = BasicBlock::Create(context, "continueTarget" + std::to_string(GetCurrentInstructionIndex()), fun);
     llvm::Value* cond = valueStack.Pop();
     builder.CreateCondBr(cond, trueTargetBlock, continueBlock);
     currentBasicBlock = continueBlock;
@@ -1675,17 +1701,18 @@ void NativeCompilerImpl::VisitJumpTrueInst(JumpTrueInst& instruction)
 void NativeCompilerImpl::VisitJumpFalseInst(JumpFalseInst& instruction)
 {
     BasicBlock* falseTargetBlock = nullptr;
-    auto it = basicBlocks.find(instruction.Index());
+    int32_t target = instruction.Index();
+    auto it = basicBlocks.find(target);
     if (it != basicBlocks.cend())
     {
         falseTargetBlock = it->second;
     }
     else
     {
-        falseTargetBlock = BasicBlock::Create(context, "falseTarget", fun);
+        falseTargetBlock = BasicBlock::Create(context, "falseTarget" + std::to_string(target), fun);
         basicBlocks[instruction.Index()] = falseTargetBlock;
     }
-    BasicBlock* continueBlock = BasicBlock::Create(context, "continueTarget", fun);
+    BasicBlock* continueBlock = BasicBlock::Create(context, "continueTarget" + std::to_string(GetCurrentInstructionIndex()), fun);
     llvm::Value* cond = valueStack.Pop();
     builder.CreateCondBr(cond, continueBlock, falseTargetBlock);
     currentBasicBlock = continueBlock;
@@ -1698,8 +1725,8 @@ void NativeCompilerImpl::VisitContinuousSwitchInst(ContinuousSwitchInst& instruc
     llvm::Value* cond = valueStack.Pop();
     IntegralValue begin = instruction.Begin();
     IntegralValue end = instruction.End();
-    BasicBlock* defaultBlock = BasicBlock::Create(context, "defaultTarget", fun);
     int32_t defaultTarget = instruction.DefaultTarget();
+    BasicBlock* defaultBlock = BasicBlock::Create(context, "defaultTarget" + std::to_string(defaultTarget), fun);
     basicBlocks[defaultTarget] = defaultBlock;
     int n = int(instruction.Targets().size());
     Assert(n == end.Value() - begin.Value() + 1, "invalid switch range");
@@ -1709,7 +1736,7 @@ void NativeCompilerImpl::VisitContinuousSwitchInst(ContinuousSwitchInst& instruc
         int32_t target = instruction.Targets()[i];
         if (target != defaultTarget)
         {
-            BasicBlock* targetBlock = BasicBlock::Create(context, "caseTarget", fun);
+            BasicBlock* targetBlock = BasicBlock::Create(context, "caseTarget" + std::to_string(target), fun);
             basicBlocks[target] = targetBlock;
             IntegralValue caseValue(begin.Value() + i, begin.GetType());
             switchInst->addCase(GetConstantInt(condType, caseValue), targetBlock);
@@ -1721,8 +1748,8 @@ void NativeCompilerImpl::VisitBinarySearchSwitchInst(BinarySearchSwitchInst& ins
 {
     ValueType condType = instruction.CondType();
     llvm::Value* cond = valueStack.Pop();
-    BasicBlock* defaultBlock = BasicBlock::Create(context, "defaultTarget", fun);
     int32_t defaultTarget = instruction.DefaultTarget();
+    BasicBlock* defaultBlock = BasicBlock::Create(context, "defaultTarget" + std::to_string(defaultTarget), fun);
     basicBlocks[defaultTarget] = defaultBlock;
     int n = int(instruction.Targets().size());
     SwitchInst* switchInst = builder.CreateSwitch(cond, defaultBlock, n);
@@ -1731,7 +1758,7 @@ void NativeCompilerImpl::VisitBinarySearchSwitchInst(BinarySearchSwitchInst& ins
         const std::pair<IntegralValue, int32_t>& t = instruction.Targets()[i];
         IntegralValue caseValue = t.first;
         int32_t target = t.second;
-        BasicBlock* targetBlock = BasicBlock::Create(context, "caseTarget", fun);
+        BasicBlock* targetBlock = BasicBlock::Create(context, "caseTarget" + std::to_string(target), fun);
         basicBlocks[target] = targetBlock;
         switchInst->addCase(GetConstantInt(condType, caseValue), targetBlock);
     }
@@ -1750,15 +1777,13 @@ void NativeCompilerImpl::VisitCallInst(CallInst& instruction)
     llvm::FunctionType* funType = llvm::FunctionType::get(returnType, paramTypes, false);
     if (calledFunction->MangledName().empty())
     {
-        calledFunction->SetMangedName(MangleFunctionName(*calledFunction));
+        calledFunction->SetMangledName(MangleFunctionName(*calledFunction));
     }
     llvm::Function* callee = cast<llvm::Function>(module->getOrInsertFunction(calledFunction->MangledName(), funType));
-#ifdef _WIN32
     if (calledFunction->GetAssembly() != assembly)
     {
-        callee->setDLLStorageClass(llvm::GlobalValue::DLLStorageClassTypes::DLLImportStorageClass);
+        ImportFunction(callee);
     }
-#endif
     ArgVector args;
     int n = int(paramTypes.size());
     args.resize(n);
@@ -1767,6 +1792,9 @@ void NativeCompilerImpl::VisitCallInst(CallInst& instruction)
         llvm::Value* arg = valueStack.Pop();
         args[n - i - 1] = arg;
     }
+    int32_t pc = GetCurrentInstructionIndex();
+    uint32_t lineNumber = function->GetSourceLine(pc);
+    SetCurrentLineNumber(lineNumber);
     if (calledFunction->ReturnsValue())
     {
         valueStack.Push(builder.CreateCall(callee, args));
@@ -1802,11 +1830,12 @@ void NativeCompilerImpl::VisitVirtualCallInst(VirtualCallInst& instruction)
     resolveArgs.push_back(llvm::ConstantInt::get(GetIntegerType(ValueType::uintType), vmtIndex));
     llvm::Function* resolveVirtualFunctionCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveVirtualFunctionCallAddress", PointerType::get(GetType(ValueType::byteType), 0),
         GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
-#ifdef _WIN32
-    resolveVirtualFunctionCallAddress->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(resolveVirtualFunctionCallAddress);
     llvm::Value* functionAddress = builder.CreateCall(resolveVirtualFunctionCallAddress, resolveArgs);
     llvm::Value* funPtrValue = builder.CreateBitCast(functionAddress, funPtrType);
+    int32_t pc = GetCurrentInstructionIndex();
+    uint32_t lineNumber = function->GetSourceLine(pc);
+    SetCurrentLineNumber(lineNumber);
     if (instruction.GetFunctionType().ReturnType() != ValueType::none)
     {
         valueStack.Push(builder.CreateCall(funPtrValue, args));
@@ -1842,14 +1871,15 @@ void NativeCompilerImpl::VisitInterfaceCallInst(InterfaceCallInst& instruction)
     AllocaInst* receiver = builder.CreateAlloca(GetType(ValueType::ulongType));
     resolveArgs.push_back(llvm::ConstantInt::get(GetIntegerType(ValueType::uintType), imtIndex));
     resolveArgs.push_back(receiver);
-    llvm::Function* resolveInterfaceCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveInterfaceCallAddress", PointerType::get(GetType(ValueType::byteType), 0),
+    llvm::Function* rtResolveInterfaceCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveInterfaceCallAddress", PointerType::get(GetType(ValueType::byteType), 0),
         GetType(ValueType::ulongType), GetType(ValueType::intType), PointerType::get(GetType(ValueType::ulongType), 0), nullptr));
-#ifdef _WIN32
-    resolveInterfaceCallAddress->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
-    llvm::Value* functionAddress = builder.CreateCall(resolveInterfaceCallAddress, resolveArgs);
+    ImportFunction(rtResolveInterfaceCallAddress);
+    llvm::Value* functionAddress = builder.CreateCall(rtResolveInterfaceCallAddress, resolveArgs);
     args[0] = builder.CreateLoad(receiver);
     llvm::Value* funPtrValue = builder.CreateBitCast(functionAddress, funPtrType);
+    int32_t pc = GetCurrentInstructionIndex();
+    uint32_t lineNumber = function->GetSourceLine(pc);
+    SetCurrentLineNumber(lineNumber);
     if (instruction.GetFunctionType().ReturnType() != ValueType::none)
     {
         valueStack.Push(builder.CreateCall(funPtrValue, args));
@@ -1918,9 +1948,10 @@ void NativeCompilerImpl::VisitVmCallInst(VmCallInst& instruction)
         GetType(ValueType::intType),
         PointerType::get(vmCallContextType, 0), 
         nullptr));
-#ifdef _WIN32
-    rtVmCall->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtVmCall);
+    int32_t pc = GetCurrentInstructionIndex();
+    uint32_t lineNumber = function->GetSourceLine(pc);
+    SetCurrentLineNumber(lineNumber);
     ArgVector args;
     args.push_back(builder.CreateLoad(functionPtrVar));
     args.push_back(builder.CreateLoad(constantPoolVariable));
@@ -1946,9 +1977,7 @@ void NativeCompilerImpl::VisitDelegateCallInst(DelegateCallInst& instruction)
     resolveArgs.push_back(functionPtr);
     llvm::Function* rtResolveDelegateCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveDelegateCallAddress", PointerType::get(GetType(ValueType::byteType), 0), 
         PointerType::get(GetType(ValueType::byteType), 0), nullptr));
-#ifdef _WIN32
-    rtResolveDelegateCallAddress->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtResolveDelegateCallAddress);
     llvm::Value* delegateCallAddress = builder.CreateCall(rtResolveDelegateCallAddress, resolveArgs);
     llvm::Type* returnType = GetType(instruction.GetFunctionType().ReturnType());
     std::vector<llvm::Type*> paramTypes;
@@ -1968,6 +1997,9 @@ void NativeCompilerImpl::VisitDelegateCallInst(DelegateCallInst& instruction)
         args[n - i - 1] = arg;
     }
     llvm::Value* funPtrValue = builder.CreateBitCast(delegateCallAddress, funPtrType);
+    int32_t pc = GetCurrentInstructionIndex();
+    uint32_t lineNumber = function->GetSourceLine(pc);
+    SetCurrentLineNumber(lineNumber);
     if (instruction.GetFunctionType().ReturnType() != ValueType::none)
     {
         valueStack.Push(builder.CreateCall(funPtrValue, args));
@@ -1987,9 +2019,7 @@ void NativeCompilerImpl::VisitClassDelegateCallInst(ClassDelegateCallInst& instr
     resolveArgs.push_back(classObjectAlloca);
     llvm::Function* rtResolveClassDelegateCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveClassDelegateCallAddress", PointerType::get(GetType(ValueType::byteType), 0),
         GetType(ValueType::ulongType), PointerType::get(GetType(ValueType::ulongType), 0), nullptr));
-#ifdef _WIN32
-    rtResolveClassDelegateCallAddress->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtResolveClassDelegateCallAddress);
     llvm::Value* classDelegateCallAddress = builder.CreateCall(rtResolveClassDelegateCallAddress, resolveArgs);
     llvm::Type* returnType = GetType(instruction.GetFunctionType().ReturnType());
     std::vector<llvm::Type*> paramTypes;
@@ -2011,6 +2041,9 @@ void NativeCompilerImpl::VisitClassDelegateCallInst(ClassDelegateCallInst& instr
         args[n - i - 1] = arg;
     }
     llvm::Value* funPtrValue = builder.CreateBitCast(classDelegateCallAddress, funPtrType);
+    int32_t pc = GetCurrentInstructionIndex();
+    uint32_t lineNumber = function->GetSourceLine(pc);
+    SetCurrentLineNumber(lineNumber);
     if (instruction.GetFunctionType().ReturnType() != ValueType::none)
     {
         valueStack.Push(builder.CreateCall(funPtrValue, args));
@@ -2026,9 +2059,7 @@ void NativeCompilerImpl::VisitSetClassDataInst(SetClassDataInst& instruction)
     llvm::Value* objectReference = valueStack.Pop();
     llvm::Function* rtSetClassDataPtr = cast<llvm::Function>(module->getOrInsertFunction("RtSetClassDataPtr", 
         GetType(ValueType::none), GetType(ValueType::ulongType), PointerType::get(GetType(ValueType::byteType), 0), nullptr));
-#ifdef _WIN32
-    rtSetClassDataPtr->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtSetClassDataPtr);
     ArgVector args;
     args.push_back(objectReference);
     ClassData* classData = instruction.GetClassData();
@@ -2040,9 +2071,7 @@ void NativeCompilerImpl::VisitSetClassDataInst(SetClassDataInst& instruction)
 void NativeCompilerImpl::VisitCreateObjectInst(CreateObjectInst& instruction)
 {
     llvm::Function* rtCreateObject = cast<llvm::Function>(module->getOrInsertFunction("RtCreateObject", GetType(ValueType::ulongType), PointerType::get(GetType(ValueType::byteType), 0), nullptr));
-#ifdef _WIN32
-    rtCreateObject->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtCreateObject);
     ArgVector args;
     Type* type = instruction.GetType();
     ClassData* classData = ClassDataTable::GetClassData(StringPtr(type->Name()));
@@ -2055,9 +2084,7 @@ void NativeCompilerImpl::VisitCopyObjectInst(CopyObjectInst& instruction)
 {
     llvm::Value* objectReference = valueStack.Pop();
     llvm::Function* rtCopyObject = cast<llvm::Function>(module->getOrInsertFunction("RtCopyObject", GetType(ValueType::ulongType), GetType(ValueType::ulongType), nullptr));
-#ifdef _WIN32
-    rtCopyObject->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtCopyObject);
     ArgVector args;
     args.push_back(objectReference);
     valueStack.Push(builder.CreateCall(rtCopyObject, args));
@@ -2067,9 +2094,7 @@ void NativeCompilerImpl::VisitStrLitToStringInst(StrLitToStringInst& instruction
 {
     llvm::Value* value = valueStack.Pop();
     llvm::Function* rtStrLitToString = cast<llvm::Function>(module->getOrInsertFunction("RtStrLitToString", GetType(ValueType::ulongType), PointerType::get(GetType(ValueType::uintType), 0), nullptr));
-#ifdef _WIN32
-    rtStrLitToString->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtStrLitToString);
     ArgVector args;
     args.push_back(value);
     valueStack.Push(builder.CreateCall(rtStrLitToString, args));
@@ -2080,9 +2105,7 @@ void NativeCompilerImpl::VisitLoadStringCharInst(LoadStringCharInst& instruction
     llvm::Value* index = valueStack.Pop();
     llvm::Value* str = valueStack.Pop();
     llvm::Function* rtLoadStringChar = cast<llvm::Function>(module->getOrInsertFunction("RtLoadStringChar", GetType(ValueType::charType), GetType(ValueType::intType), GetType(ValueType::ulongType), nullptr));
-#ifdef _WIN32
-    rtLoadStringChar->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtLoadStringChar);
     ArgVector args;
     args.push_back(index);
     args.push_back(str); 
@@ -2114,15 +2137,42 @@ void NativeCompilerImpl::VisitDownCastInst(DownCastInst& instruction)
     llvm::Value* value = valueStack.Pop();
     llvm::Function* rtDownCast = cast<llvm::Function>(module->getOrInsertFunction("RtDownCast", GetType(ValueType::ulongType), GetType(ValueType::ulongType),
         PointerType::get(GetType(ValueType::byteType), 0), nullptr));
-#ifdef _WIN32
-    rtDownCast->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtDownCast);
     ArgVector args;
     args.push_back(value);
     ClassData* classData = ClassDataTable::GetClassData(instruction.GetType()->Name());
     llvm::Value* classDataPtrVar = GetClassDataPtrVar(classData);
     args.push_back(builder.CreateLoad(classDataPtrVar));
     valueStack.Push(builder.CreateCall(rtDownCast, args));
+}
+
+void NativeCompilerImpl::VisitThrowInst(ThrowInst& instruction)
+{
+    int32_t pc = GetCurrentInstructionIndex();
+    uint32_t lineNumber = function->GetSourceLine(pc);
+    SetCurrentLineNumber(lineNumber);
+    llvm::Value* exceptionObject = valueStack.Pop(); 
+    llvm::Function* rtThrowException = cast<llvm::Function>(module->getOrInsertFunction("RtThrowException", GetType(ValueType::none), GetType(ValueType::objectReference), nullptr));
+    ImportFunction(rtThrowException);
+    ArgVector args;
+    args.push_back(exceptionObject);
+    builder.CreateCall(rtThrowException, args);
+    if (function->ReturnsValue())
+    {
+        PushDefaultValue(function->ReturnType());
+        llvm::Value* retValue = valueStack.Pop();
+        builder.CreateRet(retValue);
+    }
+    else
+    {
+        builder.CreateRetVoid(); 
+    }
+    currentBasicBlock = nullptr;
+}
+
+void NativeCompilerImpl::VisitRethrowInst(RethrowInst& instruction)
+{
+    // todo
 }
 
 void NativeCompilerImpl::VisitBeginTryInst(BeginTryInst& instruction)
@@ -2135,27 +2185,27 @@ void NativeCompilerImpl::VisitEndTryInst(EndTryInst& instruction)
     // todo
 }
 
-void NativeCompilerImpl::VisitThrowInst(ThrowInst& instruction)
+void NativeCompilerImpl::VisitBeginCatchSectionInst(BeginCatchSectionInst& instruction)
 {
-    valueStack.Pop(); // exception object
-    if (function->ReturnsValue())
-    {
-        PushDefaultValue(function->ReturnType());
-        llvm::Value* retValue = valueStack.Pop();
-        builder.CreateRet(retValue);
-    }
-    else
-    {
-        builder.CreateRetVoid(); 
-    }
+    // todo
 }
 
-void NativeCompilerImpl::VisitRethrowInst(RethrowInst& instruction)
+void NativeCompilerImpl::VisitEndCatchSectionInst(EndCatchSectionInst& instruction)
+{
+    // todo
+}
+
+void NativeCompilerImpl::VisitBeginCatchInst(BeginCatchInst& instruction)
 {
     // todo
 }
 
 void NativeCompilerImpl::VisitEndCatchInst(EndCatchInst& instruction)
+{
+    // todo
+}
+
+void NativeCompilerImpl::VisitBeginFinallyInst(BeginFinallyInst& instruction)
 {
     // todo
 }
@@ -2169,17 +2219,15 @@ void NativeCompilerImpl::VisitStaticInitInst(StaticInitInst& instruction)
 {
     llvm::Function* rtStaticInit = cast<llvm::Function>(module->getOrInsertFunction("RtStaticInit", PointerType::get(GetType(ValueType::byteType), 0), PointerType::get(GetType(ValueType::byteType), 0), 
         nullptr));
-#ifdef _WIN32
-    rtStaticInit->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtStaticInit);
     ArgVector staticInitArgs;
     ClassData* classData = ClassDataTable::GetClassData(instruction.GetType()->Name());
     llvm::Value* classDataPtrVar = GetClassDataPtrVar(classData);
     staticInitArgs.push_back(builder.CreateLoad(classDataPtrVar));
     llvm::Value* staticConstructorAddress = builder.CreateCall(rtStaticInit, staticInitArgs);
     llvm::Value* staticConstructorAddressIsNull = builder.CreateICmpEQ(staticConstructorAddress, llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
-    BasicBlock* trueTargetBlock = BasicBlock::Create(context, "trueTarget", fun);
-    BasicBlock* continueBlock = BasicBlock::Create(context, "continueTarget", fun);
+    BasicBlock* trueTargetBlock = BasicBlock::Create(context, "static_init_ready", fun);
+    BasicBlock* continueBlock = BasicBlock::Create(context, "call_static_constructor", fun);
     builder.CreateCondBr(staticConstructorAddressIsNull, trueTargetBlock, continueBlock);
     builder.SetInsertPoint(continueBlock);
     std::vector<llvm::Type*> paramTypes;
@@ -2196,9 +2244,7 @@ void NativeCompilerImpl::VisitStaticInitInst(StaticInitInst& instruction)
 void NativeCompilerImpl::VisitDoneStaticInitInst(DoneStaticInitInst& instruction)
 {
     llvm::Function* rtDoneStaticInit = cast<llvm::Function>(module->getOrInsertFunction("RtDoneStaticInit", GetType(ValueType::none), PointerType::get(GetType(ValueType::byteType), 0), nullptr));
-#ifdef _WIN32
-    rtDoneStaticInit->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtDoneStaticInit);
     ArgVector args;
     ClassData* classData = ClassDataTable::GetClassData(instruction.GetType()->Name());
     llvm::Value* classDataPtrVar = GetClassDataPtrVar(classData);
@@ -2294,9 +2340,7 @@ void NativeCompilerImpl::VisitLoadStaticFieldInst(LoadStaticFieldInst& instructi
             throw std::runtime_error("NativeCompiler: invalid field type for load static field");
         }
     }
-#ifdef _WIN32
-    rtLoadStaticField->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtLoadStaticField);
     ArgVector args;
     ClassData* classData = ClassDataTable::GetClassData(instruction.GetType()->Name());
     llvm::Value* classDataPtrVar = GetClassDataPtrVar(classData);
@@ -2395,9 +2439,7 @@ void NativeCompilerImpl::VisitStoreStaticFieldInst(StoreStaticFieldInst& instruc
             throw std::runtime_error("NativeCompiler: invalid field type for store static field");
         }
     }
-#ifdef _WIN32
-    rtStoreStaticField->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtStoreStaticField);
     ArgVector args;
     ClassData* classData = ClassDataTable::GetClassData(instruction.GetType()->Name());
     llvm::Value* classDataPtrVar = GetClassDataPtrVar(classData);
@@ -2496,9 +2538,7 @@ void NativeCompilerImpl::VisitBoxBaseInst(BoxBaseInst& instruction)
             throw std::runtime_error("NativeCompiler: invalid value type for box operation");
         }
     }
-#ifdef _WIN32
-    rtBox->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtBox);
     ArgVector args;
     args.push_back(value);
     valueStack.Push(builder.CreateCall(rtBox, args));
@@ -2576,9 +2616,7 @@ void NativeCompilerImpl::VisitUnboxBaseInst(UnboxBaseInst& instruction)
             throw std::runtime_error("NativeCompiler: invalid value type for unbox operation");
         }
     }
-#ifdef _WIN32
-    rtUnbox->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtUnbox);
     ArgVector args;
     args.push_back(objectReference);
     valueStack.Push(builder.CreateCall(rtUnbox, args));
@@ -2591,9 +2629,7 @@ void NativeCompilerImpl::VisitAllocateArrayElementsInst(AllocateArrayElementsIns
     Type* elementType = instruction.GetType();
     llvm::Function* rtAllocateArrayElements = cast<llvm::Function>(module->getOrInsertFunction("RtAllocateArrayElements", GetType(ValueType::none), GetType(ValueType::ulongType),
         GetType(ValueType::intType), PointerType::get(GetType(ValueType::byteType), 0), nullptr));
-#ifdef _WIN32
-    rtAllocateArrayElements->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtAllocateArrayElements);
     ArgVector args;
     args.push_back(arr);
     args.push_back(length);
@@ -2607,9 +2643,7 @@ void NativeCompilerImpl::VisitIsInst(IsInst& instruction)
     llvm::Value* objectReference = valueStack.Pop();
     llvm::Function* rtIs = cast<llvm::Function>(module->getOrInsertFunction("RtIs", GetType(ValueType::boolType), GetType(ValueType::objectReference), PointerType::get(GetType(ValueType::byteType), 0), 
         nullptr));
-#ifdef _WIN32
-    rtIs->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtIs);
     ArgVector args;
     args.push_back(objectReference);
     ClassData* classData = ClassDataTable::GetClassData(instruction.GetType()->Name());
@@ -2623,9 +2657,7 @@ void NativeCompilerImpl::VisitAsInst(AsInst& instruction)
     llvm::Value* objectReference = valueStack.Pop();
     llvm::Function* rtAs = cast<llvm::Function>(module->getOrInsertFunction("RtAs", GetType(ValueType::objectReference), GetType(ValueType::objectReference), PointerType::get(GetType(ValueType::byteType), 0),
         nullptr));
-#ifdef _WIN32
-    rtAs->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtAs);
     ArgVector args;
     args.push_back(objectReference);
     ClassData* classData = ClassDataTable::GetClassData(instruction.GetType()->Name());
@@ -2652,9 +2684,7 @@ void NativeCompilerImpl::VisitMemFun2ClassDlgInst(MemFun2ClassDlgInst& instructi
         GetType(ValueType::objectReference),
         PointerType::get(GetType(ValueType::byteType), 0), 
         nullptr));
-#ifdef _WIN32
-    rtMemFun2ClassDelegate->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-#endif
+    ImportFunction(rtMemFun2ClassDelegate);
     ArgVector args;
     args.push_back(classObject);
     args.push_back(classDelegateObject);
@@ -2666,31 +2696,314 @@ void NativeCompilerImpl::VisitMemFun2ClassDlgInst(MemFun2ClassDlgInst& instructi
 void NativeCompilerImpl::VisitCreateLocalVariableReferenceInst(CreateLocalVariableReferenceInst& instruction)
 {
     int32_t localIndex = instruction.LocalIndex();
-    valueStack.Push(builder.CreateBitCast(locals[localIndex], GetType(ValueType::variableReference)));
+    if (function->LocalTypes()[localIndex] == ValueType::variableReference)
+    {
+        valueStack.Push(builder.CreateLoad(locals[localIndex]));
+    }
+    else
+    {
+        std::vector<llvm::Type*> variableRefContextElementTypes;
+        variableRefContextElementTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
+        variableRefContextElementTypes.push_back(GetType(ValueType::ulongType));
+        variableRefContextElementTypes.push_back(GetType(ValueType::intType));
+        variableRefContextElementTypes.push_back(GetType(ValueType::byteType));
+        llvm::Value* localPtr = builder.CreateBitCast(locals[localIndex], GetType(ValueType::variableReference));
+        llvm::StructType* variableRefContextType = llvm::StructType::get(context, variableRefContextElementTypes);
+        AllocaInst* variableRefContext = builder.CreateAlloca(variableRefContextType);
+        ArgVector vrcLocalIndeces;
+        vrcLocalIndeces.push_back(builder.getInt32(0));
+        vrcLocalIndeces.push_back(builder.getInt32(0));
+        llvm::Value* vrcLocalPtrPtr = builder.CreateGEP(nullptr, variableRefContext, vrcLocalIndeces);
+        builder.CreateStore(localPtr, vrcLocalPtrPtr);
+        ArgVector vrcRefTypeIndeces;
+        vrcRefTypeIndeces.push_back(builder.getInt32(0));
+        vrcRefTypeIndeces.push_back(builder.getInt32(3));
+        llvm::Value* vrcRefTypePtr = builder.CreateGEP(nullptr, variableRefContext, vrcRefTypeIndeces);
+        builder.CreateStore(builder.getInt8(0), vrcRefTypePtr);
+        valueStack.Push(builder.CreateBitCast(variableRefContext, PointerType::get(GetType(ValueType::byteType), 0)));
+    }
 }
 
 void NativeCompilerImpl::VisitCreateMemberVariableReferenceInst(CreateMemberVariableReferenceInst& instruction)
 {
-    // todo
+    llvm::Value* objectReference = valueStack.Pop();
+    int32_t memberVarIndex = instruction.MemberVarIndex();
+    std::vector<llvm::Type*> variableRefContextElementTypes;
+    variableRefContextElementTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
+    variableRefContextElementTypes.push_back(GetType(ValueType::ulongType));
+    variableRefContextElementTypes.push_back(GetType(ValueType::intType));
+    variableRefContextElementTypes.push_back(GetType(ValueType::byteType));
+    llvm::StructType* variableRefContextType = llvm::StructType::get(context, variableRefContextElementTypes);
+    AllocaInst* variableRefContext = builder.CreateAlloca(variableRefContextType);
+    ArgVector vrcObjectIndeces;
+    vrcObjectIndeces.push_back(builder.getInt32(0));
+    vrcObjectIndeces.push_back(builder.getInt32(1));
+    llvm::Value* vrcObjectPtr = builder.CreateGEP(nullptr, variableRefContext, vrcObjectIndeces);
+    builder.CreateStore(objectReference, vrcObjectPtr);
+    ArgVector vrcMemberVarIndexIndeces;
+    vrcMemberVarIndexIndeces.push_back(builder.getInt32(0));
+    vrcMemberVarIndexIndeces.push_back(builder.getInt32(2));
+    llvm::Value* vrcMemberVarIndexPtr = builder.CreateGEP(nullptr, variableRefContext, vrcMemberVarIndexIndeces);
+    builder.CreateStore(builder.getInt32(memberVarIndex), vrcMemberVarIndexPtr);
+    ArgVector vrcRefTypeIndeces;
+    vrcRefTypeIndeces.push_back(builder.getInt32(0));
+    vrcRefTypeIndeces.push_back(builder.getInt32(3));
+    llvm::Value* vrcRefTypePtr = builder.CreateGEP(nullptr, variableRefContext, vrcRefTypeIndeces);
+    builder.CreateStore(builder.getInt8(1), vrcRefTypePtr);
+    valueStack.Push(builder.CreateBitCast(variableRefContext, PointerType::get(GetType(ValueType::byteType), 0)));
 }
 
 void NativeCompilerImpl::VisitLoadVariableReferenceInst(LoadVariableReferenceInst& instruction)
 {
-    // todo: handle member variable references
-    llvm::Value* ref = locals[instruction.Index()];
-    llvm::Type* ptrType = PointerType::get(GetType(instruction.GetType()), 0);
-    llvm::Value* ptr = builder.CreateBitCast(ref, ptrType);
-    valueStack.Push(builder.CreateLoad(ptr));
+    llvm::AllocaInst* variable = builder.CreateAlloca(GetType(instruction.GetType()));
+    std::vector<llvm::Type*> variableRefContextElementTypes;
+    variableRefContextElementTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
+    variableRefContextElementTypes.push_back(GetType(ValueType::ulongType));
+    variableRefContextElementTypes.push_back(GetType(ValueType::intType));
+    variableRefContextElementTypes.push_back(GetType(ValueType::byteType));
+    llvm::StructType* variableRefContextType = llvm::StructType::get(context, variableRefContextElementTypes);
+    ArgVector vrcRefTypeIndeces;
+    vrcRefTypeIndeces.push_back(builder.getInt32(0));
+    vrcRefTypeIndeces.push_back(builder.getInt32(3));
+    llvm::Value* refContext = locals[instruction.Index()];
+    llvm::Value* variableRefContext = builder.CreateBitCast(refContext, PointerType::get(variableRefContextType, 0));
+    llvm::Value* vrcRefTypePtr = builder.CreateGEP(nullptr, variableRefContext, vrcRefTypeIndeces);
+    llvm::Value* refType = builder.CreateLoad(vrcRefTypePtr);
+    llvm::Value* isLocalVariableRef = builder.CreateICmpEQ(refType, builder.getInt8(0));
+    llvm::BasicBlock* localVariableRefBlock = llvm::BasicBlock::Create(context, "localVariableRefTarget", fun);
+    llvm::BasicBlock* memberVariableRefBlock = llvm::BasicBlock::Create(context, "memberVariableRefTarget", fun);
+    builder.CreateCondBr(isLocalVariableRef, localVariableRefBlock, memberVariableRefBlock);
+    builder.SetInsertPoint(localVariableRefBlock);
+    ArgVector vrcLocalIndeces;
+    vrcLocalIndeces.push_back(builder.getInt32(0));
+    vrcLocalIndeces.push_back(builder.getInt32(0));
+    llvm::Value* vrcLocalPtrPtr = builder.CreateGEP(nullptr, variableRefContext, vrcLocalIndeces);
+    llvm::Value* localPtr = builder.CreateLoad(vrcLocalPtrPtr);
+    llvm::Type* localPtrType = PointerType::get(GetType(instruction.GetType()), 0);
+    llvm::Value* ptrToLocal = builder.CreateBitCast(localPtr, localPtrType);
+    llvm::Value* loadedLocal = builder.CreateLoad(ptrToLocal);
+    builder.CreateStore(loadedLocal, variable);
+    BasicBlock* nextBlock = BasicBlock::Create(context, "nextTarget" + std::to_string(GetCurrentInstructionIndex()), fun);
+    builder.CreateBr(nextBlock);
+    builder.SetInsertPoint(memberVariableRefBlock);
+    ArgVector vrcObjectIndeces;
+    vrcObjectIndeces.push_back(builder.getInt32(0));
+    vrcObjectIndeces.push_back(builder.getInt32(1));
+    llvm::Value* vrcObjectPtr = builder.CreateGEP(nullptr, variableRefContext, vrcObjectIndeces);
+    llvm::Value* objectReference = builder.CreateLoad(vrcObjectPtr);
+    ArgVector vrcMemberVarIndexIndeces;
+    vrcMemberVarIndexIndeces.push_back(builder.getInt32(0));
+    vrcMemberVarIndexIndeces.push_back(builder.getInt32(2));
+    llvm::Value* vrcMemberVarIndexPtr = builder.CreateGEP(nullptr, variableRefContext, vrcMemberVarIndexIndeces);
+    llvm::Value* memberVariableIndex = builder.CreateLoad(vrcMemberVarIndexPtr);
+    ArgVector args;
+    args.push_back(objectReference);
+    args.push_back(memberVariableIndex);
+    llvm::Function* callee = nullptr;
+    switch (instruction.GetType())
+    {
+        case ValueType::sbyteType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldSb", GetType(ValueType::sbyteType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::byteType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldBy", GetType(ValueType::byteType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::shortType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldSh", GetType(ValueType::shortType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::ushortType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUs", GetType(ValueType::ushortType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::intType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldIn", GetType(ValueType::intType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::uintType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUi", GetType(ValueType::uintType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::longType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldLo", GetType(ValueType::longType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::ulongType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUl", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::floatType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldFl", GetType(ValueType::floatType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::doubleType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldDo", GetType(ValueType::doubleType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::charType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldCh", GetType(ValueType::charType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::boolType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldBo", GetType(ValueType::boolType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::objectReference:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldOb", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        default:
+        {
+            throw std::runtime_error("NativeCompiler: invalid field type for load variable reference");
+        }
+    }
+    ImportFunction(callee);
+    builder.CreateStore(builder.CreateCall(callee, args), variable);
+    builder.CreateBr(nextBlock);
+    currentBasicBlock = nextBlock;
+    builder.SetInsertPoint(nextBlock);
+    valueStack.Push(builder.CreateLoad(variable));
 }
 
 void NativeCompilerImpl::VisitStoreVariableReferenceInst(StoreVariableReferenceInst& instruction)
 {
-    // todo: handle member variable references
-    llvm::Value* ref = locals[instruction.Index()];
-    llvm::Type* ptrType = PointerType::get(GetType(instruction.GetType()), 0);
-    llvm::Value* ptr = builder.CreateBitCast(ref, ptrType);
     llvm::Value* value = valueStack.Pop();
-    builder.CreateStore(value, ptr);
+    std::vector<llvm::Type*> variableRefContextElementTypes;
+    variableRefContextElementTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
+    variableRefContextElementTypes.push_back(GetType(ValueType::ulongType));
+    variableRefContextElementTypes.push_back(GetType(ValueType::intType));
+    variableRefContextElementTypes.push_back(GetType(ValueType::byteType));
+    llvm::StructType* variableRefContextType = llvm::StructType::get(context, variableRefContextElementTypes);
+    ArgVector vrcRefTypeIndeces;
+    vrcRefTypeIndeces.push_back(builder.getInt32(0));
+    vrcRefTypeIndeces.push_back(builder.getInt32(3));
+    llvm::Value* refContext = locals[instruction.Index()];
+    llvm::Value* variableRefContext = builder.CreateBitCast(refContext, PointerType::get(variableRefContextType, 0));
+    llvm::Value* vrcRefTypePtr = builder.CreateGEP(nullptr, variableRefContext, vrcRefTypeIndeces);
+    llvm::Value* refType = builder.CreateLoad(vrcRefTypePtr);
+    llvm::Value* isLocalVariableRef = builder.CreateICmpEQ(refType, builder.getInt8(0));
+    llvm::BasicBlock* localVariableRefBlock = llvm::BasicBlock::Create(context, "localVariableRefTarget", fun);
+    llvm::BasicBlock* memberVariableRefBlock = llvm::BasicBlock::Create(context, "memberVariableRefTarget", fun);
+    builder.CreateCondBr(isLocalVariableRef, localVariableRefBlock, memberVariableRefBlock);
+    builder.SetInsertPoint(localVariableRefBlock);
+    ArgVector vrcLocalIndeces;
+    vrcLocalIndeces.push_back(builder.getInt32(0));
+    vrcLocalIndeces.push_back(builder.getInt32(0));
+    llvm::Value* vrcLocalPtrPtr = builder.CreateGEP(nullptr, variableRefContext, vrcLocalIndeces);
+    llvm::Value* localPtr = builder.CreateLoad(vrcLocalPtrPtr);
+    llvm::Type* localPtrType = PointerType::get(GetType(instruction.GetType()), 0);
+    llvm::Value* ptrToLocal = builder.CreateBitCast(localPtr, localPtrType);
+    builder.CreateStore(value, ptrToLocal);
+    BasicBlock* nextBlock = BasicBlock::Create(context, "nextTarget" + std::to_string(GetCurrentInstructionIndex()), fun);
+    builder.CreateBr(nextBlock);
+    builder.SetInsertPoint(memberVariableRefBlock);
+    ArgVector vrcObjectIndeces;
+    vrcObjectIndeces.push_back(builder.getInt32(0));
+    vrcObjectIndeces.push_back(builder.getInt32(1));
+    llvm::Value* vrcObjectPtr = builder.CreateGEP(nullptr, variableRefContext, vrcObjectIndeces);
+    llvm::Value* objectReference = builder.CreateLoad(vrcObjectPtr);
+    ArgVector vrcMemberVarIndexIndeces;
+    vrcMemberVarIndexIndeces.push_back(builder.getInt32(0));
+    vrcMemberVarIndexIndeces.push_back(builder.getInt32(2));
+    llvm::Value* vrcMemberVarIndexPtr = builder.CreateGEP(nullptr, variableRefContext, vrcMemberVarIndexIndeces);
+    llvm::Value* memberVariableIndex = builder.CreateLoad(vrcMemberVarIndexPtr);
+    ArgVector args;
+    args.push_back(objectReference);
+    args.push_back(value);
+    args.push_back(memberVariableIndex);
+    llvm::Function* callee = nullptr;
+    switch (instruction.GetType())
+    {
+        case ValueType::sbyteType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldSb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::sbyteType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::byteType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldBy", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::byteType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::shortType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldSh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::shortType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::ushortType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUs", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ushortType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::intType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldIn", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::intType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::uintType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUi", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::uintType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::longType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldLo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::longType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::ulongType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::floatType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldFl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::floatType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::doubleType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldDo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::doubleType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::charType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldCh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::charType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::boolType:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldBo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::boolType), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        case ValueType::objectReference:
+        {
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldOb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::objectReference), GetType(ValueType::intType), nullptr));
+            break;
+        }
+        default:
+        {
+            throw std::runtime_error("NativeCompiler: invalid field type for store variable reference");
+        }
+    }
+    ImportFunction(callee);
+    builder.CreateCall(callee, args);
+    builder.CreateBr(nextBlock);
+    currentBasicBlock = nextBlock;
+    builder.SetInsertPoint(nextBlock);
 }
 
 llvm::Type* NativeCompilerImpl::GetType(ValueType type)
@@ -3363,6 +3676,11 @@ void NativeCompiler::Compile(const std::string& assemblyFilePath, std::string& n
     Assembly assembly(machine);
     assembly.SetReadClassNodes();
     assembly.Load(assemblyFilePath);
+    std::string assemblyName = ToUtf8(assembly.Name().Value());
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "Compiling assembly '" + assemblyName + "' to native object code..." << std::endl;
+    }
     impl->Init(assembly);
     MachineFunctionTable& machineFunctionTable = assembly.GetMachineFunctionTable();
     for (const std::unique_ptr<Function>& function : machineFunctionTable.MachineFunctions())
@@ -3375,6 +3693,11 @@ void NativeCompiler::Compile(const std::string& assemblyFilePath, std::string& n
     assembly.Write(writer);
     nativeImportLibraryFilePath = Path::Combine(Path::GetDirectoryName(assemblyFilePath), assembly.NativeImportLibraryFileName());
     nativeSharedLibraryFilePath = Path::Combine(Path::GetDirectoryName(assemblyFilePath), assembly.NativeSharedLibraryFileName());
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::cout << "Assembly '" + assemblyName + "' successfully compiled to native object code." << std::endl;
+        std::cout << "=> " << assemblyFilePath << std::endl;
+    }
 }
 
 } } // namespace cminor::build

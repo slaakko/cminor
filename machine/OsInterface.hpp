@@ -23,6 +23,10 @@ void InspectStack(uint64_t threadHandle);
 uint64_t GetCurrentThreadHandle();
 void CloseThreadHandle(uint64_t threadHandle);
 
+MACHINE_API void* LoadSharedLibrary(const std::string& sharedLibraryFilePath);
+MACHINE_API void FreeSharedLibrary(void* sharedLibraryHandle);
+MACHINE_API void* ResolveSymbolAddress(void* sharedLibraryHandle, const std::string& sharedLibraryFilePath, const std::string& symbolName);
+
 } } // namespace cminor::machine
 
 #endif // CMINOR_MACHINE_OS_INTERFACE_INCLUDED

@@ -111,6 +111,29 @@ inline AssemblyFlags operator&(AssemblyFlags left, AssemblyFlags right)
     return AssemblyFlags(uint8_t(left) & uint8_t(right));
 }
 
+enum class TransientAssemblyFlags : uint8_t
+{
+    none = 0,
+    imported = 1 << 0,
+    readClassNodes = 1 << 1,
+    sharedLibraryLoaded = 1 << 2,
+    exportedFunctionsResolved = 1 << 3,
+    functionPtrVarMappingsResolved = 1 << 4,
+    classDataPtrVarMappingsResolved = 1 << 5,
+    typePtrVarMappingsResolved = 1 << 6,
+    constantPoolVariableSet = 1 << 7
+};
+
+inline TransientAssemblyFlags operator|(TransientAssemblyFlags left, TransientAssemblyFlags right)
+{
+    return TransientAssemblyFlags(uint8_t(left) | uint8_t(right));
+}
+
+inline TransientAssemblyFlags operator&(TransientAssemblyFlags left, TransientAssemblyFlags right)
+{
+    return TransientAssemblyFlags(uint8_t(left) & uint8_t(right));
+}
+
 const uint8_t assemblyFormat_1 = uint8_t('1');
 const uint8_t currentAssemblyFormat = assemblyFormat_1;
 
@@ -119,9 +142,11 @@ class Assembly
 public:
     Assembly(Machine& machine_);
     Assembly(Machine& machine_, const utf32_string& name_, const std::string& filePath_);
+    ~Assembly();
     void Load(const std::string& assemblyFilePath);
     void PrepareForCompilation(const std::vector<std::string>& projectAssemblyReferences);
     int RunIntermediateCode(const std::vector<utf32_string>& programArguments);
+    int RunNative(const std::vector<utf32_string>& programArguments);
     void SetId(uint32_t id_) { id = id_; }
     uint32_t Id() const { return id; }
     Machine& GetMachine() { return machine; }
@@ -139,12 +164,12 @@ public:
         std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
         std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
         std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
-        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap);
+        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap);
     void BeginRead(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet,
         std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, 
         std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
         std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
-        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap);
+        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap);
     void FinishReads(std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
         std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
         std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, int prevAssemblyIndex, const std::vector<Assembly*>& finishReadOrder, 
@@ -159,18 +184,20 @@ public:
     const std::string& NativeTargetTriple() const { return nativeTargetTriple; }
     void SetNativeSharedLibraryFileName(const std::string& nativeSharedLibraryFileName_);
     const std::string& NativeSharedLibraryFileName() const { return nativeSharedLibraryFileName; }
+    std::string NativeSharedLibraryFilePath() const;
     void SetNativeImportLibraryFileName(const std::string& nativeImportLibraryFileName_);
     const std::string& NativeImportLibraryFileName() const { return nativeImportLibraryFileName; }
     void ImportAssemblies(LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet,
         std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
         std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
         std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
-        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap);
+        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap);
     void ImportAssemblies(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, 
         std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions, 
         std::vector<Fun2DlgInst*>& fun2DlgInstructions, std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, 
         std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, std::vector<ClassTypeSymbol*>& classTypeSymbols, 
-        std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, std::unordered_map<std::string, AssemblyDependency*>& dependencyMap);
+        std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, std::unordered_map<std::string, AssemblyDependency*>& dependencyMap,
+        std::unordered_map<std::string, Assembly*>& readMap);
     void ImportSymbolTables();
     const std::vector<std::unique_ptr<Assembly>>& ReferencedAssemblies() const { return referencedAssemblies; }
     void AddSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId, uint32_t mySymbolId);
@@ -185,9 +212,26 @@ public:
     const std::vector<ClassDataPtrVarClassDataName>& ClassDataPtrVarMappings() const { return classDatatPtrVarMappings; }
     void AddTypePtrVarMapping(Constant typePtrVarName, Constant typeName);
     const std::vector<TypePtrVarTypeName>& TypePtrVarMappings() const { return typePtrVarMappings; }
-    bool ReadClassNodes() const { return readClassNodes; }
-    void SetReadClassNodes() { readClassNodes = true; }
-    void PrepareForNativeExecution();
+    bool ReadClassNodes() const { return GetTransientFlag(TransientAssemblyFlags::readClassNodes); }
+    void SetReadClassNodes() { SetTransientFlag(TransientAssemblyFlags::readClassNodes); }
+    bool Imported() const { return GetTransientFlag(TransientAssemblyFlags::imported); }
+    void SetImported() { SetTransientFlag(TransientAssemblyFlags::imported); }
+    bool SharedLibraryLoaded() const { return GetTransientFlag(TransientAssemblyFlags::sharedLibraryLoaded); }
+    void SetSharedLibraryLoaded() { SetTransientFlag(TransientAssemblyFlags::sharedLibraryLoaded); }
+    bool ExportedFunctionsResolved() const { return GetTransientFlag(TransientAssemblyFlags::exportedFunctionsResolved); }
+    void SetExportedFunctionsResolved() { SetTransientFlag(TransientAssemblyFlags::exportedFunctionsResolved); }
+    bool FunctionPtrVarMappingsResolved() const { return GetTransientFlag(TransientAssemblyFlags::functionPtrVarMappingsResolved); }
+    void SetFunctionPtrVarMappingsResolved() { SetTransientFlag(TransientAssemblyFlags::functionPtrVarMappingsResolved); }
+    bool ClassDataPtrVarMappingsResolved() const { return GetTransientFlag(TransientAssemblyFlags::classDataPtrVarMappingsResolved); }
+    void SetClassDataPtrVarMappingsResolved() { SetTransientFlag(TransientAssemblyFlags::classDataPtrVarMappingsResolved); }
+    bool TypePtrVarMappingsResolved() const { return GetTransientFlag(TransientAssemblyFlags::typePtrVarMappingsResolved); }
+    void SetTypePtrVarMappingsResolved() { SetTransientFlag(TransientAssemblyFlags::typePtrVarMappingsResolved); }
+    bool ConstantPoolVariableSet() const { return GetTransientFlag(TransientAssemblyFlags::constantPoolVariableSet); }
+    void SetConstantPoolVariableSet() { SetTransientFlag(TransientAssemblyFlags::constantPoolVariableSet); }
+    void SetSharedLibraryHandle(void* sharedLibraryHandle_) { sharedLibraryHandle = sharedLibraryHandle_; }
+    void* SharedLibraryHandle() const { return sharedLibraryHandle; }
+    void SetMainEntryPointAddress(void* mainEntryPointAddress_) { mainEntryPointAddress = mainEntryPointAddress_; }
+    void* MainEntryPointAddress() const { return mainEntryPointAddress; }
 private:
     Machine& machine;
     AssemblyFlags flags;
@@ -211,12 +255,14 @@ private:
     std::vector<FunctionPtrVarFunctionName> functionPtrVarMappings;
     std::vector<ClassDataPtrVarClassDataName> classDatatPtrVarMappings;
     std::vector<TypePtrVarTypeName> typePtrVarMappings;
-    bool readClassNodes;
+    TransientAssemblyFlags transientFlags;
+    void* sharedLibraryHandle;
+    void* mainEntryPointAddress;
     void Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, const std::string& currentAssemblyDir,
         std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
         std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
         std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
-        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap);
+        std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap);
     void WriteSymbolIdMapping(SymbolWriter& writer);
     void ReadSymbolIdMapping(SymbolReader& reader);
     void WriteExportedFunctions(Writer& writer);
@@ -227,8 +273,11 @@ private:
     void ReadClasDataVarMappings(Reader& reader);
     void WriteTypePtrVarMappings(Writer& writer);
     void ReadTypePtrVarMappings(Reader& reader);
+    void PrepareForNativeExecution();
     bool GetFlag(AssemblyFlags flag) const { return (flags & flag) != AssemblyFlags::none; }
     void SetFlag(AssemblyFlags flag) { flags = (flags | flag); }
+    bool GetTransientFlag(TransientAssemblyFlags flag) const { return (transientFlags & flag) != TransientAssemblyFlags::none; }
+    void SetTransientFlag(TransientAssemblyFlags flag) { transientFlags = transientFlags | flag; }
 };
 
 void InitAssembly();

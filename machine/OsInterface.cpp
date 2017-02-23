@@ -119,6 +119,57 @@ void CloseThreadHandle(uint64_t threadHandle)
     CloseHandle(thread);
 }
 
+MACHINE_API void* LoadSharedLibrary(const std::string& sharedLibraryFilePath)
+{
+    HMODULE handle = LoadLibrary(sharedLibraryFilePath.c_str());
+    if (handle == NULL)
+    {
+        DWORD errorCode = GetLastError();
+        LPTSTR buffer = nullptr;
+        DWORD result = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, errorCode, 0, buffer, 0, nullptr);
+        if (result != 0)
+        {
+            std::string errorMessage(buffer);
+            LocalFree(buffer);
+            throw std::runtime_error("error loading library '" + sharedLibraryFilePath + "': " + errorMessage);
+        }
+        else
+        {
+            throw std::runtime_error("error loading library '" + sharedLibraryFilePath + "': error code = " + std::to_string(errorCode));
+        }
+    }
+    return static_cast<void*>(handle);
+}
+
+MACHINE_API void FreeSharedLibrary(void* sharedLibraryHandle)
+{
+    HMODULE handle = static_cast<HMODULE>(sharedLibraryHandle);
+    FreeLibrary(handle);
+}
+
+MACHINE_API void* ResolveSymbolAddress(void* sharedLibraryHandle, const std::string& sharedLibraryFilePath, const std::string& symbolName)
+{
+    HMODULE handle = static_cast<HMODULE>(sharedLibraryHandle);
+    void* symbolAddress = GetProcAddress(handle, symbolName.c_str());
+    if (!symbolAddress)
+    {
+        DWORD errorCode = GetLastError();
+        LPTSTR buffer = nullptr;
+        DWORD result = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, errorCode, 0, buffer, 0, nullptr);
+        if (result != 0)
+        {
+            std::string errorMessage(buffer);
+            LocalFree(buffer);
+            throw std::runtime_error("error resolving address of symbol '" + symbolName + "' in library '" + sharedLibraryFilePath + "': " + errorMessage);
+        }
+        else
+        {
+            throw std::runtime_error("error resolving address of symbol '" + symbolName + "' in library '" + sharedLibraryFilePath + "': error code = " + std::to_string(errorCode));
+        }
+    }
+    return symbolAddress;
+}
+
 #else
 
 uint64_t GetSystemPageSize()

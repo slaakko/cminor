@@ -1431,50 +1431,12 @@ void EnterBlockInst::Accept(MachineFunctionVisitor& visitor)
     visitor.VisitEnterBlockInst(*this);
 }
 
-ExitBlockInst::ExitBlockInst() : Instruction("exitblock"), exceptionBlockId(-1)
+ExitBlockInst::ExitBlockInst() : Instruction("exitblock")
 {
-}
-
-void ExitBlockInst::Clear()
-{
-    exceptionBlockId = -1;
-}
-
-void ExitBlockInst::Encode(Writer& writer)
-{
-    Instruction::Encode(writer);
-    writer.Put(exceptionBlockId);
-}
-
-Instruction* ExitBlockInst::Decode(Reader& reader)
-{
-    Instruction::Decode(reader);
-    exceptionBlockId = reader.GetInt();
-    return this;
 }
 
 void ExitBlockInst::Execute(Frame& frame)
 {
-    if (exceptionBlockId != -1)
-    {
-        ExceptionBlock* exceptionBlock = frame.Fun().GetExceptionBlock(exceptionBlockId);
-        Assert(exceptionBlock, "exception block not found");
-        if (exceptionBlock->HasFinally())
-        {
-            frame.GetThread().PushExitBlock(frame.PC() + 1);
-            frame.SetPC(exceptionBlock->FinallyStart());
-        }
-    }
-}
-
-void ExitBlockInst::Dump(CodeFormatter& formatter)
-{
-    Instruction::Dump(formatter);
-    if (exceptionBlockId != -1)
-    {
-        formatter.Write(" ");
-        formatter.Write(std::to_string(exceptionBlockId));
-    }
 }
 
 void ExitBlockInst::Accept(MachineFunctionVisitor& visitor)
@@ -2002,6 +1964,10 @@ void VmCallInst::Execute(Frame& frame)
     {
         ThrowArgumentOutOfRangeException(ex, frame);
     }
+    catch (const FileSystemError& ex)
+    {
+        ThrowFileSystemException(ex, frame);
+    }
     catch (const SystemException& ex)
     {
         ThrowSystemException(ex, frame);
@@ -2093,13 +2059,18 @@ void ClassDelegateCallInst::Execute(Frame& frame)
     ObjectReference classDelegateRef(classDlgValue.Value());
     Object& classDelegateObject = GetManagedMemoryPool().GetObject(classDelegateRef);
     IntegralValue classObjectValue = classDelegateObject.GetField(1);
+    if (classObjectValue.Value() == 0)
+    {
+        NullReferenceException ex("value of class delegate receiver is null");
+        ThrowNullReferenceException(ex, frame);
+    }
     Assert(classObjectValue.GetType() == ValueType::objectReference, "object reference expected");
     IntegralValue funValue = classDelegateObject.GetField(2);
     Assert(funValue.GetType() == ValueType::functionPtr, "function pointer expected");
     Function* fun = funValue.AsFunctionPtr();
     if (!fun)
     {
-        NullReferenceException ex("value of class delegate is null");
+        NullReferenceException ex("value of class delegate method is null");
         ThrowNullReferenceException(ex, frame);
     }
     else
@@ -2513,34 +2484,6 @@ void DownCastInst::Accept(MachineFunctionVisitor& visitor)
     visitor.VisitDownCastInst(*this);
 }
 
-BeginTryInst::BeginTryInst() : Instruction("begintry")
-{
-}
-
-void BeginTryInst::Execute(Frame& frame)
-{
-    frame.GetThread().BeginTry();
-}
-
-void BeginTryInst::Accept(MachineFunctionVisitor& visitor)
-{
-    visitor.VisitBeginTryInst(*this);
-}
-
-EndTryInst::EndTryInst() : Instruction("endtry")
-{
-}
-
-void EndTryInst::Execute(Frame& frame)
-{
-    frame.GetThread().EndTry();
-}
-
-void EndTryInst::Accept(MachineFunctionVisitor& visitor)
-{
-    visitor.VisitEndTryInst(*this);
-}
-
 ThrowInst::ThrowInst() : Instruction("throw")
 {
 }
@@ -2589,7 +2532,74 @@ void RethrowInst::Accept(MachineFunctionVisitor& visitor)
     visitor.VisitRethrowInst(*this);
 }
 
-EndCatchInst::EndCatchInst() : Instruction("endcatch")
+BeginTryInst::BeginTryInst() : IndexParamInst("begintry")
+{
+}
+
+void BeginTryInst::Execute(Frame& frame)
+{
+    frame.GetThread().BeginTry();
+}
+
+void BeginTryInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitBeginTryInst(*this);
+}
+
+EndTryInst::EndTryInst() : IndexParamInst("endtry")
+{
+}
+
+void EndTryInst::Execute(Frame& frame)
+{
+    frame.GetThread().EndTry();
+}
+
+void EndTryInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitEndTryInst(*this);
+}
+
+BeginCatchSectionInst::BeginCatchSectionInst() : IndexParamInst("begincatchsection")
+{
+}
+
+void BeginCatchSectionInst::Execute(Frame& frame)
+{
+}
+
+void BeginCatchSectionInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitBeginCatchSectionInst(*this);
+}
+
+EndCatchSectionInst::EndCatchSectionInst() : IndexParamInst("endcatchsection")
+{
+}
+
+void EndCatchSectionInst::Execute(Frame& frame)
+{
+}
+
+void EndCatchSectionInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitEndCatchSectionInst(*this);
+}
+
+BeginCatchInst::BeginCatchInst() : IndexParamInst("begincatch")
+{
+}
+
+void BeginCatchInst::Execute(Frame& frame)
+{
+}
+
+void BeginCatchInst::Accept(MachineFunctionVisitor& visitor) 
+{
+    visitor.VisitBeginCatchInst(*this);
+}
+
+EndCatchInst::EndCatchInst() : IndexParamInst("endcatch")
 {
 }
 
@@ -2603,7 +2613,20 @@ void EndCatchInst::Accept(MachineFunctionVisitor& visitor)
     visitor.VisitEndCatchInst(*this);
 }
 
-EndFinallyInst::EndFinallyInst() : Instruction("endfinally")
+BeginFinallyInst::BeginFinallyInst() : IndexParamInst("beginfinally")
+{
+}
+
+void BeginFinallyInst::Execute(Frame& frame)
+{
+}
+
+void BeginFinallyInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitBeginFinallyInst(*this);
+}
+
+EndFinallyInst::EndFinallyInst() : IndexParamInst("endfinally")
 {
 }
 
@@ -3243,6 +3266,12 @@ void CreateLocalVariableReferenceInst::Execute(Frame& frame)
     frame.OpStack().Push(IntegralValue(variableReferenceId, ValueType::variableReference));
 }
 
+void CreateLocalVariableReferenceInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    formatter.Write(" " + std::to_string(localIndex));
+}
+
 void CreateLocalVariableReferenceInst::Accept(MachineFunctionVisitor& visitor)
 {
     visitor.VisitCreateLocalVariableReferenceInst(*this);
@@ -3278,6 +3307,12 @@ void CreateMemberVariableReferenceInst::Execute(Frame& frame)
     int32_t variableReferenceId = frame.GetThread().GetNextVariableReferenceId();
     frame.AddVariableReference(new MemberVariableReference(variableReferenceId, objectReference, memberVarIndex));
     frame.OpStack().Push(IntegralValue(variableReferenceId, ValueType::variableReference));
+}
+
+void CreateMemberVariableReferenceInst::Dump(CodeFormatter& formatter)
+{
+    Instruction::Dump(formatter);
+    formatter.Write(" " + std::to_string(memberVarIndex));
 }
 
 void CreateMemberVariableReferenceInst::Accept(MachineFunctionVisitor& visitor)
@@ -3330,10 +3365,10 @@ void LoadVariableReferenceInst::Handle(Frame& frame, LocalVariableReference* loc
     }
 }
 
-void LoadVariableReferenceInst::Handle(Frame& frame, MemberVariableReference* memberVariableRefeence)
+void LoadVariableReferenceInst::Handle(Frame& frame, MemberVariableReference* memberVariableReference)
 {
-    Object& object = GetManagedMemoryPool().GetObject(memberVariableRefeence->GetObjectReference());
-    IntegralValue value = object.GetField(memberVariableRefeence->MemberVarIndex());
+    Object& object = GetManagedMemoryPool().GetObject(memberVariableReference->GetObjectReference());
+    IntegralValue value = object.GetField(memberVariableReference->MemberVarIndex());
     if (value.GetType() == ValueType::variableReference)
     {
         int32_t variableReferenceId = value.AsInt();

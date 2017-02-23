@@ -21,7 +21,8 @@ enum class GlobalFlags : uint16_t
     native = 1 << 5,
     emitLlvm = 1 << 6,
     emitOptLlvm = 1 << 7,
-    emitAsm = 1 << 8
+    emitAsm = 1 << 8,
+    linkWithDebugMachine = 1 << 9
 };
 
 void SetGlobalFlag(GlobalFlags flag);
@@ -34,6 +35,9 @@ void SetOptimizationLevel(int level);
 
 void SetDebugPassValue(const std::string& value);
 const std::string& GetDebugPassValue();
+
+int GetInlineLimit();
+void SetInlineLimit(int limit);
 
 } } // namespace cminor::symbols
 

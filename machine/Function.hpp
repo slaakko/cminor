@@ -64,9 +64,10 @@ private:
 class MACHINE_API CatchBlock
 {
 public:
-    CatchBlock();
+    CatchBlock(int id_);
     CatchBlock(const CatchBlock&) = delete;
     CatchBlock& operator=(const CatchBlock&) = delete;
+    int Id() const { return id; }
     void Write(Writer& writer);
     void Read(Reader& reader);
     void SetExceptionVarClassTypeFullName(Constant exceptionVarClassTypeFullName_) { exceptionVarClassTypeFullName = exceptionVarClassTypeFullName_; }
@@ -79,6 +80,7 @@ public:
     void Adjust(const std::vector<int32_t>& instructionOffsets, std::unordered_set<int32_t>& jumpTargets);
     void Dump(CodeFormatter& formatter);
 private:
+    int id;
     Constant exceptionVarClassTypeFullName;
     ObjectType* exceptionVarType;
     uint32_t exceptionVarIndex;
@@ -100,6 +102,8 @@ public:
     bool Match(int32_t pc) const;
     void AddPCRange(const PCRange& pcRange);
     PCRange& GetLastPCRange() { Assert(!pcRanges.empty(), "pc ranges empty"); return pcRanges.back(); }
+    int GetNextCatchBlockId() const { return int(catchBlocks.size()); }
+    CatchBlock* GetCatchBlock(int catchBlockId) { Assert(catchBlockId >= 0 && catchBlockId < int(catchBlocks.size()), "invalid catch block id");  return catchBlocks[catchBlockId].get(); }
     void AddCatchBlock(std::unique_ptr<CatchBlock>&& catchBlock);
     const std::vector<std::unique_ptr<CatchBlock>>& CatchBlocks() const { return catchBlocks; }
     void ResolveExceptionVarTypes();
@@ -152,7 +156,7 @@ public:
     Constant FullName() const { return fullName; }
     Constant SourceFilePath() const { return sourceFilePath; }
     const std::string& MangledName() const { return mangledName; }
-    void SetMangedName(const std::string& mangledName_);
+    void SetMangledName(const std::string& mangledName_);
     void SetSourceFilePath(Constant sourceFilePath_) { sourceFilePath = sourceFilePath_; }
     bool HasSourceFilePath() const;
     uint32_t Id() const { return id; }
@@ -189,6 +193,7 @@ public:
     ExceptionBlock* FindExceptionBlock(int32_t pc) const;
     void ResolveExceptionVarTypes();
     void MapPCToSourceLine(uint32_t pc, uint32_t sourceLine);
+    uint32_t GetFirstSourceLine() const;
     uint32_t GetSourceLine(uint32_t pc) const;
     uint32_t GetPC(uint32_t sourceLine) const;
     bool HasBreakPointAt(uint32_t pc) const;

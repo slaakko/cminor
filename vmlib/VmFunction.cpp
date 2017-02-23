@@ -8,6 +8,7 @@
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Type.hpp>
+#include <cminor/machine/Machine.hpp>
 #include <boost/filesystem.hpp>
 #include <cctype>
 
@@ -247,10 +248,18 @@ void VmSystemObjectToString::Execute(Frame& frame)
     }
     catch (const NullReferenceException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowNullReferenceException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }
@@ -331,10 +340,18 @@ void VmSystemObjectEqual::Execute(Frame& frame)
     }
     catch (const NullReferenceException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowNullReferenceException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }
@@ -388,10 +405,18 @@ void VmSystemObjectLess::Execute(Frame& frame)
     }
     catch (const NullReferenceException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowNullReferenceException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }
@@ -429,10 +454,18 @@ void VmSystemStringConstructorCharArray::Execute(Frame& frame)
     }
     catch (const NullReferenceException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowNullReferenceException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }
@@ -470,14 +503,26 @@ void VmSystemIOOpenFile::Execute(Frame& frame)
     }
     catch (const NullReferenceException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowNullReferenceException(ex, frame);
     }
     catch (const FileSystemError& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowFileSystemException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }
@@ -507,10 +552,18 @@ void VmSystemIOCloseFile::Execute(Frame& frame)
     }
     catch (const FileSystemError& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowFileSystemException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }
@@ -543,10 +596,18 @@ void VmSystemIOWriteByteToFile::Execute(Frame& frame)
     }
     catch (const FileSystemError& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowFileSystemException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }
@@ -583,18 +644,34 @@ void VmSystemIOWriteFile::Execute(Frame& frame)
     }
     catch (const NullReferenceException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowNullReferenceException(ex, frame);
     }
     catch (const IndexOutOfRangeException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowIndexOutOfRangeException(ex, frame);
     }
     catch (const FileSystemError& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowFileSystemException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }
@@ -625,10 +702,18 @@ void VmSystemIOReadByteFromFile::Execute(Frame& frame)
     }
     catch (const FileSystemError& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowFileSystemException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }
@@ -668,18 +753,34 @@ void VmSystemIOReadFile::Execute(Frame& frame)
     }
     catch (const NullReferenceException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowNullReferenceException(ex, frame);
     }
     catch (const IndexOutOfRangeException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowIndexOutOfRangeException(ex, frame);
     }
     catch (const FileSystemError& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowFileSystemException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }
@@ -711,10 +812,18 @@ void VmSystemIOFileExists::Execute(Frame& frame)
     }
     catch (const NullReferenceException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowNullReferenceException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }
@@ -750,10 +859,18 @@ void VmSystemIOLastWriteTimeLess::Execute(Frame& frame)
     }
     catch (const NullReferenceException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowNullReferenceException(ex, frame);
     }
     catch (const SystemException& ex)
     {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
         ThrowSystemException(ex, frame);
     }
 }

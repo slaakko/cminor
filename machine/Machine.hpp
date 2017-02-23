@@ -13,6 +13,9 @@
 
 namespace cminor { namespace machine {
 
+MACHINE_API void SetRunningNativeCode();
+MACHINE_API bool RunningNativeCode();
+
 class MACHINE_API Machine
 {
 public:

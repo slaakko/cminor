@@ -8,6 +8,7 @@
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Class.hpp>
+#include <cminor/machine/RunTime.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/Value.hpp>
 #include <cminor/symbols/Assembly.hpp>
@@ -73,22 +74,31 @@ struct InitDone
     ConstantPool vmFunctionNamePool;
 };
 
-const char* version = "0.0.1";
+const char* version = "0.1.0";
 
 void PrintHelp()
 {
-    std::cout << "Cminor virtual machine version " << version << "\n\n" <<
-        "Usage: cminorvm [options] program.cminora [arguments]\n" <<
-        "Run program.cminora with given arguments.\n" <<
-        "Options:\n" <<
-        "-h | --help     : print this help message\n" <<
-        "-j | --jit      : use just in time compilation\n" <<
-        "-s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE:\n" <<
-        "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
-        "       segment in megabytes. The default is 16 MB.\n" << 
-        "-p=POOL-THRESHOLD | --pool-threshold=POOL-THRESHOLD:\n" <<
-        "       POOL-THRESHOLD is the grow threshold of the managed\n" <<
-        "       memory pool in megabytes. The default is 16 MB.\n" <<
+    std::cout << "\n" <<
+        "Cminor virtual machine version " << version << "\n\n" <<
+        "Usage: cminorvm [options] PROGRAM.cminora [program-arguments]\n\n" <<
+        "Run PROGRAM.cminora with given program-arguments.\n\n" <<
+        "options:\n\n" <<
+        "   --verbose (-v)" <<
+        "       Verbose output." <<
+        "   --help (-h)\n" <<
+        "       Print this help message.\n" <<
+        "   --jit (-j)\n" <<
+        "       Use just in time compilation.\n" <<
+        "   --native (-n)\n" <<
+        "       Run program built with --native option.\n"
+        "   --trace (-t)\n" <<
+        "       Trace execution of native program to stderr (used with --native).\n" <<
+        "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
+        "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
+        "       Default is 16 MB.\n" << 
+        "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
+        "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n"
+        "       Default is 16 MB.\n" <<
         std::endl;
 }
 
@@ -113,6 +123,8 @@ int main(int argc, const char** argv)
         uint64_t segmentSizeMB = 0;
         uint64_t poolThresholdMB = 0;
         bool jit = false;
+        bool native = false;
+        bool trace = false;
         for (int i = 1; i < argc; ++i)
         {
             std::string arg = argv[i];
@@ -127,9 +139,21 @@ int main(int argc, const char** argv)
                             PrintHelp();
                             return 0;
                         }
+                        else if (arg == "-v" || arg == "--verbose")
+                        {
+                            SetGlobalFlag(GlobalFlags::verbose);
+                        }
                         else if (arg == "-j" || arg == "--jit")
                         {
                             jit = true;
+                        }
+                        else if (arg == "-n" || arg == "--native")
+                        {
+                            native = true;
+                        }
+                        else if (arg == "-t" || arg == "--trace")
+                        {
+                            trace = true;
                         }
                         else if (arg.find('=', 0) != std::string::npos)
                         {
@@ -210,11 +234,31 @@ int main(int argc, const char** argv)
         {
             programArguments.push_back(ToUtf32(arg));
         }
-        if (!jit)
+        if (trace)
+        {
+            if (!native)
+            {
+                throw std::runtime_error("--trace requires --native option");
+            }
+            SetTrace();
+            if (GetGlobalFlag(GlobalFlags::verbose))
+            {
+                std::cout << "tracing enabled" << std::endl;
+            }
+        }
+        if (jit && native)
+        {
+            throw std::runtime_error("--native and --jit are mutually exclusive options");
+        }
+        else if (!jit && !native)
         {
             return assembly.RunIntermediateCode(programArguments);
         }
-        if (jit)
+        else if (native)
+        {
+            assembly.RunNative(programArguments);
+        }
+        else if (jit)
         {
             InitializeNativeTarget();
             InitializeNativeTargetAsmPrinter();

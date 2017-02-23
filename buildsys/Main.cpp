@@ -26,12 +26,28 @@
 #include <cminor/util/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+#ifdef _WIN32
+#pragma warning(disable:4267)
+#pragma warning(disable:4244)
+#pragma warning(disable:4141)
+#pragma warning(disable:4624)
+#pragma warning(disable:4291)
+#endif
+#include <llvm/Support/CommandLine.h>
+#ifdef _WIN32
+#pragma warning(default:4267)
+#pragma warning(default:4244)
+#pragma warning(default:4141)
+#pragma warning(default:4624)
+#pragma warning(default:4291)
+#endif
 
 using namespace cminor::build;
 using namespace cminor::emitter;
 using namespace cminor::binder;
 using namespace cminor::symbols;
 using namespace cminor::machine;
+using namespace llvm;
 
 struct InitDone
 {
@@ -62,32 +78,56 @@ struct InitDone
     }
 };
 
-const char* version = "0.0.1";
+const char* version = "0.1.0";
 
 void PrintHelp()
 {
-    std::cout <<
+    std::cout << "\n" <<
         "Cminor system library builder version " << version << "\n\n" <<
-        "Usage: cminorbuildsys [options]\n" <<
-        "Compile system library solution.\n" <<
-        "Options:\n" <<
-        "-c=CONFIG | --config=CONFIG  :  set configuration to CONFIG.\n" <<
-        "                                CONFIG can be debug or release.\n" <<
-        "                                The default is debug.\n" <<
-        "-h | --help                   : print this help message\n" <<
-        "-v | --verbose                : verbose output\n" <<
-        "-e | --clean                  : clean system libraries\n" <<
-        "-d | --debug-parse            : debug parsing to stdout\n" <<
-        "-n | --native                 : compile to native object code.\n" <<
-        "-O=LEVEL | --optimization-level=LEVEL :\n" <<
-        "                                set optimization level to LEVEL=0-3 (used with --native).\n" <<
-        "                                Defaults: debug 0, release 2.\n" <<
-        "-p=VALUE | --debug-pass=VALUE : Generate debug output for LLVM passes (used with --native).\n" <<
-        "                                VALUE can be Arguments, Structure, Executions or Details.\n" <<
-        "-l | --list                   : generate listing to ASSEMBLY_NAME.list (used with --native)\n" <<
-        "-m | --emit-llvm              : emit LLVM intermediate code to ASSEMBLY_NAME.ll (used with --native)\n" <<
-        "-t | --emit-opt-llvm          : emit optimized LLVM intermediate code to ASSEMBLY_NAME.opt.ll (used with --native)\n" <<
-        "-a | --emit-asm               : emit assembly code listing to ASSEMBLY_NAME.asm or ASSEMBLY_NAME.s (used with --native)\n" <<
+        "Usage: cminorbuildsys [options]\n\n" <<
+        "Build system library solution.\n\n" <<
+        "options:\n\n" <<
+        "   --help (-h)\n" <<
+        "       Print this help message.\n" <<
+        "   --verbose (-v)\n" <<
+        "       Verbose output.\n" <<
+        "   --config=CONFIG (-c=CONFIG)\n" <<
+        "       Use CONFIG configuration. CONFIG can be debug or release. Default is debug.\n" <<
+        "   --clean (-e)\n" <<
+        "       Clean system libraries.\n" <<
+        "   --debug-parse (-d)\n" <<
+        "       Debug parsing to stdout.\n" <<
+        "   --native (-n)\n" << 
+        "       Compile to native object code. Generates DLLs in Windows, shared objects in Linux.\n" <<
+        "   --optimization-level=LEVEL (-O=LEVEL)\n" <<
+        "       Set optimization level to LEVEL=0-3 (used with --native).\n" <<
+        "       Defaults:\n" <<
+        "           0 for debug configuration\n" <<
+        "           2 for release configuration\n" <<
+        "   --inline-limit=LIMIT (-i=LIMIT)\n" <<
+        "       Set inline limit to LIMIT intermediate instructions (used with --native).\n" <<
+        "       Functions that have LIMIT or fewer intermediate instructions are chosen to be suitable for inlining.\n" <<
+        "       Eventually LLVM will decide which functions to inline.\n" <<
+        "       Defaults:\n" <<
+        "           for optimization level 0: 0 (no inlining)\n" <<
+        "           for optimization level 1: 0 (no inlining)\n" <<
+        "           for optimization level 2: 8 instructions\n" <<
+        "           for optimization level 3: 16 instructions\n" <<
+        "   --debug-pass=VALUE (-p=VALUE)\n" <<
+        "       Generate debug output for LLVM passes to stderr (used with --native).\n" <<
+        "       VALUE can be Arguments, Structure, Executions or Details:\n" <<
+        "           Arguments: print pass arguments to pass to 'opt'\n" <<
+        "           Structure: print pass structure before run()\n" <<
+        "           Executions: print pass name before it is executed\n" <<
+        "           Details: print pass details when it is executed\n" <<
+        "   --list (-l)\n" <<
+        "       Generate listing to ASSEMBLY_NAME.list (used with --native).\n" <<
+        "   --emit-llvm (-m)\n" <<
+        "       Emit LLVM intermediate code to ASSEMBLY_NAME.ll (used with --native).\n" <<
+        "   --emit-opt-llvm (-t)\n" <<
+        "       Emit optimized LLVM intermediate code to ASSEMBLY_NAME.opt.ll (used with --native).\n" <<
+        "   --emit-asm (-a)\n"
+        "       Emit assembly code listing to ASSEMBLY_NAME.asm or ASSEMBLY_NAME.s (used with --native).\n" <<
         std::endl;
 }
 
@@ -138,6 +178,10 @@ int main(int argc, const char** argv)
                 {
                     SetGlobalFlag(GlobalFlags::emitAsm);
                 }
+                else if (arg == "--link-with-debug-machine")
+                {
+                    SetGlobalFlag(GlobalFlags::linkWithDebugMachine);
+                }
                 else if (arg.find('=', 0) != std::string::npos)
                 {
                     std::vector<std::string> components = Split(arg, '=');
@@ -170,6 +214,11 @@ int main(int argc, const char** argv)
                                 int level = boost::lexical_cast<int>(levelStr);
                                 SetOptimizationLevel(level);
                             }
+                        }
+                        else if (components[0] == "-i" || components[0] == "--inline-limit")
+                        {
+                            int inlineLimit = boost::lexical_cast<int>(components[1]);
+                            SetInlineLimit(inlineLimit);
                         }
                         else if (components[0] == "-p" || components[0] == "--debug-pass")
                         {
@@ -226,6 +275,38 @@ int main(int argc, const char** argv)
             {
                 throw std::runtime_error("--emit-asm option requires --native option");
             }
+        }
+        if (GetGlobalFlag(GlobalFlags::native))
+        {
+            const int maxArgsPlusNull = 4;
+            const char* argv[maxArgsPlusNull];
+            for (int i = 0; i < maxArgsPlusNull; ++i)
+            {
+                argv[i] = nullptr;
+            }
+            std::vector<std::string> args;
+            args.push_back("cminorbuildsys");
+            const std::string& debugPassValue = GetDebugPassValue();
+            if (!debugPassValue.empty())
+            {
+                args.push_back("-debug-pass=" + debugPassValue);
+            }
+            if (GetGlobalFlag(GlobalFlags::emitAsm))
+            {
+#ifdef _WIN32
+                args.push_back("--x86-asm-syntax=intel");
+#endif // _WIN32
+            }
+            int n = int(args.size());
+            if (n >= maxArgsPlusNull)
+            {
+                throw std::runtime_error("increase max args");
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                argv[i] = args[i].c_str();
+            }
+            cl::ParseCommandLineOptions(n, argv);
         }
         Machine machine;
         {

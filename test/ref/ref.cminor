@@ -1,10 +1,32 @@
 using System;
 
+void baz(ref int x)
+{
+    Console.WriteLine("baz.begin");
+    x = 2;
+    Console.WriteLine("baz.end");
+}
+
+void bar(ref int x)
+{
+    Console.WriteLine("bar.begin");
+    baz(ref x);
+    Console.WriteLine("bar.end");
+}
+
 void foo(ref int x)
 {
+    Console.WriteLine("foo.begin");
     x = 1;
+    Console.WriteLine("foo.end");
+}
+
+int read(ref int x)
+{
+    Console.WriteLine("read.begin");
     int y = x;
-    y = x;
+    Console.WriteLine("read.end");
+    return y;
 }
 
 class Alpha
@@ -15,20 +37,31 @@ class Alpha
     }
     public void Foo()
     {
-        Console.WriteLine("Alpha before: " + x.ToString());
+        Console.WriteLine("Alpha.Foo before foo: " + x.ToString());
         foo(ref x);
-        Console.WriteLine("Alpha after: " + x.ToString());
+        Console.WriteLine("Alpha.Foo after foo: " + x.ToString());
+        x = 3;
+        Console.WriteLine("Alpha.Foo before read: " + x.ToString());
+        int y = read(ref x);
+        Console.WriteLine("Alpha.Foo after read: " + x.ToString() + " " + y.ToString());
     }
     private int x;
 }
 
-
 void main()
 {
     int x = 0;
-    Console.WriteLine("main before: " + x.ToString());
+    Console.WriteLine("main before foo: " + x.ToString());
     foo(ref x);
-    Console.WriteLine("main after: " + x.ToString());
+    Console.WriteLine("main after foo: " + x.ToString());
+    int y = 3;
+    Console.WriteLine("main before read: " + y.ToString());
+    int r = read(ref y);
+    Console.WriteLine("main after read: " + y.ToString() + " " + r.ToString());
     Alpha a = new Alpha();
     a.Foo();
+    int z = 0;
+    Console.WriteLine("main before bar: " + z.ToString());
+    bar(ref z);
+    Console.WriteLine("main after bar: " + z.ToString());
 }

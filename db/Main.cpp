@@ -62,21 +62,23 @@ struct InitDone
     ConstantPool vmFunctionNamePool;
 };
 
-const char* version = "0.0.1";
+const char* version = "0.1.0";
 
 void PrintHelp()
 {
-    std::cout << "Cminor debugger version " << version << "\n\n" <<
-        "Usage: cminordb [options] program.cminora [arguments]\n" <<
-        "Debug program.cminora with given arguments.\n" <<
-        "Options:\n" <<
-        "-h | --help     : print this help message" <<
-        "-s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE:\n" <<
-        "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
-        "       segment in megabytes. The default is 16 MB.\n" <<
-        "-p=POOL-THRESHOLD | --pool-threshold=POOL-THRESHOLD:\n" <<
-        "       POOL-THRESHOLD is the grow threshold of the managed\n" <<
-        "       memory pool in megabytes. The default is 16 MB.\n" <<
+    std::cout << "\n" <<
+        "Cminor debugger version " << version << "\n\n" <<
+        "Usage: cminordb [options] PROGRAM.cminora [program-arguments]\n\n" <<
+        "Debug PROGRAM.cminora with given program-arguments.\n\n" <<
+        "options:\n\n" <<
+        "   --help (-h)\n" <<
+        "       Print this help message.\n" <<
+        "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
+        "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
+        "       Default is 16 MB.\n" <<
+        "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
+        "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n" <<
+        "       Default is 16 MB.\n" <<
         std::endl;
 }
 

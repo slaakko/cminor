@@ -72,6 +72,7 @@ public:
 private:
     Machine& machine;
     BoundCompileUnit& boundCompileUnit;
+    BoundFunction* boundFunction;
     Function* function;
     std::vector<Instruction*>* nextSet;
     std::vector<Instruction*>* trueSet;
@@ -98,8 +99,8 @@ private:
 };
 
 EmitterVisitor::EmitterVisitor(Machine& machine_, BoundCompileUnit& boundCompileUnit_) : 
-    machine(machine_), boundCompileUnit(boundCompileUnit_), function(nullptr), nextSet(nullptr), trueSet(nullptr), falseSet(nullptr), breakSet(nullptr), continueSet(nullptr), conDisSet(nullptr),
-    breakTarget(nullptr), continueTarget(nullptr), caseTargets(nullptr), gotoCaseJumps(nullptr), gotoDefaultJumps(nullptr), genJumpingBoolCode(false), 
+    machine(machine_), boundCompileUnit(boundCompileUnit_), boundFunction(nullptr), function(nullptr), nextSet(nullptr), trueSet(nullptr), falseSet(nullptr), breakSet(nullptr), 
+    continueSet(nullptr), conDisSet(nullptr), breakTarget(nullptr), continueTarget(nullptr), caseTargets(nullptr), gotoCaseJumps(nullptr), gotoDefaultJumps(nullptr), genJumpingBoolCode(false), 
     createPCRange(false), setPCRangeEnd(false), currentExceptionBlock(nullptr)
 {
 }
@@ -128,18 +129,13 @@ void EmitterVisitor::ExitBlocks(BoundCompoundStatement* targetBlock)
     }
     while (block && block != targetBlock)
     {
-        std::unique_ptr<Instruction> exitBlockInst = machine.CreateInst("exitblock");
-        int32_t exceptionBlockId = block->ExceptionBlockId();
-        bool add = !GetGlobalFlag(GlobalFlags::release);
-        if (exceptionBlockId != -1)
+        if (block->FinallyBlock())
         {
-            ExitBlockInst* exit = dynamic_cast<ExitBlockInst*>(exitBlockInst.get());
-            Assert(exit, "exit block instruction expected");
-            exit->SetExceptionBlockId(exceptionBlockId);
-            add = true;
+            block->FinallyBlock()->Accept(*this);
         }
-        if (add)
+        if (!GetGlobalFlag(GlobalFlags::release))
         {
+            std::unique_ptr<Instruction> exitBlockInst = machine.CreateInst("exitblock");
             function->AddInst(std::move(exitBlockInst));
         }
         --n;
@@ -239,6 +235,7 @@ void EmitterVisitor::Visit(BoundFunction& boundFunction)
     }
     Emitter* prevEmitter = function->GetEmitter();
     function->SetEmitter(this);
+    this->boundFunction = &boundFunction;
     if (boundFunction.Body())
     {
         boundFunction.Body()->Accept(*this);
@@ -828,13 +825,6 @@ void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
     SetCurrentSourceLine(boundTryStatement.GetSpan().LineNumber());
     InstIndexRequest startTry;
     AddIndexRequest(&startTry);
-    std::unique_ptr<Instruction> beginTryInst = machine.CreateInst("begintry");
-    function->AddInst(std::move(beginTryInst));
-    function->MapPCToSourceLine(startTry.Index(), CurrentSourceLine());
-    bool prevCreatePCRange = createPCRange;
-    bool prevSetPCRangeEnd = setPCRangeEnd;
-    createPCRange = true;
-    setPCRangeEnd = true;
     std::unique_ptr<ExceptionBlock> exceptionBlock(new ExceptionBlock(function->GetNextExeptionBlockId()));
     ExceptionBlock* parentExceptionBlock = currentExceptionBlock;
     if (parentExceptionBlock)
@@ -843,35 +833,88 @@ void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
     }
     currentExceptionBlock = exceptionBlock.get();
     function->AddExceptionBlock(std::move(exceptionBlock));
-    boundTryStatement.TryBlock()->SetExceptionBlockId(currentExceptionBlock->Id());
+    bool prevCreatePCRange = createPCRange;
+    bool prevSetPCRangeEnd = setPCRangeEnd;
+    createPCRange = true;
+    setPCRangeEnd = true;
+    std::unique_ptr<Instruction> beginTryInst = machine.CreateInst("begintry");
+    beginTryInst->SetIndex(currentExceptionBlock->Id());
+    function->AddInst(std::move(beginTryInst));
+    function->MapPCToSourceLine(startTry.Index(), CurrentSourceLine());
+    std::vector<Instruction*> nextJumps;
+    if (boundTryStatement.FinallyBlock())
+    {
+        boundTryStatement.TryBlock()->SetFinallyBlock(boundTryStatement.FinallyBlock());
+    }
     boundTryStatement.TryBlock()->Accept(*this);
     if (boundTryStatement.FinallyBlock())
     {
-        InstIndexRequest startFinally;
-        AddIndexRequest(&startFinally);
         boundTryStatement.FinallyBlock()->Accept(*this);
-        function->MapPCToSourceLine(startFinally.Index(), boundTryStatement.FinallyBlock()->GetSpan().LineNumber());
-        int32_t finallyBlockStart = startFinally.Index();
-        currentExceptionBlock->SetFinallyStart(finallyBlockStart);
-        std::unique_ptr<Instruction> inst = machine.CreateInst("endfinally");
-        function->AddInst(std::move(inst));
     }
-    std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
-    nextSet->push_back(inst.get());
-    function->AddInst(std::move(inst));
+    std::unique_ptr<Instruction> endTryInst = machine.CreateInst("endtry");
+    endTryInst->SetIndex(currentExceptionBlock->Id());
+    function->AddInst(std::move(endTryInst));
+    std::unique_ptr<Instruction> jumpInst = machine.CreateInst("jump");
+    nextJumps.push_back(jumpInst.get());
+    function->AddInst(std::move(jumpInst));
     std::unique_ptr<Instruction> nextInst = machine.CreateInst("next");
-    NextInst* nxtInst = dynamic_cast<NextInst*>(nextInst.get());
-    nxtInst->SetExceptionBlock(currentExceptionBlock);
-    nextSet->push_back(nextInst.get());
+    NextInst* next = static_cast<NextInst*>(nextInst.get());
+    next->SetExceptionBlock(currentExceptionBlock);
     AddNextInst(std::move(nextInst));
     setPCRangeEnd = prevSetPCRangeEnd;
     createPCRange = prevCreatePCRange;
     int n = int(boundTryStatement.Catches().size());
+    if (n > 0)
+    {
+        std::unique_ptr<Instruction> beginCatchSectionInst = machine.CreateInst("begincatchsection");
+        beginCatchSectionInst->SetIndex(currentExceptionBlock->Id());
+        function->AddInst(std::move(beginCatchSectionInst));
+    }
     for (int i = 0; i < n; ++i)
     {
         const std::unique_ptr<BoundCatchStatement>& catchStatement = boundTryStatement.Catches()[i];
         catchStatement->Accept(*this);
+        if (boundTryStatement.FinallyBlock())
+        {
+            boundTryStatement.FinallyBlock()->Accept(*this);
+        }
+        std::unique_ptr<Instruction> endCatchInst = machine.CreateInst("endcatch");
+        endCatchInst->SetIndex(catchStatement->CatchBlockId());
+        function->AddInst(std::move(endCatchInst));
+        std::unique_ptr<Instruction> jumpInst = machine.CreateInst("jump");
+        nextJumps.push_back(jumpInst.get());
+        function->AddInst(std::move(jumpInst));
     }
+    if (n > 0)
+    {
+        std::unique_ptr<Instruction> endCatchSectionInst = machine.CreateInst("endcatchsection");
+        endCatchSectionInst->SetIndex(currentExceptionBlock->Id());
+        function->AddInst(std::move(endCatchSectionInst));
+        std::unique_ptr<Instruction> jumpInst = machine.CreateInst("jump");
+        nextJumps.push_back(jumpInst.get());
+        function->AddInst(std::move(jumpInst));
+    }
+    if (boundTryStatement.FinallyBlock())
+    {
+        InstIndexRequest startFinally;
+        AddIndexRequest(&startFinally);
+        std::unique_ptr<Instruction> beginFinallyInst = machine.CreateInst("beginfinally");
+        beginFinallyInst->SetIndex(currentExceptionBlock->Id());
+        function->AddInst(std::move(beginFinallyInst));
+        currentExceptionBlock->SetFinallyStart(startFinally.Index());
+        boundTryStatement.FinallyBlock()->Accept(*this);
+        std::unique_ptr<Instruction> endFinallyInst = machine.CreateInst("endfinally");
+        endFinallyInst->SetIndex(currentExceptionBlock->Id());
+        function->AddInst(std::move(endFinallyInst));
+        std::unique_ptr<Instruction> jumpInst = machine.CreateInst("jump");
+        nextJumps.push_back(jumpInst.get());
+        function->AddInst(std::move(jumpInst));
+    }
+    for (Instruction* nextJump : nextJumps)
+    {
+        nextSet->push_back(nextJump);
+    }
+    nextSet->push_back(next);
     currentExceptionBlock = parentExceptionBlock;
     if (parentExceptionBlock)
     {
@@ -883,30 +926,31 @@ void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
         createPCRange = false;
         setPCRangeEnd = false;
     }
-    std::unique_ptr<Instruction> endTryInst = machine.CreateInst("endtry");
-    function->AddInst(std::move(endTryInst));
 }
 
 void EmitterVisitor::Visit(BoundCatchStatement& boundCatchStatement)
 {
     SetCurrentSourceLine(boundCatchStatement.GetSpan().LineNumber());
-    std::unique_ptr<CatchBlock> catchBlock(new CatchBlock());
+    std::unique_ptr<CatchBlock> catchBlock(new CatchBlock(currentExceptionBlock->GetNextCatchBlockId()));
+    boundCatchStatement.SetCatchBlockId(catchBlock->Id());
+    CatchBlock* catchBlockPtr = catchBlock.get();
+    currentExceptionBlock->AddCatchBlock(std::move(catchBlock));
     LocalVariableSymbol* exceptionVar = boundCatchStatement.ExceptionVar();
     TypeSymbol* exceptionVarType = exceptionVar->GetType();
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     utf32_string fullClassName = exceptionVarType->FullName();
     Constant exceptionVarClassTypeFullName = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
-    catchBlock->SetExceptionVarClassTypeFullName(exceptionVarClassTypeFullName);
-    catchBlock->SetExceptionVarIndex(exceptionVar->Index());
+    catchBlockPtr->SetExceptionVarClassTypeFullName(exceptionVarClassTypeFullName);
+    catchBlockPtr->SetExceptionVarIndex(exceptionVar->Index());
     InstIndexRequest startCatch;
     AddIndexRequest(&startCatch);
-    boundCatchStatement.CatchBlock()->Accept(*this);
+    std::unique_ptr<Instruction> beginCatchInst = machine.CreateInst("begincatch");
+    beginCatchInst->SetIndex(catchBlockPtr->Id());
+    function->AddInst(std::move(beginCatchInst));
     function->MapPCToSourceLine(startCatch.Index(), boundCatchStatement.GetSpan().LineNumber());
+    boundCatchStatement.CatchBlock()->Accept(*this);
     int32_t catchBlockStart = startCatch.Index();
-    catchBlock->SetCatchBlockStart(catchBlockStart);
-    std::unique_ptr<Instruction> inst = machine.CreateInst("endcatch");
-    function->AddInst(std::move(inst));
-    currentExceptionBlock->AddCatchBlock(std::move(catchBlock));
+    catchBlockPtr->SetCatchBlockStart(catchBlockStart);
 }
 
 void EmitterVisitor::Visit(BoundStaticInitStatement& boundStaticInitStatement)

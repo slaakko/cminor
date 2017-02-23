@@ -20,6 +20,10 @@ Shell::Shell(Machine& machine_) : machine(machine_), exit(false), numListLines(1
 
 void Shell::StartMachine()
 {
+    if (mainFun->Arity() != 1 && mainFun->Arity() != 0)
+    {
+        throw std::runtime_error("main function has invalid arity " + std::to_string(mainFun->Arity()));
+    }
     bool startWithArguments = mainFun->Arity() == 1;
     machine.Start(startWithArguments, programArguments, argsArrayObjectType);
     ended = false;
@@ -30,6 +34,10 @@ void Shell::Run(FunctionSymbol* mainFun_, Assembly& assembly, const std::vector<
     mainFun = mainFun_;
     programArguments = programArguments_;
     argsArrayObjectType = nullptr;
+    if (mainFun->Arity() != 1 && mainFun->Arity() != 0)
+    {
+        throw std::runtime_error("main function has invalid arity " + std::to_string(mainFun->Arity()));
+    }
     if (mainFun->Arity() == 1)
     {
         TypeSymbol* argsParamType = mainFun->Parameters()[0]->GetType();

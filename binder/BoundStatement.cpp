@@ -48,7 +48,7 @@ BoundCompoundStatement* BoundStatement::Block() const
     }
 }
 
-BoundCompoundStatement::BoundCompoundStatement(Assembly& assembly_) : BoundStatement(assembly_), exceptionBlockId(-1)
+BoundCompoundStatement::BoundCompoundStatement(Assembly& assembly_) : BoundStatement(assembly_), finallyBlock(nullptr), exceptionBlockId(-1)
 {
 }
 
@@ -315,7 +315,7 @@ void BoundTryStatement::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundCatchStatement::BoundCatchStatement(Assembly& assembly_) : BoundStatement(assembly_), exceptionVar(nullptr)
+BoundCatchStatement::BoundCatchStatement(Assembly& assembly_) : BoundStatement(assembly_), exceptionVar(nullptr), catchBlockId(-1)
 {
 }
 

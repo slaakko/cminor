@@ -60,7 +60,6 @@ public:
     int32_t Id() const { return id; }
     Machine& GetMachine() { return machine; }
     OperandStack& OpStack() { return opStack; }
-    void IncInstructionCount() { ++instructionCount;  }
     void Run(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void Step();
     void Next();
@@ -81,8 +80,6 @@ public:
     void HandleException(ObjectReference exception_);
     void EndCatch();
     void EndFinally();
-    void PushExitBlock(int32_t exitBlockNext_);
-    void PopExitBlock();
     utf32_string GetStackTrace() const;
     void MapFrame(Frame* frame);
     void RemoveFrame(int32_t frameId);
@@ -111,8 +108,6 @@ private:
     ObjectReference exception;
     ExceptionBlock* currentExceptionBlock;
     ObjectType* exceptionObjectType;
-    int32_t exitBlockNext;
-    std::stack<int32_t> exitBlockStack;
     std::atomic<ThreadState> state;
     int32_t nextVariableReferenceId;
     std::vector<std::unique_ptr<DebugContext>> debugContexts;

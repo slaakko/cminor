@@ -44,6 +44,8 @@ public:
     void InsertFront(std::unique_ptr<BoundStatement>&& statement);
     void AddStatement(std::unique_ptr<BoundStatement>&& statement);
     void Accept(BoundNodeVisitor& visitor) override;
+    BoundCompoundStatement* FinallyBlock() const { return finallyBlock; }
+    void SetFinallyBlock(BoundCompoundStatement* finallyBlock_) { finallyBlock = finallyBlock_; }
     int32_t ExceptionBlockId() const { return exceptionBlockId; }
     void SetExceptionBlockId(int32_t exceptionBlockId_) { exceptionBlockId = exceptionBlockId_; }
     void SetBeginBraceSpan(const Span& beginBraceSpan_);
@@ -52,6 +54,7 @@ public:
     const Span& EndBraceSpan() const { return endBraceSpan; }
 private:
     std::vector<std::unique_ptr<BoundStatement>> statements;
+    BoundCompoundStatement* finallyBlock;
     int32_t exceptionBlockId;
     Span beginBraceSpan;
     Span endBraceSpan;
@@ -289,9 +292,12 @@ public:
     void Accept(BoundNodeVisitor& visitor) override;
     void SetExceptionVar(LocalVariableSymbol* exceptionVar_) { exceptionVar = exceptionVar_; }
     LocalVariableSymbol* ExceptionVar() const { return exceptionVar; }
+    void SetCatchBlockId(int catchBlockId_) { catchBlockId = catchBlockId_; }
+    int CatchBlockId() const { return catchBlockId; }
 private:
     std::unique_ptr<BoundCompoundStatement> catchBlock;
     LocalVariableSymbol* exceptionVar;
+    int catchBlockId;
 };
 
 class BoundStaticInitStatement : public BoundStatement

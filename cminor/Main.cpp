@@ -9,7 +9,7 @@
 #include <cminor/util/System.hpp>
 #include <cminor/util/TextUtils.hpp>
 
-const char* version = "0.0.1";
+const char* version = "0.1.0";
 
 enum class HelpTopics : uint8_t
 {
@@ -39,112 +39,136 @@ void PrintHelp(HelpTopics helpTopics)
     {
         helpTopics = HelpTopics::all;
     }
+    std::cout << "\n";
     if ((helpTopics & HelpTopics::abstract_) != HelpTopics::none)
     {
         std::cout <<
             "Cminor programming language commander version " << version << "\n\n" <<
             "Usage: cminor [global-options]\n" <<
-            "(      build [build-options] { solution.cminors | project.cminorp } | system\n" <<
-            "|      clean [clean-options] { solution.cminors | project.cminorp } | system\n" <<
-            "|      run [run-options] program.cminora [program-arguments]\n" <<
-            "|      debug [debug-options] program.cminora [program-arguments]\n" <<
-            "|      dump [dump-options] assembly.cminora [output-file]\n" <<
+            "(      build [build-options] { SOLUTION.cminors | PROJECT.cminorp } | system\n" <<
+            "|      clean [clean-options] { SOLUTION.cminors | PROJECT.cminorp } | system\n" <<
+            "|      run [run-options] PROGRAM.cminora [program-arguments]\n" <<
+            "|      debug [debug-options] PROGRAM.cminora [program-arguments]\n" <<
+            "|      dump [dump-options] ASSEMBLY.cminora [output-file]\n" <<
             ")\n" <<
             "---------------------------------------------------------------------\n" <<
-            "global-options:\n" <<
-            "   -v | --verbose : verbose output\n" <<
-            "   -h | --help [abstract | build | clean | run | debug | dump] :\n" <<
-            "       print help about specified topic(s)\n" <<
+            "global-options:\n\n" <<
+            "   --verbose (-v)\n" <<
+            "       Verbose output.\n" <<
+            "   --help (-h) [abstract | build | clean | run | debug | dump]\n" <<
+            "       Print help about specified topic(s).\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
     if ((helpTopics & HelpTopics::build) != HelpTopics::none)
     {
         std::cout <<
-            "cminor build [build-options] { solution.cminors | project.cminorp } | system\n\n" <<
-            "Build each given solution.cminors and project.cminorp, or build system libraries.\n\n" <<
-            "build-options:\n" <<
-            "   -c=CONFIG | --config=CONFIG\n" <<
-            "       Use CONFIG configuration. CONFIG can be debug or release.\n" <<
-            "       The default is debug.\n" <<
-            "   -e | --clean\n" <<
+            "cminor build [build-options] { SOLUTION.cminors | PROJECT.cminorp } | system\n\n" <<
+            "Build each given SOLUTION.cminors and PROJECT.cminorp, or build system libraries.\n\n" <<
+            "build-options:\n\n" <<
+            "   --config=CONFIG (-c=CONFIG)\n" <<
+            "       Use CONFIG configuration. CONFIG can be debug or release. Default is debug.\n" << 
+            "   --clean (-e)\n" <<
             "       Clean given projects and solutions, or clean system libraries.\n" <<
-            "   -d | --debug-parse\n" <<
-            "       Debug parsing to standard output.\n"
-            "   -n | --native\n" <<
-            "       Compile to native object code.\n" <<
-            "   -O=LEVEL | --optimization-level=LEVEL\n" <<
+            "   --debug-parse (-d)\n" <<
+            "       Debug parsing to standard output.\n" <<
+            "   --native (-n)\n" <<
+            "       Compile to native object code. Generates DLLs in Windows, shared objects in Linux.\n" <<
+            "   --optimization-level=LEVEL (-O=LEVEL)\n" <<
             "       Set optimization level to LEVEL=0-3 (used with --native).\n" <<
-            "       Defaults: debug 0, release 2.\n" <<
-            "   -p=VALUE | --debug-pass=VALUE\n" <<
-            "       Generate debug output for LLVM passes (used with --native).\n" <<
-            "       VALUE can be Arguments, Structure, Executions or Details.\n" <<
-            "   -l | --list\n" <<
+            "       Defaults:\n" <<
+            "           0 for debug configuration\n" <<
+            "           2 for release configuration\n" <<
+            "   --inline-limit=LIMIT (-i=LIMIT)\n" <<
+            "       Set inline limit to LIMIT intermediate instructions (used with --native).\n" <<
+            "       Functions that have LIMIT or fewer intermediate instructions are chosen to be suitable for inlining.\n" <<
+            "       Eventually LLVM will decide which functions to inline.\n" <<
+            "       Defaults:\n" <<
+            "           for optimization level 0: 0 (no inlining)\n" <<
+            "           for optimization level 1: 0 (no inlining)\n" <<
+            "           for optimization level 2: 8 instructions\n" <<
+            "           for optimization level 3: 16 instructions\n" <<
+            "   --debug-pass=VALUE (-p=VALUE)\n" <<
+            "       Generate debug output for LLVM passes to stderr (used with --native).\n" <<
+            "       VALUE can be Arguments, Structure, Executions or Details:\n" <<
+            "           Arguments: print pass arguments to pass to 'opt'\n" <<
+            "           Structure: print pass structure before run()\n" <<
+            "           Executions: print pass name before it is executed\n" <<
+            "           Details: print pass details when it is executed\n" <<
+            "   --list (-l)\n" <<
             "       Generate listing to ASSEMBLY_NAME.list (used with --native).\n" <<
-            "   -m | --emit-llvm\n" <<
+            "   --emit-llvm (-m)\n" <<
             "       Emit LLVM intermediate code to ASSEMBLY_NAME.ll (used with --native)\n" <<
-            "   -t | --emit-opt-llvm\n" <<
+            "   --emit-opt-llvm (-t)\n" <<
             "       Emit optimized LLVM intermediate code to ASSEMBLY_NAME.opt.ll (used with --native)\n" <<
-            "   -a | --emit-asm\n" <<
-            "       Generate assembly code listing to ASSEMBLY_NAME.asm or ASSEMBLY_NAME.s.\n" <<
-            "       (used with --native).\n" <<
+            "   --emit-asm (-a)\n" <<
+            "       Generate assembly code listing to ASSEMBLY_NAME.asm or ASSEMBLY_NAME.s (used with --native).\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
     if ((helpTopics & HelpTopics::clean) != HelpTopics::none)
     {
         std::cout <<
-            "cminor clean [clean-options] { solution.cminors | project.cminorp } | system\n\n" <<
-            "Clean each given solution.cminors and project.cminorp, or clean system libraries.\n\n" <<
-            "clean-options:\n" <<
-            "   -c=CONFIG | --config=CONFIG\n" <<
-            "       Use CONFIG configuration. CONFIG can be debug or release.\n" <<
-            "       The default is debug.\n" <<
+            "cminor clean [clean-options] { SOLUTION.cminors | PROJECT.cminorp } | system\n\n" <<
+            "Clean each given SOLUTION.cminors and PROJECT.cminorp, or clean system libraries.\n\n" <<
+            "clean-options:\n\n" <<
+            "   --config=CONFIG (-c=CONFIG)\n" <<
+            "       Use CONFIG configuration. CONFIG can be debug or release. Default is debug.\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
     if ((helpTopics & HelpTopics::run) != HelpTopics::none)
     {
         std::cout <<
-            "cminor run [run-options] program.cminora [program-arguments]\n\n" <<
-            "Run program.cminora with given program-arguments in virtual machine.\n\n" <<
-            "run-options:\n" <<
-            "   -s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE\n" <<
-            "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
-            "       segment in megabytes. The default is 16 MB.\n" <<
-            "   -p=POOL-THRESHOLD | --pool-threshold=POOL-THRESHOLD:\n" <<
-            "       POOL-THRESHOLD is the grow threshold of the managed\n" <<
-            "       memory pool in megabytes. The default is 16 MB.\n" <<
+            "cminor run [run-options] PROGRAM.cminora [program-arguments]\n\n" <<
+            "Run PROGRAM.cminora with given program-arguments in virtual machine.\n\n" <<
+            "run-options:\n\n" <<
+            "   --native (-n)" <<
+            "       Run program built with --native option.\n" <<
+            "   --trace (-t)\n" <<
+            "       Trace execution of native program to stderr (used with --native).\n" <<
+            "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
+            "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
+            "       Default is 16 MB.\n" <<
+            "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
+            "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n" <<
+            "       Default is 16 MB.\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
     if ((helpTopics & HelpTopics::debug) != HelpTopics::none)
     {
         std::cout <<
-            "cminor debug [debug-options] program.cminora [program-arguments]\n\n" <<
-            "Debug program.cminora with given program arguments.\n\n"
-            "debug-options:\n" <<
-            "   -s=SEGMENT-SIZE | --segment-size=SEGMENT-SIZE\n" <<
-            "       SEGMENT-SIZE is the size of the garbage collected memory\n" <<
-            "       segment in megabytes. The default is 16 MB.\n" <<
-            "   -p=POOL-THRESHOLD | --pool-threshold=POOL-THRESHOLD:\n" <<
-            "       POOL-THRESHOLD is the grow threshold of the managed\n" <<
-            "       memory pool in megabytes. The default is 16 MB.\n" <<
+            "cminor debug [debug-options] PROGRAM.cminora [program-arguments]\n\n" <<
+            "Debug PROGRAM.cminora with given program-arguments.\n\n"
+            "debug-options:\n\n" <<
+            "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
+            "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
+            "       Default is 16 MB.\n" <<
+            "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
+            "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n" <<
+            "       Default is 16 MB.\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
     if ((helpTopics & HelpTopics::dump) != HelpTopics::none)
     {
         std::cout <<
-            "cminor dump [dump-options] assembly.cminora [output-file]\n\n" <<
-            "Dump information in assembly.cminora to standard output or to given file.\n\n" <<
-            "dump-options:\n" <<
-            "   -a | --all       : dump all (default)\n" <<
-            "   -e | --header    : dump assembly header\n" <<
-            "   -c | --constants : dump constant pool\n" <<
-            "   -f | --functions : dump function table\n" <<
-            "   -s | --symbols   : dump symbol table\n" <<
-            "   -m | --mappings  : dump assembly mappings\n" <<
+            "cminor dump [dump-options] ASSEMBLY.cminora [output-file]\n\n" <<
+            "Dump information in ASSEMBLY.cminora to standard output or to given file.\n\n" <<
+            "dump-options:\n\n" <<
+            "   --all (-a)\n" <<
+            "       Dump all (default).\n" <<
+            "   --header (-e)\n" <<
+            "       Dump assembly header.\n" <<
+            "   --constants (-c)\n" <<
+            "       Dump constant pool.\n" <<
+            "   --functions (-f)\n" <<
+            "       Dump function table.\n" <<
+            "   --symbols (-s)\n" <<
+            "       Dump symbol table.\n" <<
+            "   --mappings (-m)\n" <<
+            "       Dump assembly mappings.\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
@@ -277,7 +301,19 @@ int main(int argc, const char** argv)
                 {
                     if (!arg.empty() && arg[0] == '-')
                     {
-                        if (arg.find('=', 0) != std::string::npos)
+                        if (arg == "-v" || arg == "--verbose")
+                        {
+                            globalOptions.push_back(arg);
+                        }
+                        else if (arg == "-n" || arg == "--native")
+                        {
+                            runOptions.push_back(arg);
+                        }
+                        else if (arg == "-t" || arg == "--trace")
+                        {
+                            runOptions.push_back(arg);
+                        }
+                        else if (arg.find('=', 0) != std::string::npos)
                         {
                             std::vector<std::string> components = Split(arg, '=');
                             if (components.size() != 2)
@@ -300,6 +336,10 @@ int main(int argc, const char** argv)
                                 }
                             }
                         }
+                        else
+                        {
+                            throw std::runtime_error("unknown run option '" + arg + "'");
+                        }
                     }
                     else
                     {
@@ -310,7 +350,11 @@ int main(int argc, const char** argv)
                 }
                 case State::debugOptions:
                 {
-                    if (!arg.empty() && arg[0] == '-')
+                    if (arg == "-v" || arg == "--verbose")
+                    {
+                        globalOptions.push_back(arg);
+                    }
+                    else if (!arg.empty() && arg[0] == '-')
                     {
                         if (arg.find('=', 0) != std::string::npos)
                         {
@@ -335,6 +379,10 @@ int main(int argc, const char** argv)
                                 }
                             }
                         }
+                        else
+                        {
+                            throw std::runtime_error("unknown debug option '" + arg + "'");
+                        }
                     }
                     else
                     {
@@ -354,7 +402,11 @@ int main(int argc, const char** argv)
                     {
                         if (!arg.empty() && arg[0] == '-')
                         {
-                            if (arg == "-a" || arg == "--all")
+                            if (arg == "-v" || arg == "--verbose")
+                            {
+                                globalOptions.push_back(arg);
+                            }
+                            else if (arg == "-a" || arg == "--all")
                             {
                                 dumpOptions.push_back(arg);
                             }
@@ -408,7 +460,11 @@ int main(int argc, const char** argv)
                 {
                     if (!arg.empty() && arg[0] == '-')
                     {
-                        if (arg == "-e" || arg == "--clean")
+                        if (arg == "-v" || arg == "--verbose")
+                        {
+                            globalOptions.push_back(arg);
+                        }
+                        else if (arg == "-e" || arg == "--clean")
                         {
                             buildOptions.push_back(arg);
                         }
@@ -433,6 +489,10 @@ int main(int argc, const char** argv)
                             buildOptions.push_back(arg);
                         }
                         else if (arg == "-a" || arg == "--emit-asm")
+                        {
+                            buildOptions.push_back(arg);
+                        }
+                        else if (arg == "--link-with-debug-machine")
                         {
                             buildOptions.push_back(arg);
                         }
@@ -471,6 +531,10 @@ int main(int argc, const char** argv)
                                     {
                                         buildOptions.push_back(arg);
                                     }
+                                }
+                                else if (components[0] == "-i" || components[0] == "--inline-limit")
+                                {
+                                    buildOptions.push_back(arg);
                                 }
                                 else if (components[0] == "-p" || components[0] == "--debug-pass")
                                 {
@@ -512,7 +576,11 @@ int main(int argc, const char** argv)
                 {
                     if (!arg.empty() && arg[0] == '-')
                     {
-                        if (arg.find('=', 0) != std::string::npos)
+                        if (arg == "-v" || arg == "--verbose")
+                        {
+                            globalOptions.push_back(arg);
+                        }
+                        else if (arg.find('=', 0) != std::string::npos)
                         {
                             std::vector<std::string> components = Split(arg, '=');
                             if (components.size() != 2)
@@ -644,6 +712,10 @@ int main(int argc, const char** argv)
             for (const std::string& globalOption : globalOptions)
             {
                 commandLine.append(" ").append(globalOption);
+            }
+            for (const std::string& runOption : runOptions)
+            {
+                commandLine.append(" ").append(runOption);
             }
             commandLine.append(" ").append(runProgram);
             for (const std::string& programArgument : programArguments)

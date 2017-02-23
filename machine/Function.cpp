@@ -74,12 +74,13 @@ void PCRange::Dump(CodeFormatter& formatter)
     formatter.WriteLine("[" + std::to_string(start) + ":" + std::to_string(end) + "]");
 }
 
-CatchBlock::CatchBlock() : exceptionVarClassTypeFullName(), exceptionVarType(nullptr), exceptionVarIndex(-1), catchBlockStart(-1)
+CatchBlock::CatchBlock(int id_) : id(id_), exceptionVarClassTypeFullName(), exceptionVarType(nullptr), exceptionVarIndex(-1), catchBlockStart(-1)
 {
 }
 
 void CatchBlock::Write(Writer& writer)
 {
+    writer.Put(id);
     ConstantId fullNameId = writer.GetConstantPool()->GetIdFor(exceptionVarClassTypeFullName);
     Assert(fullNameId != noConstantId, "got no id");
     fullNameId.Write(writer);
@@ -89,6 +90,7 @@ void CatchBlock::Write(Writer& writer)
 
 void CatchBlock::Read(Reader& reader)
 {
+    id = reader.GetInt();
     ConstantId fullNameId;
     fullNameId.Read(reader);
     exceptionVarClassTypeFullName = reader.GetConstantPool()->GetConstant(fullNameId);
@@ -113,7 +115,7 @@ void CatchBlock::Adjust(const std::vector<int32_t>& instructionOffsets, std::uno
 
 void CatchBlock::Dump(CodeFormatter& formatter)
 {
-    formatter.WriteLine("catch " + ToUtf8(exceptionVarClassTypeFullName.Value().AsStringLiteral()) + " : " + std::to_string(catchBlockStart));
+    formatter.WriteLine("catch " + std::to_string(id) + " : " + ToUtf8(exceptionVarClassTypeFullName.Value().AsStringLiteral()) + " : " + std::to_string(catchBlockStart));
 }
 
 ExceptionBlock::ExceptionBlock(int id_) : id(id_), parentId(-1), finallyStart(-1), nextTarget(-1)
@@ -155,7 +157,7 @@ void ExceptionBlock::Read(Reader& reader)
     uint32_t nc = reader.GetEncodedUInt();
     for (uint32_t i = 0; i < nc; ++i)
     {
-        std::unique_ptr<CatchBlock> catchBlock(new CatchBlock());
+        std::unique_ptr<CatchBlock> catchBlock(new CatchBlock(i));
         catchBlock->Read(reader);
         catchBlocks.push_back(std::move(catchBlock));
     }
@@ -275,7 +277,7 @@ Function::Function(Constant groupName_, Constant callName_, Constant friendlyNam
 {
 }
 
-void Function::SetMangedName(const std::string& mangledName_)
+void Function::SetMangledName(const std::string& mangledName_)
 {
     mangledName = mangledName_;
 }
@@ -419,6 +421,10 @@ void Function::SetNumParameters(uint32_t numParameters_)
 
 void Function::AddInst(std::unique_ptr<Instruction>&& inst)
 {
+    if (inst->IsJump())
+    {
+        int x = 0;
+    }
     if (emitter)
     {
         int32_t instructionIndex = int32_t(instructions.size());
@@ -603,6 +609,19 @@ void Function::MapPCToSourceLine(uint32_t pc, uint32_t sourceLine)
     }
 }
 
+uint32_t Function::GetFirstSourceLine() const
+{
+    for (const std::pair<uint32_t, uint32_t>& p : pcSourceLineMap)
+    {
+        uint32_t sourceLine = p.second;
+        if (sourceLine != uint32_t(-1))
+        {
+            return sourceLine;
+        }
+    }
+    return uint32_t(-1);
+}
+
 uint32_t Function::GetSourceLine(uint32_t pc) const
 {
     auto it = pcSourceLineMap.find(pc);
@@ -610,7 +629,7 @@ uint32_t Function::GetSourceLine(uint32_t pc) const
     {
         return it->second;
     }
-    return -1;
+    return uint32_t(-1);
 }
 
 uint32_t Function::GetPC(uint32_t sourceLine) const
@@ -620,7 +639,7 @@ uint32_t Function::GetPC(uint32_t sourceLine) const
     {
         return it->second;
     }
-    return -1;
+    return uint32_t(-1);
 }
 
 bool Function::HasBreakPointAt(uint32_t pc) const
@@ -700,11 +719,16 @@ void Function::RemoveUnreachableInstructions(std::unordered_set<int32_t>& jumpTa
         }
     }
     bool prevEndsBasicBlock = false;
+    bool prevWasEndEhInst = false;
     bool removeInst = false;
     for (int32_t i = 0; i < n; ++i)
     {
         Instruction* inst = instructions[i].get();
-        if (prevEndsBasicBlock)
+        if (prevWasEndEhInst)
+        {
+            removeInst = false;
+        }
+        else if (prevEndsBasicBlock)
         {
             if (jumpTargetMap.find(i) == jumpTargetMap.cend())
             {
@@ -746,11 +770,12 @@ void Function::RemoveUnreachableInstructions(std::unordered_set<int32_t>& jumpTa
         {
             removeInst = false;
         }
-        if (removeInst)
+        if (removeInst && !inst->DontRemove())
         {
             toBeRemoved.insert(i);
         }
         prevEndsBasicBlock = inst->EndsBasicBlock();
+        prevWasEndEhInst = inst->IsEndEhInst();
     }
     if (!toBeRemoved.empty())
     {

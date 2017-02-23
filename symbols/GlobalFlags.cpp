@@ -9,6 +9,7 @@ namespace cminor { namespace symbols {
 
 GlobalFlags globalFlags;
 int optimizationLevel = -1;
+int inlineLimit = -1;
 std::string debugPassValue;
 
 inline GlobalFlags operator|(GlobalFlags flags, GlobalFlags flag)
@@ -70,6 +71,27 @@ void SetDebugPassValue(const std::string& value)
 const std::string& GetDebugPassValue()
 {
     return debugPassValue;
+}
+
+int GetInlineLimit()
+{
+    if (inlineLimit == -1)
+    {
+        switch (GetOptimizationLevel())
+        {
+            case 0: return 0;
+            case 1: return 0;
+            case 2: return 8;
+            case 3: return 16;
+            default: return 0;
+        }
+    }
+    return inlineLimit;
+}
+
+void SetInlineLimit(int limit)
+{
+    inlineLimit = limit;
 }
 
 } } // namespace cminor::symbols

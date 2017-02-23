@@ -67,8 +67,10 @@ public:
     virtual bool EndsBasicBlock() const { return false; }
     virtual bool IsJump() const { return false; }
     virtual bool IsThrow() const { return false; }
+    virtual bool IsEndEhInst() const { return false; }
     virtual bool IsContinuousSwitchInst() const { return false; }
     virtual bool IsBinarySearchSwitchInst() const { return false; }
+    virtual bool DontRemove() const { return false; }
     virtual void DispatchTo(InstAdder& adder);
     virtual void Accept(MachineFunctionVisitor& visitor);
 private:
@@ -770,16 +772,9 @@ class MACHINE_API ExitBlockInst : public Instruction
 {
 public:
     ExitBlockInst();
-    void Clear() override;
     Instruction* Clone() const override { return new ExitBlockInst(*this); };
-    void Encode(Writer& writer) override;
-    Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
-    void Dump(CodeFormatter& formatter) override;
-    void SetExceptionBlockId(int32_t exceptionBlockId_) { exceptionBlockId = exceptionBlockId_; }
     void Accept(MachineFunctionVisitor& visitor) override;
-private:
-    int32_t exceptionBlockId;
 };
 
 class MACHINE_API ContinuousSwitchInst : public Instruction
@@ -1081,24 +1076,6 @@ public:
     void Accept(MachineFunctionVisitor& visitor) override;
 };
 
-class MACHINE_API BeginTryInst : public Instruction
-{
-public:
-    BeginTryInst();
-    Instruction* Clone() const override { return new BeginTryInst(*this); }
-    void Execute(Frame& frame) override;
-    void Accept(MachineFunctionVisitor& visitor) override;
-};
-
-class MACHINE_API EndTryInst : public Instruction
-{
-public:
-    EndTryInst();
-    Instruction* Clone() const override { return new EndTryInst(*this); }
-    void Execute(Frame& frame) override;
-    void Accept(MachineFunctionVisitor& visitor) override;
-};
-
 class MACHINE_API ThrowInst : public Instruction
 {
 public:
@@ -1120,22 +1097,88 @@ public:
     bool EndsBasicBlock() const override { return true; }
 };
 
-class MACHINE_API EndCatchInst : public Instruction
+class MACHINE_API BeginTryInst : public IndexParamInst
+{
+public:
+    BeginTryInst();
+    Instruction* Clone() const override { return new BeginTryInst(*this); }
+    void Execute(Frame& frame) override;
+    void Accept(MachineFunctionVisitor& visitor) override;
+    bool DontRemove() const override { return true; }
+};
+
+class MACHINE_API EndTryInst : public IndexParamInst
+{
+public:
+    EndTryInst();
+    Instruction* Clone() const override { return new EndTryInst(*this); }
+    void Execute(Frame& frame) override;
+    void Accept(MachineFunctionVisitor& visitor) override;
+    bool DontRemove() const override { return true; }
+    bool IsEndEhInst() const override { return true; }
+};
+
+class MACHINE_API BeginCatchSectionInst : public IndexParamInst
+{
+public:
+    BeginCatchSectionInst();
+    Instruction* Clone() const override { return new BeginCatchSectionInst(*this); }
+    void Execute(Frame& frame) override;
+    void Accept(MachineFunctionVisitor& visitor) override;
+    bool DontRemove() const override { return true; }
+};
+
+class MACHINE_API EndCatchSectionInst : public IndexParamInst
+{
+public:
+    EndCatchSectionInst();
+    Instruction* Clone() const override { return new EndCatchSectionInst(*this); }
+    void Execute(Frame& frame) override;
+    void Accept(MachineFunctionVisitor& visitor) override;
+    bool DontRemove() const override { return true; }
+    bool IsEndEhInst() const override { return true; }
+};
+
+class MACHINE_API BeginCatchInst : public IndexParamInst
+{
+public:
+    BeginCatchInst();
+    Instruction* Clone() const override { return new BeginCatchInst(*this); }
+    void Execute(Frame& frame) override;
+    void Accept(MachineFunctionVisitor& visitor) override;
+    bool DontRemove() const override { return true; }
+};
+
+class MACHINE_API EndCatchInst : public IndexParamInst
 {
 public:
     EndCatchInst();
     Instruction* Clone() const override { return new EndCatchInst(*this); }
     void Execute(Frame& frame) override;
     void Accept(MachineFunctionVisitor& visitor) override;
+    bool DontRemove() const override { return true; }
+    bool IsEndEhInst() const override { return true; }
 };
 
-class MACHINE_API EndFinallyInst : public Instruction
+class MACHINE_API BeginFinallyInst : public IndexParamInst
+{
+public:
+    BeginFinallyInst();
+    Instruction* Clone() const override { return new BeginFinallyInst(*this); }
+    void Execute(Frame& frame) override;
+    void Accept(MachineFunctionVisitor& visitor) override;
+    bool DontRemove() const override { return true; }
+};
+
+class MACHINE_API EndFinallyInst : public IndexParamInst
 {
 public:
     EndFinallyInst();
     Instruction* Clone() const override { return new EndFinallyInst(*this); }
     void Execute(Frame& frame) override;
     void Accept(MachineFunctionVisitor& visitor) override;
+    bool DontRemove() const override { return true; }
+    bool IsEndEhInst() const override { return true; }
 };
 
 class ExceptionBlock;
@@ -1399,6 +1442,7 @@ public:
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
     void Accept(MachineFunctionVisitor& visitor) override;
 private:
     int32_t localIndex;
@@ -1412,9 +1456,11 @@ public:
     void Clear() override;
     Instruction* Clone() const override { return new CreateMemberVariableReferenceInst(*this); }
     void SetMemberVarIndex(int32_t memberVarIndex_) { memberVarIndex = memberVarIndex_; }
+    int32_t MemberVarIndex() const { return memberVarIndex; }
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
+    void Dump(CodeFormatter& formatter) override;
     void Accept(MachineFunctionVisitor& visitor) override;
 private:
     int32_t memberVarIndex;
@@ -1431,7 +1477,7 @@ public:
     Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
     void Handle(Frame& frame, LocalVariableReference* localVariableReference) override;
-    void Handle(Frame& frame, MemberVariableReference* memberVariableRefeence) override;
+    void Handle(Frame& frame, MemberVariableReference* memberVariableReference) override;
     void Accept(MachineFunctionVisitor& visitor) override;
 private:
     ValueType type;

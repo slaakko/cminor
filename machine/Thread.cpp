@@ -48,7 +48,7 @@ void DebugContext::RemoveBreakpointAt(int32_t pc)
 
 Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
     stack(*this), id(id_), machine(machine_), fun(fun_), instructionCount(0), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), exceptionObjectType(nullptr), 
-    exitBlockNext(-1), nextVariableReferenceId(1), threadHandle(0)
+    nextVariableReferenceId(1), threadHandle(0)
 {
     stack.AllocateFrame(fun);
 }
@@ -113,7 +113,6 @@ void Thread::RunToEnd()
             }
         }
         inst->Execute(*frame);
-        IncInstructionCount();
     }
 }
 
@@ -188,7 +187,6 @@ void Thread::RunDebug()
             }
         }
         inst->Execute(*frame);
-        IncInstructionCount();
     }
 }
 
@@ -281,31 +279,14 @@ void Thread::EndCatch()
     Assert(!stack.IsEmpty(), "stack is empty");
     Frame* frame = stack.CurrentFrame();
     Assert(currentExceptionBlock, "got no exception block");
-    if (currentExceptionBlock->HasFinally())
-    {
-        frame->SetPC(currentExceptionBlock->FinallyStart());
-    }
-    else
-    { 
-        frame->SetPC(currentExceptionBlock->NextTarget());
-    }
+    frame->SetPC(currentExceptionBlock->NextTarget());
 }
 
 void Thread::EndFinally()
 {
     Assert(!stack.IsEmpty(), "stack is empty");
     Frame* frame = stack.CurrentFrame();
-    if (exitBlockNext != -1)
-    {
-        int32_t next = exitBlockNext;
-        PopExitBlock();
-        frame->SetPC(next);
-        return;
-    }
-    if (!handlingException)
-    {
-        return;
-    }
+    Assert(handlingException, "end finally called while not handling exception");
     while (currentExceptionBlock->HasParent())
     {
         ExceptionBlock* exceptionBlock = frame->Fun().GetExceptionBlock(currentExceptionBlock->ParentId());
@@ -386,18 +367,6 @@ bool Thread::DispatchToHandlerOrFinally(Frame* frame)
         return true;
     }
     return false;
-}
-
-void Thread::PushExitBlock(int32_t exitBlockNext_)
-{
-    exitBlockStack.push(exitBlockNext);
-    exitBlockNext = exitBlockNext_;
-}
-
-void Thread::PopExitBlock()
-{
-    exitBlockNext = exitBlockStack.top();
-    exitBlockStack.pop();
 }
 
 utf32_string Thread::GetStackTrace() const

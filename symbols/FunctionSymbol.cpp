@@ -664,6 +664,8 @@ void ConstructorSymbol::CreateMachineFunction()
     std::unique_ptr<Instruction> loadLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.0");
     MachineFunction()->AddInst(std::move(loadLocal));
     std::unique_ptr<Instruction> inst = GetAssembly()->GetMachine().CreateInst("setclassdata");
+    MachineFunction()->SetCanThrow();
+    SetCanThrow();
     SetClassDataInst* setClassDataInst = dynamic_cast<SetClassDataInst*>(inst.get());
     Assert(setClassDataInst, "set class data inst expected");
     ClassTypeSymbol* containingClass = ContainingClass();;

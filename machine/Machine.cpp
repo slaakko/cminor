@@ -13,6 +13,18 @@
 
 namespace cminor { namespace machine {
 
+bool runningNativeCode = false;
+
+MACHINE_API void SetRunningNativeCode()
+{
+    runningNativeCode = true;
+}
+
+MACHINE_API bool RunningNativeCode()
+{
+    return runningNativeCode;
+}
+
 Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this), garbageCollector(*this), exiting(), exited(), nextFrameId(0), nextSegmentId(0), threadAllocating(false),
     startThreadHandle(0)
 {
@@ -282,7 +294,6 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     rootInst.SetInst(0xC9, new RotateInst());
     rootInst.SetInst(0xCA, new PopInst());
 
-
     // objects:
     // --------
 
@@ -293,45 +304,59 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     rootInst.SetInst(0xCF, new CopyObjectInst());
     rootInst.SetInst(0xD0, new SetClassDataInst());
     rootInst.SetInst(0xD1, new DownCastInst());
-    rootInst.SetInst(0xD2, new BeginTryInst());
-    rootInst.SetInst(0xD3, new EndTryInst());
+    rootInst.SetInst(0xD2, new IsInst());
+    rootInst.SetInst(0xD3, new AsInst());
+
+    // exceptions:
+    // -----------
+
     rootInst.SetInst(0xD4, new ThrowInst());
     rootInst.SetInst(0xD5, new RethrowInst());
-    rootInst.SetInst(0xD6, new EndCatchInst());
-    rootInst.SetInst(0xD7, new EndFinallyInst());
-    rootInst.SetInst(0xD8, new NextInst());
-    rootInst.SetInst(0xD9, new StaticInitInst());
-    rootInst.SetInst(0xDA, new DoneStaticInitInst());
-    rootInst.SetInst(0xDB, new LoadStaticFieldInst());
-    rootInst.SetInst(0xDC, new StoreStaticFieldInst());
-    rootInst.SetInst(0xDD, new IsInst());
-    rootInst.SetInst(0xDE, new AsInst());
+    rootInst.SetInst(0xD6, new BeginTryInst());
+    rootInst.SetInst(0xD7, new EndTryInst());
+    rootInst.SetInst(0xD8, new BeginCatchSectionInst());
+    rootInst.SetInst(0xD9, new EndCatchSectionInst());
+    rootInst.SetInst(0xDA, new BeginCatchInst());
+    rootInst.SetInst(0xDB, new EndCatchInst());
+    rootInst.SetInst(0xDC, new BeginFinallyInst());
+    rootInst.SetInst(0xDD, new EndFinallyInst());
+    rootInst.SetInst(0xDE, new NextInst());
+
+    // statics:
+    // --------
+
+    rootInst.SetInst(0xDF, new StaticInitInst());
+    rootInst.SetInst(0xE0, new DoneStaticInitInst());
+    rootInst.SetInst(0xE1, new LoadStaticFieldInst());
+    rootInst.SetInst(0xE2, new StoreStaticFieldInst());
 
     // strings:
     // --------
 
-    rootInst.SetInst(0xE0, new StrLitToStringInst());
-    rootInst.SetInst(0xE1, new LoadStringCharInst());
+    rootInst.SetInst(0xE3, new StrLitToStringInst());
+    rootInst.SetInst(0xE4, new LoadStringCharInst());
 
     // arrays:
     // -------
 
-    rootInst.SetInst(0xE2, new AllocateArrayElementsInst());
+    rootInst.SetInst(0xE5, new AllocateArrayElementsInst());
 
     // delegates & class delegates:
     // ----------------------------
-    rootInst.SetInst(0xE3, new LoadDefaultValueInst<ValueType::functionPtr>("def", "@delegate"));
-    rootInst.SetInst(0xE4, new Fun2DlgInst());
-    rootInst.SetInst(0xE5, new DelegateCallInst());
-    rootInst.SetInst(0xE6, new MemFun2ClassDlgInst());
-    rootInst.SetInst(0xE7, new ClassDelegateCallInst());
+
+    rootInst.SetInst(0xE6, new LoadDefaultValueInst<ValueType::functionPtr>("def", "@delegate"));
+    rootInst.SetInst(0xE7, new Fun2DlgInst());
+    rootInst.SetInst(0xE8, new DelegateCallInst());
+    rootInst.SetInst(0xE9, new MemFun2ClassDlgInst());
+    rootInst.SetInst(0xEA, new ClassDelegateCallInst());
 
     // references:
     // -----------
-    rootInst.SetInst(0xE8, new CreateLocalVariableReferenceInst());
-    rootInst.SetInst(0xE9, new CreateMemberVariableReferenceInst());
-    rootInst.SetInst(0xEA, new LoadVariableReferenceInst());
-    rootInst.SetInst(0xEB, new StoreVariableReferenceInst());
+
+    rootInst.SetInst(0xEB, new CreateLocalVariableReferenceInst());
+    rootInst.SetInst(0xEC, new CreateMemberVariableReferenceInst());
+    rootInst.SetInst(0xED, new LoadVariableReferenceInst());
+    rootInst.SetInst(0xEE, new StoreVariableReferenceInst());
 
     // vmcall:
     // -------
@@ -340,6 +365,7 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
 
     // gc:
     // ---
+
     rootInst.SetInst(0xF1, new GcPointInst());
 
     //  conversion group instruction:

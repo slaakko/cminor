@@ -44,13 +44,16 @@ class DupInst;
 class SwapInst;
 class RotateInst;
 class PopInst;
-class UpCastInst;
 class DownCastInst;
-class BeginTryInst;
-class EndTryInst;
 class ThrowInst;
 class RethrowInst;
+class BeginTryInst;
+class EndTryInst;
+class BeginCatchSectionInst;
+class EndCatchSectionInst;
+class BeginCatchInst;
 class EndCatchInst;
+class BeginFinallyInst;
 class EndFinallyInst;
 class NextInst;
 class StaticInitInst;
@@ -119,11 +122,15 @@ public:
     virtual void VisitRotateInst(RotateInst& instruction) {}
     virtual void VisitPopInst(PopInst& instruction) {}
     virtual void VisitDownCastInst(DownCastInst& instruction) {}
-    virtual void VisitBeginTryInst(BeginTryInst& instruction) {}
-    virtual void VisitEndTryInst(EndTryInst& instruction) {}
     virtual void VisitThrowInst(ThrowInst& instruction) {}
     virtual void VisitRethrowInst(RethrowInst& instruction) {}
+    virtual void VisitBeginTryInst(BeginTryInst& instruction) {}
+    virtual void VisitEndTryInst(EndTryInst& instruction) {}
+    virtual void VisitBeginCatchSectionInst(BeginCatchSectionInst& instruction) {}
+    virtual void VisitEndCatchSectionInst(EndCatchSectionInst& instruction) {}
+    virtual void VisitBeginCatchInst(BeginCatchInst& instruction) {}
     virtual void VisitEndCatchInst(EndCatchInst& instruction) {}
+    virtual void VisitBeginFinallyInst(BeginFinallyInst& instruction) {}
     virtual void VisitEndFinallyInst(EndFinallyInst& instruction) {}
     virtual void VisitNextInst(NextInst& instruction) {}
     virtual void VisitStaticInitInst(StaticInitInst& instruction) {}
