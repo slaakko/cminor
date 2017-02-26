@@ -70,7 +70,9 @@ void PrintHelp(HelpTopics helpTopics)
             "       Use CONFIG configuration. CONFIG can be debug or release. Default is debug.\n" << 
             "   --clean (-e)\n" <<
             "       Clean given projects and solutions, or clean system libraries.\n" <<
-            "   --debug-parse (-d)\n" <<
+            "   --debug (-d)\n" <<
+            "       Run debug version of the compiler.\n" <<
+            "   --debug-parse (-p)\n" <<
             "       Debug parsing to standard output.\n" <<
             "   --native (-n)\n" <<
             "       Compile to native object code. Generates DLLs in Windows, shared objects in Linux.\n" <<
@@ -88,13 +90,15 @@ void PrintHelp(HelpTopics helpTopics)
             "           for optimization level 1: 0 (no inlining)\n" <<
             "           for optimization level 2: 8 instructions\n" <<
             "           for optimization level 3: 16 instructions\n" <<
-            "   --debug-pass=VALUE (-p=VALUE)\n" <<
+            "   --debug-pass=VALUE (-s=VALUE)\n" <<
             "       Generate debug output for LLVM passes to stderr (used with --native).\n" <<
             "       VALUE can be Arguments, Structure, Executions or Details:\n" <<
             "           Arguments: print pass arguments to pass to 'opt'\n" <<
             "           Structure: print pass structure before run()\n" <<
             "           Executions: print pass name before it is executed\n" <<
             "           Details: print pass details when it is executed\n" <<
+            "   --debug-llvm (-b)\n" <<
+            "       Generate LLVM debug output to stderr (used with --native).\n" <<
             "   --list (-l)\n" <<
             "       Generate listing to ASSEMBLY_NAME.list (used with --native).\n" <<
             "   --emit-llvm (-m)\n" <<
@@ -208,6 +212,7 @@ int main(int argc, const char** argv)
         std::vector<std::string> dumpOptions;
         std::string dumpAssemblyName;
         std::string dumpOutputFile;
+        bool debug = false;
         bool buildSystem = false;
         bool cleanSystem = false;
         for (int i = 1; i < argc; ++i)
@@ -468,7 +473,11 @@ int main(int argc, const char** argv)
                         {
                             buildOptions.push_back(arg);
                         }
-                        else if (arg == "-d" || arg == "--debug-parse")
+                        else if (arg == "-d" || arg == "--debug")
+                        {
+                            debug = true;
+                        }
+                        else if (arg == "-p" || arg == "--debug-parse")
                         {
                             buildOptions.push_back(arg);
                         }
@@ -490,6 +499,11 @@ int main(int argc, const char** argv)
                         }
                         else if (arg == "-a" || arg == "--emit-asm")
                         {
+                            buildOptions.push_back(arg);
+                        }
+                        else if (arg == "-b" || arg == "--debug-llvm")
+                        {
+                            debug = true;
                             buildOptions.push_back(arg);
                         }
                         else if (arg == "--link-with-debug-machine")
@@ -536,7 +550,7 @@ int main(int argc, const char** argv)
                                 {
                                     buildOptions.push_back(arg);
                                 }
-                                else if (components[0] == "-p" || components[0] == "--debug-pass")
+                                else if (components[0] == "-s" || components[0] == "--debug-pass")
                                 {
                                     const std::string& value = components[1];
                                     if (value != "Arguments" &&  value != "Structure" && value != "Executions" && value != "Details")
@@ -676,11 +690,25 @@ int main(int argc, const char** argv)
             }
             if (buildSystem || cleanSystem)
             {
-                commandLine = "cminorbuildsys";
+                if (debug)
+                {
+                    commandLine = "cminorbuildsysd";
+                }
+                else
+                {
+                    commandLine = "cminorbuildsys";
+                }
             }
             else
             {
-                commandLine = "cminorc";
+                if (debug)
+                {
+                    commandLine = "cminorcd";
+                }
+                else
+                {
+                    commandLine = "cminorc";
+                }
             }
             for (const std::string& globalOption : globalOptions)
             {

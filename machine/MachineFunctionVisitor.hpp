@@ -11,6 +11,7 @@
 namespace cminor { namespace machine {
 
 class Function;
+class Instruction;
 class InvalidInst;
 class NopInst;
 class LoadDefaultValueBaseInst;
@@ -82,7 +83,7 @@ public:
     virtual ~MachineFunctionVisitor();
     virtual void BeginVisitFunction(Function& function) {}
     virtual void EndVisitFunction(Function& function) {}
-    virtual void BeginVisitInstruction(int instructionNumber, bool prevEndsBasicBlock) {}
+    virtual void BeginVisitInstruction(int instructionNumber, bool prevEndsBasicBlock, Instruction* inst) {}
     virtual void VisitInvalidInst(InvalidInst& instruction) {}
     virtual void VisitNopInst(NopInst& instruction) {}
     virtual void VisitLoadDefaultValueBaseInst(LoadDefaultValueBaseInst& instruction) {}

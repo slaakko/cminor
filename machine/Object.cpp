@@ -916,7 +916,7 @@ ObjectReference ManagedMemoryPool::CreateStringArray(Thread& thread, const std::
 {
     ObjectReference arrayReference = CreateObject(thread, argsArrayObjectType);
     Object& object = GetObject(arrayReference);
-    ClassData* classData = ClassDataTable::GetSystemStringClassData();
+    ClassData* classData = ClassDataTable::GetClassData(StringPtr(U"System.String[]"));
     object.SetField(IntegralValue(classData), 0);
     int32_t length = int32_t(programArguments.size());
     object.SetField(IntegralValue(length, ValueType::intType), 1);

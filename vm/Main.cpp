@@ -88,7 +88,7 @@ void PrintHelp()
         "   --help (-h)\n" <<
         "       Print this help message.\n" <<
         "   --jit (-j)\n" <<
-        "       Use just in time compilation.\n" <<
+        "       Use just-in-time compilation.\n" <<
         "   --native (-n)\n" <<
         "       Run program built with --native option.\n"
         "   --trace (-t)\n" <<

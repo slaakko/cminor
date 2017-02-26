@@ -91,7 +91,7 @@ public:
     int ProgramReturnValue() const { return programReturnValue;  }
     void BeginVisitFunction(cminor::machine::Function& function) override;
     void EndVisitFunction(cminor::machine::Function& function) override;
-    void BeginVisitInstruction(int instructionNumber, bool prevEndsBasicBlock) override;
+    void BeginVisitInstruction(int instructionNumber, bool prevEndsBasicBlock, Instruction* inst) override;
     void VisitInvalidInst(InvalidInst& instruction) override;
     void VisitLoadDefaultValueBaseInst(LoadDefaultValueBaseInst& instruction) override;
     void VisitUnaryOpBaseInst(UnaryOpBaseInst& instruction) override;
@@ -267,7 +267,7 @@ void JitCompilerImpl::EndVisitFunction(cminor::machine::Function& function)
     std::cout << addr << std::endl;
 }
 
-void JitCompilerImpl::BeginVisitInstruction(int instructionNumber, bool prevEndsBasicBlock)
+void JitCompilerImpl::BeginVisitInstruction(int instructionNumber, bool prevEndsBasicBlock, Instruction* inst)
 {
     auto it = basicBlocks.find(instructionNumber);
     if (it != basicBlocks.cend())

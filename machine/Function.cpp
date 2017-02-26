@@ -898,7 +898,7 @@ void Function::Accept(MachineFunctionVisitor& visitor)
     for (const std::unique_ptr<Instruction>& instruction : instructions)
     {
         visitor.SetCurrentInstructionIndex(currentInstructionIndex);
-        visitor.BeginVisitInstruction(currentInstructionIndex, prevEndsBasicBlock);
+        visitor.BeginVisitInstruction(currentInstructionIndex, prevEndsBasicBlock, instruction.get());
         instruction->Accept(visitor);
         prevEndsBasicBlock = instruction->EndsBasicBlock();
         ++currentInstructionIndex;

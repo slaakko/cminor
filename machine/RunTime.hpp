@@ -6,20 +6,12 @@
 #ifndef CMINOR_MACHINE_RUN_TIME_INCLUDED
 #define CMINOR_MACHINE_RUN_TIME_INCLUDED
 #include <cminor/machine/MachineApi.hpp>
+#include <cminor/machine/CminorException.hpp>
 #include <stdint.h>
 
 namespace cminor { namespace machine {
 
 MACHINE_API void SetTrace();
-
-class MACHINE_API CminorException
-{
-public:
-    CminorException(uint64_t exceptionObjectReference_) : exceptionObjectReference(exceptionObjectReference_) {}
-    uint64_t ExceptionObjectReference() const { return exceptionObjectReference; }
-private:
-    uint64_t exceptionObjectReference;
-};
 
 class Function;
 

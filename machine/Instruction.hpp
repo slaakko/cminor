@@ -68,6 +68,7 @@ public:
     virtual bool IsJump() const { return false; }
     virtual bool IsThrow() const { return false; }
     virtual bool IsEndEhInst() const { return false; }
+    virtual bool IsBeginCatchSectionInst() const { return false; }
     virtual bool IsContinuousSwitchInst() const { return false; }
     virtual bool IsBinarySearchSwitchInst() const { return false; }
     virtual bool DontRemove() const { return false; }
@@ -1126,6 +1127,7 @@ public:
     void Execute(Frame& frame) override;
     void Accept(MachineFunctionVisitor& visitor) override;
     bool DontRemove() const override { return true; }
+    bool IsBeginCatchSectionInst() const override { return true; }
 };
 
 class MACHINE_API EndCatchSectionInst : public IndexParamInst
@@ -1158,6 +1160,7 @@ public:
     void Accept(MachineFunctionVisitor& visitor) override;
     bool DontRemove() const override { return true; }
     bool IsEndEhInst() const override { return true; }
+    bool EndsBasicBlock() const override { return true; }
 };
 
 class MACHINE_API BeginFinallyInst : public IndexParamInst

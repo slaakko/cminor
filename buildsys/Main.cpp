@@ -95,7 +95,7 @@ void PrintHelp()
         "       Use CONFIG configuration. CONFIG can be debug or release. Default is debug.\n" <<
         "   --clean (-e)\n" <<
         "       Clean system libraries.\n" <<
-        "   --debug-parse (-d)\n" <<
+        "   --debug-parse (-p)\n" <<
         "       Debug parsing to stdout.\n" <<
         "   --native (-n)\n" << 
         "       Compile to native object code. Generates DLLs in Windows, shared objects in Linux.\n" <<
@@ -120,6 +120,8 @@ void PrintHelp()
         "           Structure: print pass structure before run()\n" <<
         "           Executions: print pass name before it is executed\n" <<
         "           Details: print pass details when it is executed\n" <<
+        "   --debug-llvm (-b)\n" <<
+        "       Generate LLVM debug output to stderr (used with --native).\n" <<
         "   --list (-l)\n" <<
         "       Generate listing to ASSEMBLY_NAME.list (used with --native).\n" <<
         "   --emit-llvm (-m)\n" <<
@@ -136,6 +138,7 @@ int main(int argc, const char** argv)
     try
     {
         InitDone initDone;
+        bool debugLlvm = false;
         for (int i = 1; i < argc; ++i)
         {
             std::string arg = argv[i];
@@ -154,7 +157,7 @@ int main(int argc, const char** argv)
                 {
                     SetGlobalFlag(GlobalFlags::clean);
                 }
-                else if (arg == "-d" || arg == "--debug-parse")
+                else if (arg == "-p" || arg == "--debug-parse")
                 {
                     SetGlobalFlag(GlobalFlags::debugParsing);
                 }
@@ -181,6 +184,10 @@ int main(int argc, const char** argv)
                 else if (arg == "--link-with-debug-machine")
                 {
                     SetGlobalFlag(GlobalFlags::linkWithDebugMachine);
+                }
+                else if (arg == "-b" || arg == "--debug-llvm")
+                {
+                    debugLlvm = true;
                 }
                 else if (arg.find('=', 0) != std::string::npos)
                 {
@@ -220,7 +227,7 @@ int main(int argc, const char** argv)
                             int inlineLimit = boost::lexical_cast<int>(components[1]);
                             SetInlineLimit(inlineLimit);
                         }
-                        else if (components[0] == "-p" || components[0] == "--debug-pass")
+                        else if (components[0] == "-s" || components[0] == "--debug-pass")
                         {
                             const std::string& value = components[1];
                             if (value != "Arguments" &&  value != "Structure" && value != "Executions" && value != "Details")
@@ -279,34 +286,46 @@ int main(int argc, const char** argv)
         if (GetGlobalFlag(GlobalFlags::native))
         {
             const int maxArgsPlusNull = 4;
-            const char* argv[maxArgsPlusNull];
+            const char* argvForLlvm[maxArgsPlusNull];
             for (int i = 0; i < maxArgsPlusNull; ++i)
             {
-                argv[i] = nullptr;
+                argvForLlvm[i] = nullptr;
             }
-            std::vector<std::string> args;
-            args.push_back("cminorbuildsys");
+            std::vector<std::string> argsForLlvm;
+#ifdef NDEBUG
+            argsForLlvm.push_back("cminorbuildsys");
+#else
+            argsForLlvm.push_back("cminorbuildsysd");
+#endif
             const std::string& debugPassValue = GetDebugPassValue();
             if (!debugPassValue.empty())
             {
-                args.push_back("-debug-pass=" + debugPassValue);
+                argsForLlvm.push_back("-debug-pass=" + debugPassValue);
+            }
+            if (debugLlvm)
+            {
+#ifdef NDEBUG
+                std::cerr << "Warning: LLVM debug output not available for release mode compiler (use cminorbuildsysd).";
+#else 
+                argsForLlvm.push_back("-debug");
+#endif
             }
             if (GetGlobalFlag(GlobalFlags::emitAsm))
             {
 #ifdef _WIN32
-                args.push_back("--x86-asm-syntax=intel");
+                argsForLlvm.push_back("-x86-asm-syntax=intel");
 #endif // _WIN32
             }
-            int n = int(args.size());
+            int n = int(argsForLlvm.size());
             if (n >= maxArgsPlusNull)
             {
                 throw std::runtime_error("increase max args");
             }
             for (int i = 0; i < n; ++i)
             {
-                argv[i] = args[i].c_str();
+                argvForLlvm[i] = argsForLlvm[i].c_str();
             }
-            cl::ParseCommandLineOptions(n, argv);
+            cl::ParseCommandLineOptions(n, argvForLlvm);
         }
         Machine machine;
         {

@@ -187,6 +187,7 @@ public:
     void SetEmitter(Emitter* emitter_) { emitter = emitter_; }
     Emitter* GetEmitter() const { return emitter; }
     bool HasExceptionBlocks() const { return !exceptionBlocks.empty(); }
+    int NumExceptionBlocks() const { return int(exceptionBlocks.size()); }
     int GetNextExeptionBlockId() const { return int(exceptionBlocks.size()); }
     void AddExceptionBlock(std::unique_ptr<ExceptionBlock>&& exceptionBlock);
     ExceptionBlock* GetExceptionBlock(int id) const;
