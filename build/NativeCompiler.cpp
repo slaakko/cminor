@@ -94,19 +94,24 @@ private:
     std::vector<llvm::Value*> s;
 };
 
-enum class LlvmBinOp
+enum class LlvmBinOp : uint8_t
 {
     add, fadd, sub, fsub, mul, fmul, udiv, sdiv, fdiv, urem, srem, shl, lshr, ashr, and_, or_, xor_
 };
 
-enum class LlvmBinPred
+enum class LlvmBinPred : uint8_t
 {
     ieq, oeq, ult, slt, olt
 };
 
-enum class LlvmConv
+enum class LlvmConv : uint8_t
 {
     none, zext, sext, trunc, bitcast, fptoui, fptosi, uitofp, sitofp, fpext, fptrunc
+};
+
+enum class LlvmPadKind : uint8_t
+{
+    none, catchSwitch, catchPad, cleanupPad
 };
 
 class NativeCompilerImpl : public MachineFunctionVisitor
@@ -196,6 +201,7 @@ private:
     llvm::AttributeSet unwindFunctionAttributes;
     llvm::AttributeSet nounwindFunctionAttributes;
     llvm::AttributeSet mainFunctionAttributes;
+    llvm::AttributeSet noReturnFunctionAttributes;
     int inlineLimit;
     llvm::Function* fun;
     Function* function;
@@ -214,11 +220,17 @@ private:
     std::unordered_map<StringPtr, std::string, StringPtrHash> opFunMap;
     ValueStack valueStack;
     llvm::BasicBlock* currentBasicBlock;
+    llvm::BasicBlock* entryBasicBlock;
+    llvm::AllocaInst* lastAlloca;
     std::unordered_map<int, llvm::BasicBlock*> basicBlocks;
     std::unordered_map<int, llvm::BasicBlock*> unwindTargets;
     llvm::Value* currentPad;
     std::vector<llvm::Value*> padStack;
+    LlvmPadKind currentPadKind;
+    std::vector<LlvmPadKind> padKindStack;
     std::unordered_map<int, llvm::Value*> exceptionObjectVariables;
+    llvm::Value* exceptionPtr;
+    std::unordered_map<int, llvm::BasicBlock*> nextHandler;
     std::unordered_set<int32_t> jumpTargets;
     std::string listFilePath;
     std::unique_ptr<std::ofstream> listStream;
@@ -232,9 +244,13 @@ private:
     int currentCatchSectionExceptionBlockId;
     llvm::TargetOptions GetTargetOptions();
     void SetPersonalityFunction();
+    void InsertAllocaIntoEntryBlock(llvm::AllocaInst* allocaInst);
     void CreateCall(llvm::Value* callee, const ArgVector& args, bool callReturnsValue);
+    void CreateReturnFromFunctionOrFunclet();
     void CreateCatchPad();
     void CreateCatchPadWindows();
+    void GenerateRethrow();
+    void GenerateRethrowWindows();
     void ExportGlobalVariable(llvm::Constant* globalVariable);
     void ExportFunction(llvm::Function* function);
     void ImportFunction(llvm::Function* function);
@@ -260,8 +276,9 @@ private:
 };    
 
 NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), module(), inlineLimit(0), targetMachine(), fun(nullptr), function(nullptr), constantPool(nullptr), 
-    constantPoolVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), nextTypePtrVarNumber(0), functionStackEntry(nullptr), 
-    currentExceptionBlockId(-1), currentCatchSectionExceptionBlockId(-1), currentPad(nullptr)
+    constantPoolVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), nextTypePtrVarNumber(0), functionStackEntry(nullptr), currentBasicBlock(nullptr), 
+    entryBasicBlock(nullptr), lastAlloca(nullptr), currentExceptionBlockId(-1), currentCatchSectionExceptionBlockId(-1), currentPad(nullptr), currentPadKind(LlvmPadKind::none), 
+    exceptionPtr(nullptr)
 {
     InitializeAllTargetInfos();
     InitializeAllTargets();
@@ -362,17 +379,65 @@ void NativeCompilerImpl::SetPersonalityFunction()
 #endif
 }
 
+void NativeCompilerImpl::InsertAllocaIntoEntryBlock(llvm::AllocaInst* allocaInst)
+{
+    if (lastAlloca)
+    {
+        allocaInst->insertAfter(lastAlloca);
+    }
+    else
+    {
+        if (entryBasicBlock->empty())
+        {
+            entryBasicBlock->getInstList().push_back(allocaInst);
+        }
+        else
+        {
+            entryBasicBlock->getInstList().insert(entryBasicBlock->getInstList().begin(), allocaInst);
+        }
+    }
+}
+
 void NativeCompilerImpl::CreateCall(llvm::Value* callee, const ArgVector& args, bool callReturnsValue)
 {
+    std::vector<OperandBundleDef> bundles;
+    if (currentPad != nullptr)
+    {
+        std::vector<llvm::Value*> inputs;
+        inputs.push_back(currentPad);
+        bundles.push_back(OperandBundleDef("funclet", inputs));
+    }
     if (currentExceptionBlockId == -1)
     {
         if (callReturnsValue)
         {
-            valueStack.Push(builder.CreateCall(callee, args));
+            if (currentPad == nullptr)
+            {
+                valueStack.Push(builder.CreateCall(callee, args));
+            }
+            else
+            {
+                if (!currentBasicBlock)
+                {
+                    throw std::runtime_error("current basic block not set");
+                }
+                valueStack.Push(llvm::CallInst::Create(callee, args, bundles, "", currentBasicBlock));
+            }
         }
         else
         {
-            builder.CreateCall(callee, args);
+            if (currentPad == nullptr)
+            {
+                builder.CreateCall(callee, args);
+            }
+            else
+            {
+                if (!currentBasicBlock)
+                {
+                    throw std::runtime_error("current basic block not set");
+                }
+                llvm::CallInst::Create(callee, args, bundles, "", currentBasicBlock);
+            }
         }
     }
     else
@@ -384,25 +449,126 @@ void NativeCompilerImpl::CreateCall(llvm::Value* callee, const ArgVector& args, 
         }
         llvm::BasicBlock* normalTarget = BasicBlock::Create(context, "continueTarget" + std::to_string(GetCurrentInstructionIndex()), fun);
         llvm::BasicBlock* unwindTarget = nullptr;
-        if (!exceptionBlock->CatchBlocks().empty())
+        auto it = unwindTargets.find(currentExceptionBlockId);
+        if (it != unwindTargets.cend())
         {
-            unwindTarget = BasicBlock::Create(context, "catchsection" + std::to_string(currentExceptionBlockId), fun);
+            unwindTarget = it->second;
         }
         else
         {
-            unwindTarget = BasicBlock::Create(context, "finally" + std::to_string(currentExceptionBlockId), fun);
+            if (!exceptionBlock->CatchBlocks().empty())
+            {
+                unwindTarget = BasicBlock::Create(context, "catchswitch" + std::to_string(currentExceptionBlockId), fun);
+            }
+            else
+            {
+                unwindTarget = BasicBlock::Create(context, "cleanuppad" + std::to_string(currentExceptionBlockId), fun);
+            }
+            unwindTargets[currentExceptionBlockId] = unwindTarget;
         }
-        unwindTargets[currentExceptionBlockId] = unwindTarget;
         if (callReturnsValue)
         {
-            valueStack.Push(builder.CreateInvoke(callee, normalTarget, unwindTarget, args));
+            if (currentPad == nullptr)
+            {
+                valueStack.Push(builder.CreateInvoke(callee, normalTarget, unwindTarget, args));
+            }
+            else
+            {
+                if (!currentBasicBlock)
+                {
+                    throw std::runtime_error("current basic block not set");
+                }
+                valueStack.Push(llvm::InvokeInst::Create(callee, normalTarget, unwindTarget, args, bundles, "", currentBasicBlock));
+            }
         }
         else
         {
-            builder.CreateInvoke(callee, normalTarget, unwindTarget, args);
+            if (currentPad == nullptr)
+            {
+                builder.CreateInvoke(callee, normalTarget, unwindTarget, args);
+            }
+            else
+            {
+                if (!currentBasicBlock)
+                {
+                    throw std::runtime_error("current basic block not set");
+                }
+                llvm::InvokeInst::Create(callee, normalTarget, unwindTarget, args, bundles, "", currentBasicBlock);
+            }
         }
         currentBasicBlock = normalTarget;
         builder.SetInsertPoint(currentBasicBlock);
+    }
+}
+
+void NativeCompilerImpl::CreateReturnFromFunctionOrFunclet()
+{
+    switch (currentPadKind)
+    {
+        case LlvmPadKind::none:
+        {
+            Assert(currentPad == nullptr, "currentPadKind and currentPad not in sync");
+            if (function->ReturnsValue())
+            {
+                llvm::Value* retValue = valueStack.Pop();
+                builder.CreateRet(retValue);
+            }
+            else
+            {
+                builder.CreateRetVoid();
+            }
+            break;
+        }
+        case LlvmPadKind::catchSwitch:
+        {
+            throw std::runtime_error("cannot create ret from catchswitch");
+        }
+        case LlvmPadKind::catchPad:
+        {
+            if (currentPad == nullptr)
+            {
+                throw std::runtime_error("current pad not set");
+            }
+            if (currentCatchSectionExceptionBlockId == -1)
+            {
+                throw std::runtime_error("not in catch section");
+            }
+            ExceptionBlock* exceptionBlock = function->GetExceptionBlock(currentCatchSectionExceptionBlockId);
+            if (!exceptionBlock)
+            {
+                throw std::runtime_error("exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not found");
+            }
+            llvm::BasicBlock* returnTarget = llvm::BasicBlock::Create(context, "return" + std::to_string(currentCatchSectionExceptionBlockId), fun);
+            llvm::AllocaInst* returnValueAlloca = nullptr;
+            if (function->ReturnsValue())
+            {
+                returnValueAlloca = new llvm::AllocaInst(GetType(function->ReturnType()));
+                InsertAllocaIntoEntryBlock(returnValueAlloca);
+                builder.CreateStore(valueStack.Pop(), returnValueAlloca);
+            }
+            builder.CreateCatchRet(cast<llvm::CatchPadInst>(currentPad), returnTarget);
+            builder.SetInsertPoint(returnTarget);
+            CreateLeaveFunctionCall();
+            if (function->ReturnsValue())
+            {
+                builder.CreateRet(builder.CreateLoad(returnValueAlloca));
+            }
+            else
+            {
+                builder.CreateRetVoid();
+            }
+            currentBasicBlock = nullptr;
+            break;
+        }
+        case LlvmPadKind::cleanupPad:
+        {
+            if (currentPad == nullptr)
+            {
+                throw std::runtime_error("current pad not set");
+            }
+            builder.CreateCleanupRet(cast<llvm::CleanupPadInst>(currentPad));
+            break;
+        }
     }
 }
 
@@ -432,6 +598,43 @@ void NativeCompilerImpl::CreateCatchPadWindows()
     llvm::CatchPadInst* catchPad = builder.CreateCatchPad(currentPad, catchPadArgs);
     padStack.push_back(currentPad);
     currentPad = catchPad;
+    padKindStack.push_back(currentPadKind);
+    currentPadKind = LlvmPadKind::catchPad;
+}
+
+void NativeCompilerImpl::GenerateRethrow()
+{
+#ifdef _WIN32
+    GenerateRethrowWindows();
+#endif
+}
+
+void NativeCompilerImpl::GenerateRethrowWindows()
+{
+    llvm::Function* cxxThrowFunction = cast<llvm::Function>(module->getOrInsertFunction("_CxxThrowException", GetType(ValueType::none), 
+        PointerType::get(GetType(ValueType::byteType), 0), 
+        PointerType::get(GetType(ValueType::byteType), 0), 
+        nullptr));
+    ImportFunction(cxxThrowFunction);
+    ArgVector args;
+    args.push_back(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
+    args.push_back(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
+    if (currentPad != nullptr)
+    {
+        std::vector<OperandBundleDef> bundles;
+        std::vector<llvm::Value*> inputs;
+        inputs.push_back(currentPad);
+        bundles.push_back(OperandBundleDef("funclet", inputs));
+        if (!currentBasicBlock)
+        {
+            throw std::runtime_error("current basic block not set");
+        }
+        llvm::CallInst::Create(cxxThrowFunction, args, bundles, "", currentBasicBlock);
+    }
+    else
+    {
+        builder.CreateCall(cxxThrowFunction, args);
+    }
 }
 
 void NativeCompilerImpl::ExportGlobalVariable(llvm::Constant* globalVariable)
@@ -530,6 +733,26 @@ void NativeCompilerImpl::Init(Assembly& assembly)
                 ") to native object code because referenced assembly '" + ToUtf8(referencedAssembly->Name().Value()) + "' (" + referencedAssembly->FilePathReadFrom() +
                 ") is not compiled to native object code (build with --native).");
         }
+        if (GetGlobalFlag(GlobalFlags::linkWithDebugMachine))
+        {
+            if (!referencedAssembly->LinkedWithDebugMachine())
+            {
+                throw std::runtime_error("NativeCompiler: trying to link current assembly '" + assemblyName + "' (" + assembly.FilePathReadFrom() +
+                    ") with debug version of the Cminor virtual machine (cminormachined.dll) while referenced assembly '" +
+                    ToUtf8(referencedAssembly->Name().Value()) + "' (" + referencedAssembly->FilePathReadFrom() + ") is linked with release version of the Cminor virtual machine (cminormachine.dll). " +
+                    "Either build current assembly without the --link-with-debug-machine option, or build referenced assemblies with the --link-with-debug-machine option.");
+            }
+        }
+        else
+        {
+            if (referencedAssembly->LinkedWithDebugMachine())
+            {
+                throw std::runtime_error("NativeCompiler: trying to link current assembly '" + assemblyName + "' (" + assembly.FilePathReadFrom() +
+                    ") with release version of the Cminor virtual machine (cminormachine.dll) while referenced assembly '" +
+                    ToUtf8(referencedAssembly->Name().Value()) + "' (" + referencedAssembly->FilePathReadFrom() + ") is linked with debug version of the Cminor virtual machine (cminormachined.dll). " +
+                    "Either build current assembly with the --link-with-debug-machine option, or build referenced assemblies without the --link-with-debug-machine option.");
+            }
+        }
     }
     this->assembly = &assembly;
     InitOpFunMap(assembly.GetConstantPool());
@@ -588,6 +811,10 @@ void NativeCompilerImpl::Init(Assembly& assembly)
     mainAttributes.push_back(llvm::Attribute::UWTable);
     mainAttributes.push_back(llvm::Attribute::NoRecurse);
     mainFunctionAttributes = AttributeSet::get(context, llvm::AttributeSet::FunctionIndex, mainAttributes);
+    std::vector<Attribute::AttrKind> noReturnAttributes;
+    noReturnAttributes.push_back(llvm::Attribute::UWTable);
+    noReturnAttributes.push_back(llvm::Attribute::NoReturn);
+    noReturnFunctionAttributes = AttributeSet::get(context, llvm::AttributeSet::FunctionIndex, noReturnAttributes);
 }
 
 void NativeCompilerImpl::Done()
@@ -635,15 +862,6 @@ void NativeCompilerImpl::Done()
         llvm::raw_os_ostream optLlOs(optLlFile);
         module->print(optLlOs, nullptr);
     }
-    if (GetGlobalFlag(GlobalFlags::emitAsm))
-    {
-#ifdef _WIN32
-        std::string asmFilePath = boost::filesystem::path(assembly->FilePathReadFrom()).replace_extension(".asm").generic_string();
-#else
-        std::string asmFilePath = boost::filesystem::path(assembly->FilePathReadFrom()).replace_extension(".s").generic_string();
-#endif
-        GenerateAsmFile(asmFilePath);
-    }
     Link(assemblyObjectFilePath);
 }
 
@@ -689,10 +907,9 @@ void NativeCompilerImpl::GenerateObjectFile(const std::string& assemblyObjectFil
         std::cout << "Generating object code file " << assemblyObjectFilePath << "..." << std::endl;
     }
     legacy::PassManager passManager;
-    TargetMachine::CodeGenFileType fileType = TargetMachine::CGFT_ObjectFile;
     std::error_code errorCode;
     raw_fd_ostream objectFile(assemblyObjectFilePath, errorCode, sys::fs::F_None);
-    if (targetMachine->addPassesToEmitFile(passManager, objectFile, fileType))
+    if (targetMachine->addPassesToEmitFile(passManager, objectFile, TargetMachine::CGFT_ObjectFile))
     {
         throw std::runtime_error("NativeCompiler: cannot emit object code file '" + assemblyObjectFilePath + "' (llvm::TargetMachine::addPassesToEmitFile failed).");
     }
@@ -711,12 +928,9 @@ void NativeCompilerImpl::GenerateAsmFile(const std::string& asmFilePath)
         std::cout << "Generating assembly code listing to " << asmFilePath << "..." << std::endl;
     }
     legacy::PassManager passManager;
-    TargetLibraryInfoImpl tlii(Triple(module->getTargetTriple()));
-    passManager.add(new TargetLibraryInfoWrapperPass(tlii));
-    TargetMachine::CodeGenFileType fileType = TargetMachine::CGFT_AssemblyFile;
     std::error_code errorCode;
     raw_fd_ostream asmFile(asmFilePath, errorCode, sys::fs::F_None);
-    if (targetMachine->addPassesToEmitFile(passManager, asmFile, fileType))
+    if (targetMachine->addPassesToEmitFile(passManager, asmFile, TargetMachine::CGFT_AssemblyFile))
     {
         throw std::runtime_error("NativeCompiler: cannot emit asm file '" + asmFilePath + "' (llvm::TargetMachine::addPassesToEmitFile failed).");
     }
@@ -794,6 +1008,7 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
     args.push_back("cminorrt.lib");
     if (GetGlobalFlag(GlobalFlags::linkWithDebugMachine))
     {
+        assembly->SetLinkedWithDebugMachine();
         args.push_back("cminormachined.lib");
     }
     else
@@ -801,16 +1016,29 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
         args.push_back("cminormachine.lib");
     }
     ImportAssemblyReferences(assembly, args, listStream.get());
-    //std::string linkCommandLine = "lld-link";
-    std::string linkCommandLine = "link";
+    bool useMsLink = true;
+    std::string linkCommandLine = "lld-link";
+    if (useMsLink)
+    {
+        linkCommandLine = "link";
+    }
     for (const std::string& arg : args)
     {
         linkCommandLine.append(1, ' ').append(arg);
     }
     std::string linkErrorFilePath = Path::Combine(Path::GetDirectoryName(assemblyObjectFilePath), "lld-link.error");
+    if (useMsLink)
+    {
+        linkErrorFilePath = Path::Combine(Path::GetDirectoryName(assemblyObjectFilePath), "link.error");
+    }
     try
     {
-        System(linkCommandLine, 2, linkErrorFilePath);
+        int redirectHandle = 2; // stderr
+        if (useMsLink)
+        {
+            redirectHandle = 1; // stdout
+        }
+        System(linkCommandLine, redirectHandle, linkErrorFilePath);
         boost::filesystem::remove(boost::filesystem::path(linkErrorFilePath));
         assembly->SetNativeImportLibraryFileName(importLibraryFileName);
         assembly->SetNativeSharedLibraryFileName(dllFileName);
@@ -843,8 +1071,15 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     catchSectionExceptionBlockIdStack.clear();
     currentPad = nullptr;
     padStack.clear();
+    currentPadKind = LlvmPadKind::none;
+    padKindStack.clear();
+    exceptionPtr = nullptr;
     exceptionObjectVariables.clear();
     std::string mangledFunctionName = MangleFunctionName(function);
+    if (mangledFunctionName == "Visit_LinkerVisitor_256E02797B9954BAD4638DCA8D1EAD3F13C7D43E")
+    {
+        int x = 0;
+    }
     function.SetMangledName(mangledFunctionName);
     if (listStream)
     {
@@ -895,13 +1130,16 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
         SetPersonalityFunction();
     }
     BasicBlock* entryBlock = BasicBlock::Create(context, "entry", fun);
+    entryBasicBlock = entryBlock;
     builder.SetInsertPoint(entryBlock);
     locals.clear();
+    lastAlloca = nullptr;
     for (ValueType lt : function.LocalTypes())
     {
         llvm::Type* type = GetType(lt);
         llvm::AllocaInst* allocaInst = builder.CreateAlloca(type);
         locals.push_back(allocaInst);
+        lastAlloca = allocaInst;
     }
     int ne = function.NumExceptionBlocks();
     for (int i = 0; i < ne; ++i)
@@ -975,7 +1213,7 @@ void NativeCompilerImpl::BeginVisitInstruction(int instructionNumber, bool prevE
         }
         builder.SetInsertPoint(currentBasicBlock);
     }
-    else if (jumpTargets.find(instructionNumber) != jumpTargets.cend())
+    else if (jumpTargets.find(instructionNumber) != jumpTargets.cend() && !inst->IsBeginCatchOrFinallyInst())
     {
         currentBasicBlock = BasicBlock::Create(context, "target" + std::to_string(instructionNumber), fun);
         basicBlocks[instructionNumber] = currentBasicBlock;
@@ -985,7 +1223,7 @@ void NativeCompilerImpl::BeginVisitInstruction(int instructionNumber, bool prevE
         }
         builder.SetInsertPoint(currentBasicBlock);
     }
-    else if (currentBasicBlock == nullptr && !inst->IsBeginCatchSectionInst())
+    else if (currentBasicBlock == nullptr && !inst->IsEhBlockInst())
     {
         currentBasicBlock = BasicBlock::Create(context, "target" + std::to_string(instructionNumber), fun);
         builder.SetInsertPoint(currentBasicBlock);
@@ -1758,17 +1996,7 @@ void NativeCompilerImpl::VisitJumpInst(JumpInst& instruction)
     int32_t target = instruction.Index();
     if (target == endOfFunction)
     {
-        if (function->ReturnsValue())
-        {
-            llvm::Value* returnValue = valueStack.Pop();
-            CreateLeaveFunctionCall();
-            builder.CreateRet(returnValue);
-        }
-        else
-        {
-            CreateLeaveFunctionCall();
-            builder.CreateRetVoid();
-        }
+        CreateReturnFromFunctionOrFunclet();
     }
     else
     {
@@ -2234,28 +2462,26 @@ void NativeCompilerImpl::VisitThrowInst(ThrowInst& instruction)
     llvm::Value* exceptionObject = valueStack.Pop(); 
     llvm::Function* rtThrowException = cast<llvm::Function>(module->getOrInsertFunction("RtThrowException", GetType(ValueType::none), GetType(ValueType::objectReference), nullptr));
     ImportFunction(rtThrowException);
+    rtThrowException->setAttributes(noReturnFunctionAttributes);
     ArgVector args;
     args.push_back(exceptionObject);
     CreateCall(rtThrowException, args, false);
-    builder.CreateUnreachable();
-    llvm::BasicBlock* unreachableTarget = BasicBlock::Create(context, "unreachable" + std::to_string(GetCurrentInstructionIndex()), fun);
-    builder.SetInsertPoint(unreachableTarget);
     if (function->ReturnsValue())
     {
         PushDefaultValue(function->ReturnType());
-        llvm::Value* retValue = valueStack.Pop();
-        builder.CreateRet(retValue);
     }
-    else
-    {
-        builder.CreateRetVoid(); 
-    }
+    CreateReturnFromFunctionOrFunclet();
     currentBasicBlock = nullptr;
 }
 
 void NativeCompilerImpl::VisitRethrowInst(RethrowInst& instruction)
 {
-    // todo
+    GenerateRethrow();
+    if (function->ReturnsValue())
+    {
+        PushDefaultValue(function->ReturnType());
+    }
+    CreateReturnFromFunctionOrFunclet();
 }
 
 void NativeCompilerImpl::VisitBeginTryInst(BeginTryInst& instruction)
@@ -2294,10 +2520,26 @@ void NativeCompilerImpl::VisitBeginCatchSectionInst(BeginCatchSectionInst& instr
         llvm::CatchSwitchInst* catchSwitch = builder.CreateCatchSwitch(parentPad, terminateTarget, 1);
         padStack.push_back(currentPad);
         currentPad = catchSwitch;
-        llvm::BasicBlock* catchTarget = llvm::BasicBlock::Create(context, "catch" + std::to_string(currentCatchSectionExceptionBlockId), fun);
-        catchSwitch->addHandler(catchTarget);
-        builder.SetInsertPoint(catchTarget);
+        padKindStack.push_back(currentPadKind);
+        currentPadKind = LlvmPadKind::catchSwitch;
+        llvm::BasicBlock* catchPadTarget = llvm::BasicBlock::Create(context, "catchpad" + std::to_string(currentCatchSectionExceptionBlockId), fun);
+        catchSwitch->addHandler(catchPadTarget);
+        currentBasicBlock = catchPadTarget;
+        builder.SetInsertPoint(currentBasicBlock);
         CreateCatchPad();
+        auto it = exceptionObjectVariables.find(currentCatchSectionExceptionBlockId);
+        if (it != exceptionObjectVariables.cend())
+        {
+            exceptionPtr = nullptr; // todo: load exception pointer
+        }
+        else
+        {
+            throw std::runtime_error("exception object variable for exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not found");
+        }
+        int firstCatchId = exceptionBlock->CatchBlocks().front()->Id();
+        llvm::BasicBlock* catchTarget = llvm::BasicBlock::Create(context, "catch" + std::to_string(currentCatchSectionExceptionBlockId) + std::to_string(firstCatchId), fun);
+        nextHandler[currentCatchSectionExceptionBlockId] = catchTarget;
+        builder.CreateBr(catchTarget);
     }
     else
     {
@@ -2307,22 +2549,98 @@ void NativeCompilerImpl::VisitBeginCatchSectionInst(BeginCatchSectionInst& instr
 
 void NativeCompilerImpl::VisitEndCatchSectionInst(EndCatchSectionInst& instruction)
 {
-    currentPad = padStack.back();
-    padStack.pop_back();
-    currentPad = padStack.back();
-    padStack.pop_back();
-    currentCatchSectionExceptionBlockId = catchSectionExceptionBlockIdStack.back();
-    catchSectionExceptionBlockIdStack.pop_back();
+    ExceptionBlock* exceptionBlock = function->GetExceptionBlock(currentCatchSectionExceptionBlockId);
+    if (!exceptionBlock)
+    {
+        throw std::runtime_error("exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not found");
+    }
+    auto it = nextHandler.find(currentCatchSectionExceptionBlockId);
+    if (it != nextHandler.cend())
+    {
+        currentBasicBlock = it->second;
+        builder.SetInsertPoint(currentBasicBlock);
+        nextHandler.erase(currentCatchSectionExceptionBlockId);
+        GenerateRethrow();
+        if (function->ReturnsValue())
+        {
+            PushDefaultValue(function->ReturnType());
+        }
+        CreateReturnFromFunctionOrFunclet();
+        currentPad = padStack.back();
+        padStack.pop_back();
+        currentPadKind = padKindStack.back();
+        padKindStack.pop_back();
+        currentPad = padStack.back();
+        padStack.pop_back();
+        currentPadKind = padKindStack.back();
+        padKindStack.pop_back();
+        currentCatchSectionExceptionBlockId = catchSectionExceptionBlockIdStack.back();
+        catchSectionExceptionBlockIdStack.pop_back();
+        currentBasicBlock = nullptr;
+    }
+    else
+    {
+        throw std::runtime_error("next handler target not set for catch section " + std::to_string(currentCatchSectionExceptionBlockId));
+    }
 }
 
 void NativeCompilerImpl::VisitBeginCatchInst(BeginCatchInst& instruction)
 {
-    llvm::Function* rtUnwindFunctionStack = cast<llvm::Function>(module->getOrInsertFunction("RtUnwindFunctionStack", GetType(ValueType::none), llvm::PointerType::get(GetType(ValueType::byteType), 0),
+    auto it = nextHandler.find(currentCatchSectionExceptionBlockId);
+    if (it != nextHandler.cend())
+    {
+        currentBasicBlock = it->second;
+        builder.SetInsertPoint(currentBasicBlock);
+        nextHandler.erase(currentCatchSectionExceptionBlockId);
+    }
+    else
+    {
+        throw std::runtime_error("next handler target not set");
+    }
+    ExceptionBlock* exceptionBlock = function->GetExceptionBlock(currentCatchSectionExceptionBlockId);
+    if (!exceptionBlock)
+    {
+        throw std::runtime_error("exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not found");
+    }
+    int catchBlockId = instruction.Index();
+    CatchBlock* catchBlock = exceptionBlock->GetCatchBlock(catchBlockId);
+    ClassData* classData = ClassDataTable::GetClassData(catchBlock->GetExceptionVarClassTypeFullName());
+    llvm::Value* classDataPtrVar = GetClassDataPtrVar(classData);
+    llvm::Function* rtHandleException = cast<llvm::Function>(module->getOrInsertFunction("RtHandleException", GetType(ValueType::boolType),
+        llvm::PointerType::get(GetType(ValueType::byteType), 0),
+        nullptr));
+    ImportFunction(rtHandleException);
+    ArgVector handleExceptionArgs;
+    handleExceptionArgs.push_back(builder.CreateLoad(classDataPtrVar));
+    CreateCall(rtHandleException, handleExceptionArgs, true);
+    llvm::Value* handleResult = valueStack.Pop();
+    llvm::BasicBlock* handlerTarget = llvm::BasicBlock::Create(context, "handler" + std::to_string(currentCatchSectionExceptionBlockId) + std::to_string(catchBlockId), fun);
+    llvm::BasicBlock* nextTarget = nullptr;
+    if (catchBlockId == int(exceptionBlock->CatchBlocks().size()) - 1) // this is last catch block
+    {
+        nextTarget = llvm::BasicBlock::Create(context, "nohandler" + std::to_string(currentCatchSectionExceptionBlockId), fun);
+    }
+    else
+    {
+        nextTarget = llvm::BasicBlock::Create(context, "catch" + std::to_string(currentCatchSectionExceptionBlockId) + std::to_string(catchBlockId + 1), fun);
+    }
+    nextHandler[currentCatchSectionExceptionBlockId] = nextTarget;
+    builder.CreateCondBr(handleResult, handlerTarget, nextTarget);
+    currentBasicBlock = handlerTarget;
+    builder.SetInsertPoint(currentBasicBlock);
+    llvm::Function* rtGetException = cast<llvm::Function>(module->getOrInsertFunction("RtGetException", GetType(ValueType::objectReference), nullptr));
+    ImportFunction(rtGetException);
+    ArgVector getExceptionArgs;
+    int exceptionVarIndex = catchBlock->GetExceptionVarIndex();
+    CreateCall(rtGetException, getExceptionArgs, true);
+    builder.CreateStore(valueStack.Pop(), locals[exceptionVarIndex]);
+    llvm::Function* rtUnwindFunctionStack = cast<llvm::Function>(module->getOrInsertFunction("RtUnwindFunctionStack", GetType(ValueType::none), 
+        llvm::PointerType::get(GetType(ValueType::byteType), 0),
         nullptr));
     ImportFunction(rtUnwindFunctionStack);
     ArgVector unwindFunctionStackArgs;
     unwindFunctionStackArgs.push_back(builder.CreateBitCast(functionStackEntry, llvm::PointerType::get(GetType(ValueType::byteType), 0)));
-    builder.CreateCall(rtUnwindFunctionStack, unwindFunctionStackArgs);
+    CreateCall(rtUnwindFunctionStack, unwindFunctionStackArgs, false);
 }
 
 void NativeCompilerImpl::VisitEndCatchInst(EndCatchInst& instruction)
@@ -2349,33 +2667,71 @@ void NativeCompilerImpl::VisitEndCatchInst(EndCatchInst& instruction)
     }
     else
     {
-        nextTarget = llvm::BasicBlock::Create(context, "continueTarget" + std::to_string(GetCurrentInstructionIndex()), fun);
+        throw std::runtime_error("next target of exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not set");
     }
-    builder.CreateCatchRet(llvm::cast<llvm::CatchPadInst>(currentPad), nextTarget);
-    if (next == -1)
+    llvm::Function* rtDisposeException = cast<llvm::Function>(module->getOrInsertFunction("RtDisposeException", GetType(ValueType::none), nullptr));
+    ImportFunction(rtDisposeException);
+    ArgVector rtDisposeExceptionArgs;
+    CreateCall(rtDisposeException, rtDisposeExceptionArgs, false);
+    if (currentPadKind == LlvmPadKind::catchPad)
     {
-        currentBasicBlock = nextTarget;
-        builder.SetInsertPoint(currentBasicBlock);
+        builder.CreateCatchRet(llvm::cast<llvm::CatchPadInst>(currentPad), nextTarget);
     }
     else
     {
-        currentBasicBlock = nullptr;
+        throw std::runtime_error("catchpad expected");
     }
+    currentBasicBlock = nullptr;
 }
 
 void NativeCompilerImpl::VisitBeginFinallyInst(BeginFinallyInst& instruction)
 {
-    // todo
+    int finallyExceptionBlockId = instruction.Index();
+    auto it = unwindTargets.find(finallyExceptionBlockId);
+    if (it != unwindTargets.cend())
+    {
+        llvm::BasicBlock* unwindTarget = it->second;
+        currentBasicBlock = unwindTarget;
+        builder.SetInsertPoint(currentBasicBlock);
+        llvm::Value* parentPad = currentPad;
+        if (parentPad == nullptr)
+        {
+            parentPad = llvm::ConstantTokenNone::get(context);
+        }
+        ArgVector args;
+        llvm::CleanupPadInst* cleanUpPad = builder.CreateCleanupPad(parentPad, args);
+        padStack.push_back(currentPad);
+        currentPad = cleanUpPad;
+        padKindStack.push_back(currentPadKind);
+        currentPadKind = LlvmPadKind::cleanupPad;
+    }
+    else
+    {
+        throw std::runtime_error("unwind target for exception block " + std::to_string(finallyExceptionBlockId) + " not found");
+    }
 }
 
 void NativeCompilerImpl::VisitEndFinallyInst(EndFinallyInst& instruction)
 {
-    // cleanupret
+    if (currentPadKind == LlvmPadKind::cleanupPad)
+    {
+        builder.CreateCleanupRet(cast<CleanupPadInst>(currentPad));
+        currentPad = padStack.back();
+        padStack.pop_back();
+        currentPadKind = padKindStack.back();
+        padKindStack.pop_back();
+    }
+    else
+    {
+        throw std::runtime_error("cleanuppad expected");
+    }
+    currentBasicBlock = nullptr;
 }
 
 void NativeCompilerImpl::VisitStaticInitInst(StaticInitInst& instruction)
 {
-    llvm::Function* rtStaticInit = cast<llvm::Function>(module->getOrInsertFunction("RtStaticInit", PointerType::get(GetType(ValueType::byteType), 0), PointerType::get(GetType(ValueType::byteType), 0), 
+    llvm::Function* rtStaticInit = cast<llvm::Function>(module->getOrInsertFunction("RtStaticInit", PointerType::get(GetType(ValueType::byteType), 0), 
+        PointerType::get(GetType(ValueType::byteType), 0), 
         nullptr));
     ImportFunction(rtStaticInit);
     ArgVector staticInitArgs;
@@ -2388,7 +2744,8 @@ void NativeCompilerImpl::VisitStaticInitInst(StaticInitInst& instruction)
     BasicBlock* trueTargetBlock = BasicBlock::Create(context, "static_init_ready", fun);
     BasicBlock* continueBlock = BasicBlock::Create(context, "call_static_constructor", fun);
     builder.CreateCondBr(staticConstructorAddressIsNull, trueTargetBlock, continueBlock);
-    builder.SetInsertPoint(continueBlock);
+    currentBasicBlock = continueBlock;
+    builder.SetInsertPoint(currentBasicBlock);
     std::vector<llvm::Type*> paramTypes;
     llvm::FunctionType* funType = llvm::FunctionType::get(GetType(ValueType::none), paramTypes, false);
     llvm::PointerType* funPtrType = llvm::PointerType::get(funType, 0);

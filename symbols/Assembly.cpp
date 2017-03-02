@@ -221,6 +221,14 @@ std::string AssemblyFlagsStr(AssemblyFlags flags)
             }
             s.append("native");
         }
+        if ((flags & AssemblyFlags::linkedWithDebugMachine) != AssemblyFlags::none)
+        {
+            if (!s.empty())
+            {
+                s.append(" ");
+            }
+            s.append("linkedWithDebugMachine");
+        }
     }
     return s;
 }
@@ -372,6 +380,14 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
     {
         throw std::runtime_error("program '" + ToUtf8(Name().Value()) + "' is not built with --native option");
     }
+#ifdef NDEBUG
+    if (LinkedWithDebugMachine())
+    {
+        throw std::runtime_error("Cannot run program '" + ToUtf8(Name().Value()) + 
+            "' using release mode virtual machine (cminorvm) because it is linked with the debug version of the Cminor virtual machine (cminormachined.dll). " + 
+            "Rebuild the program and system libraries without the --link-with-debug-machine option.");
+    }
+#endif
     FunctionSymbol* mainFun = symbolTable.GetMainFunction();
     if (!mainFun)
     {

@@ -4,23 +4,33 @@
 // =================================
 
 #include <cminor/machine/CminorException.hpp>
+#include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/Class.hpp>
 
 namespace cminor { namespace machine {
 
+void* cd = nullptr;
+
 void foo()
 {
-    throw CminorException(1);
+    uint64_t o = RtCreateObject(cd);
+    RtSetClassDataPtr(o, cd);
+    RtThrowException(o);
 }
 
-void f()
+MACHINE_API void ThrowCatch()
 {
     try
     {
+        cd = ClassDataTable::GetClassData(U"System.Exception");
         foo();
     }
-    catch (const CminorException& ex)
+    catch (const CminorException&)
     {
-        uint64_t ob = ex.ExceptionObjectReference();
+        if (RtHandleException(cd))
+        {
+            int x = 0;
+        }
     }
 }
 

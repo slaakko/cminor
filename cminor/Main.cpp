@@ -105,8 +105,6 @@ void PrintHelp(HelpTopics helpTopics)
             "       Emit LLVM intermediate code to ASSEMBLY_NAME.ll (used with --native)\n" <<
             "   --emit-opt-llvm (-t)\n" <<
             "       Emit optimized LLVM intermediate code to ASSEMBLY_NAME.opt.ll (used with --native)\n" <<
-            "   --emit-asm (-a)\n" <<
-            "       Generate assembly code listing to ASSEMBLY_NAME.asm or ASSEMBLY_NAME.s (used with --native).\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
@@ -494,10 +492,6 @@ int main(int argc, const char** argv)
                             buildOptions.push_back(arg);
                         }
                         else if (arg == "-t" || arg == "--emit-opt-llvm")
-                        {
-                            buildOptions.push_back(arg);
-                        }
-                        else if (arg == "-a" || arg == "--emit-asm")
                         {
                             buildOptions.push_back(arg);
                         }

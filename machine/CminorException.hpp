@@ -19,7 +19,7 @@ private:
     uint64_t exceptionObjectReference;
 };
 
-void f();
+MACHINE_API void ThrowCatch();
 
 } } // namespace cminor::machine
 

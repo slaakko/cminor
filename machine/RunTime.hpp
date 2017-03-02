@@ -23,6 +23,9 @@ struct FunctionStackEntry
 };
 
 extern "C" MACHINE_API void RtThrowException(uint64_t exceptionObjectReference);
+extern "C" MACHINE_API bool RtHandleException(void* classDataPtr);
+extern "C" MACHINE_API uint64_t RtGetException();
+extern "C" MACHINE_API void RtDisposeException();
 
 extern "C" MACHINE_API void RtEnterFunction(void* functionStackEntry);
 extern "C" MACHINE_API void RtLeaveFunction(void* functionStackEntry);

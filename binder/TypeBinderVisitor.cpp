@@ -886,12 +886,12 @@ void TypeBinderVisitor::Visit(CatchNode& catchNode)
         }
         else
         {
-            throw Exception("exception variable must of class type equal to System.Exception class or derived from it", catchNode.TypeExpr()->GetSpan());
+            throw Exception("exception variable must be of class type equal to System.Exception class or derive from it", catchNode.TypeExpr()->GetSpan());
         }
     }
     else
     {
-        throw Exception("exception variable must of class type equal to System.Exception class or derived from it", catchNode.TypeExpr()->GetSpan());
+        throw Exception("exception variable must of be class type equal to System.Exception class or derive from it", catchNode.TypeExpr()->GetSpan());
     }
     catchNode.CatchBlock()->Accept(*this);
     containerScope = prevContainerScope;

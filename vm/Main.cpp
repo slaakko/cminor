@@ -9,6 +9,7 @@
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/CminorException.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/Value.hpp>
 #include <cminor/symbols/Assembly.hpp>
@@ -256,7 +257,7 @@ int main(int argc, const char** argv)
         }
         else if (native)
         {
-            assembly.RunNative(programArguments);
+            return assembly.RunNative(programArguments);
         }
         else if (jit)
         {

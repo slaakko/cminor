@@ -128,8 +128,6 @@ void PrintHelp()
         "       Emit LLVM intermediate code to ASSEMBLY_NAME.ll (used with --native).\n" <<
         "   --emit-opt-llvm (-t)\n" <<
         "       Emit optimized LLVM intermediate code to ASSEMBLY_NAME.opt.ll (used with --native).\n" <<
-        "   --emit-asm (-a)\n"
-        "       Emit assembly code listing to ASSEMBLY_NAME.asm or ASSEMBLY_NAME.s (used with --native).\n" <<
         std::endl;
 }
 
@@ -176,10 +174,6 @@ int main(int argc, const char** argv)
                 else if (arg == "-t" || arg == "--emit-opt-llvm")
                 {
                     SetGlobalFlag(GlobalFlags::emitOptLlvm);
-                }
-                else if (arg == "-a" || arg == "--emit-asm")
-                {
-                    SetGlobalFlag(GlobalFlags::emitAsm);
                 }
                 else if (arg == "--link-with-debug-machine")
                 {
@@ -276,13 +270,6 @@ int main(int argc, const char** argv)
                 throw std::runtime_error("--emit-opt-llvm option requires --native option");
             }
         }
-        if (GetGlobalFlag(GlobalFlags::emitAsm))
-        {
-            if (!GetGlobalFlag(GlobalFlags::native))
-            {
-                throw std::runtime_error("--emit-asm option requires --native option");
-            }
-        }
         if (GetGlobalFlag(GlobalFlags::native))
         {
             const int maxArgsPlusNull = 4;
@@ -309,12 +296,6 @@ int main(int argc, const char** argv)
 #else 
                 argsForLlvm.push_back("-debug");
 #endif
-            }
-            if (GetGlobalFlag(GlobalFlags::emitAsm))
-            {
-#ifdef _WIN32
-                argsForLlvm.push_back("-x86-asm-syntax=intel");
-#endif // _WIN32
             }
             int n = int(argsForLlvm.size());
             if (n >= maxArgsPlusNull)

@@ -96,7 +96,8 @@ enum class AssemblyFlags : uint8_t
     none = 0,
     core = 1 << 0,
     system = 1 << 1,
-    native = 1 << 2
+    native = 1 << 2,
+    linkedWithDebugMachine = 1 << 3
 };
 
 std::string AssemblyFlagsStr(AssemblyFlags flags);
@@ -156,6 +157,8 @@ public:
     void SetSystemAssembly() { SetFlag(AssemblyFlags::system); }
     bool IsNative() const { return GetFlag(AssemblyFlags::native); }
     void SetNative() { SetFlag(AssemblyFlags::native); }
+    bool LinkedWithDebugMachine() const { return GetFlag(AssemblyFlags::linkedWithDebugMachine); }
+    void SetLinkedWithDebugMachine() { SetFlag(AssemblyFlags::linkedWithDebugMachine); }
     void Dump(CodeFormatter& formatter, DumpOptions dumpOptions);
     void DumpHeader(CodeFormatter& formatter);
     void DumpMappings(CodeFormatter& formatter);

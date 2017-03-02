@@ -21,8 +21,7 @@ enum class GlobalFlags : uint16_t
     native = 1 << 5,
     emitLlvm = 1 << 6,
     emitOptLlvm = 1 << 7,
-    emitAsm = 1 << 8,
-    linkWithDebugMachine = 1 << 9
+    linkWithDebugMachine = 1 << 8
 };
 
 void SetGlobalFlag(GlobalFlags flag);

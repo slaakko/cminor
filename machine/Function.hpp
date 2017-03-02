@@ -71,6 +71,11 @@ public:
     void Write(Writer& writer);
     void Read(Reader& reader);
     void SetExceptionVarClassTypeFullName(Constant exceptionVarClassTypeFullName_) { exceptionVarClassTypeFullName = exceptionVarClassTypeFullName_; }
+    StringPtr GetExceptionVarClassTypeFullName() 
+    { 
+        Assert(exceptionVarClassTypeFullName.Value().GetType() == ValueType::stringLiteral, "string literal expected"); 
+        return StringPtr(exceptionVarClassTypeFullName.Value().AsStringLiteral());  
+    }
     ObjectType* GetExceptionVarType() const { return exceptionVarType; }
     void ResolveExceptionVarType();
     void SetExceptionVarIndex(uint32_t exceptionVarIndex_) { exceptionVarIndex = exceptionVarIndex_; }

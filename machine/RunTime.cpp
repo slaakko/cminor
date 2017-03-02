@@ -25,6 +25,12 @@ MACHINE_API void SetTrace()
     __thread FunctionStackEntry* functionStack = nullptr;
 #endif
 
+#ifdef _WIN32
+    __declspec(thread) uint64_t currentException = 0;
+#else
+    __thread uint64_t currentException = 0;
+#endif
+
 utf32_string GetStackTrace() 
 {
     utf32_string stackTrace;
@@ -63,6 +69,7 @@ void RtThrowCminorException(const std::string& message, const utf32_string& exce
     ObjectType* objectType = dynamic_cast<ObjectType*>(type);
     Assert(objectType, "object type expected");
     ObjectReference objectReference = GetManagedMemoryPool().CreateObject(GetCurrentThread(), objectType);
+    currentException = objectReference.Value();
     ClassData* classData = ClassDataTable::GetClassData(StringPtr(exceptionTypeName.c_str()));
     Object& o = GetManagedMemoryPool().GetObject(objectReference);
     o.Pin();
@@ -118,12 +125,46 @@ extern "C" MACHINE_API void RtThrowException(uint64_t exceptionObjectReference)
         RtThrowSystemException(SystemException("tried to throw null reference"));
         return;
     }
+    currentException = exceptionObjectReference;
     Object& exceptionObject = GetManagedMemoryPool().GetObject(exceptionObjectReference);
     exceptionObject.Pin();
     utf32_string stackTrace = GetStackTrace();
     ObjectReference stacTraceStr = GetManagedMemoryPool().CreateString(GetCurrentThread(), stackTrace);
     exceptionObject.SetField(stacTraceStr, 2);
     throw CminorException(exceptionObjectReference);
+}
+
+extern "C" MACHINE_API bool RtHandleException(void* classDataPtr)
+{
+    ObjectReference exceptionObjectReference = currentException;
+    if (exceptionObjectReference.IsNull())
+    {
+        return false;
+    }
+    Object& exceptionObject = GetManagedMemoryPool().GetObject(exceptionObjectReference);
+    uint64_t exceptionObjectTypeId = exceptionObject.GetType()->Id();
+    ClassData* classToCatch = static_cast<ClassData*>(classDataPtr);
+    uint64_t catchTypeId = classToCatch->Type()->Id();
+    bool result = exceptionObjectTypeId % catchTypeId == 0;
+    return result;
+}
+
+extern "C" MACHINE_API uint64_t RtGetException()
+{
+    ObjectReference exceptionObjectReference = currentException;
+    return exceptionObjectReference.Value();
+}
+
+extern "C" MACHINE_API void RtDisposeException()
+{
+    ObjectReference exceptionObjectReference = currentException;
+    currentException = 0;
+    if (exceptionObjectReference.IsNull())
+    {
+        return;
+    }
+    Object& exceptionObject = GetManagedMemoryPool().GetObject(exceptionObjectReference);
+    exceptionObject.Unpin();
 }
 
 extern "C" MACHINE_API void RtEnterFunction(void* functionStackEntry)
