@@ -847,13 +847,15 @@ void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
         boundTryStatement.TryBlock()->SetFinallyBlock(boundTryStatement.FinallyBlock());
     }
     boundTryStatement.TryBlock()->Accept(*this);
+    std::unique_ptr<Instruction> endTryInst = machine.CreateInst("endtry");
+    endTryInst->SetIndex(currentExceptionBlock->Id());
+    function->AddInst(std::move(endTryInst));
+    setPCRangeEnd = prevSetPCRangeEnd;
+    createPCRange = prevCreatePCRange;
     if (boundTryStatement.FinallyBlock())
     {
         boundTryStatement.FinallyBlock()->Accept(*this);
     }
-    std::unique_ptr<Instruction> endTryInst = machine.CreateInst("endtry");
-    endTryInst->SetIndex(currentExceptionBlock->Id());
-    function->AddInst(std::move(endTryInst));
     std::unique_ptr<Instruction> jumpInst = machine.CreateInst("jump");
     nextJumps.push_back(jumpInst.get());
     function->AddInst(std::move(jumpInst));
@@ -861,8 +863,6 @@ void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
     NextInst* next = static_cast<NextInst*>(nextInst.get());
     next->SetExceptionBlock(currentExceptionBlock);
     AddNextInst(std::move(nextInst));
-    setPCRangeEnd = prevSetPCRangeEnd;
-    createPCRange = prevCreatePCRange;
     int n = int(boundTryStatement.Catches().size());
     if (n > 0)
     {

@@ -102,9 +102,12 @@ void PrintHelp(HelpTopics helpTopics)
             "   --list (-l)\n" <<
             "       Generate listing to ASSEMBLY_NAME.list (used with --native).\n" <<
             "   --emit-llvm (-m)\n" <<
-            "       Emit LLVM intermediate code to ASSEMBLY_NAME.ll (used with --native)\n" <<
+            "       Emit LLVM intermediate code to ASSEMBLY_NAME.ll (used with --native).\n" <<
             "   --emit-opt-llvm (-t)\n" <<
-            "       Emit optimized LLVM intermediate code to ASSEMBLY_NAME.opt.ll (used with --native)\n" <<
+            "       Emit optimized LLVM intermediate code to ASSEMBLY_NAME.opt.ll (used with --native).\n" <<
+            "   --use-ms-link (-u)\n" <<
+            "       Use Microsoft's link.exe as a linker if in path (used with --native).\n" << 
+            "       Otherwise uses LLVM's lld-link as a linker.\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
@@ -498,6 +501,10 @@ int main(int argc, const char** argv)
                         else if (arg == "-b" || arg == "--debug-llvm")
                         {
                             debug = true;
+                            buildOptions.push_back(arg);
+                        }
+                        else if (arg == "-u" || arg == "--use-ms-link")
+                        {
                             buildOptions.push_back(arg);
                         }
                         else if (arg == "--link-with-debug-machine")

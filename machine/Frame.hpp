@@ -31,6 +31,7 @@ public:
     OperandStack& OpStack();
     const OperandStack& OpStack() const;
     int NumLocals() const;
+    LocalVariable* Locals() const { return locals; }
     LocalVariable& Local(int32_t index) { Assert(index >= 0 && index <= NumLocals(), "invalid local variable index"); return locals[index]; }
     uint32_t Id() const { return id; }
     Instruction* GetNextInst();

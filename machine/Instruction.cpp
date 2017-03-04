@@ -2501,7 +2501,6 @@ void ThrowInst::Execute(Frame& frame)
         ObjectReference stackTrace = GetManagedMemoryPool().CreateString(frame.GetThread(), stackTraceStr);
         exceptionObject.SetField(stackTrace, 2);
         frame.GetThread().HandleException(exception);
-        exceptionObject.Unpin();
     }
     catch (const NullReferenceException& ex)
     {
@@ -2524,7 +2523,7 @@ RethrowInst::RethrowInst() : Instruction("rethrow")
 
 void RethrowInst::Execute(Frame& frame)
 {
-    throw std::runtime_error("exception"); // todo
+    frame.GetThread().RethrowCurrentException();
 }
 
 void RethrowInst::Accept(MachineFunctionVisitor& visitor)

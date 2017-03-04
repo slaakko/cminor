@@ -48,7 +48,7 @@ void DebugContext::RemoveBreakpointAt(int32_t pc)
 
 Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
     stack(*this), id(id_), machine(machine_), fun(fun_), instructionCount(0), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), exceptionObjectType(nullptr), 
-    nextVariableReferenceId(1), threadHandle(0)
+    nextVariableReferenceId(1), threadHandle(0), functionStack(nullptr)
 {
     stack.AllocateFrame(fun);
 }
@@ -271,10 +271,42 @@ void Thread::HandleException(ObjectReference exception_)
     }
 }
 
+void Thread::RethrowCurrentException()
+{
+    Assert(handlingException, "not handling exception");
+    Assert(currentExceptionBlock, "current exception block not set");
+    Assert(!stack.IsEmpty(), "stack is empty");
+    Frame* frame = stack.CurrentFrame();
+    while (currentExceptionBlock->HasParent())
+    {
+        ExceptionBlock* exceptionBlock = frame->Fun().GetExceptionBlock(currentExceptionBlock->ParentId());
+        Assert(exceptionBlock, "parent exception block not found");
+        currentExceptionBlock = exceptionBlock;
+        bool handlerOrFinallyDispatched = DispatchToHandlerOrFinally(frame);
+        if (handlerOrFinallyDispatched)
+        {
+            return;
+        }
+    }
+    stack.FreeFrame();
+    if (stack.IsEmpty())
+    {
+        frame = nullptr;
+    }
+    else
+    {
+        frame = stack.CurrentFrame();
+    }
+    FindExceptionBlock(frame);
+}
+
 void Thread::EndCatch()
 {
     Assert(handlingException, "not handling exception");
+    Assert(!exception.IsNull(), "exception is null");
     handlingException = false;
+    Object& exceptionObject = GetManagedMemoryPool().GetObject(exception);
+    exceptionObject.Unpin();
     exception = ObjectReference(0);
     Assert(!stack.IsEmpty(), "stack is empty");
     Frame* frame = stack.CurrentFrame();

@@ -188,6 +188,11 @@ extern "C" MACHINE_API void RtLeaveFunction(void* functionStackEntry)
     functionStack = entry->next;
 }
 
+extern "C" MACHINE_API FunctionStackEntry* RtGetFunctionStack()
+{
+    return functionStack;
+}
+
 extern "C" MACHINE_API void RtUnwindFunctionStack(void* functionStackEntry)
 {
     FunctionStackEntry* entry = static_cast<FunctionStackEntry*>(functionStackEntry);
@@ -2737,6 +2742,12 @@ extern "C" MACHINE_API void RtMemFun2ClassDelegate(uint64_t classObjectRererence
     {
         RtThrowSystemException(ex);
     }
+}
+
+extern "C" MACHINE_API void RtWaitGc()
+{
+    GetCurrentThread().SetFunctionStack(functionStack);
+    GetCurrentThread().WaitUntilGarbageCollected();
 }
 
 } } // namespace cminor::machine

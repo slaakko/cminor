@@ -123,7 +123,7 @@ void System(const std::string& command, bool ignoreReturnValue)
     {
         if (retVal != 0)
         {
-            throw std::runtime_error("'" + command + "' returned " + std::to_string(retVal));
+            throw std::runtime_error("'" + command + "' returned exit code " + std::to_string(retVal));
         }
     }
 }

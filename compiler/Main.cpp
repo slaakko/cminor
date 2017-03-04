@@ -120,6 +120,9 @@ void PrintHelp()
         "       Emit LLVM intermediate code to ASSEMBLY_NAME.ll (used with --native)\n" <<
         "   --emit-opt-llvm (-t)\n" <<
         "       Emit optimized LLVM intermediate code to ASSEMBLY_NAME.opt.ll (used with --native)\n" <<
+        "   --use-ms-link (-u)\n" <<
+        "       Use Microsoft's link.exe as a linker if in path (used with --native)\n" <<
+        "       Otherwise uses LLVM's lld-link as a linker.\n" <<
         std::endl;
 }
 
@@ -167,6 +170,10 @@ int main(int argc, const char** argv)
                 else if (arg == "-t" || arg == "--emit-opt-llvm")
                 {
                     SetGlobalFlag(GlobalFlags::emitOptLlvm);
+                }
+                else if (arg == "-u" || arg == "--use-ms-link")
+                {
+                    SetGlobalFlag(GlobalFlags::useMsLink);
                 }
                 else if (arg == "--link-with-debug-machine")
                 {

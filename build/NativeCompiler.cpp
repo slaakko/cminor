@@ -191,6 +191,7 @@ public:
     void VisitCreateMemberVariableReferenceInst(CreateMemberVariableReferenceInst& instruction) override;
     void VisitLoadVariableReferenceInst(LoadVariableReferenceInst& instruction) override;
     void VisitStoreVariableReferenceInst(StoreVariableReferenceInst& instruction) override;
+    void VisitGcPointInst(GcPointInst& instruction) override;
 private:
     Assembly* assembly;
     LLVMContext context;
@@ -212,6 +213,7 @@ private:
     llvm::Constant* functionPtrVar;
     ConstantPool* constantPool;
     llvm::Constant* constantPoolVariable;
+    llvm::Constant* wantToCollectGarbageVariable;
     std::vector<AllocaInst*> locals;
     llvm::AllocaInst* functionStackEntry;
     std::unordered_map<std::string, LlvmBinOp> binOpMap;
@@ -242,6 +244,9 @@ private:
     int currentExceptionBlockId;
     std::vector<int> catchSectionExceptionBlockIdStack;
     int currentCatchSectionExceptionBlockId;
+    bool isGCFun;
+    std::vector<llvm::AllocaInst*> gcRoots;
+    llvm::AllocaInst* gcEntry;
     llvm::TargetOptions GetTargetOptions();
     void SetPersonalityFunction();
     void InsertAllocaIntoEntryBlock(llvm::AllocaInst* allocaInst);
@@ -276,9 +281,9 @@ private:
 };    
 
 NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), module(), inlineLimit(0), targetMachine(), fun(nullptr), function(nullptr), constantPool(nullptr), 
-    constantPoolVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), nextTypePtrVarNumber(0), functionStackEntry(nullptr), currentBasicBlock(nullptr), 
-    entryBasicBlock(nullptr), lastAlloca(nullptr), currentExceptionBlockId(-1), currentCatchSectionExceptionBlockId(-1), currentPad(nullptr), currentPadKind(LlvmPadKind::none), 
-    exceptionPtr(nullptr)
+    constantPoolVariable(nullptr), wantToCollectGarbageVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), nextTypePtrVarNumber(0), functionStackEntry(nullptr), 
+    currentBasicBlock(nullptr), entryBasicBlock(nullptr), lastAlloca(nullptr), currentExceptionBlockId(-1), currentCatchSectionExceptionBlockId(-1), 
+    currentPad(nullptr), currentPadKind(LlvmPadKind::none), exceptionPtr(nullptr), isGCFun(false)
 {
     InitializeAllTargetInfos();
     InitializeAllTargets();
@@ -507,6 +512,7 @@ void NativeCompilerImpl::CreateReturnFromFunctionOrFunclet()
     {
         case LlvmPadKind::none:
         {
+            CreateLeaveFunctionCall();
             Assert(currentPad == nullptr, "currentPadKind and currentPad not in sync");
             if (function->ReturnsValue())
             {
@@ -796,9 +802,13 @@ void NativeCompilerImpl::Init(Assembly& assembly)
         *listStream << "inline limit: " << inlineLimit << " or fewer intermediate instructions (0 = no inlining)" << std::endl;
     }
     constantPoolVariable = module->getOrInsertGlobal("__constant_pool", PointerType::get(GetType(ValueType::byteType), 0));
-    ExportGlobalVariable(constantPoolVariable);
+    ExportGlobalVariable(constantPoolVariable);;
     llvm::GlobalVariable* constantPoolVar = cast<llvm::GlobalVariable>(constantPoolVariable);
     constantPoolVar->setInitializer(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
+    wantToCollectGarbageVariable = module->getOrInsertGlobal("__want_to_collect_garbage", PointerType::get(GetType(ValueType::boolType), 0));
+    ExportGlobalVariable(wantToCollectGarbageVariable);
+    llvm::GlobalVariable* wantToCollectGarbageVar = cast<llvm::GlobalVariable>(wantToCollectGarbageVariable);
+    wantToCollectGarbageVar->setInitializer(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::boolType), 0)));
     nextFunctionVarNumber = 0;
     std::vector<Attribute::AttrKind> nounwindAttributes;
     nounwindAttributes.push_back(llvm::Attribute::UWTable);
@@ -1016,7 +1026,7 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
         args.push_back("cminormachine.lib");
     }
     ImportAssemblyReferences(assembly, args, listStream.get());
-    bool useMsLink = true;
+    bool useMsLink = GetGlobalFlag(GlobalFlags::useMsLink);
     std::string linkCommandLine = "lld-link";
     if (useMsLink)
     {
@@ -1076,10 +1086,6 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     exceptionPtr = nullptr;
     exceptionObjectVariables.clear();
     std::string mangledFunctionName = MangleFunctionName(function);
-    if (mangledFunctionName == "Visit_LinkerVisitor_256E02797B9954BAD4638DCA8D1EAD3F13C7D43E")
-    {
-        int x = 0;
-    }
     function.SetMangledName(mangledFunctionName);
     if (listStream)
     {
@@ -1134,12 +1140,30 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     builder.SetInsertPoint(entryBlock);
     locals.clear();
     lastAlloca = nullptr;
+    isGCFun = false;
+    gcRoots.clear();
     for (ValueType lt : function.LocalTypes())
     {
         llvm::Type* type = GetType(lt);
         llvm::AllocaInst* allocaInst = builder.CreateAlloca(type);
+        if (lt == ValueType::objectReference)
+        {
+            gcRoots.push_back(allocaInst);
+            isGCFun = true;
+        }
         locals.push_back(allocaInst);
         lastAlloca = allocaInst;
+    }
+    gcEntry = nullptr;
+    if (isGCFun)
+    {
+        std::vector<llvm::Type*> gcRootPtrTypes;
+        for (llvm::AllocaInst* gcRoot : gcRoots)
+        {
+            gcRootPtrTypes.push_back(llvm::PointerType::get(GetType(ValueType::objectReference), 0));
+        }
+        llvm::StructType* gcEntryType = llvm::StructType::get(context, gcRootPtrTypes);
+        gcEntry = builder.CreateAlloca(gcEntryType);
     }
     int ne = function.NumExceptionBlocks();
     for (int i = 0; i < ne; ++i)
@@ -1148,12 +1172,15 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
         exceptionObjectVariables[i] = exceptionObjectVar;
     }
     this->function = &function;
-    if (function.CanThrow() || function.HasExceptionBlocks())
+    if (function.CanThrow() || function.HasExceptionBlocks() || isGCFun)
     {
         llvm::StructType* functionStackEntryType = llvm::StructType::get(
-            llvm::PointerType::get(GetType(ValueType::byteType), 0), 
-            GetType(ValueType::intType), 
-            llvm::PointerType::get(GetType(ValueType::byteType), 0), 
+            llvm::PointerType::get(GetType(ValueType::byteType), 0),        // field 00: FunctionStackEntry* next
+            llvm::PointerType::get(GetType(ValueType::byteType), 0),        // field 01: Function* function
+            GetType(ValueType::intType),                                    // field 02: int32_t lineNumber
+            GetType(ValueType::intType),                                    // field 03: int32_t numGcRoots
+            llvm::PointerType::get(llvm::PointerType::get(GetType(ValueType::objectReference), 0), 0),
+                                                                            // field 04: uint64_t** gcEntry
             nullptr);
         functionStackEntry = builder.CreateAlloca(functionStackEntryType);
     }
@@ -1872,28 +1899,60 @@ void NativeCompilerImpl::VisitLoadConstantInst(int32_t constantIndex)
 
 void NativeCompilerImpl::VisitReceiveInst(ReceiveInst& instruction)
 {
+    std::unordered_set<llvm::AllocaInst*> args;
     int i = 0;
     for (auto it = fun->arg_begin(); it != fun->arg_end(); ++it)
     {
         llvm::AllocaInst* local = locals[i];
         builder.CreateStore(&*it, local);
+        args.insert(local);
         ++i;
+    }
+    int n = int(gcRoots.size());
+    for (int i = 0; i < n; ++i)
+    {
+        llvm::AllocaInst* gcRoot = gcRoots[i];
+        if (args.find(gcRoot) == args.cend())
+        {
+            builder.CreateStore(builder.getInt64(0), gcRoot);
+        }
+        ArgVector gcEntryI;
+        gcEntryI.push_back(builder.getInt32(0));
+        gcEntryI.push_back(builder.getInt32(i));
+        llvm::Value* gcRootPtrPtr = builder.CreateGEP(nullptr, gcEntry, gcEntryI);
+        builder.CreateStore(gcRoot, gcRootPtrPtr);
     }
     CreateEnterFunctionCall();
 }
 
 void NativeCompilerImpl::CreateEnterFunctionCall()
 {
-    if (!function->CanThrow() && !function->HasExceptionBlocks()) return;
-    ArgVector fse00;
-    fse00.push_back(builder.getInt32(0));
-    fse00.push_back(builder.getInt32(0));
-    Assert(functionStackEntry, "function stack entry variable not created");
-    llvm::Value* fseFunctionPtrPtr = builder.CreateGEP(nullptr, functionStackEntry, fse00);
+    if (!functionStackEntry) return;
+    ArgVector fse01;
+    fse01.push_back(builder.getInt32(0));
+    fse01.push_back(builder.getInt32(1));
+    llvm::Value* fseFunctionPtrPtr = builder.CreateGEP(nullptr, functionStackEntry, fse01); // functionStackEntry field 01: Function* function
     Assert(functionPtrVar, "function ptr var not created");
     llvm::Value* functionPtr = builder.CreateLoad(functionPtrVar);
     builder.CreateStore(functionPtr, fseFunctionPtrPtr);
-    SetCurrentLineNumber(function->GetFirstSourceLine());
+    SetCurrentLineNumber(function->GetFirstSourceLine());                                   // functionStackEntry field 02: int32_t current line number
+    ArgVector fse03;
+    fse03.push_back(builder.getInt32(0));
+    fse03.push_back(builder.getInt32(3));
+    llvm::Value* fseNumGCRootsPtr = builder.CreateGEP(nullptr, functionStackEntry, fse03);  // functionStackEntry field 03: int32_t numGcRoots
+    builder.CreateStore(builder.getInt32(uint32_t(gcRoots.size())), fseNumGCRootsPtr);
+    ArgVector fse04;
+    fse04.push_back(builder.getInt32(0));
+    fse04.push_back(builder.getInt32(4));
+    llvm::Value* fseGCEntryPtr = builder.CreateGEP(nullptr, functionStackEntry, fse04);     // functionStackEntry field 04: uint64_t**  gcEntry
+    if (gcEntry)
+    {
+        builder.CreateStore(builder.CreateBitCast(gcEntry, PointerType::get(PointerType::get(GetType(ValueType::objectReference), 0), 0)), fseGCEntryPtr);
+    }
+    else
+    {
+        builder.CreateStore(llvm::Constant::getNullValue(PointerType::get(PointerType::get(GetType(ValueType::objectReference), 0), 0)), fseGCEntryPtr);
+    }
     llvm::Function* rtEnterFunction = cast<llvm::Function>(module->getOrInsertFunction("RtEnterFunction", GetType(ValueType::none), llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtEnterFunction);
     ArgVector args;
@@ -1903,8 +1962,7 @@ void NativeCompilerImpl::CreateEnterFunctionCall()
 
 void NativeCompilerImpl::CreateLeaveFunctionCall()
 {
-    if (!function->CanThrow() && !function->HasExceptionBlocks()) return;
-    Assert(functionStackEntry, "function stack entry variable not created");
+    if (!functionStackEntry) return;
     llvm::Function* rtLeaveFunction = cast<llvm::Function>(module->getOrInsertFunction("RtLeaveFunction", GetType(ValueType::none), llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtLeaveFunction);
     ArgVector args;
@@ -1914,12 +1972,12 @@ void NativeCompilerImpl::CreateLeaveFunctionCall()
 
 void NativeCompilerImpl::SetCurrentLineNumber(uint32_t lineNumber)
 {
-    if (!function->CanThrow() && !function->HasExceptionBlocks()) return;
+    if (!functionStackEntry) return;
     if (lineNumber == uint32_t(-1)) return;
-    ArgVector fse01;
-    fse01.push_back(builder.getInt32(0));
-    fse01.push_back(builder.getInt32(1));
-    llvm::Value* fseLineNumberPtr = builder.CreateGEP(nullptr, functionStackEntry, fse01);
+    ArgVector fse02;
+    fse02.push_back(builder.getInt32(0));
+    fse02.push_back(builder.getInt32(2));
+    llvm::Value* fseLineNumberPtr = builder.CreateGEP(nullptr, functionStackEntry, fse02); // functionStackEntry field 02: int32_t lineNumber
     builder.CreateStore(builder.getInt32(lineNumber), fseLineNumberPtr);
 }
 
@@ -2616,7 +2674,7 @@ void NativeCompilerImpl::VisitBeginCatchInst(BeginCatchInst& instruction)
     llvm::Value* handleResult = valueStack.Pop();
     llvm::BasicBlock* handlerTarget = llvm::BasicBlock::Create(context, "handler" + std::to_string(currentCatchSectionExceptionBlockId) + std::to_string(catchBlockId), fun);
     llvm::BasicBlock* nextTarget = nullptr;
-    if (catchBlockId == int(exceptionBlock->CatchBlocks().size()) - 1) // this is last catch block
+    if (catchBlockId == int(exceptionBlock->CatchBlocks().size()) - 1) // this is last catch block in current catch section
     {
         nextTarget = llvm::BasicBlock::Create(context, "nohandler" + std::to_string(currentCatchSectionExceptionBlockId), fun);
     }
@@ -2665,17 +2723,32 @@ void NativeCompilerImpl::VisitEndCatchInst(EndCatchInst& instruction)
             basicBlocks[next] = nextTarget;
         }
     }
-    else
-    {
-        throw std::runtime_error("next target of exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not set");
-    }
     llvm::Function* rtDisposeException = cast<llvm::Function>(module->getOrInsertFunction("RtDisposeException", GetType(ValueType::none), nullptr));
     ImportFunction(rtDisposeException);
     ArgVector rtDisposeExceptionArgs;
     CreateCall(rtDisposeException, rtDisposeExceptionArgs, false);
     if (currentPadKind == LlvmPadKind::catchPad)
     {
+        bool returnTargetCreated = false;
+        if (!nextTarget)
+        {
+            nextTarget = llvm::BasicBlock::Create(context, "return" + std::to_string(currentCatchSectionExceptionBlockId), fun);
+            returnTargetCreated = true;
+        }
         builder.CreateCatchRet(llvm::cast<llvm::CatchPadInst>(currentPad), nextTarget);
+        if (returnTargetCreated)
+        {
+            builder.SetInsertPoint(nextTarget);
+            if (function->ReturnsValue())
+            {
+                PushDefaultValue(function->ReturnType());
+                builder.CreateRet(valueStack.Pop());
+            }
+            else
+            {
+                builder.CreateRetVoid();
+            }
+        }
     }
     else
     {
@@ -3523,6 +3596,22 @@ void NativeCompilerImpl::VisitStoreVariableReferenceInst(StoreVariableReferenceI
     builder.CreateBr(nextBlock);
     currentBasicBlock = nextBlock;
     builder.SetInsertPoint(nextBlock);
+}
+
+void NativeCompilerImpl::VisitGcPointInst(GcPointInst& instruction)
+{
+    llvm::Value* wantToCollectGarbage(builder.CreateLoad(builder.CreateLoad(wantToCollectGarbageVariable)));
+    BasicBlock* waitGcBlock = BasicBlock::Create(context, "waitGcTarget" + std::to_string(GetCurrentInstructionIndex()), fun);
+    BasicBlock* continueBlock = BasicBlock::Create(context, "continueTarget" + std::to_string(GetCurrentInstructionIndex()), fun);
+    builder.CreateCondBr(wantToCollectGarbage, waitGcBlock, continueBlock);
+    builder.SetInsertPoint(waitGcBlock);
+    llvm::Function* rtWaitGc = cast<llvm::Function>(module->getOrInsertFunction("RtWaitGc", GetType(ValueType::none), nullptr));
+    ImportFunction(rtWaitGc);
+    ArgVector args;
+    builder.CreateCall(rtWaitGc, args);
+    builder.CreateBr(continueBlock);
+    builder.SetInsertPoint(continueBlock);
+    currentBasicBlock = continueBlock;
 }
 
 llvm::Type* NativeCompilerImpl::GetType(ValueType type)

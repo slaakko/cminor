@@ -6,6 +6,7 @@
 #include <cminor/machine/Object.hpp>
 #include <cminor/machine/Type.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/machine/RunTime.hpp>
 #include <cminor/util/String.hpp>
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/machine/Class.hpp>
@@ -987,6 +988,10 @@ void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursiv
     {
         poolRoot = handle;
         lock.unlock();
+        if (RunningNativeCode())
+        {
+            thread.SetFunctionStack(RtGetFunctionStack());
+        }
         thread.SetState(ThreadState::paused);
 #ifdef GC_LOGGING
         LogMessage("pool>" + std::to_string(thread.Id()) + " (paused)");

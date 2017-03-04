@@ -74,7 +74,8 @@ Stack::~Stack()
 void Stack::AllocateFrame(Function& fun)
 {
     int numLocals = fun.NumLocals();
-    uint64_t frameSize = Align(sizeof(Frame), 8) + numLocals * Align(sizeof(LocalVariable), 8);
+    size_t sizeOfLocals = numLocals * Align(sizeof(LocalVariable), 8);
+    uint64_t frameSize = Align(sizeof(Frame), 8) + sizeOfLocals;
     if (free + frameSize > commit)
     {
         uint64_t commitSize = growSize * ((frameSize - 1) / growSize + 1);
@@ -93,6 +94,7 @@ void Stack::AllocateFrame(Function& fun)
         void* ptr = free;
         free += frameSize;
         Frame* frame = new (ptr) Frame(frameSize, thread, fun);
+        std::memset(frame->Locals(), 0, sizeOfLocals);
         frames.push_back(frame);
         thread.MapFrame(frame);
     }

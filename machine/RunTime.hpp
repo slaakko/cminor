@@ -17,9 +17,11 @@ class Function;
 
 struct FunctionStackEntry
 {
-    Function* function;
-    int32_t lineNumber;
-    FunctionStackEntry* next;
+    FunctionStackEntry* next;   // 0
+    Function* function;         // 1
+    int32_t lineNumber;         // 2
+    int32_t numGcRoots;         // 3
+    uint64_t** gcEntry;         // 4
 };
 
 extern "C" MACHINE_API void RtThrowException(uint64_t exceptionObjectReference);
@@ -29,6 +31,7 @@ extern "C" MACHINE_API void RtDisposeException();
 
 extern "C" MACHINE_API void RtEnterFunction(void* functionStackEntry);
 extern "C" MACHINE_API void RtLeaveFunction(void* functionStackEntry);
+extern "C" MACHINE_API FunctionStackEntry* RtGetFunctionStack();
 extern "C" MACHINE_API void RtUnwindFunctionStack(void* functionStackEntry);
 
 extern "C" MACHINE_API int8_t RtLoadFieldSb(uint64_t objectReference, int32_t fieldIndex);
@@ -185,6 +188,8 @@ extern "C" MACHINE_API uint64_t RtAs(uint64_t objectReference, void* classDataPt
 extern "C" MACHINE_API const char32_t* RtLoadStringLiteral(void* constantPool, uint32_t constantId);
 
 extern "C" MACHINE_API void RtMemFun2ClassDelegate(uint64_t classObjectRererence, uint64_t classDelegateObjectReference, void* memberFunction);
+
+extern "C" MACHINE_API void RtWaitGc();
 
 } } // namespace cminor::machine
 

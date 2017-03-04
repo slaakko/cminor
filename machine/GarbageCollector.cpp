@@ -6,6 +6,7 @@
 #include <cminor/machine/GarbageCollector.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Log.hpp>
+#include <cminor/machine/RunTime.hpp>
 #include <iostream>
 
 namespace cminor { namespace machine {
@@ -229,8 +230,8 @@ void GarbageCollector::MarkLiveAllocations()
                     {
                         IntegralValue value = staticClassData->GetStaticField(i);
                         Assert(value.GetType() == ValueType::objectReference, "object reference expected");
-                        ObjectReference objectReference(value.Value());
-                        MarkLiveAllocations(objectReference, checked);
+                        ObjectReference gcRoot(value.Value());
+                        MarkLiveAllocations(gcRoot, checked);
                     }
                 }
             }
@@ -245,8 +246,8 @@ void GarbageCollector::MarkLiveAllocations()
         {
             if (value.GetType() == ValueType::objectReference)
             {
-                ObjectReference objectReference(value.Value());
-                MarkLiveAllocations(objectReference, checked);
+                ObjectReference gcRoot(value.Value());
+                MarkLiveAllocations(gcRoot, checked);
             }
         }
         for (Frame* frame : thread->GetStack().Frames())
@@ -258,9 +259,28 @@ void GarbageCollector::MarkLiveAllocations()
                 IntegralValue value = local.GetValue();
                 if (value.GetType() == ValueType::objectReference)
                 {
-                    ObjectReference objectReference(value.Value());
-                    MarkLiveAllocations(objectReference, checked);
+                    ObjectReference gcRoot(value.Value());
+                    MarkLiveAllocations(gcRoot, checked);
                 }
+            }
+        }
+        if (RunningNativeCode())
+        {
+            FunctionStackEntry* functionStackEntry = thread->GetFunctionStack();
+            while (functionStackEntry)
+            {
+                uint64_t** gcEntry = functionStackEntry->gcEntry;
+                if (gcEntry)
+                {
+                    int32_t n = functionStackEntry->numGcRoots;
+                    for (int32_t i = 0; i < n; ++i)
+                    {
+                        uint64_t* gcRootPtr = gcEntry[i];
+                        ObjectReference gcRoot(*gcRootPtr);
+                        MarkLiveAllocations(gcRoot, checked);
+                    }
+                }
+                functionStackEntry = functionStackEntry->next;
             }
         }
     }

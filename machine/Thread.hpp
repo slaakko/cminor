@@ -21,6 +21,7 @@ class Machine;
 class Function;
 class ExceptionBlock;
 class Thread;
+struct FunctionStackEntry;
 
 extern MACHINE_API bool wantToCollectGarbage;
 
@@ -78,6 +79,7 @@ public:
     void BeginTry();
     void EndTry();
     void HandleException(ObjectReference exception_);
+    void RethrowCurrentException();
     void EndCatch();
     void EndFinally();
     utf32_string GetStackTrace() const;
@@ -94,6 +96,8 @@ public:
     void FreeDebugContext();
     uint64_t GetThreadHandle() const { return threadHandle; }
     void SetThreadHandle(uint64_t threadHandle_) { threadHandle = threadHandle_; }
+    void SetFunctionStack(FunctionStackEntry* functionStack_) { functionStack = functionStack_; }
+    FunctionStackEntry* GetFunctionStack() const { return functionStack; }
 private:
     Stack stack;
     int32_t id;
@@ -112,6 +116,7 @@ private:
     int32_t nextVariableReferenceId;
     std::vector<std::unique_ptr<DebugContext>> debugContexts;
     uint64_t threadHandle;
+    std::atomic<FunctionStackEntry*> functionStack;
     void RunToEnd();
     void FindExceptionBlock(Frame* frame);
     bool DispatchToHandlerOrFinally(Frame* frame);

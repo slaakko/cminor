@@ -221,6 +221,14 @@ std::string AssemblyFlagsStr(AssemblyFlags flags)
             }
             s.append("native");
         }
+        if ((flags & AssemblyFlags::release) != AssemblyFlags::none)
+        {
+            if (!s.empty())
+            {
+                s.append(" ");
+            }
+            s.append("release");
+        }
         if ((flags & AssemblyFlags::linkedWithDebugMachine) != AssemblyFlags::none)
         {
             if (!s.empty())
@@ -236,6 +244,10 @@ std::string AssemblyFlagsStr(AssemblyFlags flags)
 Assembly::Assembly(Machine& machine_) : machine(machine_), flags(AssemblyFlags::none), assemblyFormat(currentAssemblyFormat), originalFilePath(), constantPool(), symbolTable(this), name(), id(-1), 
     finishReadPos(0), assemblyDependency(this), transientFlags(TransientAssemblyFlags::none), sharedLibraryHandle(nullptr), mainEntryPointAddress(nullptr)
 {
+    if (GetGlobalFlag(GlobalFlags::release))
+    {
+        SetRelease();
+    }
 }
 
 Assembly::Assembly(Machine& machine_, const utf32_string& name_, const std::string& filePath_) : machine(machine_), flags(AssemblyFlags::none), assemblyFormat(currentAssemblyFormat), 
@@ -246,6 +258,10 @@ Assembly::Assembly(Machine& machine_, const utf32_string& name_, const std::stri
     if (isSystemAssemblyName)
     {
         SetSystemAssembly();
+    }
+    if (GetGlobalFlag(GlobalFlags::release))
+    {
+        SetRelease();
     }
 }
 
@@ -716,6 +732,21 @@ void Assembly::BeginRead(SymbolReader& reader, LoadType loadType, const Assembly
         dependencyMap[originalFilePath] = &assemblyDependency;
     }
     filePathReadFrom = reader.FilePath();
+    if (rootAssembly == this)
+    {
+        if ((flags & AssemblyFlags::release) != AssemblyFlags::none)
+        {
+            SetGlobalFlag(GlobalFlags::release);
+        }
+    }
+    else
+    {
+        if (GetGlobalFlag(GlobalFlags::release) && (flags & AssemblyFlags::release) == AssemblyFlags::none)
+        {
+            throw std::runtime_error("root assembly '" + ToUtf8(rootAssembly->Name().Value()) + "' (" + rootAssembly->FilePathReadFrom() + ") is a release mode assembly, but assembly '" +
+                ToUtf8(Name().Value()) + "' (" + filePathReadFrom + ") being read is not a release mode assembly.");
+        }
+    }
     nativeTargetTriple = reader.GetUtf8String();
     nativeSharedLibraryFileName = reader.GetUtf8String();
     nativeImportLibraryFileName = reader.GetUtf8String();
@@ -810,6 +841,21 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
         dependencyMap[originalFilePath] = &assemblyDependency;
     }
     filePathReadFrom = reader.FilePath();
+    if (rootAssembly == this)
+    {
+        if ((flags & AssemblyFlags::release) != AssemblyFlags::none)
+        {
+            SetGlobalFlag(GlobalFlags::release);
+        }
+    }
+    else
+    {
+        if (GetGlobalFlag(GlobalFlags::release) && (flags & AssemblyFlags::release) == AssemblyFlags::none)
+        {
+            throw std::runtime_error("root assembly '" + ToUtf8(rootAssembly->Name().Value()) + "' (" + rootAssembly->FilePathReadFrom() + ") is a release mode assembly, but assembly '" +
+                ToUtf8(Name().Value()) + "' (" + filePathReadFrom + ") being read is not a release mode assembly.");
+        }
+    }
     nativeTargetTriple = reader.GetUtf8String();
     nativeSharedLibraryFileName = reader.GetUtf8String();
     nativeImportLibraryFileName = reader.GetUtf8String();
@@ -1436,14 +1482,14 @@ void ResolveTypePtrVarMappings(Assembly* assembly)
     }
 }
 
-void SetConstantPoolVariable(Assembly* assembly)
+void SetExportedSharedLibraryVariables(Assembly* assembly)
 {
     if (assembly->IsCore()) return;
-    if (assembly->ConstantPoolVariableSet()) return;
-    assembly->SetConstantPoolVariableSet();
+    if (assembly->ExportedSharedLibraryVariablesSet()) return;
+    assembly->SetExportedSharedLibraryVariablesSet();
     for (const std::unique_ptr<Assembly>& referencedAssembly : assembly->ReferencedAssemblies())
     {
-        SetConstantPoolVariable(referencedAssembly.get());
+        SetExportedSharedLibraryVariables(referencedAssembly.get());
     }
     void* sharedLibraryHandle = assembly->SharedLibraryHandle();
     if (!sharedLibraryHandle)
@@ -1460,7 +1506,20 @@ void SetConstantPoolVariable(Assembly* assembly)
     }
     catch (const std::runtime_error& ex)
     {
-        throw std::runtime_error("resolving address of constant pool variable of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " + ex.what());
+        throw std::runtime_error("resolving address of '__constant_pool' variable of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " + ex.what());
+    }
+    std::string wantToCollectGarbageVarName = "__want_to_collect_garbage";
+    try
+    {
+        void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), wantToCollectGarbageVarName);
+        bool* wantToCollectGarbageVarAddress = static_cast<bool*>(&cminor::machine::wantToCollectGarbage);
+        bool** wantToCollectGarbageVariablePtr = static_cast<bool**>(symbolAddress);
+        *wantToCollectGarbageVariablePtr = wantToCollectGarbageVarAddress;
+    }
+    catch (const std::runtime_error& ex)
+    {
+        throw std::runtime_error("resolving address of '__want_to_collect_garbage' variable of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " +
+            ex.what());
     }
 }
 
@@ -1484,7 +1543,7 @@ void Assembly::PrepareForNativeExecution()
     ResolveFunctionPtrVarMappings(this);
     ResolveClassDataPtrVarMappings(this);
     ResolveTypePtrVarMappings(this);
-    SetConstantPoolVariable(this);
+    SetExportedSharedLibraryVariables(this);
     ResolveMainEntryPointAddress(this);
 }
 

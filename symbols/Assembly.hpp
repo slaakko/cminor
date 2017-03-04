@@ -97,7 +97,8 @@ enum class AssemblyFlags : uint8_t
     core = 1 << 0,
     system = 1 << 1,
     native = 1 << 2,
-    linkedWithDebugMachine = 1 << 3
+    release = 1 << 3,
+    linkedWithDebugMachine = 1 << 4
 };
 
 std::string AssemblyFlagsStr(AssemblyFlags flags);
@@ -122,7 +123,7 @@ enum class TransientAssemblyFlags : uint8_t
     functionPtrVarMappingsResolved = 1 << 4,
     classDataPtrVarMappingsResolved = 1 << 5,
     typePtrVarMappingsResolved = 1 << 6,
-    constantPoolVariableSet = 1 << 7
+    exportedSharedLibraryVariablesSet = 1 << 7
 };
 
 inline TransientAssemblyFlags operator|(TransientAssemblyFlags left, TransientAssemblyFlags right)
@@ -157,6 +158,8 @@ public:
     void SetSystemAssembly() { SetFlag(AssemblyFlags::system); }
     bool IsNative() const { return GetFlag(AssemblyFlags::native); }
     void SetNative() { SetFlag(AssemblyFlags::native); }
+    bool IsRelease() const { return GetFlag(AssemblyFlags::release); }
+    void SetRelease() { SetFlag(AssemblyFlags::release); }
     bool LinkedWithDebugMachine() const { return GetFlag(AssemblyFlags::linkedWithDebugMachine); }
     void SetLinkedWithDebugMachine() { SetFlag(AssemblyFlags::linkedWithDebugMachine); }
     void Dump(CodeFormatter& formatter, DumpOptions dumpOptions);
@@ -229,8 +232,8 @@ public:
     void SetClassDataPtrVarMappingsResolved() { SetTransientFlag(TransientAssemblyFlags::classDataPtrVarMappingsResolved); }
     bool TypePtrVarMappingsResolved() const { return GetTransientFlag(TransientAssemblyFlags::typePtrVarMappingsResolved); }
     void SetTypePtrVarMappingsResolved() { SetTransientFlag(TransientAssemblyFlags::typePtrVarMappingsResolved); }
-    bool ConstantPoolVariableSet() const { return GetTransientFlag(TransientAssemblyFlags::constantPoolVariableSet); }
-    void SetConstantPoolVariableSet() { SetTransientFlag(TransientAssemblyFlags::constantPoolVariableSet); }
+    bool ExportedSharedLibraryVariablesSet() const { return GetTransientFlag(TransientAssemblyFlags::exportedSharedLibraryVariablesSet); }
+    void SetExportedSharedLibraryVariablesSet() { SetTransientFlag(TransientAssemblyFlags::exportedSharedLibraryVariablesSet); }
     void SetSharedLibraryHandle(void* sharedLibraryHandle_) { sharedLibraryHandle = sharedLibraryHandle_; }
     void* SharedLibraryHandle() const { return sharedLibraryHandle; }
     void SetMainEntryPointAddress(void* mainEntryPointAddress_) { mainEntryPointAddress = mainEntryPointAddress_; }

@@ -8,6 +8,7 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/OsInterface.hpp>
 #include <cminor/machine/Log.hpp>
+#include <cminor/machine/RunTime.hpp>
 
 namespace cminor { namespace machine {
 
@@ -147,6 +148,10 @@ std::pair<MemPtr, int32_t> GenArena1::Allocate(Thread& thread, uint64_t blockSiz
     bool allocating = thread.GetMachine().ThreadAllocating().exchange(true);
     if (allocating)
     {
+        if (RunningNativeCode())
+        {
+            thread.SetFunctionStack(RtGetFunctionStack());
+        }
         thread.SetState(ThreadState::paused);
         while (thread.GetMachine().ThreadAllocating())
         {
@@ -169,6 +174,10 @@ std::pair<MemPtr, int32_t> GenArena1::Allocate(Thread& thread, uint64_t blockSiz
         }
         else
         {
+            if (RunningNativeCode())
+            {
+                thread.SetFunctionStack(RtGetFunctionStack());
+            }
             thread.SetState(ThreadState::paused);
 #ifdef GC_LOGGING
             LogMessage(">" + std::to_string(thread.Id()) + " (paused)");
@@ -258,6 +267,10 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(Thread& thread, uint64_t blockSiz
     bool allocating = thread.GetMachine().ThreadAllocating().exchange(true);
     if (allocating)
     {
+        if (RunningNativeCode())
+        {
+            thread.SetFunctionStack(RtGetFunctionStack());
+        }
         thread.SetState(ThreadState::paused);
         while (thread.GetMachine().ThreadAllocating())
         {
@@ -292,6 +305,10 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(Thread& thread, uint64_t blockSiz
         }
         else
         {
+            if (RunningNativeCode())
+            {
+                thread.SetFunctionStack(RtGetFunctionStack());
+            }
             thread.SetState(ThreadState::paused);
 #ifdef GC_LOGGING
             LogMessage(">" + std::to_string(thread.Id()) + " (paused)");
