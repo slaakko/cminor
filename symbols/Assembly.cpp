@@ -459,6 +459,7 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
             {
                 typedef void(*MainFunctionType)(uint64_t);
                 MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                GetCurrentThread().SetState(ThreadState::running);
                 main(args.Value());
                 if (GetGlobalFlag(GlobalFlags::verbose))
                 {
@@ -471,6 +472,7 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                 {
                     typedef int32_t(*MainFunctionType)(uint64_t);
                     MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                    GetCurrentThread().SetState(ThreadState::running);
                     returnValue = main(args.Value());
                     if (GetGlobalFlag(GlobalFlags::verbose))
                     {
@@ -493,6 +495,7 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
             {
                 typedef void(*MainFunctionType)(void);
                 MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                GetCurrentThread().SetState(ThreadState::running);
                 main();
                 if (GetGlobalFlag(GlobalFlags::verbose))
                 {
@@ -505,6 +508,7 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                 {
                     typedef int32_t(*MainFunctionType)(void);
                     MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                    GetCurrentThread().SetState(ThreadState::running);
                     returnValue = main();
                     if (GetGlobalFlag(GlobalFlags::verbose))
                     {

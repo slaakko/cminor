@@ -25,8 +25,8 @@ struct FunctionStackEntry;
 
 extern MACHINE_API bool wantToCollectGarbage;
 
-Thread& GetCurrentThread();
-void SetCurrentThread(Thread* currentThread_);
+MACHINE_API Thread& GetCurrentThread();
+MACHINE_API void SetCurrentThread(Thread* currentThread_);
 
 struct IntPairHash
 {

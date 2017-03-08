@@ -150,7 +150,7 @@ std::pair<MemPtr, int32_t> GenArena1::Allocate(Thread& thread, uint64_t blockSiz
     {
         if (RunningNativeCode())
         {
-            thread.SetFunctionStack(RtGetFunctionStack());
+            thread.SetFunctionStack(GetFunctionStack());
         }
         thread.SetState(ThreadState::paused);
         while (thread.GetMachine().ThreadAllocating())
@@ -176,7 +176,7 @@ std::pair<MemPtr, int32_t> GenArena1::Allocate(Thread& thread, uint64_t blockSiz
         {
             if (RunningNativeCode())
             {
-                thread.SetFunctionStack(RtGetFunctionStack());
+                thread.SetFunctionStack(GetFunctionStack());
             }
             thread.SetState(ThreadState::paused);
 #ifdef GC_LOGGING
@@ -269,7 +269,7 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(Thread& thread, uint64_t blockSiz
     {
         if (RunningNativeCode())
         {
-            thread.SetFunctionStack(RtGetFunctionStack());
+            thread.SetFunctionStack(GetFunctionStack());
         }
         thread.SetState(ThreadState::paused);
         while (thread.GetMachine().ThreadAllocating())
@@ -307,7 +307,7 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(Thread& thread, uint64_t blockSiz
         {
             if (RunningNativeCode())
             {
-                thread.SetFunctionStack(RtGetFunctionStack());
+                thread.SetFunctionStack(GetFunctionStack());
             }
             thread.SetState(ThreadState::paused);
 #ifdef GC_LOGGING

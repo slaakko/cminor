@@ -28,6 +28,7 @@ class ClassData;
 class Type;
 class ObjectType;
 class ManagedMemoryPool;
+struct FunctionStackEntry;
 
 enum class ArenaId : uint8_t
 {
@@ -292,8 +293,7 @@ public:
     void Set(StringCharacters* stringCharacters_) { stringCharacters = stringCharacters_;  }
     ManagedAllocation* GetAllocation(AllocationHandle handle);
     ManagedAllocation* GetAllocationNothrow(AllocationHandle handle);
-    AllocationHandle PoolRoot1() const { return poolRoot1; }
-    AllocationHandle PoolRoot2() const { return poolRoot2; }
+    AllocationHandle PoolRoot() const { return poolRoot; }
 private:
     Machine& machine;
     Object* object;
@@ -303,15 +303,13 @@ private:
     std::atomic_uint64_t nextReferenceValue;
     std::recursive_mutex allocationsMutex;
     void ComputeSize();
-    void CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle root1);
-    void CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle root1, AllocationHandle root2);
+    void CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle root);
     uint64_t objectCount;
     uint64_t arrayContentCount;
     uint64_t stringContentCount;
     uint64_t prevSize;
     uint64_t size;
-    std::atomic<AllocationHandle> poolRoot1;
-    std::atomic<AllocationHandle> poolRoot2;
+    std::atomic<AllocationHandle> poolRoot;
     std::unordered_map<AllocationHandle, ManagedAllocation*, AllocationHandleHash> deletedAllocations;
 };
 

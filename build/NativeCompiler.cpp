@@ -120,11 +120,6 @@ public:
     NativeCompilerImpl();
     void Init(Assembly& assembly);
     void Done();
-    void CreateDllMain();
-    void GenerateObjectFile(const std::string& assemblyObjectFilePath);
-    void GenerateAsmFile(const std::string& asmFilePath);
-    void Link(const std::string& assemblyObjectFilePath);
-    void LinkWindows(const std::string& assemblyObjectFilePath);
     void BeginVisitFunction(Function& function) override;
     void EndVisitFunction(Function& function) override;
     void BeginVisitInstruction(int instructionNumber, bool prevEndsBasicBlock, Instruction* inst) override;
@@ -249,7 +244,12 @@ private:
     std::vector<llvm::AllocaInst*> gcRoots;
     llvm::AllocaInst* gcEntry;
     std::unordered_map<int32_t, int32_t> temporaryGcRootMap;
-    void CreateTemporaryGcRoots();
+    void CreateDllMain();
+    void GenerateObjectFile(const std::string& assemblyObjectFilePath);
+    void Link(const std::string& assemblyObjectFilePath);
+    void LinkWindows(const std::string& assemblyObjectFilePath);
+    void CreateLocalVariables();
+    void CreateVariablesForTemporaryGcRoots();
     void StoreTemporaryGcRoot(Instruction& instruction);
     llvm::TargetOptions GetTargetOptions();
     void SetPersonalityFunction();
@@ -266,8 +266,8 @@ private:
     llvm::Constant* GetClassDataPtrVar(ClassData* classData);
     llvm::Constant* GetTypePtrVar(Type* type);
     llvm::Constant* GetFunctionPtrVar(Function* function);
-    void CreateEnterFunctionCall();
-    void CreateLeaveFunctionCall();
+    void EnterFunction();
+    void LeaveFunction();
     void SetCurrentLineNumber(uint32_t lineNumber);
     void InitMaps();
     void InitOpFunMap(ConstantPool& constantPool);
@@ -286,8 +286,8 @@ private:
 
 NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), module(), inlineLimit(0), targetMachine(), fun(nullptr), function(nullptr), constantPool(nullptr), 
     constantPoolVariable(nullptr), wantToCollectGarbageVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), nextTypePtrVarNumber(0), functionStackEntry(nullptr), 
-    currentBasicBlock(nullptr), entryBasicBlock(nullptr), lastAlloca(nullptr), currentExceptionBlockId(-1), currentCatchSectionExceptionBlockId(-1), 
-    currentPad(nullptr), currentPadKind(LlvmPadKind::none), exceptionPtr(nullptr), isGCFun(false)
+    currentBasicBlock(nullptr), entryBasicBlock(nullptr), lastAlloca(nullptr), currentExceptionBlockId(-1),  currentCatchSectionExceptionBlockId(-1), currentPad(nullptr), 
+    currentPadKind(LlvmPadKind::none), exceptionPtr(nullptr), isGCFun(false)
 {
     InitializeAllTargetInfos();
     InitializeAllTargets();
@@ -378,7 +378,23 @@ llvm::TargetOptions NativeCompilerImpl::GetTargetOptions()
     return targetOptions;
 }
 
-void NativeCompilerImpl::CreateTemporaryGcRoots()
+void NativeCompilerImpl::CreateLocalVariables()
+{
+    for (ValueType lt : function->LocalTypes())
+    {
+        llvm::Type* type = GetType(lt);
+        llvm::AllocaInst* allocaInst = builder.CreateAlloca(type);
+        if (lt == ValueType::objectReference)
+        {
+            gcRoots.push_back(allocaInst);
+            isGCFun = true;
+        }
+        locals.push_back(allocaInst);
+        lastAlloca = allocaInst;
+    }
+}
+
+void NativeCompilerImpl::CreateVariablesForTemporaryGcRoots()
 {
     int32_t n = function->NumInsts();
     for (int32_t i = 0; i < n; ++i)
@@ -553,7 +569,7 @@ void NativeCompilerImpl::CreateReturnFromFunctionOrFunclet()
     {
         case LlvmPadKind::none:
         {
-            CreateLeaveFunctionCall();
+            LeaveFunction();
             Assert(currentPad == nullptr, "currentPadKind and currentPad not in sync");
             if (function->ReturnsValue())
             {
@@ -596,7 +612,7 @@ void NativeCompilerImpl::CreateReturnFromFunctionOrFunclet()
             }
             builder.CreateCatchRet(cast<llvm::CatchPadInst>(currentPad), returnTarget);
             builder.SetInsertPoint(returnTarget);
-            CreateLeaveFunctionCall();
+            LeaveFunction();
             if (function->ReturnsValue())
             {
                 builder.CreateRet(builder.CreateLoad(returnValueAlloca));
@@ -876,16 +892,15 @@ void NativeCompilerImpl::Done()
     CreateDllMain();
 #endif
     std::string assemblyName = ToUtf8(assembly->Name().Value());
-    std::string errorMessage;
-    llvm::raw_string_ostream errorOs(errorMessage);
-    if (verifyModule(*module, &errorOs))
+    std::string errorMessageStore;
+    llvm::raw_string_ostream errorMessage(errorMessageStore);
+    if (verifyModule(*module, &errorMessage))
     {
-        errorOs.str(); // flush contents of errorOs to errorMessage
         if (listStream)
         {
-            *listStream << "NativeCompiler: verification of module '" << assemblyName + "' failed. " << errorMessage << std::endl;
+            *listStream << "NativeCompiler: verification of module '" << assemblyName + "' failed. " << errorMessage.str() << std::endl;
         }
-        throw std::runtime_error("NativeCompiler: verification of module '" + assemblyName + "' failed. " + errorMessage);
+        throw std::runtime_error("NativeCompiler: verification of module '" + assemblyName + "' failed. " + errorMessage.str());
     }
     std::string llFilePath = boost::filesystem::path(assembly->FilePathReadFrom()).replace_extension(".ll").generic_string();
     if (GetGlobalFlag(GlobalFlags::emitLlvm))
@@ -944,12 +959,11 @@ void NativeCompilerImpl::CreateDllMain()
     {
         dllMain->print(*os);
     }
-    std::string errorMessage;
-    llvm::raw_string_ostream errorOs(errorMessage);
-    if (verifyFunction(*dllMain, &errorOs))
+    std::string errorMessageStrore;
+    llvm::raw_string_ostream errorMessage(errorMessageStrore);
+    if (verifyFunction(*dllMain, &errorMessage))
     {
-        errorOs.str(); // flush contents of errorOs to errorMessage
-        throw std::runtime_error("NativeCompiler: verification of function 'DllMain' failed. " + errorMessage);
+        throw std::runtime_error("NativeCompiler: verification of function 'DllMain' failed. " + errorMessage.str());
     }
 }
 
@@ -971,27 +985,6 @@ void NativeCompilerImpl::GenerateObjectFile(const std::string& assemblyObjectFil
     if (objectFile.has_error())
     {
         throw std::runtime_error("NativeCompiler: could not emit object code file '" + assemblyObjectFilePath + "': " + errorCode.message());
-    }
-}
-
-void NativeCompilerImpl::GenerateAsmFile(const std::string& asmFilePath)
-{
-    if (GetGlobalFlag(GlobalFlags::verbose))
-    {
-        std::cout << "Generating assembly code listing to " << asmFilePath << "..." << std::endl;
-    }
-    legacy::PassManager passManager;
-    std::error_code errorCode;
-    raw_fd_ostream asmFile(asmFilePath, errorCode, sys::fs::F_None);
-    if (targetMachine->addPassesToEmitFile(passManager, asmFile, TargetMachine::CGFT_AssemblyFile))
-    {
-        throw std::runtime_error("NativeCompiler: cannot emit asm file '" + asmFilePath + "' (llvm::TargetMachine::addPassesToEmitFile failed).");
-    }
-    passManager.run(*module);
-    asmFile.flush();
-    if (asmFile.has_error())
-    {
-        throw std::runtime_error("NativeCompiler: could not emit asm file '" + asmFilePath + "': " + errorCode.message());
     }
 }
 
@@ -1183,19 +1176,8 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     lastAlloca = nullptr;
     isGCFun = false;
     gcRoots.clear();
-    for (ValueType lt : function.LocalTypes())
-    {
-        llvm::Type* type = GetType(lt);
-        llvm::AllocaInst* allocaInst = builder.CreateAlloca(type);
-        if (lt == ValueType::objectReference)
-        {
-            gcRoots.push_back(allocaInst);
-            isGCFun = true;
-        }
-        locals.push_back(allocaInst);
-        lastAlloca = allocaInst;
-    }
-    CreateTemporaryGcRoots();
+    CreateLocalVariables();
+    CreateVariablesForTemporaryGcRoots();
     gcEntry = nullptr;
     if (isGCFun)
     {
@@ -1213,22 +1195,15 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
         llvm::AllocaInst* exceptionObjectVar = builder.CreateAlloca(PointerType::get(GetType(ValueType::byteType), 0));
         exceptionObjectVariables[i] = exceptionObjectVar;
     }
-    if (function.CanThrow() || function.HasExceptionBlocks() || isGCFun)
-    {
-        llvm::StructType* functionStackEntryType = llvm::StructType::get(
-            llvm::PointerType::get(GetType(ValueType::byteType), 0),        // field 00: FunctionStackEntry* next
-            llvm::PointerType::get(GetType(ValueType::byteType), 0),        // field 01: Function* function
-            GetType(ValueType::intType),                                    // field 02: int32_t lineNumber
-            GetType(ValueType::intType),                                    // field 03: int32_t numGcRoots
-            llvm::PointerType::get(llvm::PointerType::get(GetType(ValueType::objectReference), 0), 0),
-                                                                            // field 04: uint64_t** gcEntry
-            nullptr);
-        functionStackEntry = builder.CreateAlloca(functionStackEntryType);
-    }
-    else
-    {
-        functionStackEntry = nullptr;
-    }
+    llvm::StructType* functionStackEntryType = llvm::StructType::get(
+        llvm::PointerType::get(GetType(ValueType::byteType), 0),        // field 00: (void*)FunctionStackEntry* next : pointer to caller's function stack entry, RtEnterFunction sets
+        llvm::PointerType::get(GetType(ValueType::byteType), 0),        // field 01: (void*)Function* function       : pointer to IL function
+        GetType(ValueType::intType),                                    // field 02: int32_t lineNumber              : current line number (updated before each call or throw)
+        GetType(ValueType::intType),                                    // field 03: int32_t numGcRoots              : number of GC roots in this function
+        llvm::PointerType::get(llvm::PointerType::get(GetType(ValueType::objectReference), 0), 0),
+                                                                        // field 04: uint64_t** gcEntry              : pointer to array of GC root pointers
+        nullptr);
+    functionStackEntry = builder.CreateAlloca(functionStackEntryType);
     constantPool = &function.GetConstantPool();
     currentBasicBlock = entryBlock;
     functionPtrVar = GetFunctionPtrVar(&function);
@@ -1244,7 +1219,7 @@ void NativeCompilerImpl::EndVisitFunction(Function& function)
     }
     if (!lastIsJumpOrThrow && !function.ReturnsValue())
     {
-        CreateLeaveFunctionCall();
+        LeaveFunction();
         builder.CreateRetVoid();
     }
     std::unique_ptr<llvm::raw_os_ostream> os;
@@ -1256,16 +1231,15 @@ void NativeCompilerImpl::EndVisitFunction(Function& function)
     {
         fun->print(*os);
     }
-    std::string errorMessage;
-    llvm::raw_string_ostream errorOs(errorMessage);
-    if (verifyFunction(*fun, &errorOs))
+    std::string errorMessageStore;
+    llvm::raw_string_ostream errorMessage(errorMessageStore);
+    if (verifyFunction(*fun, &errorMessage))
     {
-        errorOs.str(); // flush contents of errorOs to errorMessage
         if (listStream)
         {
-            *listStream << "NativeCompiler: verification of function '" << ToUtf8(function.CallName().Value().AsStringLiteral()) << "' failed. " << errorMessage << std::endl;
+            *listStream << "NativeCompiler: verification of function '" << ToUtf8(function.CallName().Value().AsStringLiteral()) << "' failed. " << errorMessage.str() << std::endl;
         }
-        throw std::runtime_error("NativeCompiler: verification of function '" + ToUtf8(function.CallName().Value().AsStringLiteral()) + "' failed. " + errorMessage);
+        throw std::runtime_error("NativeCompiler: verification of function '" + ToUtf8(function.CallName().Value().AsStringLiteral()) + "' failed. " + errorMessage.str());
     }
 }
 
@@ -1520,67 +1494,80 @@ void NativeCompilerImpl::VisitLoadFieldInst(int32_t fieldIndex, ValueType fieldT
     {
         case ValueType::sbyteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldSb", GetType(ValueType::sbyteType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldSb", GetType(ValueType::sbyteType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::byteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldBy", GetType(ValueType::byteType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldBy", GetType(ValueType::byteType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::shortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldSh", GetType(ValueType::shortType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldSh", GetType(ValueType::shortType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::ushortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUs", GetType(ValueType::ushortType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUs", GetType(ValueType::ushortType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::intType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldIn", GetType(ValueType::intType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldIn", GetType(ValueType::intType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::uintType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUi", GetType(ValueType::uintType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUi", GetType(ValueType::uintType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::longType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldLo", GetType(ValueType::longType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldLo", GetType(ValueType::longType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::ulongType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUl", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUl", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::floatType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldFl", GetType(ValueType::floatType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldFl", GetType(ValueType::floatType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::doubleType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldDo", GetType(ValueType::doubleType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldDo", GetType(ValueType::doubleType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::charType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldCh", GetType(ValueType::charType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldCh", GetType(ValueType::charType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::boolType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldBo", GetType(ValueType::boolType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldBo", GetType(ValueType::boolType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::objectReference:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldOb", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldOb", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         default:
@@ -1606,67 +1593,80 @@ void NativeCompilerImpl::VisitStoreFieldInst(int32_t fieldIndex, ValueType field
     {
         case ValueType::sbyteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldSb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::sbyteType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldSb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::sbyteType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::byteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldBy", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::byteType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldBy", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::byteType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::shortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldSh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::shortType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldSh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::shortType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::ushortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUs", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ushortType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUs", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ushortType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::intType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldIn", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::intType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldIn", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::uintType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUi", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::uintType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUi", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::uintType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::longType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldLo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::longType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldLo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::longType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::ulongType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ulongType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::floatType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldFl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::floatType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldFl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::floatType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::doubleType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldDo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::doubleType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldDo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::doubleType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::charType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldCh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::charType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldCh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::charType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::boolType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldBo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::boolType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldBo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::boolType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::objectReference:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldOb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::objectReference), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldOb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::objectReference), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         default:
@@ -1690,67 +1690,80 @@ void NativeCompilerImpl::VisitLoadElemInst(LoadElemInst& instruction)
     {
         case ValueType::sbyteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemSb", GetType(ValueType::sbyteType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemSb", GetType(ValueType::sbyteType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::byteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemBy", GetType(ValueType::byteType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemBy", GetType(ValueType::byteType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::shortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemSh", GetType(ValueType::shortType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemSh", GetType(ValueType::shortType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::ushortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemUs", GetType(ValueType::ushortType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemUs", GetType(ValueType::ushortType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::intType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemIn", GetType(ValueType::intType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemIn", GetType(ValueType::intType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::uintType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemUi", GetType(ValueType::uintType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemUi", GetType(ValueType::uintType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::longType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemLo", GetType(ValueType::longType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemLo", GetType(ValueType::longType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::ulongType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemUl", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemUl", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::floatType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemFl", GetType(ValueType::floatType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemFl", GetType(ValueType::floatType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::doubleType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemDo", GetType(ValueType::doubleType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemDo", GetType(ValueType::doubleType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::charType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemCh", GetType(ValueType::charType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemCh", GetType(ValueType::charType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::boolType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemBo", GetType(ValueType::boolType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemBo", GetType(ValueType::boolType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::objectReference:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemOb", GetType(ValueType::objectReference), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadElemOb", GetType(ValueType::objectReference), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         default:
@@ -1776,67 +1789,80 @@ void NativeCompilerImpl::VisitStoreElemInst(StoreElemInst& instruction)
     {
         case ValueType::sbyteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemSb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::sbyteType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemSb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::sbyteType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::byteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemBy", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::byteType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemBy", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::byteType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::shortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemSh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::shortType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemSh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::shortType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::ushortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemUs", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ushortType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemUs", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ushortType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::intType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemIn", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::intType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemIn", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::uintType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemUi", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::uintType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemUi", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::uintType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::longType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemLo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::longType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemLo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::longType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::ulongType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemUl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemUl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ulongType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::floatType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemFl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::floatType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemFl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::floatType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::doubleType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemDo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::doubleType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemDo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::doubleType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::charType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemCh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::charType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemCh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::charType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::boolType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemBo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::boolType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemBo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::boolType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::objectReference:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemOb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::objectReference), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreElemOb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::objectReference), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         default:
@@ -1941,16 +1967,17 @@ void NativeCompilerImpl::VisitLoadConstantInst(int32_t constantIndex)
 void NativeCompilerImpl::VisitReceiveInst(ReceiveInst& instruction)
 {
     std::unordered_set<llvm::AllocaInst*> args;
-    int i = 0;
-    for (auto it = fun->arg_begin(); it != fun->arg_end(); ++it)
+    int n = int(fun->arg_size());
+    auto it = fun->args().begin();
+    for (int i = 0; i < n; ++i)
     {
         llvm::AllocaInst* local = locals[i];
         builder.CreateStore(&*it, local);
         args.insert(local);
-        ++i;
+        ++it;
     }
-    int n = int(gcRoots.size());
-    for (int i = 0; i < n; ++i)
+    int nr = int(gcRoots.size());
+    for (int i = 0; i < nr; ++i)
     {
         llvm::AllocaInst* gcRoot = gcRoots[i];
         if (args.find(gcRoot) == args.cend())
@@ -1963,12 +1990,11 @@ void NativeCompilerImpl::VisitReceiveInst(ReceiveInst& instruction)
         llvm::Value* gcRootPtrPtr = builder.CreateGEP(nullptr, gcEntry, gcEntryI);
         builder.CreateStore(gcRoot, gcRootPtrPtr);
     }
-    CreateEnterFunctionCall();
+    EnterFunction();
 }
 
-void NativeCompilerImpl::CreateEnterFunctionCall()
+void NativeCompilerImpl::EnterFunction()
 {
-    if (!functionStackEntry) return;
     ArgVector fse01;
     fse01.push_back(builder.getInt32(0));
     fse01.push_back(builder.getInt32(1));
@@ -1994,17 +2020,18 @@ void NativeCompilerImpl::CreateEnterFunctionCall()
     {
         builder.CreateStore(llvm::Constant::getNullValue(PointerType::get(PointerType::get(GetType(ValueType::objectReference), 0), 0)), fseGCEntryPtr);
     }
-    llvm::Function* rtEnterFunction = cast<llvm::Function>(module->getOrInsertFunction("RtEnterFunction", GetType(ValueType::none), llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr));
+    llvm::Function* rtEnterFunction = cast<llvm::Function>(module->getOrInsertFunction("RtEnterFunction", GetType(ValueType::none), 
+        llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtEnterFunction);
     ArgVector args;
     args.push_back(builder.CreateBitCast(functionStackEntry, llvm::PointerType::get(GetType(ValueType::byteType), 0)));
     builder.CreateCall(rtEnterFunction, args);
 }
 
-void NativeCompilerImpl::CreateLeaveFunctionCall()
+void NativeCompilerImpl::LeaveFunction()
 {
-    if (!functionStackEntry) return;
-    llvm::Function* rtLeaveFunction = cast<llvm::Function>(module->getOrInsertFunction("RtLeaveFunction", GetType(ValueType::none), llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr));
+    llvm::Function* rtLeaveFunction = cast<llvm::Function>(module->getOrInsertFunction("RtLeaveFunction", GetType(ValueType::none), 
+        llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtLeaveFunction);
     ArgVector args;
     args.push_back(builder.CreateBitCast(functionStackEntry, llvm::PointerType::get(GetType(ValueType::byteType), 0)));
@@ -2013,7 +2040,6 @@ void NativeCompilerImpl::CreateLeaveFunctionCall()
 
 void NativeCompilerImpl::SetCurrentLineNumber(uint32_t lineNumber)
 {
-    if (!functionStackEntry) return;
     if (lineNumber == uint32_t(-1)) return;
     ArgVector fse02;
     fse02.push_back(builder.getInt32(0));
@@ -2296,8 +2322,10 @@ void NativeCompilerImpl::VisitVirtualCallInst(VirtualCallInst& instruction)
     uint32_t vmtIndex = instruction.VmtIndex();
     resolveArgs.push_back(args[0]);
     resolveArgs.push_back(llvm::ConstantInt::get(GetIntegerType(ValueType::uintType), vmtIndex));
-    llvm::Function* resolveVirtualFunctionCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveVirtualFunctionCallAddress", PointerType::get(GetType(ValueType::byteType), 0),
-        GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+    llvm::Function* resolveVirtualFunctionCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveVirtualFunctionCallAddress", 
+        PointerType::get(GetType(ValueType::byteType), 0),
+        GetType(ValueType::ulongType), GetType(ValueType::intType), 
+        nullptr));
     ImportFunction(resolveVirtualFunctionCallAddress);
     CreateCall(resolveVirtualFunctionCallAddress, resolveArgs, true);
     llvm::Value* functionAddress = valueStack.Pop();
@@ -2434,7 +2462,7 @@ void NativeCompilerImpl::VisitDelegateCallInst(DelegateCallInst& instruction)
     llvm::Value* functionPtr = valueStack.Pop();
     ArgVector resolveArgs;
     resolveArgs.push_back(functionPtr);
-    llvm::Function* rtResolveDelegateCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveDelegateCallAddress", PointerType::get(GetType(ValueType::byteType), 0), 
+    llvm::Function* rtResolveDelegateCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveDelegateCallAddress", PointerType::get(GetType(ValueType::byteType), 0),
         PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtResolveDelegateCallAddress);
     CreateCall(rtResolveDelegateCallAddress, resolveArgs, true);
@@ -2472,7 +2500,9 @@ void NativeCompilerImpl::VisitClassDelegateCallInst(ClassDelegateCallInst& instr
     resolveArgs.push_back(classDlg);
     resolveArgs.push_back(classObjectAlloca);
     llvm::Function* rtResolveClassDelegateCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveClassDelegateCallAddress", PointerType::get(GetType(ValueType::byteType), 0),
-        GetType(ValueType::ulongType), PointerType::get(GetType(ValueType::ulongType), 0), nullptr));
+        GetType(ValueType::ulongType), 
+        PointerType::get(GetType(ValueType::ulongType), 0), 
+        nullptr));
     ImportFunction(rtResolveClassDelegateCallAddress);
     CreateCall(rtResolveClassDelegateCallAddress, resolveArgs, true);
     llvm::Value* classDelegateCallAddress = valueStack.Pop();
@@ -2493,7 +2523,7 @@ void NativeCompilerImpl::VisitClassDelegateCallInst(ClassDelegateCallInst& instr
     for (int i = 0; i < n - 1; ++i)
     {
         llvm::Value* arg = valueStack.Pop();
-        args[n - i - 1] = arg;
+        args[n - i - 1] = arg; 
     }
     llvm::Value* funPtrValue = builder.CreateBitCast(classDelegateCallAddress, funPtrType);
     int32_t pc = GetCurrentInstructionIndex();
@@ -2519,7 +2549,8 @@ void NativeCompilerImpl::VisitSetClassDataInst(SetClassDataInst& instruction)
 
 void NativeCompilerImpl::VisitCreateObjectInst(CreateObjectInst& instruction)
 {
-    llvm::Function* rtCreateObject = cast<llvm::Function>(module->getOrInsertFunction("RtCreateObject", GetType(ValueType::ulongType), PointerType::get(GetType(ValueType::byteType), 0), nullptr));
+    llvm::Function* rtCreateObject = cast<llvm::Function>(module->getOrInsertFunction("RtCreateObject", GetType(ValueType::ulongType), 
+        PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtCreateObject);
     ArgVector args;
     Type* type = instruction.GetType();
@@ -2533,7 +2564,8 @@ void NativeCompilerImpl::VisitCreateObjectInst(CreateObjectInst& instruction)
 void NativeCompilerImpl::VisitCopyObjectInst(CopyObjectInst& instruction)
 {
     llvm::Value* objectReference = valueStack.Pop();
-    llvm::Function* rtCopyObject = cast<llvm::Function>(module->getOrInsertFunction("RtCopyObject", GetType(ValueType::ulongType), GetType(ValueType::ulongType), nullptr));
+    llvm::Function* rtCopyObject = cast<llvm::Function>(module->getOrInsertFunction("RtCopyObject", GetType(ValueType::ulongType), GetType(ValueType::ulongType), 
+        nullptr));
     ImportFunction(rtCopyObject);
     ArgVector args;
     args.push_back(objectReference);
@@ -2544,7 +2576,8 @@ void NativeCompilerImpl::VisitCopyObjectInst(CopyObjectInst& instruction)
 void NativeCompilerImpl::VisitStrLitToStringInst(StrLitToStringInst& instruction)
 {
     llvm::Value* value = valueStack.Pop();
-    llvm::Function* rtStrLitToString = cast<llvm::Function>(module->getOrInsertFunction("RtStrLitToString", GetType(ValueType::ulongType), PointerType::get(GetType(ValueType::uintType), 0), nullptr));
+    llvm::Function* rtStrLitToString = cast<llvm::Function>(module->getOrInsertFunction("RtStrLitToString", GetType(ValueType::ulongType), 
+        PointerType::get(GetType(ValueType::uintType), 0), nullptr));
     ImportFunction(rtStrLitToString);
     ArgVector args;
     args.push_back(value);
@@ -2556,7 +2589,8 @@ void NativeCompilerImpl::VisitLoadStringCharInst(LoadStringCharInst& instruction
 {
     llvm::Value* index = valueStack.Pop();
     llvm::Value* str = valueStack.Pop();
-    llvm::Function* rtLoadStringChar = cast<llvm::Function>(module->getOrInsertFunction("RtLoadStringChar", GetType(ValueType::charType), GetType(ValueType::intType), GetType(ValueType::ulongType), nullptr));
+    llvm::Function* rtLoadStringChar = cast<llvm::Function>(module->getOrInsertFunction("RtLoadStringChar", GetType(ValueType::charType), GetType(ValueType::intType), 
+        GetType(ValueType::ulongType), nullptr));
     ImportFunction(rtLoadStringChar);
     ArgVector args;
     args.push_back(index);
@@ -2604,11 +2638,14 @@ void NativeCompilerImpl::VisitThrowInst(ThrowInst& instruction)
     uint32_t lineNumber = function->GetSourceLine(pc);
     SetCurrentLineNumber(lineNumber);
     llvm::Value* exceptionObject = valueStack.Pop(); 
-    llvm::Function* rtThrowException = cast<llvm::Function>(module->getOrInsertFunction("RtThrowException", GetType(ValueType::none), GetType(ValueType::objectReference), nullptr));
+    llvm::Function* rtThrowException = cast<llvm::Function>(module->getOrInsertFunction("RtThrowException", GetType(ValueType::none), GetType(ValueType::objectReference), 
+        PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtThrowException);
     rtThrowException->setAttributes(noReturnFunctionAttributes);
     ArgVector args;
     args.push_back(exceptionObject);
+    Assert(functionStackEntry, "a nonleaf function needs a function stack entry");
+    args.push_back(builder.CreateBitCast(functionStackEntry, PointerType::get(GetType(ValueType::byteType), 0)));
     CreateCall(rtThrowException, args, false);
     if (function->ReturnsValue())
     {
@@ -2779,8 +2816,7 @@ void NativeCompilerImpl::VisitBeginCatchInst(BeginCatchInst& instruction)
     CreateCall(rtGetException, getExceptionArgs, true);
     builder.CreateStore(valueStack.Pop(), locals[exceptionVarIndex]);
     llvm::Function* rtUnwindFunctionStack = cast<llvm::Function>(module->getOrInsertFunction("RtUnwindFunctionStack", GetType(ValueType::none), 
-        llvm::PointerType::get(GetType(ValueType::byteType), 0),
-        nullptr));
+        PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtUnwindFunctionStack);
     ArgVector unwindFunctionStackArgs;
     unwindFunctionStackArgs.push_back(builder.CreateBitCast(functionStackEntry, llvm::PointerType::get(GetType(ValueType::byteType), 0)));
@@ -2918,7 +2954,9 @@ void NativeCompilerImpl::VisitStaticInitInst(StaticInitInst& instruction)
 
 void NativeCompilerImpl::VisitDoneStaticInitInst(DoneStaticInitInst& instruction)
 {
-    llvm::Function* rtDoneStaticInit = cast<llvm::Function>(module->getOrInsertFunction("RtDoneStaticInit", GetType(ValueType::none), PointerType::get(GetType(ValueType::byteType), 0), nullptr));
+    llvm::Function* rtDoneStaticInit = cast<llvm::Function>(module->getOrInsertFunction("RtDoneStaticInit", GetType(ValueType::none), 
+        PointerType::get(GetType(ValueType::byteType), 0), 
+        nullptr));
     ImportFunction(rtDoneStaticInit);
     ArgVector args;
     ClassData* classData = ClassDataTable::GetClassData(instruction.GetType()->Name());
@@ -3150,62 +3188,74 @@ void NativeCompilerImpl::VisitBoxBaseInst(BoxBaseInst& instruction)
     {
         case ValueType::sbyteType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxSb", GetType(ValueType::objectReference), GetType(ValueType::sbyteType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxSb", GetType(ValueType::objectReference), GetType(ValueType::sbyteType), 
+                nullptr));
             break;
         }
         case ValueType::byteType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxBy", GetType(ValueType::objectReference), GetType(ValueType::byteType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxBy", GetType(ValueType::objectReference), GetType(ValueType::byteType), 
+                nullptr));
             break;
         }
         case ValueType::shortType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxSh", GetType(ValueType::objectReference), GetType(ValueType::shortType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxSh", GetType(ValueType::objectReference), GetType(ValueType::shortType), 
+                nullptr));
             break;
         }
         case ValueType::ushortType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxUs", GetType(ValueType::objectReference), GetType(ValueType::ushortType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxUs", GetType(ValueType::objectReference), GetType(ValueType::ushortType), 
+                nullptr));
             break;
         }
         case ValueType::intType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxIn", GetType(ValueType::objectReference), GetType(ValueType::intType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxIn", GetType(ValueType::objectReference), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::uintType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxUi", GetType(ValueType::objectReference), GetType(ValueType::uintType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxUi", GetType(ValueType::objectReference), GetType(ValueType::uintType), 
+                nullptr));
             break;
         }
         case ValueType::longType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxLo", GetType(ValueType::objectReference), GetType(ValueType::longType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxLo", GetType(ValueType::objectReference), GetType(ValueType::longType), 
+                nullptr));
             break;
         }
         case ValueType::ulongType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxUl", GetType(ValueType::objectReference), GetType(ValueType::ulongType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxUl", GetType(ValueType::objectReference), GetType(ValueType::ulongType), 
+                nullptr));
             break;
         }
         case ValueType::floatType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxFl", GetType(ValueType::objectReference), GetType(ValueType::floatType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxFl", GetType(ValueType::objectReference), GetType(ValueType::floatType), 
+                nullptr));
             break;
         }
         case ValueType::doubleType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxDo", GetType(ValueType::objectReference), GetType(ValueType::doubleType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxDo", GetType(ValueType::objectReference), GetType(ValueType::doubleType), 
+                nullptr));
             break;
         }
         case ValueType::charType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxCh", GetType(ValueType::objectReference), GetType(ValueType::charType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxCh", GetType(ValueType::objectReference), GetType(ValueType::charType), 
+                nullptr));
             break;
         }
         case ValueType::boolType:
         {
-            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxBo", GetType(ValueType::objectReference), GetType(ValueType::boolType), nullptr));
+            rtBox = cast<llvm::Function>(module->getOrInsertFunction("RtBoxBo", GetType(ValueType::objectReference), GetType(ValueType::boolType), 
+                nullptr));
             break;
         }
         default:
@@ -3229,62 +3279,74 @@ void NativeCompilerImpl::VisitUnboxBaseInst(UnboxBaseInst& instruction)
     {
         case ValueType::sbyteType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxSb", GetType(ValueType::sbyteType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxSb", GetType(ValueType::sbyteType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         case ValueType::byteType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxBy", GetType(ValueType::byteType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxBy", GetType(ValueType::byteType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         case ValueType::shortType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxSh", GetType(ValueType::shortType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxSh", GetType(ValueType::shortType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         case ValueType::ushortType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxUs", GetType(ValueType::ushortType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxUs", GetType(ValueType::ushortType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         case ValueType::intType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxIn", GetType(ValueType::intType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxIn", GetType(ValueType::intType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         case ValueType::uintType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxUi", GetType(ValueType::uintType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxUi", GetType(ValueType::uintType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         case ValueType::longType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxLo", GetType(ValueType::longType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxLo", GetType(ValueType::longType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         case ValueType::ulongType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxUl", GetType(ValueType::ulongType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxUl", GetType(ValueType::ulongType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         case ValueType::floatType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxFl", GetType(ValueType::floatType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxFl", GetType(ValueType::floatType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         case ValueType::doubleType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxDo", GetType(ValueType::doubleType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxDo", GetType(ValueType::doubleType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         case ValueType::charType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxCh", GetType(ValueType::charType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxCh", GetType(ValueType::charType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         case ValueType::boolType:
         {
-            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxBo", GetType(ValueType::boolType), GetType(ValueType::objectReference), nullptr));
+            rtUnbox = cast<llvm::Function>(module->getOrInsertFunction("RtUnboxBo", GetType(ValueType::boolType), GetType(ValueType::objectReference), 
+                nullptr));
             break;
         }
         default:
@@ -3317,8 +3379,8 @@ void NativeCompilerImpl::VisitAllocateArrayElementsInst(AllocateArrayElementsIns
 void NativeCompilerImpl::VisitIsInst(IsInst& instruction)
 {
     llvm::Value* objectReference = valueStack.Pop();
-    llvm::Function* rtIs = cast<llvm::Function>(module->getOrInsertFunction("RtIs", GetType(ValueType::boolType), GetType(ValueType::objectReference), PointerType::get(GetType(ValueType::byteType), 0), 
-        nullptr));
+    llvm::Function* rtIs = cast<llvm::Function>(module->getOrInsertFunction("RtIs", GetType(ValueType::boolType), GetType(ValueType::objectReference), 
+        PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtIs);
     ArgVector args;
     args.push_back(objectReference);
@@ -3331,8 +3393,8 @@ void NativeCompilerImpl::VisitIsInst(IsInst& instruction)
 void NativeCompilerImpl::VisitAsInst(AsInst& instruction)
 {
     llvm::Value* objectReference = valueStack.Pop();
-    llvm::Function* rtAs = cast<llvm::Function>(module->getOrInsertFunction("RtAs", GetType(ValueType::objectReference), GetType(ValueType::objectReference), PointerType::get(GetType(ValueType::byteType), 0),
-        nullptr));
+    llvm::Function* rtAs = cast<llvm::Function>(module->getOrInsertFunction("RtAs", GetType(ValueType::objectReference), GetType(ValueType::objectReference), 
+        PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtAs);
     ArgVector args;
     args.push_back(objectReference);
@@ -3482,67 +3544,80 @@ void NativeCompilerImpl::VisitLoadVariableReferenceInst(LoadVariableReferenceIns
     {
         case ValueType::sbyteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldSb", GetType(ValueType::sbyteType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldSb", GetType(ValueType::sbyteType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::byteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldBy", GetType(ValueType::byteType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldBy", GetType(ValueType::byteType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::shortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldSh", GetType(ValueType::shortType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldSh", GetType(ValueType::shortType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::ushortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUs", GetType(ValueType::ushortType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUs", GetType(ValueType::ushortType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::intType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldIn", GetType(ValueType::intType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldIn", GetType(ValueType::intType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::uintType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUi", GetType(ValueType::uintType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUi", GetType(ValueType::uintType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::longType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldLo", GetType(ValueType::longType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldLo", GetType(ValueType::longType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::ulongType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUl", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldUl", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::floatType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldFl", GetType(ValueType::floatType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldFl", GetType(ValueType::floatType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::doubleType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldDo", GetType(ValueType::doubleType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldDo", GetType(ValueType::doubleType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::charType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldCh", GetType(ValueType::charType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldCh", GetType(ValueType::charType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::boolType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldBo", GetType(ValueType::boolType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldBo", GetType(ValueType::boolType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         case ValueType::objectReference:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldOb", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldOb", GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                nullptr));
             break;
         }
         default:
@@ -3611,67 +3686,80 @@ void NativeCompilerImpl::VisitStoreVariableReferenceInst(StoreVariableReferenceI
     {
         case ValueType::sbyteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldSb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::sbyteType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldSb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::sbyteType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::byteType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldBy", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::byteType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldBy", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::byteType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::shortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldSh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::shortType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldSh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::shortType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::ushortType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUs", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ushortType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUs", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ushortType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::intType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldIn", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::intType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldIn", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::intType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::uintType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUi", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::uintType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUi", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::uintType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::longType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldLo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::longType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldLo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::longType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::ulongType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ulongType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldUl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::ulongType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::floatType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldFl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::floatType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldFl", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::floatType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::doubleType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldDo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::doubleType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldDo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::doubleType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::charType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldCh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::charType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldCh", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::charType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::boolType:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldBo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::boolType), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldBo", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::boolType), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         case ValueType::objectReference:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldOb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::objectReference), GetType(ValueType::intType), nullptr));
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtStoreFieldOb", GetType(ValueType::none), GetType(ValueType::ulongType), GetType(ValueType::objectReference), 
+                GetType(ValueType::intType), nullptr));
             break;
         }
         default:

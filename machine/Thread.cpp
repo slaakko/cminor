@@ -16,13 +16,13 @@ namespace cminor { namespace machine {
     __thread Thread* currentThread = nullptr;
 #endif
 
-Thread& GetCurrentThread()
+MACHINE_API Thread& GetCurrentThread()
 {
     Assert(currentThread, "current thread not set");
     return *currentThread;
 }
 
-void SetCurrentThread(Thread* currentThread_)
+MACHINE_API void SetCurrentThread(Thread* currentThread_)
 {
     currentThread = currentThread_;
 }
@@ -47,8 +47,8 @@ void DebugContext::RemoveBreakpointAt(int32_t pc)
 }
 
 Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
-    stack(*this), id(id_), machine(machine_), fun(fun_), instructionCount(0), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), exceptionObjectType(nullptr), 
-    nextVariableReferenceId(1), threadHandle(0), functionStack(nullptr)
+    stack(*this), id(id_), machine(machine_), fun(fun_), instructionCount(0), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), 
+    exceptionObjectType(nullptr), nextVariableReferenceId(1), threadHandle(0), functionStack(nullptr)
 {
     stack.AllocateFrame(fun);
 }

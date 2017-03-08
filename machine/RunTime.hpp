@@ -17,13 +17,14 @@ class Function;
 
 struct FunctionStackEntry
 {
-    FunctionStackEntry* next;   // 0
-    Function* function;         // 1
-    int32_t lineNumber;         // 2
-    int32_t numGcRoots;         // 3
-    uint64_t** gcEntry;         // 4
+    FunctionStackEntry* next;   // 0: pointer to caller's function stack entry
+    Function* function;         // 1: pointer to IL function
+    int32_t lineNumber;         // 2: current line number (updated before each call and throw)
+    int32_t numGcRoots;         // 3: number of GC roots in this function
+    uint64_t** gcEntry;         // 4: pointer to array of GC root pointers (array contains numGcRoots GC root pointers)
 };
 
+FunctionStackEntry* GetFunctionStack();
 extern "C" MACHINE_API void RtThrowException(uint64_t exceptionObjectReference);
 extern "C" MACHINE_API bool RtHandleException(void* classDataPtr);
 extern "C" MACHINE_API uint64_t RtGetException();
@@ -31,7 +32,6 @@ extern "C" MACHINE_API void RtDisposeException();
 
 extern "C" MACHINE_API void RtEnterFunction(void* functionStackEntry);
 extern "C" MACHINE_API void RtLeaveFunction(void* functionStackEntry);
-extern "C" MACHINE_API FunctionStackEntry* RtGetFunctionStack();
 extern "C" MACHINE_API void RtUnwindFunctionStack(void* functionStackEntry);
 
 extern "C" MACHINE_API int8_t RtLoadFieldSb(uint64_t objectReference, int32_t fieldIndex);

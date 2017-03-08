@@ -202,20 +202,10 @@ inline void GarbageCollector::MarkLiveAllocations(ObjectReference objectReferenc
 void GarbageCollector::MarkLiveAllocations()
 {
     std::unordered_set<AllocationHandle, AllocationHandleHash> checked;
-    AllocationHandle root1 = machine.GetManagedMemoryPool().PoolRoot1();
-    if (root1.Value() != 0)
+    AllocationHandle root = machine.GetManagedMemoryPool().PoolRoot();
+    if (root.Value() != 0)
     {
-        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocationNothrow(root1);
-        if (allocation)
-        {
-            allocation->SetLive();
-            allocation->MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
-        }
-    }
-    AllocationHandle root2 = machine.GetManagedMemoryPool().PoolRoot2();
-    if (root2.Value() != 0)
-    {
-        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocationNothrow(root2);
+        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocationNothrow(root);
         if (allocation)
         {
             allocation->SetLive();
@@ -277,6 +267,7 @@ void GarbageCollector::MarkLiveAllocations()
         if (RunningNativeCode())
         {
             FunctionStackEntry* functionStackEntry = thread->GetFunctionStack();
+            Assert(functionStackEntry, "native GC needs a function stack set to thread");
             while (functionStackEntry)
             {
                 uint64_t** gcEntry = functionStackEntry->gcEntry;

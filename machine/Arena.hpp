@@ -13,6 +13,7 @@
 namespace cminor { namespace machine {
 
 class Thread;
+struct FunctionStackEntry;
 
 MACHINE_API void SetSegmentSize(uint64_t segmentSize_);
 MACHINE_API uint64_t GetSegmentSize();
@@ -72,16 +73,16 @@ class GenArena1 : public Arena
 {
 public:
     GenArena1(Machine& machine_, uint64_t size_);
-    std::pair<MemPtr, int32_t> Allocate(uint64_t blockSize, bool allocateNewSegment);
-    std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize);
+    std::pair<MemPtr, int32_t> Allocate(uint64_t blockSize, bool allocateNewSegment) override;
+    std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize) override;
 };
 
 class GenArena2 : public Arena
 {
 public:
     GenArena2(Machine& machine_, uint64_t size_);
-    std::pair<MemPtr, int32_t>  Allocate(uint64_t blockSize, bool allocateNewSegment);
-    std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize);
+    std::pair<MemPtr, int32_t>  Allocate(uint64_t blockSize, bool allocateNewSegment) override;
+    std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize) override;
 };
 
 } } // namespace cminor::machine

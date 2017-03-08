@@ -19,6 +19,7 @@ class ManagedMemoryPool;
 class ConstantPool;
 class Function;
 class Instruction;
+struct FunctionStackEntry;
 
 class MACHINE_API Frame
 {

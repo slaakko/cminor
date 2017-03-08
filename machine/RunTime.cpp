@@ -31,6 +31,11 @@ MACHINE_API void SetTrace()
     __thread uint64_t currentException = 0;
 #endif
 
+FunctionStackEntry* GetFunctionStack()
+{
+    return functionStack;
+}
+
 utf32_string GetStackTrace() 
 {
     utf32_string stackTrace;
@@ -68,17 +73,18 @@ void RtThrowCminorException(const std::string& message, const utf32_string& exce
     Type* type = TypeTable::GetType(StringPtr(exceptionTypeName.c_str()));
     ObjectType* objectType = dynamic_cast<ObjectType*>(type);
     Assert(objectType, "object type expected");
-    ObjectReference objectReference = GetManagedMemoryPool().CreateObject(GetCurrentThread(), objectType);
+    Thread& thread = GetCurrentThread();
+    ObjectReference objectReference = GetManagedMemoryPool().CreateObject(thread, objectType);
     currentException = objectReference.Value();
     ClassData* classData = ClassDataTable::GetClassData(StringPtr(exceptionTypeName.c_str()));
     Object& o = GetManagedMemoryPool().GetObject(objectReference);
     o.Pin();
     IntegralValue classDataValue(classData);
     o.SetField(classDataValue, 0);
-    ObjectReference messageStr = GetManagedMemoryPool().CreateString(GetCurrentThread(), ToUtf32(message));
+    ObjectReference messageStr = GetManagedMemoryPool().CreateString(thread, ToUtf32(message));
     o.SetField(messageStr, 1);
     utf32_string stackTrace = GetStackTrace();
-    ObjectReference stacTraceStr = GetManagedMemoryPool().CreateString(GetCurrentThread(), stackTrace);
+    ObjectReference stacTraceStr = GetManagedMemoryPool().CreateString(thread, stackTrace);
     o.SetField(stacTraceStr, 2);
     throw CminorException(objectReference.Value());
 }
@@ -128,9 +134,8 @@ extern "C" MACHINE_API void RtThrowException(uint64_t exceptionObjectReference)
     currentException = exceptionObjectReference;
     Object& exceptionObject = GetManagedMemoryPool().GetObject(exceptionObjectReference);
     exceptionObject.Pin();
-    utf32_string stackTrace = GetStackTrace();
-    ObjectReference stacTraceStr = GetManagedMemoryPool().CreateString(GetCurrentThread(), stackTrace);
-    exceptionObject.SetField(stacTraceStr, 2);
+    ObjectReference stackTraceStr = GetManagedMemoryPool().CreateString(GetCurrentThread(), GetStackTrace());
+    exceptionObject.SetField(stackTraceStr, 2);
     throw CminorException(exceptionObjectReference);
 }
 
@@ -186,11 +191,6 @@ extern "C" MACHINE_API void RtLeaveFunction(void* functionStackEntry)
         std::cerr << "< " << ToUtf8(entry->function->CallName().Value().AsStringLiteral()) << std::endl;
     }
     functionStack = entry->next;
-}
-
-extern "C" MACHINE_API FunctionStackEntry* RtGetFunctionStack()
-{
-    return functionStack;
 }
 
 extern "C" MACHINE_API void RtUnwindFunctionStack(void* functionStackEntry)
@@ -1309,10 +1309,11 @@ extern "C" MACHINE_API uint64_t RtStrLitToString(const char32_t* strLitValue)
     {
         uint32_t len = static_cast<uint32_t>(StringLen(strLitValue));
         ClassData* classData = ClassDataTable::GetSystemStringClassData();
-        ObjectReference objectReference = GetManagedMemoryPool().CreateObject(GetCurrentThread(), classData->Type());
+        Thread& thread = GetCurrentThread();
+        ObjectReference objectReference = GetManagedMemoryPool().CreateObject(thread, classData->Type());
         Object& o = GetManagedMemoryPool().GetObject(objectReference);
         o.Pin();
-        AllocationHandle charsHandle = GetManagedMemoryPool().CreateStringCharsFromLiteral(GetCurrentThread(), strLitValue, len);
+        AllocationHandle charsHandle = GetManagedMemoryPool().CreateStringCharsFromLiteral(thread, strLitValue, len);
         o.SetField(IntegralValue(classData), 0);
         o.SetField(IntegralValue(static_cast<int32_t>(len), ValueType::intType), 1);
         o.SetField(charsHandle, 2);
@@ -1365,8 +1366,7 @@ extern "C" MACHINE_API uint64_t RtDownCast(uint64_t objectReference, void* class
             {
                 throw InvalidCastException("invalid cast from '" + ToUtf8(classData->Type()->Name().Value()) + "' to '" + ToUtf8(targetClassData->Type()->Name().Value()));
             }
-            ObjectReference copy = reference;
-            return copy.Value();
+            return reference.Value();
         }
     }
     catch (const NullReferenceException& ex)
@@ -2769,8 +2769,9 @@ extern "C" MACHINE_API void RtRequestGc()
 
 extern "C" MACHINE_API void RtWaitGc()
 {
-    GetCurrentThread().SetFunctionStack(functionStack);
-    GetCurrentThread().WaitUntilGarbageCollected();
+    Thread& thread = GetCurrentThread();
+    thread.SetFunctionStack(functionStack);
+    thread.WaitUntilGarbageCollected();
 }
 
 } } // namespace cminor::machine
