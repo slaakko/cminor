@@ -1013,7 +1013,7 @@ void SymbolTable::MergeClassTemplateSpecializations()
 {
     for (auto& p : classTemplateSpecializationMap)
     {
-        p.second->MergeOpenedInstances();
+        p.second->MergeOpenedInstances(assembly);
     }
 }
 
@@ -1220,6 +1220,13 @@ std::unique_ptr<Assembly> CreateSystemCoreAssembly(Machine& machine, const std::
     nullReferenceTypeSymbol->SetAssembly(systemCoreAssembly.get());
     nullReferenceTypeSymbol->GetMachineType()->SetNameConstant(systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"System.@nullref")));
     systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(nullReferenceTypeSymbol));
+    Constant requestGcFunctionName = systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"RequestGc()"));
+    FunctionSymbol* requestGcFunctionSymbol = new RequestGcFunctionSymbol(Span(), requestGcFunctionName);
+    requestGcFunctionSymbol->SetReturnType(voidTypeSymbol);
+    requestGcFunctionSymbol->SetAssembly(systemCoreAssembly.get());
+    Constant requestGcGroupName = systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"RequestGc"));
+    requestGcFunctionSymbol->SetGroupNameConstant(requestGcGroupName);
+    systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(requestGcFunctionSymbol));
     systemCoreAssembly->GetSymbolTable().EndNamespace();
     InitBasicTypeFun(*systemCoreAssembly);
     return systemCoreAssembly;

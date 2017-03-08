@@ -421,10 +421,6 @@ void Function::SetNumParameters(uint32_t numParameters_)
 
 void Function::AddInst(std::unique_ptr<Instruction>&& inst)
 {
-    if (inst->IsJump())
-    {
-        int x = 0;
-    }
     if (emitter)
     {
         int32_t instructionIndex = int32_t(instructions.size());

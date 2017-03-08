@@ -128,6 +128,8 @@ void PrintHelp(HelpTopics helpTopics)
             "cminor run [run-options] PROGRAM.cminora [program-arguments]\n\n" <<
             "Run PROGRAM.cminora with given program-arguments in virtual machine.\n\n" <<
             "run-options:\n\n" <<
+            "   --debug (-d)\n" <<
+            "       Run debug version of the virtual machine.\n" <<
             "   --native (-n)" <<
             "       Run program built with --native option.\n" <<
             "   --trace (-t)\n" <<
@@ -310,6 +312,10 @@ int main(int argc, const char** argv)
                         if (arg == "-v" || arg == "--verbose")
                         {
                             globalOptions.push_back(arg);
+                        }
+                        else if (arg == "-d" || arg == "--debug")
+                        {
+                            debug = true;
                         }
                         else if (arg == "-n" || arg == "--native")
                         {
@@ -732,7 +738,14 @@ int main(int argc, const char** argv)
             }
             if (command == "run")
             {
-                commandLine = "cminorvm";
+                if (debug)
+                {
+                    commandLine = "cminorvmd";
+                }
+                else
+                {
+                    commandLine = "cminorvm";
+                }
             }
             else if (command == "debug")
             {

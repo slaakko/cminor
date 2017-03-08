@@ -366,7 +366,8 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     // gc:
     // ---
 
-    rootInst.SetInst(0xF1, new GcPointInst());
+    rootInst.SetInst(0xF1, new GcPollInst());
+    rootInst.SetInst(0xF2, new RequestGcInst());
 
     //  conversion group instruction:
     //  -----------------------------

@@ -117,13 +117,12 @@ enum class TransientAssemblyFlags : uint8_t
 {
     none = 0,
     imported = 1 << 0,
-    readClassNodes = 1 << 1,
-    sharedLibraryLoaded = 1 << 2,
-    exportedFunctionsResolved = 1 << 3,
-    functionPtrVarMappingsResolved = 1 << 4,
-    classDataPtrVarMappingsResolved = 1 << 5,
-    typePtrVarMappingsResolved = 1 << 6,
-    exportedSharedLibraryVariablesSet = 1 << 7
+    sharedLibraryLoaded = 1 << 1,
+    exportedFunctionsResolved = 1 << 2,
+    functionPtrVarMappingsResolved = 1 << 3,
+    classDataPtrVarMappingsResolved = 1 << 4,
+    typePtrVarMappingsResolved = 1 << 5,
+    exportedSharedLibraryVariablesSet = 1 << 6
 };
 
 inline TransientAssemblyFlags operator|(TransientAssemblyFlags left, TransientAssemblyFlags right)
@@ -218,8 +217,6 @@ public:
     const std::vector<ClassDataPtrVarClassDataName>& ClassDataPtrVarMappings() const { return classDatatPtrVarMappings; }
     void AddTypePtrVarMapping(Constant typePtrVarName, Constant typeName);
     const std::vector<TypePtrVarTypeName>& TypePtrVarMappings() const { return typePtrVarMappings; }
-    bool ReadClassNodes() const { return GetTransientFlag(TransientAssemblyFlags::readClassNodes); }
-    void SetReadClassNodes() { SetTransientFlag(TransientAssemblyFlags::readClassNodes); }
     bool Imported() const { return GetTransientFlag(TransientAssemblyFlags::imported); }
     void SetImported() { SetTransientFlag(TransientAssemblyFlags::imported); }
     bool SharedLibraryLoaded() const { return GetTransientFlag(TransientAssemblyFlags::sharedLibraryLoaded); }

@@ -29,7 +29,6 @@ MACHINE_API void ThrowCatch()
     {
         if (RtHandleException(cd))
         {
-            int x = 0;
         }
     }
 }

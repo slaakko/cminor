@@ -109,10 +109,6 @@ void FunctionSymbol::Read(SymbolReader& reader)
         reader.EmplaceTypeRequest(this, returnTypeNameId, 0);
     }
     flags = FunctionSymbolFlags(reader.GetByte());
-    if (Name() == U"UnsignedConversion<System.UInt64>.@static_constructor()")
-    {
-        int x = 0;
-    }
     bool hasMachineFunction = reader.GetBool();
     if (hasMachineFunction)
     {
@@ -417,7 +413,7 @@ void FunctionSymbol::CreateMachineFunction()
         machineFunction->SetReturnType(ReturnType()->GetValueType());
     }
     machineFunction->AddInst(GetAssembly()->GetMachine().CreateInst("receive"));
-    machineFunction->AddInst(GetAssembly()->GetMachine().CreateInst("gcpoint"));
+    machineFunction->AddInst(GetAssembly()->GetMachine().CreateInst("gcpoll"));
     if (IsExternal() && !IsDerived())
     {
         Assert(vmFunctionName.Value().AsStringLiteral() != nullptr, "vm function name not set");
@@ -715,14 +711,14 @@ void ConstructorSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
     classTypeSymbol->Add(this);
 }
 
-void ConstructorSymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
+void ConstructorSymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol, Assembly* assembly)
 {
-    classTemplateSpecializationSymbol->MergeConstructorSymbol(*this);
+    classTemplateSpecializationSymbol->MergeConstructorSymbol(*this, assembly);
 }
 
-void ConstructorSymbol::Merge(const ConstructorSymbol& that)
+void ConstructorSymbol::Merge(ConstructorSymbol& that, Assembly* assembly)
 {
-    Symbol::Merge(that);
+    Symbol::Merge(that, assembly);
 }
 
 ArraySizeConstructorSymbol::ArraySizeConstructorSymbol(const Span& span_, Constant name_) : ConstructorSymbol(span_, name_)
@@ -763,7 +759,7 @@ void ArraySizeConstructorSymbol::CreateMachineFunction()
     std::unique_ptr<Instruction> loadSizeLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.1");
     MachineFunction()->AddInst(std::move(loadSizeLocal));
 
-    MachineFunction()->AddInst(GetAssembly()->GetMachine().CreateInst("gcpoint"));
+    //MachineFunction()->AddInst(GetAssembly()->GetMachine().CreateInst("gcpoint"));
     std::unique_ptr<Instruction> allocElems = GetAssembly()->GetMachine().CreateInst("allocelems");
     AllocateArrayElementsInst* allocElemsInst = dynamic_cast<AllocateArrayElementsInst*>(allocElems.get());
 
@@ -1094,14 +1090,14 @@ void MemberFunctionSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
     classTypeSymbol->Add(this);
 }
 
-void MemberFunctionSymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
+void MemberFunctionSymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol, Assembly* assembly)
 {
-    classTemplateSpecializationSymbol->MergeMemberFunctionSymbol(*this);
+    classTemplateSpecializationSymbol->MergeMemberFunctionSymbol(*this, assembly);
 }
 
-void MemberFunctionSymbol::Merge(const MemberFunctionSymbol& that)
+void MemberFunctionSymbol::Merge(MemberFunctionSymbol& that, Assembly* assembly)
 {
-    Symbol::Merge(that);
+    Symbol::Merge(that, assembly);
 }
 
 bool MemberFunctionSymbol::ImplementsInterfaceMemFun(InterfaceTypeSymbol* intf)
@@ -1150,7 +1146,7 @@ ClassToInterfaceConversion::ClassToInterfaceConversion(const Span& span_, Consta
 
 void ClassToInterfaceConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
-    function.AddInst(machine.CreateInst("gcpoint"));
+    //function.AddInst(machine.CreateInst("gcpoint"));
     std::unique_ptr<Instruction> createInst;
     createInst = machine.CreateInst("createo");
     ConstantPool& constantPool = assembly.GetConstantPool();
@@ -1282,6 +1278,16 @@ void MemFunToClassDelegateConversion::GenerateCall(Machine& machine, Assembly& a
     std::unique_ptr<Instruction> inst = machine.CreateInst("memfun2classdlg");
     MemFun2ClassDlgInst* memfun2ClassDlgInst = dynamic_cast<MemFun2ClassDlgInst*>(inst.get());
     memfun2ClassDlgInst->SetFunctionName(functionName);
+    function.AddInst(std::move(inst));
+}
+
+RequestGcFunctionSymbol::RequestGcFunctionSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
+{
+}
+
+void RequestGcFunctionSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
+{
+    std::unique_ptr<Instruction> inst = machine.CreateInst("requestgc");
     function.AddInst(std::move(inst));
 }
 

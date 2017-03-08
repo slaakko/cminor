@@ -984,7 +984,7 @@ BoundNewExpression::BoundNewExpression(BoundFunctionCall* boundFunctionCall_, Ty
 
 void BoundNewExpression::GenLoad(Machine& machine, Function& function) 
 {
-    function.AddInst(machine.CreateInst("gcpoint"));
+    //function.AddInst(machine.CreateInst("gcpoint"));
     std::unique_ptr<Instruction> createInst;
     createInst = machine.CreateInst("createo");
     ConstantPool& constantPool = GetAssembly().GetConstantPool();

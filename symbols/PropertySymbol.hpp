@@ -28,8 +28,8 @@ public:
     PropertyGetterFunctionSymbol* Getter() const { return getter; }
     PropertySetterFunctionSymbol* Setter() const { return setter; }
     void AddTo(ClassTypeSymbol* classTypeSymbol) override;
-    void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol) override;
-    void Merge(const PropertySymbol& that);
+    void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol, Assembly* assembly) override;
+    void Merge(PropertySymbol& that, Assembly* assembly);
 private:
     TypeSymbol* type;
     PropertyGetterFunctionSymbol* getter;

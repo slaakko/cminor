@@ -7,7 +7,7 @@
 #include <cminor/binder/BoundCompileUnit.hpp>
 #include <cminor/binder/TypeBinderVisitor.hpp>
 #include <cminor/binder/StatementBinderVisitor.hpp>
-#include <cminor/binder/ConstantPoolInstallerVisitor.hpp>
+#include <cminor/symbols/ConstantPoolInstallerVisitor.hpp>
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/util/Util.hpp>
 

@@ -22,10 +22,12 @@ enum class GlobalFlags : uint16_t
     emitLlvm = 1 << 6,
     emitOptLlvm = 1 << 7,
     linkWithDebugMachine = 1 << 8,
-    useMsLink = 1 << 9
+    useMsLink = 1 << 9,
+    readClassNodes = 1 << 10
 };
 
 void SetGlobalFlag(GlobalFlags flag);
+void ResetGlobalFlag(GlobalFlags flag);
 bool GetGlobalFlag(GlobalFlags flag);
 
 std::string GetConfig();

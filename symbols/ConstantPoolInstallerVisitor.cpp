@@ -3,7 +3,7 @@
 // Distributed under the MIT license
 // =================================
 
-#include <cminor/binder/ConstantPoolInstallerVisitor.hpp>
+#include <cminor/symbols/ConstantPoolInstallerVisitor.hpp>
 #include <cminor/ast/Identifier.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Parameter.hpp>
@@ -17,7 +17,7 @@
 #include <cminor/ast/Enumeration.hpp>
 #include <cminor/ast/Delegate.hpp>
 
-namespace cminor { namespace binder {
+namespace cminor { namespace symbols {
 
 ConstantPoolInstallerVisitor::ConstantPoolInstallerVisitor(ConstantPool& constantPool_) : constantPool(constantPool_)
 {
@@ -625,4 +625,4 @@ void ConstantPoolInstallerVisitor::Visit(DelegateNode& delegateNode)
     }
 }
 
-} } // namespace cminor::binder
+} } // namespace cminor::symbols

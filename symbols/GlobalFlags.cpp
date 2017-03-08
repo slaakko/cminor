@@ -22,9 +22,19 @@ inline GlobalFlags operator&(GlobalFlags flags, GlobalFlags flag)
     return GlobalFlags(uint16_t(flags) & uint16_t(flag));
 }
 
+inline GlobalFlags operator~(GlobalFlags flags)
+{
+    return GlobalFlags(~uint16_t(flags));
+}
+
 void SetGlobalFlag(GlobalFlags flag)
 {
     globalFlags = globalFlags | flag;
+}
+
+void ResetGlobalFlag(GlobalFlags flag)
+{
+    globalFlags = globalFlags & ~flag;
 }
 
 bool GetGlobalFlag(GlobalFlags flag)

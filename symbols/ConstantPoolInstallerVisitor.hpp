@@ -3,12 +3,12 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_BINDER_CONSTANT_POOL_INSTALLER_VISITOR_INCLUDED
-#define CMINOR_BINDER_CONSTANT_POOL_INSTALLER_VISITOR_INCLUDED
+#ifndef CMINOR_SYMBOLS_CONSTANT_POOL_INSTALLER_VISITOR_INCLUDED
+#define CMINOR_SYMBOLS_CONSTANT_POOL_INSTALLER_VISITOR_INCLUDED
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/machine/Constant.hpp>
 
-namespace cminor { namespace binder {
+namespace cminor { namespace symbols {
 
 using namespace cminor::ast;
 using namespace cminor::machine;
@@ -92,6 +92,6 @@ private:
     ConstantPool& constantPool;
 };
 
-} } // namespace cminor::binder
+} } // namespace cminor::symbols
 
-#endif // CMINOR_BINDER_CONSTANT_POOL_INSTALLER_VISITOR_INCLUDED
+#endif // CMINOR_SYMBOLS_CONSTANT_POOL_INSTALLER_VISITOR_INCLUDED

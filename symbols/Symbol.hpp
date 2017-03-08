@@ -173,8 +173,8 @@ public:
     void SetId(uint32_t id_) { id = id_; }
     bool HasId() const { return id != noSymbolId; }
     virtual void AddTo(ClassTypeSymbol* classTypeSymbol);
-    virtual void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol);
-    void Merge(const Symbol& that);
+    virtual void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol, Assembly* assembly);
+    void Merge(Symbol& that, Assembly* assembly);
     virtual bool Evaluate(SymbolEvaluator* evaluator, const Span& span, bool dontThrow);
     void Dump(CodeFormatter& formatter, Assembly* assembly);
     virtual void DumpHeader(CodeFormatter& formatter);
@@ -538,7 +538,8 @@ enum class ClassTypeSymbolFlags : uint8_t
     abstract_ = 1 << 0,
     nonLeaf = 1 << 1,
     reopened = 1 << 2,
-    reopenDetected = 1 <<3
+    reopenDetected = 1 << 3,
+    hasOpenedInstances = 1 << 4
 };
 
 inline ClassTypeSymbolFlags operator&(ClassTypeSymbolFlags left, ClassTypeSymbolFlags right)
@@ -606,6 +607,8 @@ public:
     void SetReopened() { SetFlag(ClassTypeSymbolFlags::reopened); }
     bool IsReopenDetected() const { return GetFlag(ClassTypeSymbolFlags::reopenDetected); }
     void SetReopenDetected() { SetFlag(ClassTypeSymbolFlags::reopenDetected); }
+    bool HasOpenedInstances() { return GetFlag(ClassTypeSymbolFlags::hasOpenedInstances); }
+    void SetHasOpenedInstances() { SetFlag(ClassTypeSymbolFlags::hasOpenedInstances); }
     void EmplaceType(TypeSymbol* type, int index) override;
     int Level() const { return level; }
     void SetLevel(int level_) { level = level_; }
@@ -623,6 +626,7 @@ public:
     void LinkImts();
     void SetSourceFilePathConstant(Constant sourceFilePathConstant_) { sourceFilePathConstant = sourceFilePathConstant_; }
     Constant GetSourceFilePathConstant() const { return sourceFilePathConstant; }
+    ClassTypeSymbolFlags Flags() const { return flags; }
 private:
     ClassTypeSymbol* baseClass;
     std::vector<InterfaceTypeSymbol*> implementedInterfaces;
@@ -757,11 +761,11 @@ public:
     NamespaceNode* GlobalNs() const { return globalNs.get(); }
     bool IsReopenedClassTemplateSpecialization() const override { return IsReopened(); }
     void AddToBeMerged(std::unique_ptr<ClassTemplateSpecializationSymbol>&& that);
-    void MergeOpenedInstances();
-    void MergeConstructorSymbol(const ConstructorSymbol& constructorSymbol);
-    void MergeMemberFunctionSymbol(const MemberFunctionSymbol& memberFunctionSymbol);
-    void MergePropertySymbol(const PropertySymbol& propertySymbol);
-    void MergeIndexerSymbol(const IndexerSymbol& indexerSymbol);
+    void MergeOpenedInstances(Assembly* assembly);
+    void MergeConstructorSymbol(ConstructorSymbol& constructorSymbol, Assembly* assembly);
+    void MergeMemberFunctionSymbol(MemberFunctionSymbol& memberFunctionSymbol, Assembly* assembly);
+    void MergePropertySymbol(PropertySymbol& propertySymbol, Assembly* assembly);
+    void MergeIndexerSymbol(IndexerSymbol& indexerSymbol, Assembly* assembly);
     bool HasGlobalNs() const { return globalNs != nullptr; }
     void ReadGlobalNs();
 private:

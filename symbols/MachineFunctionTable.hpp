@@ -27,6 +27,7 @@ public:
     std::vector<std::unique_ptr<Function>>& MachineFunctions() { return machineFunctions; }
 private:
     std::vector<std::unique_ptr<Function>> machineFunctions;
+    void InstallNameConstants(FunctionSymbol* functionSymbol);
 };
 
 } } // namespace cminor::symbols

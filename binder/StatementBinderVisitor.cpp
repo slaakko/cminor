@@ -11,7 +11,7 @@
 #include <cminor/binder/ExpressionBinder.hpp>
 #include <cminor/binder/OverloadResolution.hpp>
 #include <cminor/binder/Access.hpp>
-#include <cminor/binder/ConstantPoolInstallerVisitor.hpp>
+#include <cminor/symbols/ConstantPoolInstallerVisitor.hpp>
 #include <cminor/binder/TypeBinderVisitor.hpp>
 #include <cminor/binder/Evaluator.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
@@ -1082,13 +1082,6 @@ void StatementBinderVisitor::Visit(CaseStatementNode& caseStatementNode)
     for (int i = 0; i < m; ++i)
     {
         Node* caseExpr = caseStatementNode.CaseExprs()[i];
-        if (DotNode* dotNode = dynamic_cast<DotNode*>(caseExpr))
-        {
-            if (dotNode->MemberStr() == "disjunction")
-            {
-                int x = 0;
-            }
-        }
         std::unique_ptr<Value> value(Evaluate(GetValueKindFor(switchConditionType->GetSymbolType(), caseStatementNode.GetSpan()), false, containerScope, boundCompileUnit, caseExpr));
         IntegralValue caseValue = value->GetIntegralValue();
         auto it = caseValueMap->find(caseValue);

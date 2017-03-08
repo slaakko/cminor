@@ -74,7 +74,8 @@ class CreateLocalVariableReferenceInst;
 class CreateMemberVariableReferenceInst;
 class LoadVariableReferenceInst;
 class StoreVariableReferenceInst;
-class GcPointInst;
+class GcPollInst;
+class RequestGcInst;
 
 class MACHINE_API MachineFunctionVisitor
 {
@@ -151,7 +152,8 @@ public:
     virtual void VisitCreateMemberVariableReferenceInst(CreateMemberVariableReferenceInst& instruction) {}
     virtual void VisitLoadVariableReferenceInst(LoadVariableReferenceInst& instruction) {}
     virtual void VisitStoreVariableReferenceInst(StoreVariableReferenceInst& instruction) {}
-    virtual void VisitGcPointInst(GcPointInst& instruction) {}
+    virtual void VisitGcPollInst(GcPollInst& instruction) {}
+    virtual void VisitRequestGcInst(RequestGcInst& instruction) {}
     void SetCurrentInstructionIndex(int currentInstructionIndex_) { currentInstructionIndex = currentInstructionIndex_; }
     int GetCurrentInstructionIndex() const { return currentInstructionIndex;  }
 private:

@@ -1547,9 +1547,24 @@ void ContinuousSwitchInst::Dump(CodeFormatter& formatter)
         {
             targetsStr.append(", ");
         }
-        targetsStr.append(std::to_string(target));
+        if (target == endOfFunction)
+        {
+            targetsStr.append("eof");
+        }
+        else
+        {
+            targetsStr.append(std::to_string(target));
+        }
     }
-    targetsStr.append(" : ").append(std::to_string(defaultTarget));
+    targetsStr.append(" : ");
+    if (defaultTarget == endOfFunction)
+    {
+        targetsStr.append("eof");
+    }
+    else
+    {
+        targetsStr.append(std::to_string(defaultTarget));
+    }
     targetsStr.append("]");
     formatter.Write(targetsStr);
 }
@@ -1644,9 +1659,24 @@ void BinarySearchSwitchInst::Dump(CodeFormatter& formatter)
         {
             targetsStr.append(", ");
         }
-        targetsStr.append(std::to_string(target.second));
+        if (target.second == endOfFunction)
+        {
+            targetsStr.append("eof");
+        }
+        else
+        {
+            targetsStr.append(std::to_string(target.second));
+        }
     }
-    targetsStr.append(" : ").append(std::to_string(defaultTarget));
+    targetsStr.append(" : ");
+    if (defaultTarget == endOfFunction)
+    {
+        targetsStr.append("eof");
+    }
+    else
+    {
+        targetsStr.append(std::to_string(defaultTarget));
+    }
     targetsStr.append("]");
     formatter.Write(targetsStr);
 }
@@ -1751,6 +1781,16 @@ void CallInst::Accept(MachineFunctionVisitor& visitor)
     visitor.VisitCallInst(*this);
 }
 
+bool CallInst::CreatesTemporaryObject(Function* function) const
+{
+    Function* fn = GetFunction();
+    if (fn->ReturnsValue())
+    {
+        return fn->ReturnType() == ValueType::objectReference;
+    }
+    return false;
+}
+
 VirtualCallInst::VirtualCallInst() : Instruction("callv"), numArgs(0), vmtIndex(-1)
 {
 }
@@ -1834,6 +1874,11 @@ void VirtualCallInst::Dump(CodeFormatter& formatter)
 {
     Instruction::Dump(formatter);
     formatter.Write(" " + std::to_string(numArgs) + " " + std::to_string(vmtIndex));
+}
+
+bool VirtualCallInst::CreatesTemporaryObject(Function* function) const
+{
+    return functionType.ReturnType() == ValueType::objectReference;
 }
 
 void VirtualCallInst::Accept(MachineFunctionVisitor& visitor)
@@ -1933,6 +1978,11 @@ void InterfaceCallInst::Dump(CodeFormatter& formatter)
     formatter.Write(" " + std::to_string(numArgs) + " " + std::to_string(imtIndex));
 }
 
+bool InterfaceCallInst::CreatesTemporaryObject(Function* function) const
+{
+    return functionType.ReturnType() == ValueType::objectReference;
+}
+
 void InterfaceCallInst::Accept(MachineFunctionVisitor& visitor)
 {
     visitor.VisitInterfaceCallInst(*this);
@@ -1972,6 +2022,11 @@ void VmCallInst::Execute(Frame& frame)
     {
         ThrowSystemException(ex, frame);
     }
+}
+
+bool VmCallInst::CreatesTemporaryObject(Function* function) const 
+{ 
+    return function->ReturnsValue() && function->ReturnType() == ValueType::objectReference; 
 }
 
 void VmCallInst::Accept(MachineFunctionVisitor& visitor)
@@ -2030,6 +2085,11 @@ void DelegateCallInst::Accept(MachineFunctionVisitor& visitor)
     visitor.VisitDelegateCallInst(*this);
 }
 
+bool DelegateCallInst::CreatesTemporaryObject(Function* function) const
+{
+    return functionType.ReturnType() == ValueType::objectReference;
+}
+
 ClassDelegateCallInst::ClassDelegateCallInst() : Instruction("callcd")
 {
 }
@@ -2086,6 +2146,11 @@ void ClassDelegateCallInst::Execute(Frame& frame)
             ThrowStackOverflowException(ex, frame);
         }
     }
+}
+
+bool ClassDelegateCallInst::CreatesTemporaryObject(Function* function) const
+{
+    return functionType.ReturnType() == ValueType::objectReference;
 }
 
 void ClassDelegateCallInst::Accept(MachineFunctionVisitor& visitor)
@@ -3455,18 +3520,49 @@ void StoreVariableReferenceInst::Accept(MachineFunctionVisitor& visitor)
     visitor.VisitStoreVariableReferenceInst(*this);
 }
 
-GcPointInst::GcPointInst() : Instruction("gcpoint")
+GcPollInst::GcPollInst() : Instruction("gcpoll")
 {
 }
 
-void GcPointInst::Execute(Frame& frame)
+void GcPollInst::Execute(Frame& frame)
 {
-    GetCurrentThread().CheckPause();
+    frame.GetThread().CheckPause();
 }
 
-void GcPointInst::Accept(MachineFunctionVisitor& visitor)
+void GcPollInst::Accept(MachineFunctionVisitor& visitor)
 {
-    visitor.VisitGcPointInst(*this);
+    visitor.VisitGcPollInst(*this);
+}
+
+RequestGcInst::RequestGcInst() : Instruction("requestgc")
+{
+}
+
+void RequestGcInst::Execute(Frame& frame)
+{
+    Thread& thread = frame.GetThread();
+    thread.SetState(ThreadState::paused);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + " (paused)");
+#endif
+    thread.GetMachine().GetGarbageCollector().RequestGarbageCollection(thread);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + " (collection requested)");
+#endif
+    thread.GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(thread);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + " (collection ended)");
+#endif
+    thread.SetState(ThreadState::running);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + " (running)");
+#endif
+    thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
+}
+
+void RequestGcInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitRequestGcInst(*this);
 }
 
 void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName)
@@ -3474,8 +3570,6 @@ void ThrowException(const std::string& message, Frame& frame, const utf32_string
     Type* type = TypeTable::GetType(StringPtr(exceptionTypeName.c_str()));
     ObjectType* objectType = dynamic_cast<ObjectType*>(type);
     Assert(objectType, "object type expected");
-    GcPointInst gcPoint;
-    gcPoint.Execute(frame);
     ObjectReference objectReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
     ClassData* classData = ClassDataTable::GetClassData(StringPtr(exceptionTypeName.c_str()));
     Object& o = GetManagedMemoryPool().GetObject(objectReference);

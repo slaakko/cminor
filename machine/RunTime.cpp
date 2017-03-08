@@ -2744,6 +2744,29 @@ extern "C" MACHINE_API void RtMemFun2ClassDelegate(uint64_t classObjectRererence
     }
 }
 
+extern "C" MACHINE_API void RtRequestGc()
+{
+    Thread& thread = GetCurrentThread();
+    thread.SetFunctionStack(functionStack);
+    thread.SetState(ThreadState::paused);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + " (paused)");
+#endif
+    thread.GetMachine().GetGarbageCollector().RequestGarbageCollection(thread);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + " (collection requested)");
+#endif
+    thread.GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(thread);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + " (collection ended)");
+#endif
+    thread.SetState(ThreadState::running);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(thread.Id()) + " (running)");
+#endif
+    thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
+}
+
 extern "C" MACHINE_API void RtWaitGc()
 {
     GetCurrentThread().SetFunctionStack(functionStack);

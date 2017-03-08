@@ -202,10 +202,20 @@ inline void GarbageCollector::MarkLiveAllocations(ObjectReference objectReferenc
 void GarbageCollector::MarkLiveAllocations()
 {
     std::unordered_set<AllocationHandle, AllocationHandleHash> checked;
-    AllocationHandle handle = machine.GetManagedMemoryPool().PoolRoot();
-    if (handle.Value() != 0)
+    AllocationHandle root1 = machine.GetManagedMemoryPool().PoolRoot1();
+    if (root1.Value() != 0)
     {
-        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocationNothrow(handle);
+        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocationNothrow(root1);
+        if (allocation)
+        {
+            allocation->SetLive();
+            allocation->MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
+        }
+    }
+    AllocationHandle root2 = machine.GetManagedMemoryPool().PoolRoot2();
+    if (root2.Value() != 0)
+    {
+        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocationNothrow(root2);
         if (allocation)
         {
             allocation->SetLive();

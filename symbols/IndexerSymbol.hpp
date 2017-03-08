@@ -30,8 +30,8 @@ public:
     IndexerGetterFunctionSymbol* Getter() const { return getter; }
     IndexerSetterFunctionSymbol* Setter() const { return setter; }
     void AddTo(ClassTypeSymbol* classTypeSymbol) override;
-    void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol) override;
-    void Merge(const IndexerSymbol& that);
+    void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol, Assembly* assembly) override;
+    void Merge(IndexerSymbol& that, Assembly* assembly);
 private:
     TypeSymbol* valueType;
     TypeSymbol* indexType;

@@ -191,7 +191,8 @@ public:
     void VisitCreateMemberVariableReferenceInst(CreateMemberVariableReferenceInst& instruction) override;
     void VisitLoadVariableReferenceInst(LoadVariableReferenceInst& instruction) override;
     void VisitStoreVariableReferenceInst(StoreVariableReferenceInst& instruction) override;
-    void VisitGcPointInst(GcPointInst& instruction) override;
+    void VisitGcPollInst(GcPollInst& instruction) override;
+    void VisitRequestGcInst(RequestGcInst& instruction) override;
 private:
     Assembly* assembly;
     LLVMContext context;
@@ -247,6 +248,9 @@ private:
     bool isGCFun;
     std::vector<llvm::AllocaInst*> gcRoots;
     llvm::AllocaInst* gcEntry;
+    std::unordered_map<int32_t, int32_t> temporaryGcRootMap;
+    void CreateTemporaryGcRoots();
+    void StoreTemporaryGcRoot(Instruction& instruction);
     llvm::TargetOptions GetTargetOptions();
     void SetPersonalityFunction();
     void InsertAllocaIntoEntryBlock(llvm::AllocaInst* allocaInst);
@@ -372,6 +376,43 @@ llvm::TargetOptions NativeCompilerImpl::GetTargetOptions()
     targetOptions.ExceptionModel = llvm::ExceptionHandling::WinEH;
 #endif
     return targetOptions;
+}
+
+void NativeCompilerImpl::CreateTemporaryGcRoots()
+{
+    int32_t n = function->NumInsts();
+    for (int32_t i = 0; i < n; ++i)
+    {
+        Instruction* inst = function->GetInst(i);
+        if (inst->CreatesTemporaryObject(function))
+        {
+            isGCFun = true;
+            int32_t temporaryGcRootIndex = int32_t(gcRoots.size());
+            llvm::AllocaInst* allocaInst = builder.CreateAlloca(GetType(ValueType::objectReference));
+            gcRoots.push_back(allocaInst);
+            temporaryGcRootMap[i] = temporaryGcRootIndex;
+        }
+    }
+}
+
+void NativeCompilerImpl::StoreTemporaryGcRoot(Instruction& instruction)
+{
+    if (instruction.CreatesTemporaryObject(function))
+    {
+        llvm::Value* temporaryGcRoot = valueStack.Pop();
+        int32_t instructionIndex = GetCurrentInstructionIndex();
+        auto it = temporaryGcRootMap.find(instructionIndex);
+        if (it != temporaryGcRootMap.cend())
+        {
+            int32_t temporaryGcRootIndex = it->second;
+            builder.CreateStore(temporaryGcRoot, gcRoots[temporaryGcRootIndex]);
+        }
+        else
+        {
+            throw std::runtime_error("temporary gc root index not found");
+        }
+        valueStack.Push(temporaryGcRoot);
+    }
 }
 
 void NativeCompilerImpl::SetPersonalityFunction()
@@ -523,6 +564,7 @@ void NativeCompilerImpl::CreateReturnFromFunctionOrFunclet()
             {
                 builder.CreateRetVoid();
             }
+            currentBasicBlock = nullptr;
             break;
         }
         case LlvmPadKind::catchSwitch:
@@ -573,6 +615,7 @@ void NativeCompilerImpl::CreateReturnFromFunctionOrFunclet()
                 throw std::runtime_error("current pad not set");
             }
             builder.CreateCleanupRet(cast<llvm::CleanupPadInst>(currentPad));
+            currentBasicBlock = nullptr;
             break;
         }
     }
@@ -1002,10 +1045,7 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
     std::vector<std::string> args;
     args.push_back("/dll");
     args.push_back("/entry:DllMain");
-    if (!GetGlobalFlag(GlobalFlags::release))
-    {
-        args.push_back("/debug");
-    }
+    args.push_back("/debug");
     std::string importLibraryFilePath = Path::ChangeExtension(assemblyObjectFilePath, ".lib");
     std::string importLibraryFileName = Path::GetFileName(importLibraryFilePath);
     args.push_back("/implib:" + QuotedPath(importLibraryFilePath));
@@ -1072,6 +1112,7 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
 
 void NativeCompilerImpl::BeginVisitFunction(Function& function)
 {
+    this->function = &function;
     basicBlocks.clear();
     unwindTargets.clear();
     jumpTargets.clear();
@@ -1154,6 +1195,7 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
         locals.push_back(allocaInst);
         lastAlloca = allocaInst;
     }
+    CreateTemporaryGcRoots();
     gcEntry = nullptr;
     if (isGCFun)
     {
@@ -1171,7 +1213,6 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
         llvm::AllocaInst* exceptionObjectVar = builder.CreateAlloca(PointerType::get(GetType(ValueType::byteType), 0));
         exceptionObjectVariables[i] = exceptionObjectVar;
     }
-    this->function = &function;
     if (function.CanThrow() || function.HasExceptionBlocks() || isGCFun)
     {
         llvm::StructType* functionStackEntryType = llvm::StructType::get(
@@ -2123,7 +2164,15 @@ void NativeCompilerImpl::VisitContinuousSwitchInst(ContinuousSwitchInst& instruc
     IntegralValue begin = instruction.Begin();
     IntegralValue end = instruction.End();
     int32_t defaultTarget = instruction.DefaultTarget();
-    BasicBlock* defaultBlock = BasicBlock::Create(context, "defaultTarget" + std::to_string(defaultTarget), fun);
+    BasicBlock* defaultBlock = nullptr;
+    if (defaultTarget == endOfFunction)
+    {
+        defaultBlock = BasicBlock::Create(context, "defaultTargetEof", fun);
+    }
+    else
+    {
+        defaultBlock = BasicBlock::Create(context, "defaultTarget" + std::to_string(defaultTarget), fun);
+    }
     basicBlocks[defaultTarget] = defaultBlock;
     int n = int(instruction.Targets().size());
     Assert(n == end.Value() - begin.Value() + 1, "invalid switch range");
@@ -2139,6 +2188,16 @@ void NativeCompilerImpl::VisitContinuousSwitchInst(ContinuousSwitchInst& instruc
             switchInst->addCase(GetConstantInt(condType, caseValue), targetBlock);
         }
     }
+    if (defaultTarget == endOfFunction)
+    {
+        currentBasicBlock = defaultBlock;
+        builder.SetInsertPoint(currentBasicBlock);
+        if (function->ReturnsValue())
+        {
+            PushDefaultValue(function->ReturnType());
+        }
+        CreateReturnFromFunctionOrFunclet();
+    }
 }
 
 void NativeCompilerImpl::VisitBinarySearchSwitchInst(BinarySearchSwitchInst& instruction)
@@ -2146,7 +2205,15 @@ void NativeCompilerImpl::VisitBinarySearchSwitchInst(BinarySearchSwitchInst& ins
     ValueType condType = instruction.CondType();
     llvm::Value* cond = valueStack.Pop();
     int32_t defaultTarget = instruction.DefaultTarget();
-    BasicBlock* defaultBlock = BasicBlock::Create(context, "defaultTarget" + std::to_string(defaultTarget), fun);
+    BasicBlock* defaultBlock = nullptr;
+    if (defaultTarget == endOfFunction)
+    {
+        defaultBlock = BasicBlock::Create(context, "defaultTargetEof", fun);
+    }
+    else
+    {
+        defaultBlock = BasicBlock::Create(context, "defaultTarget" + std::to_string(defaultTarget), fun);
+    }
     basicBlocks[defaultTarget] = defaultBlock;
     int n = int(instruction.Targets().size());
     SwitchInst* switchInst = builder.CreateSwitch(cond, defaultBlock, n);
@@ -2158,6 +2225,16 @@ void NativeCompilerImpl::VisitBinarySearchSwitchInst(BinarySearchSwitchInst& ins
         BasicBlock* targetBlock = BasicBlock::Create(context, "caseTarget" + std::to_string(target), fun);
         basicBlocks[target] = targetBlock;
         switchInst->addCase(GetConstantInt(condType, caseValue), targetBlock);
+    }
+    if (defaultTarget == endOfFunction)
+    {
+        currentBasicBlock = defaultBlock;
+        builder.SetInsertPoint(currentBasicBlock);
+        if (function->ReturnsValue())
+        {
+            PushDefaultValue(function->ReturnType());
+        }
+        CreateReturnFromFunctionOrFunclet();
     }
 }
 
@@ -2193,6 +2270,7 @@ void NativeCompilerImpl::VisitCallInst(CallInst& instruction)
     uint32_t lineNumber = function->GetSourceLine(pc);
     SetCurrentLineNumber(lineNumber);
     CreateCall(callee, args, calledFunction->ReturnsValue());
+    StoreTemporaryGcRoot(instruction);
 }
 
 void NativeCompilerImpl::VisitVirtualCallInst(VirtualCallInst& instruction)
@@ -2228,6 +2306,7 @@ void NativeCompilerImpl::VisitVirtualCallInst(VirtualCallInst& instruction)
     uint32_t lineNumber = function->GetSourceLine(pc);
     SetCurrentLineNumber(lineNumber);
     CreateCall(funPtrValue, args, instruction.GetFunctionType().ReturnType() != ValueType::none);
+    StoreTemporaryGcRoot(instruction);
 }
 
 void NativeCompilerImpl::VisitInterfaceCallInst(InterfaceCallInst& instruction)
@@ -2266,6 +2345,7 @@ void NativeCompilerImpl::VisitInterfaceCallInst(InterfaceCallInst& instruction)
     uint32_t lineNumber = function->GetSourceLine(pc);
     SetCurrentLineNumber(lineNumber);
     CreateCall(funPtrValue, args, instruction.GetFunctionType().ReturnType() != ValueType::none);
+    StoreTemporaryGcRoot(instruction);
 }
 
 void NativeCompilerImpl::VisitVmCallInst(VmCallInst& instruction)
@@ -2345,6 +2425,7 @@ void NativeCompilerImpl::VisitVmCallInst(VmCallInst& instruction)
         llvm::Value* retValAsULong = builder.CreateLoad(retValPtr);
         llvm::Value* retVal = CreateConversionFromULong(retValAsULong, retValType);
         valueStack.Push(retVal);
+        StoreTemporaryGcRoot(instruction);
     }
 }
 
@@ -2380,6 +2461,7 @@ void NativeCompilerImpl::VisitDelegateCallInst(DelegateCallInst& instruction)
     uint32_t lineNumber = function->GetSourceLine(pc);
     SetCurrentLineNumber(lineNumber);
     CreateCall(funPtrValue, args, instruction.GetFunctionType().ReturnType() != ValueType::none);
+    StoreTemporaryGcRoot(instruction);
 }
 
 void NativeCompilerImpl::VisitClassDelegateCallInst(ClassDelegateCallInst& instruction)
@@ -2418,6 +2500,7 @@ void NativeCompilerImpl::VisitClassDelegateCallInst(ClassDelegateCallInst& instr
     uint32_t lineNumber = function->GetSourceLine(pc);
     SetCurrentLineNumber(lineNumber);
     CreateCall(funPtrValue, args, instruction.GetFunctionType().ReturnType() != ValueType::none);
+    StoreTemporaryGcRoot(instruction);
 }
 
 void NativeCompilerImpl::VisitSetClassDataInst(SetClassDataInst& instruction)
@@ -2444,6 +2527,7 @@ void NativeCompilerImpl::VisitCreateObjectInst(CreateObjectInst& instruction)
     llvm::Value* classDataPtrVar = GetClassDataPtrVar(classData);
     args.push_back(builder.CreateLoad(classDataPtrVar));
     CreateCall(rtCreateObject, args, true);
+    StoreTemporaryGcRoot(instruction);
 }
 
 void NativeCompilerImpl::VisitCopyObjectInst(CopyObjectInst& instruction)
@@ -2454,6 +2538,7 @@ void NativeCompilerImpl::VisitCopyObjectInst(CopyObjectInst& instruction)
     ArgVector args;
     args.push_back(objectReference);
     CreateCall(rtCopyObject, args, true);
+    StoreTemporaryGcRoot(instruction);
 }
 
 void NativeCompilerImpl::VisitStrLitToStringInst(StrLitToStringInst& instruction)
@@ -2464,6 +2549,7 @@ void NativeCompilerImpl::VisitStrLitToStringInst(StrLitToStringInst& instruction
     ArgVector args;
     args.push_back(value);
     CreateCall(rtStrLitToString, args, true);
+    StoreTemporaryGcRoot(instruction);
 }
 
 void NativeCompilerImpl::VisitLoadStringCharInst(LoadStringCharInst& instruction)
@@ -3131,6 +3217,7 @@ void NativeCompilerImpl::VisitBoxBaseInst(BoxBaseInst& instruction)
     ArgVector args;
     args.push_back(value);
     CreateCall(rtBox, args, true);
+    StoreTemporaryGcRoot(instruction);
 }
 
 void NativeCompilerImpl::VisitUnboxBaseInst(UnboxBaseInst& instruction)
@@ -3280,6 +3367,7 @@ void NativeCompilerImpl::VisitMemFun2ClassDlgInst(MemFun2ClassDlgInst& instructi
     args.push_back(builder.CreateLoad(functionPtrVar));
     CreateCall(rtMemFun2ClassDelegate, args, false);
     valueStack.Push(classDelegateObject);
+    StoreTemporaryGcRoot(instruction);
 }
 
 void NativeCompilerImpl::VisitCreateLocalVariableReferenceInst(CreateLocalVariableReferenceInst& instruction)
@@ -3598,7 +3686,7 @@ void NativeCompilerImpl::VisitStoreVariableReferenceInst(StoreVariableReferenceI
     builder.SetInsertPoint(nextBlock);
 }
 
-void NativeCompilerImpl::VisitGcPointInst(GcPointInst& instruction)
+void NativeCompilerImpl::VisitGcPollInst(GcPollInst& instruction)
 {
     llvm::Value* wantToCollectGarbage(builder.CreateLoad(builder.CreateLoad(wantToCollectGarbageVariable)));
     BasicBlock* waitGcBlock = BasicBlock::Create(context, "waitGcTarget" + std::to_string(GetCurrentInstructionIndex()), fun);
@@ -3612,6 +3700,14 @@ void NativeCompilerImpl::VisitGcPointInst(GcPointInst& instruction)
     builder.CreateBr(continueBlock);
     builder.SetInsertPoint(continueBlock);
     currentBasicBlock = continueBlock;
+}
+
+void NativeCompilerImpl::VisitRequestGcInst(RequestGcInst& instruction)
+{
+    llvm::Function* rtRequestGc = cast<llvm::Function>(module->getOrInsertFunction("RtRequestGc", GetType(ValueType::none), nullptr));
+    ImportFunction(rtRequestGc);
+    ArgVector args;
+    builder.CreateCall(rtRequestGc, args);
 }
 
 llvm::Type* NativeCompilerImpl::GetType(ValueType type)
@@ -4282,8 +4378,9 @@ void NativeCompiler::Compile(const std::string& assemblyFilePath, std::string& n
     TypeInit();
     AssemblyTable::Init();
     Assembly assembly(machine);
-    assembly.SetReadClassNodes();
+    SetGlobalFlag(GlobalFlags::readClassNodes);
     assembly.Load(assemblyFilePath);
+    ResetGlobalFlag(GlobalFlags::readClassNodes);
     std::string assemblyName = ToUtf8(assembly.Name().Value());
     if (GetGlobalFlag(GlobalFlags::verbose))
     {

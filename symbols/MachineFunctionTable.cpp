@@ -20,7 +20,7 @@ Function* MachineFunctionTable::CreateFunction(FunctionSymbol* functionSymbol)
     Constant functionCallNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(functionCallName.c_str())));
     utf32_string functionFullNameWithSpecifiers = functionSymbol->FullNameWithSpecifiers();
     Constant functionFullNameWithSpecifiersConstant = constantPool.GetConstant(constantPool.Install(StringPtr(functionFullNameWithSpecifiers.c_str())));
-    Function* function = new Function(functionGroupNameConstant, functionCallNameConstant, functionFullNameWithSpecifiersConstant, int32_t(machineFunctions.size()), &constantPool);
+    Function* function = new Function(functionGroupNameConstant, functionCallNameConstant, functionFullNameWithSpecifiersConstant, uint32_t(machineFunctions.size()), &constantPool);
     if (functionSymbol->GetSpan().Valid())
     {
         utf32_string sfp = ToUtf32(FileRegistry::GetParsedFileName(functionSymbol->GetSpan().FileIndex()));
@@ -34,7 +34,9 @@ Function* MachineFunctionTable::CreateFunction(FunctionSymbol* functionSymbol)
 Function* MachineFunctionTable::GetFunction(uint32_t functionId) const
 {
     Assert(functionId < uint32_t(machineFunctions.size()), "invalid function id");
-    return machineFunctions[functionId].get();
+    Function* function = machineFunctions[functionId].get();
+    Assert(function, "function not set");
+    return function;
 }
 
 void MachineFunctionTable::Write(SymbolWriter& writer)

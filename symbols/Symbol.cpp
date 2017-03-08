@@ -14,6 +14,8 @@
 #include <cminor/symbols/ObjectFun.hpp>
 #include <cminor/symbols/IndexerSymbol.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
+#include <cminor/symbols/GlobalFlags.hpp>
+#include <cminor/symbols/ConstantPoolInstallerVisitor.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/util/Util.hpp>
@@ -423,11 +425,11 @@ void Symbol::AddTo(ClassTypeSymbol* classTypeSymbol)
 {
 }
 
-void Symbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
+void Symbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol, Assembly* assembly)
 {
 }
 
-void Symbol::Merge(const Symbol& that)
+void Symbol::Merge(Symbol& that, Assembly* assembly)
 {
     if (that.IsInstantiated())
     {
@@ -1409,7 +1411,7 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
     }
     if (IsClassTemplate())
     {
-        if (GetAssembly()->ReadClassNodes())
+        if (GetGlobalFlag(GlobalFlags::readClassNodes))
         {
             uint32_t classNodeSize = reader.GetUInt();
             usingNodes.Read(reader);
@@ -1971,6 +1973,19 @@ ClassTemplateSpecializationSymbol::ClassTemplateSpecializationSymbol(const Span&
 
 void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)
 {
+    writer.AsMachineWriter().Put(uint8_t(Flags()));
+    if (HasOpenedInstances())
+    {
+        Symbol::Write(writer);
+        uint32_t n = uint32_t(toBeMerged.size());
+        writer.AsMachineWriter().PutEncodedUInt(n);
+        for (const std::unique_ptr<ClassTemplateSpecializationSymbol>& openedInstance : toBeMerged)
+        {
+            openedInstance->SetReopened();
+            writer.Put(openedInstance.get());
+        }
+        return;
+    }
     ClassTypeSymbol::Write(writer);
     uint32_t sizePos = writer.Pos();
     uint32_t size = 0;
@@ -2008,6 +2023,22 @@ void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)
 
 void ClassTemplateSpecializationSymbol::Read(SymbolReader& reader)
 {
+    ClassTypeSymbolFlags flags = ClassTypeSymbolFlags(reader.GetByte());
+    if ((flags & ClassTypeSymbolFlags::hasOpenedInstances) != ClassTypeSymbolFlags::none)
+    {
+        Symbol::Read(reader);
+        SetReopened();
+        uint32_t n = reader.GetEncodedUInt();
+        for (uint32_t i = 0; i < n; ++i)
+        {
+            Symbol* symbol = reader.GetSymbol();
+            ClassTemplateSpecializationSymbol* specializationSymbol = dynamic_cast<ClassTemplateSpecializationSymbol*>(symbol);
+            specializationSymbol->SetReopened();
+            Assert(specializationSymbol, "class template specialization expected");
+            toBeMerged.push_back(std::unique_ptr<ClassTemplateSpecializationSymbol>(specializationSymbol));
+        }
+        return;
+    }
     reader.BeginReadingClassTemplateSpecialization();
     ClassTypeSymbol::Read(reader);
     uint32_t size = reader.GetUInt();
@@ -2034,7 +2065,7 @@ void ClassTemplateSpecializationSymbol::Read(SymbolReader& reader)
         typeArgumentId.Read(reader);
         reader.EmplaceTypeRequest(this, typeArgumentId, i + 1);
     }
-    if (GetAssembly()->ReadClassNodes())
+    if (GetGlobalFlag(GlobalFlags::readClassNodes))
     {
         uint32_t globalNsSize = reader.GetUInt();
         Node* node = reader.GetNode();
@@ -2107,21 +2138,46 @@ void ClassTemplateSpecializationSymbol::SetGlobalNs(std::unique_ptr<NamespaceNod
 
 void ClassTemplateSpecializationSymbol::AddToBeMerged(std::unique_ptr<ClassTemplateSpecializationSymbol>&& that)
 {
+    that->SetKey(key);
     toBeMerged.push_back(std::move(that));
 }
 
-void ClassTemplateSpecializationSymbol::MergeOpenedInstances()
+void ClassTemplateSpecializationSymbol::MergeOpenedInstances(Assembly* assembly)
 {
+    bool needToMerge = false;
     for (const std::unique_ptr<ClassTemplateSpecializationSymbol>& openedInstance : toBeMerged)
     {
-        for (const std::unique_ptr<Symbol>& symbol : openedInstance->Symbols())
+        if (!openedInstance->Symbols().empty())
         {
-            symbol->MergeTo(this);
+            needToMerge = true;
+            break;
+        }
+    }
+    if (needToMerge)
+    {
+        if (GetGlobalFlag(GlobalFlags::native))
+        {
+            SetProject();
+            SetReopened();
+            SetHasOpenedInstances();
+            assembly->GetConstantPool().Install(Name());
+        }
+        for (const std::unique_ptr<ClassTemplateSpecializationSymbol>& openedInstance : toBeMerged)
+        {
+            for (const std::unique_ptr<Symbol>& symbol : openedInstance->Symbols())
+            {
+                symbol->MergeTo(this, assembly);
+            }
+            openedInstance->SetParent(Parent());
+            openedInstance->SetReopened();
+            openedInstance->SetProject();
+            openedInstance->InitVmt();
+            openedInstance->InitImts();
         }
     }
 }
 
-void ClassTemplateSpecializationSymbol::MergeConstructorSymbol(const ConstructorSymbol& constructorSymbol)
+void ClassTemplateSpecializationSymbol::MergeConstructorSymbol(ConstructorSymbol& constructorSymbol, Assembly* assembly)
 {
     uint32_t constructorSymbolId = constructorSymbol.Id();
     bool found = false;
@@ -2130,7 +2186,7 @@ void ClassTemplateSpecializationSymbol::MergeConstructorSymbol(const Constructor
         if (constructorSymbolId == baseConstructor->Id() || 
             constructorSymbolId == constructorSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseConstructor->GetAssembly()->Name().Value()), baseConstructor->Id()))
         {
-            baseConstructor->Merge(constructorSymbol);
+            baseConstructor->Merge(constructorSymbol, assembly);
             found = true;
             break;
         }
@@ -2141,7 +2197,7 @@ void ClassTemplateSpecializationSymbol::MergeConstructorSymbol(const Constructor
     }
 }
 
-void ClassTemplateSpecializationSymbol::MergeMemberFunctionSymbol(const MemberFunctionSymbol& memberFunctionSymbol)
+void ClassTemplateSpecializationSymbol::MergeMemberFunctionSymbol(MemberFunctionSymbol& memberFunctionSymbol, Assembly* assembly)
 {
     uint32_t memFunSymbolId = memberFunctionSymbol.Id();
     bool found = false;
@@ -2150,7 +2206,7 @@ void ClassTemplateSpecializationSymbol::MergeMemberFunctionSymbol(const MemberFu
         if (memFunSymbolId == baseMemFun->Id() || 
             memFunSymbolId == memberFunctionSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseMemFun->GetAssembly()->Name().Value()), baseMemFun->Id()))
         {
-            baseMemFun->Merge(memberFunctionSymbol);
+            baseMemFun->Merge(memberFunctionSymbol, assembly);
             found = true;
             break;
         }
@@ -2161,7 +2217,7 @@ void ClassTemplateSpecializationSymbol::MergeMemberFunctionSymbol(const MemberFu
     }
 }
 
-void ClassTemplateSpecializationSymbol::MergePropertySymbol(const PropertySymbol& propertySymbol)
+void ClassTemplateSpecializationSymbol::MergePropertySymbol(PropertySymbol& propertySymbol, Assembly* assembly)
 {
     uint32_t propertySymbolId = propertySymbol.Id();
     bool found = false;
@@ -2170,7 +2226,7 @@ void ClassTemplateSpecializationSymbol::MergePropertySymbol(const PropertySymbol
         if (propertySymbolId == baseProperty->Id() ||
             propertySymbolId == propertySymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseProperty->GetAssembly()->Name().Value()), baseProperty->Id()))
         {
-            baseProperty->Merge(propertySymbol);
+            baseProperty->Merge(propertySymbol, assembly);
             found = true;
             break;
         }
@@ -2181,7 +2237,7 @@ void ClassTemplateSpecializationSymbol::MergePropertySymbol(const PropertySymbol
     }
 }
 
-void ClassTemplateSpecializationSymbol::MergeIndexerSymbol(const IndexerSymbol& indexerSymbol)
+void ClassTemplateSpecializationSymbol::MergeIndexerSymbol(IndexerSymbol& indexerSymbol, Assembly* assembly)
 {
     uint32_t indexerSymbolId = indexerSymbol.Id();
     bool found = false;
@@ -2190,7 +2246,7 @@ void ClassTemplateSpecializationSymbol::MergeIndexerSymbol(const IndexerSymbol& 
         if (indexerSymbolId == baseIndexer->Id() || 
             indexerSymbolId == indexerSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseIndexer->GetAssembly()->Name().Value()), baseIndexer->Id()))
         {
-            baseIndexer->Merge(indexerSymbol);
+            baseIndexer->Merge(indexerSymbol, assembly);
             found = true;
             break;
         }

@@ -107,22 +107,22 @@ void IndexerSymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
     classTypeSymbol->Add(this);
 }
 
-void IndexerSymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
+void IndexerSymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol, Assembly* assembly)
 {
-    classTemplateSpecializationSymbol->MergeIndexerSymbol(*this);
+    classTemplateSpecializationSymbol->MergeIndexerSymbol(*this, assembly);
 }
 
-void IndexerSymbol::Merge(const IndexerSymbol& that)
+void IndexerSymbol::Merge(IndexerSymbol& that, Assembly* assembly)
 {
     if (that.Getter())
     {
         Assert(Getter(), "getter expected");
-        Getter()->Merge(*that.Getter());
+        Getter()->Merge(*that.Getter(), assembly);
     }
     if (that.Setter())
     {
         Assert(Setter(), "setter expected");
-        Setter()->Merge(*that.Setter());
+        Setter()->Merge(*that.Setter(), assembly);
     }
 }
 

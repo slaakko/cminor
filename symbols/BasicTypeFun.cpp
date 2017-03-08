@@ -194,7 +194,7 @@ void BasicTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Fun
 {
     if (createsObject)
     {
-        function.AddInst(machine.CreateInst("gcpoint"));
+        //function.AddInst(machine.CreateInst("gcpoint"));
     }
     std::unique_ptr<Instruction> inst =  machine.CreateInst(conversionInstructionName);
     function.AddInst(std::move(inst));

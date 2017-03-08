@@ -409,7 +409,7 @@ uint64_t GetPoolThreshold()
 }
 
 ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextReferenceValue(1), object(nullptr), arrayElements(nullptr), stringCharacters(nullptr),
-    objectCount(0), arrayContentCount(0), stringContentCount(0), prevSize(0), size(0), poolRoot(AllocationHandle(0))
+    objectCount(0), arrayContentCount(0), stringContentCount(0), prevSize(0), size(0), poolRoot1(AllocationHandle(0)), poolRoot2(AllocationHandle(0))
 {
 }
 
@@ -446,7 +446,7 @@ ObjectReference ManagedMemoryPool::CopyObject(Thread& thread, ObjectReference fr
         throw SystemException("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
     }
     ++objectCount;
-    CheckSize(thread, lock, reference);
+    CheckSize(thread, lock, from, reference);
     return reference;
 }
 
@@ -618,7 +618,7 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
             MemPtr stringMem = memPtrSegmentId.first;
             std::memcpy(stringMem.Value(), characters.Value(), stringSize);
             ++stringContentCount;
-            CheckSize(thread, lock, handle);
+            CheckSize(thread, lock, handle, charArray);
             return std::make_pair(handle, numChars);
         }
         else
@@ -631,7 +631,7 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
                 throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
             }
             ++stringContentCount;
-            CheckSize(thread, lock, handle);
+            CheckSize(thread, lock, handle, charArray);
             return std::make_pair(handle, numChars);
         }
     }
@@ -664,7 +664,7 @@ ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_stri
         MemPtr stringMem = memPtrSegmentId.first;
         std::memcpy(stringMem.Value(), s.c_str(), stringSize);
         ++stringContentCount;
-        CheckSize(thread, lock, handle);
+        CheckSize(thread, lock, handle, str);
     }
     else
     {
@@ -674,7 +674,7 @@ ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_stri
             throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
         }
         ++stringContentCount;
-        CheckSize(thread, lock, handle);
+        CheckSize(thread, lock, handle, str);
     }
     Object& strObject = GetObject(str);
     ClassData* classDataPtr = ClassDataTable::GetSystemStringClassData();
@@ -823,7 +823,7 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
             throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
         }
         ++arrayContentCount;
-        CheckSize(thread, lock, handle);
+        CheckSize(thread, lock, handle, arr);
     }
     else
     {
@@ -833,7 +833,7 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
             throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
         }
         ++arrayContentCount;
-        CheckSize(thread, lock, handle);
+        CheckSize(thread, lock, handle, arr);
     }
     a.SetField(handle, 2);
 }
@@ -980,13 +980,14 @@ void ManagedMemoryPool::ComputeSize()
     size = allocationCount * allocationSize + objectCount * objectSize + arrayContentCount * arrayContentSize + stringContentCount * stringContentSize;
 }
 
-void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle handle)
+void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle root1, AllocationHandle root2)
 {
     ComputeSize();
     uint64_t sizeDiff = size - prevSize;
     if (sizeDiff >= GetPoolThreshold())
     {
-        poolRoot = handle;
+        poolRoot1 = root1;
+        poolRoot2 = root2;
         lock.unlock();
         if (RunningNativeCode())
         {
@@ -996,7 +997,7 @@ void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursiv
 #ifdef GC_LOGGING
         LogMessage("pool>" + std::to_string(thread.Id()) + " (paused)");
         LogMessage("pool> allocations=" + std::to_string(allocations.size()) + " objects=" + std::to_string(objectCount) + " arraycontents=" + std::to_string(arrayContentCount) +
-            " stringContents=" + std::to_string(stringContentCount) + " size=" + std::to_string(size/(1024ull*1024ull)));
+            " stringContents=" + std::to_string(stringContentCount) + " size=" + std::to_string(size / (1024ull * 1024ull)));
 #endif
         thread.GetMachine().GetGarbageCollector().RequestGarbageCollection(thread);
 #ifdef GC_LOGGING
@@ -1012,13 +1013,19 @@ void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursiv
         LogMessage("pool> allocations=" + std::to_string(allocations.size()) + " objects=" + std::to_string(objectCount) + " arraycontents=" + std::to_string(arrayContentCount) +
             " stringContents=" + std::to_string(stringContentCount) + " size=" + std::to_string(size / (1024ull * 1024ull)));
 #endif
-        poolRoot = AllocationHandle(0);
+        poolRoot1 = AllocationHandle(0);
+        poolRoot2 = AllocationHandle(0);
         thread.SetState(ThreadState::running);
 #ifdef GC_LOGGING
         LogMessage("pool>" + std::to_string(thread.Id()) + " (running)");
 #endif
         thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
     }
+}
+
+void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle root1)
+{
+    CheckSize(thread, lock, root1, AllocationHandle(0));
 }
 
 void ManagedMemoryPool::ResetLiveFlags()

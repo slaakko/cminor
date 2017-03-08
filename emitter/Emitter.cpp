@@ -221,10 +221,6 @@ void EmitterVisitor::Visit(BoundClass& boundClass)
 
 void EmitterVisitor::Visit(BoundFunction& boundFunction)
 {
-    if (boundFunction.GetFunctionSymbol()->GroupName() == U"ReadByte")
-    {
-        int x = 0;
-    }
     boundFunction.GetFunctionSymbol()->CreateMachineFunction();
     Function* prevFunction = function;
     function = boundFunction.GetFunctionSymbol()->MachineFunction();
@@ -406,12 +402,19 @@ void EmitterVisitor::Visit(BoundWhileStatement& boundWhileStatement)
     genJumpingBoolCode = prevGenJumpingBoolCode;
     InstIndexRequest startStatement;
     AddIndexRequest(&startStatement);
+    std::vector<Instruction*> statementNext;
+    std::vector<Instruction*>* prevNextSet = nextSet;
+    nextSet = &statementNext;
     boundWhileStatement.Statement()->Accept(*this);
     function->MapPCToSourceLine(startStatement.Index(), boundWhileStatement.Statement()->GetSpan().LineNumber());
     boundWhileStatement.Statement()->SetFirstInstIndex(startStatement.Index());
     Backpatch(true_, startStatement.Index());
-    std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
-    function->AddInst(std::move(gcpoint));
+    nextSet = prevNextSet;
+    InstIndexRequest gcPoint;
+    AddIndexRequest(&gcPoint);
+    std::unique_ptr<Instruction> gcpoll = machine.CreateInst("gcpoll");
+    function->AddInst(std::move(gcpoll));
+    Backpatch(statementNext, gcPoint.Index());
     std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
     inst->SetTarget(conditionTarget);
     function->AddInst(std::move(inst));
@@ -444,22 +447,27 @@ void EmitterVisitor::Visit(BoundDoStatement& boundDoStatement)
     std::vector<Instruction*> continue_;
     breakSet = &break_;
     continueSet = &continue_;
+    std::vector<Instruction*> statementNext;
+    std::vector<Instruction*>* prevNextSet = nextSet;
+    nextSet = &statementNext;
     InstIndexRequest startStatement;
     AddIndexRequest(&startStatement);
     boundDoStatement.Statement()->Accept(*this);
     function->MapPCToSourceLine(startStatement.Index(), boundDoStatement.GetSpan().LineNumber());
     int32_t statementTarget = startStatement.Index();
     boundDoStatement.Statement()->SetFirstInstIndex(statementTarget);
+    nextSet = prevNextSet;
     trueSet = &true_;
     falseSet = &false_;
     bool prevGenJumpingBoolCode = genJumpingBoolCode;
     genJumpingBoolCode = true;
     InstIndexRequest startCond;
     AddIndexRequest(&startCond);
-    std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
-    function->AddInst(std::move(gcpoint));
+    std::unique_ptr<Instruction> gcpoll = machine.CreateInst("gcpoll");
+    function->AddInst(std::move(gcpoll));
     boundDoStatement.Condition()->Accept(*this);
     int32_t conditionTarget = startCond.Index();
+    Backpatch(statementNext, conditionTarget);
     genJumpingBoolCode = prevGenJumpingBoolCode;
     Backpatch(true_, statementTarget);
     Backpatch(continue_, conditionTarget);
@@ -505,6 +513,9 @@ void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
     boundForStatement.Condition()->Accept(*this);
     int32_t conditionTarget = startCond.Index();
     genJumpingBoolCode = prevGenJumpingBoolCode;
+    std::vector<Instruction*> actionNext;
+    std::vector<Instruction*>* prevNextSet = nextSet;
+    nextSet = &actionNext;
     InstIndexRequest startAction;
     AddIndexRequest(&startAction);
     boundForStatement.ActionS()->Accept(*this);
@@ -512,14 +523,23 @@ void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
     int32_t actionTarget = startAction.Index();
     boundForStatement.ActionS()->SetFirstInstIndex(actionTarget);
     Backpatch(true_, actionTarget);
+    nextSet = prevNextSet;
+    std::vector<Instruction*> loopNext;
+    prevNextSet = nextSet;
+    nextSet = &loopNext;
     InstIndexRequest startLoop;
     AddIndexRequest(&startLoop);
     boundForStatement.LoopS()->Accept(*this);
     int32_t loopTarget = startLoop.Index();
     boundForStatement.LoopS()->SetFirstInstIndex(loopTarget);
     Backpatch(continue_, loopTarget);
-    std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
-    function->AddInst(std::move(gcpoint));
+    nextSet = prevNextSet;
+    Backpatch(actionNext, loopTarget);
+    InstIndexRequest gcPoint;
+    AddIndexRequest(&gcPoint);
+    std::unique_ptr<Instruction> gcpoll = machine.CreateInst("gcpoll");
+    function->AddInst(std::move(gcpoll));
+    Backpatch(loopNext, gcPoint.Index());
     std::unique_ptr<Instruction> jumpToCond = machine.CreateInst("jump");
     jumpToCond->SetTarget(conditionTarget);
     function->AddInst(std::move(jumpToCond));
@@ -688,8 +708,8 @@ void EmitterVisitor::Visit(BoundGotoCaseStatement& boundGotoCaseStatement)
     ExitBlocks(breakTarget->Block());
     if (breakTarget->FirstInstIndex() != -1 && breakTarget->FirstInstIndex() < function->NumInsts())
     {
-        std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
-        function->AddInst(std::move(gcpoint));
+        std::unique_ptr<Instruction> gcpoll = machine.CreateInst("gcpoll");
+        function->AddInst(std::move(gcpoll));
     }
     std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
     Instruction* gotoCaseJump = jump.get();
@@ -703,8 +723,8 @@ void EmitterVisitor::Visit(BoundGotoDefaultStatement& boundGotoDefaultStatement)
     ExitBlocks(breakTarget->Block());
     if (breakTarget->FirstInstIndex() != -1 && breakTarget->FirstInstIndex() < function->NumInsts())
     {
-        std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
-        function->AddInst(std::move(gcpoint));
+        std::unique_ptr<Instruction> gcpoll = machine.CreateInst("gcpoll");
+        function->AddInst(std::move(gcpoll));
     }
     std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
     Instruction* gotoDefaultJump = jump.get();
@@ -741,8 +761,8 @@ void EmitterVisitor::Visit(BoundGotoStatement& boundGotoStatement)
     ExitBlocks(targetBlock);
     if (boundGotoStatement.TargetStatement()->FirstInstIndex() != -1 && boundGotoStatement.TargetStatement()->FirstInstIndex() < function->NumInsts())
     {
-        std::unique_ptr<Instruction> gcpoint = machine.CreateInst("gcpoint");
-        function->AddInst(std::move(gcpoint));
+        std::unique_ptr<Instruction> gcpoll = machine.CreateInst("gcpoll");
+        function->AddInst(std::move(gcpoll));
     }
     std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
     if (boundGotoStatement.TargetStatement()->FirstInstIndex() != -1)

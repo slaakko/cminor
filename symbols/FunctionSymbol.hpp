@@ -158,8 +158,8 @@ public:
     bool BaseConstructorCallGenerated() const { return GetFlag(ConstructorSymbolFlags::baseConstructorCallGenerated); }
     ParameterSymbol* GetThisParam() const override { return Parameters()[0]; }
     void AddTo(ClassTypeSymbol* classTypeSymbol) override;
-    void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol) override;
-    void Merge(const ConstructorSymbol& that);
+    void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol, Assembly* assembly) override;
+    void Merge(ConstructorSymbol& that, Assembly* assembly);
     bool IsDerived() const override { return true; }
 private:
     ConstructorSymbolFlags flags;
@@ -226,8 +226,8 @@ public:
     void GenerateInterfaceCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects);
     ParameterSymbol* GetThisParam() const override { if (IsStatic()) return nullptr; else return Parameters()[0]; }
     void AddTo(ClassTypeSymbol* classTypeSymbol) override;
-    void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol) override;
-    void Merge(const MemberFunctionSymbol& that);
+    void MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol, Assembly* assembly) override;
+    void Merge(MemberFunctionSymbol& that, Assembly* assembly);
     bool ImplementsInterfaceMemFun(InterfaceTypeSymbol* intf);
 private:
     uint32_t vmtIndex;
@@ -361,6 +361,13 @@ private:
     TypeSymbol* sourceType;
     TypeSymbol* targetType;
     Constant functionName;
+};
+
+class RequestGcFunctionSymbol : public FunctionSymbol
+{
+public:
+    RequestGcFunctionSymbol(const Span& span_, Constant name_);
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
 struct ConversionTypeHash

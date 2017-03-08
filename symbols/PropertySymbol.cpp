@@ -96,22 +96,22 @@ void PropertySymbol::AddTo(ClassTypeSymbol* classTypeSymbol)
     classTypeSymbol->Add(this);
 }
 
-void PropertySymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol)
+void PropertySymbol::MergeTo(ClassTemplateSpecializationSymbol* classTemplateSpecializationSymbol, Assembly* assembly)
 {
-    classTemplateSpecializationSymbol->MergePropertySymbol(*this);
+    classTemplateSpecializationSymbol->MergePropertySymbol(*this, assembly);
 }
 
-void PropertySymbol::Merge(const PropertySymbol& that)
+void PropertySymbol::Merge(PropertySymbol& that, Assembly* assembly)
 {
     if (that.Getter())
     {
         Assert(Getter(), "getter expected");
-        Getter()->Merge(*that.Getter());
+        Getter()->Merge(*that.Getter(), assembly);
     }
     if (that.Setter())
     {
         Assert(Setter(), "setter expected");
-        Setter()->Merge(*that.Setter());
+        Setter()->Merge(*that.Setter(), assembly);
     }
 }
 

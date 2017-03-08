@@ -73,6 +73,7 @@ public:
     virtual bool IsContinuousSwitchInst() const { return false; }
     virtual bool IsBinarySearchSwitchInst() const { return false; }
     virtual bool DontRemove() const { return false; }
+    virtual bool CreatesTemporaryObject(Function* function) const { return false; }
     virtual void DispatchTo(InstAdder& adder);
     virtual void Accept(MachineFunctionVisitor& visitor);
 private:
@@ -868,6 +869,7 @@ public:
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
     void DispatchTo(InstAdder& adder) override;
+    bool CreatesTemporaryObject(Function* function) const override;
     void Accept(MachineFunctionVisitor& visitor) override;
 private:
     Constant function;
@@ -889,6 +891,7 @@ public:
     Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
+    bool CreatesTemporaryObject(Function* function) const override;
     void Accept(MachineFunctionVisitor& visitor) override;
 private:
     uint32_t numArgs;
@@ -912,6 +915,7 @@ public:
     const FunctionType& GetFunctionType() const { return functionType; }
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
+    bool CreatesTemporaryObject(Function* function) const override;
     void Accept(MachineFunctionVisitor& visitor) override;
 private:
     uint32_t numArgs;
@@ -925,6 +929,7 @@ public:
     VmCallInst();
     Instruction* Clone() const override { return new VmCallInst(*this); }
     void Execute(Frame& frame) override;
+    bool CreatesTemporaryObject(Function* function) const override;
     void Accept(MachineFunctionVisitor& visitor) override;
 };
 
@@ -938,6 +943,7 @@ public:
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
+    bool CreatesTemporaryObject(Function* function) const override;
     void Accept(MachineFunctionVisitor& visitor) override;
 private:
     FunctionType functionType;
@@ -953,6 +959,7 @@ public:
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
     void Execute(Frame& frame) override;
+    bool CreatesTemporaryObject(Function* function) const override;
     void Accept(MachineFunctionVisitor& visitor) override;
 private:
     FunctionType functionType;
@@ -1003,6 +1010,7 @@ public:
     CreateObjectInst();
     Instruction* Clone() const override { return new CreateObjectInst(*this); }
     void Execute(Frame& frame) override;
+    bool CreatesTemporaryObject(Function* function) const override { return true; }
     void Accept(MachineFunctionVisitor& visitor) override;
 };
 
@@ -1012,6 +1020,7 @@ public:
     CopyObjectInst();
     Instruction* Clone() const override { return new CopyObjectInst(*this); }
     void Execute(Frame& frame) override;
+    bool CreatesTemporaryObject(Function* function) const override { return true; }
     void Accept(MachineFunctionVisitor& visitor) override;
 };
 
@@ -1021,6 +1030,7 @@ public:
     StrLitToStringInst();
     Instruction* Clone() const override { return new StrLitToStringInst(*this); }
     void Execute(Frame& frame) override;
+    bool CreatesTemporaryObject(Function* function) const override { return true; }
     void Accept(MachineFunctionVisitor& visitor) override;
 };
 
@@ -1290,6 +1300,7 @@ class MACHINE_API BoxBaseInst : public Instruction
 public:
     BoxBaseInst(const std::string& name_);
     virtual ValueType GetValueType() const = 0;
+    bool CreatesTemporaryObject(Function* function) const override { return true; }
     void Accept(MachineFunctionVisitor& visitor) override;
 };
 
@@ -1436,6 +1447,7 @@ public:
     void Execute(Frame& frame) override;
     void Dump(CodeFormatter& formatter) override;
     void DispatchTo(InstAdder& adder) override;
+    bool CreatesTemporaryObject(Function* function) const override { return true; }
     void Accept(MachineFunctionVisitor& visitor) override;
 private:
     Constant function;
@@ -1511,11 +1523,20 @@ private:
     ValueType type;
 };
 
-class MACHINE_API GcPointInst : public Instruction
+class MACHINE_API GcPollInst : public Instruction
 {
 public:
-    GcPointInst();
-    Instruction* Clone() const override { return new GcPointInst(*this); }
+    GcPollInst();
+    Instruction* Clone() const override { return new GcPollInst(*this); }
+    void Execute(Frame& frame) override;
+    void Accept(MachineFunctionVisitor& visitor) override;
+};
+
+class MACHINE_API RequestGcInst : public Instruction
+{
+public:
+    RequestGcInst();
+    Instruction* Clone() const override { return new RequestGcInst(*this); }
     void Execute(Frame& frame) override;
     void Accept(MachineFunctionVisitor& visitor) override;
 };
