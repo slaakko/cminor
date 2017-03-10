@@ -40,6 +40,7 @@
     <ClCompile Include="Reader.cpp" />
     <ClCompile Include="RunTime.cpp" />
     <ClCompile Include="Stack.cpp" />
+    <ClCompile Include="Stats.cpp" />
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="Type.cpp" />
     <ClCompile Include="VariableReference.cpp" />
@@ -68,6 +69,7 @@
     <ClInclude Include="Reader.hpp" />
     <ClInclude Include="RunTime.hpp" />
     <ClInclude Include="Stack.hpp" />
+    <ClInclude Include="Stats.hpp" />
     <ClInclude Include="Thread.hpp" />
     <ClInclude Include="Type.hpp" />
     <ClInclude Include="VariableReference.hpp" />

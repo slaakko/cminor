@@ -13,6 +13,7 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/RunTime.hpp>
 #include <cminor/machine/OsInterface.hpp>
+#include <cminor/machine/Stats.hpp>
 #include <boost/filesystem.hpp>
 #include <cminor/util/Path.hpp>
 #include <cminor/util/TextUtils.hpp>
@@ -275,6 +276,7 @@ Assembly::~Assembly()
 
 void Assembly::Load(const std::string& assemblyFilePath)
 {
+    auto startLoad = std::chrono::system_clock::now();
     const Assembly* rootAssembly = this;
     SymbolReader symbolReader(assemblyFilePath);
     std::vector<CallInst*> callInstructions;
@@ -302,7 +304,16 @@ void Assembly::Load(const std::string& assemblyFilePath)
     FinishReads(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes,
         classTemplateSpecializationNames, int(finishReadOrder.size() - 2), finishReadOrder, true);
     symbolTable.MergeClassTemplateSpecializations();
+    auto startLink = std::chrono::system_clock::now();
     Link(callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, typeInstructions, setClassDataInstructions, classTypes);
+    auto endLink = std::chrono::system_clock::now();
+    auto endLoad = std::chrono::system_clock::now();
+    auto loadDuration = endLoad - startLoad;
+    auto linkDuration = endLink - startLink;
+    int64_t msLoad = std::chrono::duration_cast<std::chrono::milliseconds>(loadDuration).count();
+    int64_t msLink = std::chrono::duration_cast<std::chrono::milliseconds>(linkDuration).count();
+    AddLoadTime(msLoad);
+    AddLinkTime(msLink);
 }
 
 void Assembly::PrepareForCompilation(const std::vector<std::string>& projectAssemblyReferences)
@@ -370,7 +381,12 @@ int Assembly::RunIntermediateCode(const std::vector<utf32_string>& programArgume
     {
         std::cout << "running intermediate code of program '" + ToUtf8(Name().Value()) + "'..." << std::endl;
     }
+    auto startRun = std::chrono::system_clock::now();
     machine.Run(runWithArgs, programArguments, argsArrayObjectType);
+    auto endRun = std::chrono::system_clock::now();
+    auto runDuration = endRun - startRun;
+    int64_t runMs = std::chrono::duration_cast<std::chrono::milliseconds>(runDuration).count();
+    AddRunTime(runMs);
     if (mainFun->ReturnType() == symbolTable.GetType(U"System.Int32"))
     {
         IntegralValue programReturnValue = machine.MainThread().OpStack().Pop();
@@ -409,7 +425,12 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
     {
         throw std::runtime_error("assembly '" + ToUtf8(Name().Value()) + "' has no main function");
     }
+    auto startPrepare = std::chrono::system_clock::now();
     PrepareForNativeExecution();
+    auto endPrepare = std::chrono::system_clock::now();
+    auto prepareDuration = endPrepare - startPrepare;
+    int64_t prepareMs = std::chrono::duration_cast<std::chrono::milliseconds>(prepareDuration).count();
+    AddPrepareTime(prepareMs);
     if (!mainEntryPointAddress)
     {
         throw std::runtime_error("main entry point not resolved");
@@ -460,7 +481,12 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                 typedef void(*MainFunctionType)(uint64_t);
                 MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
                 GetCurrentThread().SetState(ThreadState::running);
+                auto startRun = std::chrono::system_clock::now();
                 main(args.Value());
+                auto endRun = std::chrono::system_clock::now();
+                auto runDuration = endRun - startRun;
+                int64_t runMs = std::chrono::duration_cast<std::chrono::milliseconds>(runDuration).count();
+                AddRunTime(runMs);
                 if (GetGlobalFlag(GlobalFlags::verbose))
                 {
                     std::cout << "program exited normally" << std::endl;
@@ -473,7 +499,12 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                     typedef int32_t(*MainFunctionType)(uint64_t);
                     MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
                     GetCurrentThread().SetState(ThreadState::running);
+                    auto startRun = std::chrono::system_clock::now();
                     returnValue = main(args.Value());
+                    auto endRun = std::chrono::system_clock::now();
+                    auto runDuration = endRun - startRun;
+                    int64_t runMs = std::chrono::duration_cast<std::chrono::milliseconds>(runDuration).count();
+                    AddRunTime(runMs);
                     if (GetGlobalFlag(GlobalFlags::verbose))
                     {
                         std::cout << "program returned exit code " << returnValue << std::endl;
@@ -496,7 +527,12 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                 typedef void(*MainFunctionType)(void);
                 MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
                 GetCurrentThread().SetState(ThreadState::running);
+                auto startRun = std::chrono::system_clock::now();
                 main();
+                auto endRun = std::chrono::system_clock::now();
+                auto runDuration = endRun - startRun;
+                int64_t runMs = std::chrono::duration_cast<std::chrono::milliseconds>(runDuration).count();
+                AddRunTime(runMs);
                 if (GetGlobalFlag(GlobalFlags::verbose))
                 {
                     std::cout << "program exited normally" << std::endl;
@@ -509,7 +545,12 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                     typedef int32_t(*MainFunctionType)(void);
                     MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
                     GetCurrentThread().SetState(ThreadState::running);
+                    auto startRun = std::chrono::system_clock::now();
                     returnValue = main();
+                    auto endRun = std::chrono::system_clock::now();
+                    auto runDuration = endRun - startRun;
+                    int64_t runMs = std::chrono::duration_cast<std::chrono::milliseconds>(runDuration).count();
+                    AddRunTime(runMs);
                     if (GetGlobalFlag(GlobalFlags::verbose))
                     {
                         std::cout << "program returned exit code " << returnValue << std::endl;

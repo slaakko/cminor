@@ -7,6 +7,7 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Log.hpp>
 #include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/Stats.hpp>
 #include <iostream>
 
 namespace cminor { namespace machine {
@@ -166,7 +167,7 @@ void GarbageCollector::Run()
 
 void GarbageCollector::CollectGarbage()
 {
-    //auto start = std::chrono::system_clock::now();
+    auto start = std::chrono::system_clock::now();
     machine.GetManagedMemoryPool().ResetLiveFlags();
     MarkLiveAllocations();
     machine.GetManagedMemoryPool().MoveLiveAllocationsToArena(ArenaId::gen1Arena, machine.Gen2Arena());
@@ -179,10 +180,10 @@ void GarbageCollector::CollectGarbage()
 #ifdef GC_LOGGING
     std::cout << ".";
 #endif
-    //auto end = std::chrono::system_clock::now();
-    //auto duration = end - start;
-    //long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
-    //std::cout << "gc " << ms << " " << fullCollectionRequested << std::endl;
+    auto end = std::chrono::system_clock::now();
+    auto duration = end - start;
+    int64_t ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+    AddGcTime(ms, fullCollectionRequested);
 }
 
 inline void GarbageCollector::MarkLiveAllocations(ObjectReference objectReference, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked)

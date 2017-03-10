@@ -10,6 +10,7 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/RunTime.hpp>
 #include <cminor/machine/CminorException.hpp>
+#include <cminor/machine/Stats.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/Value.hpp>
 #include <cminor/symbols/Assembly.hpp>
@@ -94,6 +95,8 @@ void PrintHelp()
         "       Run program built with --native option.\n"
         "   --trace (-t)\n" <<
         "       Trace execution of native program to stderr (used with --native).\n" <<
+        "   --stats (-a)\n" <<
+        "       Print statistics.\n" <<
         "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
         "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
         "       Default is 16 MB.\n" << 
@@ -110,6 +113,9 @@ enum class State
 
 int main(int argc, const char** argv)
 {
+    auto startVm = std::chrono::system_clock::now();
+    int programReturnValue = 0;
+    bool printStats = false;
     try
     {
         if (argc < 2)
@@ -155,6 +161,10 @@ int main(int argc, const char** argv)
                         else if (arg == "-t" || arg == "--trace")
                         {
                             trace = true;
+                        }
+                        else if (arg == "-a" || arg == "--stats")
+                        {
+                            printStats = true;
                         }
                         else if (arg.find('=', 0) != std::string::npos)
                         {
@@ -253,11 +263,11 @@ int main(int argc, const char** argv)
         }
         else if (!jit && !native)
         {
-            return assembly.RunIntermediateCode(programArguments);
+            programReturnValue = assembly.RunIntermediateCode(programArguments);
         }
         else if (native)
         {
-            return assembly.RunNative(programArguments);
+            programReturnValue = assembly.RunNative(programArguments);
         }
         else if (jit)
         {
@@ -266,7 +276,7 @@ int main(int argc, const char** argv)
             InitializeNativeTargetAsmParser();
             Function* main = FunctionTable::GetMain();
             JitCompiler jitCompiler(*main);
-            return jitCompiler.ProgramReturnValue();
+            programReturnValue = jitCompiler.ProgramReturnValue();
         }
     }
     catch (const Exception& ex)
@@ -279,5 +289,13 @@ int main(int argc, const char** argv)
         std::cerr << ex.what() << std::endl;
         return 1;
     }
-    return 0;
+    auto endVm = std::chrono::system_clock::now();
+    auto vmDuration = endVm - startVm;
+    int64_t msVm = std::chrono::duration_cast<std::chrono::milliseconds>(vmDuration).count();
+    AddTotalVmTime(msVm);
+    if (printStats)
+    {
+        PrintStats();
+    }
+    return programReturnValue;
 }

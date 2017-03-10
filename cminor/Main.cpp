@@ -141,6 +141,8 @@ void PrintHelp(HelpTopics helpTopics)
             "       Run program built with --native option.\n" <<
             "   --trace (-t)\n" <<
             "       Trace execution of native program to stderr (used with --native).\n" <<
+            "   --stats (-a)\n" <<
+            "       Print statistics.\n" <<
             "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
             "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
             "       Default is 16 MB.\n" <<
@@ -329,6 +331,10 @@ int main(int argc, const char** argv)
                             runOptions.push_back(arg);
                         }
                         else if (arg == "-t" || arg == "--trace")
+                        {
+                            runOptions.push_back(arg);
+                        }
+                        else if (arg == "-a" || arg == "--stats")
                         {
                             runOptions.push_back(arg);
                         }

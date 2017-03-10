@@ -2978,16 +2978,16 @@ namespace Code
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new Code.IdentifierGrammar(parsingDomain);
+                grammar0 = new Code.TypeExprGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("Code.ExpressionGrammar");
+            Grammar grammar1 = parsingDomain.GetGrammar("Code.KeywordGrammar");
             if (grammar1 == null)
             {
-                grammar1 = new Code.ExpressionGrammar(parsingDomain);
+                grammar1 = new Code.KeywordGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
             Grammar grammar2 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
@@ -2996,16 +2996,16 @@ namespace Code
                 grammar2 = new System.Text.Parsing.stdlib(parsingDomain);
             }
             ReferencedGrammars.Add(grammar2);
-            Grammar grammar3 = parsingDomain.GetGrammar("Code.KeywordGrammar");
+            Grammar grammar3 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
             if (grammar3 == null)
             {
-                grammar3 = new Code.KeywordGrammar(parsingDomain);
+                grammar3 = new Code.IdentifierGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar3);
-            Grammar grammar4 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
+            Grammar grammar4 = parsingDomain.GetGrammar("Code.ExpressionGrammar");
             if (grammar4 == null)
             {
-                grammar4 = new Code.TypeExprGrammar(parsingDomain);
+                grammar4 = new Code.ExpressionGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar4);
         }
