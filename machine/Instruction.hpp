@@ -72,6 +72,7 @@ public:
     virtual bool IsBeginCatchOrFinallyInst() const { return false; }
     virtual bool IsContinuousSwitchInst() const { return false; }
     virtual bool IsBinarySearchSwitchInst() const { return false; }
+    virtual bool IsCall() const { return false; }
     virtual bool DontRemove() const { return false; }
     virtual bool CreatesTemporaryObject(Function* function) const { return false; }
     virtual void DispatchTo(InstAdder& adder);
@@ -870,6 +871,7 @@ public:
     void Dump(CodeFormatter& formatter) override;
     void DispatchTo(InstAdder& adder) override;
     bool CreatesTemporaryObject(Function* function) const override;
+    bool IsCall() const override { return true; }
     void Accept(MachineFunctionVisitor& visitor) override;
 private:
     Constant function;

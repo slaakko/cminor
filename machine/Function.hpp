@@ -134,7 +134,8 @@ enum class FunctionFlags : uint8_t
 {
     none = 0, 
     exported = 1 << 0, 
-    canThrow = 1 << 1
+    canThrow = 1 << 1,
+    inlineAttr = 1 << 2
 };
 
 inline FunctionFlags operator&(FunctionFlags left, FunctionFlags right)
@@ -162,6 +163,8 @@ public:
     Constant SourceFilePath() const { return sourceFilePath; }
     const std::string& MangledName() const { return mangledName; }
     void SetMangledName(const std::string& mangledName_);
+    const std::string& MangledInlineName() const { return mangledInlineName; }
+    void SetMangledInlineName(const std::string& mangledInlineName_);
     void SetSourceFilePath(Constant sourceFilePath_) { sourceFilePath = sourceFilePath_; }
     bool HasSourceFilePath() const;
     uint32_t Id() const { return id; }
@@ -211,6 +214,8 @@ public:
     void SetExported() { SetFlag(FunctionFlags::exported); }
     bool CanThrow() const { return GetFlag(FunctionFlags::canThrow); }
     void SetCanThrow() { SetFlag(FunctionFlags::canThrow); }
+    bool HasInlineAttribute() const { return GetFlag(FunctionFlags::inlineAttr); }
+    void SetInlineAttribute() { SetFlag(FunctionFlags::inlineAttr); }
     void* Address() const { return address; }
     void SetAddress(void* address_) { address = address_; }
     void* GetAssembly() const { return assembly; }
@@ -226,6 +231,7 @@ private:
     Constant sourceFilePath;
     uint32_t id;
     std::string mangledName;
+    std::string mangledInlineName;
     ConstantPool* constantPool;
     std::vector<std::unique_ptr<Instruction>> instructions;
     uint32_t numLocals;

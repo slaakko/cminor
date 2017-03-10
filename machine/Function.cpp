@@ -262,6 +262,14 @@ std::string FunctionFlagsStr(FunctionFlags flags)
             }
             s.append("canThrow");
         }
+        if ((flags & FunctionFlags::inlineAttr) != FunctionFlags::none)
+        {
+            if (!s.empty())
+            {
+                s.append(" ");
+            }
+            s.append("inline");
+        }
         return s;
     }
 }
@@ -280,6 +288,11 @@ Function::Function(Constant groupName_, Constant callName_, Constant friendlyNam
 void Function::SetMangledName(const std::string& mangledName_)
 {
     mangledName = mangledName_;
+}
+
+void Function::SetMangledInlineName(const std::string& mangledInlineName_)
+{
+    mangledInlineName = mangledInlineName_;
 }
 
 bool Function::HasSourceFilePath() const
@@ -309,6 +322,7 @@ void Function::Write(Writer& writer)
     }
     writer.PutEncodedUInt(id);
     writer.Put(mangledName);
+    writer.Put(mangledInlineName);
     uint32_t n = static_cast<uint32_t>(instructions.size());
     writer.PutEncodedUInt(n);
     for (uint32_t i = 0; i < n; ++i)
@@ -368,6 +382,7 @@ void Function::Read(Reader& reader)
     }
     id = reader.GetEncodedUInt();
     mangledName = reader.GetUtf8String();
+    mangledInlineName = reader.GetUtf8String();
     uint32_t n = reader.GetEncodedUInt();
     for (uint32_t i = 0; i < n; ++i)
     {
@@ -451,6 +466,10 @@ void Function::Dump(CodeFormatter& formatter)
     if (!mangledName.empty())
     {
         formatter.WriteLine("mangled name: " + mangledName);
+    }
+    if (!mangledInlineName.empty())
+    {
+        formatter.WriteLine("mangled inline name: " + mangledInlineName);
     }
     formatter.WriteLine("flags: " + FunctionFlagsStr(flags));
     if (sourceFilePath.Value().AsStringLiteral())

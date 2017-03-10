@@ -83,13 +83,20 @@ void PrintHelp(HelpTopics helpTopics)
             "           2 for release configuration\n" <<
             "   --inline-limit=LIMIT (-i=LIMIT)\n" <<
             "       Set inline limit to LIMIT intermediate instructions (used with --native).\n" <<
-            "       Functions that have LIMIT or fewer intermediate instructions are chosen to be suitable for inlining.\n" <<
+            "       Functions that have LIMIT or fewer intermediate instructions are chosen to be inline candidates.\n" <<
             "       Eventually LLVM will decide which functions to inline.\n" <<
             "       Defaults:\n" <<
             "           for optimization level 0: 0 (no inlining)\n" <<
             "           for optimization level 1: 0 (no inlining)\n" <<
-            "           for optimization level 2: 8 instructions\n" <<
-            "           for optimization level 3: 16 instructions\n" <<
+            "           for optimization level 2: 16 instructions\n" <<
+            "           for optimization level 3: 32 instructions\n" <<
+            "   --inline-locals=NUMLOCALS (-a=NUMLOCALS)\n" <<
+            "       Set maximum number of locals for inline function (used with --native).\n" <<
+            "       Defaults:\n" <<
+            "           for optimization level 0: 0 (no inlining)\n" <<
+            "           for optimization level 1: 0 (no inlining)\n" <<
+            "           for optimization level 2: 4 locals\n" <<
+            "           for optimization level 3: 8 locals\n" <<
             "   --debug-pass=VALUE (-s=VALUE)\n" <<
             "       Generate debug output for LLVM passes to stderr (used with --native).\n" <<
             "       VALUE can be Arguments, Structure, Executions or Details:\n" <<
@@ -554,6 +561,10 @@ int main(int argc, const char** argv)
                                     }
                                 }
                                 else if (components[0] == "-i" || components[0] == "--inline-limit")
+                                {
+                                    buildOptions.push_back(arg);
+                                }
+                                else if (components[0] == "-a" || components[0] == "--inline-locals")
                                 {
                                     buildOptions.push_back(arg);
                                 }

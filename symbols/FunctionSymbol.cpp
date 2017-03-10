@@ -389,6 +389,10 @@ void FunctionSymbol::CreateMachineFunction()
     {
         machineFunction->SetCanThrow();
     }
+    if (IsInline())
+    {
+        machineFunction->SetInlineAttribute();
+    }
     int32_t numLocals = int32_t(parameters.size() + localVariables.size());
     machineFunction->SetNumLocals(numLocals);
     int32_t numParameters = int32_t(parameters.size());

@@ -17,6 +17,7 @@
 #include <cminor/ast/Project.hpp>
 #include <cminor/util/System.hpp>
 #include <boost/filesystem.hpp>
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -114,12 +115,17 @@ enum class LlvmPadKind : uint8_t
     none, catchSwitch, catchPad, cleanupPad
 };
 
+enum class Mode : uint8_t
+{
+    normalMode, inlineMode
+};
+
 class NativeCompilerImpl : public MachineFunctionVisitor
 {
 public:
     NativeCompilerImpl();
-    void Init(Assembly& assembly);
-    void Done();
+    void BeginModule(Assembly& assembly);
+    void EndModule();
     void BeginVisitFunction(Function& function) override;
     void EndVisitFunction(Function& function) override;
     void BeginVisitInstruction(int instructionNumber, bool prevEndsBasicBlock, Instruction* inst) override;
@@ -199,7 +205,12 @@ private:
     llvm::AttributeSet nounwindFunctionAttributes;
     llvm::AttributeSet mainFunctionAttributes;
     llvm::AttributeSet noReturnFunctionAttributes;
+    llvm::AttributeSet unwindInlineFunctionAttributes;
+    llvm::AttributeSet nounwindInlineFunctionAttributes;
     int inlineLimit;
+    int optimizationLevel;
+    int inlineLocals;
+    Mode mode;
     llvm::Function* fun;
     Function* function;
     int32_t nextFunctionVarNumber;
@@ -207,7 +218,8 @@ private:
     int32_t nextTypePtrVarNumber;
     std::string functionPtrVarName;
     llvm::Constant* functionPtrVar;
-    ConstantPool* constantPool;
+    ConstantPool* functionConstantPool;
+    ConstantPool* assemblyConstantPool;
     llvm::Constant* constantPoolVariable;
     llvm::Constant* wantToCollectGarbageVariable;
     std::vector<AllocaInst*> locals;
@@ -244,6 +256,10 @@ private:
     std::vector<llvm::AllocaInst*> gcRoots;
     llvm::AllocaInst* gcEntry;
     std::unordered_map<int32_t, int32_t> temporaryGcRootMap;
+    std::unordered_set<Function*> inlinedFunctions;
+    void ScanForInlineCandidates(Function& function);
+    bool MakeInlineDecisionFor(Function& function);
+    void GenerateInlineDefinitionFor(Function& function);
     void CreateDllMain();
     void GenerateObjectFile(const std::string& assemblyObjectFilePath);
     void Link(const std::string& assemblyObjectFilePath);
@@ -284,10 +300,11 @@ private:
     llvm::Value* CreateConversionFromULong(llvm::Value* from, ValueType toType);
 };    
 
-NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), module(), inlineLimit(0), targetMachine(), fun(nullptr), function(nullptr), constantPool(nullptr), 
-    constantPoolVariable(nullptr), wantToCollectGarbageVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), nextTypePtrVarNumber(0), functionStackEntry(nullptr), 
-    currentBasicBlock(nullptr), entryBasicBlock(nullptr), lastAlloca(nullptr), currentExceptionBlockId(-1),  currentCatchSectionExceptionBlockId(-1), currentPad(nullptr), 
-    currentPadKind(LlvmPadKind::none), exceptionPtr(nullptr), isGCFun(false)
+NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), module(), targetMachine(), fun(nullptr), function(nullptr), assemblyConstantPool(nullptr), 
+    functionConstantPool(nullptr), constantPoolVariable(nullptr), wantToCollectGarbageVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), 
+    nextTypePtrVarNumber(0), functionStackEntry(nullptr), currentBasicBlock(nullptr), entryBasicBlock(nullptr), lastAlloca(nullptr), currentExceptionBlockId(-1),  
+    currentCatchSectionExceptionBlockId(-1), currentPad(nullptr), currentPadKind(LlvmPadKind::none), exceptionPtr(nullptr), isGCFun(false), optimizationLevel(0), 
+    inlineLimit(0), inlineLocals(0), mode(Mode::normalMode)
 {
     InitializeAllTargetInfos();
     InitializeAllTargets();
@@ -366,6 +383,10 @@ std::string NativeCompilerImpl::MangleFunctionName(const Function& function) con
         }
     }
     mangledName.append(1, '_').append(GetSha1MessageDigest(ToUtf8(function.CallName().Value().AsStringLiteral())));
+    if (mode == Mode::inlineMode)
+    {
+        mangledName.append("_inline");
+    }
     return mangledName;
 }
 
@@ -786,7 +807,7 @@ llvm::Constant* NativeCompilerImpl::GetFunctionPtrVar(Function* function)
     return functionPtrVar;
 }
 
-void NativeCompilerImpl::Init(Assembly& assembly)
+void NativeCompilerImpl::BeginModule(Assembly& assembly)
 {
     std::string assemblyName = ToUtf8(assembly.Name().Value());
     for (const std::unique_ptr<Assembly>& referencedAssembly : assembly.ReferencedAssemblies())
@@ -820,7 +841,8 @@ void NativeCompilerImpl::Init(Assembly& assembly)
         }
     }
     this->assembly = &assembly;
-    InitOpFunMap(assembly.GetConstantPool());
+    assemblyConstantPool = &assembly.GetConstantPool();
+    InitOpFunMap(*assemblyConstantPool);
     module.reset(new Module(assemblyName, context));
     std::string targetTriple = sys::getDefaultTargetTriple();
     module->setTargetTriple(targetTriple);
@@ -835,8 +857,8 @@ void NativeCompilerImpl::Init(Assembly& assembly)
     llvm::Optional<Reloc::Model> relocModel;
     llvm::CodeModel::Model codeModel = CodeModel::Default;
     llvm::CodeGenOpt::Level codeGenLevel = CodeGenOpt::None;
-    int optLevel = GetOptimizationLevel();
-    switch (optLevel)
+    optimizationLevel = GetOptimizationLevel();
+    switch (optimizationLevel)
     {
         case 0: codeGenLevel = CodeGenOpt::None; break;
         case 1: codeGenLevel = CodeGenOpt::Less; break;
@@ -844,6 +866,7 @@ void NativeCompilerImpl::Init(Assembly& assembly)
         case 3: codeGenLevel = CodeGenOpt::Aggressive; break;
     }
     inlineLimit = GetInlineLimit();
+    inlineLocals = GetInlineLocals();
     targetMachine.reset(target->createTargetMachine(targetTriple, "generic", "", targetOptions, relocModel, codeModel, codeGenLevel));
     dataLayout.reset(new llvm::DataLayout(targetMachine->createDataLayout()));
     module->setDataLayout(*dataLayout);
@@ -857,8 +880,9 @@ void NativeCompilerImpl::Init(Assembly& assembly)
         listStream.reset(new std::ofstream(listFilePath));
         *listStream << "MODULE " << assemblyName << " : " << assembly.FilePathReadFrom() << std::endl;
         *listStream << "target triple: " << targetTriple << std::endl;
-        *listStream << "optimization level: " << optLevel << std::endl;
+        *listStream << "optimization level: " << optimizationLevel << std::endl;
         *listStream << "inline limit: " << inlineLimit << " or fewer intermediate instructions (0 = no inlining)" << std::endl;
+        *listStream << "inline locals: " << inlineLocals << std::endl;
     }
     constantPoolVariable = module->getOrInsertGlobal("__constant_pool", PointerType::get(GetType(ValueType::byteType), 0));
     ExportGlobalVariable(constantPoolVariable);;
@@ -876,6 +900,15 @@ void NativeCompilerImpl::Init(Assembly& assembly)
     std::vector<Attribute::AttrKind> unwindAttributes;
     unwindAttributes.push_back(llvm::Attribute::UWTable);
     unwindFunctionAttributes = AttributeSet::get(context, llvm::AttributeSet::FunctionIndex, unwindAttributes);
+    std::vector<Attribute::AttrKind> nounwindInlineAttributes;
+    nounwindInlineAttributes.push_back(llvm::Attribute::UWTable);
+    nounwindInlineAttributes.push_back(llvm::Attribute::NoUnwind);
+    nounwindInlineAttributes.push_back(llvm::Attribute::InlineHint);
+    nounwindInlineFunctionAttributes = AttributeSet::get(context, llvm::AttributeSet::FunctionIndex, nounwindInlineAttributes);
+    std::vector<Attribute::AttrKind> unwindInlineAttributes;
+    unwindInlineAttributes.push_back(llvm::Attribute::UWTable);
+    unwindInlineAttributes.push_back(llvm::Attribute::InlineHint);
+    unwindInlineFunctionAttributes = AttributeSet::get(context, llvm::AttributeSet::FunctionIndex, unwindInlineAttributes);
     std::vector<Attribute::AttrKind> mainAttributes;
     mainAttributes.push_back(llvm::Attribute::UWTable);
     mainAttributes.push_back(llvm::Attribute::NoRecurse);
@@ -886,7 +919,7 @@ void NativeCompilerImpl::Init(Assembly& assembly)
     noReturnFunctionAttributes = AttributeSet::get(context, llvm::AttributeSet::FunctionIndex, noReturnAttributes);
 }
 
-void NativeCompilerImpl::Done()
+void NativeCompilerImpl::EndModule()
 {
 #ifdef _WIN32
     CreateDllMain();
@@ -1103,8 +1136,59 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
     }
 }
 
+void NativeCompilerImpl::GenerateInlineDefinitionFor(Function& function)
+{
+    Mode prevMode = mode;
+    mode = Mode::inlineMode;
+    function.Accept(*this);
+    mode = prevMode;
+}
+
+bool NativeCompilerImpl::MakeInlineDecisionFor(Function& function)
+{
+    if (function.HasInlineAttribute()) return true;
+    if (function.NumInsts() > inlineLimit) return false;
+    if (int(function.NumLocals()) > inlineLocals) return false;
+    return true;
+}
+
+void NativeCompilerImpl::ScanForInlineCandidates(Function& function)
+{
+    std::vector<Function*> inlineCandidates;
+    int n = function.NumInsts();
+    for (int i = 0; i < n; ++i)
+    {
+        Instruction* inst = function.GetInst(i);
+        if (inst->IsCall())
+        {
+            CallInst* callInst = static_cast<CallInst*>(inst);
+            Function* calledFunction = callInst->GetFunction();
+            if (inlinedFunctions.find(calledFunction) == inlinedFunctions.cend())
+            {
+                inlineCandidates.push_back(calledFunction);
+            }
+        }
+    }
+    inlineCandidates.erase(std::unique(inlineCandidates.begin(), inlineCandidates.end()), inlineCandidates.end());
+    int nc = int(inlineCandidates.size());
+    for (int i = 0; i < nc; ++i)
+    {
+        Function* inlineCandidate = inlineCandidates[i];
+        bool doInline = MakeInlineDecisionFor(*inlineCandidate);
+        if (doInline)
+        {
+            inlinedFunctions.insert(inlineCandidate);
+            GenerateInlineDefinitionFor(*inlineCandidate);
+        }
+    }
+}
+
 void NativeCompilerImpl::BeginVisitFunction(Function& function)
 {
+    if (optimizationLevel > 1)
+    {
+        ScanForInlineCandidates(function);
+    }
     this->function = &function;
     basicBlocks.clear();
     unwindTargets.clear();
@@ -1120,10 +1204,26 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     exceptionPtr = nullptr;
     exceptionObjectVariables.clear();
     std::string mangledFunctionName = MangleFunctionName(function);
-    function.SetMangledName(mangledFunctionName);
+    if (mode == Mode::normalMode)
+    {
+        function.SetMangledName(mangledFunctionName);
+    }
+    else if (mode == Mode::inlineMode)
+    {
+        function.SetMangledInlineName(mangledFunctionName);
+    }
+    else
+    {
+        Assert(false, "unknown mode");
+    }
     if (listStream)
     {
         CodeFormatter formatter(*listStream);
+        if (mode == Mode::inlineMode)
+        {
+            formatter.WriteLine();
+            formatter.WriteLine("INLINE CANDIDATE : " + mangledFunctionName);
+        }
         formatter.WriteLine();
         formatter.WriteLine("before removing unreachable instructions:");
         function.Dump(formatter);
@@ -1144,26 +1244,45 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     }
     llvm::FunctionType* funType = llvm::FunctionType::get(returnType, paramTypes, false);
     fun = cast<llvm::Function>(module->getOrInsertFunction(mangledFunctionName, funType));
-    if (function.IsExported())
+    if (mode == Mode::normalMode)
     {
-        ExportFunction(fun);
-        assembly->AddExportedFunction(function.CallName());
+        if (function.IsExported())
+        {
+            ExportFunction(fun);
+            assembly->AddExportedFunction(function.CallName());
+        }
+        else
+        {
+            fun->setLinkage(llvm::GlobalValue::LinkageTypes::InternalLinkage);
+        }
+        if (function.IsMain())
+        {
+            fun->setAttributes(mainFunctionAttributes);
+        }
+        else if (function.HasExceptionBlocks() || function.CanThrow())
+        {
+            fun->setAttributes(unwindFunctionAttributes);
+        }
+        else
+        {
+            fun->setAttributes(nounwindFunctionAttributes);
+        }
+    }
+    else if (mode == Mode::inlineMode)
+    {
+        fun->setLinkage(llvm::GlobalValue::LinkageTypes::LinkOnceODRLinkage);
+        if (function.HasExceptionBlocks() || function.CanThrow())
+        {
+            fun->setAttributes(unwindInlineFunctionAttributes);
+        }
+        else
+        {
+            fun->setAttributes(nounwindInlineFunctionAttributes);
+        }
     }
     else
     {
-        fun->setLinkage(llvm::GlobalValue::LinkageTypes::InternalLinkage);
-    }
-    if (function.IsMain())
-    {
-        fun->setAttributes(mainFunctionAttributes);
-    }
-    else if (function.HasExceptionBlocks() || function.CanThrow())
-    {
-        fun->setAttributes(unwindFunctionAttributes);
-    }
-    else
-    {
-        fun->setAttributes(nounwindFunctionAttributes);
+        Assert(false, "unknown mode");
     }
     if (function.HasExceptionBlocks())
     {
@@ -1204,7 +1323,7 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
                                                                         // field 04: uint64_t** gcEntry              : pointer to array of GC root pointers
         nullptr);
     functionStackEntry = builder.CreateAlloca(functionStackEntryType);
-    constantPool = &function.GetConstantPool();
+    functionConstantPool = &function.GetConstantPool();
     currentBasicBlock = entryBlock;
     functionPtrVar = GetFunctionPtrVar(&function);
 }
@@ -1877,7 +1996,7 @@ void NativeCompilerImpl::VisitStoreElemInst(StoreElemInst& instruction)
 void NativeCompilerImpl::VisitLoadConstantInst(int32_t constantIndex)
 {
     ConstantId constantId(constantIndex);
-    cminor::machine::Constant constant = constantPool->GetConstant(constantId);
+    cminor::machine::Constant constant = functionConstantPool->GetConstant(constantId);
     IntegralValue value = constant.Value();
     switch (value.GetType())
     {
@@ -1948,7 +2067,8 @@ void NativeCompilerImpl::VisitLoadConstantInst(int32_t constantIndex)
             ImportFunction(rtLoadStringLiteral);
             ArgVector args;
             args.push_back(builder.CreateLoad(constantPoolVariable));
-            args.push_back(builder.getInt32(constantId.Value()));
+            ConstantId assemblyConstantId = assemblyConstantPool->Install(constant);
+            args.push_back(builder.getInt32(assemblyConstantId.Value()));
             CreateCall(rtLoadStringLiteral, args, true);
             break;
         }
@@ -2275,14 +2395,32 @@ void NativeCompilerImpl::VisitCallInst(CallInst& instruction)
         paramTypes.push_back(paramType);
     }
     llvm::FunctionType* funType = llvm::FunctionType::get(returnType, paramTypes, false);
-    if (calledFunction->MangledName().empty())
+    llvm::Function* callee = nullptr;
+    if (inlinedFunctions.find(calledFunction) != inlinedFunctions.cend())
     {
-        calledFunction->SetMangledName(MangleFunctionName(*calledFunction));
+        if (calledFunction->MangledInlineName().empty())
+        {
+            Mode prevMode = mode;
+            mode = Mode::inlineMode;
+            calledFunction->SetMangledInlineName(MangleFunctionName(*calledFunction));
+            mode = prevMode;
+        }
+        callee = cast<llvm::Function>(module->getOrInsertFunction(calledFunction->MangledInlineName(), funType));
     }
-    llvm::Function* callee = cast<llvm::Function>(module->getOrInsertFunction(calledFunction->MangledName(), funType));
-    if (calledFunction->GetAssembly() != assembly)
+    else
     {
-        ImportFunction(callee);
+        if (calledFunction->MangledName().empty())
+        {
+            Mode prevMode = mode;
+            mode = Mode::normalMode;
+            calledFunction->SetMangledName(MangleFunctionName(*calledFunction));
+            mode = prevMode;
+        }
+        callee = cast<llvm::Function>(module->getOrInsertFunction(calledFunction->MangledName(), funType));
+        if (calledFunction->GetAssembly() != assembly)
+        {
+            ImportFunction(callee);
+        }
     }
     ArgVector args;
     int n = int(paramTypes.size());
@@ -2379,6 +2517,8 @@ void NativeCompilerImpl::VisitInterfaceCallInst(InterfaceCallInst& instruction)
 void NativeCompilerImpl::VisitVmCallInst(VmCallInst& instruction)
 {
     ConstantId vmFunctionNameId(instruction.Index());
+    Constant vmFunctionName = functionConstantPool->GetConstant(vmFunctionNameId);
+    ConstantId assemblyVmFunctionNameId = assemblyConstantPool->Install(vmFunctionName);
     std::vector<llvm::Type*> vmCallContextElementTypes;
     vmCallContextElementTypes.push_back(GetType(ValueType::intType));
     vmCallContextElementTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
@@ -2441,7 +2581,7 @@ void NativeCompilerImpl::VisitVmCallInst(VmCallInst& instruction)
     ArgVector args;
     args.push_back(builder.CreateLoad(functionPtrVar));
     args.push_back(builder.CreateLoad(constantPoolVariable));
-    args.push_back(builder.getInt32(vmFunctionNameId.Value()));
+    args.push_back(builder.getInt32(assemblyVmFunctionNameId.Value()));
     args.push_back(vmCallContext);
     CreateCall(rtVmCall, args, false);
     if (retValType != ValueType::none)
@@ -4474,13 +4614,13 @@ void NativeCompiler::Compile(const std::string& assemblyFilePath, std::string& n
     {
         std::cout << "Compiling assembly '" + assemblyName + "' to native object code..." << std::endl;
     }
-    impl->Init(assembly);
+    impl->BeginModule(assembly);
     MachineFunctionTable& machineFunctionTable = assembly.GetMachineFunctionTable();
     for (const std::unique_ptr<Function>& function : machineFunctionTable.MachineFunctions())
     {
         function->Accept(*impl);
     }
-    impl->Done();
+    impl->EndModule();
     SymbolWriter writer(assemblyFilePath);
     assembly.SetNative();
     assembly.Write(writer);

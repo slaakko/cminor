@@ -35,11 +35,14 @@ std::string GetConfig();
 int GetOptimizationLevel();
 void SetOptimizationLevel(int level);
 
-void SetDebugPassValue(const std::string& value);
-const std::string& GetDebugPassValue();
-
 int GetInlineLimit();
 void SetInlineLimit(int limit);
+
+int GetInlineLocals();
+void SetInlineLocals(int numLocals);
+
+const std::string& GetDebugPassValue();
+void SetDebugPassValue(const std::string& value);
 
 } } // namespace cminor::symbols
 
