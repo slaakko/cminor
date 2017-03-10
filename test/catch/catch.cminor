@@ -1,0 +1,56 @@
+using System;
+
+class FooException : Exception
+{
+    public FooException(string message) : base(message)
+    {
+    }
+}
+
+void foo()
+{
+    throw new FooException("foo");
+}
+
+void bar()
+{
+    int x = 10;
+    try
+    {
+        foo();
+    }
+    finally
+    {
+        Console.Error.WriteLine("exception passing by: " + x.ToString());
+    }
+}
+
+void baz()
+{
+    try
+    {
+        bar();
+    }
+    catch (FooException ex)
+    {
+        Console.Error.WriteLine("FooException caught in baz()");
+        throw;
+    }
+}
+
+int main()
+{
+    int x = 1;
+    try
+    {
+        baz();
+    }
+    catch (Exception ex)
+    {
+        int y = x;
+        Console.Error.WriteLine("main() : " + y.ToString());
+        Console.Error.WriteLine(ex.ToString());
+        return 1;
+    }
+    return 0;
+}

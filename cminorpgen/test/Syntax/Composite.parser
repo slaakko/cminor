@@ -1,0 +1,41 @@
+using Code;
+
+namespace Syntax
+{
+    grammar CompositeGrammar
+    {
+        using PrimaryGrammar.Primary;
+
+        Alternative(Scope enclosingScope, ParsingContext ctx) : Parser
+                        ::= Sequence(enclosingScope, ctx):left{ value = left; } ('|' Sequence(enclosingScope, ctx):right!{ value = new AlternativeParser(value, right); })*
+                        ;
+
+        Sequence(Scope enclosingScope, ParsingContext ctx) : Parser
+                        ::= Difference(enclosingScope, ctx):left{ value = left; } (Difference(enclosingScope, ctx):right{ value = new SequenceParser(value, right); })*
+                        ;
+
+        Difference(Scope enclosingScope, ParsingContext ctx) : Parser
+                        ::= ExclusiveOr(enclosingScope, ctx):left{ value = left; } ('-' ExclusiveOr(enclosingScope, ctx):right!{ value = new DifferenceParser(value, right); })*
+                        ;
+
+        ExclusiveOr(Scope enclosingScope, ParsingContext ctx) : Parser
+                        ::= Intersection(enclosingScope, ctx):left{ value = left; } ('^' Intersection(enclosingScope, ctx):right!{ value = new ExclusiveOrParser(value, right); })*
+                        ;
+
+        Intersection(Scope enclosingScope, ParsingContext ctx) : Parser
+                        ::= List(enclosingScope, ctx):left{ value = left; } ('&' List(enclosingScope, ctx):right{ value = new IntersectionParser(value, right); })*
+                        ;
+
+        List(Scope enclosingScope, ParsingContext ctx) : Parser
+                        ::= Postfix(enclosingScope, ctx):left{ value = left; } ('%' Postfix(enclosingScope, ctx):right{ value = new ListParser(value, right); })?
+                        ;
+
+        Postfix(Scope enclosingScope, ParsingContext ctx) : Parser
+                        ::= Primary(enclosingScope, ctx){ value = Primary; }
+                        (   '*'{ value = new KleeneStarParser(value); }
+                        |   '+'{ value = new PositiveParser(value); }
+                        |   '?'{ value = new OptionalParser(value); }
+                        )?
+                        ;
+    }
+}

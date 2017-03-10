@@ -1,0 +1,598 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Parsing;
+using Code;
+using System.Text.Parsing.CodeDom;
+
+namespace Syntax
+{
+    public class ElementGrammar : System.Text.Parsing.Grammar
+    {
+        public ElementGrammar() : this(new ParsingDomain())
+        {
+        }
+        public ElementGrammar(ParsingDomain parsingDomain) : base("ElementGrammar", parsingDomain.GetNamespaceScope("Syntax"), parsingDomain)
+        {
+            Owner = 0;
+            keywords0 = new List<string>();
+            keywords0.Add("var");
+            keywords0.Add("skip");
+            keywords0.Add("token");
+            keywords0.Add("grammar");
+            keywords0.Add("letter");
+            keywords0.Add("keyword");
+            keywords0.Add("start");
+            keywords0.Add("punctuation");
+            keywords0.Add("hexdigit");
+            keywords0.Add("digit");
+            keywords0.Add("empty");
+            keywords0.Add("keyword_list");
+            keywords0.Add("anychar");
+            keywords0.Add("using");
+            keywords0.Add("space");
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public void Parse(string content, int fileIndex, string fileName, Grammar grammar)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                stack.Push(grammar);
+                Match match = Parse(scanner, stack);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+        }
+        public class RuleLinkRule : System.Text.Parsing.RuleParser
+        {
+            public RuleLinkRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("Grammar", "grammar"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.grammar = cast<Grammar>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser aliasNameNonterminalParser = GetNonterminal("aliasName");
+                aliasNameNonterminalParser.Post = PostaliasName;
+                NonterminalParser ruleNameNonterminalParser = GetNonterminal("ruleName");
+                ruleNameNonterminalParser.Post = PostruleName;
+                NonterminalParser qualified_idNonterminalParser = GetNonterminal("qualified_id");
+                qualified_idNonterminalParser.Post = Postqualified_id;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                RuleLink link = new RuleLink(context.fromaliasName, context.grammar, context.fromruleName);
+                link.SpanValue = span;
+                context.grammar.AddRuleLink(link);
+            }
+            public void A1Action(string match, Span span, string fileName, ref bool pass)
+            {
+                RuleLink link = new RuleLink(context.grammar, context.fromqualified_id);
+                link.SpanValue = span;
+                context.grammar.AddRuleLink(link);
+            }
+            public void PostaliasName(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromaliasName = cast<string>(stack.Pop());
+                }
+            }
+            public void PostruleName(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromruleName = cast<string>(stack.Pop());
+                }
+            }
+            public void Postqualified_id(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromqualified_id = cast<string>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public Grammar grammar;
+                public string fromaliasName;
+                public string fromruleName;
+                public string fromqualified_id;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class SignatureRule : System.Text.Parsing.RuleParser
+        {
+            public SignatureRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("RuleParser", "rule"));
+                InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.ctx = cast<ParsingContext>(stack.Pop());
+                context.rule = cast<RuleParser>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                NonterminalParser parameterListNonterminalParser = GetNonterminal("ParameterList");
+                parameterListNonterminalParser.Pre = PreParameterList;
+                NonterminalParser returnTypeNonterminalParser = GetNonterminal("ReturnType");
+                returnTypeNonterminalParser.Pre = PreReturnType;
+            }
+            public void PreParameterList(Stack<object> stack)
+            {
+                stack.Push(context.rule);
+                stack.Push(context.ctx);
+            }
+            public void PreReturnType(Stack<object> stack)
+            {
+                stack.Push(context.rule);
+                stack.Push(context.ctx);
+            }
+            public class Context
+            {
+                public RuleParser rule;
+                public ParsingContext ctx;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class ParameterListRule : System.Text.Parsing.RuleParser
+        {
+            public ParameterListRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("RuleParser", "rule"));
+                InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.ctx = cast<ParsingContext>(stack.Pop());
+                context.rule = cast<RuleParser>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                NonterminalParser variableNonterminalParser = GetNonterminal("Variable");
+                variableNonterminalParser.Pre = PreVariable;
+                NonterminalParser parameterNonterminalParser = GetNonterminal("Parameter");
+                parameterNonterminalParser.Pre = PreParameter;
+            }
+            public void PreVariable(Stack<object> stack)
+            {
+                stack.Push(context.rule);
+                stack.Push(context.ctx);
+            }
+            public void PreParameter(Stack<object> stack)
+            {
+                stack.Push(context.rule);
+                stack.Push(context.ctx);
+            }
+            public class Context
+            {
+                public RuleParser rule;
+                public ParsingContext ctx;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class VariableRule : System.Text.Parsing.RuleParser
+        {
+            public VariableRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("RuleParser", "rule"));
+                InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.ctx = cast<ParsingContext>(stack.Pop());
+                context.rule = cast<RuleParser>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser.Pre = PreTypeExpr;
+                typeExprNonterminalParser.Post = PostTypeExpr;
+                NonterminalParser declaratorNonterminalParser = GetNonterminal("Declarator");
+                declaratorNonterminalParser.Post = PostDeclarator;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.rule.LocalVariables.Add(new AttrOrVar(context.fromTypeExpr.Name, context.fromDeclarator.Name));
+            }
+            public void PreTypeExpr(Stack<object> stack)
+            {
+                stack.Push(context.ctx);
+            }
+            public void PostTypeExpr(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromTypeExpr = cast<DomObject>(stack.Pop());
+                }
+            }
+            public void PostDeclarator(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromDeclarator = cast<Identifier>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public RuleParser rule;
+                public ParsingContext ctx;
+                public DomObject fromTypeExpr;
+                public Identifier fromDeclarator;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class ParameterRule : System.Text.Parsing.RuleParser
+        {
+            public ParameterRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("RuleParser", "rule"));
+                InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.ctx = cast<ParsingContext>(stack.Pop());
+                context.rule = cast<RuleParser>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser.Pre = PreTypeExpr;
+                typeExprNonterminalParser.Post = PostTypeExpr;
+                NonterminalParser declaratorNonterminalParser = GetNonterminal("Declarator");
+                declaratorNonterminalParser.Post = PostDeclarator;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.rule.InheritedAttributes.Add(new AttrOrVar(context.fromTypeExpr.Name, context.fromDeclarator.Name));
+            }
+            public void PreTypeExpr(Stack<object> stack)
+            {
+                stack.Push(context.ctx);
+            }
+            public void PostTypeExpr(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromTypeExpr = cast<DomObject>(stack.Pop());
+                }
+            }
+            public void PostDeclarator(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromDeclarator = cast<Identifier>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public RuleParser rule;
+                public ParsingContext ctx;
+                public DomObject fromTypeExpr;
+                public Identifier fromDeclarator;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class ReturnTypeRule : System.Text.Parsing.RuleParser
+        {
+            public ReturnTypeRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("RuleParser", "rule"));
+                InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.ctx = cast<ParsingContext>(stack.Pop());
+                context.rule = cast<RuleParser>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser.Pre = PreTypeExpr;
+                typeExprNonterminalParser.Post = PostTypeExpr;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.rule.ValueTypeName = context.fromTypeExpr.Name;
+            }
+            public void PreTypeExpr(Stack<object> stack)
+            {
+                stack.Push(context.ctx);
+            }
+            public void PostTypeExpr(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromTypeExpr = cast<DomObject>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public RuleParser rule;
+                public ParsingContext ctx;
+                public DomObject fromTypeExpr;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class IdentifierRule : System.Text.Parsing.RuleParser
+        {
+            public IdentifierRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                ValueTypeName = "string";
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser identifierNonterminalParser = GetNonterminal("identifier");
+                identifierNonterminalParser.Post = Postidentifier;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = match;
+            }
+            public void Postidentifier(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromidentifier = cast<string>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public string value;
+                public string fromidentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class QualifiedIdRule : System.Text.Parsing.RuleParser
+        {
+            public QualifiedIdRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                ValueTypeName = "string";
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser firstNonterminalParser = GetNonterminal("first");
+                firstNonterminalParser.Post = Postfirst;
+                NonterminalParser restNonterminalParser = GetNonterminal("rest");
+                restNonterminalParser.Post = Postrest;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = match;
+            }
+            public void Postfirst(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromfirst = cast<string>(stack.Pop());
+                }
+            }
+            public void Postrest(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromrest = cast<string>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public string value;
+                public string fromfirst;
+                public string fromrest;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class StringArrayRule : System.Text.Parsing.RuleParser
+        {
+            public StringArrayRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("List<string>", "array"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.array = cast<List<string>>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser strNonterminalParser = GetNonterminal("str");
+                strNonterminalParser.Post = Poststr;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.array.Add(context.fromstr);
+            }
+            public void Poststr(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromstr = cast<string>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public List<string> array;
+                public string fromstr;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+            Grammar grammar1 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
+            if (grammar1 == null)
+            {
+                grammar1 = new Code.IdentifierGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar1);
+            Grammar grammar2 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
+            if (grammar2 == null)
+            {
+                grammar2 = new Code.TypeExprGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar2);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
+            AddRuleLink(new RuleLink("Declarator", this, "Code.IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "Code.TypeExprGrammar.TypeExpr"));
+            AddRule(new RuleLinkRule("RuleLink", GetScope(),
+                new AlternativeParser(
+                    new ActionParser("A0",
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new KeywordParser("using"),
+                                        new NonterminalParser("aliasName", "identifier", 0)),
+                   

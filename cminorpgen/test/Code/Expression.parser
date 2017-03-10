@@ -1,0 +1,399 @@
+using System.Text.Parsing.CodeDom;
+
+namespace Code
+{
+    grammar ExpressionGrammar
+    {
+        using IdentifierGrammar.Identifier;
+        using IdentifierGrammar.QualifiedId;
+        using LiteralGrammar.Literal;
+        using BasicTypeGrammar.BasicType;
+        using TemplateGrammar.TemplateId;
+        using TypeExprGrammar.TypeExpr;
+
+        Expression(ParsingContext ctx) : DomObject
+                ::= Disjunction(ctx){ value = Disjunction; }
+                ;
+
+        Disjunction(ParsingContext ctx) : DomObject
+                ::= Conjunction(ctx):left{ value = left; }
+                (
+                    "||"
+                    {
+                        if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                        {
+                            pass = false;
+                        }
+                    }
+                    Conjunction(ctx):right!{ value = new Disjunction(value, right); }
+                )*
+                ;
+
+        Conjunction(ParsingContext ctx) : DomObject
+                ::= BitOr(ctx):left{ value = left; }
+                (
+                    "&&"
+                    {
+                        if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                        {
+                            pass = false;
+                        }
+                    }
+                    BitOr(ctx):right!{ value = new Conjunction(value, right); }
+                )*
+                ;
+
+        BitOr(ParsingContext ctx) : DomObject
+                ::= BitXor(ctx):left{ value = left; }
+                (
+                    ('|' - "||")
+                    {
+                        if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                        {
+                            pass = false;
+                        }
+                    }
+                    BitXor(ctx):right!{ value = new BitOr(value, right); }
+                )*
+                ;
+
+        BitXor(ParsingContext ctx) : DomObject
+                ::= BitAnd(ctx):left{ value = left; }
+                (
+                    '^'
+                    {
+                        if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                        {
+                            pass = false;
+                        }
+                    }
+                    BitAnd(ctx):right!{ value = new BitXor(value, right); }
+                )*
+                ;
+
+        BitAnd(ParsingContext ctx) : DomObject
+                ::= Equality(ctx):left{ value = left; }
+                (
+                    ('&' - "&&")
+                    {
+                        if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                        {
+                            pass = false;
+                        }
+                    }
+                    Equality(ctx):right!{ value = new BitAnd(value, right); }
+                )*
+                ;
+
+        Equality(ParsingContext ctx, var Operator op) : DomObject
+                ::= Relational(ctx):left{ value = left; }
+                (
+                    (   "=="
+                    {
+                        if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                        {
+                            pass = false;
+                        }
+                        else
+                        {
+                            op = Operator.equal;
+                        }
+                    }
+                    |   "!="
+                    {
+                        if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                        {
+                            pass = false;
+                        }
+                        else
+                        {
+                            op = Operator.notEqual;
+                        }
+                    }
+                    )
+                    Relational(ctx):right!
+                    {
+                        switch (op)
+                        {
+                            case Operator.equal: value = new Equal(value, right); break;
+                            case Operator.notEqual: value = new NotEqual(value, right); break;
+                        }
+                    }
+                )*
+                ;
+
+        Relational(ParsingContext ctx, var Operator op) : DomObject
+                ::= Shift(ctx):left{ value = left; }
+                (
+                    (   ("<=" - "<=>")
+                        {
+                            if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                            {
+                                pass = false;
+                            }
+                            else
+                            {
+                                op = Operator.lessOrEqual;
+                            }
+                        }
+                    |   ">="
+                        {
+                            if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                            {
+                                pass = false;
+                            }
+                            else
+                            {
+                                op = Operator.greaterOrEqual;
+                            }
+                        }
+                    |   ('<' - ("<<" | "<=>"))
+                        {
+                            if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                            {
+                                pass = false;
+                            }
+                            else
+                            {
+                                op = Operator.less;
+                            }
+                        }
+                    |   ('>' - ">>")
+                        {
+                            if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                            {
+                                pass = false;
+                            }
+                            else
+                            {
+                                op = Operator.greater;
+                            }
+                        }
+                    |   (keyword("is"){ if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments()) pass = false; else { op = Operator.is_; ctx.PushParsingIsOrAs(true); } }
+                        TypeExpr(ctx):isType)
+                    |   (keyword("as"){ if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments()) pass = false; else { op = Operator.as_; ctx.PushParsingIsOrAs(true); } }
+                        TypeExpr(ctx):asType)
+                    )
+                    Shift(ctx):right
+                    {
+                        switch (op)
+                        {
+                            case Operator.less: value = new Less(value, right); break;
+                            case Operator.greater: value = new Greater(value, right); break;
+                            case Operator.lessOrEqual: value = new LessOrEqual(value, right); break;
+                            case Operator.greaterOrEqual: value = new GreaterOrEqual(value, right); break;
+                            case Operator.is_: value = new IsExpression(value, isType); break;
+                            case Operator.as_: value = new AsExpression(value, asType); break;
+                        }
+                    }
+                )*
+                ;
+
+        Shift(ParsingContext ctx, var Operator op) : DomObject
+                ::= Additive(ctx):left{ value = left; }
+                (
+                    (   "<<"
+                        {
+                            if (ctx.ParsingLvalue())
+                            {
+                                pass = false;
+                            }
+                            else
+                            {
+                                op = Operator.shiftLeft;
+                            }
+
+                        }
+                    |   ">>"
+                        {
+                            if (ctx.ParsingLvalue())
+                            {
+                                pass = false;
+                            }
+                            else
+                            {
+                                op = Operator.shiftRight;
+                            }
+
+                        }
+                    )
+                    (empty{ ctx.BeginParsingArguments(); } Additive(ctx):right!{ ctx.EndParsingArguments(); } / { ctx.EndParsingArguments(); })
+                    {
+                        switch (op)
+                        {
+                            case Operator.shiftLeft: value = new ShiftLeft(value, right); break;
+                            case Operator.shiftRight: value = new ShiftRight(value, right); break;
+                        }
+                    }
+                )*
+                ;
+
+        Additive(ParsingContext ctx, var Operator op) : DomObject
+                ::= Multiplicative(ctx):left{ value = left; }
+                (
+                    (   '+'
+                        {
+                            if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                            {
+                                pass = false;
+                            }
+                            else
+                            {
+                                op = Operator.add;
+                            }
+
+                        }
+                    |   '-'
+                        {
+                            if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                            {
+                                pass = false;
+                            }
+                            else
+                            {
+                                op = Operator.sub;
+                            }
+
+                        }
+                    )
+                    Multiplicative(ctx):right!
+                    {
+                        switch (op)
+                        {
+                            case Operator.add: value = new Add(value, right); break;
+                            case Operator.sub: value = new Sub(value, right); break;
+                        }
+                    }
+                )*
+                ;
+
+        Multiplicative(ParsingContext ctx, var Operator op) : DomObject
+                ::= Prefix(ctx):left{ value = left; }
+                (
+                    (   '*'
+                        {
+                            if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                            {
+                                pass = false;
+                            }
+                            else
+                            {
+                                op = Operator.mul;
+                            }
+                        }
+                    |   '/'
+                        {
+                            if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                            {
+                                pass = false;
+                            }
+                            else
+                            {
+                                op = Operator.div;
+                            }
+
+                        }
+                    |   '%'
+                        {
+                            if (ctx.ParsingLvalue() || ctx.ParsingSimpleStatement() && !ctx.ParsingArguments())
+                            {
+                                pass = false;
+                            }
+                            else
+                            {
+                                op = Operator.rem;
+                            }
+
+                        }
+                    )
+                    Prefix(ctx):right
+                    {
+                        switch (op)
+                        {
+                            case Operator.mul: value = new Mul(value, right); break;
+                            case Operator.div: value = new Div(value, right); break;
+                            case Operator.rem: value = new Rem(value, right); break;
+                        }
+                    }
+                )*
+                ;
+
+        Prefix(ParsingContext ctx, var Operator op) : DomObject
+                ::= (
+                (   '-'{  if (ctx.ParsingSimpleStatement() && !ctx.ParsingArguments()) pass = false; else op = Operator.unaryMinus; }
+                |   '+'{ if (ctx.ParsingSimpleStatement() && !ctx.ParsingArguments()) pass = false; else op = Operator.unaryPlus; }
+                |   ('!' - "!="){ if (ctx.ParsingSimpleStatement() && !ctx.ParsingArguments()) pass = false; else op = Operator.not_; }
+                |   '~'{ if (ctx.ParsingSimpleStatement() && !ctx.ParsingArguments()) pass = false; else op = Operator.complement; }
+                )
+                Prefix(ctx):prefix
+                {
+                    switch (op)
+                    {
+                        case Operator.unaryMinus: value = new UnaryMinus(prefix); break;
+                        case Operator.unaryPlus: value = new UnaryPlus(prefix); break;
+                        case Operator.not_: value = new Not(prefix); break;
+                        case Operator.complement: value = new Complement(prefix); break;
+                    }
+                }
+                )
+                |   Postfix(ctx)
+                {
+                    value = Postfix;
+                }
+                ;
+
+        Postfix(ParsingContext ctx) : DomObject
+                ::= 
+                (   Primary(ctx){ value = Primary; }
+                    (   '.' Identifier:dotMemberId{ value = new DotExpression(value, dotMemberId); }
+                    |   '['{ ctx.PushParsingLvalue(false); ctx.PushParsingSimpleStatement(false); } Expression(ctx):index{ ctx.PopParsingLvalue(); ctx.PopParsingSimpleStatement(); } / 
+                        { ctx.PopParsingLvalue(); ctx.PopParsingSimpleStatement(); } ']'{ value = new IndexExpression(value, index); }
+                    |   '('{ value = new InvokeExpression(value); } ArgumentList(ctx, value) ')'
+                    )*
+                )
+                ;
+
+        Primary(ParsingContext ctx) : DomObject
+                ::= ('(' Expression(ctx) ')'){ value = Expression; value.Parens = true; }
+                |   Literal{ value = Literal; }
+                |   BasicType{ value = BasicType; }
+                |   TemplateId(ctx){ value = TemplateId; }
+                |   Identifier:id{ value = id; }
+                |   keyword("this"){ value = new This(); }
+                |   keyword("base"){ value = new Base(); }
+                |   (keyword("default") '(' TypeExpr(ctx)! ')'!){ value = new DefaultExpression(TypeExpr); }
+                |   CastExpr(ctx){ value = CastExpr; }
+                |   NewExpr(ctx){ value = NewExpr; }
+                ;
+
+        CastExpr(ParsingContext ctx) : DomObject
+                ::= (keyword("cast") '<'! TypeExpr(ctx):typeExpr! '>'! '('! Expression(ctx):sourceExpr! ')'!)
+                {
+                    value = new CastExpression(typeExpr, sourceExpr);
+                }
+                ;
+
+        NewExpr(ParsingContext ctx) : DomObject
+                ::= (keyword("new") TypeExpr(ctx):type!{ value = new NewExpression(type); }
+                    '('! ArgumentList(ctx, value):args! ')'!)
+                ;
+
+        ArgumentList(ParsingContext ctx, DomObject o)
+                ::= (ExpressionList(ctx, o))?
+                ;
+
+        ExpressionList(ParsingContext ctx, DomObject o)
+                ::= empty{ ctx.BeginParsingArguments(); }
+                (
+                    (keyword("ref") Expression(ctx):arg{ o.AddArgument(new RefExpression(arg)); } | Expression(ctx){ o.AddArgument(Expression); }) % ','
+                )
+                {
+                    ctx.EndParsingArguments();
+                }
+                /
+                {
+                    ctx.EndParsingArguments();
+                }
+                ;
+    }
+}

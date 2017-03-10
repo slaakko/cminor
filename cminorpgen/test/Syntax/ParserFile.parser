@@ -1,0 +1,46 @@
+using Code;
+using System.Text.Parsing.CodeDom;
+
+namespace Syntax
+{
+    grammar ParserFileGrammar
+    {
+        using stdlib.spaces_and_comments;
+        using stdlib.newline;
+        using stdlib.qualified_id;
+        using GrammarGrammar.Grammar;
+        using Code.NamespaceGrammar.NamespaceImport;
+        using Code.NamespaceGrammar.Alias;
+
+        skip spaces_and_comments;
+
+        ParserFile(int id_, ParsingDomain parsingDomain_, var ParsingContext ctx) : ParserFileContent
+                    ::= empty{ value = new ParserFileContent(id_, parsingDomain_); value.FilePath = fileName; ctx = new ParsingContext(); }
+                        NamespaceContent(value, ctx)
+                    ;
+
+        UsingDeclarations(ParserFileContent parserFileContent)
+                    ::= UsingDeclaration(parserFileContent)+
+                    ;
+
+        UsingDeclaration(ParserFileContent parserFileContent)
+                    ::= (   NamespaceImport{ parserFileContent.AddUsingObject(NamespaceImport); }
+                        |   Alias{ parserFileContent.AddUsingObject(Alias); }
+                        )
+                    ;
+
+        NamespaceContent(ParserFileContent parserFileContent, ParsingContext ctx)
+                    ::= UsingDeclarations(parserFileContent)?
+                    (   Grammar(parserFileContent.CurrentScope, ctx){ parserFileContent.AddGrammar(Grammar); }
+                    |   Namespace(parserFileContent, ctx)
+                    )*
+                    ;
+
+        Namespace(ParserFileContent parserFileContent, ParsingContext ctx)
+                    ::= keyword("namespace") qualified_id:ns!{ parserFileContent.BeginNamespace(ns); }
+                        '{'!
+                        NamespaceContent(parserFileContent, ctx)
+                        '}'!{ parserFileContent.EndNamespace(); }
+                    ;
+    }
+}

@@ -1,0 +1,16 @@
+using System;
+
+void foo()
+{
+    throw new Exception("foo");
+}
+
+void bar()
+{
+    foo();
+}
+
+void main()
+{
+    bar();
+}

@@ -1,0 +1,16 @@
+nonnative StdLib.pp debug   : 20343 ms
+nonnative StdLib.pp release : 19364 ms
+
+native StdLib.pp debug      : 6369 ms
+native StdLib.pp release    : 6274 ms
+
+---------------------------------------
+
+native Code.pp debug        : 30251 ms
+native Code.pp release      : 29893 ms
+
+---------------------------------------
+
+native Syntax.pp debug      : 16693 ms
+native Syntax.pp release    : 16481 ms
+

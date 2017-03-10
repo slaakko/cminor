@@ -1,0 +1,58 @@
+using System;
+using System.Collections.Generic;
+
+class Alpha
+{
+    public Alpha(int x)
+    {
+        this.x = x;
+        this.y = new byte[cast<int>(1024) * 60];
+    }
+    public int X
+    {
+        get { return x; }
+    }
+    private int x;
+    private byte[] y;
+}
+
+void main()
+{
+    try
+    {
+        HashMap<string, Alpha> h = new HashMap<string, Alpha>();
+        for (int i = 0; i < 4; ++i)
+        {
+            h.Add(new KeyValuePair<string, Alpha>(i.ToString(), new Alpha(i)));
+        }
+        Alpha x = new Alpha(999);
+        h["foo"] = x;
+        foreach (KeyValuePair<string, Alpha> p in h)
+        {
+            Console.Write(p.Key); 
+            Console.Write(" ");
+            Console.Write(p.Value.X);
+            Console.WriteLine();
+        }
+        if (h.ContainsKey("foo"))
+        {
+            Console.WriteLine("foo");
+        }
+        Alpha a = h["foo"];
+        Console.WriteLine(a.X);
+        if (h.Remove("foo"))
+        {
+            Console.WriteLine("jee");
+        }
+        Alpha b;
+        if (h.TryGetValue("0", ref b))
+        {
+            Console.WriteLine(b.X);
+        }
+        Console.WriteLine(h.Count);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+    }
+}

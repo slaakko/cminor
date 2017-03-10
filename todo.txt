@@ -1,0 +1,3 @@
+o   instantiate virtual functions contained in a class template specialization
+
+

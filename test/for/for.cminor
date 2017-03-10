@@ -1,0 +1,17 @@
+public class X<T>
+{    
+    public void Foo()
+    {
+        T[] newItems = new T[0];
+        for (int i = 0; i < count; ++i)
+        {
+            newItems[i] = items[i];
+        }
+    }
+    private T[] items;
+    private int count;
+}
+
+void main()
+{
+}

@@ -1,0 +1,376 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Parsing;
+using Code;
+using System.Text.Parsing.CodeDom;
+
+namespace Syntax
+{
+    public class ParserFileGrammar : System.Text.Parsing.Grammar
+    {
+        public ParserFileGrammar() : this(new ParsingDomain())
+        {
+        }
+        public ParserFileGrammar(ParsingDomain parsingDomain) : base("ParserFileGrammar", parsingDomain.GetNamespaceScope("Syntax"), parsingDomain)
+        {
+            Owner = 0;
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public ParserFileContent Parse(string content, int fileIndex, string fileName, int id_, ParsingDomain parsingDomain_)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                stack.Push(id_);
+                stack.Push(parsingDomain_);
+                Match match = Parse(scanner, stack);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+            ParserFileContent result = cast<ParserFileContent>(stack.Pop());
+            return result;
+        }
+        public class ParserFileRule : System.Text.Parsing.RuleParser
+        {
+            public ParserFileRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("int", "id_"));
+                InheritedAttributes.Add(new AttrOrVar("ParsingDomain", "parsingDomain_"));
+                ValueTypeName = "ParserFileContent";
+                LocalVariables.Add(new AttrOrVar("ParsingContext", "ctx"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.parsingDomain_ = cast<ParsingDomain>(stack.Pop());
+                context.id_ = cast<int>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser namespaceContentNonterminalParser = GetNonterminal("NamespaceContent");
+                namespaceContentNonterminalParser.Pre = PreNamespaceContent;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.value = new ParserFileContent(context.id_, context.parsingDomain_);
+                context.value.FilePath = fileName;
+                context.ctx = new ParsingContext();
+            }
+            public void PreNamespaceContent(Stack<object> stack)
+            {
+                stack.Push(context.value);
+                stack.Push(context.ctx);
+            }
+            public class Context
+            {
+                public int id_;
+                public ParsingDomain parsingDomain_;
+                public ParserFileContent value;
+                public ParsingContext ctx;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class UsingDeclarationsRule : System.Text.Parsing.RuleParser
+        {
+            public UsingDeclarationsRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("ParserFileContent", "parserFileContent"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.parserFileContent = cast<ParserFileContent>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                NonterminalParser usingDeclarationNonterminalParser = GetNonterminal("UsingDeclaration");
+                usingDeclarationNonterminalParser.Pre = PreUsingDeclaration;
+            }
+            public void PreUsingDeclaration(Stack<object> stack)
+            {
+                stack.Push(context.parserFileContent);
+            }
+            public class Context
+            {
+                public ParserFileContent parserFileContent;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class UsingDeclarationRule : System.Text.Parsing.RuleParser
+        {
+            public UsingDeclarationRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("ParserFileContent", "parserFileContent"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.parserFileContent = cast<ParserFileContent>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser namespaceImportNonterminalParser = GetNonterminal("NamespaceImport");
+                namespaceImportNonterminalParser.Post = PostNamespaceImport;
+                NonterminalParser aliasNonterminalParser = GetNonterminal("Alias");
+                aliasNonterminalParser.Post = PostAlias;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.parserFileContent.AddUsingObject(context.fromNamespaceImport);
+            }
+            public void A1Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.parserFileContent.AddUsingObject(context.fromAlias);
+            }
+            public void PostNamespaceImport(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromNamespaceImport = cast<NamespaceImport>(stack.Pop());
+                }
+            }
+            public void PostAlias(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromAlias = cast<Alias>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public ParserFileContent parserFileContent;
+                public NamespaceImport fromNamespaceImport;
+                public Alias fromAlias;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class NamespaceContentRule : System.Text.Parsing.RuleParser
+        {
+            public NamespaceContentRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("ParserFileContent", "parserFileContent"));
+                InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.ctx = cast<ParsingContext>(stack.Pop());
+                context.parserFileContent = cast<ParserFileContent>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser usingDeclarationsNonterminalParser = GetNonterminal("UsingDeclarations");
+                usingDeclarationsNonterminalParser.Pre = PreUsingDeclarations;
+                NonterminalParser grammarNonterminalParser = GetNonterminal("Grammar");
+                grammarNonterminalParser.Pre = PreGrammar;
+                grammarNonterminalParser.Post = PostGrammar;
+                NonterminalParser namespaceNonterminalParser = GetNonterminal("Namespace");
+                namespaceNonterminalParser.Pre = PreNamespace;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.parserFileContent.AddGrammar(context.fromGrammar);
+            }
+            public void PreUsingDeclarations(Stack<object> stack)
+            {
+                stack.Push(context.parserFileContent);
+            }
+            public void PreGrammar(Stack<object> stack)
+            {
+                stack.Push(context.parserFileContent.CurrentScope);
+                stack.Push(context.ctx);
+            }
+            public void PostGrammar(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromGrammar = cast<Grammar>(stack.Pop());
+                }
+            }
+            public void PreNamespace(Stack<object> stack)
+            {
+                stack.Push(context.parserFileContent);
+                stack.Push(context.ctx);
+            }
+            public class Context
+            {
+                public ParserFileContent parserFileContent;
+                public ParsingContext ctx;
+                public Grammar fromGrammar;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public class NamespaceRule : System.Text.Parsing.RuleParser
+        {
+            public NamespaceRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("ParserFileContent", "parserFileContent"));
+                InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
+                contextStack = new Stack<Context>();
+            }
+            public override void Enter(Stack<object> stack)
+            {
+                contextStack.Push(context);
+                context = new Context();
+                context.ctx = cast<ParsingContext>(stack.Pop());
+                context.parserFileContent = cast<ParserFileContent>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser nsNonterminalParser = GetNonterminal("ns");
+                nsNonterminalParser.Post = Postns;
+                NonterminalParser namespaceContentNonterminalParser = GetNonterminal("NamespaceContent");
+                namespaceContentNonterminalParser.Pre = PreNamespaceContent;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.parserFileContent.BeginNamespace(context.fromns);
+            }
+            public void A1Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.parserFileContent.EndNamespace();
+            }
+            public void Postns(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromns = cast<string>(stack.Pop());
+                }
+            }
+            public void PreNamespaceContent(Stack<object> stack)
+            {
+                stack.Push(context.parserFileContent);
+                stack.Push(context.ctx);
+            }
+            public class Context
+            {
+                public ParserFileContent parserFileContent;
+                public ParsingContext ctx;
+                public string fromns;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.NamespaceGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = new Code.NamespaceGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+            Grammar grammar1 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar1 == null)
+            {
+                grammar1 = new System.Text.Parsing.stdlib(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar1);
+            Grammar grammar2 = parsingDomain.GetGrammar("Syntax.GrammarGrammar");
+            if (grammar2 == null)
+            {
+                grammar2 = new Syntax.GrammarGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar2);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("newline", this, "System.Text.Parsing.stdlib.newline"));
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRuleLink(new RuleLink("Grammar", this, "GrammarGrammar.Grammar"));
+            AddRuleLink(new RuleLink("NamespaceImport", this, "Code.NamespaceGrammar.NamespaceImport"));
+            AddRuleLink(new RuleLink("Alias", this, "Code.NamespaceGrammar.Alias"));
+            AddRule(new ParserFileRule("ParserFile", GetScope(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new EmptyParser()),
+                    new NonterminalParser("NamespaceContent", "NamespaceContent", 2))));
+            AddRule(new UsingDeclarationsRule("UsingDeclarations", GetScope(),
+                new PositiveParser(
+                    new NonterminalParser("UsingDeclaration", "UsingDeclaration", 1))));
+            AddRule(new UsingDeclarationRule("UsingDeclaration", GetScope(),
+                new Alternati

@@ -1,0 +1,198 @@
+using System;
+using System.Text;
+
+namespace System.Text.Parsing
+{
+    grammar stdlib
+    {
+        spaces                              ::= space+
+                                            ;
+
+        newline                             ::= "\r\n" | "\n" | "\r"
+                                            ;
+
+        comment                             ::= line_comment | block_comment
+                                            ;
+
+        line_comment                        ::= "//" [^\r\n]* newline
+                                            ;
+
+        block_comment                       ::= "/*" (string | char | (anychar - "*/"))* "*/"
+                                            ;
+
+        spaces_and_comments                 ::= (space | comment)+
+                                            ;
+
+        digit_sequence                      ::= token(digit+)
+                                            ;
+
+        sign                                ::= '+' | '-'
+                                            ;
+
+        sbyte : sbyte                       ::= token(sign? digit_sequence)
+                                            {
+                                                value = sbyte.Parse(match);
+                                            }
+                                            ;
+
+        byte : byte                         ::= token(digit_sequence)
+                                            {
+                                                value = byte.Parse(match);
+                                            }
+                                            ;
+    
+        short : short                       ::= token(sign? digit_sequence)
+                                            {
+                                                value = short.Parse(match);
+                                            }
+                                            ;
+
+        ushort : ushort                     ::= token(digit_sequence)
+                                            {
+                                                value = ushort.Parse(match);
+                                            }
+                                            ;
+
+        int : int                           ::= token(sign? digit_sequence)
+                                            {
+                                                value = int.Parse(match);
+                                            }
+                                            ;
+
+        uint : uint                         ::= digit_sequence
+                                            {
+                                                value = uint.Parse(match);
+                                            }
+                                            ;
+                                            
+        long : long                         ::= token(sign? digit_sequence)
+                                            {
+                                                value = long.Parse(match);
+                                            }
+                                            ;   
+                                                                                  
+        ulong : ulong                       ::= digit_sequence
+                                            {
+                                                value = ulong.Parse(match);
+                                            }
+                                            ;
+
+        hexbyte : byte                      ::= token(hexdigit+)
+                                            {
+                                                value = byte.ParseHex(match);
+                                            }
+                                            ;
+
+        hexword : ushort                    ::= token(hexdigit+)
+                                            {
+                                                value = ushort.ParseHex(match);
+                                            }
+                                            ;
+
+        hexdword : uint                     ::= token(hexdigit+)
+                                            {
+                                                value = uint.ParseHex(match);
+                                            }
+                                            ;
+    
+        hexqword : ulong                    ::= token(hexdigit+)
+                                            {
+                                                value = ulong.ParseHex(match);
+                                            }
+                                            ;
+
+        hex : ulong                         ::= hexqword
+                                            {
+                                                value = hexqword;
+                                            }
+                                            ;
+
+        hex_literal : ulong                 ::= token(("0x" | "0X") hex!){ value = hex; }
+                                            ;
+
+        octaldigit : int                    ::= [0-7]{ value = cast<int>(match[0]) - cast<int>('0'); }
+                                            ;
+
+        float : float                       ::= token(sign? fractional_real exponent_part? | sign? digit_sequence exponent_part)
+                                            {
+                                                value = float.Parse(match);
+                                            }
+                                            ;
+
+        double : double                     ::= token(sign? fractional_real exponent_part? | sign? digit_sequence exponent_part)
+                                            {
+                                                value = double.Parse(match);
+                                            }
+                                            ;
+
+        ureal : double                      ::= token(fractional_real exponent_part? | digit_sequence exponent_part)
+                                            {
+                                                value = double.Parse(match);
+                                            }
+                                            ;
+
+        fractional_real                     ::= token(digit_sequence? '.' digit_sequence)
+                                            |   token(digit_sequence '.')
+                                            ;
+
+        exponent_part                       ::= token([eE] sign? digit_sequence)
+                                            ;
+
+        number : double                     ::= double:r{ value = r; } | int:i{ value = i; }
+                                            ;
+
+        bool : bool                         ::= keyword("true"){ value = true; } | keyword("false"){ value = false; }
+                                            ;
+
+        identifier : string                 ::= token((letter | '_') (letter | digit | '_')*)
+                                            {
+                                                value = match;
+                                            }
+                                            ;
+
+        qualified_id : string               ::= token(identifier:first ('.' identifier:rest)*)
+                                            {
+                                                value = match;
+                                            }
+                                            ;
+
+        escape : char                       ::= token('\\'
+                                            (
+                                                [xX] hex:x{ value = cast<char>(x); }
+                                            |   (octaldigit:o1 octaldigit:o2 octaldigit:o3){ value = cast<char>(64 * o1 + 8 * o2 + o3); }
+                                            |   [dD] uint:decimalEscape{ value = cast<char>(decimalEscape); }
+                                            |   [^dDxX]
+                                            {
+                                                char c = match[0];
+                                                switch (c)
+                                                {
+                                                    case 'a': value = '\a'; break;
+                                                    case 'b': value = '\b'; break;
+                                                    case 'f': value = '\f'; break;
+                                                    case 'n': value = '\n'; break;
+                                                    case 'r': value = '\r'; break;
+                                                    case 't': value = '\t'; break;
+                                                    case 'v': value = '\v'; break;
+                                                    case '0': value = '\0'; break;
+                                                    default:  value = c; break;
+                                                }
+                                            }
+                                            )
+                                            )
+                                            ;
+
+        char : char                         ::= token('\''
+                                            (   [^\\\r\n]{ value = match[0]; }
+                                            |   escape{ value = escape; }
+                                            )   '\''!)
+                                            ;
+
+        string(var StringBuilder s) : string ::= token('"'{ s = new StringBuilder(); }
+                                                (
+                                                    ([^"\\\r\n]+){ s.Append(match); }
+                                                |   escape{ s.Append(escape); }
+                                                )*
+                                            '"'!){ value = s.ToString(); }
+                                            ;
+    }
+}

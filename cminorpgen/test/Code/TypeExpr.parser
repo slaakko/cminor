@@ -1,0 +1,34 @@
+using System.Text.Parsing.CodeDom;
+
+namespace Code
+{
+    grammar TypeExprGrammar
+    {
+        using BasicTypeGrammar.BasicType;
+        using TemplateGrammar.TemplateId;
+        using IdentifierGrammar.Identifier;
+        using ExpressionGrammar.Expression;
+        
+        TypeExpr(ParsingContext ctx) : DomObject
+            ::= PrefixTypeExpr(ctx){ value = PrefixTypeExpr; }
+            ;
+            
+        PrefixTypeExpr(ParsingContext ctx) : DomObject
+            ::= (keyword("ref") PostfixTypeExpr(ctx):refExpr){ value = new TypeExpr(match.Trim()); }
+            |   PostfixTypeExpr(ctx):pf{ value = new TypeExpr(match.Trim()); }
+            ;
+            
+        PostfixTypeExpr(ParsingContext ctx)
+            ::= PrimaryTypeExpr(ctx)
+            (   '.' Identifier!
+            |   ('[' Expression(ctx):size? ']'!)
+            )*
+            ;
+            
+        PrimaryTypeExpr(ParsingContext ctx)
+            ::= BasicType
+            |   TemplateId(ctx)
+            |   Identifier
+            ;
+    }
+}

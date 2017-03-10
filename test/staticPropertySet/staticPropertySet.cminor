@@ -1,0 +1,22 @@
+using System;
+
+public static class Flags
+{
+    public static bool ForceCodeGen
+    {
+        get { return forceCodeGen; }
+        set { forceCodeGen = value; }
+    }
+    public static bool Debug
+    {
+        get { return debug; }
+        set { debug = value; }
+    }
+    private static bool forceCodeGen;
+    private static bool debug;
+}
+
+void main()
+{
+    Flags.Debug = true;
+}

@@ -1,0 +1,31 @@
+using System;
+
+public class Str
+{   
+    public static Str Empty
+    {
+        get { return new Str(); }
+    }
+    public static bool IsNullOrEmpty(Str s)
+    {
+        return s == null || s.Length == 0;
+    }
+    public int Length
+    {
+        get { return length; }
+    }
+    private int length;
+}
+
+void main()
+{
+    Str s = Str.Empty;
+    if (Str.IsNullOrEmpty(s))
+    {
+        Console.WriteLine("jee");
+    }
+    else
+    {
+        Console.WriteLine("not");
+    }
+}

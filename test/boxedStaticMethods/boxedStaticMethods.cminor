@@ -1,0 +1,7 @@
+using System;
+
+void main()
+{
+    sbyte x = 0;
+    object o = new sbyte(x);
+}

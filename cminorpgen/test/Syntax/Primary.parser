@@ -1,0 +1,76 @@
+using Code;
+using System.Text.Parsing.CodeDom;
+
+namespace Syntax
+{
+    grammar PrimaryGrammar
+    {
+        using PrimitiveGrammar.Primitive;
+        using ElementGrammar.Identifier;
+        using CompositeGrammar.Alternative;
+        using Code.ExpressionGrammar.ArgumentList;
+        using Code.StatementGrammar.CompoundStatement;
+
+        Primary(Scope enclosingScope, ParsingContext ctx) : Parser
+                    ::=
+                    (   RuleCall(ctx){ value = RuleCall; }
+                    |   Primitive{ value = Primitive; }
+                    |   Grouping(enclosingScope, ctx){ value = Grouping; }
+                    |   Token(enclosingScope, ctx){ value = Token; }
+                    )
+                    (Expectation(value){ value = Expectation; })?
+                    (Action(value, ctx){ value = Action; })?
+                    ;
+
+        RuleCall(ParsingContext ctx, var NonterminalParser nt, var NonterminalArgumentAdder adder) : Parser
+                    ::= empty{ nt = new NonterminalParser(); adder = new NonterminalArgumentAdder(nt); } 
+                        ((token(Nonterminal:ntWithArgs '(') ArgumentList(ctx, adder) ')' | Nonterminal:ntNoArgs) Alias?)
+                    {
+                        string ruleName;
+                        if (!string.IsNullOrEmpty(ntWithArgs))
+                        {
+                            ruleName = ntWithArgs;
+                        }
+                        else
+                        {
+                            ruleName = ntNoArgs;
+                        }
+                        string alias = Alias;
+                        string name = alias;
+                        if (string.IsNullOrEmpty(alias)) name = ruleName;
+                        nt.Name = name;
+                        nt.RuleName = ruleName;
+                        nt.SpanValue = span;
+                        value = nt;
+                    }
+                    ;
+
+        Nonterminal : string
+                    ::= Identifier{ value = Identifier; }
+                    ;
+
+        Alias : string
+                    ::= ':' Identifier!{ value = Identifier; }
+                    ;
+
+        Grouping(Scope enclosingScope, ParsingContext ctx) : Parser
+                    ::= '(' Alternative(enclosingScope, ctx)! ')'!{ value = Alternative; }
+                    ;
+
+        Token(Scope enclosingScope, ParsingContext ctx) : Parser
+                    ::= keyword("token") '('! Alternative(enclosingScope, ctx)! ')'!{ value = new TokenParser(Alternative); }
+                    ;
+
+        Expectation(Parser child): Parser ::= '!'{ value = new ExpectationParser(child); }
+                    ;
+
+        Action(Parser child, ParsingContext ctx) : ActionParser
+                    ::= (CompoundStatement(ctx):action ('/' CompoundStatement(ctx):failureAction)?)
+                    {
+                        value = new ActionParser("", child);
+                        value.SuccessCode = action;
+                        value.FailureCode = failureAction;
+                    }
+                    ;
+    }
+}

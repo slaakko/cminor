@@ -1,0 +1,24 @@
+using System.Text.Parsing.CodeDom;
+
+namespace Code
+{
+    grammar NamespaceGrammar
+    {
+        using IdentifierGrammar.QualifiedId;
+        using IdentifierGrammar.Identifier;
+
+        NamespaceImport : NamespaceImport
+                    ::= keyword("using") QualifiedId ';'
+                    {
+                        value = new NamespaceImport(QualifiedId.Name);
+                    }
+                    ;
+
+        Alias : Alias
+                    ::= keyword("using") Identifier '=' QualifiedId ';'
+                    {
+                        value = new Alias(Identifier.Name, QualifiedId.Name);
+                    }
+                    ;
+    }
+}
