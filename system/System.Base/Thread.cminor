@@ -1,0 +1,66 @@
+using System;
+
+namespace System.Threading
+{
+    public delegate void ThreadStartFunction();
+    public delegate void ParameterizedThreadStartFunction(object param);
+
+    public class delegate void ThreadStartMethod();
+    public class delegate void ParameterizedThreadStartMethod(object param);
+
+    public class Thread
+    {
+        public static Thread StartFunction(ThreadStartFunction function)
+        {
+            if (function == null)
+            {
+                throw new NullReferenceException("thread start function is null");
+            }
+            return System.Threading.StartThread(function);
+        }
+        public static Thread StartFunction(ParameterizedThreadStartFunction function, object param)
+        {
+            if (function == null)
+            {
+                throw new NullReferenceException("parameterized thread start function is null");
+            }
+            return System.Threading.StartThread(function, param);
+        }
+        public static Thread StartMethod(ThreadStartMethod method)
+        {
+            if (method == null)
+            {
+                throw new NullReferenceException("thread start method is null");
+            }
+            return System.Threading.StartThread(method);
+        }
+        public static Thread StartMethod(ParameterizedThreadStartMethod method, object param)
+        {
+            if (method == null)
+            {
+                throw new NullReferenceException("parameterized thread start method is null");
+            }
+            return System.Threading.StartThread(method, param);
+        }
+        public int Id
+        {
+            get { return id; }
+        }
+        private Thread()
+        {
+        }
+        private int id;
+    }
+
+    [VmFunctionName=Vm.System.Threading.StartThread.ThreadStartFunction]
+    public extern Thread StartThread(ThreadStartFunction fun);
+
+    [VmFunctionName=Vm.System.Threading.StartThread.ThreadStartMethod]
+    public extern Thread StartThread(ThreadStartMethod method);
+
+    [VmFunctionName=Vm.System.Threading.StartThread.ParameterizedThreadStartFunction]
+    public extern Thread StartThread(ParameterizedThreadStartFunction fun, object param);
+
+    [VmFunctionName=Vm.System.Threading.StartThread.ParameterizedThreadStartMethod]
+    public extern Thread StartThread(ParameterizedThreadStartMethod method, object param);
+}

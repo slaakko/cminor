@@ -16,13 +16,19 @@ namespace cminor { namespace machine {
 MACHINE_API void SetRunningNativeCode();
 MACHINE_API bool RunningNativeCode();
 
+enum class RunThreadKind
+{
+    function, method, functionWithParam, methodWithParam
+};
+
 class MACHINE_API Machine
 {
 public:
     Machine();
     ~Machine();
     void Start(bool startWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
-    void Run(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
+    void RunMain(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
+    int StartThread(Function* fun, RunThreadKind runThreadKind, ObjectReference receiver, ObjectReference arg);
     void AddInst(Instruction* inst);
     std::unique_ptr<Instruction> CreateInst(const std::string& instName) const;
     std::unique_ptr<Instruction> CreateInst(const std::string& instGroupName, const std::string& typeName) const;
@@ -42,8 +48,7 @@ public:
     void Exit();
     void AddSegment(Segment* segment);
     void RemoveSegment(int32_t segmentId);
-    Segment* GetSegment(int32_t segmentId) const;
-    std::atomic_bool& ThreadAllocating() { return threadAllocating; }
+    Segment* GetSegment(int32_t segmentId);
     void Compact();
 private:
     ContainerInst rootInst;
@@ -51,17 +56,17 @@ private:
     std::unordered_map<std::string, InstructionTypeGroup> instructionTypeGroupMap;
     ManagedMemoryPool managedMemoryPool;
     std::vector<std::unique_ptr<Thread>> threads;
+    std::vector<std::unique_ptr<std::thread>> userThreads;
     GarbageCollector garbageCollector;
     std::unique_ptr<GenArena1> gen1Arena;
     std::unique_ptr<GenArena2> gen2Arena;
     std::atomic_bool exiting;
     std::atomic_bool exited;
-    std::atomic_bool threadAllocating;
     std::thread garbageCollectorThread;
+    std::mutex threadMutex;
     std::atomic_int32_t nextFrameId;
     std::atomic_int32_t nextSegmentId;
     std::unordered_map<int32_t, Segment*> segmentMap;
-    uint64_t startThreadHandle;
 };
 
 } } // namespace cminor::machine

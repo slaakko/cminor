@@ -714,7 +714,7 @@ namespace System.Text.Parsing.CodeDom
 
     public class DefaultExpression : DomObject
     {
-        public DefaultExpression(DomObject type)
+        public DefaultExpression(DomObject type) : base("default")
         {
             this.type = type;
         }

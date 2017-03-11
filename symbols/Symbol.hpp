@@ -52,7 +52,7 @@ enum class SymbolType : uint8_t
     basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, objectDefaultInit, objectCopyInit, objectNullInit, 
     objectAssignment, objectNullAssignment, objectNullEqual, nullObjectEqual, nullToObjectConversion, classTypeConversion, classToInterfaceConversion, enumTypeSymbol, enumConstantSymbol,
     enumTypeDefaultInit, enumTypeConversion, delegateTypeSymbol, delegateDefaultInit, functionGroupTypeSymbol, classDelegateTypeSymbol, memberExpressionTypeSymbol, refTypeSymbol, refTypeAssignment,
-    refTypeInit, 
+    refTypeInit, delegateNullEqual, nullDelegateEqual, delegateFunConstructorSymbol,
     maxSymbol
 };
 
@@ -539,7 +539,8 @@ enum class ClassTypeSymbolFlags : uint8_t
     nonLeaf = 1 << 1,
     reopened = 1 << 2,
     reopenDetected = 1 << 3,
-    hasOpenedInstances = 1 << 4
+    hasOpenedInstances = 1 << 4,
+    dontCreateDefaultConstructor = 1 << 5
 };
 
 inline ClassTypeSymbolFlags operator&(ClassTypeSymbolFlags left, ClassTypeSymbolFlags right)
@@ -609,6 +610,8 @@ public:
     void SetReopenDetected() { SetFlag(ClassTypeSymbolFlags::reopenDetected); }
     bool HasOpenedInstances() { return GetFlag(ClassTypeSymbolFlags::hasOpenedInstances); }
     void SetHasOpenedInstances() { SetFlag(ClassTypeSymbolFlags::hasOpenedInstances); }
+    bool DontCreateDefaultConstructor() const { return GetFlag(ClassTypeSymbolFlags::dontCreateDefaultConstructor); }
+    void SetDontCreateDefaultConstructor() { SetFlag(ClassTypeSymbolFlags::dontCreateDefaultConstructor); }
     void EmplaceType(TypeSymbol* type, int index) override;
     int Level() const { return level; }
     void SetLevel(int level_) { level = level_; }

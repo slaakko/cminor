@@ -191,7 +191,6 @@ public:
     void SetMemPtr(MemPtr newMemPtr) { memPtr = newMemPtr; }
     uint64_t Size() const { return size; }
     void SetSize(uint64_t size_) { size = size_; }
-    virtual void Set(ManagedMemoryPool* pool) = 0;
     bool IsLive() const { return GetFlag(AllocationFlags::live); }
     void SetLive() { SetFlag(AllocationFlags::live); }
     void ResetLive() { ResetFlag(AllocationFlags::live); }
@@ -219,7 +218,6 @@ public:
     IntegralValue GetField(int index) const;
     void SetField(IntegralValue fieldValue, int index);
     int32_t FieldCount() const;
-    void Set(ManagedMemoryPool* pool) override;
     void MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool) override;
 private:
     ObjectReference reference;
@@ -234,7 +232,6 @@ public:
     IntegralValue GetElement(int32_t index) const;
     void SetElement(IntegralValue elementValue, int32_t index);
     int32_t NumElements() const { return numElements; }
-    void Set(ManagedMemoryPool* pool) override;
     void MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool) override;
 private:
     Type* elementType;
@@ -247,7 +244,6 @@ public:
     StringCharacters(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, int32_t numChars_, uint64_t size_);
     IntegralValue GetChar(int32_t index) const;
     int32_t NumChars() const { return numChars; }
-    void Set(ManagedMemoryPool* pool) override;
 private:
     int32_t numChars;
 };
@@ -288,17 +284,11 @@ public:
     void MoveLiveAllocationsToArena(ArenaId fromArenaId, Arena& toArena);
     void MoveLiveAllocationsToNewSegments(Arena& arena);
     MemPtr GetMemPtr(AllocationHandle handle);
-    void Set(Object* object_) { object = object_; }
-    void Set(ArrayElements* arrayElements_) { arrayElements = arrayElements_; }
-    void Set(StringCharacters* stringCharacters_) { stringCharacters = stringCharacters_;  }
     ManagedAllocation* GetAllocation(AllocationHandle handle);
     ManagedAllocation* GetAllocationNothrow(AllocationHandle handle);
     AllocationHandle PoolRoot() const { return poolRoot; }
 private:
     Machine& machine;
-    Object* object;
-    ArrayElements* arrayElements;
-    StringCharacters* stringCharacters;
     std::unordered_map<AllocationHandle, std::unique_ptr<ManagedAllocation>, AllocationHandleHash> allocations;
     std::atomic_uint64_t nextReferenceValue;
     std::recursive_mutex allocationsMutex;

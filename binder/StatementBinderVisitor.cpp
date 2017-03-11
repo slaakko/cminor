@@ -168,11 +168,14 @@ void StatementBinderVisitor::Visit(ClassNode& classNode)
         classMember->Accept(*this);
     }
     ConstructorSymbol* defaultConstructorSymbol = classTypeSymbol->DefaultConstructorSymbol();
-    if (!defaultConstructorSymbol->IsBound())
+    if (defaultConstructorSymbol)
     {
-        defaultConstructorSymbol->SetBound();
-        std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(defaultConstructorSymbol));
-        boundClass->AddMember(std::move(boundFunction));
+        if (!defaultConstructorSymbol->IsBound())
+        {
+            defaultConstructorSymbol->SetBound();
+            std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(defaultConstructorSymbol));
+            boundClass->AddMember(std::move(boundFunction));
+        }
     }
     boundCompileUnit.AddBoundNode(std::move(currentClass));
     boundClass = prevClass;
@@ -217,15 +220,23 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
         {
             constructorNode.Initializer()->Accept(*this);
         }
-        else if (boundClass->GetClassTypeSymbol()->BaseClass())
+        else 
         {
-            BoundFunctionCall* baseConstructorCall = new BoundFunctionCall(boundCompileUnit.GetAssembly(), boundClass->GetClassTypeSymbol()->BaseClass()->DefaultConstructorSymbol());
-            BoundExpression* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), constructorSymbol->Parameters()[0]->GetType(), constructorSymbol->Parameters()[0]);
-            BoundConversion* thisAsBase = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(boundThisParam),
-                boundCompileUnit.GetConversion(boundClass->GetClassTypeSymbol(), boundClass->GetClassTypeSymbol()->BaseClass()));
-            baseConstructorCall->AddArgument(std::unique_ptr<BoundExpression>(thisAsBase));
-            BoundExpressionStatement* baseConstructorCallStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(baseConstructorCall));
-            compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(baseConstructorCallStatement));
+            ClassTypeSymbol* baseClass = boundClass->GetClassTypeSymbol()->BaseClass();
+            if (baseClass)
+            {
+                if (!baseClass->DefaultConstructorSymbol())
+                {
+                    throw Exception("base class has no default constructor to call", constructorNode.GetSpan(), baseClass->GetSpan());
+                }
+                BoundFunctionCall* baseConstructorCall = new BoundFunctionCall(boundCompileUnit.GetAssembly(), baseClass->DefaultConstructorSymbol());
+                BoundExpression* boundThisParam = new BoundParameter(boundCompileUnit.GetAssembly(), constructorSymbol->Parameters()[0]->GetType(), constructorSymbol->Parameters()[0]);
+                BoundConversion* thisAsBase = new BoundConversion(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(boundThisParam),
+                    boundCompileUnit.GetConversion(boundClass->GetClassTypeSymbol(), boundClass->GetClassTypeSymbol()->BaseClass()));
+                baseConstructorCall->AddArgument(std::unique_ptr<BoundExpression>(thisAsBase));
+                BoundExpressionStatement* baseConstructorCallStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::unique_ptr<BoundExpression>(baseConstructorCall));
+                compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(baseConstructorCallStatement));
+            }
         }
         Symbol* parent = constructorSymbol->Parent();
         ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);

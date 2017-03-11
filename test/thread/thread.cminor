@@ -1,0 +1,32 @@
+using System;
+using System.Threading;
+
+class Foo
+{
+    public Foo(int x)
+    {
+        this.x = x;
+    }
+    public void RunFunInThread()
+    {
+        Thread.StartMethod(Fun, x);
+    }
+    public void Fun(object y)
+    {
+        Console.WriteLine("fun " + y.ToString());
+    }
+    private int x;
+}
+
+void main()
+{
+    try
+    {
+        Foo foo = new Foo(1);
+        foo.RunFunInThread();
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+    }
+}

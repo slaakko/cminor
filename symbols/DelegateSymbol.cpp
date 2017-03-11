@@ -112,6 +112,36 @@ void DelegateDefaultInit::GenerateCall(Machine& machine, Assembly& assembly, Fun
     target->GenStore(machine, function);
 }
 
+DelegateNullEqual::DelegateNullEqual(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
+{
+}
+
+void DelegateNullEqual::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
+{
+    std::unique_ptr<Instruction> inst = machine.CreateInst("equaldlgnull");
+    Assert(objects.size() == 2, "null equality comparison needs two objects");
+    GenObject* left = objects[0];
+    left->GenLoad(machine, function);
+    GenObject* right = objects[1];
+    right->GenLoad(machine, function);
+    function.AddInst(std::move(inst));
+}
+
+NullDelegateEqual::NullDelegateEqual(const Span& span_, Constant name_) : BasicTypeFun(span_, name_)
+{
+}
+
+void NullDelegateEqual::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) 
+{
+    std::unique_ptr<Instruction> inst = machine.CreateInst("equalnulldlg");
+    Assert(objects.size() == 2, "null equality comparison needs two objects");
+    GenObject* left = objects[0];
+    left->GenLoad(machine, function);
+    GenObject* right = objects[1];
+    right->GenLoad(machine, function);
+    function.AddInst(std::move(inst));
+}
+
 void CreateDelegateFun(Assembly& assembly, TypeSymbol* type)
 {
     assembly.GetSymbolTable().BeginNamespace(StringPtr(U"System"), Span());
@@ -127,10 +157,49 @@ void CreateDelegateFun(Assembly& assembly, TypeSymbol* type)
     defaultInit->SetType(type);
     defaultInit->AddSymbol(std::unique_ptr<Symbol>(thisParam1));
     defaultInit->ComputeName();
+
+    DelegateNullEqual* delegateNullEqual = new DelegateNullEqual(Span(), constantPool.GetEmptyStringConstant());
+    delegateNullEqual->SetAssembly(&assembly);
+    Constant opEqualGroupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"operator==")));
+    delegateNullEqual->SetGroupNameConstant(opEqualGroupName);
+    delegateNullEqual->SetType(type);
+    TypeSymbol* boolType = assembly.GetSymbolTable().GetType(U"System.Boolean");
+    delegateNullEqual->SetReturnType(boolType);
+
+    ParameterSymbol* thisParam2 = new ParameterSymbol(Span(), thisParamName);
+    thisParam2->SetAssembly(&assembly);
+    thisParam2->SetType(type);
+    ParameterSymbol* thatParam2 = new ParameterSymbol(Span(), thatParamName);
+    thatParam2->SetAssembly(&assembly);
+    TypeSymbol* nullRefType = assembly.GetSymbolTable().GetType(U"System.@nullref");
+    thatParam2->SetType(nullRefType);
+
+    delegateNullEqual->AddSymbol(std::unique_ptr<Symbol>(thisParam2));
+    delegateNullEqual->AddSymbol(std::unique_ptr<Symbol>(thatParam2));
+    delegateNullEqual->ComputeName();
+
+    NullDelegateEqual* nullDelegateEqual = new NullDelegateEqual(Span(), constantPool.GetEmptyStringConstant());
+    nullDelegateEqual->SetAssembly(&assembly);
+    nullDelegateEqual->SetGroupNameConstant(opEqualGroupName);
+    nullDelegateEqual->SetType(type);
+    nullDelegateEqual->SetReturnType(boolType);
+
+    ParameterSymbol* thisParam3 = new ParameterSymbol(Span(), thisParamName);
+    thisParam3->SetAssembly(&assembly);
+    thisParam3->SetType(nullRefType);
+    ParameterSymbol* thatParam3 = new ParameterSymbol(Span(), thatParamName);
+    thatParam3->SetAssembly(&assembly);
+    thatParam3->SetType(type);
+
+    nullDelegateEqual->AddSymbol(std::unique_ptr<Symbol>(thisParam3));
+    nullDelegateEqual->AddSymbol(std::unique_ptr<Symbol>(thatParam3));
+    nullDelegateEqual->ComputeName();
+
     assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(defaultInit));
-
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(delegateNullEqual));
+    assembly.GetSymbolTable().Container()->AddSymbol(std::unique_ptr<FunctionSymbol>(nullDelegateEqual));
+    
     CreateBasicTypeBasicFun(assembly, type, true);
-
     assembly.GetSymbolTable().EndNamespace();
 }
 

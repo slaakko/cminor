@@ -34,7 +34,8 @@ const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
     "declarationBlock", "typeParameterSymbol", "boundTypeParameterSymbol", "classTemplateSpecializationSymbol", "basicTypeDefaultInit", "basicTypeCopyInit", "basicTypeAssignment", 
     "basicTypeReturn", "basicTypeConversion", "basicTypeUnaryOp", "basicTypBinaryOp", "objectDefaultInit", "objectCopyInit", "objectNullInit", "objectAssignment", "objectNullAssignment",
     "objectNullEqual", "nullObjectEqual", "nullToObjectConversion", "classTypeConversion", "classToInterfaceConversion", "enumTypeSymbol", "enumConstantSymbol", "enumTypeDefaultInit", 
-    "enumTypeConversion", "delegateTypeSymbol", "delegateDefaultInit", "functionGroupTypeSymbol", "classDelegateTypeSymbol", "memberExpressionTypeSymbol", "refTypeSymbol", "refTypeAssignment"
+    "enumTypeConversion", "delegateTypeSymbol", "delegateDefaultInit", "functionGroupTypeSymbol", "classDelegateTypeSymbol", "memberExpressionTypeSymbol", "refTypeSymbol", "refTypeAssignment",
+    "delegateNullEqual", "nullDelegateEqual", "delegateFunConstructorSymbol"
 };
 
 std::string SymbolTypeStr(SymbolType symbolType)

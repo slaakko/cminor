@@ -145,22 +145,6 @@ struct Resetter
 
 std::pair<MemPtr, int32_t> GenArena1::Allocate(Thread& thread, uint64_t blockSize)
 {
-    bool allocating = thread.GetMachine().ThreadAllocating().exchange(true);
-    if (allocating)
-    {
-        if (RunningNativeCode())
-        {
-            thread.SetFunctionStack(GetFunctionStack());
-        }
-        thread.SetState(ThreadState::paused);
-        while (thread.GetMachine().ThreadAllocating())
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
-        }
-        thread.SetState(ThreadState::running);
-        thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
-    }
-    Resetter resetter(thread.GetMachine().ThreadAllocating());
     if (blockSize == 0)
     {
         throw std::runtime_error("invalid allocation request of zero bytes from arena " + std::to_string(int(Id())));
@@ -218,9 +202,12 @@ std::pair<MemPtr, int32_t>  GenArena2::Allocate(uint64_t blockSize, bool allocat
     {
         GetMachine().GetGarbageCollector().RequestFullCollection();
         Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), blockSize);
-        GetMachine().AddSegment(seg);
         std::unique_ptr<Segment> segment(seg);
-        Segments().push_back(std::move(segment));
+        {
+            std::lock_guard<std::mutex> lock(SegmentsMutex());
+            GetMachine().AddSegment(seg);
+            Segments().push_back(std::move(segment));
+        }
         MemPtr mem = seg->Allocate(blockSize);
         if (mem.Value())
         {
@@ -246,9 +233,12 @@ std::pair<MemPtr, int32_t>  GenArena2::Allocate(uint64_t blockSize, bool allocat
         {
             GetMachine().GetGarbageCollector().RequestFullCollection();
             Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), SegmentSize());
-            GetMachine().AddSegment(seg);
             std::unique_ptr<Segment> segment(seg);
-            Segments().push_back(std::move(segment));
+            {
+                std::lock_guard<std::mutex> lock(SegmentsMutex());
+                GetMachine().AddSegment(seg);
+                Segments().push_back(std::move(segment));
+            }
             MemPtr mem = seg->Allocate(blockSize);
             if (mem.Value())
             {
@@ -264,28 +254,15 @@ std::pair<MemPtr, int32_t>  GenArena2::Allocate(uint64_t blockSize, bool allocat
 
 std::pair<MemPtr, int32_t> GenArena2::Allocate(Thread& thread, uint64_t blockSize)
 {
-    bool allocating = thread.GetMachine().ThreadAllocating().exchange(true);
-    if (allocating)
-    {
-        if (RunningNativeCode())
-        {
-            thread.SetFunctionStack(GetFunctionStack());
-        }
-        thread.SetState(ThreadState::paused);
-        while (thread.GetMachine().ThreadAllocating())
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
-        }
-        thread.SetState(ThreadState::running);
-        thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
-    }
-    Resetter resetter(thread.GetMachine().ThreadAllocating());
     if (blockSize > SegmentSize())
     {
         Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), blockSize);
-        GetMachine().AddSegment(seg);
         std::unique_ptr<Segment> segment(seg);
-        Segments().push_back(std::move(segment));
+        {
+            std::lock_guard<std::mutex> lock(SegmentsMutex());
+            GetMachine().AddSegment(seg);
+            Segments().push_back(std::move(segment));
+        }
         MemPtr mem = seg->Allocate(blockSize);
         if (mem.Value())
         {
@@ -334,9 +311,12 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(Thread& thread, uint64_t blockSiz
             else
             {
                 Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), SegmentSize());
-                GetMachine().AddSegment(seg);
                 std::unique_ptr<Segment> segment(seg);
-                Segments().push_back(std::move(segment));
+                {
+                    std::lock_guard<std::mutex> lock(SegmentsMutex());
+                    GetMachine().AddSegment(seg);
+                    Segments().push_back(std::move(segment));
+                }
                 MemPtr mem = seg->Allocate(blockSize);
                 if (mem.Value())
                 {

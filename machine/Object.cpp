@@ -278,11 +278,6 @@ void Object::MarkLiveAllocations(std::unordered_set<AllocationHandle, Allocation
     }
 }
 
-void Object::Set(ManagedMemoryPool* pool)
-{
-    pool->Set(this);
-}
-
 ArrayElements::ArrayElements(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, Type* elementType_, int32_t numElements_, uint64_t size_) :
     ManagedAllocation(handle_, memPtr_, segmentId_, size_), elementType(elementType_), numElements(numElements_)
 {
@@ -352,11 +347,6 @@ void ArrayElements::SetElement(IntegralValue elementValue, int32_t index)
     }
 }
 
-void ArrayElements::Set(ManagedMemoryPool* pool)
-{
-    pool->Set(this);
-}
-
 void ArrayElements::MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool)
 {
     if (elementType->GetValueType() == ValueType::objectReference)
@@ -391,11 +381,6 @@ IntegralValue StringCharacters::GetChar(int32_t index) const
     return IntegralValue(memPtr.StrValue()[index], ValueType::charType);
 }
 
-void StringCharacters::Set(ManagedMemoryPool* pool)
-{
-    pool->Set(this);
-}
-
 uint64_t poolThreshold = defaultPoolThreshold;
 
 void SetPoolThreshold(uint64_t poolThreshold_)
@@ -408,14 +393,18 @@ uint64_t GetPoolThreshold()
     return poolThreshold;
 }
 
-ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextReferenceValue(1), object(nullptr), arrayElements(nullptr), stringCharacters(nullptr),
-    objectCount(0), arrayContentCount(0), stringContentCount(0), prevSize(0), size(0), poolRoot(AllocationHandle(0))
+ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextReferenceValue(1), objectCount(0), arrayContentCount(0), stringContentCount(0), prevSize(0), size(0), 
+    poolRoot(AllocationHandle(0))
 {
 }
 
 ObjectReference ManagedMemoryPool::CreateObject(Thread& thread, ObjectType* type)
 {
     ObjectReference reference(nextReferenceValue++);
+    if (reference == 16)
+    {
+        int x = 0;
+    }
     std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, type->ObjectSize());
     memPtrSegmentId.first.SetHashCode(Random64());
     Object* obj = new Object(reference, memPtrSegmentId.first, memPtrSegmentId.second, type, type->ObjectSize());
@@ -492,8 +481,7 @@ Object& ManagedMemoryPool::GetObject(ObjectReference reference)
     if (it != allocations.cend())
     {
         ManagedAllocation* allocation = it->second.get();
-        object = nullptr;
-        allocation->Set(this);
+        Object* object = dynamic_cast<Object*>(allocation);
         Assert(object, "object expected");
         return *object;
     }
@@ -540,8 +528,7 @@ Object* ManagedMemoryPool::GetObjectNothrow(ObjectReference reference)
     if (it != allocations.cend())
     {
         ManagedAllocation* allocation = it->second.get();
-        object = nullptr;
-        allocation->Set(this);
+        Object* object = dynamic_cast<Object*>(allocation);
         Assert(object, "object expected");
         return object;
     }

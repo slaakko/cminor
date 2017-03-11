@@ -21,6 +21,7 @@ public:
     NamespaceSymbol& GlobalNs() { return globalNs; }
     const NamespaceSymbol& GlobalNs() const { return globalNs; }
     ContainerSymbol* Container() const { return container; }
+    ClassTypeSymbol* CurrentClass() const { return currentClass; }
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();
     void BeginNamespace(NamespaceNode& namespaceNode);

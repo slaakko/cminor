@@ -56,12 +56,16 @@ class MACHINE_API Thread
 {
 public:
     Thread(int32_t id_, Machine& machine_, Function& fun_);
+    ~Thread();
     const Stack& GetStack() const { return stack; }
     Stack& GetStack() { return stack; }
     int32_t Id() const { return id; }
+    int32_t NativeId() const { return nativeId; }
+    void SetNativeId(int32_t nativeId_) { nativeId = nativeId_; }
     Machine& GetMachine() { return machine; }
     OperandStack& OpStack() { return opStack; }
-    void Run(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
+    void RunMain(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
+    void RunUser();
     void Step();
     void Next();
     void RunDebug();
@@ -98,13 +102,14 @@ public:
     void SetThreadHandle(uint64_t threadHandle_) { threadHandle = threadHandle_; }
     void SetFunctionStack(FunctionStackEntry* functionStack_) { functionStack = functionStack_; }
     FunctionStackEntry* GetFunctionStack() const { return functionStack; }
+    void SetExceptionPtr(std::exception_ptr exceptionPtr_) { exceptionPtr = exceptionPtr_; }
 private:
     Stack stack;
     int32_t id;
+    int32_t nativeId;
     Machine& machine;
     Function& fun;
     OperandStack opStack;
-    uint64_t instructionCount;
     std::unordered_map<int32_t, Frame*> frameMap;
     std::unordered_map<int32_t, VariableReference*> variableReferenceMap;
     bool handlingException;
@@ -117,6 +122,7 @@ private:
     std::vector<std::unique_ptr<DebugContext>> debugContexts;
     uint64_t threadHandle;
     std::atomic<FunctionStackEntry*> functionStack;
+    std::exception_ptr exceptionPtr;
     void RunToEnd();
     void FindExceptionBlock(Frame* frame);
     bool DispatchToHandlerOrFinally(Frame* frame);

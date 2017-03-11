@@ -155,6 +155,11 @@ public:
     {
         frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(0), type));
     }
+    void Dump(CodeFormatter& formatter) override
+    {
+        LoadDefaultValueBaseInst::Dump(formatter);
+        formatter.Write(" " + TypeName());
+    }
 };
 
 class MACHINE_API UnaryOpBaseInst : public Instruction
@@ -1293,6 +1298,24 @@ class MACHINE_API EqualNullObjectInst : public Instruction
 public:
     EqualNullObjectInst();
     Instruction* Clone() const override { return new EqualNullObjectInst(*this); }
+    void Execute(Frame& frame) override;
+    void Accept(MachineFunctionVisitor& visitor) override;
+};
+
+class MACHINE_API EqualDlgNullInst : public Instruction
+{
+public:
+    EqualDlgNullInst();
+    Instruction* Clone() const override { return new EqualDlgNullInst(*this); }
+    void Execute(Frame& frame) override;
+    void Accept(MachineFunctionVisitor& visitor) override;
+};
+
+class MACHINE_API EqualNullDlgInst : public Instruction
+{
+public:
+    EqualNullDlgInst();
+    Instruction* Clone() const override { return new EqualNullDlgInst(*this); }
     void Execute(Frame& frame) override;
     void Accept(MachineFunctionVisitor& visitor) override;
 };

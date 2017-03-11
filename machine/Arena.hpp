@@ -61,11 +61,13 @@ public:
     void RemoveSegment(int32_t segmentId);
     void RemoveEmptySegments(const std::unordered_set<int32_t>& liveSegments);
     void Compact();
+    std::mutex& SegmentsMutex() { return segmentsMutex; }
 private:
     Machine& machine;
     ArenaId id;
     uint64_t pageSize;
     uint64_t segmentSize;
+    std::mutex segmentsMutex;
     std::vector<std::unique_ptr<Segment>> segments;
 };
 
@@ -81,7 +83,7 @@ class GenArena2 : public Arena
 {
 public:
     GenArena2(Machine& machine_, uint64_t size_);
-    std::pair<MemPtr, int32_t>  Allocate(uint64_t blockSize, bool allocateNewSegment) override;
+    std::pair<MemPtr, int32_t> Allocate(uint64_t blockSize, bool allocateNewSegment) override;
     std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize) override;
 };
 

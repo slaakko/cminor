@@ -113,6 +113,14 @@ void SymbolCreatorVisitor::Visit(ConstructorNode& constructorNode)
 {
     symbolTable.BeginConstructor(constructorNode);
     int n = constructorNode.Parameters().Count();
+    if (n > 0)
+    {
+        ClassTypeSymbol* currentClass = symbolTable.CurrentClass();
+        if (currentClass)
+        {
+            currentClass->SetDontCreateDefaultConstructor();
+        }
+    }
     for (int i = 0; i < n; ++i)
     {
         ParameterNode* parameter = constructorNode.Parameters()[i];

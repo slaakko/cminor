@@ -275,7 +275,7 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
         ObjectType* baseClassObjectType = classTypeSymbol->BaseClass()->GetObjectType();
         classTypeSymbol->GetObjectType()->AddFields(baseClassObjectType->Fields());
     }
-    if (!classTypeSymbol->DefaultConstructorSymbol())
+    if (!classTypeSymbol->DefaultConstructorSymbol() && !classTypeSymbol->DontCreateDefaultConstructor())
     {
         CreateDefaultConstructor(boundCompileUnit.GetAssembly(), classTypeSymbol);
     }

@@ -181,6 +181,8 @@ public:
     void VisitStoreStaticFieldInst(StoreStaticFieldInst& instruction) override;
     void VisitEqualObjectNullInst(EqualObjectNullInst& instruction) override;
     void VisitEqualNullObjectInst(EqualNullObjectInst& instuction) override;
+    void VisitEqualDlgNullInst(EqualDlgNullInst& instruction) override;
+    void VisitEqualNullDlgInst(EqualNullDlgInst& instruction) override;
     void VisitBoxBaseInst(BoxBaseInst& instruction) override;
     void VisitUnboxBaseInst(UnboxBaseInst& instruction) override;
     void VisitAllocateArrayElementsInst(AllocateArrayElementsInst& instruction) override;
@@ -3319,6 +3321,23 @@ void NativeCompilerImpl::VisitEqualNullObjectInst(EqualNullObjectInst& instuctio
     valueStack.Push(result);
 }
 
+void NativeCompilerImpl::VisitEqualDlgNullInst(EqualDlgNullInst& instruction)
+{
+    llvm::Value* right = valueStack.Pop();
+    llvm::Value* left = valueStack.Pop();
+    llvm::Value* result = builder.CreateICmpEQ(left, llvm::Constant::getNullValue(GetType(ValueType::functionPtr)));
+    valueStack.Push(result);
+}
+
+void NativeCompilerImpl::VisitEqualNullDlgInst(EqualNullDlgInst& instruction)
+{
+    llvm::Value* right = valueStack.Pop();
+    llvm::Value* left = valueStack.Pop();
+    llvm::Value* result = builder.CreateICmpEQ(right, llvm::Constant::getNullValue(GetType(ValueType::functionPtr)));
+    valueStack.Push(result);
+}
+
+
 void NativeCompilerImpl::VisitBoxBaseInst(BoxBaseInst& instruction)
 {
     llvm::Value* value = valueStack.Pop();
@@ -3978,7 +3997,7 @@ llvm::Type* NativeCompilerImpl::GetType(ValueType type)
         {
             return llvm::Type::getInt32Ty(context);
         }
-        case ValueType::variableReference:
+        case ValueType::variableReference: case ValueType::functionPtr:
         {
             return PointerType::get(llvm::Type::getInt8Ty(context), 0);
         }
@@ -4413,6 +4432,7 @@ void NativeCompilerImpl::InitMaps()
     binPredMap["equaldo"] = LlvmBinPred::oeq;
     binPredMap["equalch"] = LlvmBinPred::ieq;
     binPredMap["equalbo"] = LlvmBinPred::ieq;
+    binPredMap["equaldl"] = LlvmBinPred::ieq;
 
     binPredMap["lesssb"] = LlvmBinPred::slt;
     binPredMap["lessby"] = LlvmBinPred::ult;

@@ -25,8 +25,7 @@ MACHINE_API bool RunningNativeCode()
     return runningNativeCode;
 }
 
-Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this), garbageCollector(*this), exiting(), exited(), nextFrameId(0), nextSegmentId(0), threadAllocating(false),
-    startThreadHandle(0)
+Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this), garbageCollector(*this), exiting(), exited(), nextFrameId(0), nextSegmentId(0)
 {
     SetMachine(this);
     SetManagedMemoryPool(&managedMemoryPool);
@@ -345,29 +344,31 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     // ----------------------------
 
     rootInst.SetInst(0xE6, new LoadDefaultValueInst<ValueType::functionPtr>("def", "@delegate"));
-    rootInst.SetInst(0xE7, new Fun2DlgInst());
-    rootInst.SetInst(0xE8, new DelegateCallInst());
-    rootInst.SetInst(0xE9, new MemFun2ClassDlgInst());
-    rootInst.SetInst(0xEA, new ClassDelegateCallInst());
+    rootInst.SetInst(0xE7, new EqualDlgNullInst());
+    rootInst.SetInst(0xE8, new EqualNullDlgInst());
+    rootInst.SetInst(0xE9, new Fun2DlgInst());
+    rootInst.SetInst(0xEA, new DelegateCallInst());
+    rootInst.SetInst(0xEB, new MemFun2ClassDlgInst());
+    rootInst.SetInst(0xEC, new ClassDelegateCallInst());
 
     // references:
     // -----------
 
-    rootInst.SetInst(0xEB, new CreateLocalVariableReferenceInst());
-    rootInst.SetInst(0xEC, new CreateMemberVariableReferenceInst());
-    rootInst.SetInst(0xED, new LoadVariableReferenceInst());
-    rootInst.SetInst(0xEE, new StoreVariableReferenceInst());
+    rootInst.SetInst(0xED, new CreateLocalVariableReferenceInst());
+    rootInst.SetInst(0xEE, new CreateMemberVariableReferenceInst());
+    rootInst.SetInst(0xEF, new LoadVariableReferenceInst());
+    rootInst.SetInst(0xF0, new StoreVariableReferenceInst());
 
     // vmcall:
     // -------
 
-    rootInst.SetInst(0xF0, new VmCallInst());
+    rootInst.SetInst(0xF1, new VmCallInst());
 
     // gc:
     // ---
 
-    rootInst.SetInst(0xF1, new GcPollInst());
-    rootInst.SetInst(0xF2, new RequestGcInst());
+    rootInst.SetInst(0xF2, new GcPollInst());
+    rootInst.SetInst(0xF3, new RequestGcInst());
 
     //  conversion group instruction:
     //  -----------------------------
@@ -568,10 +569,6 @@ Machine::~Machine()
     try
     {
         Exit();
-        if (startThreadHandle != 0)
-        {
-            CloseThreadHandle(startThreadHandle);
-        }
     }
     catch (...)
     {
@@ -613,10 +610,9 @@ void Machine::Start(bool startWithArgs, const std::vector<utf32_string>& program
     MainThread().SetThreadHandle(currentThreadHandle);
     SetCurrentThread(&MainThread());
     RunGarbageCollector();
-    startThreadHandle = currentThreadHandle;
 }
 
-void Machine::Run(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
+void Machine::RunMain(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
 {
     Function* mainFun = FunctionTable::GetMain();
     if (!mainFun)
@@ -628,8 +624,74 @@ void Machine::Run(bool runWithArgs, const std::vector<utf32_string>& programArgu
     MainThread().SetThreadHandle(currentThreadHandle);
     SetCurrentThread(&MainThread());
     RunGarbageCollector();
-    startThreadHandle = currentThreadHandle;
-    MainThread().Run(runWithArgs, programArguments, argsArrayObjectType);
+    MainThread().RunMain(runWithArgs, programArguments, argsArrayObjectType);
+    for (const std::unique_ptr<std::thread>& userThread : userThreads)
+    {
+        userThread->join();
+    }
+}
+
+void RunUserThread(Thread* thread)
+{
+    try
+    {
+        uint64_t currentThreadHandle = GetCurrentThreadHandle();
+        thread->SetThreadHandle(currentThreadHandle);
+        SetCurrentThread(thread);
+        thread->RunUser();
+    }
+    catch (const Exception& ex)
+    {
+        std::cerr << "exception escaped from user thread " << thread->Id() << ": " << ex.What() << std::endl;
+        thread->SetExceptionPtr(std::current_exception());
+    }
+    catch (const std::exception& ex)
+    {
+        std::cerr << "exception escaped from user thread " << thread->Id() << ": " << ex.what() << std::endl;
+        thread->SetExceptionPtr(std::current_exception());
+    }
+    catch (...)
+    {
+        std::cerr << "unknown exception escaped from user thread " << thread->Id() << std::endl;
+        thread->SetExceptionPtr(std::current_exception());
+    }
+}
+
+int Machine::StartThread(Function* fun, RunThreadKind runThreadKind, ObjectReference receiver, ObjectReference arg)
+{
+    if (!fun)
+    {
+        throw std::runtime_error("machine.runthread: function not set");
+    }
+    std::lock_guard<std::mutex> lock(threadMutex);
+    Thread* thread = new Thread(int32_t(threads.size()), *this, *fun);
+    switch (runThreadKind)
+    {
+        case RunThreadKind::function:
+        {
+            break;
+        }
+        case RunThreadKind::method:
+        {
+            thread->OpStack().Push(receiver);
+            break;
+        }
+        case RunThreadKind::functionWithParam:
+        {
+            thread->OpStack().Push(arg);
+            break;
+        }
+        case RunThreadKind::methodWithParam:
+        {
+            thread->OpStack().Push(receiver);
+            thread->OpStack().Push(arg);
+            break;
+        }
+    }
+    thread->SetNativeId(int32_t(userThreads.size()));
+    threads.push_back(std::unique_ptr<Thread>(thread));
+    userThreads.push_back(std::unique_ptr<std::thread>(new std::thread(RunUserThread, thread)));
+    return thread->Id();
 }
 
 void Machine::AddInst(Instruction* inst)
@@ -751,7 +813,7 @@ void Machine::RemoveSegment(int32_t segmentId)
     segmentMap.erase(segmentId);
 }
 
-Segment* Machine::GetSegment(int32_t segmentId) const
+Segment* Machine::GetSegment(int32_t segmentId)
 {
     auto it = segmentMap.find(segmentId);
     if (it != segmentMap.cend())
@@ -763,7 +825,6 @@ Segment* Machine::GetSegment(int32_t segmentId) const
 
 void Machine::Compact()
 {
-    threads.shrink_to_fit();
     gen1Arena->Compact();
     gen2Arena->Compact();
 }

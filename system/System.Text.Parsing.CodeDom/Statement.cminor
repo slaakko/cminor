@@ -585,7 +585,7 @@ namespace System.Text.Parsing.CodeDom
 
     public class ForEachStatement : Statement
     {
-        public ForEachStatement(DomObject type, Identifier id, DomObject container, Statement action)
+        public ForEachStatement(DomObject type, Identifier id, DomObject container, Statement action) : base("foreach")
         {
             this.type = type;
             this.id = id;
@@ -917,7 +917,7 @@ namespace System.Text.Parsing.CodeDom
 
     public class Finally : DomObject
     {
-        public Finally(CompoundStatement finallyBlock)
+        public Finally(CompoundStatement finallyBlock) : base("finally")
         {
             this.finallyBlock = finallyBlock;
         }

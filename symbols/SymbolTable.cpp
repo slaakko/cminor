@@ -1152,6 +1152,8 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::refTypeAssignment, new ConcreteSymbolCreator<RefTypeAssignment>());
     SymbolFactory::Instance().Register(SymbolType::refTypeSymbol, new ConcreteSymbolCreator<RefTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::refTypeInit, new ConcreteSymbolCreator<RefTypeInit>());
+    SymbolFactory::Instance().Register(SymbolType::delegateNullEqual, new ConcreteSymbolCreator<DelegateNullEqual>());
+    SymbolFactory::Instance().Register(SymbolType::nullDelegateEqual, new ConcreteSymbolCreator<NullDelegateEqual>());
 }
 
 void DoneSymbol()

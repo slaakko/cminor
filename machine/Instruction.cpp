@@ -2968,6 +2968,42 @@ void EqualNullObjectInst::Accept(MachineFunctionVisitor& visitor)
     visitor.VisitEqualNullObjectInst(*this);
 }
 
+EqualDlgNullInst::EqualDlgNullInst() : Instruction("equaldlgnull")
+{
+}
+
+void EqualDlgNullInst::Execute(Frame& frame)
+{
+    IntegralValue rightValue = frame.OpStack().Pop();
+    IntegralValue leftValue = frame.OpStack().Pop();
+    Assert(leftValue.GetType() == ValueType::functionPtr, "function pointer expected");
+    bool result = leftValue.AsFunctionPtr() == nullptr;
+    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
+}
+
+void EqualDlgNullInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitEqualDlgNullInst(*this);
+}
+
+EqualNullDlgInst::EqualNullDlgInst() : Instruction("equalnulldlg")
+{
+}
+
+void EqualNullDlgInst::Execute(Frame& frame)
+{
+    IntegralValue rightValue = frame.OpStack().Pop();
+    IntegralValue leftValue = frame.OpStack().Pop();
+    Assert(rightValue.GetType() == ValueType::functionPtr, "function pointer expected");
+    bool result = rightValue.AsFunctionPtr() == nullptr;
+    frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
+}
+
+void EqualNullDlgInst::Accept(MachineFunctionVisitor& visitor)
+{
+    visitor.VisitEqualNullDlgInst(*this);
+}
+
 BoxBaseInst::BoxBaseInst(const std::string& name_) : Instruction(name_)
 {
 }

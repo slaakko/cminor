@@ -410,6 +410,7 @@ public:
     Node* Expression() const { return expression.get(); }
     bool IsFunctionTerminatingNode() const override { return true; }
     bool IsCaseTerminatingNode() const override { return true; }
+    bool IsDefaultTerminatingNode() const override { return true; }
 private:
     std::unique_ptr<Node> expression;
 };

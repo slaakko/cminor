@@ -6,6 +6,7 @@
 #include <cminor/machine/Thread.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Function.hpp>
+#include <cminor/machine/OsInterface.hpp>
 #include <chrono>
 
 namespace cminor { namespace machine {
@@ -47,10 +48,18 @@ void DebugContext::RemoveBreakpointAt(int32_t pc)
 }
 
 Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
-    stack(*this), id(id_), machine(machine_), fun(fun_), instructionCount(0), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), 
-    exceptionObjectType(nullptr), nextVariableReferenceId(1), threadHandle(0), functionStack(nullptr)
+    stack(*this), id(id_), machine(machine_), fun(fun_), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), 
+    exceptionObjectType(nullptr), nextVariableReferenceId(1), threadHandle(0), functionStack(nullptr), nativeId(-1)
 {
     stack.AllocateFrame(fun);
+}
+
+Thread::~Thread()
+{
+    if (threadHandle != 0)
+    {
+        CloseThreadHandle(threadHandle);
+    }
 }
 
 void Thread::WaitUntilGarbageCollected()
@@ -116,7 +125,7 @@ void Thread::RunToEnd()
     }
 }
 
-void Thread::Run(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
+void Thread::RunMain(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
 {
     Frame* frame = stack.CurrentFrame();
     if (runWithArgs)
@@ -139,6 +148,11 @@ void Thread::Run(bool runWithArgs, const std::vector<utf32_string>& programArgum
             throw std::runtime_error("thread.run: function takes arguments but thread run without arguments");
         }
     }
+    RunToEnd();
+}
+
+void Thread::RunUser()
+{
     RunToEnd();
 }
 

@@ -10,7 +10,7 @@ namespace System.Text.Parsing
 
     public class NonterminalArgumentAdder : DomObject
     {
-        public NonterminalArgumentAdder(NonterminalParser parser)
+        public NonterminalArgumentAdder(NonterminalParser parser) : base("argument adder")
         {
             this.parser = parser;
         }

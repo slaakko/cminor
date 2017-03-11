@@ -29,4 +29,5 @@ source <StreamWriter.cminor>;
 source <String.cminor>;
 source <StringBuilder.cminor>;
 source <TextUtil.cminor>;
+source <Thread.cminor>;
 source <Unicode.cminor>;

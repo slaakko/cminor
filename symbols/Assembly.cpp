@@ -382,7 +382,7 @@ int Assembly::RunIntermediateCode(const std::vector<utf32_string>& programArgume
         std::cout << "running intermediate code of program '" + ToUtf8(Name().Value()) + "'..." << std::endl;
     }
     auto startRun = std::chrono::system_clock::now();
-    machine.Run(runWithArgs, programArguments, argsArrayObjectType);
+    machine.RunMain(runWithArgs, programArguments, argsArrayObjectType);
     auto endRun = std::chrono::system_clock::now();
     auto runDuration = endRun - startRun;
     int64_t runMs = std::chrono::duration_cast<std::chrono::milliseconds>(runDuration).count();

@@ -907,7 +907,6 @@ void VmSystemGetEnvironmentVariable::Execute(Frame& frame)
     {
         frame.OpStack().Push(ObjectReference(0));
     }
-    
 }
 
 class VmSystemGetPathSeparatorChar : public VmFunction
@@ -954,6 +953,194 @@ void VmSystemIOInternalGetCurrentWorkingDirectory::Execute(Frame& frame)
     utf32_string s = ToUtf32(workingDirectory);
     ObjectReference reference = GetManagedMemoryPool().CreateString(frame.GetThread(), s);
     frame.OpStack().Push(reference);
+}
+
+class VmSystemThreadingStartThreadWithThreadStartFunction : public VmFunction
+{
+public:
+    VmSystemThreadingStartThreadWithThreadStartFunction(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingStartThreadWithThreadStartFunction::VmSystemThreadingStartThreadWithThreadStartFunction(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Threading.StartThread.ThreadStartFunction"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingStartThreadWithThreadStartFunction::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue dlg = frame.Local(0).GetValue();
+        Assert(dlg.GetType() == ValueType::functionPtr, "function pointer expected");
+        Function* fun = dlg.AsFunctionPtr();
+        if (!fun)
+        {
+            throw NullReferenceException("provided delegate is null");
+        }
+        int threadId = GetMachine().StartThread(fun, RunThreadKind::function, ObjectReference(0), ObjectReference(0));
+        ClassData* threadClassData = ClassDataTable::GetClassData(U"System.Threading.Thread");
+        ObjectReference threadReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), threadClassData->Type());
+        GetManagedMemoryPool().SetField(threadReference, 0, IntegralValue(threadClassData));
+        GetManagedMemoryPool().SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType));
+        frame.OpStack().Push(threadReference);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+}
+
+class VmSystemThreadingStartThreadWithThreadStartMethod : public VmFunction
+{
+public:
+    VmSystemThreadingStartThreadWithThreadStartMethod(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingStartThreadWithThreadStartMethod::VmSystemThreadingStartThreadWithThreadStartMethod(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Threading.StartThread.ThreadStartMethod"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingStartThreadWithThreadStartMethod::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue clsdlg = frame.Local(0).GetValue();
+        Assert(clsdlg.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference classDelegateObject(clsdlg.Value());
+        if (classDelegateObject.IsNull())
+        {
+            throw NullReferenceException("provided class delegate is null");
+        }
+        Object& object = GetManagedMemoryPool().GetObject(classDelegateObject);
+        IntegralValue classObjectValue = object.GetField(1);
+        Assert(classObjectValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference receiver(classObjectValue.Value());
+        IntegralValue functionValue = object.GetField(2);
+        Assert(functionValue.GetType() == ValueType::functionPtr, "function pointer expected");
+        Function* fun = functionValue.AsFunctionPtr();
+        int threadId = GetMachine().StartThread(fun, RunThreadKind::method, receiver, ObjectReference(0));
+        ClassData* threadClassData = ClassDataTable::GetClassData(U"System.Threading.Thread");
+        ObjectReference threadReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), threadClassData->Type());
+        GetManagedMemoryPool().SetField(threadReference, 0, IntegralValue(threadClassData));
+        GetManagedMemoryPool().SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType));
+        frame.OpStack().Push(threadReference);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+}
+
+class VmSystemThreadingStartThreadWithParameterizedThreadStartFunction : public VmFunction
+{
+public:
+    VmSystemThreadingStartThreadWithParameterizedThreadStartFunction(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingStartThreadWithParameterizedThreadStartFunction::VmSystemThreadingStartThreadWithParameterizedThreadStartFunction(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Threading.StartThread.ParameterizedThreadStartFunction"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingStartThreadWithParameterizedThreadStartFunction::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue dlg = frame.Local(0).GetValue();
+        Assert(dlg.GetType() == ValueType::functionPtr, "function pointer expected");
+        Function* fun = dlg.AsFunctionPtr();
+        if (!fun)
+        {
+            throw NullReferenceException("provided delegate is null");
+        }
+        IntegralValue argValue = frame.Local(1).GetValue();
+        Assert(argValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference arg(argValue.Value());
+        int threadId = GetMachine().StartThread(fun, RunThreadKind::functionWithParam, ObjectReference(0), arg);
+        ClassData* threadClassData = ClassDataTable::GetClassData(U"System.Threading.Thread");
+        ObjectReference threadReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), threadClassData->Type());
+        GetManagedMemoryPool().SetField(threadReference, 0, IntegralValue(threadClassData));
+        GetManagedMemoryPool().SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType));
+        frame.OpStack().Push(threadReference);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+}
+
+class VmSystemThreadingStartThreadWithParameterizedThreadStartMethod : public VmFunction
+{
+public:
+    VmSystemThreadingStartThreadWithParameterizedThreadStartMethod(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingStartThreadWithParameterizedThreadStartMethod::VmSystemThreadingStartThreadWithParameterizedThreadStartMethod(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Threading.StartThread.ParameterizedThreadStartMethod"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingStartThreadWithParameterizedThreadStartMethod::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue clsdlg = frame.Local(0).GetValue();
+        Assert(clsdlg.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference classDelegateObject(clsdlg.Value());
+        if (classDelegateObject.IsNull())
+        {
+            throw NullReferenceException("provided class delegate is null");
+        }
+        Object& object = GetManagedMemoryPool().GetObject(classDelegateObject);
+        IntegralValue classObjectValue = object.GetField(1);
+        Assert(classObjectValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference receiver(classObjectValue.Value());
+        IntegralValue functionValue = object.GetField(2);
+        Assert(functionValue.GetType() == ValueType::functionPtr, "function pointer expected");
+        Function* fun = functionValue.AsFunctionPtr();
+        IntegralValue argValue = frame.Local(1).GetValue();
+        Assert(argValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference arg(argValue.Value());
+        int threadId = GetMachine().StartThread(fun, RunThreadKind::methodWithParam, receiver, arg);
+        ClassData* threadClassData = ClassDataTable::GetClassData(U"System.Threading.Thread");
+        ObjectReference threadReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), threadClassData->Type());
+        GetManagedMemoryPool().SetField(threadReference, 0, IntegralValue(threadClassData));
+        GetManagedMemoryPool().SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType));
+        frame.OpStack().Push(threadReference);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
 }
 
 class VmFunctionPool
@@ -1011,6 +1198,10 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemGetEnvironmentVariable(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemGetPathSeparatorChar(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOInternalGetCurrentWorkingDirectory(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingStartThreadWithThreadStartFunction(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingStartThreadWithThreadStartMethod(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingStartThreadWithParameterizedThreadStartFunction(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingStartThreadWithParameterizedThreadStartMethod(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool)

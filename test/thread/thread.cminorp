@@ -1,0 +1,2 @@
+project Thread;
+source <thread.cminor>;

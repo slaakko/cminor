@@ -63,6 +63,8 @@ class LoadStaticFieldInst;
 class StoreStaticFieldInst;
 class EqualObjectNullInst;
 class EqualNullObjectInst;
+class EqualDlgNullInst;
+class EqualNullDlgInst;
 class BoxBaseInst;
 class UnboxBaseInst;
 class AllocateArrayElementsInst;
@@ -141,6 +143,8 @@ public:
     virtual void VisitStoreStaticFieldInst(StoreStaticFieldInst& instruction) {}
     virtual void VisitEqualObjectNullInst(EqualObjectNullInst& instruction) {}
     virtual void VisitEqualNullObjectInst(EqualNullObjectInst& instuction) {}
+    virtual void VisitEqualDlgNullInst(EqualDlgNullInst& instruction) {}
+    virtual void VisitEqualNullDlgInst(EqualNullDlgInst& instruction) {}
     virtual void VisitBoxBaseInst(BoxBaseInst& instruction) {}
     virtual void VisitUnboxBaseInst(UnboxBaseInst& instruction) {}
     virtual void VisitAllocateArrayElementsInst(AllocateArrayElementsInst& instruction) {}

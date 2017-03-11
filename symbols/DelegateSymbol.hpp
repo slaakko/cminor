@@ -44,6 +44,22 @@ public:
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 
+class DelegateNullEqual : public BasicTypeFun
+{
+public:
+    DelegateNullEqual(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::delegateNullEqual; }
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
+};
+
+class NullDelegateEqual : public BasicTypeFun
+{
+public:
+    NullDelegateEqual(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::nullDelegateEqual; }
+    void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
+};
+
 void CreateDelegateFun(Assembly& assembly, TypeSymbol* type);
 
 class ClassDelegateTypeSymbol : public ClassTypeSymbol
@@ -68,7 +84,6 @@ private:
     TypeSymbol* returnType;
     std::vector<ParameterSymbol*> parameters;
 };
-
 
 } } // namespace cminor::symbols
 
