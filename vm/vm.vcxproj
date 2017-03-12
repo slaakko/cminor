@@ -147,7 +147,7 @@ C:\Programming\llvm-3.9.1\build\Debug\lib\LLVMOrcJIT.lib;C:\Programming\llvm-3.9
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>GC_LOGGING;WIN32;_WINDOWS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0;C:\Programming\llvm-3.9.1-release\build\include;C:\Programming\llvm-3.9.1.src\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
     </ClCompile>

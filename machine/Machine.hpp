@@ -63,7 +63,8 @@ private:
     std::atomic_bool exiting;
     std::atomic_bool exited;
     std::thread garbageCollectorThread;
-    std::mutex threadMutex;
+    Mutex threadMutex;
+    MutexOwner owner;
     std::atomic_int32_t nextFrameId;
     std::atomic_int32_t nextSegmentId;
     std::unordered_map<int32_t, Segment*> segmentMap;

@@ -50,7 +50,7 @@ void DebugContext::RemoveBreakpointAt(int32_t pc)
 
 Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
     stack(*this), id(id_), machine(machine_), fun(fun_), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), 
-    exceptionObjectType(nullptr), nextVariableReferenceId(1), threadHandle(0), functionStack(nullptr), nativeId(-1)
+    exceptionObjectType(nullptr), nextVariableReferenceId(1), threadHandle(0), functionStack(nullptr), nativeId(-1), owner('0' + id), mtx('0' + id)
 {
     stack.AllocateFrame(fun);
 }
@@ -63,42 +63,41 @@ Thread::~Thread()
     }
 }
 
+Mutex requestGcMutex('R');
+
 void Thread::RequestGc(bool requestFullCollection)
 {
-    std::lock_guard<std::mutex> lock(requestGcMutex);
-    RequestGcNoLock(requestFullCollection);
-}
-
-void Thread::RequestGcNoLock(bool requestFullCollection)
-{
+    LockGuard lock(requestGcMutex, owner);
     if (!wantToCollectGarbage)
     {
         if (requestFullCollection)
         {
 #ifdef GC_LOGGING
-            LogMessage(">" + std::to_string(id) + " Thread::RequestGcNoLock: (requesting full gc)");
+            LogMessage(">" + std::to_string(id) + " Thread::RequestGc: (requesting full gc)");
 #endif
             GetMachine().GetGarbageCollector().RequestFullCollection(*this);
         }
         else
         {
 #ifdef GC_LOGGING
-            LogMessage(">" + std::to_string(id) + " Thread::RequestGcNoLock: (requesting gc)");
+            LogMessage(">" + std::to_string(id) + " Thread::RequestGc: (requesting gc)");
 #endif
             GetMachine().GetGarbageCollector().RequestGarbageCollection(*this);
         }
+        OwnerGuard ownerGuard(garbageCollectorMutex, owner);
+        std::unique_lock<std::mutex> lock(garbageCollectorMutex.Mtx());
         while (!wantToCollectGarbage)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+            GetMachine().GetGarbageCollector().WantToCollectGarbageCond().wait(lock);
         }
 #ifdef GC_LOGGING
-        LogMessage("<" + std::to_string(id) + " Thread::RequestGcNoLock: (gc requested)");
+        LogMessage("<" + std::to_string(id) + " Thread::RequestGc: (gc requested)");
 #endif
     }
     else
     {
 #ifdef GC_LOGGING
-        LogMessage(">" + std::to_string(id) + " Thread::RequestGcNoLock: (gc requested by another thread)");
+        LogMessage(">" + std::to_string(id) + " Thread::RequestGc: (gc requested by another thread)");
 #endif
     }
 }
@@ -135,22 +134,50 @@ void Thread::WaitUntilGarbageCollected()
 
 void Thread::SetState(ThreadState state_)
 {
+    LockGuard lock(mtx, owner);
     state = state_;
+    switch (state)
+    {
+        case ThreadState::paused:
+        {
+            running = false;
+            paused = true;
+            pausedCond.notify_all();
+            break;
+        }
+        case ThreadState::running:
+        {
+            paused = false;
+            running = true;
+            runningCond.notify_all();
+            break;
+        }
+        case ThreadState::exited:
+        {
+            paused = false;
+            running = false;
+            break;
+        }
+    }
 }
 
 void Thread::WaitPaused()
 {
-    while (state != ThreadState::paused && state != ThreadState::exited)
+    OwnerGuard ownerGuard(mtx, gc);
+    std::unique_lock<std::mutex> lock(mtx.Mtx());
+    while (state != ThreadState::exited && !paused)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+        pausedCond.wait(lock);
     }
 }
 
 void Thread::WaitRunning()
 {
-    while (state != ThreadState::running && state != ThreadState::exited)
+    OwnerGuard ownerGuard(mtx, gc);
+    std::unique_lock<std::mutex> lock(mtx.Mtx());
+    while (state != ThreadState::exited && !running)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+        runningCond.wait(lock);
     }
 }
 

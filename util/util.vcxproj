@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="CodeFormatter.cpp" />
     <ClCompile Include="MappedInputFile.cpp" />
+    <ClCompile Include="Mutex.cpp" />
     <ClCompile Include="Path.cpp" />
     <ClCompile Include="Prime.cpp" />
     <ClCompile Include="Random.cpp" />
@@ -35,6 +36,7 @@
     <ClInclude Include="Error.hpp" />
     <ClInclude Include="Handle.hpp" />
     <ClInclude Include="MappedInputFile.hpp" />
+    <ClInclude Include="Mutex.hpp" />
     <ClInclude Include="Path.hpp" />
     <ClInclude Include="Prime.hpp" />
     <ClInclude Include="Random.hpp" />

@@ -12,8 +12,12 @@ void foo()
 void thread(object i)
 {
     Console.WriteLine("begin:" + i.ToString());
-    for (int i = 0; i < 1000; ++i)
+    for (int i = 0; i < 10000; ++i)
     {
+        if (i % 100 == 0)
+        {
+            Console.Write(".");
+        }
         foo();
     }
     Console.WriteLine("end:" + i.ToString());

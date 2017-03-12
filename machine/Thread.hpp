@@ -10,6 +10,7 @@
 #include <cminor/machine/Object.hpp>
 #include <cminor/machine/OperandStack.hpp>
 #include <cminor/machine/VariableReference.hpp>
+#include <cminor/util/Mutex.hpp>
 #include <unordered_set>
 #include <atomic>
 #include <condition_variable>
@@ -23,7 +24,7 @@ class ExceptionBlock;
 class Thread;
 struct FunctionStackEntry;
 
-extern MACHINE_API std::atomic_bool wantToCollectGarbage;
+extern std::atomic_bool wantToCollectGarbage;
 
 MACHINE_API Thread& GetCurrentThread();
 MACHINE_API void SetCurrentThread(Thread* currentThread_);
@@ -76,7 +77,6 @@ public:
             WaitUntilGarbageCollected();
         }
     }
-    void RequestGcNoLock(bool requestFullCollection);
     void RequestGc(bool requestFullCollection);
     void WaitUntilGarbageCollected();
     void WaitPaused();
@@ -105,6 +105,7 @@ public:
     void SetFunctionStack(FunctionStackEntry* functionStack_) { functionStack = functionStack_; }
     FunctionStackEntry* GetFunctionStack() const { return functionStack; }
     void SetExceptionPtr(std::exception_ptr exceptionPtr_) { exceptionPtr = exceptionPtr_; }
+    MutexOwner& Owner() { return owner; }
 private:
     Stack stack;
     int32_t id;
@@ -120,12 +121,17 @@ private:
     ExceptionBlock* currentExceptionBlock;
     ObjectType* exceptionObjectType;
     std::atomic<ThreadState> state;
+    std::atomic_bool paused;
+    std::condition_variable pausedCond;
+    std::atomic_bool running;
+    std::condition_variable runningCond;
     int32_t nextVariableReferenceId;
     std::vector<std::unique_ptr<DebugContext>> debugContexts;
     uint64_t threadHandle;
     std::atomic<FunctionStackEntry*> functionStack;
     std::exception_ptr exceptionPtr;
-    std::mutex requestGcMutex;
+    MutexOwner owner;
+    Mutex mtx;
     void RunToEnd();
     void FindExceptionBlock(Frame* frame);
     bool DispatchToHandlerOrFinally(Frame* frame);

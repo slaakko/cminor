@@ -12,11 +12,14 @@
 
 namespace cminor { namespace machine {
 
-MACHINE_API std::atomic_bool wantToCollectGarbage = false;
+MutexOwner gc('G');
 
-std::mutex garbageCollectorMutex;
+std::atomic_bool wantToCollectGarbage = false;
 
-GarbageCollector::GarbageCollector(Machine& machine_) : machine(machine_), state(GarbageCollectorState::idle), started(false), collectionRequested(false), fullCollectionRequested(false), error(false)
+Mutex garbageCollectorMutex('G');
+
+GarbageCollector::GarbageCollector(Machine& machine_) : machine(machine_), state(GarbageCollectorState::idle), started(false), collectionRequested(false), fullCollectionRequested(false), 
+    idle(true), collected(false), error(false)
 {
 }
 
@@ -25,9 +28,11 @@ void GarbageCollector::WaitForIdle(Thread& thread)
 #ifdef GC_LOGGING
     LogMessage(">" + std::to_string(thread.Id()) + ":WaitForIdle()");
 #endif
-    while (state != GarbageCollectorState::idle)
+    OwnerGuard ownerGuard(garbageCollectorMutex, thread.Owner());
+    std::unique_lock<std::mutex> lock(garbageCollectorMutex.Mtx());
+    while (!idle)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+        idleCond.wait(lock);
     }
 #ifdef GC_LOGGING
     LogMessage("<" + std::to_string(thread.Id()) + ":WaitForIdle()");
@@ -67,9 +72,11 @@ void GarbageCollector::RequestGarbageCollection(Thread& thread)
 #ifdef GC_LOGGING
     LogMessage(">" + std::to_string(thread.Id()) + ":RequestGarbageCollection()");
 #endif
-    while (state != GarbageCollectorState::idle)
+    OwnerGuard ownerGuard(garbageCollectorMutex, thread.Owner());
+    std::unique_lock<std::mutex> lock(garbageCollectorMutex.Mtx());
+    while (!idle)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+        idleCond.wait(lock);
     }
     collectionRequested = true;
     collectionRequestedCond.notify_one();
@@ -83,9 +90,11 @@ void GarbageCollector::RequestFullCollection(Thread& thread)
 #ifdef GC_LOGGING
     LogMessage(">" + std::to_string(thread.Id()) + ":RequestFullCollection()");
 #endif
-    while (state != GarbageCollectorState::idle)
+    OwnerGuard ownerGuard(garbageCollectorMutex, thread.Owner());
+    std::unique_lock<std::mutex> lock(garbageCollectorMutex.Mtx());
+    while (!idle)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+        idleCond.wait(lock);
     }
     fullCollectionRequested = true;
     collectionRequested = true;
@@ -111,13 +120,53 @@ void GarbageCollector::WaitUntilGarbageCollected(Thread& thread)
 #ifdef GC_LOGGING
     LogMessage(">" + std::to_string(thread.Id()) + ":WaitUntilGarbageCollected()");
 #endif
-    while (state != GarbageCollectorState::collected)
+    OwnerGuard ownerGuard(garbageCollectorMutex, thread.Owner());
+    std::unique_lock<std::mutex> lock(garbageCollectorMutex.Mtx());
+    while (!collected)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+        collectedCond.wait(lock);
     }
 #ifdef GC_LOGGING
     LogMessage("<" + std::to_string(thread.Id()) + ":WaitUntilGarbageCollected()");
 #endif
+}
+
+void GarbageCollector::SetState(GarbageCollectorState state_)
+{
+    state = state_;
+    switch (state)
+    {
+        case GarbageCollectorState::idle:
+        {
+            collected = false;
+            idle = true;
+            idleCond.notify_all();
+            break;
+        }
+        case GarbageCollectorState::requested:
+        {
+            OwnerGuard ownerGuard(garbageCollectorMutex, gc);
+            std::unique_lock<std::mutex> lock(garbageCollectorMutex.Mtx());
+            collectionRequested = false;
+            wantToCollectGarbage = true;
+            wantToCollectGarbageCond.notify_all();
+            break;
+        }
+        case GarbageCollectorState::collecting:
+        {
+            idle = false;
+            wantToCollectGarbage = false;
+            break;
+        }
+        case GarbageCollectorState::collected:
+        {
+            OwnerGuard ownerGuard(garbageCollectorMutex, gc);
+            std::unique_lock<std::mutex> lock(garbageCollectorMutex.Mtx());
+            collected = true;
+            collectedCond.notify_all();
+            break;
+        }
+    }
 }
 
 void GarbageCollector::WaitForGarbageCollection()
@@ -125,9 +174,10 @@ void GarbageCollector::WaitForGarbageCollection()
 #ifdef GC_LOGGING
     LogMessage(">gc:WaitForGarbageCollection() (idle)");
 #endif
-    std::unique_lock<std::mutex> lock(garbageCollectorMutex);
+    OwnerGuard ownerGuard(garbageCollectorMutex, gc);
+    std::unique_lock<std::mutex> lock(garbageCollectorMutex.Mtx());
     fullCollectionRequested = false;
-    state = GarbageCollectorState::idle;
+    SetState(GarbageCollectorState::idle);
     collectionRequestedCond.wait(lock);
 #ifdef GC_LOGGING
     LogMessage("<gc:WaitForGarbageCollection() (idle)");
@@ -143,20 +193,17 @@ void GarbageCollector::Run()
         if (machine.Exiting()) break;
         if (collectionRequested)
         {
-            collectionRequested = false;
-            state = GarbageCollectorState::requested;
-            wantToCollectGarbage = true;
+            SetState(GarbageCollectorState::requested);
 #ifdef GC_LOGGING
             LogMessage(">gc:Run() (requested)");
 #endif
             WaitForThreadsPaused();
-            state = GarbageCollectorState::collecting;
-            wantToCollectGarbage = false;
+            SetState(GarbageCollectorState::collecting);
 #ifdef GC_LOGGING
             LogMessage(">gc:Run() (collecting)");
 #endif
             CollectGarbage();
-            state = GarbageCollectorState::collected;
+            SetState(GarbageCollectorState::collected);
 #ifdef GC_LOGGING
             LogMessage(">gc:Run() (collected)");
 #endif

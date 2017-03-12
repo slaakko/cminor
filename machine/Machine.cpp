@@ -25,7 +25,8 @@ MACHINE_API bool RunningNativeCode()
     return runningNativeCode;
 }
 
-Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this), garbageCollector(*this), exiting(), exited(), nextFrameId(0), nextSegmentId(0)
+Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryPool(*this), garbageCollector(*this), exiting(), exited(), nextFrameId(0), nextSegmentId(0), 
+    threadMutex('T'), owner('M')
 {
     SetMachine(this);
     SetManagedMemoryPool(&managedMemoryPool);
@@ -663,7 +664,7 @@ int Machine::StartThread(Function* fun, RunThreadKind runThreadKind, ObjectRefer
     {
         throw std::runtime_error("machine.runthread: function not set");
     }
-    std::lock_guard<std::mutex> lock(threadMutex);
+    LockGuard lock(threadMutex, owner);
     Thread* thread = new Thread(int32_t(threads.size()), *this, *fun);
     switch (runThreadKind)
     {

@@ -7,8 +7,8 @@
 #define CMINOR_MACHINE_ARENA_INCLUDED
 #include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Object.hpp>
+#include <cminor/util/Mutex.hpp>
 #include <atomic>
-#include <mutex>
 
 namespace cminor { namespace machine {
 
@@ -42,7 +42,7 @@ private:
     uint8_t* commit;
     uint8_t* free;
     uint8_t* end;
-    std::mutex mtx;
+    Mutex mtx;
 };
 
 class Arena
@@ -62,13 +62,13 @@ public:
     void RemoveSegment(int32_t segmentId);
     void RemoveEmptySegments(const std::unordered_set<int32_t>& liveSegments);
     void Compact();
-    std::mutex& SegmentsMutex() { return segmentsMutex; }
+    Mutex& SegmentsMutex() { return segmentsMutex; }
 private:
     Machine& machine;
     ArenaId id;
     uint64_t pageSize;
     uint64_t segmentSize;
-    std::mutex segmentsMutex;
+    Mutex segmentsMutex;
     std::vector<std::unique_ptr<Segment>> segments;
 };
 

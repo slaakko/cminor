@@ -25,7 +25,7 @@ uint64_t GetSegmentSize()
 }
 
 Segment::Segment(int32_t id_, ArenaId arenaId_, uint64_t pageSize_, uint64_t size_) : 
-    id(id_), arenaId(arenaId_), pageSize(pageSize_), size(size_), mem(ReserveMemory(size)), commit(mem), free(mem), end(mem + size)
+    id(id_), arenaId(arenaId_), pageSize(pageSize_), size(size_), mem(ReserveMemory(size)), commit(mem), free(mem), end(mem + size), mtx('S')
 {
 }
 
@@ -36,7 +36,7 @@ Segment::~Segment()
 
 bool Segment::Allocate(uint64_t blockSize, MemPtr& mem)
 {
-    std::lock_guard<std::mutex> lock(mtx);
+    LockGuard lock(mtx, gc);
     if (free + blockSize > commit)
     {
         uint64_t commitSize = pageSize * ((blockSize - 1) / pageSize + 1);
@@ -66,7 +66,7 @@ bool Segment::Allocate(uint64_t blockSize, MemPtr& mem)
 
 bool Segment::Allocate(Thread& thread, uint64_t blockSize, MemPtr& mem, bool requestFullCollection)
 {
-    std::lock_guard<std::mutex> lock(mtx);
+    LockGuard lock(mtx, thread.Owner());
     if (free + blockSize > commit)
     {
         uint64_t commitSize = pageSize * ((blockSize - 1) / pageSize + 1);
@@ -78,7 +78,8 @@ bool Segment::Allocate(Thread& thread, uint64_t blockSize, MemPtr& mem, bool req
         }
         else
         {
-            thread.RequestGcNoLock(requestFullCollection);
+            lock.Unlock();
+            thread.RequestGc(requestFullCollection);
             return false;
         }
     }
@@ -97,13 +98,13 @@ bool Segment::Allocate(Thread& thread, uint64_t blockSize, MemPtr& mem, bool req
 
 void Segment::Clear()
 {
-    std::lock_guard<std::mutex> lock(garbageCollectorMutex);
+    LockGuard lock(garbageCollectorMutex, gc);
     free = mem;
     uint64_t n = commit - mem;
     std::memset(mem, 0, n);
 }
 
-Arena::Arena(Machine& machine_, ArenaId id_, uint64_t segmentSize_) : machine(machine_), id(id_), pageSize(GetSystemPageSize()), segmentSize(segmentSize_)
+Arena::Arena(Machine& machine_, ArenaId id_, uint64_t segmentSize_) : machine(machine_), id(id_), pageSize(GetSystemPageSize()), segmentSize(segmentSize_), segmentsMutex('A')
 {
     Segment* segment = new Segment(machine.GetNextSegmentId(), id, pageSize, segmentSize);
     machine.AddSegment(segment);
@@ -197,7 +198,7 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(uint64_t blockSize, bool allocate
         Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), blockSize);
         std::unique_ptr<Segment> segment(seg);
         {
-            std::lock_guard<std::mutex> lock(SegmentsMutex());
+            LockGuard lock(SegmentsMutex(), gc);
             GetMachine().AddSegment(seg);
             Segments().push_back(std::move(segment));
         }
@@ -225,7 +226,7 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(uint64_t blockSize, bool allocate
         Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), SegmentSize());
         std::unique_ptr<Segment> segment(seg);
         {
-            std::lock_guard<std::mutex> lock(SegmentsMutex());
+            LockGuard lock(SegmentsMutex(), gc);
             GetMachine().AddSegment(seg);
             Segments().push_back(std::move(segment));
         }
@@ -247,7 +248,7 @@ void GenArena2::Allocate(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int
         Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), blockSize);
         std::unique_ptr<Segment> segment(seg);
         {
-            std::lock_guard<std::mutex> lock(SegmentsMutex());
+            LockGuard lock(SegmentsMutex(), thread.Owner());
             GetMachine().AddSegment(seg);
             Segments().push_back(std::move(segment));
         }

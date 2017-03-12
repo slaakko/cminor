@@ -982,8 +982,8 @@ void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursiv
     if (sizeDiff >= GetPoolThreshold())
     {
         poolRoot = root;
-        thread.RequestGcNoLock(false);
         lock.unlock();
+        thread.RequestGc(false);
         thread.WaitUntilGarbageCollected();
         ComputeSize();
         prevSize = size;

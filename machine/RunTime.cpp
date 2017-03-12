@@ -2744,10 +2744,10 @@ extern "C" MACHINE_API void RtMemFun2ClassDelegate(uint64_t classObjectRererence
     }
 }
 
-extern "C" MACHINE_API void RtRequestGc()
+extern "C" MACHINE_API void RtRequestGc(bool requestFullCollection)
 {
     Thread& thread = GetCurrentThread();
-    thread.RequestGc(false);
+    thread.RequestGc(requestFullCollection);
     thread.WaitUntilGarbageCollected();
 }
 

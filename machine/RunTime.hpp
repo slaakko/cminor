@@ -189,7 +189,7 @@ extern "C" MACHINE_API const char32_t* RtLoadStringLiteral(void* constantPool, u
 
 extern "C" MACHINE_API void RtMemFun2ClassDelegate(uint64_t classObjectRererence, uint64_t classDelegateObjectReference, void* memberFunction);
 
-extern "C" MACHINE_API void RtRequestGc();
+extern "C" MACHINE_API void RtRequestGc(bool requestFullCollection);
 
 extern "C" MACHINE_API void RtPollGc();
 
