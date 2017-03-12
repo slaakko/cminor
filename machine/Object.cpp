@@ -405,9 +405,11 @@ ObjectReference ManagedMemoryPool::CreateObject(Thread& thread, ObjectType* type
     {
         int x = 0;
     }
-    std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, type->ObjectSize());
-    memPtrSegmentId.first.SetHashCode(Random64());
-    Object* obj = new Object(reference, memPtrSegmentId.first, memPtrSegmentId.second, type, type->ObjectSize());
+    MemPtr memPtr = MemPtr();
+    int32_t segmentId = -1;
+    machine.AllocateMemory(thread, type->ObjectSize(), memPtr, segmentId);
+    memPtr.SetHashCode(Random64());
+    Object* obj = new Object(reference, memPtr, segmentId, type, type->ObjectSize());
     std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
     auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(obj)));
     if (!pairItBool.second)
@@ -593,16 +595,18 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
         uint64_t stringSize = numChars * ValueSize(ValueType::charType);
         if (stringSize > 0)
         {
-            std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
-            memPtrSegmentId.first.SetHashCode(Random64());
-            StringCharacters* strChars = new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize);
+            MemPtr memPtr = MemPtr();
+            int32_t segmentId = -1;
+            machine.AllocateMemory(thread, stringSize, memPtr, segmentId);
+            memPtr.SetHashCode(Random64());
+            StringCharacters* strChars = new StringCharacters(handle, memPtr, segmentId, numChars, stringSize);
             lock.lock();
             auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(strChars)));
             if (!pairItBool.second)
             {
                 throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
             }
-            MemPtr stringMem = memPtrSegmentId.first;
+            MemPtr stringMem = memPtr;
             std::memcpy(stringMem.Value(), characters.Value(), stringSize);
             ++stringContentCount;
             CheckSize(thread, lock, handle);
@@ -639,16 +643,18 @@ ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_stri
     if (stringSize > 0)
     {
         lock.unlock();
-        std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, stringSize);
-        memPtrSegmentId.first.SetHashCode(Random64());
-        StringCharacters* strChars = new StringCharacters(handle, memPtrSegmentId.first, memPtrSegmentId.second, numChars, stringSize);
+        MemPtr memPtr = MemPtr();
+        int32_t segmentId = -1;
+        machine.AllocateMemory(thread, stringSize, memPtr, segmentId);
+        memPtr.SetHashCode(Random64());
+        StringCharacters* strChars = new StringCharacters(handle, memPtr, segmentId, numChars, stringSize);
         lock.lock();
         auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(strChars)));
         if (!pairItBool.second)
         {
             throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
         }
-        MemPtr stringMem = memPtrSegmentId.first;
+        MemPtr stringMem = memPtr;
         std::memcpy(stringMem.Value(), s.c_str(), stringSize);
         ++stringContentCount;
         CheckSize(thread, lock, handle);
@@ -801,10 +807,12 @@ void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference ar
     if (arraySize > 0)
     {
         lock.unlock();
-        std::pair<MemPtr, int32_t> memPtrSegmentId = machine.AllocateMemory(thread, arraySize);
-        memPtrSegmentId.first.SetHashCode(Random64());
+        MemPtr memPtr = MemPtr();
+        int32_t segmentId = -1;
+        machine.AllocateMemory(thread, arraySize, memPtr, segmentId);
+        memPtr.SetHashCode(Random64());
         lock.lock();
-        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, memPtrSegmentId.first, memPtrSegmentId.second, elementType, length, arraySize))));
+        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, memPtr, segmentId, elementType, length, arraySize))));
         if (!pairItBool.second)
         {
             throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
@@ -974,37 +982,11 @@ void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursiv
     if (sizeDiff >= GetPoolThreshold())
     {
         poolRoot = root;
+        thread.RequestGcNoLock(false);
         lock.unlock();
-        if (RunningNativeCode())
-        {
-            thread.SetFunctionStack(GetFunctionStack());
-        }
-        thread.SetState(ThreadState::paused);
-#ifdef GC_LOGGING
-        LogMessage("pool>" + std::to_string(thread.Id()) + " (paused)");
-        LogMessage("pool> allocations=" + std::to_string(allocations.size()) + " objects=" + std::to_string(objectCount) + " arraycontents=" + std::to_string(arrayContentCount) +
-            " stringContents=" + std::to_string(stringContentCount) + " size=" + std::to_string(size / (1024ull * 1024ull)));
-#endif
-        thread.GetMachine().GetGarbageCollector().RequestGarbageCollection(thread);
-#ifdef GC_LOGGING
-        LogMessage("pool>" + std::to_string(thread.Id()) + " (collection requested)");
-#endif
-        thread.GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(thread);
-#ifdef GC_LOGGING
-        LogMessage("pool>" + std::to_string(thread.Id()) + " (collection ended)");
-#endif
+        thread.WaitUntilGarbageCollected();
         ComputeSize();
         prevSize = size;
-#ifdef GC_LOGGING
-        LogMessage("pool> allocations=" + std::to_string(allocations.size()) + " objects=" + std::to_string(objectCount) + " arraycontents=" + std::to_string(arrayContentCount) +
-            " stringContents=" + std::to_string(stringContentCount) + " size=" + std::to_string(size / (1024ull * 1024ull)));
-#endif
-        poolRoot = AllocationHandle(0);
-        thread.SetState(ThreadState::running);
-#ifdef GC_LOGGING
-        LogMessage("pool>" + std::to_string(thread.Id()) + " (running)");
-#endif
-        thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
     }
 }
 

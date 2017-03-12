@@ -23,7 +23,7 @@ class ExceptionBlock;
 class Thread;
 struct FunctionStackEntry;
 
-extern MACHINE_API bool wantToCollectGarbage;
+extern MACHINE_API std::atomic_bool wantToCollectGarbage;
 
 MACHINE_API Thread& GetCurrentThread();
 MACHINE_API void SetCurrentThread(Thread* currentThread_);
@@ -69,13 +69,15 @@ public:
     void Step();
     void Next();
     void RunDebug();
-    void CheckPause()
+    void PollGc()
     {
         if (wantToCollectGarbage)
         {
             WaitUntilGarbageCollected();
         }
     }
+    void RequestGcNoLock(bool requestFullCollection);
+    void RequestGc(bool requestFullCollection);
     void WaitUntilGarbageCollected();
     void WaitPaused();
     void WaitRunning();
@@ -123,6 +125,7 @@ private:
     uint64_t threadHandle;
     std::atomic<FunctionStackEntry*> functionStack;
     std::exception_ptr exceptionPtr;
+    std::mutex requestGcMutex;
     void RunToEnd();
     void FindExceptionBlock(Frame* frame);
     bool DispatchToHandlerOrFinally(Frame* frame);

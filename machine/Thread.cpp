@@ -7,6 +7,7 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/OsInterface.hpp>
+#include <cminor/machine/Log.hpp>
 #include <chrono>
 
 namespace cminor { namespace machine {
@@ -62,12 +63,74 @@ Thread::~Thread()
     }
 }
 
+void Thread::RequestGc(bool requestFullCollection)
+{
+    std::lock_guard<std::mutex> lock(requestGcMutex);
+    RequestGcNoLock(requestFullCollection);
+}
+
+void Thread::RequestGcNoLock(bool requestFullCollection)
+{
+    if (!wantToCollectGarbage)
+    {
+        if (requestFullCollection)
+        {
+#ifdef GC_LOGGING
+            LogMessage(">" + std::to_string(id) + " Thread::RequestGcNoLock: (requesting full gc)");
+#endif
+            GetMachine().GetGarbageCollector().RequestFullCollection(*this);
+        }
+        else
+        {
+#ifdef GC_LOGGING
+            LogMessage(">" + std::to_string(id) + " Thread::RequestGcNoLock: (requesting gc)");
+#endif
+            GetMachine().GetGarbageCollector().RequestGarbageCollection(*this);
+        }
+        while (!wantToCollectGarbage)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+        }
+#ifdef GC_LOGGING
+        LogMessage("<" + std::to_string(id) + " Thread::RequestGcNoLock: (gc requested)");
+#endif
+    }
+    else
+    {
+#ifdef GC_LOGGING
+        LogMessage(">" + std::to_string(id) + " Thread::RequestGcNoLock: (gc requested by another thread)");
+#endif
+    }
+}
+
 void Thread::WaitUntilGarbageCollected()
 {
+    if (RunningNativeCode())
+    {
+#ifdef GC_LOGGING
+        LogMessage(">" + std::to_string(id) + " (setting native function stack)");
+#endif
+        SetFunctionStack(GetFunctionStack());
+#ifdef GC_LOGGING
+        LogMessage(">" + std::to_string(id) + " (native function stack set)");
+#endif
+    }
     SetState(ThreadState::paused);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(id) + " (paused)");
+#endif
     GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(*this);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(id) + " (collection ended)");
+#endif
     SetState(ThreadState::running);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(id) + " (running)");
+#endif
     GetMachine().GetGarbageCollector().WaitForIdle(*this);
+#ifdef GC_LOGGING
+    LogMessage(">" + std::to_string(id) + " (gc idle)");
+#endif
 }
 
 void Thread::SetState(ThreadState state_)

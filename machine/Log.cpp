@@ -16,18 +16,18 @@ auto start = std::chrono::steady_clock::now();
 bool logOpen = false;
 std::mutex logMutex;
 
-void OpenLog()
+MACHINE_API void OpenLog()
 {
     log.open(logFilePath);
     logOpen = true;
     log.close();
 }
 
-void CloseLog()
+MACHINE_API void CloseLog()
 {
 }
 
-void LogMessage(const std::string& message)
+MACHINE_API void LogMessage(const std::string& message)
 {
     if (logOpen)
     {

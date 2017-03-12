@@ -223,7 +223,6 @@ private:
     ConstantPool* functionConstantPool;
     ConstantPool* assemblyConstantPool;
     llvm::Constant* constantPoolVariable;
-    llvm::Constant* wantToCollectGarbageVariable;
     std::vector<AllocaInst*> locals;
     llvm::AllocaInst* functionStackEntry;
     std::unordered_map<std::string, LlvmBinOp> binOpMap;
@@ -303,7 +302,7 @@ private:
 };    
 
 NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), module(), targetMachine(), fun(nullptr), function(nullptr), assemblyConstantPool(nullptr), 
-    functionConstantPool(nullptr), constantPoolVariable(nullptr), wantToCollectGarbageVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), 
+    functionConstantPool(nullptr), constantPoolVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), 
     nextTypePtrVarNumber(0), functionStackEntry(nullptr), currentBasicBlock(nullptr), entryBasicBlock(nullptr), lastAlloca(nullptr), currentExceptionBlockId(-1),  
     currentCatchSectionExceptionBlockId(-1), currentPad(nullptr), currentPadKind(LlvmPadKind::none), exceptionPtr(nullptr), isGCFun(false), optimizationLevel(0), 
     inlineLimit(0), inlineLocals(0), mode(Mode::normalMode)
@@ -890,10 +889,6 @@ void NativeCompilerImpl::BeginModule(Assembly& assembly)
     ExportGlobalVariable(constantPoolVariable);;
     llvm::GlobalVariable* constantPoolVar = cast<llvm::GlobalVariable>(constantPoolVariable);
     constantPoolVar->setInitializer(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
-    wantToCollectGarbageVariable = module->getOrInsertGlobal("__want_to_collect_garbage", PointerType::get(GetType(ValueType::boolType), 0));
-    ExportGlobalVariable(wantToCollectGarbageVariable);
-    llvm::GlobalVariable* wantToCollectGarbageVar = cast<llvm::GlobalVariable>(wantToCollectGarbageVariable);
-    wantToCollectGarbageVar->setInitializer(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::boolType), 0)));
     nextFunctionVarNumber = 0;
     std::vector<Attribute::AttrKind> nounwindAttributes;
     nounwindAttributes.push_back(llvm::Attribute::UWTable);
@@ -3935,18 +3930,10 @@ void NativeCompilerImpl::VisitStoreVariableReferenceInst(StoreVariableReferenceI
 
 void NativeCompilerImpl::VisitGcPollInst(GcPollInst& instruction)
 {
-    llvm::Value* wantToCollectGarbage(builder.CreateLoad(builder.CreateLoad(wantToCollectGarbageVariable)));
-    BasicBlock* waitGcBlock = BasicBlock::Create(context, "waitGcTarget" + std::to_string(GetCurrentInstructionIndex()), fun);
-    BasicBlock* continueBlock = BasicBlock::Create(context, "continueTarget" + std::to_string(GetCurrentInstructionIndex()), fun);
-    builder.CreateCondBr(wantToCollectGarbage, waitGcBlock, continueBlock);
-    builder.SetInsertPoint(waitGcBlock);
-    llvm::Function* rtWaitGc = cast<llvm::Function>(module->getOrInsertFunction("RtWaitGc", GetType(ValueType::none), nullptr));
-    ImportFunction(rtWaitGc);
+    llvm::Function* rtPollGc = cast<llvm::Function>(module->getOrInsertFunction("RtPollGc", GetType(ValueType::none), nullptr));
+    ImportFunction(rtPollGc);
     ArgVector args;
-    builder.CreateCall(rtWaitGc, args);
-    builder.CreateBr(continueBlock);
-    builder.SetInsertPoint(continueBlock);
-    currentBasicBlock = continueBlock;
+    builder.CreateCall(rtPollGc, args);
 }
 
 void NativeCompilerImpl::VisitRequestGcInst(RequestGcInst& instruction)

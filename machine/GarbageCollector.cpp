@@ -12,7 +12,7 @@
 
 namespace cminor { namespace machine {
 
-MACHINE_API bool wantToCollectGarbage = false;
+MACHINE_API std::atomic_bool wantToCollectGarbage = false;
 
 std::mutex garbageCollectorMutex;
 

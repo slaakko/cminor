@@ -38,7 +38,7 @@ public:
     const std::vector<std::unique_ptr<Thread>>& Threads() const { return threads; }
     Thread& MainThread() { Assert(!threads.empty(), "no main thread"); return *threads.front().get(); }
     GarbageCollector& GetGarbageCollector() { return garbageCollector; }
-    std::pair<MemPtr, int32_t> AllocateMemory(Thread& thread, uint64_t blockSize);
+    void AllocateMemory(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int32_t& segmentId);
     void RunGarbageCollector();
     Arena& Gen1Arena() { return *gen1Arena; }
     Arena& Gen2Arena() { return *gen2Arena; }

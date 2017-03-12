@@ -6,12 +6,13 @@
 #ifndef CMINOR_MACHINE_LOG_INCLUDED
 #define CMINOR_MACHINE_LOG_INCLUDED
 #include <string>
+#include <cminor/machine/MachineApi.hpp>
 
 namespace cminor { namespace machine {
 
-void OpenLog();
-void CloseLog();
-void LogMessage(const std::string& message);
+MACHINE_API void OpenLog();
+MACHINE_API void CloseLog();
+MACHINE_API void LogMessage(const std::string& message);
 
 } } // namespace cminor::machine
 

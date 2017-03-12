@@ -738,15 +738,15 @@ std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
     return std::unique_ptr<Instruction>(clonedInst);
 }
 
-std::pair<MemPtr, int32_t> Machine::AllocateMemory(Thread& thread, uint64_t blockSize)
+void Machine::AllocateMemory(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int32_t& segmentId)
 {
     if (blockSize <= defaultLargeObjectThresholdSize)
     {
-        return gen1Arena->Allocate(thread, blockSize);
+        gen1Arena->Allocate(thread, blockSize, memPtr, segmentId);
     }
     else
     {
-        return gen2Arena->Allocate(thread, blockSize);
+        gen2Arena->Allocate(thread, blockSize, memPtr, segmentId);
     }
 }
 

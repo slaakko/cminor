@@ -3562,7 +3562,7 @@ GcPollInst::GcPollInst() : Instruction("gcpoll")
 
 void GcPollInst::Execute(Frame& frame)
 {
-    frame.GetThread().CheckPause();
+    frame.GetThread().PollGc();
 }
 
 void GcPollInst::Accept(MachineFunctionVisitor& visitor)
@@ -3577,23 +3577,8 @@ RequestGcInst::RequestGcInst() : Instruction("requestgc")
 void RequestGcInst::Execute(Frame& frame)
 {
     Thread& thread = frame.GetThread();
-    thread.SetState(ThreadState::paused);
-#ifdef GC_LOGGING
-    LogMessage(">" + std::to_string(thread.Id()) + " (paused)");
-#endif
-    thread.GetMachine().GetGarbageCollector().RequestGarbageCollection(thread);
-#ifdef GC_LOGGING
-    LogMessage(">" + std::to_string(thread.Id()) + " (collection requested)");
-#endif
-    thread.GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(thread);
-#ifdef GC_LOGGING
-    LogMessage(">" + std::to_string(thread.Id()) + " (collection ended)");
-#endif
-    thread.SetState(ThreadState::running);
-#ifdef GC_LOGGING
-    LogMessage(">" + std::to_string(thread.Id()) + " (running)");
-#endif
-    thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
+    thread.RequestGc(false);
+    thread.WaitUntilGarbageCollected();
 }
 
 void RequestGcInst::Accept(MachineFunctionVisitor& visitor)

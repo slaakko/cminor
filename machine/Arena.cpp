@@ -34,7 +34,7 @@ Segment::~Segment()
     FreeMemory(mem, size);
 }
 
-MemPtr Segment::Allocate(uint64_t blockSize)
+bool Segment::Allocate(uint64_t blockSize, MemPtr& mem)
 {
     std::lock_guard<std::mutex> lock(mtx);
     if (free + blockSize > commit)
@@ -48,18 +48,50 @@ MemPtr Segment::Allocate(uint64_t blockSize)
         }
         else
         {
-            return MemPtr();
+            return false;
         }
     }
     if (free + blockSize <= commit)
     {
         MemPtr ptr(free);
         free += blockSize;
-        return ptr;
+        mem = ptr;
+        return true;
     }
     else
     {
-        return MemPtr();
+        return false;
+    }
+}
+
+bool Segment::Allocate(Thread& thread, uint64_t blockSize, MemPtr& mem, bool requestFullCollection)
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    if (free + blockSize > commit)
+    {
+        uint64_t commitSize = pageSize * ((blockSize - 1) / pageSize + 1);
+        if (commit + commitSize <= end)
+        {
+            uint8_t* commitBase = CommitMemory(commit, commitSize);
+            std::memset(commitBase, 0, commitSize);
+            commit = commitBase + commitSize;
+        }
+        else
+        {
+            thread.RequestGcNoLock(requestFullCollection);
+            return false;
+        }
+    }
+    if (free + blockSize <= commit)
+    {
+        MemPtr ptr(free);
+        free += blockSize;
+        mem = ptr;
+        return true;
+    }
+    else
+    {
+        return false;
     }
 }
 
@@ -136,14 +168,7 @@ std::pair<MemPtr, int32_t> GenArena1::Allocate(uint64_t blockSize, bool allocate
     throw std::runtime_error("could not allocate " + std::to_string(blockSize) + " bytes memory from arena " + std::to_string(int(Id())) + ": arena 1 needs a thread");
 }
 
-struct Resetter
-{
-    Resetter(std::atomic_bool& toReset_) : toReset(toReset_) {}
-    ~Resetter() { toReset = false; }
-    std::atomic_bool& toReset;
-};
-
-std::pair<MemPtr, int32_t> GenArena1::Allocate(Thread& thread, uint64_t blockSize)
+void GenArena1::Allocate(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int32_t& segmentId)
 {
     if (blockSize == 0)
     {
@@ -151,44 +176,12 @@ std::pair<MemPtr, int32_t> GenArena1::Allocate(Thread& thread, uint64_t blockSiz
     }
     else
     {
-        MemPtr mem = Segments().back()->Allocate(blockSize);
-        if (mem.Value())
+        Segment* segment = Segments().back().get();
+        while (!segment->Allocate(thread, blockSize, memPtr, false))
         {
-            return std::make_pair(mem, Segments().back()->Id());
+            thread.WaitUntilGarbageCollected();
         }
-        else
-        {
-            if (RunningNativeCode())
-            {
-                thread.SetFunctionStack(GetFunctionStack());
-            }
-            thread.SetState(ThreadState::paused);
-#ifdef GC_LOGGING
-            LogMessage(">" + std::to_string(thread.Id()) + " (paused)");
-#endif
-            thread.GetMachine().GetGarbageCollector().RequestGarbageCollection(thread);
-#ifdef GC_LOGGING
-            LogMessage(">" + std::to_string(thread.Id()) + " (collection requested)");
-#endif
-            thread.GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(thread);
-#ifdef GC_LOGGING
-            LogMessage(">" + std::to_string(thread.Id()) + " (collection ended)");
-#endif
-            thread.SetState(ThreadState::running);
-#ifdef GC_LOGGING
-            LogMessage(">" + std::to_string(thread.Id()) + " (running)");
-#endif
-            thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
-            mem = Segments().back()->Allocate(blockSize);
-            if (mem.Value())
-            {
-                return std::make_pair(mem, Segments().back()->Id());
-            }
-            else
-            {
-                throw std::runtime_error("could not allocate " + std::to_string(blockSize) + " bytes memory from arena " + std::to_string(int(Id())));
-            }
-        }
+        segmentId = segment->Id();
     }
 }
 
@@ -196,7 +189,7 @@ GenArena2::GenArena2(Machine& machine_, uint64_t size_) : Arena(machine_, ArenaI
 {
 }
 
-std::pair<MemPtr, int32_t>  GenArena2::Allocate(uint64_t blockSize, bool allocateNewSegment)
+std::pair<MemPtr, int32_t> GenArena2::Allocate(uint64_t blockSize, bool allocateNewSegment)
 {
     if (blockSize > SegmentSize())
     {
@@ -208,8 +201,8 @@ std::pair<MemPtr, int32_t>  GenArena2::Allocate(uint64_t blockSize, bool allocat
             GetMachine().AddSegment(seg);
             Segments().push_back(std::move(segment));
         }
-        MemPtr mem = seg->Allocate(blockSize);
-        if (mem.Value())
+        MemPtr mem = MemPtr();
+        if (seg->Allocate(blockSize, mem))
         {
             return std::make_pair(mem, seg->Id());
         }
@@ -223,36 +216,31 @@ std::pair<MemPtr, int32_t>  GenArena2::Allocate(uint64_t blockSize, bool allocat
         MemPtr mem = MemPtr();
         if (!allocateNewSegment)
         {
-            mem = Segments().back()->Allocate(blockSize);
+            if (Segments().back()->Allocate(blockSize, mem))
+            {
+                return std::make_pair(mem, Segments().back()->Id());
+            }
         }
-        if (mem.Value())
+        GetMachine().GetGarbageCollector().RequestFullCollection();
+        Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), SegmentSize());
+        std::unique_ptr<Segment> segment(seg);
         {
-            return std::make_pair(mem, Segments().back()->Id());
+            std::lock_guard<std::mutex> lock(SegmentsMutex());
+            GetMachine().AddSegment(seg);
+            Segments().push_back(std::move(segment));
+        }
+        if (seg->Allocate(blockSize, mem))
+        {
+            return std::make_pair(mem, seg->Id());
         }
         else
         {
-            GetMachine().GetGarbageCollector().RequestFullCollection();
-            Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), SegmentSize());
-            std::unique_ptr<Segment> segment(seg);
-            {
-                std::lock_guard<std::mutex> lock(SegmentsMutex());
-                GetMachine().AddSegment(seg);
-                Segments().push_back(std::move(segment));
-            }
-            MemPtr mem = seg->Allocate(blockSize);
-            if (mem.Value())
-            {
-                return std::make_pair(mem, seg->Id());
-            }
-            else
-            {
-                throw std::runtime_error("could not allocate " + std::to_string(blockSize) + " bytes memory from arena " + std::to_string(int(Id())));
-            }
+            throw std::runtime_error("could not allocate " + std::to_string(blockSize) + " bytes memory from arena " + std::to_string(int(Id())));
         }
     }
 }
 
-std::pair<MemPtr, int32_t> GenArena2::Allocate(Thread& thread, uint64_t blockSize)
+void GenArena2::Allocate(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int32_t& segmentId)
 {
     if (blockSize > SegmentSize())
     {
@@ -263,71 +251,19 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(Thread& thread, uint64_t blockSiz
             GetMachine().AddSegment(seg);
             Segments().push_back(std::move(segment));
         }
-        MemPtr mem = seg->Allocate(blockSize);
-        if (mem.Value())
-        {
-            return std::make_pair(mem, seg->Id());
-        }
-        else
+        if (!seg->Allocate(thread, blockSize, memPtr, false))
         {
             throw std::runtime_error("could not allocate " + std::to_string(blockSize) + " bytes memory from arena " + std::to_string(int(Id())));
         }
     }
     else
     {
-        MemPtr mem = Segments().back()->Allocate(blockSize);
-        if (mem.Value())
+        Segment* segment = Segments().back().get();
+        while (!segment->Allocate(thread, blockSize, memPtr, true))
         {
-            return std::make_pair(mem, Segments().back()->Id());
+            thread.WaitUntilGarbageCollected();
         }
-        else
-        {
-            if (RunningNativeCode())
-            {
-                thread.SetFunctionStack(GetFunctionStack());
-            }
-            thread.SetState(ThreadState::paused);
-#ifdef GC_LOGGING
-            LogMessage(">" + std::to_string(thread.Id()) + " (paused)");
-#endif
-            GetMachine().GetGarbageCollector().RequestFullCollection(thread);
-#ifdef GC_LOGGING
-            LogMessage(">" + std::to_string(thread.Id()) + " (collection requested)");
-#endif
-            thread.GetMachine().GetGarbageCollector().WaitUntilGarbageCollected(thread);
-#ifdef GC_LOGGING
-            LogMessage(">" + std::to_string(thread.Id()) + " (collection ended)");
-#endif
-            thread.SetState(ThreadState::running);
-#ifdef GC_LOGGING
-            LogMessage(">" + std::to_string(thread.Id()) + " (running)");
-#endif
-            thread.GetMachine().GetGarbageCollector().WaitForIdle(thread);
-            mem = Segments().back()->Allocate(blockSize);
-            if (mem.Value())
-            {
-                return std::make_pair(mem, Segments().back()->Id());
-            }
-            else
-            {
-                Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), SegmentSize());
-                std::unique_ptr<Segment> segment(seg);
-                {
-                    std::lock_guard<std::mutex> lock(SegmentsMutex());
-                    GetMachine().AddSegment(seg);
-                    Segments().push_back(std::move(segment));
-                }
-                MemPtr mem = seg->Allocate(blockSize);
-                if (mem.Value())
-                {
-                    return std::make_pair(mem, seg->Id());
-                }
-                else
-                {
-                    throw std::runtime_error("could not allocate " + std::to_string(blockSize) + " bytes memory from arena " + std::to_string(int(Id())));
-                }
-            }
-        }
+        segmentId = segment->Id();
     }
 }
 

@@ -24,7 +24,7 @@ enum class GarbageCollectorState
     idle, requested, collecting, collected
 };
 
-extern MACHINE_API bool wantToCollectGarbage;
+extern MACHINE_API std::atomic_bool wantToCollectGarbage;
 
 class GarbageCollector
 {

@@ -1,0 +1,46 @@
+using System;
+using System.Threading;
+
+void foo()
+{
+    for (int i = 0; i < 100; ++i)
+    {
+        byte[] a = new byte[cast<int>(64) * 1024];
+    }
+}
+
+void thread(object i)
+{
+    Console.WriteLine("begin:" + i.ToString());
+    for (int i = 0; i < 1000; ++i)
+    {
+        foo();
+    }
+    Console.WriteLine("end:" + i.ToString());
+}
+
+void main(string[] args)
+{
+    try
+    {    
+        int n = 1;
+        if (args.Length == 1)
+        {
+            n = int.Parse(args[0]);
+        }
+        else if (args.Length != 0)
+        {
+            Console.WriteLine("usage: threadgc <n>");
+        }
+        Console.WriteLine("begin:main (" + n.ToString() + ")");
+        for (int i = 0; i < n; ++i)
+        {
+            Thread.StartFunction(thread, i);
+        }
+        Console.WriteLine("end:main");
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine("ex.ToString()");
+    }
+}

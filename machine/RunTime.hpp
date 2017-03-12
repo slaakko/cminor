@@ -191,7 +191,7 @@ extern "C" MACHINE_API void RtMemFun2ClassDelegate(uint64_t classObjectRererence
 
 extern "C" MACHINE_API void RtRequestGc();
 
-extern "C" MACHINE_API void RtWaitGc();
+extern "C" MACHINE_API void RtPollGc();
 
 } } // namespace cminor::machine
 

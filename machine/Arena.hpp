@@ -30,7 +30,8 @@ public:
     ~Segment();
     int32_t Id() const { return id; }
     ArenaId GetArenaId() const { return arenaId; }
-    MemPtr Allocate(uint64_t blockSize);
+    bool Allocate(uint64_t blockSize, MemPtr& mem);
+    bool Allocate(Thread& thread, uint64_t blockSize, MemPtr& mem, bool requestFullCollection);
     void Clear();
 private:
     int32_t id;
@@ -52,7 +53,7 @@ public:
     ArenaId Id() const { return id; }
     std::pair<MemPtr, int32_t> Allocate(uint64_t blockSize);
     virtual std::pair<MemPtr, int32_t> Allocate(uint64_t blockSize, bool allocateNewSegment) = 0;
-    virtual std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize) = 0;
+    virtual void Allocate(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int32_t& segmentId) = 0;
     void Clear();
     const std::vector<std::unique_ptr<Segment>>& Segments() const { return segments; }
     std::vector<std::unique_ptr<Segment>>& Segments() { return segments; }
@@ -76,7 +77,7 @@ class GenArena1 : public Arena
 public:
     GenArena1(Machine& machine_, uint64_t size_);
     std::pair<MemPtr, int32_t> Allocate(uint64_t blockSize, bool allocateNewSegment) override;
-    std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize) override;
+    void Allocate(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int32_t& segmentId) override;
 };
 
 class GenArena2 : public Arena
@@ -84,7 +85,7 @@ class GenArena2 : public Arena
 public:
     GenArena2(Machine& machine_, uint64_t size_);
     std::pair<MemPtr, int32_t> Allocate(uint64_t blockSize, bool allocateNewSegment) override;
-    std::pair<MemPtr, int32_t> Allocate(Thread& thread, uint64_t blockSize) override;
+    void Allocate(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int32_t& segmentId) override;
 };
 
 } } // namespace cminor::machine

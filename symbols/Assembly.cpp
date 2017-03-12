@@ -1553,19 +1553,6 @@ void SetExportedSharedLibraryVariables(Assembly* assembly)
     {
         throw std::runtime_error("resolving address of '__constant_pool' variable of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " + ex.what());
     }
-    std::string wantToCollectGarbageVarName = "__want_to_collect_garbage";
-    try
-    {
-        void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), wantToCollectGarbageVarName);
-        bool* wantToCollectGarbageVarAddress = static_cast<bool*>(&cminor::machine::wantToCollectGarbage);
-        bool** wantToCollectGarbageVariablePtr = static_cast<bool**>(symbolAddress);
-        *wantToCollectGarbageVariablePtr = wantToCollectGarbageVarAddress;
-    }
-    catch (const std::runtime_error& ex)
-    {
-        throw std::runtime_error("resolving address of '__want_to_collect_garbage' variable of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " +
-            ex.what());
-    }
 }
 
 void ResolveMainEntryPointAddress(Assembly* assembly)
