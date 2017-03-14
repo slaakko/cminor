@@ -1,5 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
+
+void freeFun()
+{
+    Console.WriteLine("free fun");
+}
+
+void freeFunWithArg(object arg)
+{
+    Console.WriteLine("free fun with argument: " + arg.ToString());
+}
 
 class Foo
 {
@@ -7,13 +18,21 @@ class Foo
     {
         this.x = x;
     }
-    public void RunFunInThread()
+    public void Method()
     {
-        Thread.StartMethod(Fun, x);
+        Console.WriteLine("method");
     }
-    public void Fun(object y)
+    public void MethodWithArg(object y)
     {
-        Console.WriteLine("fun " + y.ToString());
+        Console.WriteLine("method " + y.ToString());
+    }
+    public Thread RunMethodInThread()
+    {
+        return Thread.StartMethod(Method);
+    }
+    public Thread RunMethodWithArgInThread()
+    {
+        return Thread.StartMethod(MethodWithArg, x);
     }
     private int x;
 }
@@ -22,8 +41,20 @@ void main()
 {
     try
     {
-        Foo foo = new Foo(1);
-        foo.RunFunInThread();
+        List<Thread> threads = new List<Thread>();
+        Thread thread1 = Thread.StartFunction(freeFun);
+        threads.Add(thread1);
+        Thread thread2 = Thread.StartFunction(freeFunWithArg, 1);
+        threads.Add(thread2);
+        Foo foo = new Foo(2);
+        Thread thread3 = foo.RunMethodInThread();
+        threads.Add(thread3);
+        Thread thread4 = foo.RunMethodWithArgInThread();
+        threads.Add(thread4);
+        foreach (Thread thread in threads)
+        {
+            thread.Join();
+        }
     }
     catch (Exception ex)
     {

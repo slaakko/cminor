@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 void foo()
@@ -9,7 +10,7 @@ void foo()
     }
 }
 
-void thread(object i)
+void threadFun(object i)
 {
     Console.WriteLine("begin:" + i.ToString());
     for (int i = 0; i < 10000; ++i)
@@ -37,9 +38,14 @@ void main(string[] args)
             Console.WriteLine("usage: threadgc <n>");
         }
         Console.WriteLine("begin:main (" + n.ToString() + ")");
+        List<Thread> threads = new List<Thread>();
         for (int i = 0; i < n; ++i)
         {
-            Thread.StartFunction(thread, i);
+            threads.Add(Thread.StartFunction(threadFun, i));
+        }
+        foreach (Thread thread in threads)
+        {
+            thread.Join();
         }
         Console.WriteLine("end:main");
     }

@@ -39,7 +39,14 @@ struct IntPairHash
 
 enum class ThreadState
 {
-    paused, running, exited
+    paused, running, waiting, exited
+};
+
+struct MACHINE_API ThreadExitSetter
+{
+    ThreadExitSetter(Thread& thread_);
+    ~ThreadExitSetter();
+    Thread& thread;
 };
 
 class DebugContext
@@ -82,6 +89,7 @@ public:
     void WaitPaused();
     void WaitRunning();
     void SetState(ThreadState state_);
+    ThreadState GetState() const { return state; }
     void BeginTry();
     void EndTry();
     void HandleException(ObjectReference exception_);
@@ -106,6 +114,7 @@ public:
     FunctionStackEntry* GetFunctionStack() const { return functionStack; }
     void SetExceptionPtr(std::exception_ptr exceptionPtr_) { exceptionPtr = exceptionPtr_; }
     MutexOwner& Owner() { return owner; }
+    Mutex& Mtx() { return mtx; }
 private:
     Stack stack;
     int32_t id;

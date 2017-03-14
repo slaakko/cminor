@@ -155,4 +155,8 @@ StackOverflowException::StackOverflowException() : SystemException("stack overfl
 {
 }
 
+ThreadingException::ThreadingException(const std::string& message_) : SystemException(message_)
+{
+}
+
 } } // namespace cminor::machine

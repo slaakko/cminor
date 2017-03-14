@@ -15,7 +15,7 @@ MACHINE_API void SetTrace();
 
 class Function;
 
-struct FunctionStackEntry
+struct MACHINE_API FunctionStackEntry
 {
     FunctionStackEntry* next;   // 0: pointer to caller's function stack entry
     Function* function;         // 1: pointer to IL function
@@ -24,7 +24,7 @@ struct FunctionStackEntry
     uint64_t** gcEntry;         // 4: pointer to array of GC root pointers (array contains numGcRoots GC root pointers)
 };
 
-FunctionStackEntry* GetFunctionStack();
+extern "C" MACHINE_API FunctionStackEntry* RtGetFunctionStack();
 extern "C" MACHINE_API void RtThrowException(uint64_t exceptionObjectReference);
 extern "C" MACHINE_API bool RtHandleException(void* classDataPtr);
 extern "C" MACHINE_API uint64_t RtGetException();

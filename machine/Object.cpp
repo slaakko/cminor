@@ -463,13 +463,13 @@ void ManagedMemoryPool::DestroyAllocation(AllocationHandle handle)
         {
             --stringContentCount;
         }
+        //deletedAllocations[handle] = it->second.release();
     }
     auto n = allocations.erase(handle);
     if (n != 1)
     {
         throw SystemException("could not erase: allocation with handle " + std::to_string(handle.Value()) + " not found");
     }
-
 }
 
 Object& ManagedMemoryPool::GetObject(ObjectReference reference)

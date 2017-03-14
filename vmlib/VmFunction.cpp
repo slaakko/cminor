@@ -9,6 +9,7 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Type.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/machine/RunTime.hpp>
 #include <boost/filesystem.hpp>
 #include <cctype>
 
@@ -1143,6 +1144,73 @@ void VmSystemThreadingStartThreadWithParameterizedThreadStartMethod::Execute(Fra
     }
 }
 
+class VmSystemThreadingJoinThread : public VmFunction
+{
+public:
+    VmSystemThreadingJoinThread(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingJoinThread::VmSystemThreadingJoinThread(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Threading.JoinThread"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+struct WaitingSetter
+{
+    WaitingSetter(Thread& thread_) : thread(thread_)
+    {
+        prevState = thread.GetState();
+        if (RunningNativeCode())
+        {
+            thread.SetFunctionStack(RtGetFunctionStack());
+        }
+        thread.SetState(ThreadState::waiting);
+    }
+    ~WaitingSetter()
+    {
+        thread.SetState(prevState);
+    }
+    Thread& thread;
+    ThreadState prevState;
+};
+
+void VmSystemThreadingJoinThread::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue threadValue = frame.Local(0).GetValue();
+        ObjectReference threadRefefence(threadValue.Value());
+        if (threadRefefence.IsNull())
+        {
+            throw new NullReferenceException("tried to join null thread");
+        }
+        IntegralValue threadIdValue = GetManagedMemoryPool().GetField(threadRefefence, 1);
+        Assert(threadIdValue.GetType() == ValueType::intType, "int expected");
+        int threadId = threadIdValue.AsInt();
+        WaitingSetter waiting(frame.GetThread());
+        GetMachine().JoinThread(threadId);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const ThreadingException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowThreadingException(ex, frame);
+    }
+}
+
 class VmFunctionPool
 {
 public:
@@ -1202,6 +1270,7 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingStartThreadWithThreadStartMethod(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingStartThreadWithParameterizedThreadStartFunction(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingStartThreadWithParameterizedThreadStartMethod(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingJoinThread(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool)

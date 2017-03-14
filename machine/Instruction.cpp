@@ -3640,4 +3640,9 @@ MACHINE_API void ThrowStackOverflowException(const StackOverflowException& ex, F
     ThrowException(ex.Message(), frame, U"System.StackOverflowException");
 }
 
+MACHINE_API void ThrowThreadingException(const ThreadingException& ex, Frame& frame)
+{
+    ThrowException(ex.Message(), frame, U"System.Threading.ThreadingException");
+}
+
 } } // namespace cminor::machine

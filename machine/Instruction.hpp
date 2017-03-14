@@ -30,6 +30,7 @@ MACHINE_API void ThrowArgumentOutOfRangeException(const ArgumentOutOfRangeExcept
 MACHINE_API void ThrowInvalidCastException(const InvalidCastException& ex, Frame& frame);
 MACHINE_API void ThrowFileSystemException(const FileSystemError& ex, Frame& frame);
 MACHINE_API void ThrowStackOverflowException(const StackOverflowException& ex, Frame& frame);
+MACHINE_API void ThrowThreadingException(const ThreadingException& ex, Frame& frame);
 
 MACHINE_API Machine& GetMachine();
 void SetMachine(Machine* machine_);

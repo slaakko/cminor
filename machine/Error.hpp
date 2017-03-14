@@ -120,6 +120,12 @@ public:
     StackOverflowException();
 };
 
+class MACHINE_API ThreadingException : public SystemException
+{
+public:
+    ThreadingException(const std::string& message_);
+};
+
 } } // namespace cminor::machine
 
 #endif // CMINOR_MACHINE_ERROR_INCLUDED

@@ -482,7 +482,10 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                 MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
                 GetCurrentThread().SetState(ThreadState::running);
                 auto startRun = std::chrono::system_clock::now();
-                main(args.Value());
+                {
+                    ThreadExitSetter exitSetter(GetMachine().MainThread());
+                    main(args.Value());
+                }
                 auto endRun = std::chrono::system_clock::now();
                 auto runDuration = endRun - startRun;
                 int64_t runMs = std::chrono::duration_cast<std::chrono::milliseconds>(runDuration).count();
@@ -500,7 +503,10 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                     MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
                     GetCurrentThread().SetState(ThreadState::running);
                     auto startRun = std::chrono::system_clock::now();
-                    returnValue = main(args.Value());
+                    {
+                        ThreadExitSetter exitSetter(GetMachine().MainThread());
+                        returnValue = main(args.Value());
+                    }
                     auto endRun = std::chrono::system_clock::now();
                     auto runDuration = endRun - startRun;
                     int64_t runMs = std::chrono::duration_cast<std::chrono::milliseconds>(runDuration).count();
@@ -528,7 +534,10 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                 MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
                 GetCurrentThread().SetState(ThreadState::running);
                 auto startRun = std::chrono::system_clock::now();
-                main();
+                {
+                    ThreadExitSetter exitSetter(GetMachine().MainThread());
+                    main();
+                }
                 auto endRun = std::chrono::system_clock::now();
                 auto runDuration = endRun - startRun;
                 int64_t runMs = std::chrono::duration_cast<std::chrono::milliseconds>(runDuration).count();
@@ -546,7 +555,10 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                     MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
                     GetCurrentThread().SetState(ThreadState::running);
                     auto startRun = std::chrono::system_clock::now();
-                    returnValue = main();
+                    {
+                        ThreadExitSetter exitSetter(GetMachine().MainThread());
+                        returnValue = main();
+                    }
                     auto endRun = std::chrono::system_clock::now();
                     auto runDuration = endRun - startRun;
                     int64_t runMs = std::chrono::duration_cast<std::chrono::milliseconds>(runDuration).count();

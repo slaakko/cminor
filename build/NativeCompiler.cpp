@@ -107,7 +107,7 @@ enum class LlvmBinPred : uint8_t
 
 enum class LlvmConv : uint8_t
 {
-    none, zext, sext, trunc, bitcast, fptoui, fptosi, uitofp, sitofp, fpext, fptrunc
+    none, zext, sext, trunc, bitcast, fptoui, fptosi, uitofp, sitofp, fpext, fptrunc, ptr2int, int2ptr
 };
 
 enum class LlvmPadKind : uint8_t
@@ -4160,6 +4160,10 @@ LlvmConv NativeCompilerImpl::GetConversionToULongFrom(ValueType type) const
         {
             return LlvmConv::fptoui;
         }
+        case ValueType::functionPtr:
+        {
+            return LlvmConv::ptr2int;
+        }
         default: 
         {
             throw std::runtime_error("NativeCompiler: invalid type for GetConversionToUlongFrom");
@@ -4217,6 +4221,10 @@ llvm::Value* NativeCompilerImpl::CreateConversionToUlong(llvm::Value* from, Valu
         {
             return builder.CreateFPTrunc(from, ulongType);
         }
+        case LlvmConv::ptr2int:
+        {
+            return builder.CreatePtrToInt(from, ulongType);
+        }
         default:
         {
             throw std::runtime_error("NativeCompiler: invalid llvm conversion op");
@@ -4243,6 +4251,10 @@ LlvmConv NativeCompilerImpl::GetConversionFromULong(ValueType type) const
         case ValueType::floatType: case ValueType::doubleType:
         {
             return LlvmConv::uitofp;
+        }
+        case ValueType::functionPtr:
+        {
+            return LlvmConv::int2ptr;
         }
         default:
         {
@@ -4299,6 +4311,10 @@ llvm::Value* NativeCompilerImpl::CreateConversionFromULong(llvm::Value* from, Va
         case LlvmConv::fptrunc:
         {
             return builder.CreateFPTrunc(from, GetType(toType));
+        }
+        case LlvmConv::int2ptr:
+        {
+            return builder.CreateIntToPtr(from, GetType(toType));
         }
         default:
         {

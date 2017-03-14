@@ -315,7 +315,6 @@ void GarbageCollector::MarkLiveAllocations()
         if (RunningNativeCode())
         {
             FunctionStackEntry* functionStackEntry = thread->GetFunctionStack();
-            Assert(functionStackEntry, "native GC needs a function stack set to thread");
             while (functionStackEntry)
             {
                 uint64_t** gcEntry = functionStackEntry->gcEntry;

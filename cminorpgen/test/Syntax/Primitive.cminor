@@ -1043,16 +1043,16 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Syntax.ElementGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
             if (grammar0 == null)
             {
-                grammar0 = new Syntax.ElementGrammar(parsingDomain);
+                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            Grammar grammar1 = parsingDomain.GetGrammar("Syntax.ElementGrammar");
             if (grammar1 == null)
             {
-                grammar1 = new System.Text.Parsing.stdlib(parsingDomain);
+                grammar1 = new Syntax.ElementGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
         }

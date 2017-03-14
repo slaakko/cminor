@@ -297,10 +297,10 @@ namespace Code
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.TemplateGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.BasicTypeGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new Code.TemplateGrammar(parsingDomain);
+                grammar0 = new Code.BasicTypeGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
             Grammar grammar1 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
@@ -308,4 +308,4 @@ namespace Code
             {
                 grammar1 = new Code.IdentifierGrammar(parsingDomain);
             }
-           
+         

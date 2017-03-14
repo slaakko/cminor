@@ -31,7 +31,7 @@ MACHINE_API void SetTrace()
     __thread uint64_t currentException = 0;
 #endif
 
-FunctionStackEntry* GetFunctionStack()
+MACHINE_API FunctionStackEntry* RtGetFunctionStack()
 {
     return functionStack;
 }
@@ -122,6 +122,11 @@ void RtThrowFileSystemException(const FileSystemError& ex)
 void RtThrowStackOverflowException(const StackOverflowException& ex)
 {
     RtThrowCminorException(ex.Message(), U"System.StackOverflowException");
+}
+
+void RtThrowThreadingException(const ThreadingException& ex)
+{
+    RtThrowCminorException(ex.Message(), U"System.Threading.ThreadingException");
 }
 
 extern "C" MACHINE_API void RtThrowException(uint64_t exceptionObjectReference)
@@ -1174,6 +1179,10 @@ extern "C" MACHINE_API void RtVmCall(void* function, void* constantPool, uint32_
     catch (const FileSystemError& ex)
     {
         RtThrowFileSystemException(ex);
+    }
+    catch (const ThreadingException& ex)
+    {
+        RtThrowThreadingException(ex);
     }
     catch (const SystemException& ex)
     {

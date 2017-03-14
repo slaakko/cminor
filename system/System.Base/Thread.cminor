@@ -2,6 +2,13 @@ using System;
 
 namespace System.Threading
 {
+    public class ThreadingException : SystemException
+    {
+        public ThreadingException(string message) : base(message)
+        {
+        }
+    }
+
     public delegate void ThreadStartFunction();
     public delegate void ParameterizedThreadStartFunction(object param);
 
@@ -42,6 +49,10 @@ namespace System.Threading
             }
             return System.Threading.StartThread(method, param);
         }
+        public void Join()
+        {
+            System.Threading.JoinThread(this);
+        }
         public int Id
         {
             get { return id; }
@@ -63,4 +74,7 @@ namespace System.Threading
 
     [VmFunctionName=Vm.System.Threading.StartThread.ParameterizedThreadStartMethod]
     public extern Thread StartThread(ParameterizedThreadStartMethod method, object param);
+
+    [VmFunctionName=Vm.System.Threading.JoinThread]
+    public extern void JoinThread(Thread thread);
 }

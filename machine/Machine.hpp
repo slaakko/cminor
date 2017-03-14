@@ -29,6 +29,7 @@ public:
     void Start(bool startWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void RunMain(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     int StartThread(Function* fun, RunThreadKind runThreadKind, ObjectReference receiver, ObjectReference arg);
+    void JoinThread(int threadId);
     void AddInst(Instruction* inst);
     std::unique_ptr<Instruction> CreateInst(const std::string& instName) const;
     std::unique_ptr<Instruction> CreateInst(const std::string& instGroupName, const std::string& typeName) const;

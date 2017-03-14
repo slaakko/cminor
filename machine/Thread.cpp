@@ -7,6 +7,7 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/OsInterface.hpp>
+#include <cminor/machine/RunTime.hpp>
 #include <cminor/machine/Log.hpp>
 #include <chrono>
 
@@ -46,6 +47,16 @@ void DebugContext::SetBreakpointAt(int32_t pc)
 void DebugContext::RemoveBreakpointAt(int32_t pc)
 {
     breakpoints.erase(pc);
+}
+
+ThreadExitSetter::ThreadExitSetter(Thread& thread_) : thread(thread_) 
+{
+}
+
+ThreadExitSetter::~ThreadExitSetter() 
+{ 
+    thread.SetFunctionStack(nullptr);
+    thread.SetState(ThreadState::exited);
 }
 
 Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
@@ -109,7 +120,7 @@ void Thread::WaitUntilGarbageCollected()
 #ifdef GC_LOGGING
         LogMessage(">" + std::to_string(id) + " (setting native function stack)");
 #endif
-        SetFunctionStack(GetFunctionStack());
+        SetFunctionStack(RtGetFunctionStack());
 #ifdef GC_LOGGING
         LogMessage(">" + std::to_string(id) + " (native function stack set)");
 #endif
@@ -152,10 +163,20 @@ void Thread::SetState(ThreadState state_)
             runningCond.notify_all();
             break;
         }
+        case ThreadState::waiting:
+        {
+            paused = false;
+            running = false;
+            pausedCond.notify_all();
+            runningCond.notify_all();
+            break;
+        }
         case ThreadState::exited:
         {
             paused = false;
             running = false;
+            pausedCond.notify_all();
+            runningCond.notify_all();
             break;
         }
     }
@@ -165,7 +186,7 @@ void Thread::WaitPaused()
 {
     OwnerGuard ownerGuard(mtx, gc);
     std::unique_lock<std::mutex> lock(mtx.Mtx());
-    while (state != ThreadState::exited && !paused)
+    while (state != ThreadState::exited && state != ThreadState::waiting && !paused)
     {
         pausedCond.wait(lock);
     }
@@ -175,23 +196,16 @@ void Thread::WaitRunning()
 {
     OwnerGuard ownerGuard(mtx, gc);
     std::unique_lock<std::mutex> lock(mtx.Mtx());
-    while (state != ThreadState::exited && !running)
+    while (state != ThreadState::exited && state != ThreadState::waiting && !running)
     {
         runningCond.wait(lock);
     }
 }
 
-struct ExitSetter
-{
-    ExitSetter(Thread& thread_) : thread(thread_) {}
-    ~ExitSetter() { thread.SetState(ThreadState::exited);  }
-    Thread& thread;
-};
-
 void Thread::RunToEnd()
 {
     SetState(ThreadState::running);
-    ExitSetter exitSetter(*this);
+    ThreadExitSetter exitSetter(*this);
     Assert(!stack.IsEmpty(), "stack is empty");
     while (true)
     {
@@ -249,7 +263,7 @@ void Thread::RunUser()
 void Thread::RunDebug()
 {
     SetState(ThreadState::running);
-    ExitSetter exitSetter(*this);
+    ThreadExitSetter exitSetter(*this);
     Assert(!stack.IsEmpty(), "stack is empty");
     bool first = true;
     while (true)

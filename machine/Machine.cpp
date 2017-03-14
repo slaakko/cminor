@@ -628,18 +628,87 @@ void Machine::RunMain(bool runWithArgs, const std::vector<utf32_string>& program
     MainThread().RunMain(runWithArgs, programArguments, argsArrayObjectType);
     for (const std::unique_ptr<std::thread>& userThread : userThreads)
     {
-        userThread->join();
+        if (userThread->joinable())
+        {
+            userThread->join();
+        }
     }
 }
 
-void RunUserThread(Thread* thread)
+void RunUserThread(Thread* thread, Function* fun, RunThreadKind runThreadKind)
 {
     try
     {
         uint64_t currentThreadHandle = GetCurrentThreadHandle();
         thread->SetThreadHandle(currentThreadHandle);
         SetCurrentThread(thread);
-        thread->RunUser();
+        if (RunningNativeCode())
+        {
+            void* functionAddress = fun->Address();
+            if (!functionAddress)
+            {
+                throw std::runtime_error("function address not set");
+            }
+            switch (runThreadKind)
+            {
+                case RunThreadKind::function:
+                {
+                    typedef void(*ThreadFunctionType)(void);
+                    ThreadFunctionType threadFun = static_cast<ThreadFunctionType>(functionAddress);
+                    thread->SetState(ThreadState::running);
+                    ThreadExitSetter exitSetter(*thread);
+                    threadFun();
+                    break;
+                }
+                case RunThreadKind::method:
+                {
+                    IntegralValue receiverValue = thread->OpStack().Pop();
+                    Assert(receiverValue.GetType() == ValueType::objectReference, "object reference expected");
+                    ObjectReference receiver(receiverValue.Value());
+                    typedef void(*ThreadMethodType)(uint64_t);
+                    ThreadMethodType threadMethod = static_cast<ThreadMethodType>(functionAddress);
+                    thread->SetState(ThreadState::running);
+                    ThreadExitSetter exitSetter(*thread);
+                    threadMethod(receiver.AsULong());
+                    break;
+                }
+                case RunThreadKind::functionWithParam:
+                {
+                    IntegralValue argValue = thread->OpStack().Pop();
+                    Assert(argValue.GetType() == ValueType::objectReference, "object reference expected");
+                    ObjectReference arg(argValue.Value());
+                    typedef void(*ThreadFunctionType)(uint64_t);
+                    ThreadFunctionType threadFun = static_cast<ThreadFunctionType>(functionAddress);
+                    thread->SetState(ThreadState::running);
+                    ThreadExitSetter exitSetter(*thread);
+                    threadFun(arg.AsULong());
+                    break;
+                }
+                case RunThreadKind::methodWithParam:
+                {
+                    IntegralValue argValue = thread->OpStack().Pop();
+                    Assert(argValue.GetType() == ValueType::objectReference, "object reference expected");
+                    ObjectReference arg(argValue.Value());
+                    IntegralValue receiverValue = thread->OpStack().Pop();
+                    Assert(receiverValue.GetType() == ValueType::objectReference, "object reference expected");
+                    ObjectReference receiver(receiverValue.Value());
+                    typedef void(*ThreadMethodType)(uint64_t, uint64_t);
+                    ThreadMethodType threadMethod = static_cast<ThreadMethodType>(functionAddress);
+                    thread->SetState(ThreadState::running);
+                    ThreadExitSetter exitSetter(*thread);
+                    threadMethod(receiver.AsULong(), arg.AsULong());
+                    break;
+                }
+                default:
+                {
+                    throw std::runtime_error("invalid run thread kind value");
+                }
+            }
+        }
+        else
+        {
+            thread->RunUser();
+        }
     }
     catch (const Exception& ex)
     {
@@ -662,7 +731,7 @@ int Machine::StartThread(Function* fun, RunThreadKind runThreadKind, ObjectRefer
 {
     if (!fun)
     {
-        throw std::runtime_error("machine.runthread: function not set");
+        throw std::runtime_error("machine.startthread: function not set");
     }
     LockGuard lock(threadMutex, owner);
     Thread* thread = new Thread(int32_t(threads.size()), *this, *fun);
@@ -691,8 +760,31 @@ int Machine::StartThread(Function* fun, RunThreadKind runThreadKind, ObjectRefer
     }
     thread->SetNativeId(int32_t(userThreads.size()));
     threads.push_back(std::unique_ptr<Thread>(thread));
-    userThreads.push_back(std::unique_ptr<std::thread>(new std::thread(RunUserThread, thread)));
+    userThreads.push_back(std::unique_ptr<std::thread>(new std::thread(RunUserThread, thread, fun, runThreadKind)));
     return thread->Id();
+}
+
+void Machine::JoinThread(int threadId)
+{
+    if (threadId < 0 || threadId >= int(threads.size()))
+    {
+        throw std::runtime_error("invalid thread id " + std::to_string(threadId));
+    }
+    Thread* thread = threads[threadId].get();
+    int32_t nativeThreadId = thread->NativeId();
+    if (nativeThreadId < 0 || nativeThreadId >= int(userThreads.size()))
+    {
+        throw std::runtime_error("invalid native thread id " + std::to_string(nativeThreadId));
+    }
+    const std::unique_ptr<std::thread>& userThread = userThreads[nativeThreadId];
+    if (userThread->joinable())
+    {
+        userThread->join();
+    }
+    else
+    {
+        throw ThreadingException("thread not joinable");
+    }
 }
 
 void Machine::AddInst(Instruction* inst)
