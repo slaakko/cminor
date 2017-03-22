@@ -36,7 +36,7 @@ public:
     std::string ValueFieldName() const { return "from" + name; }
     std::string VariableName() const { return (!name.empty() ? std::string(1, std::tolower(name[0])) + name.substr(1) : name) + "NonterminalParser"; }
     bool Specialized() const;
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
     virtual bool IsNonterminalParser() const { return true; }
 private:

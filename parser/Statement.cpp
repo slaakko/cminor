@@ -48,8 +48,10 @@ StatementNode* StatementGrammar::Parse(const char* start, const char* end, int f
         xmlLog->WriteBeginRule("parse");
     }
     cminor::parsing::ObjectStack stack;
+    std::unique_ptr<cminor::parsing::ParsingData> parsingData(new cminor::parsing::ParsingData(GetParsingDomain()->GetNumRules()));
+    scanner.SetParsingData(parsingData.get());
     stack.push(std::unique_ptr<cminor::parsing::Object>(new ValueObject<ParsingContext*>(ctx)));
-    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack);
+    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack, parsingData.get());
     cminor::parsing::Span stop = scanner.GetSpan();
     if (Log())
     {
@@ -75,28 +77,28 @@ StatementNode* StatementGrammar::Parse(const char* start, const char* end, int f
 class StatementGrammar::StatementRule : public cminor::parsing::Rule
 {
 public:
-    StatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    StatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -161,212 +163,248 @@ public:
         lockStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreLockStatement));
         lockStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostLockStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromLabeledStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromLabeledStatement;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromControlStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromControlStatement;
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromIncrementStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromIncrementStatement;
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromDecrementStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromDecrementStatement;
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromExpressionStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromExpressionStatement;
     }
-    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromAssignmentStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromAssignmentStatement;
     }
-    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromConstructionStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromConstructionStatement;
     }
-    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromEmptyStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromEmptyStatement;
     }
-    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromThrowStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromThrowStatement;
     }
-    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromTryStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromTryStatement;
     }
-    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromUsingStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromUsingStatement;
     }
-    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromLockStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromLockStatement;
     }
-    void PreLabeledStatement(cminor::parsing::ObjectStack& stack)
+    void PreLabeledStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostLabeledStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostLabeledStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromLabeledStatement_value = std::move(stack.top());
-            context.fromLabeledStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromLabeledStatement_value.get());
+            context->fromLabeledStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromLabeledStatement_value.get());
             stack.pop();
         }
     }
-    void PreControlStatement(cminor::parsing::ObjectStack& stack)
+    void PreControlStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostControlStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostControlStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromControlStatement_value = std::move(stack.top());
-            context.fromControlStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromControlStatement_value.get());
+            context->fromControlStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromControlStatement_value.get());
             stack.pop();
         }
     }
-    void PreIncrementStatement(cminor::parsing::ObjectStack& stack)
+    void PreIncrementStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostIncrementStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostIncrementStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromIncrementStatement_value = std::move(stack.top());
-            context.fromIncrementStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromIncrementStatement_value.get());
+            context->fromIncrementStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromIncrementStatement_value.get());
             stack.pop();
         }
     }
-    void PreDecrementStatement(cminor::parsing::ObjectStack& stack)
+    void PreDecrementStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostDecrementStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostDecrementStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromDecrementStatement_value = std::move(stack.top());
-            context.fromDecrementStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromDecrementStatement_value.get());
+            context->fromDecrementStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromDecrementStatement_value.get());
             stack.pop();
         }
     }
-    void PreExpressionStatement(cminor::parsing::ObjectStack& stack)
+    void PreExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpressionStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpressionStatement_value = std::move(stack.top());
-            context.fromExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromExpressionStatement_value.get());
+            context->fromExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromExpressionStatement_value.get());
             stack.pop();
         }
     }
-    void PreAssignmentStatement(cminor::parsing::ObjectStack& stack)
+    void PreAssignmentStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostAssignmentStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostAssignmentStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromAssignmentStatement_value = std::move(stack.top());
-            context.fromAssignmentStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromAssignmentStatement_value.get());
+            context->fromAssignmentStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromAssignmentStatement_value.get());
             stack.pop();
         }
     }
-    void PreConstructionStatement(cminor::parsing::ObjectStack& stack)
+    void PreConstructionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostConstructionStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostConstructionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromConstructionStatement_value = std::move(stack.top());
-            context.fromConstructionStatement = *static_cast<cminor::parsing::ValueObject<ConstructionStatementNode*>*>(fromConstructionStatement_value.get());
+            context->fromConstructionStatement = *static_cast<cminor::parsing::ValueObject<ConstructionStatementNode*>*>(fromConstructionStatement_value.get());
             stack.pop();
         }
     }
-    void PreEmptyStatement(cminor::parsing::ObjectStack& stack)
+    void PreEmptyStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostEmptyStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostEmptyStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromEmptyStatement_value = std::move(stack.top());
-            context.fromEmptyStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromEmptyStatement_value.get());
+            context->fromEmptyStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromEmptyStatement_value.get());
             stack.pop();
         }
     }
-    void PreThrowStatement(cminor::parsing::ObjectStack& stack)
+    void PreThrowStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostThrowStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostThrowStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromThrowStatement_value = std::move(stack.top());
-            context.fromThrowStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromThrowStatement_value.get());
+            context->fromThrowStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromThrowStatement_value.get());
             stack.pop();
         }
     }
-    void PreTryStatement(cminor::parsing::ObjectStack& stack)
+    void PreTryStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostTryStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostTryStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromTryStatement_value = std::move(stack.top());
-            context.fromTryStatement = *static_cast<cminor::parsing::ValueObject<TryStatementNode*>*>(fromTryStatement_value.get());
+            context->fromTryStatement = *static_cast<cminor::parsing::ValueObject<TryStatementNode*>*>(fromTryStatement_value.get());
             stack.pop();
         }
     }
-    void PreUsingStatement(cminor::parsing::ObjectStack& stack)
+    void PreUsingStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostUsingStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostUsingStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromUsingStatement_value = std::move(stack.top());
-            context.fromUsingStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromUsingStatement_value.get());
+            context->fromUsingStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromUsingStatement_value.get());
             stack.pop();
         }
     }
-    void PreLockStatement(cminor::parsing::ObjectStack& stack)
+    void PreLockStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostLockStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostLockStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromLockStatement_value = std::move(stack.top());
-            context.fromLockStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromLockStatement_value.get());
+            context->fromLockStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromLockStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromLabeledStatement(), fromControlStatement(), fromIncrementStatement(), fromDecrementStatement(), fromExpressionStatement(), fromAssignmentStatement(), fromConstructionStatement(), fromEmptyStatement(), fromThrowStatement(), fromTryStatement(), fromUsingStatement(), fromLockStatement() {}
         ParsingContext* ctx;
@@ -384,31 +422,29 @@ private:
         StatementNode* fromUsingStatement;
         StatementNode* fromLockStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::LabelIdRule : public cminor::parsing::Rule
 {
 public:
-    LabelIdRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    LabelIdRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("std::string");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -417,52 +453,52 @@ public:
         cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LabelIdRule>(this, &LabelIdRule::Postidentifier));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromidentifier;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromidentifier;
     }
-    void Postidentifier(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postidentifier(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromidentifier_value = std::move(stack.top());
-            context.fromidentifier = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromidentifier_value.get());
+            context->fromidentifier = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromidentifier_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value(), fromidentifier() {}
         std::string value;
         std::string fromidentifier;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::LabelRule : public cminor::parsing::Rule
 {
 public:
-    LabelRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    LabelRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("LabelNode*");
         AddLocalVariable(AttrOrVariable("std::string", "label"));
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<LabelNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<LabelNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -473,60 +509,61 @@ public:
         cminor::parsing::NonterminalParser* labelIdNonterminalParser = GetNonterminal("LabelId");
         labelIdNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LabelRule>(this, &LabelRule::PostLabelId));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new LabelNode(span, context.label);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new LabelNode(span, context->label);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.label = context.fromLabelId;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->label = context->fromLabelId;
     }
-    void PostLabelId(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostLabelId(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromLabelId_value = std::move(stack.top());
-            context.fromLabelId = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromLabelId_value.get());
+            context->fromLabelId = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromLabelId_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value(), label(), fromLabelId() {}
         LabelNode* value;
         std::string label;
         std::string fromLabelId;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::LabeledStatementRule : public cminor::parsing::Rule
 {
 public:
-    LabeledStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    LabeledStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -538,35 +575,39 @@ public:
         stmtNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<LabeledStatementRule>(this, &LabeledStatementRule::Prestmt));
         stmtNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LabeledStatementRule>(this, &LabeledStatementRule::Poststmt));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.fromstmt->SetLabelNode(context.fromlbl);
-        context.value = context.fromstmt;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->fromstmt->SetLabelNode(context->fromlbl);
+        context->value = context->fromstmt;
     }
-    void Postlbl(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postlbl(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromlbl_value = std::move(stack.top());
-            context.fromlbl = *static_cast<cminor::parsing::ValueObject<LabelNode*>*>(fromlbl_value.get());
+            context->fromlbl = *static_cast<cminor::parsing::ValueObject<LabelNode*>*>(fromlbl_value.get());
             stack.pop();
         }
     }
-    void Prestmt(cminor::parsing::ObjectStack& stack)
+    void Prestmt(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void Poststmt(cminor::parsing::ObjectStack& stack, bool matched)
+    void Poststmt(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromstmt_value = std::move(stack.top());
-            context.fromstmt = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromstmt_value.get());
+            context->fromstmt = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromstmt_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromlbl(), fromstmt() {}
         ParsingContext* ctx;
@@ -574,35 +615,33 @@ private:
         LabelNode* fromlbl;
         StatementNode* fromstmt;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::ControlStatementRule : public cminor::parsing::Rule
 {
 public:
-    ControlStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ControlStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -672,229 +711,268 @@ public:
         gotoDefaultStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreGotoDefaultStatement));
         gotoDefaultStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostGotoDefaultStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromCompoundStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromCompoundStatement;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromReturnStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromReturnStatement;
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromIfStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromIfStatement;
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromWhileStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromWhileStatement;
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromDoStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromDoStatement;
     }
-    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromForStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromForStatement;
     }
-    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromForEachStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromForEachStatement;
     }
-    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromBreakStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromBreakStatement;
     }
-    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromContinueStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromContinueStatement;
     }
-    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromGotoStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromGotoStatement;
     }
-    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromSwitchStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromSwitchStatement;
     }
-    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromGotoCaseStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromGotoCaseStatement;
     }
-    void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromGotoDefaultStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromGotoDefaultStatement;
     }
-    void PreCompoundStatement(cminor::parsing::ObjectStack& stack)
+    void PreCompoundStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostCompoundStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostCompoundStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromCompoundStatement_value = std::move(stack.top());
-            context.fromCompoundStatement = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
+            context->fromCompoundStatement = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
             stack.pop();
         }
     }
-    void PreReturnStatement(cminor::parsing::ObjectStack& stack)
+    void PreReturnStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostReturnStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostReturnStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromReturnStatement_value = std::move(stack.top());
-            context.fromReturnStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromReturnStatement_value.get());
+            context->fromReturnStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromReturnStatement_value.get());
             stack.pop();
         }
     }
-    void PreIfStatement(cminor::parsing::ObjectStack& stack)
+    void PreIfStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostIfStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostIfStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromIfStatement_value = std::move(stack.top());
-            context.fromIfStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromIfStatement_value.get());
+            context->fromIfStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromIfStatement_value.get());
             stack.pop();
         }
     }
-    void PreWhileStatement(cminor::parsing::ObjectStack& stack)
+    void PreWhileStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostWhileStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostWhileStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromWhileStatement_value = std::move(stack.top());
-            context.fromWhileStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromWhileStatement_value.get());
+            context->fromWhileStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromWhileStatement_value.get());
             stack.pop();
         }
     }
-    void PreDoStatement(cminor::parsing::ObjectStack& stack)
+    void PreDoStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostDoStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostDoStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromDoStatement_value = std::move(stack.top());
-            context.fromDoStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromDoStatement_value.get());
+            context->fromDoStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromDoStatement_value.get());
             stack.pop();
         }
     }
-    void PreForStatement(cminor::parsing::ObjectStack& stack)
+    void PreForStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostForStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostForStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromForStatement_value = std::move(stack.top());
-            context.fromForStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromForStatement_value.get());
+            context->fromForStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromForStatement_value.get());
             stack.pop();
         }
     }
-    void PreForEachStatement(cminor::parsing::ObjectStack& stack)
+    void PreForEachStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostForEachStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostForEachStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromForEachStatement_value = std::move(stack.top());
-            context.fromForEachStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromForEachStatement_value.get());
+            context->fromForEachStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromForEachStatement_value.get());
             stack.pop();
         }
     }
-    void PreBreakStatement(cminor::parsing::ObjectStack& stack)
+    void PreBreakStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostBreakStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostBreakStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromBreakStatement_value = std::move(stack.top());
-            context.fromBreakStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromBreakStatement_value.get());
+            context->fromBreakStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromBreakStatement_value.get());
             stack.pop();
         }
     }
-    void PreContinueStatement(cminor::parsing::ObjectStack& stack)
+    void PreContinueStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostContinueStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostContinueStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromContinueStatement_value = std::move(stack.top());
-            context.fromContinueStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromContinueStatement_value.get());
+            context->fromContinueStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromContinueStatement_value.get());
             stack.pop();
         }
     }
-    void PreGotoStatement(cminor::parsing::ObjectStack& stack)
+    void PreGotoStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostGotoStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostGotoStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromGotoStatement_value = std::move(stack.top());
-            context.fromGotoStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromGotoStatement_value.get());
+            context->fromGotoStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromGotoStatement_value.get());
             stack.pop();
         }
     }
-    void PreSwitchStatement(cminor::parsing::ObjectStack& stack)
+    void PreSwitchStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostSwitchStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostSwitchStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromSwitchStatement_value = std::move(stack.top());
-            context.fromSwitchStatement = *static_cast<cminor::parsing::ValueObject<SwitchStatementNode*>*>(fromSwitchStatement_value.get());
+            context->fromSwitchStatement = *static_cast<cminor::parsing::ValueObject<SwitchStatementNode*>*>(fromSwitchStatement_value.get());
             stack.pop();
         }
     }
-    void PreGotoCaseStatement(cminor::parsing::ObjectStack& stack)
+    void PreGotoCaseStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostGotoCaseStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostGotoCaseStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromGotoCaseStatement_value = std::move(stack.top());
-            context.fromGotoCaseStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromGotoCaseStatement_value.get());
+            context->fromGotoCaseStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromGotoCaseStatement_value.get());
             stack.pop();
         }
     }
-    void PreGotoDefaultStatement(cminor::parsing::ObjectStack& stack)
+    void PreGotoDefaultStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostGotoDefaultStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostGotoDefaultStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromGotoDefaultStatement_value = std::move(stack.top());
-            context.fromGotoDefaultStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromGotoDefaultStatement_value.get());
+            context->fromGotoDefaultStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromGotoDefaultStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromCompoundStatement(), fromReturnStatement(), fromIfStatement(), fromWhileStatement(), fromDoStatement(), fromForStatement(), fromForEachStatement(), fromBreakStatement(), fromContinueStatement(), fromGotoStatement(), fromSwitchStatement(), fromGotoCaseStatement(), fromGotoDefaultStatement() {}
         ParsingContext* ctx;
@@ -913,35 +991,33 @@ private:
         StatementNode* fromGotoCaseStatement;
         StatementNode* fromGotoDefaultStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::CompoundStatementRule : public cminor::parsing::Rule
 {
 public:
-    CompoundStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    CompoundStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("CompoundStatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<CompoundStatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<CompoundStatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -957,73 +1033,77 @@ public:
         stmtNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<CompoundStatementRule>(this, &CompoundStatementRule::Prestmt));
         stmtNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CompoundStatementRule>(this, &CompoundStatementRule::Poststmt));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->GetSpan().SetEnd(span.End());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->GetSpan().SetEnd(span.End());
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new CompoundStatementNode(span);
-        context.value->SetBeginBraceSpan(span);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new CompoundStatementNode(span);
+        context->value->SetBeginBraceSpan(span);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->AddStatement(context.fromstmt);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->AddStatement(context->fromstmt);
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->SetEndBraceSpan(span);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->SetEndBraceSpan(span);
     }
-    void Prestmt(cminor::parsing::ObjectStack& stack)
+    void Prestmt(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void Poststmt(cminor::parsing::ObjectStack& stack, bool matched)
+    void Poststmt(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromstmt_value = std::move(stack.top());
-            context.fromstmt = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromstmt_value.get());
+            context->fromstmt = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromstmt_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromstmt() {}
         ParsingContext* ctx;
         CompoundStatementNode* value;
         StatementNode* fromstmt;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::ReturnStatementRule : public cminor::parsing::Rule
 {
 public:
-    ReturnStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ReturnStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -1033,60 +1113,61 @@ public:
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ReturnStatementRule>(this, &ReturnStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ReturnStatementRule>(this, &ReturnStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ReturnStatementNode(span, context.fromExpression);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ReturnStatementNode(span, context->fromExpression);
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromExpression() {}
         ParsingContext* ctx;
         StatementNode* value;
         Node* fromExpression;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::IfStatementRule : public cminor::parsing::Rule
 {
 public:
-    IfStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    IfStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -1102,51 +1183,58 @@ public:
         elsesNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IfStatementRule>(this, &IfStatementRule::Preelses));
         elsesNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IfStatementRule>(this, &IfStatementRule::Postelses));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new IfStatementNode(span, context.fromExpression, context.fromthens, context.fromelses);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new IfStatementNode(span, context->fromExpression, context->fromthens, context->fromelses);
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
-    void Prethens(cminor::parsing::ObjectStack& stack)
+    void Prethens(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void Postthens(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postthens(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromthens_value = std::move(stack.top());
-            context.fromthens = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromthens_value.get());
+            context->fromthens = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromthens_value.get());
             stack.pop();
         }
     }
-    void Preelses(cminor::parsing::ObjectStack& stack)
+    void Preelses(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void Postelses(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postelses(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromelses_value = std::move(stack.top());
-            context.fromelses = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromelses_value.get());
+            context->fromelses = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromelses_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromExpression(), fromthens(), fromelses() {}
         ParsingContext* ctx;
@@ -1155,35 +1243,33 @@ private:
         StatementNode* fromthens;
         StatementNode* fromelses;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::WhileStatementRule : public cminor::parsing::Rule
 {
 public:
-    WhileStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    WhileStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -1196,38 +1282,43 @@ public:
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<WhileStatementRule>(this, &WhileStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<WhileStatementRule>(this, &WhileStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new WhileStatementNode(span, context.fromExpression, context.fromStatement);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new WhileStatementNode(span, context->fromExpression, context->fromStatement);
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
-    void PreStatement(cminor::parsing::ObjectStack& stack)
+    void PreStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromStatement_value = std::move(stack.top());
-            context.fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
+            context->fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromExpression(), fromStatement() {}
         ParsingContext* ctx;
@@ -1235,35 +1326,33 @@ private:
         Node* fromExpression;
         StatementNode* fromStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::DoStatementRule : public cminor::parsing::Rule
 {
 public:
-    DoStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    DoStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -1276,38 +1365,43 @@ public:
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<DoStatementRule>(this, &DoStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DoStatementRule>(this, &DoStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new DoStatementNode(span, context.fromStatement, context.fromExpression);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new DoStatementNode(span, context->fromStatement, context->fromExpression);
     }
-    void PreStatement(cminor::parsing::ObjectStack& stack)
+    void PreStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromStatement_value = std::move(stack.top());
-            context.fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
+            context->fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
             stack.pop();
         }
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromStatement(), fromExpression() {}
         ParsingContext* ctx;
@@ -1315,35 +1409,33 @@ private:
         StatementNode* fromStatement;
         Node* fromExpression;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::ForStatementRule : public cminor::parsing::Rule
 {
 public:
-    ForStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ForStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -1362,64 +1454,73 @@ public:
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForStatementRule>(this, &ForStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForStatementRule>(this, &ForStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ForStatementNode(span, context.fromForInitStatement, context.fromExpression, context.fromForLoopExpressionStatement, context.fromStatement);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ForStatementNode(span, context->fromForInitStatement, context->fromExpression, context->fromForLoopExpressionStatement, context->fromStatement);
     }
-    void PreForInitStatement(cminor::parsing::ObjectStack& stack)
+    void PreForInitStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostForInitStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostForInitStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromForInitStatement_value = std::move(stack.top());
-            context.fromForInitStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromForInitStatement_value.get());
+            context->fromForInitStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromForInitStatement_value.get());
             stack.pop();
         }
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
-    void PreForLoopExpressionStatement(cminor::parsing::ObjectStack& stack)
+    void PreForLoopExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostForLoopExpressionStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostForLoopExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromForLoopExpressionStatement_value = std::move(stack.top());
-            context.fromForLoopExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromForLoopExpressionStatement_value.get());
+            context->fromForLoopExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromForLoopExpressionStatement_value.get());
             stack.pop();
         }
     }
-    void PreStatement(cminor::parsing::ObjectStack& stack)
+    void PreStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromStatement_value = std::move(stack.top());
-            context.fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
+            context->fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromForInitStatement(), fromExpression(), fromForLoopExpressionStatement(), fromStatement() {}
         ParsingContext* ctx;
@@ -1429,35 +1530,33 @@ private:
         StatementNode* fromForLoopExpressionStatement;
         StatementNode* fromStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::ForInitStatementRule : public cminor::parsing::Rule
 {
 public:
-    ForInitStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ForInitStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -1477,59 +1576,68 @@ public:
         emptyStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForInitStatementRule>(this, &ForInitStatementRule::PreEmptyStatement));
         emptyStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForInitStatementRule>(this, &ForInitStatementRule::PostEmptyStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromAssignmentStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromAssignmentStatement;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromConstructionStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromConstructionStatement;
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromEmptyStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromEmptyStatement;
     }
-    void PreAssignmentStatement(cminor::parsing::ObjectStack& stack)
+    void PreAssignmentStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostAssignmentStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostAssignmentStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromAssignmentStatement_value = std::move(stack.top());
-            context.fromAssignmentStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromAssignmentStatement_value.get());
+            context->fromAssignmentStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromAssignmentStatement_value.get());
             stack.pop();
         }
     }
-    void PreConstructionStatement(cminor::parsing::ObjectStack& stack)
+    void PreConstructionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostConstructionStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostConstructionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromConstructionStatement_value = std::move(stack.top());
-            context.fromConstructionStatement = *static_cast<cminor::parsing::ValueObject<ConstructionStatementNode*>*>(fromConstructionStatement_value.get());
+            context->fromConstructionStatement = *static_cast<cminor::parsing::ValueObject<ConstructionStatementNode*>*>(fromConstructionStatement_value.get());
             stack.pop();
         }
     }
-    void PreEmptyStatement(cminor::parsing::ObjectStack& stack)
+    void PreEmptyStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostEmptyStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostEmptyStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromEmptyStatement_value = std::move(stack.top());
-            context.fromEmptyStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromEmptyStatement_value.get());
+            context->fromEmptyStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromEmptyStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromAssignmentStatement(), fromConstructionStatement(), fromEmptyStatement() {}
         ParsingContext* ctx;
@@ -1538,35 +1646,33 @@ private:
         ConstructionStatementNode* fromConstructionStatement;
         StatementNode* fromEmptyStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::ForLoopExpressionStatementRule : public cminor::parsing::Rule
 {
 public:
-    ForLoopExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ForLoopExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -1588,63 +1694,73 @@ public:
         assignmentExpressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PreAssignmentExpressionStatement));
         assignmentExpressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PostAssignmentExpressionStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromIncrementExpressionStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromIncrementExpressionStatement;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromDecrementExpressionStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromDecrementExpressionStatement;
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromAssignmentExpressionStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromAssignmentExpressionStatement;
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new EmptyStatementNode(span);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new EmptyStatementNode(span);
     }
-    void PreIncrementExpressionStatement(cminor::parsing::ObjectStack& stack)
+    void PreIncrementExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostIncrementExpressionStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostIncrementExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromIncrementExpressionStatement_value = std::move(stack.top());
-            context.fromIncrementExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromIncrementExpressionStatement_value.get());
+            context->fromIncrementExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromIncrementExpressionStatement_value.get());
             stack.pop();
         }
     }
-    void PreDecrementExpressionStatement(cminor::parsing::ObjectStack& stack)
+    void PreDecrementExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostDecrementExpressionStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostDecrementExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromDecrementExpressionStatement_value = std::move(stack.top());
-            context.fromDecrementExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromDecrementExpressionStatement_value.get());
+            context->fromDecrementExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromDecrementExpressionStatement_value.get());
             stack.pop();
         }
     }
-    void PreAssignmentExpressionStatement(cminor::parsing::ObjectStack& stack)
+    void PreAssignmentExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostAssignmentExpressionStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostAssignmentExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromAssignmentExpressionStatement_value = std::move(stack.top());
-            context.fromAssignmentExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromAssignmentExpressionStatement_value.get());
+            context->fromAssignmentExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromAssignmentExpressionStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromIncrementExpressionStatement(), fromDecrementExpressionStatement(), fromAssignmentExpressionStatement() {}
         ParsingContext* ctx;
@@ -1653,35 +1769,33 @@ private:
         StatementNode* fromDecrementExpressionStatement;
         StatementNode* fromAssignmentExpressionStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::ForEachStatementRule : public cminor::parsing::Rule
 {
 public:
-    ForEachStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ForEachStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -1699,60 +1813,68 @@ public:
         compoundStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForEachStatementRule>(this, &ForEachStatementRule::PreCompoundStatement));
         compoundStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForEachStatementRule>(this, &ForEachStatementRule::PostCompoundStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ForEachStatementNode(span, context.fromTypeExpr, context.fromIdentifier, context.fromExpression, context.fromCompoundStatement);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ForEachStatementNode(span, context->fromTypeExpr, context->fromIdentifier, context->fromExpression, context->fromCompoundStatement);
     }
-    void PreTypeExpr(cminor::parsing::ObjectStack& stack)
+    void PreTypeExpr(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostTypeExpr(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostTypeExpr(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromTypeExpr_value = std::move(stack.top());
-            context.fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
+            context->fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
             stack.pop();
         }
     }
-    void PostIdentifier(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostIdentifier(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromIdentifier_value = std::move(stack.top());
-            context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
+            context->fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
-    void PreCompoundStatement(cminor::parsing::ObjectStack& stack)
+    void PreCompoundStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostCompoundStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostCompoundStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromCompoundStatement_value = std::move(stack.top());
-            context.fromCompoundStatement = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
+            context->fromCompoundStatement = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromTypeExpr(), fromIdentifier(), fromExpression(), fromCompoundStatement() {}
         ParsingContext* ctx;
@@ -1762,127 +1884,123 @@ private:
         Node* fromExpression;
         CompoundStatementNode* fromCompoundStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::BreakStatementRule : public cminor::parsing::Rule
 {
 public:
-    BreakStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    BreakStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
         cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BreakStatementRule>(this, &BreakStatementRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new BreakStatementNode(span);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new BreakStatementNode(span);
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value() {}
         ParsingContext* ctx;
         StatementNode* value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::ContinueStatementRule : public cminor::parsing::Rule
 {
 public:
-    ContinueStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ContinueStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
         cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ContinueStatementRule>(this, &ContinueStatementRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ContinueStatementNode(span);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ContinueStatementNode(span);
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value() {}
         ParsingContext* ctx;
         StatementNode* value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::GotoStatementRule : public cminor::parsing::Rule
 {
 public:
-    GotoStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    GotoStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -1891,56 +2009,56 @@ public:
         cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<GotoStatementRule>(this, &GotoStatementRule::PostIdentifier));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new GotoStatementNode(span, context.fromIdentifier->Str());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new GotoStatementNode(span, context->fromIdentifier->Str());
     }
-    void PostIdentifier(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostIdentifier(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromIdentifier_value = std::move(stack.top());
-            context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
+            context->fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromIdentifier() {}
         ParsingContext* ctx;
         StatementNode* value;
         IdentifierNode* fromIdentifier;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::SwitchStatementRule : public cminor::parsing::Rule
 {
 public:
-    SwitchStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    SwitchStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("SwitchStatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<SwitchStatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<SwitchStatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -1960,59 +2078,68 @@ public:
         defaultStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<SwitchStatementRule>(this, &SwitchStatementRule::PreDefaultStatement));
         defaultStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<SwitchStatementRule>(this, &SwitchStatementRule::PostDefaultStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new SwitchStatementNode(span, context.fromExpression);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new SwitchStatementNode(span, context->fromExpression);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->AddCase(context.fromCaseStatement);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->AddCase(context->fromCaseStatement);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->SetDefault(context.fromDefaultStatement);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->SetDefault(context->fromDefaultStatement);
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
-    void PreCaseStatement(cminor::parsing::ObjectStack& stack)
+    void PreCaseStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostCaseStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostCaseStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromCaseStatement_value = std::move(stack.top());
-            context.fromCaseStatement = *static_cast<cminor::parsing::ValueObject<CaseStatementNode*>*>(fromCaseStatement_value.get());
+            context->fromCaseStatement = *static_cast<cminor::parsing::ValueObject<CaseStatementNode*>*>(fromCaseStatement_value.get());
             stack.pop();
         }
     }
-    void PreDefaultStatement(cminor::parsing::ObjectStack& stack)
+    void PreDefaultStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostDefaultStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostDefaultStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromDefaultStatement_value = std::move(stack.top());
-            context.fromDefaultStatement = *static_cast<cminor::parsing::ValueObject<DefaultStatementNode*>*>(fromDefaultStatement_value.get());
+            context->fromDefaultStatement = *static_cast<cminor::parsing::ValueObject<DefaultStatementNode*>*>(fromDefaultStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromExpression(), fromCaseStatement(), fromDefaultStatement() {}
         ParsingContext* ctx;
@@ -2021,36 +2148,34 @@ private:
         CaseStatementNode* fromCaseStatement;
         DefaultStatementNode* fromDefaultStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::CaseStatementRule : public cminor::parsing::Rule
 {
 public:
-    CaseStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    CaseStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("CaseStatementNode*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<CaseStatementNode>", "caseS"));
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<CaseStatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<CaseStatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -2071,54 +2196,63 @@ public:
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<CaseStatementRule>(this, &CaseStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CaseStatementRule>(this, &CaseStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.caseS.release();
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->caseS.release();
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.caseS->GetSpan().SetEnd(span.End());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->caseS->GetSpan().SetEnd(span.End());
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.caseS.reset(new CaseStatementNode(span));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->caseS.reset(new CaseStatementNode(span));
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.caseS->AddCaseExpr(context.fromExpression);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->caseS->AddCaseExpr(context->fromExpression);
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.caseS->AddStatement(context.fromStatement);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->caseS->AddStatement(context->fromStatement);
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
-    void PreStatement(cminor::parsing::ObjectStack& stack)
+    void PreStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromStatement_value = std::move(stack.top());
-            context.fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
+            context->fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), caseS(), fromExpression(), fromStatement() {}
         ParsingContext* ctx;
@@ -2127,35 +2261,33 @@ private:
         Node* fromExpression;
         StatementNode* fromStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::DefaultStatementRule : public cminor::parsing::Rule
 {
 public:
-    DefaultStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    DefaultStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("DefaultStatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<DefaultStatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<DefaultStatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -2167,64 +2299,66 @@ public:
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<DefaultStatementRule>(this, &DefaultStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DefaultStatementRule>(this, &DefaultStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new DefaultStatementNode(span);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new DefaultStatementNode(span);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->AddStatement(context.fromStatement);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->AddStatement(context->fromStatement);
     }
-    void PreStatement(cminor::parsing::ObjectStack& stack)
+    void PreStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromStatement_value = std::move(stack.top());
-            context.fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
+            context->fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromStatement() {}
         ParsingContext* ctx;
         DefaultStatementNode* value;
         StatementNode* fromStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::GotoCaseStatementRule : public cminor::parsing::Rule
 {
 public:
-    GotoCaseStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    GotoCaseStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -2234,107 +2368,107 @@ public:
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<GotoCaseStatementRule>(this, &GotoCaseStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<GotoCaseStatementRule>(this, &GotoCaseStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new GotoCaseStatementNode(span, context.fromExpression);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new GotoCaseStatementNode(span, context->fromExpression);
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromExpression() {}
         ParsingContext* ctx;
         StatementNode* value;
         Node* fromExpression;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::GotoDefaultStatementRule : public cminor::parsing::Rule
 {
 public:
-    GotoDefaultStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    GotoDefaultStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
         cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<GotoDefaultStatementRule>(this, &GotoDefaultStatementRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new GotoDefaultStatementNode(span);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new GotoDefaultStatementNode(span);
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value() {}
         ParsingContext* ctx;
         StatementNode* value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::AssignmentExpressionStatementRule : public cminor::parsing::Rule
 {
 public:
-    AssignmentExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    AssignmentExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "targetExpr"));
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -2352,51 +2486,59 @@ public:
         sourceNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::Presource));
         sourceNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::Postsource));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.ctx->PushParsingLvalue(true);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->ctx->PushParsingLvalue(true);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new AssignmentStatementNode(span, context.targetExpr.release(), context.fromsource);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new AssignmentStatementNode(span, context->targetExpr.release(), context->fromsource);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.ctx->PopParsingLvalue();
-        context.targetExpr.reset(context.fromtarget);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->ctx->PopParsingLvalue();
+        context->targetExpr.reset(context->fromtarget);
     }
-    void A2ActionFail()
+    void A2ActionFail(ParsingData* parsingData)
     {
-        context.ctx->PopParsingLvalue();
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->ctx->PopParsingLvalue();
     }
-    void Pretarget(cminor::parsing::ObjectStack& stack)
+    void Pretarget(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void Posttarget(cminor::parsing::ObjectStack& stack, bool matched)
+    void Posttarget(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromtarget_value = std::move(stack.top());
-            context.fromtarget = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromtarget_value.get());
+            context->fromtarget = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromtarget_value.get());
             stack.pop();
         }
     }
-    void Presource(cminor::parsing::ObjectStack& stack)
+    void Presource(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void Postsource(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postsource(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromsource_value = std::move(stack.top());
-            context.fromsource = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromsource_value.get());
+            context->fromsource = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromsource_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), targetExpr(), fromtarget(), fromsource() {}
         ParsingContext* ctx;
@@ -2405,35 +2547,33 @@ private:
         Node* fromtarget;
         Node* fromsource;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::AssignmentStatementRule : public cminor::parsing::Rule
 {
 public:
-    AssignmentStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    AssignmentStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -2443,61 +2583,62 @@ public:
         assignmentExpressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<AssignmentStatementRule>(this, &AssignmentStatementRule::PreAssignmentExpressionStatement));
         assignmentExpressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<AssignmentStatementRule>(this, &AssignmentStatementRule::PostAssignmentExpressionStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromAssignmentExpressionStatement;
-        context.value->GetSpan().SetEnd(span.End());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromAssignmentExpressionStatement;
+        context->value->GetSpan().SetEnd(span.End());
     }
-    void PreAssignmentExpressionStatement(cminor::parsing::ObjectStack& stack)
+    void PreAssignmentExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostAssignmentExpressionStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostAssignmentExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromAssignmentExpressionStatement_value = std::move(stack.top());
-            context.fromAssignmentExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromAssignmentExpressionStatement_value.get());
+            context->fromAssignmentExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromAssignmentExpressionStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromAssignmentExpressionStatement() {}
         ParsingContext* ctx;
         StatementNode* value;
         StatementNode* fromAssignmentExpressionStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::ConstructionStatementRule : public cminor::parsing::Rule
 {
 public:
-    ConstructionStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ConstructionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("ConstructionStatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ConstructionStatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ConstructionStatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -2516,55 +2657,63 @@ public:
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ConstructionStatementNode(span, context.fromTypeExpr, context.fromIdentifier);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ConstructionStatementNode(span, context->fromTypeExpr, context->fromIdentifier);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->SetInitializer(context.fromExpression);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->SetInitializer(context->fromExpression);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->GetSpan().SetEnd(span.End());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->GetSpan().SetEnd(span.End());
     }
-    void PreTypeExpr(cminor::parsing::ObjectStack& stack)
+    void PreTypeExpr(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostTypeExpr(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostTypeExpr(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromTypeExpr_value = std::move(stack.top());
-            context.fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
+            context->fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
             stack.pop();
         }
     }
-    void PostIdentifier(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostIdentifier(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromIdentifier_value = std::move(stack.top());
-            context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
+            context->fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromTypeExpr(), fromIdentifier(), fromExpression() {}
         ParsingContext* ctx;
@@ -2573,35 +2722,33 @@ private:
         IdentifierNode* fromIdentifier;
         Node* fromExpression;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::ConstructionStatementExpressionRule : public cminor::parsing::Rule
 {
 public:
-    ConstructionStatementExpressionRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ConstructionStatementExpressionRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("ConstructionStatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ConstructionStatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ConstructionStatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -2620,55 +2767,63 @@ public:
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->GetSpan().SetEnd(span.End());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->GetSpan().SetEnd(span.End());
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ConstructionStatementNode(span, context.fromTypeExpr, context.fromIdentifier);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ConstructionStatementNode(span, context->fromTypeExpr, context->fromIdentifier);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->SetInitializer(context.fromExpression);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->SetInitializer(context->fromExpression);
     }
-    void PreTypeExpr(cminor::parsing::ObjectStack& stack)
+    void PreTypeExpr(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostTypeExpr(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostTypeExpr(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromTypeExpr_value = std::move(stack.top());
-            context.fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
+            context->fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
             stack.pop();
         }
     }
-    void PostIdentifier(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostIdentifier(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromIdentifier_value = std::move(stack.top());
-            context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
+            context->fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromTypeExpr(), fromIdentifier(), fromExpression() {}
         ParsingContext* ctx;
@@ -2677,36 +2832,34 @@ private:
         IdentifierNode* fromIdentifier;
         Node* fromExpression;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::IncrementExpressionStatementRule : public cminor::parsing::Rule
 {
 public:
-    IncrementExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    IncrementExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "expr"));
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -2723,46 +2876,53 @@ public:
         rightNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::Preright));
         rightNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::Postright));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new IncrementStatementNode(span, context.fromleft);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new IncrementStatementNode(span, context->fromleft);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new IncrementStatementNode(span, context.expr.release());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new IncrementStatementNode(span, context->expr.release());
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.expr.reset(context.fromright);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->expr.reset(context->fromright);
     }
-    void Preleft(cminor::parsing::ObjectStack& stack)
+    void Preleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void Postleft(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromleft_value = std::move(stack.top());
-            context.fromleft = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromleft_value.get());
+            context->fromleft = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromleft_value.get());
             stack.pop();
         }
     }
-    void Preright(cminor::parsing::ObjectStack& stack)
+    void Preright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void Postright(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromright_value = std::move(stack.top());
-            context.fromright = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromright_value.get());
+            context->fromright = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromright_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), expr(), fromleft(), fromright() {}
         ParsingContext* ctx;
@@ -2771,35 +2931,33 @@ private:
         Node* fromleft;
         Node* fromright;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::IncrementStatementRule : public cminor::parsing::Rule
 {
 public:
-    IncrementStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    IncrementStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -2809,62 +2967,63 @@ public:
         incrementExpressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IncrementStatementRule>(this, &IncrementStatementRule::PreIncrementExpressionStatement));
         incrementExpressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IncrementStatementRule>(this, &IncrementStatementRule::PostIncrementExpressionStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromIncrementExpressionStatement;
-        context.value->GetSpan().SetEnd(span.End());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromIncrementExpressionStatement;
+        context->value->GetSpan().SetEnd(span.End());
     }
-    void PreIncrementExpressionStatement(cminor::parsing::ObjectStack& stack)
+    void PreIncrementExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostIncrementExpressionStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostIncrementExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromIncrementExpressionStatement_value = std::move(stack.top());
-            context.fromIncrementExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromIncrementExpressionStatement_value.get());
+            context->fromIncrementExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromIncrementExpressionStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromIncrementExpressionStatement() {}
         ParsingContext* ctx;
         StatementNode* value;
         StatementNode* fromIncrementExpressionStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::DecrementExpressionStatementRule : public cminor::parsing::Rule
 {
 public:
-    DecrementExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    DecrementExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "expr"));
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -2881,46 +3040,53 @@ public:
         rightNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::Preright));
         rightNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::Postright));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new DecrementStatementNode(span, context.fromleft);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new DecrementStatementNode(span, context->fromleft);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new DecrementStatementNode(span, context.expr.release());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new DecrementStatementNode(span, context->expr.release());
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.expr.reset(context.fromright);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->expr.reset(context->fromright);
     }
-    void Preleft(cminor::parsing::ObjectStack& stack)
+    void Preleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void Postleft(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromleft_value = std::move(stack.top());
-            context.fromleft = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromleft_value.get());
+            context->fromleft = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromleft_value.get());
             stack.pop();
         }
     }
-    void Preright(cminor::parsing::ObjectStack& stack)
+    void Preright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void Postright(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromright_value = std::move(stack.top());
-            context.fromright = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromright_value.get());
+            context->fromright = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromright_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), expr(), fromleft(), fromright() {}
         ParsingContext* ctx;
@@ -2929,35 +3095,33 @@ private:
         Node* fromleft;
         Node* fromright;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::DecrementStatementRule : public cminor::parsing::Rule
 {
 public:
-    DecrementStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    DecrementStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -2967,62 +3131,63 @@ public:
         decrementExpressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<DecrementStatementRule>(this, &DecrementStatementRule::PreDecrementExpressionStatement));
         decrementExpressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DecrementStatementRule>(this, &DecrementStatementRule::PostDecrementExpressionStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromDecrementExpressionStatement;
-        context.value->GetSpan().SetEnd(span.End());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromDecrementExpressionStatement;
+        context->value->GetSpan().SetEnd(span.End());
     }
-    void PreDecrementExpressionStatement(cminor::parsing::ObjectStack& stack)
+    void PreDecrementExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostDecrementExpressionStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostDecrementExpressionStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromDecrementExpressionStatement_value = std::move(stack.top());
-            context.fromDecrementExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromDecrementExpressionStatement_value.get());
+            context->fromDecrementExpressionStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromDecrementExpressionStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromDecrementExpressionStatement() {}
         ParsingContext* ctx;
         StatementNode* value;
         StatementNode* fromDecrementExpressionStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::ExpressionStatementRule : public cminor::parsing::Rule
 {
 public:
-    ExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
         AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "expr"));
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -3034,29 +3199,33 @@ public:
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ExpressionStatementRule>(this, &ExpressionStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ExpressionStatementRule>(this, &ExpressionStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ExpressionStatementNode(span, context.expr.release());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ExpressionStatementNode(span, context->expr.release());
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.expr.reset(context.fromExpression);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->expr.reset(context->fromExpression);
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), expr(), fromExpression() {}
         ParsingContext* ctx;
@@ -3064,81 +3233,78 @@ private:
         std::unique_ptr<Node> expr;
         Node* fromExpression;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::EmptyStatementRule : public cminor::parsing::Rule
 {
 public:
-    EmptyStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    EmptyStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
         cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<EmptyStatementRule>(this, &EmptyStatementRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new EmptyStatementNode(span);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new EmptyStatementNode(span);
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value() {}
         ParsingContext* ctx;
         StatementNode* value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::ThrowStatementRule : public cminor::parsing::Rule
 {
 public:
-    ThrowStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ThrowStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -3148,60 +3314,61 @@ public:
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ThrowStatementRule>(this, &ThrowStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ThrowStatementRule>(this, &ThrowStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ThrowStatementNode(span, context.fromExpression);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ThrowStatementNode(span, context->fromExpression);
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromExpression() {}
         ParsingContext* ctx;
         StatementNode* value;
         Node* fromExpression;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::TryStatementRule : public cminor::parsing::Rule
 {
 public:
-    TryStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    TryStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("TryStatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<TryStatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<TryStatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -3226,76 +3393,88 @@ public:
         finNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<TryStatementRule>(this, &TryStatementRule::Prefin));
         finNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<TryStatementRule>(this, &TryStatementRule::Postfin));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new TryStatementNode(span, context.fromtryBlock);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new TryStatementNode(span, context->fromtryBlock);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->AddCatch(context.fromCatch);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->AddCatch(context->fromCatch);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->SetFinally(context.fromFinally);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->SetFinally(context->fromFinally);
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value->SetFinally(context.fromfin);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value->SetFinally(context->fromfin);
     }
-    void PretryBlock(cminor::parsing::ObjectStack& stack)
+    void PretryBlock(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PosttryBlock(cminor::parsing::ObjectStack& stack, bool matched)
+    void PosttryBlock(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromtryBlock_value = std::move(stack.top());
-            context.fromtryBlock = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromtryBlock_value.get());
+            context->fromtryBlock = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromtryBlock_value.get());
             stack.pop();
         }
     }
-    void PreCatch(cminor::parsing::ObjectStack& stack)
+    void PreCatch(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostCatch(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostCatch(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromCatch_value = std::move(stack.top());
-            context.fromCatch = *static_cast<cminor::parsing::ValueObject<CatchNode*>*>(fromCatch_value.get());
+            context->fromCatch = *static_cast<cminor::parsing::ValueObject<CatchNode*>*>(fromCatch_value.get());
             stack.pop();
         }
     }
-    void PreFinally(cminor::parsing::ObjectStack& stack)
+    void PreFinally(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostFinally(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostFinally(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromFinally_value = std::move(stack.top());
-            context.fromFinally = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromFinally_value.get());
+            context->fromFinally = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromFinally_value.get());
             stack.pop();
         }
     }
-    void Prefin(cminor::parsing::ObjectStack& stack)
+    void Prefin(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void Postfin(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postfin(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromfin_value = std::move(stack.top());
-            context.fromfin = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromfin_value.get());
+            context->fromfin = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromfin_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromtryBlock(), fromCatch(), fromFinally(), fromfin() {}
         ParsingContext* ctx;
@@ -3305,35 +3484,33 @@ private:
         CompoundStatementNode* fromFinally;
         CompoundStatementNode* fromfin;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::CatchRule : public cminor::parsing::Rule
 {
 public:
-    CatchRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    CatchRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("CatchNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<CatchNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<CatchNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -3353,64 +3530,73 @@ public:
         catchBlock2NonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<CatchRule>(this, &CatchRule::PrecatchBlock2));
         catchBlock2NonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CatchRule>(this, &CatchRule::PostcatchBlock2));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new CatchNode(span, context.fromTypeExpr, context.fromIdentifier, context.fromcatchBlock1);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new CatchNode(span, context->fromTypeExpr, context->fromIdentifier, context->fromcatchBlock1);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new CatchNode(span, context.fromcatchBlock2);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new CatchNode(span, context->fromcatchBlock2);
     }
-    void PreTypeExpr(cminor::parsing::ObjectStack& stack)
+    void PreTypeExpr(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostTypeExpr(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostTypeExpr(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromTypeExpr_value = std::move(stack.top());
-            context.fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
+            context->fromTypeExpr = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromTypeExpr_value.get());
             stack.pop();
         }
     }
-    void PostIdentifier(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostIdentifier(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromIdentifier_value = std::move(stack.top());
-            context.fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
+            context->fromIdentifier = *static_cast<cminor::parsing::ValueObject<IdentifierNode*>*>(fromIdentifier_value.get());
             stack.pop();
         }
     }
-    void PrecatchBlock1(cminor::parsing::ObjectStack& stack)
+    void PrecatchBlock1(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostcatchBlock1(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostcatchBlock1(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromcatchBlock1_value = std::move(stack.top());
-            context.fromcatchBlock1 = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromcatchBlock1_value.get());
+            context->fromcatchBlock1 = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromcatchBlock1_value.get());
             stack.pop();
         }
     }
-    void PrecatchBlock2(cminor::parsing::ObjectStack& stack)
+    void PrecatchBlock2(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostcatchBlock2(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostcatchBlock2(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromcatchBlock2_value = std::move(stack.top());
-            context.fromcatchBlock2 = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromcatchBlock2_value.get());
+            context->fromcatchBlock2 = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromcatchBlock2_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromTypeExpr(), fromIdentifier(), fromcatchBlock1(), fromcatchBlock2() {}
         ParsingContext* ctx;
@@ -3420,35 +3606,33 @@ private:
         CompoundStatementNode* fromcatchBlock1;
         CompoundStatementNode* fromcatchBlock2;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::FinallyRule : public cminor::parsing::Rule
 {
 public:
-    FinallyRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    FinallyRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("CompoundStatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<CompoundStatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<CompoundStatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -3458,60 +3642,61 @@ public:
         compoundStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<FinallyRule>(this, &FinallyRule::PreCompoundStatement));
         compoundStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<FinallyRule>(this, &FinallyRule::PostCompoundStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromCompoundStatement;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromCompoundStatement;
     }
-    void PreCompoundStatement(cminor::parsing::ObjectStack& stack)
+    void PreCompoundStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostCompoundStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostCompoundStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromCompoundStatement_value = std::move(stack.top());
-            context.fromCompoundStatement = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
+            context->fromCompoundStatement = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromCompoundStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromCompoundStatement() {}
         ParsingContext* ctx;
         CompoundStatementNode* value;
         CompoundStatementNode* fromCompoundStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::UsingStatementRule : public cminor::parsing::Rule
 {
 public:
-    UsingStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    UsingStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -3524,38 +3709,43 @@ public:
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<UsingStatementRule>(this, &UsingStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<UsingStatementRule>(this, &UsingStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new UsingStatementNode(span, context.fromConstructionStatementExpression, context.fromStatement);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new UsingStatementNode(span, context->fromConstructionStatementExpression, context->fromStatement);
     }
-    void PreConstructionStatementExpression(cminor::parsing::ObjectStack& stack)
+    void PreConstructionStatementExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostConstructionStatementExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostConstructionStatementExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromConstructionStatementExpression_value = std::move(stack.top());
-            context.fromConstructionStatementExpression = *static_cast<cminor::parsing::ValueObject<ConstructionStatementNode*>*>(fromConstructionStatementExpression_value.get());
+            context->fromConstructionStatementExpression = *static_cast<cminor::parsing::ValueObject<ConstructionStatementNode*>*>(fromConstructionStatementExpression_value.get());
             stack.pop();
         }
     }
-    void PreStatement(cminor::parsing::ObjectStack& stack)
+    void PreStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromStatement_value = std::move(stack.top());
-            context.fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
+            context->fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromConstructionStatementExpression(), fromStatement() {}
         ParsingContext* ctx;
@@ -3563,35 +3753,33 @@ private:
         ConstructionStatementNode* fromConstructionStatementExpression;
         StatementNode* fromStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class StatementGrammar::LockStatementRule : public cminor::parsing::Rule
 {
 public:
-    LockStatementRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    LockStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
         SetValueTypeName("StatementNode*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> ctx_value = std::move(stack.top());
-        context.ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        context->ctx = *static_cast<cminor::parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<StatementNode*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -3604,38 +3792,43 @@ public:
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<LockStatementRule>(this, &LockStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LockStatementRule>(this, &LockStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new LockStatementNode(span, context.fromExpression, context.fromStatement);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new LockStatementNode(span, context->fromExpression, context->fromStatement);
     }
-    void PreExpression(cminor::parsing::ObjectStack& stack)
+    void PreExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostExpression(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostExpression(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromExpression_value = std::move(stack.top());
-            context.fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
+            context->fromExpression = *static_cast<cminor::parsing::ValueObject<Node*>*>(fromExpression_value.get());
             stack.pop();
         }
     }
-    void PreStatement(cminor::parsing::ObjectStack& stack)
+    void PreStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context.ctx)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
     }
-    void PostStatement(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostStatement(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromStatement_value = std::move(stack.top());
-            context.fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
+            context->fromStatement = *static_cast<cminor::parsing::ValueObject<StatementNode*>*>(fromStatement_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): ctx(), value(), fromExpression(), fromStatement() {}
         ParsingContext* ctx;
@@ -3643,29 +3836,27 @@ private:
         Node* fromExpression;
         StatementNode* fromStatement;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 void StatementGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar0 = cminor::parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::ExpressionGrammar::Create(pd);
+        grammar1 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar1);
-    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parsing.stdlib");
+    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar2)
     {
-        grammar2 = cminor::parsing::stdlib::Create(pd);
+        grammar2 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
     cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.KeywordGrammar");
@@ -3684,13 +3875,13 @@ void StatementGrammar::GetReferencedGrammars()
 
 void StatementGrammar::CreateRules()
 {
+    AddRuleLink(new cminor::parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
-    AddRuleLink(new cminor::parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
-    AddRuleLink(new cminor::parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRule(new StatementRule("Statement", GetScope(),
+    AddRuleLink(new cminor::parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
+    AddRule(new StatementRule("Statement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
@@ -3726,23 +3917,23 @@ void StatementGrammar::CreateRules()
                     new cminor::parsing::NonterminalParser("UsingStatement", "UsingStatement", 1))),
             new cminor::parsing::ActionParser("A11",
                 new cminor::parsing::NonterminalParser("LockStatement", "LockStatement", 1)))));
-    AddRule(new LabelIdRule("LabelId", GetScope(),
+    AddRule(new LabelIdRule("LabelId", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::DifferenceParser(
                 new cminor::parsing::NonterminalParser("identifier", "identifier", 0),
                 new cminor::parsing::NonterminalParser("Keyword", "Keyword", 0)))));
-    AddRule(new LabelRule("Label", GetScope(),
+    AddRule(new LabelRule("Label", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::ActionParser("A1",
                     new cminor::parsing::NonterminalParser("LabelId", "LabelId", 0)),
                 new cminor::parsing::CharParser(':')))));
-    AddRule(new LabeledStatementRule("LabeledStatement", GetScope(),
+    AddRule(new LabeledStatementRule("LabeledStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::NonterminalParser("lbl", "Label", 0),
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::NonterminalParser("stmt", "Statement", 1)))));
-    AddRule(new ControlStatementRule("ControlStatement", GetScope(),
+    AddRule(new ControlStatementRule("ControlStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
@@ -3781,7 +3972,7 @@ void StatementGrammar::CreateRules()
                     new cminor::parsing::NonterminalParser("GotoCaseStatement", "GotoCaseStatement", 1))),
             new cminor::parsing::ActionParser("A12",
                 new cminor::parsing::NonterminalParser("GotoDefaultStatement", "GotoDefaultStatement", 1)))));
-    AddRule(new CompoundStatementRule("CompoundStatement", GetScope(),
+    AddRule(new CompoundStatementRule("CompoundStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -3793,7 +3984,7 @@ void StatementGrammar::CreateRules()
                 new cminor::parsing::ActionParser("A3",
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser('}')))))));
-    AddRule(new ReturnStatementRule("ReturnStatement", GetScope(),
+    AddRule(new ReturnStatementRule("ReturnStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -3802,7 +3993,7 @@ void StatementGrammar::CreateRules()
                         new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new IfStatementRule("IfStatement", GetScope(),
+    AddRule(new IfStatementRule("IfStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -3818,7 +4009,7 @@ void StatementGrammar::CreateRules()
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::KeywordParser("else"),
                         new cminor::parsing::NonterminalParser("elses", "Statement", 1)))))));
-    AddRule(new WhileStatementRule("WhileStatement", GetScope(),
+    AddRule(new WhileStatementRule("WhileStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -3833,7 +4024,7 @@ void StatementGrammar::CreateRules()
                         new cminor::parsing::CharParser(')'))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::NonterminalParser("Statement", "Statement", 1))))));
-    AddRule(new DoStatementRule("DoStatement", GetScope(),
+    AddRule(new DoStatementRule("DoStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -3854,7 +4045,7 @@ void StatementGrammar::CreateRules()
                         new cminor::parsing::CharParser(')'))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new ForStatementRule("ForStatement", GetScope(),
+    AddRule(new ForStatementRule("ForStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -3877,7 +4068,7 @@ void StatementGrammar::CreateRules()
                         new cminor::parsing::CharParser(')'))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::NonterminalParser("Statement", "Statement", 1))))));
-    AddRule(new ForInitStatementRule("ForInitStatement", GetScope(),
+    AddRule(new ForInitStatementRule("ForInitStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::ActionParser("A0",
@@ -3886,7 +4077,7 @@ void StatementGrammar::CreateRules()
                     new cminor::parsing::NonterminalParser("ConstructionStatement", "ConstructionStatement", 1))),
             new cminor::parsing::ActionParser("A2",
                 new cminor::parsing::NonterminalParser("EmptyStatement", "EmptyStatement", 1)))));
-    AddRule(new ForLoopExpressionStatementRule("ForLoopExpressionStatement", GetScope(),
+    AddRule(new ForLoopExpressionStatementRule("ForLoopExpressionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
@@ -3898,7 +4089,7 @@ void StatementGrammar::CreateRules()
                     new cminor::parsing::NonterminalParser("AssignmentExpressionStatement", "AssignmentExpressionStatement", 1))),
             new cminor::parsing::ActionParser("A3",
                 new cminor::parsing::EmptyParser()))));
-    AddRule(new ForEachStatementRule("ForEachStatement", GetScope(),
+    AddRule(new ForEachStatementRule("ForEachStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -3921,19 +4112,19 @@ void StatementGrammar::CreateRules()
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser(')'))),
                 new cminor::parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)))));
-    AddRule(new BreakStatementRule("BreakStatement", GetScope(),
+    AddRule(new BreakStatementRule("BreakStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::KeywordParser("break"),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new ContinueStatementRule("ContinueStatement", GetScope(),
+    AddRule(new ContinueStatementRule("ContinueStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::KeywordParser("continue"),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new GotoStatementRule("GotoStatement", GetScope(),
+    AddRule(new GotoStatementRule("GotoStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -3941,7 +4132,7 @@ void StatementGrammar::CreateRules()
                     new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0)),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new SwitchStatementRule("SwitchStatement", GetScope(),
+    AddRule(new SwitchStatementRule("SwitchStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -3966,7 +4157,7 @@ void StatementGrammar::CreateRules()
                             new cminor::parsing::NonterminalParser("DefaultStatement", "DefaultStatement", 1))))),
             new cminor::parsing::ExpectationParser(
                 new cminor::parsing::CharParser('}')))));
-    AddRule(new CaseStatementRule("CaseStatement", GetScope(),
+    AddRule(new CaseStatementRule("CaseStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::ActionParser("A1",
@@ -3984,7 +4175,7 @@ void StatementGrammar::CreateRules()
                 new cminor::parsing::KleeneStarParser(
                     new cminor::parsing::ActionParser("A4",
                         new cminor::parsing::NonterminalParser("Statement", "Statement", 1)))))));
-    AddRule(new DefaultStatementRule("DefaultStatement", GetScope(),
+    AddRule(new DefaultStatementRule("DefaultStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::SequenceParser(
@@ -3994,7 +4185,7 @@ void StatementGrammar::CreateRules()
             new cminor::parsing::KleeneStarParser(
                 new cminor::parsing::ActionParser("A1",
                     new cminor::parsing::NonterminalParser("Statement", "Statement", 1))))));
-    AddRule(new GotoCaseStatementRule("GotoCaseStatement", GetScope(),
+    AddRule(new GotoCaseStatementRule("GotoCaseStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -4005,7 +4196,7 @@ void StatementGrammar::CreateRules()
                         new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new GotoDefaultStatementRule("GotoDefaultStatement", GetScope(),
+    AddRule(new GotoDefaultStatementRule("GotoDefaultStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -4013,7 +4204,7 @@ void StatementGrammar::CreateRules()
                     new cminor::parsing::KeywordParser("default")),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new AssignmentExpressionStatementRule("AssignmentExpressionStatement", GetScope(),
+    AddRule(new AssignmentExpressionStatementRule("AssignmentExpressionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::EmptyParser()),
@@ -4024,12 +4215,12 @@ void StatementGrammar::CreateRules()
                             new cminor::parsing::NonterminalParser("target", "Expression", 1)),
                         new cminor::parsing::CharParser('=')),
                     new cminor::parsing::NonterminalParser("source", "Expression", 1))))));
-    AddRule(new AssignmentStatementRule("AssignmentStatement", GetScope(),
+    AddRule(new AssignmentStatementRule("AssignmentStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::NonterminalParser("AssignmentExpressionStatement", "AssignmentExpressionStatement", 1),
                 new cminor::parsing::CharParser(';')))));
-    AddRule(new ConstructionStatementRule("ConstructionStatement", GetScope(),
+    AddRule(new ConstructionStatementRule("ConstructionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -4046,7 +4237,7 @@ void StatementGrammar::CreateRules()
             new cminor::parsing::ActionParser("A2",
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new ConstructionStatementExpressionRule("ConstructionStatementExpression", GetScope(),
+    AddRule(new ConstructionStatementExpressionRule("ConstructionStatementExpression", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -4060,7 +4251,7 @@ void StatementGrammar::CreateRules()
                         new cminor::parsing::ActionParser("A2",
                             new cminor::parsing::ExpectationParser(
                                 new cminor::parsing::NonterminalParser("Expression", "Expression", 1)))))))));
-    AddRule(new IncrementExpressionStatementRule("IncrementExpressionStatement", GetScope(),
+    AddRule(new IncrementExpressionStatementRule("IncrementExpressionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::SequenceParser(
@@ -4072,13 +4263,13 @@ void StatementGrammar::CreateRules()
                     new cminor::parsing::ActionParser("A2",
                         new cminor::parsing::NonterminalParser("right", "Expression", 1)),
                     new cminor::parsing::StringParser("++"))))));
-    AddRule(new IncrementStatementRule("IncrementStatement", GetScope(),
+    AddRule(new IncrementStatementRule("IncrementStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::NonterminalParser("IncrementExpressionStatement", "IncrementExpressionStatement", 1),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new DecrementExpressionStatementRule("DecrementExpressionStatement", GetScope(),
+    AddRule(new DecrementExpressionStatementRule("DecrementExpressionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::SequenceParser(
@@ -4090,22 +4281,22 @@ void StatementGrammar::CreateRules()
                     new cminor::parsing::ActionParser("A2",
                         new cminor::parsing::NonterminalParser("right", "Expression", 1)),
                     new cminor::parsing::StringParser("--"))))));
-    AddRule(new DecrementStatementRule("DecrementStatement", GetScope(),
+    AddRule(new DecrementStatementRule("DecrementStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::NonterminalParser("DecrementExpressionStatement", "DecrementExpressionStatement", 1),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new ExpressionStatementRule("ExpressionStatement", GetScope(),
+    AddRule(new ExpressionStatementRule("ExpressionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::ActionParser("A1",
                     new cminor::parsing::NonterminalParser("Expression", "Expression", 1)),
                 new cminor::parsing::CharParser(';')))));
-    AddRule(new EmptyStatementRule("EmptyStatement", GetScope(),
+    AddRule(new EmptyStatementRule("EmptyStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::CharParser(';'))));
-    AddRule(new ThrowStatementRule("ThrowStatement", GetScope(),
+    AddRule(new ThrowStatementRule("ThrowStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -4114,7 +4305,7 @@ void StatementGrammar::CreateRules()
                         new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new TryStatementRule("TryStatement", GetScope(),
+    AddRule(new TryStatementRule("TryStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::KeywordParser("try"),
@@ -4130,7 +4321,7 @@ void StatementGrammar::CreateRules()
                             new cminor::parsing::NonterminalParser("Finally", "Finally", 1)))),
                 new cminor::parsing::ActionParser("A3",
                     new cminor::parsing::NonterminalParser("fin", "Finally", 1))))));
-    AddRule(new CatchRule("Catch", GetScope(),
+    AddRule(new CatchRule("Catch", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::SequenceParser(
@@ -4152,12 +4343,12 @@ void StatementGrammar::CreateRules()
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::KeywordParser("catch"),
                     new cminor::parsing::NonterminalParser("catchBlock2", "CompoundStatement", 1))))));
-    AddRule(new FinallyRule("Finally", GetScope(),
+    AddRule(new FinallyRule("Finally", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::KeywordParser("finally"),
                 new cminor::parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)))));
-    AddRule(new UsingStatementRule("UsingStatement", GetScope(),
+    AddRule(new UsingStatementRule("UsingStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -4172,7 +4363,7 @@ void StatementGrammar::CreateRules()
                         new cminor::parsing::CharParser(')'))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::NonterminalParser("Statement", "Statement", 1))))));
-    AddRule(new LockStatementRule("LockStatement", GetScope(),
+    AddRule(new LockStatementRule("LockStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(

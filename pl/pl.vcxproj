@@ -29,6 +29,7 @@
     <ClCompile Include="Namespace.cpp" />
     <ClCompile Include="Nonterminal.cpp" />
     <ClCompile Include="Parser.cpp" />
+    <ClCompile Include="ParsingData.cpp" />
     <ClCompile Include="ParsingDomain.cpp" />
     <ClCompile Include="ParsingObject.cpp" />
     <ClCompile Include="Primitive.cpp" />
@@ -51,6 +52,7 @@
     <ClInclude Include="Namespace.hpp" />
     <ClInclude Include="Nonterminal.hpp" />
     <ClInclude Include="Parser.hpp" />
+    <ClInclude Include="ParsingData.hpp" />
     <ClInclude Include="ParsingDomain.hpp" />
     <ClInclude Include="ParsingObject.hpp" />
     <ClInclude Include="Primitive.hpp" />

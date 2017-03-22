@@ -108,7 +108,7 @@ void KeywordGrammar::GetReferencedGrammars()
 void KeywordGrammar::CreateRules()
 {
     AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
-    AddRule(new cminor::parsing::Rule("Keyword", GetScope(),
+    AddRule(new cminor::parsing::Rule("Keyword", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::KeywordListParser("identifier", keywords0)));
 }
 

@@ -5,6 +5,7 @@
 
 #ifndef CMINOR_PARSING_SCANNER_INCLUDED
 #define CMINOR_PARSING_SCANNER_INCLUDED
+#include <cminor/pl/ParsingData.hpp>
 #include <memory>
 #include <string>
 #include <stdint.h>
@@ -83,6 +84,7 @@ public:
     bool Synchronizing() const { return synchronizing; }
     void PushCCRule(Rule* ccRule_);
     void PopCCRule();
+    void SetParsingData(ParsingData* parsingData_) { parsingData = parsingData_; }
 private:
     const char* start;
     const char* end;
@@ -96,6 +98,7 @@ private:
     bool synchronizing;
     Rule* ccRule;
     std::stack<Rule*> ccRuleStack;
+    ParsingData* parsingData;
 };
 
 } } // namespace cminor::parsing

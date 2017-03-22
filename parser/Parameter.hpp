@@ -1,5 +1,5 @@
-#ifndef Parameter_hpp_1192
-#define Parameter_hpp_1192
+#ifndef Parameter_hpp_7033
+#define Parameter_hpp_7033
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -25,4 +25,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Parameter_hpp_1192
+#endif // Parameter_hpp_7033

@@ -6,6 +6,7 @@
 #ifndef CMINOR_PARSING_PARSER_INCLUDED
 #define CMINOR_PARSING_PARSER_INCLUDED
 #include <cminor/pl/Match.hpp>
+#include <cminor/pl/ParsingData.hpp>
 #include <cminor/pl/ParsingObject.hpp>
 #include <stack>
 
@@ -38,7 +39,7 @@ class Parser: public ParsingObject
 public:
     Parser(const std::string& name_, const std::string& info_);
     const std::string& Info() const { return info; }
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack) = 0;
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData) = 0;
 private:
     std::string info;
 };

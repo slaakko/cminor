@@ -1,5 +1,5 @@
-#ifndef LibraryFile_hpp_20689
-#define LibraryFile_hpp_20689
+#ifndef LibraryFile_hpp_5596
+#define LibraryFile_hpp_5596
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -27,4 +27,4 @@ private:
 
 } } // namespace cpg.syntax
 
-#endif // LibraryFile_hpp_20689
+#endif // LibraryFile_hpp_5596

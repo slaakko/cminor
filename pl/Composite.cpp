@@ -19,11 +19,11 @@ OptionalParser::OptionalParser(Parser* child_): UnaryParser("optional", child_, 
 {
 }
 
-Match OptionalParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match OptionalParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     Span save = scanner.GetSpan();
     bool synchronizing = scanner.Synchronizing();
-    Match match = Child()->Parse(scanner, stack);
+    Match match = Child()->Parse(scanner, stack, parsingData);
     if (match.Hit())
     {
         return match;
@@ -44,9 +44,9 @@ PositiveParser::PositiveParser(Parser* child_): UnaryParser("positive", child_, 
 {
 }
 
-Match PositiveParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match PositiveParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
-    Match match = Child()->Parse(scanner, stack);
+    Match match = Child()->Parse(scanner, stack, parsingData);
     if (match.Hit())
     {
         for (;;)
@@ -54,7 +54,7 @@ Match PositiveParser::Parse(Scanner& scanner, ObjectStack& stack)
             Span save = scanner.GetSpan();
             bool synchronizing = scanner.Synchronizing();
             scanner.Skip();
-            Match next = Child()->Parse(scanner, stack);
+            Match next = Child()->Parse(scanner, stack, parsingData);
             if (next.Hit())
             {
                 match.Concatenate(next);
@@ -81,7 +81,7 @@ KleeneStarParser::KleeneStarParser(Parser* child_): UnaryParser("kleene", child_
 {
 }
 
-Match KleeneStarParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match KleeneStarParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     Match match = Match::Empty();
     bool first = true;
@@ -97,7 +97,7 @@ Match KleeneStarParser::Parse(Scanner& scanner, ObjectStack& stack)
         {
             scanner.Skip();
         }
-        Match next = Child()->Parse(scanner, stack);
+        Match next = Child()->Parse(scanner, stack, parsingData);
         if (next.Hit())
         {
             match.Concatenate(next);
@@ -123,13 +123,13 @@ ExpectationParser::ExpectationParser(Parser* child_): UnaryParser("expectation",
 {
 }
 
-Match ExpectationParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match ExpectationParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     Span expectationSpan = scanner.GetSpan();
     Match match = Match::Nothing();
     try
     {
-        match = Child()->Parse(scanner, stack);
+        match = Child()->Parse(scanner, stack, parsingData);
     }
     catch (const ExpectationFailure& ex)
     {
@@ -156,11 +156,11 @@ CCOptParser::CCOptParser(Parser* child_) : UnaryParser("ccopt", child_, child_->
 {
 }
 
-Match CCOptParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match CCOptParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     Span save = scanner.GetSpan();
     bool synchronizing = scanner.Synchronizing();
-    Match match = Child()->Parse(scanner, stack);
+    Match match = Child()->Parse(scanner, stack, parsingData);
     if (match.Hit())
     {
         return match;
@@ -185,10 +185,10 @@ TokenParser::TokenParser(Parser* child_): UnaryParser("token", child_, child_->I
 {
 }
 
-Match TokenParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match TokenParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     scanner.BeginToken();
-    Match match = Child()->Parse(scanner, stack);
+    Match match = Child()->Parse(scanner, stack, parsingData);
     scanner.EndToken();
     return match;
 }
@@ -210,13 +210,13 @@ SequenceParser::SequenceParser(Parser* left_, Parser* right_): BinaryParser("seq
 {
 }
 
-Match SequenceParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match SequenceParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
-    Match leftMatch = Left()->Parse(scanner, stack);
+    Match leftMatch = Left()->Parse(scanner, stack, parsingData);
     if (leftMatch.Hit())
     {
         scanner.Skip();
-        Match rightMatch = Right()->Parse(scanner, stack);
+        Match rightMatch = Right()->Parse(scanner, stack, parsingData);
         if (rightMatch.Hit())
         {
             leftMatch.Concatenate(rightMatch);
@@ -239,18 +239,18 @@ AlternativeParser::AlternativeParser(Parser* left_, Parser* right_): BinaryParse
 {
 }
 
-Match AlternativeParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match AlternativeParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     Span save = scanner.GetSpan();
     bool synchronizing = scanner.Synchronizing();
-    Match leftMatch = Left()->Parse(scanner, stack);
+    Match leftMatch = Left()->Parse(scanner, stack, parsingData);
     if (leftMatch.Hit())
     {
         return leftMatch;
     }
     scanner.SetSpan(save);
     scanner.SetSynchronizing(synchronizing);
-    return Right()->Parse(scanner, stack);
+    return Right()->Parse(scanner, stack, parsingData);
 }
 
 void AlternativeParser::Accept(Visitor& visitor)
@@ -266,11 +266,11 @@ DifferenceParser::DifferenceParser(Parser* left_, Parser* right_): BinaryParser(
 {
 }
 
-Match DifferenceParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match DifferenceParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     Span save = scanner.GetSpan();
     bool synchronizing = scanner.Synchronizing();
-    Match leftMatch = Left()->Parse(scanner, stack);
+    Match leftMatch = Left()->Parse(scanner, stack, parsingData);
     if (leftMatch.Hit())
     {
         Span tmp = scanner.GetSpan();
@@ -278,7 +278,7 @@ Match DifferenceParser::Parse(Scanner& scanner, ObjectStack& stack)
         scanner.SetSpan(save);
         scanner.SetSynchronizing(synchronizing);
         save = tmp;
-        Match rightMatch = Right()->Parse(scanner, stack);
+        Match rightMatch = Right()->Parse(scanner, stack, parsingData);
         if (!rightMatch.Hit() || rightMatch.Length() < leftMatch.Length())
         {
             scanner.SetSpan(save);
@@ -302,17 +302,17 @@ ExclusiveOrParser::ExclusiveOrParser(Parser* left_, Parser* right_): BinaryParse
 {
 }
 
-Match ExclusiveOrParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match ExclusiveOrParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     Span save = scanner.GetSpan();
     bool synchronizing = scanner.Synchronizing();
-    Match leftMatch = Left()->Parse(scanner, stack);
+    Match leftMatch = Left()->Parse(scanner, stack, parsingData);
     Span temp = scanner.GetSpan();
     bool tempSynchronizing = scanner.Synchronizing();
     scanner.SetSpan(save);
     scanner.SetSynchronizing(synchronizing);
     save = temp;
-    Match rightMatch = Right()->Parse(scanner, stack);
+    Match rightMatch = Right()->Parse(scanner, stack, parsingData);
     bool match = leftMatch.Hit() ? !rightMatch.Hit() : rightMatch.Hit();
     if (match)
     {
@@ -339,16 +339,16 @@ IntersectionParser::IntersectionParser(Parser* left_, Parser* right_): BinaryPar
 {
 }
 
-Match IntersectionParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match IntersectionParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     Span save = scanner.GetSpan();
     bool synchronizing = scanner.Synchronizing();
-    Match leftMatch = Left()->Parse(scanner, stack);
+    Match leftMatch = Left()->Parse(scanner, stack, parsingData);
     if (leftMatch.Hit())
     {
         scanner.SetSpan(save);
         scanner.SetSynchronizing(synchronizing);
-        Match rightMatch = Right()->Parse(scanner, stack);
+        Match rightMatch = Right()->Parse(scanner, stack, parsingData);
         if (leftMatch.Length() == rightMatch.Length())
         {
             return leftMatch;
@@ -372,9 +372,9 @@ ListParser::ListParser(Parser* left_, Parser* right_):
 {
 }
 
-Match ListParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match ListParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
-    return Child()->Parse(scanner, stack);
+    return Child()->Parse(scanner, stack, parsingData);
 }
 
 void ListParser::Accept(Visitor& visitor)

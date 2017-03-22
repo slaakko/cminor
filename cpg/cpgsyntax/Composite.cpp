@@ -46,8 +46,10 @@ cminor::parsing::Parser* CompositeGrammar::Parse(const char* start, const char* 
         xmlLog->WriteBeginRule("parse");
     }
     cminor::parsing::ObjectStack stack;
+    std::unique_ptr<cminor::parsing::ParsingData> parsingData(new cminor::parsing::ParsingData(GetParsingDomain()->GetNumRules()));
+    scanner.SetParsingData(parsingData.get());
     stack.push(std::unique_ptr<cminor::parsing::Object>(new ValueObject<cminor::parsing::Scope*>(enclosingScope)));
-    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack);
+    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack, parsingData.get());
     cminor::parsing::Span stop = scanner.GetSpan();
     if (Log())
     {
@@ -73,28 +75,28 @@ cminor::parsing::Parser* CompositeGrammar::Parse(const char* start, const char* 
 class CompositeGrammar::AlternativeRule : public cminor::parsing::Rule
 {
 public:
-    AlternativeRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    AlternativeRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("cminor::parsing::Scope*", "enclosingScope"));
         SetValueTypeName("cminor::parsing::Parser*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> enclosingScope_value = std::move(stack.top());
-        context.enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
+        context->enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -109,42 +111,48 @@ public:
         rightNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<AlternativeRule>(this, &AlternativeRule::Preright));
         rightNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<AlternativeRule>(this, &AlternativeRule::Postright));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromleft;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromleft;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new AlternativeParser(context.value, context.fromright);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new AlternativeParser(context->value, context->fromright);
     }
-    void Preleft(cminor::parsing::ObjectStack& stack)
+    void Preleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postleft(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromleft_value = std::move(stack.top());
-            context.fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
+            context->fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
             stack.pop();
         }
     }
-    void Preright(cminor::parsing::ObjectStack& stack)
+    void Preright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postright(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromright_value = std::move(stack.top());
-            context.fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
+            context->fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): enclosingScope(), value(), fromleft(), fromright() {}
         cminor::parsing::Scope* enclosingScope;
@@ -152,35 +160,33 @@ private:
         cminor::parsing::Parser* fromleft;
         cminor::parsing::Parser* fromright;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class CompositeGrammar::SequenceRule : public cminor::parsing::Rule
 {
 public:
-    SequenceRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    SequenceRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("cminor::parsing::Scope*", "enclosingScope"));
         SetValueTypeName("cminor::parsing::Parser*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> enclosingScope_value = std::move(stack.top());
-        context.enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
+        context->enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -195,42 +201,48 @@ public:
         rightNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<SequenceRule>(this, &SequenceRule::Preright));
         rightNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<SequenceRule>(this, &SequenceRule::Postright));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromleft;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromleft;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new SequenceParser(context.value, context.fromright);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new SequenceParser(context->value, context->fromright);
     }
-    void Preleft(cminor::parsing::ObjectStack& stack)
+    void Preleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postleft(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromleft_value = std::move(stack.top());
-            context.fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
+            context->fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
             stack.pop();
         }
     }
-    void Preright(cminor::parsing::ObjectStack& stack)
+    void Preright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postright(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromright_value = std::move(stack.top());
-            context.fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
+            context->fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): enclosingScope(), value(), fromleft(), fromright() {}
         cminor::parsing::Scope* enclosingScope;
@@ -238,35 +250,33 @@ private:
         cminor::parsing::Parser* fromleft;
         cminor::parsing::Parser* fromright;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class CompositeGrammar::DifferenceRule : public cminor::parsing::Rule
 {
 public:
-    DifferenceRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    DifferenceRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("cminor::parsing::Scope*", "enclosingScope"));
         SetValueTypeName("cminor::parsing::Parser*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> enclosingScope_value = std::move(stack.top());
-        context.enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
+        context->enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -281,42 +291,48 @@ public:
         rightNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<DifferenceRule>(this, &DifferenceRule::Preright));
         rightNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DifferenceRule>(this, &DifferenceRule::Postright));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromleft;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromleft;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new DifferenceParser(context.value, context.fromright);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new DifferenceParser(context->value, context->fromright);
     }
-    void Preleft(cminor::parsing::ObjectStack& stack)
+    void Preleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postleft(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromleft_value = std::move(stack.top());
-            context.fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
+            context->fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
             stack.pop();
         }
     }
-    void Preright(cminor::parsing::ObjectStack& stack)
+    void Preright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postright(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromright_value = std::move(stack.top());
-            context.fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
+            context->fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): enclosingScope(), value(), fromleft(), fromright() {}
         cminor::parsing::Scope* enclosingScope;
@@ -324,35 +340,33 @@ private:
         cminor::parsing::Parser* fromleft;
         cminor::parsing::Parser* fromright;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class CompositeGrammar::ExclusiveOrRule : public cminor::parsing::Rule
 {
 public:
-    ExclusiveOrRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ExclusiveOrRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("cminor::parsing::Scope*", "enclosingScope"));
         SetValueTypeName("cminor::parsing::Parser*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> enclosingScope_value = std::move(stack.top());
-        context.enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
+        context->enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -367,42 +381,48 @@ public:
         rightNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ExclusiveOrRule>(this, &ExclusiveOrRule::Preright));
         rightNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ExclusiveOrRule>(this, &ExclusiveOrRule::Postright));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromleft;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromleft;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ExclusiveOrParser(context.value, context.fromright);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ExclusiveOrParser(context->value, context->fromright);
     }
-    void Preleft(cminor::parsing::ObjectStack& stack)
+    void Preleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postleft(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromleft_value = std::move(stack.top());
-            context.fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
+            context->fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
             stack.pop();
         }
     }
-    void Preright(cminor::parsing::ObjectStack& stack)
+    void Preright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postright(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromright_value = std::move(stack.top());
-            context.fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
+            context->fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): enclosingScope(), value(), fromleft(), fromright() {}
         cminor::parsing::Scope* enclosingScope;
@@ -410,35 +430,33 @@ private:
         cminor::parsing::Parser* fromleft;
         cminor::parsing::Parser* fromright;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class CompositeGrammar::IntersectionRule : public cminor::parsing::Rule
 {
 public:
-    IntersectionRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    IntersectionRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("cminor::parsing::Scope*", "enclosingScope"));
         SetValueTypeName("cminor::parsing::Parser*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> enclosingScope_value = std::move(stack.top());
-        context.enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
+        context->enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -453,42 +471,48 @@ public:
         rightNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IntersectionRule>(this, &IntersectionRule::Preright));
         rightNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IntersectionRule>(this, &IntersectionRule::Postright));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromleft;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromleft;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new IntersectionParser(context.value, context.fromright);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new IntersectionParser(context->value, context->fromright);
     }
-    void Preleft(cminor::parsing::ObjectStack& stack)
+    void Preleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postleft(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromleft_value = std::move(stack.top());
-            context.fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
+            context->fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
             stack.pop();
         }
     }
-    void Preright(cminor::parsing::ObjectStack& stack)
+    void Preright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postright(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromright_value = std::move(stack.top());
-            context.fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
+            context->fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): enclosingScope(), value(), fromleft(), fromright() {}
         cminor::parsing::Scope* enclosingScope;
@@ -496,35 +520,33 @@ private:
         cminor::parsing::Parser* fromleft;
         cminor::parsing::Parser* fromright;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class CompositeGrammar::ListRule : public cminor::parsing::Rule
 {
 public:
-    ListRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ListRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("cminor::parsing::Scope*", "enclosingScope"));
         SetValueTypeName("cminor::parsing::Parser*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> enclosingScope_value = std::move(stack.top());
-        context.enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
+        context->enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -539,42 +561,48 @@ public:
         rightNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ListRule>(this, &ListRule::Preright));
         rightNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ListRule>(this, &ListRule::Postright));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromleft;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromleft;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ListParser(context.value, context.fromright);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ListParser(context->value, context->fromright);
     }
-    void Preleft(cminor::parsing::ObjectStack& stack)
+    void Preleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postleft(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postleft(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromleft_value = std::move(stack.top());
-            context.fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
+            context->fromleft = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromleft_value.get());
             stack.pop();
         }
     }
-    void Preright(cminor::parsing::ObjectStack& stack)
+    void Preright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void Postright(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postright(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromright_value = std::move(stack.top());
-            context.fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
+            context->fromright = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromright_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): enclosingScope(), value(), fromleft(), fromright() {}
         cminor::parsing::Scope* enclosingScope;
@@ -582,35 +610,33 @@ private:
         cminor::parsing::Parser* fromleft;
         cminor::parsing::Parser* fromright;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class CompositeGrammar::PostfixRule : public cminor::parsing::Rule
 {
 public:
-    PostfixRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    PostfixRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("cminor::parsing::Scope*", "enclosingScope"));
         SetValueTypeName("cminor::parsing::Parser*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> enclosingScope_value = std::move(stack.top());
-        context.enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
+        context->enclosingScope = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Scope*>*>(enclosingScope_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -626,45 +652,49 @@ public:
         primaryNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<PostfixRule>(this, &PostfixRule::PrePrimary));
         primaryNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PostfixRule>(this, &PostfixRule::PostPrimary));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromPrimary;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromPrimary;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new KleeneStarParser(context.value);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new KleeneStarParser(context->value);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new PositiveParser(context.value);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new PositiveParser(context->value);
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new OptionalParser(context.value);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new OptionalParser(context->value);
     }
-    void PrePrimary(cminor::parsing::ObjectStack& stack)
+    void PrePrimary(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context.enclosingScope)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Scope*>(context->enclosingScope)));
     }
-    void PostPrimary(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostPrimary(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromPrimary_value = std::move(stack.top());
-            context.fromPrimary = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromPrimary_value.get());
+            context->fromPrimary = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromPrimary_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): enclosingScope(), value(), fromPrimary() {}
         cminor::parsing::Scope* enclosingScope;
         cminor::parsing::Parser* value;
         cminor::parsing::Parser* fromPrimary;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 void CompositeGrammar::GetReferencedGrammars()
@@ -681,7 +711,7 @@ void CompositeGrammar::GetReferencedGrammars()
 void CompositeGrammar::CreateRules()
 {
     AddRuleLink(new cminor::parsing::RuleLink("Primary", this, "PrimaryGrammar.Primary"));
-    AddRule(new AlternativeRule("Alternative", GetScope(),
+    AddRule(new AlternativeRule("Alternative", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::NonterminalParser("left", "Sequence", 1)),
@@ -691,14 +721,14 @@ void CompositeGrammar::CreateRules()
                     new cminor::parsing::ActionParser("A1",
                         new cminor::parsing::ExpectationParser(
                             new cminor::parsing::NonterminalParser("right", "Sequence", 1))))))));
-    AddRule(new SequenceRule("Sequence", GetScope(),
+    AddRule(new SequenceRule("Sequence", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::NonterminalParser("left", "Difference", 1)),
             new cminor::parsing::KleeneStarParser(
                 new cminor::parsing::ActionParser("A1",
                     new cminor::parsing::NonterminalParser("right", "Difference", 1))))));
-    AddRule(new DifferenceRule("Difference", GetScope(),
+    AddRule(new DifferenceRule("Difference", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::NonterminalParser("left", "ExclusiveOr", 1)),
@@ -708,7 +738,7 @@ void CompositeGrammar::CreateRules()
                     new cminor::parsing::ActionParser("A1",
                         new cminor::parsing::ExpectationParser(
                             new cminor::parsing::NonterminalParser("right", "ExclusiveOr", 1))))))));
-    AddRule(new ExclusiveOrRule("ExclusiveOr", GetScope(),
+    AddRule(new ExclusiveOrRule("ExclusiveOr", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::NonterminalParser("left", "Intersection", 1)),
@@ -718,7 +748,7 @@ void CompositeGrammar::CreateRules()
                     new cminor::parsing::ActionParser("A1",
                         new cminor::parsing::ExpectationParser(
                             new cminor::parsing::NonterminalParser("right", "Intersection", 1))))))));
-    AddRule(new IntersectionRule("Intersection", GetScope(),
+    AddRule(new IntersectionRule("Intersection", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::NonterminalParser("left", "List", 1)),
@@ -727,7 +757,7 @@ void CompositeGrammar::CreateRules()
                     new cminor::parsing::CharParser('&'),
                     new cminor::parsing::ActionParser("A1",
                         new cminor::parsing::NonterminalParser("right", "List", 1)))))));
-    AddRule(new ListRule("List", GetScope(),
+    AddRule(new ListRule("List", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::NonterminalParser("left", "Postfix", 1)),
@@ -736,7 +766,7 @@ void CompositeGrammar::CreateRules()
                     new cminor::parsing::CharParser('%'),
                     new cminor::parsing::ActionParser("A1",
                         new cminor::parsing::NonterminalParser("right", "Postfix", 1)))))));
-    AddRule(new PostfixRule("Postfix", GetScope(),
+    AddRule(new PostfixRule("Postfix", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::NonterminalParser("Primary", "Primary", 1)),

@@ -1,5 +1,5 @@
-#ifndef Rule_hpp_20689
-#define Rule_hpp_20689
+#ifndef Rule_hpp_5596
+#define Rule_hpp_5596
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -24,4 +24,4 @@ private:
 
 } } // namespace cpg.syntax
 
-#endif // Rule_hpp_20689
+#endif // Rule_hpp_5596

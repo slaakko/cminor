@@ -1,5 +1,5 @@
-#ifndef Function_hpp_9318
-#define Function_hpp_9318
+#ifndef Function_hpp_7033
+#define Function_hpp_7033
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -30,4 +30,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Function_hpp_9318
+#endif // Function_hpp_7033

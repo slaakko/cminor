@@ -11,7 +11,7 @@
 
 namespace cpg.cpp
 {
-    [cpp]using cminor::machine::Trim;
+    [cpp]using cminor::util::Trim;
     [cpp]using namespace cminor::pom;
 
     grammar DeclaratorGrammar

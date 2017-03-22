@@ -45,7 +45,9 @@ cminor::pom::Literal* LiteralGrammar::Parse(const char* start, const char* end, 
         xmlLog->WriteBeginRule("parse");
     }
     cminor::parsing::ObjectStack stack;
-    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack);
+    std::unique_ptr<cminor::parsing::ParsingData> parsingData(new cminor::parsing::ParsingData(GetParsingDomain()->GetNumRules()));
+    scanner.SetParsingData(parsingData.get());
+    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack, parsingData.get());
     cminor::parsing::Span stop = scanner.GetSpan();
     if (Log())
     {
@@ -71,24 +73,24 @@ cminor::pom::Literal* LiteralGrammar::Parse(const char* start, const char* end, 
 class LiteralGrammar::LiteralRule : public cminor::parsing::Rule
 {
 public:
-    LiteralRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    LiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("cminor::pom::Literal*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -117,86 +119,98 @@ public:
         cminor::parsing::NonterminalParser* pointerLiteralNonterminalParser = GetNonterminal("PointerLiteral");
         pointerLiteralNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LiteralRule>(this, &LiteralRule::PostPointerLiteral));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromIntegerLiteral;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromIntegerLiteral;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromCharacterLiteral;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromCharacterLiteral;
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromFloatingLiteral;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromFloatingLiteral;
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromStringLiteral;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromStringLiteral;
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromBooleanLiteral;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromBooleanLiteral;
     }
-    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromPointerLiteral;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromPointerLiteral;
     }
-    void PostIntegerLiteral(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostIntegerLiteral(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromIntegerLiteral_value = std::move(stack.top());
-            context.fromIntegerLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromIntegerLiteral_value.get());
+            context->fromIntegerLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromIntegerLiteral_value.get());
             stack.pop();
         }
     }
-    void PostCharacterLiteral(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostCharacterLiteral(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromCharacterLiteral_value = std::move(stack.top());
-            context.fromCharacterLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromCharacterLiteral_value.get());
+            context->fromCharacterLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromCharacterLiteral_value.get());
             stack.pop();
         }
     }
-    void PostFloatingLiteral(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostFloatingLiteral(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromFloatingLiteral_value = std::move(stack.top());
-            context.fromFloatingLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromFloatingLiteral_value.get());
+            context->fromFloatingLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromFloatingLiteral_value.get());
             stack.pop();
         }
     }
-    void PostStringLiteral(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostStringLiteral(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromStringLiteral_value = std::move(stack.top());
-            context.fromStringLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromStringLiteral_value.get());
+            context->fromStringLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromStringLiteral_value.get());
             stack.pop();
         }
     }
-    void PostBooleanLiteral(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostBooleanLiteral(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromBooleanLiteral_value = std::move(stack.top());
-            context.fromBooleanLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromBooleanLiteral_value.get());
+            context->fromBooleanLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromBooleanLiteral_value.get());
             stack.pop();
         }
     }
-    void PostPointerLiteral(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostPointerLiteral(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromPointerLiteral_value = std::move(stack.top());
-            context.fromPointerLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromPointerLiteral_value.get());
+            context->fromPointerLiteral = *static_cast<cminor::parsing::ValueObject<cminor::pom::Literal*>*>(fromPointerLiteral_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value(), fromIntegerLiteral(), fromCharacterLiteral(), fromFloatingLiteral(), fromStringLiteral(), fromBooleanLiteral(), fromPointerLiteral() {}
         cminor::pom::Literal* value;
@@ -207,31 +221,29 @@ private:
         cminor::pom::Literal* fromBooleanLiteral;
         cminor::pom::Literal* fromPointerLiteral;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class LiteralGrammar::IntegerLiteralRule : public cminor::parsing::Rule
 {
 public:
-    IntegerLiteralRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    IntegerLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("cminor::pom::Literal*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -242,49 +254,50 @@ public:
         cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IntegerLiteralRule>(this, &IntegerLiteralRule::A2Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Literal(std::string(matchBegin, matchEnd));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Literal(std::string(matchBegin, matchEnd));
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Literal(std::string(matchBegin, matchEnd));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Literal(std::string(matchBegin, matchEnd));
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Literal(std::string(matchBegin, matchEnd));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Literal(std::string(matchBegin, matchEnd));
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value() {}
         cminor::pom::Literal* value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class LiteralGrammar::CharacterLiteralRule : public cminor::parsing::Rule
 {
 public:
-    CharacterLiteralRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    CharacterLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("cminor::pom::Literal*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -295,90 +308,90 @@ public:
         cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharacterLiteralRule>(this, &CharacterLiteralRule::A2Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Literal(std::string(matchBegin, matchEnd));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Literal(std::string(matchBegin, matchEnd));
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Literal(std::string(matchBegin, matchEnd));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Literal(std::string(matchBegin, matchEnd));
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Literal(std::string(matchBegin, matchEnd));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Literal(std::string(matchBegin, matchEnd));
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value() {}
         cminor::pom::Literal* value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class LiteralGrammar::CCharSequenceRule : public cminor::parsing::Rule
 {
 public:
-    CCharSequenceRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    CCharSequenceRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("std::string");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
         cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CCharSequenceRule>(this, &CCharSequenceRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = std::string(matchBegin, matchEnd);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = std::string(matchBegin, matchEnd);
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value() {}
         std::string value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class LiteralGrammar::FloatingLiteralRule : public cminor::parsing::Rule
 {
 public:
-    FloatingLiteralRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    FloatingLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("cminor::pom::Literal*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -387,86 +400,85 @@ public:
         cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<FloatingLiteralRule>(this, &FloatingLiteralRule::A1Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Literal(std::string(matchBegin, matchEnd));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Literal(std::string(matchBegin, matchEnd));
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Literal(std::string(matchBegin, matchEnd));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Literal(std::string(matchBegin, matchEnd));
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value() {}
         cminor::pom::Literal* value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class LiteralGrammar::StringLiteralRule : public cminor::parsing::Rule
 {
 public:
-    StringLiteralRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    StringLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("cminor::pom::Literal*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
         cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Literal(std::string(matchBegin, matchEnd));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Literal(std::string(matchBegin, matchEnd));
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value() {}
         cminor::pom::Literal* value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class LiteralGrammar::BooleanLiteralRule : public cminor::parsing::Rule
 {
 public:
-    BooleanLiteralRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    BooleanLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("cminor::pom::Literal*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -475,63 +487,62 @@ public:
         cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BooleanLiteralRule>(this, &BooleanLiteralRule::A1Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Literal("true");
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Literal("true");
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Literal("false");
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Literal("false");
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value() {}
         cminor::pom::Literal* value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class LiteralGrammar::PointerLiteralRule : public cminor::parsing::Rule
 {
 public:
-    PointerLiteralRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    PointerLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("cminor::pom::Literal*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::pom::Literal*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
         cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PointerLiteralRule>(this, &PointerLiteralRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new cminor::pom::Literal("nullptr");
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new cminor::pom::Literal("nullptr");
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value() {}
         cminor::pom::Literal* value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 void LiteralGrammar::GetReferencedGrammars()
@@ -540,7 +551,7 @@ void LiteralGrammar::GetReferencedGrammars()
 
 void LiteralGrammar::CreateRules()
 {
-    AddRule(new LiteralRule("Literal", GetScope(),
+    AddRule(new LiteralRule("Literal", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
@@ -558,7 +569,7 @@ void LiteralGrammar::CreateRules()
                     new cminor::parsing::NonterminalParser("BooleanLiteral", "BooleanLiteral", 0))),
             new cminor::parsing::ActionParser("A5",
                 new cminor::parsing::NonterminalParser("PointerLiteral", "PointerLiteral", 0)))));
-    AddRule(new IntegerLiteralRule("IntegerLiteral", GetScope(),
+    AddRule(new IntegerLiteralRule("IntegerLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::ActionParser("A0",
@@ -579,21 +590,21 @@ void LiteralGrammar::CreateRules()
                         new cminor::parsing::NonterminalParser("hl", "HexadecimalLiteral", 0),
                         new cminor::parsing::OptionalParser(
                             new cminor::parsing::NonterminalParser("is3", "IntegerSuffix", 0))))))));
-    AddRule(new cminor::parsing::Rule("DecimalLiteral", GetScope(),
+    AddRule(new cminor::parsing::Rule("DecimalLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::CharSetParser("1-9"),
                 new cminor::parsing::KleeneStarParser(
                     new cminor::parsing::DigitParser())))));
-    AddRule(new cminor::parsing::Rule("OctalLiteral", GetScope(),
+    AddRule(new cminor::parsing::Rule("OctalLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::CharParser('0'),
                 new cminor::parsing::KleeneStarParser(
                     new cminor::parsing::NonterminalParser("OctalDigit", "OctalDigit", 0))))));
-    AddRule(new cminor::parsing::Rule("OctalDigit", GetScope(),
+    AddRule(new cminor::parsing::Rule("OctalDigit", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::CharSetParser("0-7")));
-    AddRule(new cminor::parsing::Rule("HexadecimalLiteral", GetScope(),
+    AddRule(new cminor::parsing::Rule("HexadecimalLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::AlternativeParser(
@@ -601,7 +612,7 @@ void LiteralGrammar::CreateRules()
                     new cminor::parsing::StringParser("0X")),
                 new cminor::parsing::PositiveParser(
                     new cminor::parsing::HexDigitParser())))));
-    AddRule(new cminor::parsing::Rule("IntegerSuffix", GetScope(),
+    AddRule(new cminor::parsing::Rule("IntegerSuffix", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::TokenParser(
@@ -621,19 +632,19 @@ void LiteralGrammar::CreateRules()
                     new cminor::parsing::NonterminalParser("LongSuffix", "LongSuffix", 0),
                     new cminor::parsing::OptionalParser(
                         new cminor::parsing::NonterminalParser("UnsignedSuffix", "UnsignedSuffix", 0)))))));
-    AddRule(new cminor::parsing::Rule("UnsignedSuffix", GetScope(),
+    AddRule(new cminor::parsing::Rule("UnsignedSuffix", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::CharParser('u'),
             new cminor::parsing::CharParser('U'))));
-    AddRule(new cminor::parsing::Rule("LongLongSuffix", GetScope(),
+    AddRule(new cminor::parsing::Rule("LongLongSuffix", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::StringParser("ll"),
             new cminor::parsing::StringParser("LL"))));
-    AddRule(new cminor::parsing::Rule("LongSuffix", GetScope(),
+    AddRule(new cminor::parsing::Rule("LongSuffix", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::CharParser('l'),
             new cminor::parsing::CharParser('L'))));
-    AddRule(new CharacterLiteralRule("CharacterLiteral", GetScope(),
+    AddRule(new CharacterLiteralRule("CharacterLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::ActionParser("A0",
@@ -642,14 +653,14 @@ void LiteralGrammar::CreateRules()
                     new cminor::parsing::NonterminalParser("UniversalCharacterLiteral", "UniversalCharacterLiteral", 0))),
             new cminor::parsing::ActionParser("A2",
                 new cminor::parsing::NonterminalParser("WideCharacterLiteral", "WideCharacterLiteral", 0)))));
-    AddRule(new cminor::parsing::Rule("NarrowCharacterLiteral", GetScope(),
+    AddRule(new cminor::parsing::Rule("NarrowCharacterLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::CharParser('\''),
                     new cminor::parsing::NonterminalParser("CCharSequence", "CCharSequence", 0)),
                 new cminor::parsing::CharParser('\'')))));
-    AddRule(new cminor::parsing::Rule("UniversalCharacterLiteral", GetScope(),
+    AddRule(new cminor::parsing::Rule("UniversalCharacterLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::TokenParser(
                 new cminor::parsing::SequenceParser(
@@ -667,7 +678,7 @@ void LiteralGrammar::CreateRules()
                             new cminor::parsing::CharParser('\'')),
                         new cminor::parsing::NonterminalParser("cs2", "CCharSequence", 0)),
                     new cminor::parsing::CharParser('\''))))));
-    AddRule(new cminor::parsing::Rule("WideCharacterLiteral", GetScope(),
+    AddRule(new cminor::parsing::Rule("WideCharacterLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -676,22 +687,22 @@ void LiteralGrammar::CreateRules()
                         new cminor::parsing::CharParser('\'')),
                     new cminor::parsing::NonterminalParser("CCharSequence", "CCharSequence", 0)),
                 new cminor::parsing::CharParser('\'')))));
-    AddRule(new CCharSequenceRule("CCharSequence", GetScope(),
+    AddRule(new CCharSequenceRule("CCharSequence", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::TokenParser(
                 new cminor::parsing::PositiveParser(
                     new cminor::parsing::NonterminalParser("CChar", "CChar", 0))))));
-    AddRule(new cminor::parsing::Rule("CChar", GetScope(),
+    AddRule(new cminor::parsing::Rule("CChar", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::CharSetParser("\'\\\n", true),
             new cminor::parsing::NonterminalParser("EscapeSequence", "EscapeSequence", 0))));
-    AddRule(new cminor::parsing::Rule("EscapeSequence", GetScope(),
+    AddRule(new cminor::parsing::Rule("EscapeSequence", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::NonterminalParser("SimpleEscapeSequence", "SimpleEscapeSequence", 0),
                 new cminor::parsing::NonterminalParser("OctalEscapeSequence", "OctalEscapeSequence", 0)),
             new cminor::parsing::NonterminalParser("HexadecimalEscapeSequence", "HexadecimalEscapeSequence", 0))));
-    AddRule(new cminor::parsing::Rule("SimpleEscapeSequence", GetScope(),
+    AddRule(new cminor::parsing::Rule("SimpleEscapeSequence", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
@@ -713,7 +724,7 @@ void LiteralGrammar::CreateRules()
                     new cminor::parsing::StringParser("\\r")),
                 new cminor::parsing::StringParser("\\t")),
             new cminor::parsing::StringParser("\\v"))));
-    AddRule(new cminor::parsing::Rule("OctalEscapeSequence", GetScope(),
+    AddRule(new cminor::parsing::Rule("OctalEscapeSequence", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -723,12 +734,12 @@ void LiteralGrammar::CreateRules()
                     new cminor::parsing::NonterminalParser("OctalDigit", "OctalDigit", 0))),
             new cminor::parsing::OptionalParser(
                 new cminor::parsing::NonterminalParser("OctalDigit", "OctalDigit", 0)))));
-    AddRule(new cminor::parsing::Rule("HexadecimalEscapeSequence", GetScope(),
+    AddRule(new cminor::parsing::Rule("HexadecimalEscapeSequence", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::StringParser("\\x"),
             new cminor::parsing::PositiveParser(
                 new cminor::parsing::HexDigitParser()))));
-    AddRule(new FloatingLiteralRule("FloatingLiteral", GetScope(),
+    AddRule(new FloatingLiteralRule("FloatingLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::TokenParser(
@@ -747,7 +758,7 @@ void LiteralGrammar::CreateRules()
                             new cminor::parsing::NonterminalParser("ExponentPart", "ExponentPart", 0)),
                         new cminor::parsing::OptionalParser(
                             new cminor::parsing::NonterminalParser("FloatingSuffix", "FloatingSuffix", 0))))))));
-    AddRule(new cminor::parsing::Rule("FractionalConstant", GetScope(),
+    AddRule(new cminor::parsing::Rule("FractionalConstant", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -758,10 +769,10 @@ void LiteralGrammar::CreateRules()
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::NonterminalParser("DigitSequence", "DigitSequence", 0),
                 new cminor::parsing::CharParser('.')))));
-    AddRule(new cminor::parsing::Rule("DigitSequence", GetScope(),
+    AddRule(new cminor::parsing::Rule("DigitSequence", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::PositiveParser(
             new cminor::parsing::DigitParser())));
-    AddRule(new cminor::parsing::Rule("ExponentPart", GetScope(),
+    AddRule(new cminor::parsing::Rule("ExponentPart", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::AlternativeParser(
@@ -770,13 +781,13 @@ void LiteralGrammar::CreateRules()
                 new cminor::parsing::OptionalParser(
                     new cminor::parsing::NonterminalParser("Sign", "Sign", 0))),
             new cminor::parsing::NonterminalParser("DigitSequence", "DigitSequence", 0))));
-    AddRule(new cminor::parsing::Rule("Sign", GetScope(),
+    AddRule(new cminor::parsing::Rule("Sign", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::CharParser('+'),
             new cminor::parsing::CharParser('-'))));
-    AddRule(new cminor::parsing::Rule("FloatingSuffix", GetScope(),
+    AddRule(new cminor::parsing::Rule("FloatingSuffix", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::CharSetParser("fFlL")));
-    AddRule(new StringLiteralRule("StringLiteral", GetScope(),
+    AddRule(new StringLiteralRule("StringLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::TokenParser(
                 new cminor::parsing::SequenceParser(
@@ -788,7 +799,7 @@ void LiteralGrammar::CreateRules()
                         new cminor::parsing::OptionalParser(
                             new cminor::parsing::NonterminalParser("SCharSequence", "SCharSequence", 0))),
                     new cminor::parsing::CharParser('\"'))))));
-    AddRule(new cminor::parsing::Rule("EncodingPrefix", GetScope(),
+    AddRule(new cminor::parsing::Rule("EncodingPrefix", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
@@ -796,20 +807,20 @@ void LiteralGrammar::CreateRules()
                     new cminor::parsing::CharParser('u')),
                 new cminor::parsing::CharParser('U')),
             new cminor::parsing::CharParser('L'))));
-    AddRule(new cminor::parsing::Rule("SCharSequence", GetScope(),
+    AddRule(new cminor::parsing::Rule("SCharSequence", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::PositiveParser(
             new cminor::parsing::NonterminalParser("SChar", "SChar", 0))));
-    AddRule(new cminor::parsing::Rule("SChar", GetScope(),
+    AddRule(new cminor::parsing::Rule("SChar", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::CharSetParser("\"\\\n", true),
             new cminor::parsing::NonterminalParser("EscapeSequence", "EscapeSequence", 0))));
-    AddRule(new BooleanLiteralRule("BooleanLiteral", GetScope(),
+    AddRule(new BooleanLiteralRule("BooleanLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::ActionParser("A0",
                 new cminor::parsing::KeywordParser("true")),
             new cminor::parsing::ActionParser("A1",
                 new cminor::parsing::KeywordParser("false")))));
-    AddRule(new PointerLiteralRule("PointerLiteral", GetScope(),
+    AddRule(new PointerLiteralRule("PointerLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::KeywordParser("nullptr"))));
 }

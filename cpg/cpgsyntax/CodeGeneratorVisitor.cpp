@@ -139,6 +139,8 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
             cppFormatter.DecIndent();
             cppFormatter.WriteLine("}");
             cppFormatter.WriteLine("cminor::parsing::ObjectStack stack;");
+            cppFormatter.WriteLine("std::unique_ptr<cminor::parsing::ParsingData> parsingData(new cminor::parsing::ParsingData(GetParsingDomain()->GetNumRules()));");
+            cppFormatter.WriteLine("scanner.SetParsingData(parsingData.get());");
 
             int n = int(grammar.StartRule()->InheritedAttributes().size());
             for (int i = 0; i < n; ++i)
@@ -147,7 +149,7 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
                 cppFormatter.WriteLine("stack.push(std::unique_ptr<cminor::parsing::Object>(new ValueObject<" + attr.TypeName() + ">(" + attr.Name() + ")));");
             }
 
-            cppFormatter.WriteLine("cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack);");
+            cppFormatter.WriteLine("cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack, parsingData.get());");
             cppFormatter.WriteLine("cminor::parsing::Span stop = scanner.GetSpan();");
             cppFormatter.WriteLine("if (Log())");
             cppFormatter.WriteLine("{");
@@ -196,9 +198,9 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
             cppFormatter.WriteLine("public:");
             cppFormatter.IncIndent();
             // constructor:
-            cppFormatter.WriteLine(rule->SpecializedTypeName() + "(const std::string& name_, Scope* enclosingScope_, Parser* definition_):");
+            cppFormatter.WriteLine(rule->SpecializedTypeName() + "(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):");
             cppFormatter.IncIndent();
-            cppFormatter.WriteLine("cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()");
+            cppFormatter.WriteLine("cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)");
             cppFormatter.DecIndent();
             cppFormatter.WriteLine("{");
             cppFormatter.IncIndent();
@@ -222,36 +224,36 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
             cppFormatter.WriteLine("}");
 
             // enter:
-            cppFormatter.WriteLine("virtual void Enter(cminor::parsing::ObjectStack& stack)");
+            cppFormatter.WriteLine("virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)");
             cppFormatter.WriteLine("{");
             cppFormatter.IncIndent();
-            cppFormatter.WriteLine("contextStack.push(std::move(context));");
-            cppFormatter.WriteLine("context = Context();");
+            cppFormatter.WriteLine("parsingData->PushContext(Id(), new Context());");
+            cppFormatter.WriteLine("Context* context = static_cast<Context*>(parsingData->GetContext(Id()));");
             m = int(rule->InheritedAttributes().size());
             for (int i = m - 1; i >= 0; --i)
             {
                 const AttrOrVariable& attr = rule->InheritedAttributes()[i];
                 cppFormatter.WriteLine("std::unique_ptr<cminor::parsing::Object> " + attr.Name() + "_value = std::move(stack.top());");
-                cppFormatter.WriteLine("context." + attr.Name() + " = *static_cast<cminor::parsing::ValueObject<" + attr.TypeName() + ">*>(" + attr.Name() + "_value.get());");
+                cppFormatter.WriteLine("context->" + attr.Name() + " = *static_cast<cminor::parsing::ValueObject<" + attr.TypeName() + ">*>(" + attr.Name() + "_value.get());");
                 cppFormatter.WriteLine("stack.pop();");
             }
             cppFormatter.DecIndent();
             cppFormatter.WriteLine("}");
             // leave:
-            cppFormatter.WriteLine("virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)");
+            cppFormatter.WriteLine("virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)");
             cppFormatter.WriteLine("{");
             cppFormatter.IncIndent();
             if (!rule->ValueTypeName().empty())
             {
+                cppFormatter.WriteLine("Context* context = static_cast<Context*>(parsingData->GetContext(Id()));");
                 cppFormatter.WriteLine("if (matched)");
                 cppFormatter.WriteLine("{");
                 cppFormatter.IncIndent();
-                cppFormatter.WriteLine("stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<" + rule->ValueTypeName() + ">(context.value)));");
+                cppFormatter.WriteLine("stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<" + rule->ValueTypeName() + ">(context->value)));");
                 cppFormatter.DecIndent();
                 cppFormatter.WriteLine("}");
             }
-            cppFormatter.WriteLine("context = std::move(contextStack.top());");
-            cppFormatter.WriteLine("contextStack.pop();");
+            cppFormatter.WriteLine("parsingData->PopContext(Id());");
             cppFormatter.DecIndent();
             cppFormatter.WriteLine("}");
 
@@ -296,11 +298,15 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
             {
                 ActionParser* action = rule->Actions()[i];
                 cppFormatter.WriteLine("void " + action->MethodName() +
-                    "(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)");
+                    "(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)");
+                cppFormatter.SetStart();
+                cppFormatter.SetStartText("Context* context = static_cast<Context*>(parsingData->GetContext(Id()));");
                 action->SuccessCode()->Print(cppFormatter);
                 if (action->FailCode())
                 {
-                    cppFormatter.WriteLine("void " + action->MethodName() + "Fail()");
+                    cppFormatter.WriteLine("void " + action->MethodName() + "Fail(ParsingData* parsingData)");
+                    cppFormatter.SetStart();
+                    cppFormatter.SetStartText("Context* context = static_cast<Context*>(parsingData->GetContext(Id()));");
                     action->FailCode()->Print(cppFormatter);
                 }
             }
@@ -314,9 +320,10 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
                 {
                     if (!nonterminal->Arguments().empty())
                     {
-                        cppFormatter.WriteLine("void " + nonterminal->PreCallMethodName() + "(cminor::parsing::ObjectStack& stack)");
+                        cppFormatter.WriteLine("void " + nonterminal->PreCallMethodName() + "(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)");
                         cppFormatter.WriteLine("{");
                         cppFormatter.IncIndent();
+                        cppFormatter.WriteLine("Context* context = static_cast<Context*>(parsingData->GetContext(Id()));");
                         int p = int(nonterminal->Arguments().size());
                         for (int j = 0; j < p; ++j)
                         {
@@ -331,14 +338,15 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
                     }
                     if (!nonterminal->GetRule()->ValueTypeName().empty())
                     {
-                        cppFormatter.WriteLine("void " + nonterminal->PostCallMethodName() + "(cminor::parsing::ObjectStack& stack, bool matched)");
+                        cppFormatter.WriteLine("void " + nonterminal->PostCallMethodName() + "(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)");
                         cppFormatter.WriteLine("{");
                         cppFormatter.IncIndent();
+                        cppFormatter.WriteLine("Context* context = static_cast<Context*>(parsingData->GetContext(Id()));");
                         cppFormatter.WriteLine("if (matched)");
                         cppFormatter.WriteLine("{");
                         cppFormatter.IncIndent();
                         cppFormatter.WriteLine("std::unique_ptr<cminor::parsing::Object> " + nonterminal->ValueFieldName() + "_value = std::move(stack.top());");
-                        cppFormatter.WriteLine("context." + nonterminal->ValueFieldName() + " = *static_cast<cminor::parsing::ValueObject<" + 
+                        cppFormatter.WriteLine("context->" + nonterminal->ValueFieldName() + " = *static_cast<cminor::parsing::ValueObject<" + 
                             nonterminal->GetRule()->ValueTypeName() + ">*>(" + nonterminal->ValueFieldName() + "_value.get());");
                         cppFormatter.WriteLine("stack.pop();");
                         cppFormatter.DecIndent();
@@ -353,7 +361,7 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
             cppFormatter.IncIndent();
 
             // Context:
-            cppFormatter.WriteLine("struct Context");
+            cppFormatter.WriteLine("struct Context : cminor::parsing::Context");
             cppFormatter.WriteLine("{");
             cppFormatter.IncIndent();
             cppFormatter.Write("Context(): ");
@@ -415,8 +423,6 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
             }
             cppFormatter.DecIndent();
             cppFormatter.WriteLine("};");
-            cppFormatter.WriteLine("std::stack<Context> contextStack;");
-            cppFormatter.WriteLine("Context context;");
             cppFormatter.DecIndent();
             cppFormatter.WriteLine("};");
             cppFormatter.NewLine();
@@ -589,11 +595,11 @@ void CodeGeneratorVisitor::BeginVisit(Rule& rule)
 {
     if (rule.Specialized())
     {
-        cppFormatter.Write("AddRule(new " + rule.SpecializedTypeName() + "(\"" + rule.Name() + "\", GetScope(),");
+        cppFormatter.Write("AddRule(new " + rule.SpecializedTypeName() + "(\"" + rule.Name() + "\", GetScope(), GetParsingDomain()->GetNextRuleId(),");
     }
     else
     {
-        cppFormatter.Write("AddRule(new cminor::parsing::Rule(\"" + rule.Name() + "\", GetScope(),");
+        cppFormatter.Write("AddRule(new cminor::parsing::Rule(\"" + rule.Name() + "\", GetScope(), GetParsingDomain()->GetNextRuleId(),");
     }
     cppFormatter.IncIndent();
     cppFormatter.NewLine();

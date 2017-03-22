@@ -3,8 +3,8 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_PARSING_PARSINGDOMAIN_INCLUDED
-#define CMINOR_PARSING_PARSINGDOMAIN_INCLUDED
+#ifndef CMINOR_PARSING_PARSING_DOMAIN_INCLUDED
+#define CMINOR_PARSING_PARSING_DOMAIN_INCLUDED
 #include <cminor/pl/ParsingObject.hpp>
 #include <string>
 #include <stack>
@@ -29,6 +29,8 @@ public:
     Namespace* CurrentNamespace() const { return currentNamespace; }
     Scope* CurrentScope() const;
     virtual void Accept(Visitor& visitor);
+    int GetNextRuleId() { return nextRuleId++; }
+    int GetNumRules() const { return nextRuleId; }
 private:
     typedef std::unordered_map<std::string, Grammar*> GrammarMap;
     typedef GrammarMap::const_iterator GrammarMapIt;
@@ -40,6 +42,7 @@ private:
     NamespaceMap namespaceMap;
     std::stack<Namespace*> namespaceStack;
     Namespace* currentNamespace;
+    int nextRuleId;
 };
 
 void RegisterParsingDomain(ParsingDomain* parsingDomain);
@@ -48,4 +51,4 @@ void ParsingDomainDone();
 
 } } // namespace cminor::parsing
 
-#endif // CMINOR_PARSING_PARSINGDOMAIN_INCLUDED
+#endif // CMINOR_PARSING_PARSING_DOMAIN_INCLUDED

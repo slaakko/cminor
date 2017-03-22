@@ -1,5 +1,5 @@
-#ifndef CommandGrammar_hpp_354
-#define CommandGrammar_hpp_354
+#ifndef CommandGrammar_hpp_7892
+#define CommandGrammar_hpp_7892
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -24,4 +24,4 @@ private:
 
 } } // namespace cminor.db
 
-#endif // CommandGrammar_hpp_354
+#endif // CommandGrammar_hpp_7892

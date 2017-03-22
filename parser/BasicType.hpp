@@ -1,5 +1,5 @@
-#ifndef BasicType_hpp_27569
-#define BasicType_hpp_27569
+#ifndef BasicType_hpp_7033
+#define BasicType_hpp_7033
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -23,4 +23,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // BasicType_hpp_27569
+#endif // BasicType_hpp_7033

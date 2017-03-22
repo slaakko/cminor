@@ -1,5 +1,5 @@
-#ifndef SourceToken_hpp_27813
-#define SourceToken_hpp_27813
+#ifndef SourceToken_hpp_7033
+#define SourceToken_hpp_7033
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -26,4 +26,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // SourceToken_hpp_27813
+#endif // SourceToken_hpp_7033

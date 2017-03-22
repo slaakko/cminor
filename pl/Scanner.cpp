@@ -124,7 +124,7 @@ int CCDiff(const char* start, const char* end, char ccStart, char ccEnd)
 
 Scanner::Scanner(const char* start_, const char* end_, const std::string& fileName_, int fileIndex_, Parser* skipper_):
     start(start_), end(end_), skipper(skipper_), skipping(false), tokenCounter(0), fileName(fileName_), span(fileIndex_),
-    log(nullptr), atBeginningOfLine(true), synchronizing(false), ccRule(nullptr)
+    log(nullptr), atBeginningOfLine(true), synchronizing(false), ccRule(nullptr), parsingData(nullptr)
 {
     if (countSourceLines)
     {
@@ -252,7 +252,7 @@ void Scanner::Skip()
         BeginToken();
         skipping = true;
         ObjectStack stack;
-        Match match = skipper->Parse(*this, stack);
+        Match match = skipper->Parse(*this, stack, parsingData);
         skipping = false;
         EndToken();
         if (!match.Hit())

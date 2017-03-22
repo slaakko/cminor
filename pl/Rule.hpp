@@ -30,6 +30,7 @@ public:
     typedef std::vector<AttrOrVariable> AttrOrVariableVec;
     typedef std::vector<ActionParser*> ActionVec;
     typedef std::vector<NonterminalParser*> NonterminalVec;
+    Rule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_);
     Rule(const std::string& name_, Scope* enclosingScope_, Parser* definition_);
     Rule(const std::string& name_, Scope* enclosingScope_);
     virtual bool IsRule() const { return true; }
@@ -55,9 +56,11 @@ public:
     std::string SpecializedTypeName() const { return Specialized() ? Name() + "Rule" : "Rule"; }
     virtual void Link() {}
     void ExpandCode();
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Enter(ObjectStack& stack) {}
     virtual void Leave(ObjectStack& stack, bool matched) {}
+    virtual void Enter(ObjectStack& stack, ParsingData* parsingData) {}
+    virtual void Leave(ObjectStack& stack, ParsingData* parsingData, bool matched) {}
     virtual void Accept(Visitor& visitor);
     void IncCCCount() { ++ccCount; }
     void DecCCCount() { --ccCount; }
@@ -94,7 +97,9 @@ public:
     {
         ccSkip = true;
     }
+    int Id() const { return id; }
 private:
+    int id;
     Grammar* grammar;
     Parser* definition;
     AttrOrVariableVec inheritedAttributes;

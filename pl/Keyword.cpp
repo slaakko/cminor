@@ -26,7 +26,7 @@ private:
 };
 
 IdentifierCharsRule::IdentifierCharsRule(): 
-    rule(new Rule("identifier_chars", nullptr,
+    rule(new Rule("identifier_chars", nullptr, -1,
             new PositiveParser(
                 new AlternativeParser(
                     new AlternativeParser(
@@ -92,7 +92,7 @@ void KeywordParser::SetContinuationRule(Rule* continuationRule_)
 
 void KeywordParser::CreateKeywordRule()
 {
-    keywordRule = new Rule(keyword, nullptr,
+    keywordRule = new Rule(keyword, nullptr, -1,
         new DifferenceParser(
             keywordStringParser,
             new TokenParser(
@@ -102,9 +102,9 @@ void KeywordParser::CreateKeywordRule()
     Own(keywordRule);
 }
 
-Match KeywordParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match KeywordParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
-    return keywordRule->Parse(scanner, stack);
+    return keywordRule->Parse(scanner, stack, parsingData);
 }
 
 void KeywordParser::Accept(Visitor& visitor)
@@ -117,13 +117,13 @@ KeywordListParser::KeywordListParser(const std::string& selectorRuleName_, const
 {
 }
 
-Match KeywordListParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match KeywordListParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (selectorRule)
     {
         Span save = scanner.GetSpan();
         bool synchronizing = scanner.Synchronizing();
-        Match match = selectorRule->Parse(scanner, stack);
+        Match match = selectorRule->Parse(scanner, stack, parsingData);
         if (match.Hit())
         {
             const char* matchBegin = scanner.Start() + save.Start();
@@ -154,7 +154,5 @@ void KeywordDone()
 {
     IdentifierCharsRule::Done();
 }
-
-
 
 } } // namespace cminor::parsing

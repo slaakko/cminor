@@ -1,5 +1,5 @@
-#ifndef Expression_hpp_20441
-#define Expression_hpp_20441
+#ifndef Expression_hpp_5397
+#define Expression_hpp_5397
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -60,4 +60,4 @@ private:
 
 } } // namespace cpg.cpp
 
-#endif // Expression_hpp_20441
+#endif // Expression_hpp_5397

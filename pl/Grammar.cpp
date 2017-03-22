@@ -102,9 +102,10 @@ void Grammar::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
-void Grammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName)
+void Grammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingData* parsingData)
 {
     Scanner scanner(start, end, fileName, fileIndex, skipRule);
+    scanner.SetParsingData(parsingData);
     std::unique_ptr<XmlLog> xmlLog;
     if (log)
     {
@@ -113,7 +114,7 @@ void Grammar::Parse(const char* start, const char* end, int fileIndex, const std
         xmlLog->WriteBeginRule("parse");
     }
     ObjectStack stack;
-    Match match = Parse(scanner, stack);
+    Match match = Parse(scanner, stack, parsingData);
     Span stop = scanner.GetSpan();
     if (log)
     {
@@ -132,7 +133,7 @@ void Grammar::Parse(const char* start, const char* end, int fileIndex, const std
     }
 }
 
-Match Grammar::Parse(Scanner& scanner, ObjectStack& stack)
+Match Grammar::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (startRule)
     {
@@ -148,9 +149,21 @@ Match Grammar::Parse(Scanner& scanner, ObjectStack& stack)
                 contentParser = startRule;
             }
         }
-        return contentParser->Parse(scanner, stack);
+        return contentParser->Parse(scanner, stack, parsingData);
     }
     return Match::Nothing();
+}
+
+void Grammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName)
+{
+    std::unique_ptr<ParsingData> parsingData(new ParsingData(parsingDomain->GetNumRules()));
+    Parse(start, end, fileIndex, fileName, parsingData.get());
+}
+
+Match Grammar::Parse(Scanner& scanner, ObjectStack& stack)
+{
+    std::unique_ptr<ParsingData> parsingData(new ParsingData(parsingDomain->GetNumRules()));
+    return Parse(scanner, stack, parsingData.get());
 }
 
 void Grammar::ResolveStartRule()

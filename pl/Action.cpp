@@ -50,10 +50,10 @@ std::string ActionParser::VariableName() const
     return (Name().length() > 0 ? std::string(1, std::tolower(Name()[0])) + Name().substr(1) : Name()) + "ActionParser"; 
 }
 
-Match ActionParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match ActionParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     Span actionSpan = scanner.GetSpan();
-    Match match = Child()->Parse(scanner, stack);
+    Match match = Child()->Parse(scanner, stack, parsingData);
     if (match.Hit())
     {
         if (action)
@@ -62,7 +62,7 @@ Match ActionParser::Parse(Scanner& scanner, ObjectStack& stack)
             actionSpan.SetEnd(scanner.GetSpan().Start());
             const char* matchBegin = scanner.Start() + actionSpan.Start();
             const char* matchEnd = scanner.Start() + actionSpan.End();
-            (*action)(matchBegin, matchEnd, actionSpan, scanner.FileName(), pass);
+            (*action)(matchBegin, matchEnd, actionSpan, scanner.FileName(), parsingData, pass);
             if (!pass)
             {
                 return Match::Nothing();
@@ -71,7 +71,7 @@ Match ActionParser::Parse(Scanner& scanner, ObjectStack& stack)
     }
     else if (failureAction)
     {
-        (*failureAction)();
+        (*failureAction)(parsingData);
     }
     return match;
 }
@@ -82,6 +82,5 @@ void ActionParser::Accept(Visitor& visitor)
     Child()->Accept(visitor);
     visitor.EndVisit(*this);
 }
-
 
 } } // namespace cminor::parsing

@@ -1,5 +1,5 @@
-#ifndef Composite_hpp_20689
-#define Composite_hpp_20689
+#ifndef Composite_hpp_5596
+#define Composite_hpp_5596
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -29,4 +29,4 @@ private:
 
 } } // namespace cpg.syntax
 
-#endif // Composite_hpp_20689
+#endif // Composite_hpp_5596

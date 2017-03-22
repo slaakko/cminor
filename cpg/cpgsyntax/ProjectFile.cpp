@@ -44,7 +44,9 @@ Project* ProjectFileGrammar::Parse(const char* start, const char* end, int fileI
         xmlLog->WriteBeginRule("parse");
     }
     cminor::parsing::ObjectStack stack;
-    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack);
+    std::unique_ptr<cminor::parsing::ParsingData> parsingData(new cminor::parsing::ParsingData(GetParsingDomain()->GetNumRules()));
+    scanner.SetParsingData(parsingData.get());
+    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack, parsingData.get());
     cminor::parsing::Span stop = scanner.GetSpan();
     if (Log())
     {
@@ -70,24 +72,24 @@ Project* ProjectFileGrammar::Parse(const char* start, const char* end, int fileI
 class ProjectFileGrammar::ProjectFileRule : public cminor::parsing::Rule
 {
 public:
-    ProjectFileRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ProjectFileRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("Project*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Project*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Project*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -98,54 +100,54 @@ public:
         cminor::parsing::NonterminalParser* projectFileContentNonterminalParser = GetNonterminal("ProjectFileContent");
         projectFileContentNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ProjectFileRule>(this, &ProjectFileRule::PreProjectFileContent));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new Project(context.fromprojectName, fileName);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new Project(context->fromprojectName, fileName);
     }
-    void PostprojectName(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostprojectName(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromprojectName_value = std::move(stack.top());
-            context.fromprojectName = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromprojectName_value.get());
+            context->fromprojectName = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromprojectName_value.get());
             stack.pop();
         }
     }
-    void PreProjectFileContent(cminor::parsing::ObjectStack& stack)
+    void PreProjectFileContent(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Project*>(context.value)));
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Project*>(context->value)));
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value(), fromprojectName() {}
         Project* value;
         std::string fromprojectName;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class ProjectFileGrammar::ProjectFileContentRule : public cminor::parsing::Rule
 {
 public:
-    ProjectFileContentRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ProjectFileContentRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         AddInheritedAttribute(AttrOrVariable("Project*", "project"));
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::unique_ptr<cminor::parsing::Object> project_value = std::move(stack.top());
-        context.project = *static_cast<cminor::parsing::ValueObject<Project*>*>(project_value.get());
+        context->project = *static_cast<cminor::parsing::ValueObject<Project*>*>(project_value.get());
         stack.pop();
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -158,65 +160,67 @@ public:
         cminor::parsing::NonterminalParser* referenceNonterminalParser = GetNonterminal("Reference");
         referenceNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ProjectFileContentRule>(this, &ProjectFileContentRule::PostReference));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.project->AddSourceFile(context.fromSource);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->project->AddSourceFile(context->fromSource);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.project->AddReferenceFile(context.fromReference);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->project->AddReferenceFile(context->fromReference);
     }
-    void PostSource(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostSource(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromSource_value = std::move(stack.top());
-            context.fromSource = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromSource_value.get());
+            context->fromSource = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromSource_value.get());
             stack.pop();
         }
     }
-    void PostReference(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostReference(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromReference_value = std::move(stack.top());
-            context.fromReference = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromReference_value.get());
+            context->fromReference = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromReference_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): project(), fromSource(), fromReference() {}
         Project* project;
         std::string fromSource;
         std::string fromReference;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class ProjectFileGrammar::SourceRule : public cminor::parsing::Rule
 {
 public:
-    SourceRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    SourceRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("std::string");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -225,51 +229,51 @@ public:
         cminor::parsing::NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
         filePathNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<SourceRule>(this, &SourceRule::PostFilePath));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromFilePath;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromFilePath;
     }
-    void PostFilePath(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostFilePath(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromFilePath_value = std::move(stack.top());
-            context.fromFilePath = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromFilePath_value.get());
+            context->fromFilePath = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromFilePath_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value(), fromFilePath() {}
         std::string value;
         std::string fromFilePath;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class ProjectFileGrammar::ReferenceRule : public cminor::parsing::Rule
 {
 public:
-    ReferenceRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    ReferenceRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("std::string");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -278,69 +282,68 @@ public:
         cminor::parsing::NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
         filePathNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ReferenceRule>(this, &ReferenceRule::PostFilePath));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromFilePath;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromFilePath;
     }
-    void PostFilePath(cminor::parsing::ObjectStack& stack, bool matched)
+    void PostFilePath(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromFilePath_value = std::move(stack.top());
-            context.fromFilePath = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromFilePath_value.get());
+            context->fromFilePath = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromFilePath_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value(), fromFilePath() {}
         std::string value;
         std::string fromFilePath;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class ProjectFileGrammar::FilePathRule : public cminor::parsing::Rule
 {
 public:
-    FilePathRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    FilePathRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("std::string");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
         cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<FilePathRule>(this, &FilePathRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = std::string(matchBegin, matchEnd);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = std::string(matchBegin, matchEnd);
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value() {}
         std::string value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 void ProjectFileGrammar::GetReferencedGrammars()
@@ -356,9 +359,9 @@ void ProjectFileGrammar::GetReferencedGrammars()
 
 void ProjectFileGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "cminor.parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
-    AddRule(new ProjectFileRule("ProjectFile", GetScope(),
+    AddRuleLink(new cminor::parsing::RuleLink("spaces_and_comments", this, "cminor.parsing.stdlib.spaces_and_comments"));
+    AddRule(new ProjectFileRule("ProjectFile", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
@@ -367,28 +370,28 @@ void ProjectFileGrammar::CreateRules()
                         new cminor::parsing::NonterminalParser("projectName", "qualified_id", 0))),
                 new cminor::parsing::CharParser(';')),
             new cminor::parsing::NonterminalParser("ProjectFileContent", "ProjectFileContent", 1))));
-    AddRule(new ProjectFileContentRule("ProjectFileContent", GetScope(),
+    AddRule(new ProjectFileContentRule("ProjectFileContent", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::KleeneStarParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::ActionParser("A0",
                     new cminor::parsing::NonterminalParser("Source", "Source", 0)),
                 new cminor::parsing::ActionParser("A1",
                     new cminor::parsing::NonterminalParser("Reference", "Reference", 0))))));
-    AddRule(new SourceRule("Source", GetScope(),
+    AddRule(new SourceRule("Source", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::KeywordParser("source"),
                     new cminor::parsing::NonterminalParser("FilePath", "FilePath", 0)),
                 new cminor::parsing::CharParser(';')))));
-    AddRule(new ReferenceRule("Reference", GetScope(),
+    AddRule(new ReferenceRule("Reference", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::KeywordParser("reference"),
                     new cminor::parsing::NonterminalParser("FilePath", "FilePath", 0)),
                 new cminor::parsing::CharParser(';')))));
-    AddRule(new FilePathRule("FilePath", GetScope(),
+    AddRule(new FilePathRule("FilePath", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(

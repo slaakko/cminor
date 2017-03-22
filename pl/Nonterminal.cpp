@@ -49,18 +49,18 @@ bool NonterminalParser::Specialized() const
         (rule && rule->TakesOrReturnsValuesOrHasLocals()); 
 }
 
-Match NonterminalParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match NonterminalParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (rule)
     {
         if (preCall)
         {
-            (*preCall)(stack);
+            (*preCall)(stack, parsingData);
         }
-        Match match = rule->Parse(scanner, stack);
+        Match match = rule->Parse(scanner, stack, parsingData);
         if (postCall)
         {
-            (*postCall)(stack, match.Hit());
+            (*postCall)(stack, parsingData, match.Hit());
         }
         return match;
     }

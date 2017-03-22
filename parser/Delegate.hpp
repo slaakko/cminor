@@ -1,5 +1,5 @@
-#ifndef Delegate_hpp_11865
-#define Delegate_hpp_11865
+#ifndef Delegate_hpp_7033
+#define Delegate_hpp_7033
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -25,4 +25,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Delegate_hpp_11865
+#endif // Delegate_hpp_7033

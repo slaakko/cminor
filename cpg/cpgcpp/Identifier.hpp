@@ -1,5 +1,5 @@
-#ifndef Identifier_hpp_20441
-#define Identifier_hpp_20441
+#ifndef Identifier_hpp_5397
+#define Identifier_hpp_5397
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -22,4 +22,4 @@ private:
 
 } } // namespace cpg.cpp
 
-#endif // Identifier_hpp_20441
+#endif // Identifier_hpp_5397

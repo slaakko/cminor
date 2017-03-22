@@ -15,7 +15,7 @@ CharParser::CharParser(char c_): Parser("char", "\"" + std::string(1, c_) + "\""
 {
 }
 
-Match CharParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match CharParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (!scanner.AtEnd())
     {
@@ -60,7 +60,7 @@ StringParser::StringParser(const std::string& s_): Parser("string", "\"" + s_ + 
 {
 }
 
-Match StringParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match StringParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     Match match = Match::Empty();
     int i = 0;
@@ -127,7 +127,7 @@ void CharSetParser::InitBits()
     }
 }
 
-Match CharSetParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match CharSetParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (!scanner.AtEnd())
     {
@@ -149,7 +149,7 @@ EmptyParser::EmptyParser(): Parser("empty", "")
 {
 }
 
-Match EmptyParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match EmptyParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     return Match::Empty();
 }
@@ -163,7 +163,7 @@ SpaceParser::SpaceParser(): Parser("space", "space")
 {
 }
 
-Match SpaceParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match SpaceParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (!scanner.AtEnd())
     {
@@ -185,7 +185,7 @@ LetterParser::LetterParser(): Parser("letter", "letter")
 {
 }
 
-Match LetterParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match LetterParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (!scanner.AtEnd())
     {
@@ -207,7 +207,7 @@ DigitParser::DigitParser(): Parser("digit", "digit")
 {
 }
 
-Match DigitParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match DigitParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (!scanner.AtEnd())
     {
@@ -229,7 +229,7 @@ HexDigitParser::HexDigitParser(): Parser("hexdigit", "hexdigit")
 {
 }
 
-Match HexDigitParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match HexDigitParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (!scanner.AtEnd())
     {
@@ -251,7 +251,7 @@ PunctuationParser::PunctuationParser(): Parser("punctuation", "punctuation")
 {
 }
 
-Match PunctuationParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match PunctuationParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (!scanner.AtEnd())
     {
@@ -273,7 +273,7 @@ AnyCharParser::AnyCharParser(): Parser("anychar", "anychar")
 {
 }
 
-Match AnyCharParser::Parse(Scanner& scanner, ObjectStack& stack)
+Match AnyCharParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (!scanner.AtEnd())
     {

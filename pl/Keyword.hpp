@@ -20,7 +20,7 @@ public:
     const std::string& Keyword() const { return keyword; }
     const std::string& ContinuationRuleName() const { return continuationRuleName; }
     void SetContinuationRule(Rule* continuationRule_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 private:
     std::string keyword;
@@ -42,7 +42,7 @@ public:
     std::string& KeywordVecName() { return keywordVecName; }
     const KeywordSet& Keywords() const { return keywords; }
     void SetSelectorRule(Rule* selectorRule_) { selectorRule = selectorRule_; }
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 private:
     std::string selectorRuleName;

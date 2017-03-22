@@ -1,5 +1,5 @@
-#ifndef SolutionFile_hpp_1192
-#define SolutionFile_hpp_1192
+#ifndef SolutionFile_hpp_7033
+#define SolutionFile_hpp_7033
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -26,4 +26,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // SolutionFile_hpp_1192
+#endif // SolutionFile_hpp_7033

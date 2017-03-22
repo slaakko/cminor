@@ -44,7 +44,9 @@ Command* CommandGrammar::Parse(const char* start, const char* end, int fileIndex
         xmlLog->WriteBeginRule("parse");
     }
     cminor::parsing::ObjectStack stack;
-    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack);
+    std::unique_ptr<cminor::parsing::ParsingData> parsingData(new cminor::parsing::ParsingData(GetParsingDomain()->GetNumRules()));
+    scanner.SetParsingData(parsingData.get());
+    cminor::parsing::Match match = cminor::parsing::Grammar::Parse(scanner, stack, parsingData.get());
     cminor::parsing::Span stop = scanner.GetSpan();
     if (Log())
     {
@@ -70,24 +72,24 @@ Command* CommandGrammar::Parse(const char* start, const char* end, int fileIndex
 class CommandGrammar::CommandRule : public cminor::parsing::Rule
 {
 public:
-    CommandRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    CommandRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("Command*");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Command*>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<Command*>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -160,209 +162,243 @@ public:
         cminor::parsing::NonterminalParser* bpnumNonterminalParser = GetNonterminal("bpnum");
         bpnumNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CommandRule>(this, &CommandRule::Postbpnum));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new StartCommand;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new StartCommand;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ShowBreakpointsCommand;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ShowBreakpointsCommand;
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new StackCommand;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new StackCommand;
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new HelpCommand;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new HelpCommand;
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ExitCommand;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ExitCommand;
     }
-    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ExitCommand;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ExitCommand;
     }
-    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new StepCommand;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new StepCommand;
     }
-    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new NextCommand;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new NextCommand;
     }
-    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new RunCommand;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new RunCommand;
     }
-    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ListCommand(context.fromlfp, context.fromline);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ListCommand(context->fromlfp, context->fromline);
     }
-    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ListCommand("", context.fromlline);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ListCommand("", context->fromlline);
     }
-    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ListCommand("", -1);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ListCommand("", -1);
     }
-    void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new PrintCommand(context.fromname);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new PrintCommand(context->fromname);
     }
-    void A13Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A13Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new LocalCommand(context.fromln);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new LocalCommand(context->fromln);
     }
-    void A14Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A14Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new OperandCommand(context.fromsn);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new OperandCommand(context->fromsn);
     }
-    void A15Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A15Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new AllocationCommand(context.fromah);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new AllocationCommand(context->fromah);
     }
-    void A16Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A16Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new FieldCommand(context.fromo, context.fromf);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new FieldCommand(context->fromo, context->fromf);
     }
-    void A17Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A17Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new BreakCommand(context.frombfp, context.frombpline);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new BreakCommand(context->frombfp, context->frombpline);
     }
-    void A18Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A18Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new BreakCommand("", context.frombpline2);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new BreakCommand("", context->frombpline2);
     }
-    void A19Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A19Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new ClearCommand(context.frombpnum);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new ClearCommand(context->frombpnum);
     }
-    void A20Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A20Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = new PrevCommand;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new PrevCommand;
     }
-    void Postlfp(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postlfp(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromlfp_value = std::move(stack.top());
-            context.fromlfp = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromlfp_value.get());
+            context->fromlfp = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromlfp_value.get());
             stack.pop();
         }
     }
-    void Postline(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postline(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromline_value = std::move(stack.top());
-            context.fromline = *static_cast<cminor::parsing::ValueObject<int>*>(fromline_value.get());
+            context->fromline = *static_cast<cminor::parsing::ValueObject<int>*>(fromline_value.get());
             stack.pop();
         }
     }
-    void Postlline(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postlline(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromlline_value = std::move(stack.top());
-            context.fromlline = *static_cast<cminor::parsing::ValueObject<int>*>(fromlline_value.get());
+            context->fromlline = *static_cast<cminor::parsing::ValueObject<int>*>(fromlline_value.get());
             stack.pop();
         }
     }
-    void Postname(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postname(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromname_value = std::move(stack.top());
-            context.fromname = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromname_value.get());
+            context->fromname = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromname_value.get());
             stack.pop();
         }
     }
-    void Postln(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postln(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromln_value = std::move(stack.top());
-            context.fromln = *static_cast<cminor::parsing::ValueObject<int>*>(fromln_value.get());
+            context->fromln = *static_cast<cminor::parsing::ValueObject<int>*>(fromln_value.get());
             stack.pop();
         }
     }
-    void Postsn(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postsn(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromsn_value = std::move(stack.top());
-            context.fromsn = *static_cast<cminor::parsing::ValueObject<int>*>(fromsn_value.get());
+            context->fromsn = *static_cast<cminor::parsing::ValueObject<int>*>(fromsn_value.get());
             stack.pop();
         }
     }
-    void Postah(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postah(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromah_value = std::move(stack.top());
-            context.fromah = *static_cast<cminor::parsing::ValueObject<int>*>(fromah_value.get());
+            context->fromah = *static_cast<cminor::parsing::ValueObject<int>*>(fromah_value.get());
             stack.pop();
         }
     }
-    void Posto(cminor::parsing::ObjectStack& stack, bool matched)
+    void Posto(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromo_value = std::move(stack.top());
-            context.fromo = *static_cast<cminor::parsing::ValueObject<int>*>(fromo_value.get());
+            context->fromo = *static_cast<cminor::parsing::ValueObject<int>*>(fromo_value.get());
             stack.pop();
         }
     }
-    void Postf(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postf(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromf_value = std::move(stack.top());
-            context.fromf = *static_cast<cminor::parsing::ValueObject<int>*>(fromf_value.get());
+            context->fromf = *static_cast<cminor::parsing::ValueObject<int>*>(fromf_value.get());
             stack.pop();
         }
     }
-    void Postbfp(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postbfp(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> frombfp_value = std::move(stack.top());
-            context.frombfp = *static_cast<cminor::parsing::ValueObject<std::string>*>(frombfp_value.get());
+            context->frombfp = *static_cast<cminor::parsing::ValueObject<std::string>*>(frombfp_value.get());
             stack.pop();
         }
     }
-    void Postbpline(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postbpline(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> frombpline_value = std::move(stack.top());
-            context.frombpline = *static_cast<cminor::parsing::ValueObject<int>*>(frombpline_value.get());
+            context->frombpline = *static_cast<cminor::parsing::ValueObject<int>*>(frombpline_value.get());
             stack.pop();
         }
     }
-    void Postbpline2(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postbpline2(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> frombpline2_value = std::move(stack.top());
-            context.frombpline2 = *static_cast<cminor::parsing::ValueObject<int>*>(frombpline2_value.get());
+            context->frombpline2 = *static_cast<cminor::parsing::ValueObject<int>*>(frombpline2_value.get());
             stack.pop();
         }
     }
-    void Postbpnum(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postbpnum(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> frombpnum_value = std::move(stack.top());
-            context.frombpnum = *static_cast<cminor::parsing::ValueObject<int>*>(frombpnum_value.get());
+            context->frombpnum = *static_cast<cminor::parsing::ValueObject<int>*>(frombpnum_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value(), fromlfp(), fromline(), fromlline(), fromname(), fromln(), fromsn(), fromah(), fromo(), fromf(), frombfp(), frombpline(), frombpline2(), frombpnum() {}
         Command* value;
@@ -380,31 +416,29 @@ private:
         int frombpline2;
         int frombpnum;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class CommandGrammar::FilePathRule : public cminor::parsing::Rule
 {
 public:
-    FilePathRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    FilePathRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("std::string");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -415,49 +449,50 @@ public:
         cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<FilePathRule>(this, &FilePathRule::A2Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = std::string(matchBegin, matchEnd);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = std::string(matchBegin, matchEnd);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = std::string(matchBegin, matchEnd);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = std::string(matchBegin, matchEnd);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = std::string(matchBegin, matchEnd);
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = std::string(matchBegin, matchEnd);
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value() {}
         std::string value;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 class CommandGrammar::QualifiedIdRule : public cminor::parsing::Rule
 {
 public:
-    QualifiedIdRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
-        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    QualifiedIdRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
         SetValueTypeName("std::string");
     }
-    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
-        contextStack.push(std::move(context));
-        context = Context();
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
     }
-    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context.value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context->value)));
         }
-        context = std::move(contextStack.top());
-        contextStack.pop();
+        parsingData->PopContext(Id());
     }
     virtual void Link()
     {
@@ -466,28 +501,28 @@ public:
         cminor::parsing::NonterminalParser* qualified_idNonterminalParser = GetNonterminal("qualified_id");
         qualified_idNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<QualifiedIdRule>(this, &QualifiedIdRule::Postqualified_id));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
-        context.value = context.fromqualified_id;
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromqualified_id;
     }
-    void Postqualified_id(cminor::parsing::ObjectStack& stack, bool matched)
+    void Postqualified_id(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromqualified_id_value = std::move(stack.top());
-            context.fromqualified_id = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromqualified_id_value.get());
+            context->fromqualified_id = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromqualified_id_value.get());
             stack.pop();
         }
     }
 private:
-    struct Context
+    struct Context : cminor::parsing::Context
     {
         Context(): value(), fromqualified_id() {}
         std::string value;
         std::string fromqualified_id;
     };
-    std::stack<Context> contextStack;
-    Context context;
 };
 
 void CommandGrammar::GetReferencedGrammars()
@@ -505,7 +540,7 @@ void CommandGrammar::CreateRules()
 {
     AddRuleLink(new cminor::parsing::RuleLink("int", this, "cminor.parsing.stdlib.int"));
     AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
-    AddRule(new CommandRule("Command", GetScope(),
+    AddRule(new CommandRule("Command", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
@@ -639,10 +674,10 @@ void CommandGrammar::CreateRules()
                         new cminor::parsing::NonterminalParser("bpnum", "int", 0)))),
             new cminor::parsing::ActionParser("A20",
                 new cminor::parsing::EmptyParser()))));
-    AddRule(new cminor::parsing::Rule("Spaces", GetScope(),
+    AddRule(new cminor::parsing::Rule("Spaces", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::PositiveParser(
             new cminor::parsing::CharSetParser(" \t"))));
-    AddRule(new FilePathRule("FilePath", GetScope(),
+    AddRule(new FilePathRule("FilePath", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
@@ -668,7 +703,7 @@ void CommandGrammar::CreateRules()
                             new cminor::parsing::PositiveParser(
                                 new cminor::parsing::CharSetParser(">", true)))),
                     new cminor::parsing::CharParser('>'))))));
-    AddRule(new QualifiedIdRule("QualifiedId", GetScope(),
+    AddRule(new QualifiedIdRule("QualifiedId", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::NonterminalParser("qualified_id", "qualified_id", 0))));
     SetSkipRuleName("Spaces");

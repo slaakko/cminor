@@ -114,6 +114,11 @@ void CompoundStatement::Print(CodeFormatter& formatter)
 {
     formatter.WriteLine("{");
     formatter.IncIndent();
+    if (formatter.Start())
+    {
+        formatter.WriteLine(formatter.StartText());
+        formatter.ResetStart();
+    }
     int n = int(statements.size());
     for (int i = 0; i < n; ++i)
     {

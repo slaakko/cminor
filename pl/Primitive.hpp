@@ -19,7 +19,7 @@ class CharParser : public Parser
 public:
     CharParser(char c_);
     char GetChar() const { return c; }
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
     void SetCCRule(Rule* ccRule_)
     {
@@ -35,7 +35,7 @@ class StringParser : public Parser
 public:
     StringParser(const std::string& s_);
     const std::string& GetString() const { return s; }
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 private:
     std::string s;
@@ -48,7 +48,7 @@ public:
     CharSetParser(const std::string& s_, bool inverse_);
     const std::string& Set() const { return s; }
     bool Inverse() const { return inverse; }
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 private:
     std::string s;
@@ -61,7 +61,7 @@ class EmptyParser : public Parser
 {
 public:
     EmptyParser();
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -69,7 +69,7 @@ class SpaceParser : public Parser
 {
 public:
     SpaceParser();
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -77,7 +77,7 @@ class LetterParser : public Parser
 {
 public:
     LetterParser();
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -85,7 +85,7 @@ class DigitParser : public Parser
 {
 public:
     DigitParser();
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -93,7 +93,7 @@ class HexDigitParser : public Parser
 {
 public:
     HexDigitParser();
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -101,7 +101,7 @@ class PunctuationParser : public Parser
 {
 public:
     PunctuationParser();
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -109,7 +109,7 @@ class AnyCharParser : public Parser
 {
 public:
     AnyCharParser();
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 

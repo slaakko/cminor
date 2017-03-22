@@ -27,6 +27,7 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/util/Path.hpp>
 #include <iostream>
+#include <stdexcept>
 
 namespace cminor { namespace build {
 
@@ -39,11 +40,20 @@ using namespace cminor::machine;
 
 CompileUnitGrammar* compileUnitGrammar = nullptr;
 
-std::vector<std::unique_ptr<CompileUnitNode>> ParseSources(const std::vector<std::string>& sourceFilePaths)
+std::vector<std::unique_ptr<CompileUnitNode>> ParseSourcesInMainThread(const std::vector<std::string>& sourceFilePaths)
 {
     if (!compileUnitGrammar)
     {
         compileUnitGrammar = CompileUnitGrammar::Create();
+    }
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::string s;
+        if (sourceFilePaths.size() != 1)
+        {
+            s = "s";
+        }
+        std::cout << "parsing " << sourceFilePaths.size() << " source file" << s << " in main thread..." << std::endl;
     }
     std::vector<std::unique_ptr<CompileUnitNode>> compileUnits;
     for (const std::string& sourceFilePath : sourceFilePaths)
@@ -57,6 +67,117 @@ std::vector<std::unique_ptr<CompileUnitNode>> ParseSources(const std::vector<std
         }
         std::unique_ptr<CompileUnitNode> compileUnit(compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), fileIndex, sourceFilePath, &parsingContext));
         compileUnits.push_back(std::move(compileUnit));
+    }
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::string s;
+        if (sourceFilePaths.size() != 1)
+        {
+            s = "s";
+        }
+        std::cout << sourceFilePaths.size() << " source file" << s << " parsed" << std::endl;
+    }
+    return compileUnits;
+}
+
+struct ParserData
+{
+    ParserData(const std::vector<std::string>& sourceFilePaths_, std::vector<std::unique_ptr<CompileUnitNode>>& compileUnits_, const std::vector<int>& fileIndeces_, 
+        std::vector<std::exception_ptr>& exceptions_) : sourceFilePaths(sourceFilePaths_), compileUnits(compileUnits_), fileIndeces(fileIndeces_), stop(false), exceptions(exceptions_)
+    {
+    }
+    const std::vector<std::string>& sourceFilePaths;
+    std::vector<std::unique_ptr<CompileUnitNode>>& compileUnits;
+    const std::vector<int>& fileIndeces;
+    std::list<int> indexQueue;
+    std::mutex indexQueueMutex;
+    std::atomic_bool stop;
+    std::vector<std::exception_ptr>& exceptions;
+};
+
+void ParseSourceFile(ParserData* parserData)
+{
+    int index = -1;
+    try
+    {
+        while (!parserData->stop)
+        {
+            {
+                std::lock_guard<std::mutex> lock(parserData->indexQueueMutex);
+                if (parserData->indexQueue.empty()) return;
+                index = parserData->indexQueue.front();
+                parserData->indexQueue.pop_front();
+            }
+            const std::string& sourceFilePath = parserData->sourceFilePaths[index];
+            MappedInputFile sourceFile(sourceFilePath);
+            ParsingContext parsingContext;
+            int fileIndex = parserData->fileIndeces[index];
+            std::unique_ptr<CompileUnitNode> compileUnit(compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), fileIndex, sourceFilePath, &parsingContext));
+            parserData->compileUnits[index].reset(compileUnit.release());
+        }
+    }
+    catch (...)
+    {
+        if (index != -1)
+        {
+            parserData->exceptions[index] = std::current_exception();
+            parserData->stop = true;
+        }
+    }
+}
+
+std::vector<std::unique_ptr<CompileUnitNode>> ParseSourcesConcurrently(const std::vector<std::string>& sourceFilePaths, int numThreads)
+{
+    if (!compileUnitGrammar)
+    {
+        compileUnitGrammar = CompileUnitGrammar::Create();
+    }
+    if (GetGlobalFlag(GlobalFlags::verbose))
+    {
+        std::string s;
+        if (sourceFilePaths.size() != 1)
+        {
+            s = "s";
+        }
+        std::cout << "Parsing " << sourceFilePaths.size() << " source file" << s << " using " << numThreads << " threads..." << std::endl;
+    }
+    std::vector<std::unique_ptr<CompileUnitNode>> compileUnits;
+    int n = int(sourceFilePaths.size());
+    compileUnits.resize(n);
+    std::vector<int> fileIndeces;
+    for (int i = 0; i < n; ++i)
+    {
+        const std::string& sourceFilePath = sourceFilePaths[i];
+        int fileIndex = FileRegistry::RegisterParsedFile(sourceFilePath);
+        fileIndeces.push_back(fileIndex);
+    }
+    std::vector<std::exception_ptr> exceptions;
+    exceptions.resize(n);
+    ParserData parserData(sourceFilePaths, compileUnits, fileIndeces, exceptions);
+    for (int i = 0; i < n; ++i)
+    {
+        parserData.indexQueue.push_back(i);
+    }
+    std::vector<std::thread> threads;
+    for (int i = 0; i < numThreads; ++i)
+    {
+        threads.push_back(std::thread(ParseSourceFile, &parserData));
+        if (parserData.stop) break;
+    }
+    int numStartedThreads = int(threads.size());
+    for (int i = 0; i < numStartedThreads; ++i)
+    {
+        if (threads[i].joinable())
+        {
+            threads[i].join();
+        }
+    }
+    for (int i = 0; i < n; ++i)
+    {
+        if (exceptions[i])
+        {
+            std::rethrow_exception(exceptions[i]);
+        }
     }
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
@@ -309,7 +430,16 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
         std::cout << "Building project '" << project->Name() << "' (" << project->FilePath() << ") using " << config << " configuration." << std::endl;
     }
     CompileWarningCollection::Instance().SetCurrentProjectName(project->Name());
-    std::vector<std::unique_ptr<CompileUnitNode>> compileUnits = ParseSources(project->SourceFilePaths());
+    std::vector<std::unique_ptr<CompileUnitNode>> compileUnits;
+    int numCores = std::thread::hardware_concurrency();
+    if (numCores == 0 || GetGlobalFlag(GlobalFlags::debugParsing))
+    {
+        compileUnits = ParseSourcesInMainThread(project->SourceFilePaths());
+    }
+    else
+    {
+        compileUnits = ParseSourcesConcurrently(project->SourceFilePaths(), numCores);
+    }
     utf32_string assemblyName = ToUtf32(project->Name());
     Machine machine;
     AssemblyTable::Init();

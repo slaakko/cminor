@@ -1,5 +1,5 @@
-#ifndef Element_hpp_20689
-#define Element_hpp_20689
+#ifndef Element_hpp_5596
+#define Element_hpp_5596
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -32,4 +32,4 @@ private:
 
 } } // namespace cpg.syntax
 
-#endif // Element_hpp_20689
+#endif // Element_hpp_5596

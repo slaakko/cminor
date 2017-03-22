@@ -36,6 +36,8 @@ public:
     void AddGrammarReference(Grammar* grammarReference);
     const GrammarSet& GrammarReferences() const { return grammarReferences; }
     void Accept(Visitor& visitor);
+    void Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingData* parsingData);
+    Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     void Parse(const char* start, const char* end, int fileIndex, const std::string& fileName);
     Match Parse(Scanner& scanner, ObjectStack& stack);
     const std::string& StartRuleName() const { return startRuleName; }

@@ -1,5 +1,5 @@
-#ifndef Specifier_hpp_345
-#define Specifier_hpp_345
+#ifndef Specifier_hpp_7033
+#define Specifier_hpp_7033
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -24,4 +24,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Specifier_hpp_345
+#endif // Specifier_hpp_7033

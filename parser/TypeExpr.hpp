@@ -1,5 +1,5 @@
-#ifndef TypeExpr_hpp_22205
-#define TypeExpr_hpp_22205
+#ifndef TypeExpr_hpp_7033
+#define TypeExpr_hpp_7033
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -27,4 +27,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // TypeExpr_hpp_22205
+#endif // TypeExpr_hpp_7033

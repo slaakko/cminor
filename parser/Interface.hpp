@@ -1,5 +1,5 @@
-#ifndef Interface_hpp_1192
-#define Interface_hpp_1192
+#ifndef Interface_hpp_7033
+#define Interface_hpp_7033
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -27,4 +27,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Interface_hpp_1192
+#endif // Interface_hpp_7033

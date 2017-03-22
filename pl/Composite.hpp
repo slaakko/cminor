@@ -24,7 +24,7 @@ class OptionalParser : public UnaryParser
 {
 public:
     OptionalParser(Parser* child_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -32,7 +32,7 @@ class PositiveParser : public UnaryParser
 {
 public:
     PositiveParser(Parser* child_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -40,7 +40,7 @@ class KleeneStarParser : public UnaryParser
 {
 public:
     KleeneStarParser(Parser* child_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -48,7 +48,7 @@ class ExpectationParser : public UnaryParser
 {
 public:
     ExpectationParser(Parser* child_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -56,7 +56,7 @@ class CCOptParser : public UnaryParser
 {
 public:
     CCOptParser(Parser* child_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -64,7 +64,7 @@ class TokenParser : public UnaryParser
 {
 public:
     TokenParser(Parser* child_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -83,7 +83,7 @@ class SequenceParser : public BinaryParser
 {
 public:
     SequenceParser(Parser* left_, Parser* right_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -91,7 +91,7 @@ class AlternativeParser : public BinaryParser
 {
 public:
     AlternativeParser(Parser* left_, Parser* right_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -99,7 +99,7 @@ class DifferenceParser : public BinaryParser
 {
 public:
     DifferenceParser(Parser* left_, Parser* right_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -107,7 +107,7 @@ class ExclusiveOrParser : public BinaryParser
 {
 public:
     ExclusiveOrParser(Parser* left_, Parser* right_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -115,7 +115,7 @@ class IntersectionParser : public BinaryParser
 {
 public:
     IntersectionParser(Parser* left_, Parser* right_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 };
 
@@ -123,7 +123,7 @@ class ListParser : public UnaryParser
 {
 public:
     ListParser(Parser* left_, Parser* right_);
-    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
     virtual void Accept(Visitor& visitor);
 private:
     Parser* left;

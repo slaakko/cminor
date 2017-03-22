@@ -20,8 +20,9 @@ AttrOrVariable::AttrOrVariable(const std::string& typeName_, const std::string& 
 {
 }
 
-Rule::Rule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+Rule::Rule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_) :
     Parser(name_, "<" + name_ + ">"),
+    id(id_),
     grammar(nullptr),
     definition(definition_),
     inheritedAttributes(),
@@ -39,8 +40,29 @@ Rule::Rule(const std::string& name_, Scope* enclosingScope_, Parser* definition_
     SetScope(new Scope(Name(), EnclosingScope()));
 }
 
-Rule::Rule(const std::string& name_, Scope* enclosingScope_):
+Rule::Rule(const std::string& name_, Scope* enclosingScope_, Parser* definition_) :
     Parser(name_, "<" + name_ + ">"),
+    id(-1),
+    grammar(nullptr),
+    definition(definition_),
+    inheritedAttributes(),
+    localVariables(),
+    valueTypeName(),
+    actions(),
+    nonterminals(),
+    ccCount(0),
+    ccRule(false),
+    ccStart(),
+    ccEnd(),
+    ccSkip(false)
+{
+    Own(definition);
+    SetScope(new Scope(Name(), EnclosingScope()));
+}
+
+Rule::Rule(const std::string& name_, Scope* enclosingScope_) : 
+    Parser(name_, "<" + name_ + ">"), 
+    id(-1),
     grammar(nullptr),
     definition(),
     inheritedAttributes(),
@@ -136,24 +158,24 @@ private:
 void Rule::ExpandCode()
 {
     std::unordered_map<std::string, std::string> expandMap;
-    expandMap["value"] = "context.value";
+    expandMap["value"] = "context->value";
     int n = int(nonterminals.size());
     for (int i = 0; i < n; ++i)
     {
         NonterminalParser* nonterminal = nonterminals[i];
-        expandMap[nonterminal->Name()] = "context." + nonterminal->ValueFieldName();
+        expandMap[nonterminal->Name()] = "context->" + nonterminal->ValueFieldName();
     }
     n = int(inheritedAttributes.size());
     for (int i = 0; i < n; ++i)
     {
         const AttrOrVariable& attr = inheritedAttributes[i];
-        expandMap[attr.Name()] = "context." + attr.Name();
+        expandMap[attr.Name()] = "context->" + attr.Name();
     }
     n = int(localVariables.size());
     for (int i = 0; i < n; ++i)
     {
         const AttrOrVariable& var = localVariables[i];
-        expandMap[var.Name()] = "context." + var.Name();
+        expandMap[var.Name()] = "context->" + var.Name();
     }
     CodeExpandingVisitor visitor(expandMap);
     n = int(actions.size());
@@ -182,7 +204,7 @@ void Rule::ExpandCode()
     }
 }
 
-Match Rule::Parse(Scanner& scanner, ObjectStack& stack)
+Match Rule::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
 {
     if (CC() && ccRule)
     {
@@ -197,9 +219,9 @@ Match Rule::Parse(Scanner& scanner, ObjectStack& stack)
         scanner.Log()->IncIndent();
     }
     int startIndex = scanner.GetSpan().Start();
-    Enter(stack);
-    Match match = definition ? definition->Parse(scanner, stack) : Match::Nothing();
-    Leave(stack, match.Hit());
+    Enter(stack, parsingData);
+    Match match = definition ? definition->Parse(scanner, stack, parsingData) : Match::Nothing();
+    Leave(stack, parsingData, match.Hit());
     if (writeToLog)
     {
         scanner.Log()->DecIndent();
