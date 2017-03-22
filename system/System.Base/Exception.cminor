@@ -103,4 +103,7 @@ namespace System
         {
         }
     }
+
+    [vmf=rethrow]
+    public extern void Rethrow(Exception exception);
 }

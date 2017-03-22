@@ -1688,6 +1688,38 @@ void VmSystemSleepFor::Execute(Frame& frame)
     }
 }
 
+class VmSystemRethrow : public VmFunction
+{
+public:
+    VmSystemRethrow(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemRethrow::VmSystemRethrow(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"rethrow"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemRethrow::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue exceptionValue = frame.Local(0).GetValue();
+        uint64_t exception = exceptionValue.AsULong();
+        throw CapturedException(exception);
+    }
+    catch (const CapturedException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        frame.GetThread().HandleException(ex.GetException());
+    }
+}
+
 class VmFunctionPool
 {
 public:
@@ -1758,6 +1790,7 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemTimePointNow(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemSleepFor(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingHardwareConcurrency(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemRethrow(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool)

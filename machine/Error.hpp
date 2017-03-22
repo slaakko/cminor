@@ -126,6 +126,15 @@ public:
     ThreadingException(const std::string& message_);
 };
 
+class MACHINE_API CapturedException : public Exception
+{
+public:
+    CapturedException(uint64_t exception_);
+    uint64_t GetException() const { return exception; }
+private:
+    uint64_t exception;
+};
+
 } } // namespace cminor::machine
 
 #endif // CMINOR_MACHINE_ERROR_INCLUDED

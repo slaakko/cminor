@@ -1203,6 +1203,11 @@ extern "C" MACHINE_API void RtVmCall(void* function, void* constantPool, uint32_
     {
         RtThrowSystemException(ex);
     }
+    catch (const CapturedException& ex)
+    {
+        currentException = ex.GetException();
+        throw CminorException(ex.GetException());
+    }
 }
 
 extern "C" MACHINE_API void* RtResolveDelegateCallAddress(void* function)

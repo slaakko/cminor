@@ -159,4 +159,8 @@ ThreadingException::ThreadingException(const std::string& message_) : SystemExce
 {
 }
 
+CapturedException::CapturedException(uint64_t exception_) : Exception("captured", Span()), exception(exception_)
+{
+}
+
 } } // namespace cminor::machine
