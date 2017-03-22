@@ -6,7 +6,7 @@
 #include <cminor/machine/Object.hpp>
 #include <cminor/machine/Type.hpp>
 #include <cminor/machine/Machine.hpp>
-#include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/Runtime.hpp>
 #include <cminor/util/String.hpp>
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/machine/Class.hpp>
@@ -120,8 +120,8 @@ std::string IntegralValue::ValueStr()
         case ValueType::charType: return "'" + UCharStr(AsChar()) + "'";
         case ValueType::memPtr: return ToHexString(AsULong());
         case ValueType::stringLiteral: return "\"" + StringStr(ToUtf8(AsStringLiteral())) + "\"";
-        case ValueType::allocationHandle: return std::to_string(AsULong());
-        case ValueType::objectReference: return std::to_string(AsULong());
+        case ValueType::allocationHandle: return AsULong() == 0 ? "null" : std::to_string(AsULong());
+        case ValueType::objectReference: return AsULong() == 0 ? "null" : std::to_string(AsULong());
         case ValueType::functionPtr: return ToUtf8(AsFunctionPtr()->CallName().Value().AsStringLiteral());
         case ValueType::classDataPtr: return ToUtf8(AsClassDataPtr()->Type()->Name().Value());
         case ValueType::typePtr: return ToUtf8(AsTypePtr()->Name().Value());
@@ -130,7 +130,7 @@ std::string IntegralValue::ValueStr()
     return "";
 }
 
-uint64_t ValueSize(ValueType type)
+uint32_t ValueSize(ValueType type)
 {
     switch (type)
     {
@@ -156,105 +156,92 @@ uint64_t ValueSize(ValueType type)
     return sizeof(uint64_t);
 }
 
-ManagedAllocation::ManagedAllocation(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, uint64_t size_) : 
-    handle(handle_), memPtr(memPtr_), segmentId(segmentId_), size(size_), flags(AllocationFlags::none)
+IntegralValue GetObjectField(void* object, int index)
 {
-}
-
-ManagedAllocation::~ManagedAllocation()
-{
-}
-
-void ManagedAllocation::MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool)
-{
-}
-
-Object::Object(ObjectReference reference_, MemPtr memPtr_, int32_t segmentId_, ObjectType* type_, uint64_t size_) : 
-    ManagedAllocation(reference_, memPtr_, segmentId_, size_), reference(reference_), type(type_)
-{
-}
-
-IntegralValue Object::GetField(int index) const
-{
-    Field field = type->GetField(index);
-    MemPtr fieldPtr = GetMemPtr() + field.Offset();
+    ObjectHeader* header = &GetAllocationHeader(object)->objectHeader;
+    Field field = header->GetType()->GetField(index);
+    void* fieldPtr = static_cast<uint8_t*>(object) + field.Offset().Value();
     switch (field.GetType())
     {
-        case ValueType::boolType: return IntegralValue(*static_cast<bool*>(fieldPtr.Value()), field.GetType());
-        case ValueType::sbyteType: return IntegralValue(*static_cast<int8_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::byteType: return IntegralValue(*static_cast<uint8_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::shortType: return IntegralValue(*static_cast<int16_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::ushortType: return IntegralValue(*static_cast<uint16_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::intType: return IntegralValue(*static_cast<int32_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::uintType: return IntegralValue(*static_cast<uint32_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::longType: return IntegralValue(*static_cast<int64_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::ulongType: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::floatType: return IntegralValue(static_cast<uint64_t>(*static_cast<float*>(fieldPtr.Value())), field.GetType());
-        case ValueType::doubleType: return IntegralValue(static_cast<uint64_t>(*static_cast<double*>(fieldPtr.Value())), field.GetType());
-        case ValueType::charType: return IntegralValue(*static_cast<char32_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::memPtr: return IntegralValue(static_cast<uint8_t*>(fieldPtr.Value()));
-        case ValueType::classDataPtr: return IntegralValue(*static_cast<ClassData**>(fieldPtr.Value()));
-        case ValueType::typePtr: return IntegralValue(*static_cast<ObjectType**>(fieldPtr.Value()));
-        case ValueType::stringLiteral: return IntegralValue(static_cast<const char32_t*>(fieldPtr.Value()));
-        case ValueType::allocationHandle: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::objectReference: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
-        case ValueType::functionPtr: return IntegralValue(*static_cast<Function**>(fieldPtr.Value()));
-        default: return IntegralValue(*static_cast<uint64_t*>(fieldPtr.Value()), field.GetType());
+        case ValueType::boolType: return IntegralValue(*static_cast<bool*>(fieldPtr), field.GetType());
+        case ValueType::sbyteType: return IntegralValue(*static_cast<int8_t*>(fieldPtr), field.GetType());
+        case ValueType::byteType: return IntegralValue(*static_cast<uint8_t*>(fieldPtr), field.GetType());
+        case ValueType::shortType: return IntegralValue(*static_cast<int16_t*>(fieldPtr), field.GetType());
+        case ValueType::ushortType: return IntegralValue(*static_cast<uint16_t*>(fieldPtr), field.GetType());
+        case ValueType::intType: return IntegralValue(*static_cast<int32_t*>(fieldPtr), field.GetType());
+        case ValueType::uintType: return IntegralValue(*static_cast<uint32_t*>(fieldPtr), field.GetType());
+        case ValueType::longType: return IntegralValue(*static_cast<int64_t*>(fieldPtr), field.GetType());
+        case ValueType::ulongType: return IntegralValue(*static_cast<uint64_t*>(fieldPtr), field.GetType());
+        case ValueType::floatType: return IntegralValue(static_cast<uint64_t>(*static_cast<float*>(fieldPtr)), field.GetType());
+        case ValueType::doubleType: return IntegralValue(static_cast<uint64_t>(*static_cast<double*>(fieldPtr)), field.GetType());
+        case ValueType::charType: return IntegralValue(*static_cast<char32_t*>(fieldPtr), field.GetType());
+        case ValueType::memPtr: return IntegralValue(static_cast<uint8_t*>(fieldPtr));
+        case ValueType::classDataPtr: return IntegralValue(*static_cast<ClassData**>(fieldPtr));
+        case ValueType::typePtr: return IntegralValue(*static_cast<ObjectType**>(fieldPtr));
+        case ValueType::stringLiteral: return IntegralValue(static_cast<const char32_t*>(fieldPtr));
+        case ValueType::allocationHandle: return IntegralValue(*static_cast<uint64_t*>(fieldPtr), field.GetType());
+        case ValueType::objectReference: return IntegralValue(*static_cast<uint64_t*>(fieldPtr), field.GetType());
+        case ValueType::functionPtr: return IntegralValue(*static_cast<Function**>(fieldPtr));
+        default: return IntegralValue(*static_cast<uint64_t*>(fieldPtr), field.GetType());
     }
 }
 
-void Object::SetField(IntegralValue fieldValue, int index)
+void SetObjectField(void* object, IntegralValue fieldValue, int index)
 {
-    Field field = type->GetField(index);
+    ObjectHeader* header = &GetAllocationHeader(object)->objectHeader;
+    Field field = header->GetType()->GetField(index);
     Assert(field.GetType() == fieldValue.GetType(), "value types do not match in set field");
-    MemPtr fieldPtr = GetMemPtr() + field.Offset();
+    void* fieldPtr = static_cast<uint8_t*>(object) + field.Offset().Value();
     switch (field.GetType())
     {
-        case ValueType::boolType: *static_cast<bool*>(fieldPtr.Value()) = fieldValue.AsBool(); break;
-        case ValueType::sbyteType: *static_cast<int8_t*>(fieldPtr.Value()) = fieldValue.AsSByte(); break;
-        case ValueType::byteType: *static_cast<uint8_t*>(fieldPtr.Value()) = fieldValue.AsByte(); break;
-        case ValueType::shortType: *static_cast<int16_t*>(fieldPtr.Value()) = fieldValue.AsShort(); break;
-        case ValueType::ushortType: *static_cast<uint16_t*>(fieldPtr.Value()) = fieldValue.AsUShort(); break;
-        case ValueType::intType: *static_cast<int32_t*>(fieldPtr.Value()) = fieldValue.AsInt(); break;
-        case ValueType::uintType: *static_cast<uint32_t*>(fieldPtr.Value()) = fieldValue.AsUInt(); break;
-        case ValueType::longType: *static_cast<int64_t*>(fieldPtr.Value()) = fieldValue.AsLong(); break;
-        case ValueType::ulongType: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.AsULong(); break;
-        case ValueType::floatType: *static_cast<float*>(fieldPtr.Value()) = fieldValue.AsFloat(); break;
-        case ValueType::doubleType: *static_cast<double*>(fieldPtr.Value()) = fieldValue.AsDouble(); break;
-        case ValueType::charType: *static_cast<char32_t*>(fieldPtr.Value()) = fieldValue.AsChar(); break;
-        case ValueType::memPtr: *static_cast<uint8_t**>(fieldPtr.Value()) = fieldValue.AsMemPtr(); break;
-        case ValueType::classDataPtr: *static_cast<ClassData**>(fieldPtr.Value()) = fieldValue.AsClassDataPtr(); break;
-        case ValueType::typePtr: *static_cast<Type**>(fieldPtr.Value()) = fieldValue.AsTypePtr(); break;
-        case ValueType::stringLiteral: *static_cast<const char32_t**>(fieldPtr.Value()) = fieldValue.AsStringLiteral(); break;
-        case ValueType::allocationHandle: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
-        case ValueType::objectReference: *static_cast<uint64_t*>(fieldPtr.Value()) = fieldValue.Value(); break;
-        case ValueType::functionPtr: *static_cast<Function**>(fieldPtr.Value()) = fieldValue.AsFunctionPtr(); break;
+        case ValueType::boolType: *static_cast<bool*>(fieldPtr) = fieldValue.AsBool(); break;
+        case ValueType::sbyteType: *static_cast<int8_t*>(fieldPtr) = fieldValue.AsSByte(); break;
+        case ValueType::byteType: *static_cast<uint8_t*>(fieldPtr) = fieldValue.AsByte(); break;
+        case ValueType::shortType: *static_cast<int16_t*>(fieldPtr) = fieldValue.AsShort(); break;
+        case ValueType::ushortType: *static_cast<uint16_t*>(fieldPtr) = fieldValue.AsUShort(); break;
+        case ValueType::intType: *static_cast<int32_t*>(fieldPtr) = fieldValue.AsInt(); break;
+        case ValueType::uintType: *static_cast<uint32_t*>(fieldPtr) = fieldValue.AsUInt(); break;
+        case ValueType::longType: *static_cast<int64_t*>(fieldPtr) = fieldValue.AsLong(); break;
+        case ValueType::ulongType: *static_cast<uint64_t*>(fieldPtr) = fieldValue.AsULong(); break;
+        case ValueType::floatType: *static_cast<float*>(fieldPtr) = fieldValue.AsFloat(); break;
+        case ValueType::doubleType: *static_cast<double*>(fieldPtr) = fieldValue.AsDouble(); break;
+        case ValueType::charType: *static_cast<char32_t*>(fieldPtr) = fieldValue.AsChar(); break;
+        case ValueType::memPtr: *static_cast<uint8_t**>(fieldPtr) = fieldValue.AsMemPtr(); break;
+        case ValueType::classDataPtr: *static_cast<ClassData**>(fieldPtr) = fieldValue.AsClassDataPtr(); break;
+        case ValueType::typePtr: *static_cast<Type**>(fieldPtr) = fieldValue.AsTypePtr(); break;
+        case ValueType::stringLiteral: *static_cast<const char32_t**>(fieldPtr) = fieldValue.AsStringLiteral(); break;
+        case ValueType::allocationHandle: *static_cast<uint64_t*>(fieldPtr) = fieldValue.Value(); break;
+        case ValueType::objectReference: *static_cast<uint64_t*>(fieldPtr) = fieldValue.Value(); break;
+        case ValueType::functionPtr: *static_cast<Function**>(fieldPtr) = fieldValue.AsFunctionPtr(); break;
         default: throw SystemException("invalid field type " + std::to_string(int(field.GetType())));
     }
 }
 
-int32_t Object::FieldCount() const
+int32_t ObjectFieldCount(void* object)
 {
-    return type->FieldCount();
+    ObjectHeader* header = &GetAllocationHeader(object)->objectHeader;
+    return header->GetType()->FieldCount();
 }
 
-void Object::MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool)
+void MarkObjectLiveAllocations(void* object, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked)
 {
-    int32_t n = type->FieldCount();
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    int32_t n = ObjectFieldCount(object);
     for (int32_t i = 0; i < n; ++i)
     {
-        IntegralValue value = GetField(i);
+        IntegralValue value = GetObjectField(object, i);
         if (value.GetType() == ValueType::objectReference)
         {
             ObjectReference objectRef(value.Value());
             if (!objectRef.IsNull() && checked.find(objectRef) == checked.cend())
             {
                 checked.insert(objectRef);
-                Object* object = managedMemoryPool.GetObjectNothrow(objectRef);
+                void* object = memoryPool.GetObjectNoThrowNoLock(objectRef);
                 if (object)
                 {
-                    object->SetLive();
-                    object->MarkLiveAllocations(checked, managedMemoryPool);
+                    ManagedAllocationHeader* header = GetAllocationHeader(object);
+                    header->SetLive();
+                    MarkObjectLiveAllocations(object, checked);
                 }
             }
         }
@@ -266,11 +253,19 @@ void Object::MarkLiveAllocations(std::unordered_set<AllocationHandle, Allocation
                 if (checked.find(allocationHandle) == checked.cend())
                 {
                     checked.insert(allocationHandle);
-                    ManagedAllocation* allocation = managedMemoryPool.GetAllocationNothrow(allocationHandle);
+                    void* allocation = memoryPool.GetAllocationNoThrowNoLock(allocationHandle);
                     if (allocation)
                     {
-                        allocation->SetLive();
-                        allocation->MarkLiveAllocations(checked, managedMemoryPool);
+                        ManagedAllocationHeader* allocationHeader = GetAllocationHeader(allocation);
+                        allocationHeader->SetLive();
+                        if (allocationHeader->IsObject())
+                        {
+                            MarkObjectLiveAllocations(allocation, checked);
+                        }
+                        else if (allocationHeader->IsArrayElements())
+                        {
+                            MarkArrayElementsLiveAllocations(allocation, checked);
+                        }
                     }
                 }
             }
@@ -278,107 +273,118 @@ void Object::MarkLiveAllocations(std::unordered_set<AllocationHandle, Allocation
     }
 }
 
-ArrayElements::ArrayElements(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, Type* elementType_, int32_t numElements_, uint64_t size_) :
-    ManagedAllocation(handle_, memPtr_, segmentId_, size_), elementType(elementType_), numElements(numElements_)
+MACHINE_API IntegralValue GetElement(void* arrayElements, int32_t index)
 {
-}
-
-IntegralValue ArrayElements::GetElement(int32_t index) const
-{
+    ArrayElementsHeader* header = &GetAllocationHeader(arrayElements)->arrayElementsHeader;
+    int32_t numElements = header->NumElements();
     if (index < 0 || index >= numElements)
     {
         throw IndexOutOfRangeException("array index out of range");
     }
+    Type* elementType = header->GetElementType();
     ValueType valueType = elementType->GetValueType();
-    MemPtr elementPtr = ElementPtr(GetMemPtr(), valueType, index);
+    void* elementPtr = static_cast<uint8_t*>(arrayElements) + ValueSize(valueType) * index;
     switch (valueType)
     {
-        case ValueType::boolType: return IntegralValue(*static_cast<bool*>(elementPtr.Value()), valueType);
-        case ValueType::sbyteType: return IntegralValue(*static_cast<int8_t*>(elementPtr.Value()), valueType);
-        case ValueType::byteType: return IntegralValue(*static_cast<uint8_t*>(elementPtr.Value()), valueType);
-        case ValueType::shortType: return IntegralValue(*static_cast<int16_t*>(elementPtr.Value()), valueType);
-        case ValueType::ushortType: return IntegralValue(*static_cast<uint16_t*>(elementPtr.Value()), valueType);
-        case ValueType::intType: return IntegralValue(*static_cast<int32_t*>(elementPtr.Value()), valueType);
-        case ValueType::uintType: return IntegralValue(*static_cast<uint32_t*>(elementPtr.Value()), valueType);
-        case ValueType::longType: return IntegralValue(*static_cast<int64_t*>(elementPtr.Value()), valueType);
-        case ValueType::ulongType: return IntegralValue(*static_cast<uint64_t*>(elementPtr.Value()), valueType);
-        case ValueType::floatType: return IntegralValue(static_cast<uint64_t>(*static_cast<float*>(elementPtr.Value())), valueType);
-        case ValueType::doubleType: return IntegralValue(static_cast<uint64_t>(*static_cast<double*>(elementPtr.Value())), valueType);
-        case ValueType::charType: return IntegralValue(*static_cast<char32_t*>(elementPtr.Value()), valueType);
-        case ValueType::memPtr: return IntegralValue(static_cast<uint8_t*>(elementPtr.Value()));
-        case ValueType::classDataPtr: return IntegralValue(*static_cast<ClassData**>(elementPtr.Value()));
-        case ValueType::typePtr: return IntegralValue(*static_cast<ObjectType**>(elementPtr.Value()));
-        case ValueType::stringLiteral: return IntegralValue(static_cast<const char32_t*>(elementPtr.Value()));
-        case ValueType::allocationHandle: return IntegralValue(*static_cast<uint64_t*>(elementPtr.Value()), valueType);
-        case ValueType::objectReference: return IntegralValue(*static_cast<uint64_t*>(elementPtr.Value()), valueType);
-        default: return IntegralValue(*static_cast<uint64_t*>(elementPtr.Value()), valueType);
+        case ValueType::boolType: return IntegralValue(*static_cast<bool*>(elementPtr), valueType);
+        case ValueType::sbyteType: return IntegralValue(*static_cast<int8_t*>(elementPtr), valueType);
+        case ValueType::byteType: return IntegralValue(*static_cast<uint8_t*>(elementPtr), valueType);
+        case ValueType::shortType: return IntegralValue(*static_cast<int16_t*>(elementPtr), valueType);
+        case ValueType::ushortType: return IntegralValue(*static_cast<uint16_t*>(elementPtr), valueType);
+        case ValueType::intType: return IntegralValue(*static_cast<int32_t*>(elementPtr), valueType);
+        case ValueType::uintType: return IntegralValue(*static_cast<uint32_t*>(elementPtr), valueType);
+        case ValueType::longType: return IntegralValue(*static_cast<int64_t*>(elementPtr), valueType);
+        case ValueType::ulongType: return IntegralValue(*static_cast<uint64_t*>(elementPtr), valueType);
+        case ValueType::floatType: return IntegralValue(static_cast<uint64_t>(*static_cast<float*>(elementPtr)), valueType);
+        case ValueType::doubleType: return IntegralValue(static_cast<uint64_t>(*static_cast<double*>(elementPtr)), valueType);
+        case ValueType::charType: return IntegralValue(*static_cast<char32_t*>(elementPtr), valueType);
+        case ValueType::memPtr: return IntegralValue(static_cast<uint8_t*>(elementPtr));
+        case ValueType::classDataPtr: return IntegralValue(*static_cast<ClassData**>(elementPtr));
+        case ValueType::typePtr: return IntegralValue(*static_cast<ObjectType**>(elementPtr));
+        case ValueType::stringLiteral: return IntegralValue(static_cast<const char32_t*>(elementPtr));
+        case ValueType::allocationHandle: return IntegralValue(*static_cast<uint64_t*>(elementPtr), valueType);
+        case ValueType::objectReference: return IntegralValue(*static_cast<uint64_t*>(elementPtr), valueType);
+        default: return IntegralValue(*static_cast<uint64_t*>(elementPtr), valueType);
     }
 }
 
-void ArrayElements::SetElement(IntegralValue elementValue, int32_t index)
+MACHINE_API void SetElement(void* arrayElements, IntegralValue elementValue, int32_t index)
 {
-    if (index < 0 || index >= numElements) 
+    ArrayElementsHeader* header = &GetAllocationHeader(arrayElements)->arrayElementsHeader;
+    int32_t numElements = header->NumElements();
+    if (index < 0 || index >= numElements)
     {
         throw IndexOutOfRangeException("array index out of range");
     }
+    Type* elementType = header->GetElementType();
     ValueType valueType = elementType->GetValueType();
-    MemPtr elementPtr = ElementPtr(GetMemPtr(), valueType, index);
+    void* elementPtr = static_cast<uint8_t*>(arrayElements) + ValueSize(valueType) * index;
     switch (valueType)
     {
-        case ValueType::boolType: *static_cast<bool*>(elementPtr.Value()) = elementValue.AsBool(); break;
-        case ValueType::sbyteType: *static_cast<int8_t*>(elementPtr.Value()) = elementValue.AsSByte(); break;
-        case ValueType::byteType: *static_cast<uint8_t*>(elementPtr.Value()) = elementValue.AsByte(); break;
-        case ValueType::shortType: *static_cast<int16_t*>(elementPtr.Value()) = elementValue.AsShort(); break;
-        case ValueType::ushortType: *static_cast<uint16_t*>(elementPtr.Value()) = elementValue.AsUShort(); break;
-        case ValueType::intType: *static_cast<int32_t*>(elementPtr.Value()) = elementValue.AsInt(); break;
-        case ValueType::uintType: *static_cast<uint32_t*>(elementPtr.Value()) = elementValue.AsUInt(); break;
-        case ValueType::longType: *static_cast<int64_t*>(elementPtr.Value()) = elementValue.AsLong(); break;
-        case ValueType::ulongType: *static_cast<uint64_t*>(elementPtr.Value()) = elementValue.AsULong(); break;
-        case ValueType::floatType: *static_cast<float*>(elementPtr.Value()) = elementValue.AsFloat(); break;
-        case ValueType::doubleType: *static_cast<double*>(elementPtr.Value()) = elementValue.AsDouble(); break;
-        case ValueType::charType: *static_cast<char32_t*>(elementPtr.Value()) = elementValue.AsChar(); break;
-        case ValueType::memPtr: *static_cast<uint8_t**>(elementPtr.Value()) = elementValue.AsMemPtr(); break;
-        case ValueType::classDataPtr: *static_cast<ClassData**>(elementPtr.Value()) = elementValue.AsClassDataPtr(); break;
-        case ValueType::typePtr: *static_cast<Type**>(elementPtr.Value()) = elementValue.AsTypePtr(); break;
-        case ValueType::stringLiteral: *static_cast<const char32_t**>(elementPtr.Value()) = elementValue.AsStringLiteral(); break;
-        case ValueType::allocationHandle: *static_cast<uint64_t*>(elementPtr.Value()) = elementValue.Value(); break;
-        case ValueType::objectReference: *static_cast<uint64_t*>(elementPtr.Value()) = elementValue.Value(); break;
+        case ValueType::boolType: *static_cast<bool*>(elementPtr) = elementValue.AsBool(); break;
+        case ValueType::sbyteType: *static_cast<int8_t*>(elementPtr) = elementValue.AsSByte(); break;
+        case ValueType::byteType: *static_cast<uint8_t*>(elementPtr) = elementValue.AsByte(); break;
+        case ValueType::shortType: *static_cast<int16_t*>(elementPtr) = elementValue.AsShort(); break;
+        case ValueType::ushortType: *static_cast<uint16_t*>(elementPtr) = elementValue.AsUShort(); break;
+        case ValueType::intType: *static_cast<int32_t*>(elementPtr) = elementValue.AsInt(); break;
+        case ValueType::uintType: *static_cast<uint32_t*>(elementPtr) = elementValue.AsUInt(); break;
+        case ValueType::longType: *static_cast<int64_t*>(elementPtr) = elementValue.AsLong(); break;
+        case ValueType::ulongType: *static_cast<uint64_t*>(elementPtr) = elementValue.AsULong(); break;
+        case ValueType::floatType: *static_cast<float*>(elementPtr) = elementValue.AsFloat(); break;
+        case ValueType::doubleType: *static_cast<double*>(elementPtr) = elementValue.AsDouble(); break;
+        case ValueType::charType: *static_cast<char32_t*>(elementPtr) = elementValue.AsChar(); break;
+        case ValueType::memPtr: *static_cast<uint8_t**>(elementPtr) = elementValue.AsMemPtr(); break;
+        case ValueType::classDataPtr: *static_cast<ClassData**>(elementPtr) = elementValue.AsClassDataPtr(); break;
+        case ValueType::typePtr: *static_cast<Type**>(elementPtr) = elementValue.AsTypePtr(); break;
+        case ValueType::stringLiteral: *static_cast<const char32_t**>(elementPtr) = elementValue.AsStringLiteral(); break;
+        case ValueType::allocationHandle: *static_cast<uint64_t*>(elementPtr) = elementValue.Value(); break;
+        case ValueType::objectReference: *static_cast<uint64_t*>(elementPtr) = elementValue.Value(); break;
         default: throw SystemException("invalid element type " + std::to_string(int(valueType)));
     }
 }
 
-void ArrayElements::MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool)
+MACHINE_API int32_t NumElements(void* arrayElements)
 {
+    ArrayElementsHeader* header = &GetAllocationHeader(arrayElements)->arrayElementsHeader;
+    return header->NumElements();
+}
+
+void MarkArrayElementsLiveAllocations(void* arrayElements, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked)
+{
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    ArrayElementsHeader* header = &GetAllocationHeader(arrayElements)->arrayElementsHeader;
+    Type* elementType = header->GetElementType();
+    int32_t numElements = header->NumElements();
     if (elementType->GetValueType() == ValueType::objectReference)
     {
         for (int32_t i = 0; i < numElements; ++i)
         {
-            IntegralValue value = GetElement(i);
+            IntegralValue value = GetElement(arrayElements, i);
             Assert(value.GetType() == ValueType::objectReference, "object reference expected");
             ObjectReference objectReference(value.Value());
             if (!objectReference.IsNull() && checked.find(objectReference) == checked.cend())
             {
                 checked.insert(objectReference);
-                Object* object = managedMemoryPool.GetObjectNothrow(objectReference);
+                void* object = memoryPool.GetObjectNoThrowNoLock(objectReference);
                 if (object)
                 {
-                    object->SetLive();
-                    object->MarkLiveAllocations(checked, managedMemoryPool);
+                    ManagedAllocationHeader* header = GetAllocationHeader(object);
+                    header->SetLive();
+                    MarkObjectLiveAllocations(object, checked);
                 }
             }
         }
     }
 }
 
-StringCharacters::StringCharacters(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, int32_t numChars_, uint64_t size_) :
-    ManagedAllocation(handle_, memPtr_, segmentId_, size_), numChars(numChars_)
+IntegralValue GetChar(void* stringCharacters, int32_t index)
 {
-}
-
-IntegralValue StringCharacters::GetChar(int32_t index) const
-{
-    MemPtr memPtr = GetMemPtr();
-    return IntegralValue(memPtr.StrValue()[index], ValueType::charType);
+    StringCharactersHeader* header = &GetAllocationHeader(stringCharacters)->stringCharactersHeader;
+    if (index < 0 || index >= header->NumChars())
+    {
+        throw IndexOutOfRangeException("string index out of range");
+    }
+    return IntegralValue(header->Str()[index], ValueType::charType);
 }
 
 uint64_t poolThreshold = defaultPoolThreshold;
@@ -393,32 +399,171 @@ uint64_t GetPoolThreshold()
     return poolThreshold;
 }
 
-ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextReferenceValue(1), objectCount(0), arrayContentCount(0), stringContentCount(0), prevSize(0), size(0), 
-    poolRoot(AllocationHandle(0))
+ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextAllocationHandleValue(firstAllocationHandleValue), prevSize(0), size(0), poolRoot(AllocationHandle(0))
 {
+}
+
+AllocationHandle ManagedMemoryPool::AddAllocation(Thread& thread, ManagedAllocationHeader* header, std::unique_lock<std::recursive_mutex>& lock)
+{
+    AllocationHandle allocationHandle;
+    if (thread.HasAllocationHandles())
+    {
+        allocationHandle = thread.PopAllocationHandle();
+    }
+    else
+    {
+        allocationHandle = nextAllocationHandleValue++;
+    }
+    if (!lock.owns_lock())
+    {
+        lock.lock();
+    }
+    if (allocationHandle.Value() < uint64_t(allocations.size()))
+    {
+        Assert(!allocations[allocationHandle.Value()], "overwriting existing allocation");
+        allocations[allocationHandle.Value()] = GetAllocationPtr(header);
+    }
+    else
+    {
+        CheckSize(thread, lock, allocationHandle);
+        if (!lock.owns_lock())
+        {
+            lock.lock();    // CheckSize might release the lock, ensure that it is owned again...
+        }
+        while (allocationHandle.Value() >= uint64_t(allocations.size()))
+        {
+            allocations.push_back(nullptr);
+        }
+        allocations[allocationHandle.Value()] = GetAllocationPtr(header);
+    }
+    return allocationHandle;
+}
+
+void* ManagedMemoryPool::MoveAllocation(int32_t newSegmentId, void* newAllocWithHeader, ManagedAllocationHeader* header)
+{
+    std::memcpy(newAllocWithHeader, header, header->AllocationSize());
+    ManagedAllocationHeader* newHeader = static_cast<ManagedAllocationHeader*>(newAllocWithHeader);
+    newHeader->SetSegmentId(newSegmentId);
+    void* allocationPtr = GetAllocationPtr(newHeader);
+    if (header->IsStringCharacters())
+    {
+        if (!header->IsStringLiteral())
+        {
+            StringCharactersHeader* newStringCharsHeader = &newHeader->stringCharactersHeader;
+            const char32_t* str = static_cast<const char32_t*>(allocationPtr);
+            newStringCharsHeader->SetStr(str);
+        }
+    }
+    return allocationPtr;
+}
+
+DestroyLockFn destroyLock = nullptr;
+
+MACHINE_API void SetDestroyLockFn(DestroyLockFn destroyLock_)
+{
+    destroyLock = destroyLock_;
+}
+
+DestroyConditionVariableFn destroyCondVar = nullptr;
+
+MACHINE_API void SetDestroyConditionVariableFn(DestroyConditionVariableFn destroyCondVar_)
+{
+    destroyCondVar = destroyCondVar_;
+}
+
+void ManagedMemoryPool::DestroyAllocation(AllocationHandle handle)
+{ 
+    void* allocation = allocations[handle.Value()];
+    ManagedAllocationHeader* header = GetAllocationHeader(allocation);
+    if (header->IsObject())
+    {
+        if (header->LockId() != lockNotAllocated)
+        {
+            if (destroyLock)
+            {
+                destroyLock(header->LockId());
+            }
+        }
+        if (header->IsConditionVariable())
+        {
+            IntegralValue conditionVariableId = GetObjectField(allocation, 1);
+            Assert(conditionVariableId.GetType() == ValueType::intType, "int type expected");
+            if (destroyCondVar)
+            {
+                destroyCondVar(conditionVariableId.AsInt());
+            }
+        }
+    }
+    allocations[handle.Value()] = nullptr;
+}
+
+void ManagedMemoryPool::DestroyAllocations(std::vector<AllocationHandle>& toBeDestroyed)
+{
+    int32_t n = int32_t(toBeDestroyed.size());
+    int32_t m = int32_t(GetMachine().Threads().size());
+    if (m == 1)
+    {
+        Thread& thread = GetMachine().MainThread();
+        for (int32_t i = 0; i < n; ++i)
+        {
+            AllocationHandle handle = toBeDestroyed[i];
+            thread.PushAllocationHandle(handle);
+        }
+    }
+    else
+    {
+        for (int32_t i = 0; i < n; ++i)
+        {
+            AllocationHandle handle = toBeDestroyed[i];
+            int32_t threadId = i % m;
+            int32_t startTheadId = threadId;
+            Thread* thread = GetMachine().Threads()[threadId].get();
+            while (thread->GetState() == ThreadState::waiting)
+            {
+                threadId = (threadId + 1) % m;
+                thread = GetMachine().Threads()[threadId].get();
+                if (threadId == startTheadId)
+                {
+                    break;
+                }
+            }
+            thread->PushAllocationHandle(handle);
+        }
+    }
+    for (AllocationHandle handle : toBeDestroyed)
+    {
+        DestroyAllocation(handle);
+    }
+    toBeDestroyed.clear();
+}
+
+ObjectReference ManagedMemoryPool::CreateObject(Thread& thread, ObjectType* type, std::unique_lock<std::recursive_mutex>& lock)
+{
+    void* ptr = nullptr;
+    int32_t segmentId = -1;
+    Assert(type->ObjectSize() < std::numeric_limits<uint32_t>::max(), "object too big");
+    uint32_t objectSize = static_cast<uint32_t>(type->ObjectSize());
+    uint32_t allocationSize = objectSize + sizeof(ManagedAllocationHeader);
+    machine.AllocateMemory(thread, allocationSize, ptr, segmentId, lock);
+    ManagedAllocationHeader* header = static_cast<ManagedAllocationHeader*>(ptr);
+    ObjectHeader* objectHeader = &header->objectHeader;
+    header->SetAllocationSize(allocationSize);
+    header->SetSegmentId(segmentId);
+    header->SetLockId(lockNotAllocated);
+    header->SetFlags(AllocationFlags::object);
+    objectHeader->SetType(type);
+    if (!lock.owns_lock())
+    {
+        lock.lock();
+    }
+    objectHeader->SetHashCode(Random64());
+    return ObjectReference(AddAllocation(thread, header, lock).Value());
 }
 
 ObjectReference ManagedMemoryPool::CreateObject(Thread& thread, ObjectType* type)
 {
-    ObjectReference reference(nextReferenceValue++);
-    if (reference == 16)
-    {
-        int x = 0;
-    }
-    MemPtr memPtr = MemPtr();
-    int32_t segmentId = -1;
-    machine.AllocateMemory(thread, type->ObjectSize(), memPtr, segmentId);
-    memPtr.SetHashCode(Random64());
-    Object* obj = new Object(reference, memPtr, segmentId, type, type->ObjectSize());
-    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
-    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(obj)));
-    if (!pairItBool.second)
-    {
-        throw SystemException("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
-    }
-    ++objectCount;
-    CheckSize(thread, lock, reference);
-    return reference;
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
+    return CreateObject(thread, type, lock);
 }
 
 ObjectReference ManagedMemoryPool::CopyObject(Thread& thread, ObjectReference from)
@@ -427,279 +572,254 @@ ObjectReference ManagedMemoryPool::CopyObject(Thread& thread, ObjectReference fr
     {
         return from;
     }
-    ObjectReference reference(nextReferenceValue++);
-    Object& object = GetObject(from);
-    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
-    Object* obj = new Object(reference, object.GetMemPtr(), object.SegmentId(), object.GetType(), object.Size());
-    auto pairItBool = allocations.insert(std::make_pair(reference, std::unique_ptr<ManagedAllocation>(obj)));
-    if (!pairItBool.second)
-    {
-        throw SystemException("could not insert object to pool because an object with reference " + std::to_string(reference.Value()) + " already exists");
-    }
-    ++objectCount;
-    CheckSize(thread, lock, reference);
-    return reference;
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
+    void* object = GetObject(from, lock);
+    return ObjectReference(AddAllocation(thread, GetAllocationHeader(object), lock).Value());
 }
 
-void ManagedMemoryPool::DestroyAllocation(AllocationHandle handle)
+void* ManagedMemoryPool::GetObject(ObjectReference reference)
 {
-    if (!handle.Value())
-    {
-        throw SystemException("cannot destroy null handle");
-    }
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
-    {
-        ManagedAllocation* allocation = it->second.get();
-        if (dynamic_cast<Object*>(allocation))
-        {
-            --objectCount;
-        }
-        else if (dynamic_cast<ArrayElements*>(allocation))
-        {
-            --arrayContentCount;
-        }
-        else if (dynamic_cast<StringCharacters*>(allocation))
-        {
-            --stringContentCount;
-        }
-        //deletedAllocations[handle] = it->second.release();
-    }
-    auto n = allocations.erase(handle);
-    if (n != 1)
-    {
-        throw SystemException("could not erase: allocation with handle " + std::to_string(handle.Value()) + " not found");
-    }
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
+    return GetObject(reference, lock);
 }
 
-Object& ManagedMemoryPool::GetObject(ObjectReference reference)
+void* ManagedMemoryPool::GetObject(ObjectReference reference, std::unique_lock<std::recursive_mutex>& lock)
 {
     if (reference.IsNull())
     {
         throw NullReferenceException("object reference is null");
     }
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(reference);
-    if (it != allocations.cend())
+    uint64_t index = reference.Value();
+    if (!lock.owns_lock())
     {
-        ManagedAllocation* allocation = it->second.get();
-        Object* object = dynamic_cast<Object*>(allocation);
-        Assert(object, "object expected");
-        return *object;
+        lock.lock();
     }
-    auto dit = deletedAllocations.find(reference);
-    if (dit != deletedAllocations.cend())
+    if (index < uint64_t(allocations.size()))
     {
-        ManagedAllocation* allocation = dit->second;
-        if (Object* o = dynamic_cast<Object*>(allocation))
-        {
-            Type* type = o->GetType();
-            std::cout << ToUtf8(type->Name().Value()) << std::endl;
-            if (o->FieldCount() >= 3)
-            {
-                IntegralValue f = o->GetField(2);
-                if (f.GetType() == ValueType::allocationHandle)
-                {
-                    AllocationHandle h(f.AsULong());
-                    auto t = allocations.find(h);
-                    if (t != allocations.cend())
-                    {
-                        ManagedAllocation* a = t->second.get();
-                        if (StringCharacters* s = dynamic_cast<StringCharacters*>(a))
-                        {
-                            int n = s->NumChars();
-                            for (int i = 0; i < n; ++i)
-                            {
-                                IntegralValue v = s->GetChar(i);
-                                char c = char(v.AsChar());
-                                std::cout << c;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        return allocations[index];
     }
     throw SystemException("object with reference " + std::to_string(reference.Value()) + " not found");
 }
 
-Object* ManagedMemoryPool::GetObjectNothrow(ObjectReference reference)
+void* ManagedMemoryPool::GetObjectNoThrow(ObjectReference reference, std::unique_lock<std::recursive_mutex>& lock)
 {
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(reference);
-    if (it != allocations.cend())
+    uint64_t index = reference.Value();
+    if (!lock.owns_lock())
     {
-        ManagedAllocation* allocation = it->second.get();
-        Object* object = dynamic_cast<Object*>(allocation);
-        Assert(object, "object expected");
-        return object;
+        lock.lock();
+    }
+    if (index < uint64_t(allocations.size()))
+    {
+        return allocations[index];
     }
     return nullptr;
 }
 
-IntegralValue ManagedMemoryPool::GetField(ObjectReference reference, int32_t fieldIndex)
+void* ManagedMemoryPool::GetObjectNoThrowNoLock(ObjectReference reference)
+{
+    uint64_t index = reference.Value();
+    if (index < uint64_t(allocations.size()))
+    {
+        return allocations[index];
+    }
+    return nullptr;
+}
+
+void* ManagedMemoryPool::GetAllocation(AllocationHandle handle, std::unique_lock<std::recursive_mutex>& lock)
+{
+    uint64_t index = handle.Value();
+    if (!lock.owns_lock())
+    {
+        lock.lock();
+    }
+    if (index < uint64_t(allocations.size()))
+    {
+        return allocations[index];
+    }
+    throw SystemException("allocation with handle " + std::to_string(handle.Value()) + " not found");
+}
+
+void* ManagedMemoryPool::GetAllocationNoThrowNoLock(AllocationHandle handle)
+{
+    uint64_t index = handle.Value();
+    if (index < uint64_t(allocations.size()))
+    {
+        return allocations[index];
+    }
+    return nullptr;
+}
+
+IntegralValue ManagedMemoryPool::GetField(ObjectReference reference, int32_t fieldIndex, std::unique_lock<std::recursive_mutex>& lock)
 {
     if (reference.IsNull())
     {
         throw NullReferenceException("cannot get field of a null object reference");
     }
-    Object& object = GetObject(reference);
-    return object.GetField(fieldIndex);
+    void* object = GetObject(reference, lock);
+    return GetObjectField(object, fieldIndex);
 }
 
-void ManagedMemoryPool::SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue)
+IntegralValue ManagedMemoryPool::GetField(ObjectReference reference, int32_t fieldIndex)
+{
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
+    return GetField(reference, fieldIndex, lock);
+}
+
+void ManagedMemoryPool::SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue, std::unique_lock<std::recursive_mutex>& lock)
 {
     if (reference.IsNull())
     {
         throw NullReferenceException("cannot set field of a null object reference");
     }
-    Object& object = GetObject(reference);
-    object.SetField(fieldValue, fieldIndex);
+    void* object = GetObject(reference, lock);
+    SetObjectField(object, fieldValue, fieldIndex);
+}
+
+void ManagedMemoryPool::SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue)
+{
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
+    SetField(reference, fieldIndex, fieldValue, lock);
+}
+
+int32_t ManagedMemoryPool::GetFieldCount(ObjectReference reference)
+{
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
+    void* object = GetObject(reference, lock);
+    return ObjectFieldCount(object);
 }
 
 AllocationHandle ManagedMemoryPool::CreateStringCharsFromLiteral(Thread& thread, const char32_t* strLit, uint32_t len)
 {
-    AllocationHandle handle(nextReferenceValue++);
-    uint64_t stringSize = static_cast<uint64_t>(sizeof(char32_t)) * len;
-    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
-    MemPtr memPtr(strLit);
-    memPtr.SetHashCode(Random64());
-    StringCharacters* strChars = new StringCharacters(handle, memPtr, notGarbageCollectedSegment, len, stringSize);
-    auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(strChars)));
-    if (!pairItBool.second)
-    {
-        throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
-    }
-    ++stringContentCount;
-    CheckSize(thread, lock, handle);
-    return handle;
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
+    return CreateStringCharsFromLiteral(thread, strLit, len, lock);
+}
+
+AllocationHandle ManagedMemoryPool::CreateStringCharsFromLiteral(Thread& thread, const char32_t* strLit, uint32_t len, std::unique_lock<std::recursive_mutex>& lock)
+{
+    void* ptr = nullptr;
+    int32_t segmentId = -1;
+    uint32_t stringContentSize = 0;
+    uint32_t allocationSize = stringContentSize + sizeof(ManagedAllocationHeader);
+    machine.AllocateMemory(thread, allocationSize, ptr, segmentId, lock);
+    ManagedAllocationHeader* header = static_cast<ManagedAllocationHeader*>(ptr);
+    StringCharactersHeader* stringCharsHeader = &header->stringCharactersHeader;
+    header->SetAllocationSize(allocationSize);
+    header->SetSegmentId(segmentId);
+    header->SetFlags(AllocationFlags::stringChars);
+    header->SetStringLiteral();
+    stringCharsHeader->SetNumChars(len);
+    stringCharsHeader->SetStr(strLit);
+    return AddAllocation(thread, header, lock);
 }
 
 std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCharArray(Thread& thread, ObjectReference charArray)
 {
-    Object& charArrayObject = GetObject(charArray);
-    IntegralValue charElementsValue = charArrayObject.GetField(2);
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
+    return CreateStringCharsFromCharArray(thread, charArray, lock);
+}
+
+std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCharArray(Thread& thread, ObjectReference charArray, std::unique_lock<std::recursive_mutex>& lock)
+{
+    IntegralValue charElementsValue = GetField(charArray, 2, lock);
     Assert(charElementsValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle charElementsHandle(charElementsValue.Value());
-    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(charElementsHandle);
-    if (it != allocations.cend())
+    void* charElements = GetAllocation(charElementsHandle, lock);
+    ManagedAllocationHeader* charElementsHeader = GetAllocationHeader(charElements);
+    charElementsHeader->Reference();
+    ArrayElementsHeader* arrayHeader = &charElementsHeader->arrayElementsHeader;
+    int32_t numChars = arrayHeader->NumElements();
+    if (numChars > 0)
     {
-        ManagedAllocation* allocation = it->second.get();
-        lock.unlock();
-        ArrayElements* charElements = dynamic_cast<ArrayElements*>(allocation);
-        Assert(charElements, "array elements expected");
-        int32_t numChars = charElements->NumElements();
-        MemPtr characters = charElements->GetMemPtr();
-        AllocationHandle handle(nextReferenceValue++);
-        uint64_t stringSize = numChars * ValueSize(ValueType::charType);
-        if (stringSize > 0)
-        {
-            MemPtr memPtr = MemPtr();
-            int32_t segmentId = -1;
-            machine.AllocateMemory(thread, stringSize, memPtr, segmentId);
-            memPtr.SetHashCode(Random64());
-            StringCharacters* strChars = new StringCharacters(handle, memPtr, segmentId, numChars, stringSize);
-            lock.lock();
-            auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(strChars)));
-            if (!pairItBool.second)
-            {
-                throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
-            }
-            MemPtr stringMem = memPtr;
-            std::memcpy(stringMem.Value(), characters.Value(), stringSize);
-            ++stringContentCount;
-            CheckSize(thread, lock, handle);
-            return std::make_pair(handle, numChars);
-        }
-        else
-        {
-            lock.lock();
-            StringCharacters* strChars = new StringCharacters(handle, MemPtr(), notGarbageCollectedSegment, numChars, stringSize);
-            auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(strChars)));
-            if (!pairItBool.second)
-            {
-                throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
-            }
-            ++stringContentCount;
-            CheckSize(thread, lock, handle);
-            return std::make_pair(handle, numChars);
-        }
+        uint32_t stringContentSize = numChars * sizeof(char32_t);
+        uint32_t allocationSize = stringContentSize + sizeof(ManagedAllocationHeader);
+        void* ptr = nullptr;
+        int32_t segmentId = -1;
+        machine.AllocateMemory(thread, allocationSize, ptr, segmentId, lock);
+        ManagedAllocationHeader* header = static_cast<ManagedAllocationHeader*>(ptr);
+        StringCharactersHeader* stringCharsHeader = &header->stringCharactersHeader;
+        header->SetAllocationSize(allocationSize);
+        header->SetSegmentId(segmentId);
+        header->SetFlags(AllocationFlags::stringChars);
+        stringCharsHeader->SetNumChars(numChars);
+        void* strPtr = GetAllocationPtr(header);
+        stringCharsHeader->SetStr(static_cast<const char32_t*>(strPtr));
+        charElements = GetAllocation(charElementsHandle, lock);
+        std::memcpy(strPtr, charElements, stringContentSize);
+        AllocationHandle handle = AddAllocation(thread, header, lock);
+        charElements = GetAllocation(charElementsHandle, lock);
+        charElementsHeader = GetAllocationHeader(charElements);
+        charElementsHeader->Unreference();
+        return std::make_pair(handle, numChars);
     }
     else
     {
-        throw SystemException("array element allocation with handle " + std::to_string(charElementsHandle.Value()) + " not found");
+        charElements = GetAllocation(charElementsHandle, lock);
+        charElementsHeader = GetAllocationHeader(charElements);
+        charElementsHeader->Unreference();
+        AllocationHandle handle = CreateStringCharsFromLiteral(thread, U"", 0, lock);
+        return std::make_pair(handle, numChars);
     }
 }
 
 ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_string& s)
 {
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
+    return CreateString(thread, s, lock);
+}
+
+ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_string& s, std::unique_lock<std::recursive_mutex>& lock)
+{
     ClassData* classData = ClassDataTable::GetSystemStringClassData();
-    ObjectReference str = CreateObject(thread, classData->Type());
     int32_t numChars = int32_t(s.length());
-    AllocationHandle handle(nextReferenceValue++);
-    uint64_t stringSize = numChars * ValueSize(ValueType::charType);
-    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
-    if (stringSize > 0)
+    AllocationHandle handle;
+    if (numChars > 0)
     {
-        lock.unlock();
-        MemPtr memPtr = MemPtr();
+        uint32_t stringContentSize = numChars * sizeof(char32_t);
+        uint32_t allocationSize = stringContentSize + sizeof(ManagedAllocationHeader);
+        void* ptr = nullptr;
         int32_t segmentId = -1;
-        machine.AllocateMemory(thread, stringSize, memPtr, segmentId);
-        memPtr.SetHashCode(Random64());
-        StringCharacters* strChars = new StringCharacters(handle, memPtr, segmentId, numChars, stringSize);
-        lock.lock();
-        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(strChars)));
-        if (!pairItBool.second)
-        {
-            throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
-        }
-        MemPtr stringMem = memPtr;
-        std::memcpy(stringMem.Value(), s.c_str(), stringSize);
-        ++stringContentCount;
-        CheckSize(thread, lock, handle);
+        machine.AllocateMemory(thread, allocationSize, ptr, segmentId, lock);
+        ManagedAllocationHeader* header = static_cast<ManagedAllocationHeader*>(ptr);
+        StringCharactersHeader* stringCharsHeader = &header->stringCharactersHeader;
+        header->SetAllocationSize(allocationSize);
+        header->SetSegmentId(segmentId);
+        header->SetFlags(AllocationFlags::stringChars);
+        stringCharsHeader->SetNumChars(numChars);
+        void* strPtr = GetAllocationPtr(header);
+        stringCharsHeader->SetStr(static_cast<const char32_t*>(strPtr));
+        std::memcpy(strPtr, s.c_str(), stringContentSize);
+        handle = AddAllocation(thread, header, lock);
     }
     else
     {
-        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new StringCharacters(handle, MemPtr(), notGarbageCollectedSegment, numChars, stringSize))));
-        if (!pairItBool.second)
-        {
-            throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
-        }
-        ++stringContentCount;
-        CheckSize(thread, lock, handle);
+        handle = CreateStringCharsFromLiteral(thread, U"", 0, lock);
     }
-    Object& strObject = GetObject(str);
     ClassData* classDataPtr = ClassDataTable::GetSystemStringClassData();
-    strObject.SetField(IntegralValue(classDataPtr), 0);
-    strObject.SetField(IntegralValue(numChars, ValueType::intType), 1);
-    strObject.SetField(handle, 2);
+    ObjectReference str = CreateObject(thread, classData->Type(), lock);
+    void* strObject = GetObject(str, lock);
+    SetObjectField(strObject, IntegralValue(classDataPtr), 0);
+    SetObjectField(strObject, IntegralValue(numChars, ValueType::intType), 1);
+    SetObjectField(strObject, handle, 2);
     return str;
 }
 
 IntegralValue ManagedMemoryPool::GetStringChar(ObjectReference str, int32_t index)
 {
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
+    return GetStringChar(str, index, lock);
+}
+
+IntegralValue ManagedMemoryPool::GetStringChar(ObjectReference str, int32_t index, std::unique_lock<std::recursive_mutex>& lock)
+{
     if (str.IsNull())
     {
         throw NullReferenceException("cannot index a null string");
     }
-    Object& o = GetObject(str);
-    IntegralValue charsHandleValue = o.GetField(2);
+    IntegralValue charsHandleValue = GetField(str, 2, lock);
     Assert(charsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(charsHandleValue.Value());
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
-    {
-        ManagedAllocation* allocation = it->second.get();
-        StringCharacters* chars = dynamic_cast<StringCharacters*>(allocation);
-        Assert(chars, "string characters expected");
-        return chars->GetChar(index);
-    }
-    else
-    {
-        throw SystemException("string characters allocation with handle " + std::to_string(handle.Value()) + " not found");
-    }
+    void* stringChars = GetAllocation(handle, lock);
+    return GetChar(stringChars, index);
 }
 
 std::string ManagedMemoryPool::GetUtf8String(ObjectReference str)
@@ -708,29 +828,20 @@ std::string ManagedMemoryPool::GetUtf8String(ObjectReference str)
     {
         throw NullReferenceException("cannot get value of a null string");
     }
-    Object& o = GetObject(str);
-    IntegralValue charsHandleValue = o.GetField(2);
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
+    IntegralValue charsHandleValue = GetField(str, 2, lock);
     Assert(charsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(charsHandleValue.Value());
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
+    void* stringChars = GetAllocation(handle, lock);
+    ManagedAllocationHeader* header = GetAllocationHeader(stringChars);
+    StringCharactersHeader* stringCharsHeader = &header->stringCharactersHeader;
+    utf32_string s;
+    int32_t n = stringCharsHeader->NumChars();
+    for (int32_t i = 0; i < n; ++i)
     {
-        ManagedAllocation* allocation = it->second.get();
-        StringCharacters* chars = dynamic_cast<StringCharacters*>(allocation);
-        Assert(chars, "string characters expected");
-        utf32_string s;
-        int32_t n = chars->NumChars();
-        for (int32_t i = 0; i < n; ++i)
-        {
-            s.append(1, chars->GetChar(i).AsChar());
-        }
-        return ToUtf8(s);
+        s.append(1, GetChar(stringChars, i).AsChar());
     }
-    else
-    {
-        throw SystemException("string characters allocation with handle " + std::to_string(handle.Value()) + " not found");
-    }
+    return ToUtf8(s);
 }
 
 std::vector<uint8_t> ManagedMemoryPool::GetBytes(ObjectReference arr)
@@ -740,29 +851,21 @@ std::vector<uint8_t> ManagedMemoryPool::GetBytes(ObjectReference arr)
     {
         throw NullReferenceException("cannot get value of a null array");
     }
-    Object& a = GetObject(arr);
-    IntegralValue elementsHandleValue = a.GetField(2);
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
+    IntegralValue elementsHandleValue = GetField(arr, 2, lock);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
+    void* arrayElements = GetAllocation(handle, lock);
+    lock.unlock();
+    ManagedAllocationHeader* header = GetAllocationHeader(arrayElements);
+    ArrayElementsHeader* arrayElementsHeader = &header->arrayElementsHeader;
+    Assert(arrayElementsHeader->GetElementType() == TypeTable::GetType(StringPtr(U"System.UInt8")), "byte array expected");
+    int32_t n = arrayElementsHeader->NumElements();
+    for (int32_t i = 0; i < n; ++i)
     {
-        ManagedAllocation* allocation = it->second.get();
-        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
-        Assert(elements, "array elements expected");
-        Assert(elements->GetElementType() == TypeTable::GetType(StringPtr(U"System.UInt8")), "byte array expected");
-        int32_t n = elements->NumElements();
-        for (int32_t i = 0; i < n; ++i)
-        {
-            bytes.push_back(elements->GetElement(i).AsByte());
-        }
-        return bytes;
+        bytes.push_back(GetElement(arrayElements, i).AsByte());
     }
-    else
-    {
-        throw SystemException("array elements allocation with handle " + std::to_string(handle.Value()) + " not found");
-    }
+    return bytes;
 }
 
 void ManagedMemoryPool::SetBytes(ObjectReference arr, const std::vector<uint8_t>& bytes, int32_t count)
@@ -771,66 +874,47 @@ void ManagedMemoryPool::SetBytes(ObjectReference arr, const std::vector<uint8_t>
     {
         throw NullReferenceException("cannot set value of a null array");
     }
-    Object& a = GetObject(arr);
-    IntegralValue elementsHandleValue = a.GetField(2);
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
+    IntegralValue elementsHandleValue = GetField(arr, 2, lock);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
+    void* arrayElements = GetAllocation(handle, lock);
+    ManagedAllocationHeader* header = GetAllocationHeader(arrayElements);
+    ArrayElementsHeader* arrayElementsHeader = &header->arrayElementsHeader;
+    Assert(arrayElementsHeader->GetElementType() == TypeTable::GetType(StringPtr(U"System.UInt8")), "byte array expected");
+    for (int32_t i = 0; i < count; ++i)
     {
-        ManagedAllocation* allocation = it->second.get();
-        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
-        Assert(elements, "array elements expected");
-        Assert(elements->GetElementType() == TypeTable::GetType(StringPtr(U"System.UInt8")), "byte array expected");
-        for (int32_t i = 0; i < count; ++i)
-        {
-            elements->SetElement(IntegralValue(bytes[i], ValueType::byteType), i);
-        }
-    }
-    else
-    {
-        throw SystemException("array elements allocation with handle " + std::to_string(handle.Value()) + " not found");
+        SetElement(arrayElements, IntegralValue(bytes[i], ValueType::byteType), i);
     }
 }
 
 void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference arr, Type* elementType, int32_t length)
 {
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
+    AllocateArrayElements(thread, arr, elementType, length, lock);
+}
+
+void ManagedMemoryPool::AllocateArrayElements(Thread& thread, ObjectReference arr, Type* elementType, int32_t length, std::unique_lock<std::recursive_mutex>& lock)
+{
     if (length < 0)
     {
         throw ArgumentOutOfRangeException("invalid array length");
     }
-    Object& a = GetObject(arr);
-    AllocationHandle handle(nextReferenceValue++);
-    uint64_t arraySize = ValueSize(elementType->GetValueType()) * uint64_t(length);
-    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
-    if (arraySize > 0)
-    {
-        lock.unlock();
-        MemPtr memPtr = MemPtr();
-        int32_t segmentId = -1;
-        machine.AllocateMemory(thread, arraySize, memPtr, segmentId);
-        memPtr.SetHashCode(Random64());
-        lock.lock();
-        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, memPtr, segmentId, elementType, length, arraySize))));
-        if (!pairItBool.second)
-        {
-            throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
-        }
-        ++arrayContentCount;
-        CheckSize(thread, lock, handle);
-    }
-    else
-    {
-        auto pairItBool = allocations.insert(std::make_pair(handle, std::unique_ptr<ManagedAllocation>(new ArrayElements(handle, MemPtr(), notGarbageCollectedSegment, elementType, length, arraySize))));
-        if (!pairItBool.second)
-        {
-            throw SystemException("could not insert object to pool because an object with handle " + std::to_string(handle.Value()) + " already exists");
-        }
-        ++arrayContentCount;
-        CheckSize(thread, lock, handle);
-    }
-    a.SetField(handle, 2);
+    uint32_t arraySize = ValueSize(elementType->GetValueType()) * uint32_t(length);
+    void* ptr = nullptr;
+    int32_t segmentId = -1;
+    uint32_t allocationSize = arraySize + sizeof(ManagedAllocationHeader);
+    machine.AllocateMemory(thread, allocationSize, ptr, segmentId, lock);
+    ManagedAllocationHeader* header = static_cast<ManagedAllocationHeader*>(ptr);
+    header->SetAllocationSize(allocationSize);
+    header->SetSegmentId(segmentId);
+    header->SetFlags(AllocationFlags::arrayElements);
+    ArrayElementsHeader* arrayElementsHeader = &header->arrayElementsHeader;
+    arrayElementsHeader->SetElementType(elementType);
+    arrayElementsHeader->SetNumElements(length);
+    AllocationHandle handle = AddAllocation(thread, header, lock);
+    void* a = GetObject(arr, lock);
+    SetObjectField(a, handle, 2);
 }
 
 IntegralValue ManagedMemoryPool::GetArrayElement(ObjectReference reference, int32_t index)
@@ -839,48 +923,31 @@ IntegralValue ManagedMemoryPool::GetArrayElement(ObjectReference reference, int3
     { 
         throw NullReferenceException("cannot get item of a null array");
     }
-    Object& arr = GetObject(reference);
-    IntegralValue elementsHandleValue = arr.GetField(2);
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
+    IntegralValue elementsHandleValue = GetField(reference, 2, lock);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
-    {
-        ManagedAllocation* allocation = it->second.get();
-        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
-        Assert(elements, "array elements expected");
-        return elements->GetElement(index);
-    }
-    else
-    {
-        throw SystemException("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
-    }
+    void* arrayElements = GetAllocation(handle, lock);
+    return GetElement(arrayElements, index);
 }
 
 void ManagedMemoryPool::SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue)
+{
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
+    SetArrayElement(reference, index, elementValue, lock);
+}
+
+void ManagedMemoryPool::SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue, std::unique_lock<std::recursive_mutex>& lock)
 {
     if (reference.IsNull())
     {
         throw NullReferenceException("cannot set item of a null array");
     }
-    Object& arr = GetObject(reference);
-    IntegralValue elementsHandleValue = arr.GetField(2);
+    IntegralValue elementsHandleValue = GetField(reference, 2, lock);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
-    {
-        ManagedAllocation* allocation = it->second.get();
-        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
-        Assert(elements, "array elements expected");
-        elements->SetElement(elementValue, index);
-    }
-    else
-    {
-        throw SystemException("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
-    }
+    void* arrayElements = GetAllocation(handle, lock);
+    SetElement(arrayElements, elementValue, index);
 }
 
 int32_t ManagedMemoryPool::GetNumArrayElements(ObjectReference arr)
@@ -889,90 +956,39 @@ int32_t ManagedMemoryPool::GetNumArrayElements(ObjectReference arr)
     {
         throw NullReferenceException("cannot get number of items of a null array");
     }
-    Object& a = GetObject(arr);
-    IntegralValue elementsHandleValue = a.GetField(2);
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex);
+    IntegralValue elementsHandleValue = GetField(arr, 2, lock);
     Assert(elementsHandleValue.GetType() == ValueType::allocationHandle, "allocation handle expected");
     AllocationHandle handle(elementsHandleValue.Value());
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
-    {
-        ManagedAllocation* allocation = it->second.get();
-        ArrayElements* elements = dynamic_cast<ArrayElements*>(allocation);
-        Assert(elements, "array elements expected");
-        return elements->NumElements();
-    }
-    else
-    {
-        throw SystemException("array element allocation with handle " + std::to_string(handle.Value()) + " not found");
-    }
+    void* arrayElements = GetAllocation(handle, lock);
+    ManagedAllocationHeader* header = GetAllocationHeader(arrayElements);
+    ArrayElementsHeader* arrayElementsHeader = &header->arrayElementsHeader;
+    return arrayElementsHeader->NumElements();
 }
 
-ObjectReference ManagedMemoryPool::CreateStringArray(Thread& thread, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
+ObjectReference ManagedMemoryPool::CreateStringArray(Thread& thread, const std::vector<utf32_string>& strings, ObjectType* argsArrayObjectType)
 {
-    ObjectReference arrayReference = CreateObject(thread, argsArrayObjectType);
-    Object& object = GetObject(arrayReference);
+    std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
+    ObjectReference arrayReference = CreateObject(thread, argsArrayObjectType, lock);
+    void* object = GetObject(arrayReference, lock);
     ClassData* classData = ClassDataTable::GetClassData(StringPtr(U"System.String[]"));
-    object.SetField(IntegralValue(classData), 0);
-    int32_t length = int32_t(programArguments.size());
-    object.SetField(IntegralValue(length, ValueType::intType), 1);
-    AllocateArrayElements(thread, arrayReference, classData->Type(), length);
+    SetObjectField(object, IntegralValue(classData), 0);
+    int32_t length = int32_t(strings.size());
+    SetObjectField(object, IntegralValue(length, ValueType::intType), 1);
+    AllocateArrayElements(thread, arrayReference, classData->Type(), length, lock);
     for (int32_t i = 0; i < length; ++i)
     {
-        const utf32_string& arg = programArguments[i];
-        ObjectReference argStr = CreateString(thread, arg);
-        SetArrayElement(arrayReference, i, argStr);
+        const utf32_string& s = strings[i];
+        ObjectReference str = CreateString(thread, s, lock);
+        SetArrayElement(arrayReference, i, str, lock);
     }
     return arrayReference;
 }
 
-MemPtr ManagedMemoryPool::GetMemPtr(AllocationHandle handle) 
-{
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
-    {
-        ManagedAllocation* allocation = it->second.get();
-        return allocation->GetMemPtr();
-    }
-    else
-    {
-        throw SystemException("allocation with handle " + std::to_string(handle.Value()) + " not found");
-    }
-}
-
-ManagedAllocation* ManagedMemoryPool::GetAllocation(AllocationHandle handle)
-{
-    ManagedAllocation* allocation = GetAllocationNothrow(handle);
-    if (allocation)
-    {
-        return allocation;
-    }
-    else
-    {
-        throw SystemException("allocation with handle " + std::to_string(handle.Value()) + " not found");
-    }
-}
-
-ManagedAllocation* ManagedMemoryPool::GetAllocationNothrow(AllocationHandle handle)
-{
-    std::lock_guard<std::recursive_mutex> lock(allocationsMutex);
-    auto it = allocations.find(handle);
-    if (it != allocations.cend())
-    {
-        ManagedAllocation* allocation = it->second.get();
-        return allocation;
-    }
-    else
-    {
-        return nullptr;
-    }
-}
-
 void ManagedMemoryPool::ComputeSize()
 {
-    uint64_t allocationCount = allocations.size();
-    size = allocationCount * allocationSize + objectCount * objectSize + arrayContentCount * arrayContentSize + stringContentCount * stringContentSize;
+    uint64_t allocationCapacity = allocations.capacity();
+    size = sizeof(allocations) + allocationCapacity * allocationSize;
 }
 
 void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle root)
@@ -992,122 +1008,151 @@ void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursiv
 
 void ManagedMemoryPool::ResetLiveFlags()
 {
-    for (auto& p : allocations)
+    for (void* allocation : allocations)
     {
-        ManagedAllocation* allocation = p.second.get();
-        allocation->ResetLive();
+        if (allocation)
+        {
+            ManagedAllocationHeader* header = GetAllocationHeader(allocation);
+            header->ResetLive();
+        }
     }
 }
 
 void ManagedMemoryPool::MoveLiveAllocationsToArena(ArenaId fromArenaId, Arena& toArena)
 {
-    std::unordered_map<void*, std::pair<MemPtr, int32_t>> moveMap;
+    std::unordered_map<void*, void*> moveMap;
     std::vector<AllocationHandle> toBeDestroyed;
-    for (auto& p : allocations)
+    for (uint64_t i = firstAllocationHandleValue; i < uint64_t(allocations.size()); ++i)
     {
-        ManagedAllocation* allocation = p.second.get();
-        if (allocation->SegmentId() != notGarbageCollectedSegment)
+        AllocationHandle allocationHandle = i;
+        void* allocation = allocations[i];
+        if (allocation)
         {
-            if (machine.GetSegment(allocation->SegmentId())->GetArenaId() == fromArenaId)
+            ManagedAllocationHeader* header = GetAllocationHeader(allocation);
+            int32_t segmentId = header->SegmentId();
+            if (segmentId != notGarbageCollectedSegment)
             {
-                if (allocation->IsLive())
+                if (machine.GetSegment(segmentId)->GetArenaId() == fromArenaId)
                 {
-                    MemPtr oldMemPtr = allocation->GetMemPtr();
-                    auto it = moveMap.find(oldMemPtr.Value());
-                    if (it == moveMap.cend())
+                    if (header->IsLive() || header->IsReferenced())
                     {
-                        uint64_t n = allocation->Size();
-                        std::pair<MemPtr, int32_t> newMemPtrSegmentId = toArena.Allocate(n, nullptr);
-                        newMemPtrSegmentId.first.SetHashCode(oldMemPtr.HashCode());
-                        std::memcpy(newMemPtrSegmentId.first.Value(), oldMemPtr.Value(), n);
-                        allocation->SetMemPtr(newMemPtrSegmentId.first);
-                        allocation->SetSegmentId(newMemPtrSegmentId.second);
-                        moveMap[oldMemPtr.Value()] = newMemPtrSegmentId;
+                        auto it = moveMap.find(allocation);
+                        if (it == moveMap.cend())
+                        {
+                            uint32_t n = header->AllocationSize();
+                            void* newAllocWithHeader = nullptr;
+                            int32_t newSegmentId = -1;
+                            toArena.Allocate(n, newAllocWithHeader, newSegmentId);
+                            void* movedAllocation = MoveAllocation(newSegmentId, newAllocWithHeader, header);
+                            allocations[i] = movedAllocation;
+                            moveMap[allocation] = movedAllocation;
+                        }
+                        else
+                        {
+                            void* movedAllocation = it->second;
+                            allocations[i] = movedAllocation;
+                        }
                     }
-                    else
+                    else 
                     {
-                        MemPtr newMemPtr(it->second.first);
-                        int32_t segmentId = it->second.second;
-                        allocation->SetMemPtr(it->second.first);
-                        allocation->SetSegmentId(segmentId);
+                        toBeDestroyed.push_back(allocationHandle);
                     }
                 }
-                else if (!allocation->IsPinned())
-                {
-                    toBeDestroyed.push_back(allocation->Handle());
-                }
+            }
+            else
+            {
+                throw std::runtime_error("invalid segment id -1");
             }
         }
     }
-    for (AllocationHandle handle : toBeDestroyed)
-    {
-        DestroyAllocation(handle);
-    }
+    DestroyAllocations(toBeDestroyed);
 }
 
 struct SegmentIdLess
 {
-    bool operator()(ManagedAllocation* left, ManagedAllocation* right) const
+    bool operator()(AllocationHandle left, AllocationHandle right) const
     {
-        return left->SegmentId() < right->SegmentId();
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        void* leftAllocation = memoryPool.GetAllocationNoThrowNoLock(left);
+        ManagedAllocationHeader* leftHeader = GetAllocationHeader(leftAllocation);
+        void* rightAllocation = memoryPool.GetAllocationNoThrowNoLock(right);
+        ManagedAllocationHeader* rightHeader = GetAllocationHeader(rightAllocation);
+        return leftHeader->SegmentId() < rightHeader->SegmentId();
     }
 };
 
-void MoveSegment(Arena& arena, std::unordered_map<void*, std::pair<MemPtr, int32_t>>& moveMap, int32_t segmentId, 
-    std::vector<ManagedAllocation*>::iterator segmentBegin, std::vector<ManagedAllocation*>::iterator segmentEnd, bool allocateNewSegment)
+void MoveSegment(Arena& arena, std::unordered_map<void*, void*>& moveMap, int32_t segmentId, 
+    std::vector<AllocationHandle>::iterator segmentBegin, std::vector<AllocationHandle>::iterator segmentEnd, bool allocateNewSegment, std::vector<AllocationHandle>& toBeDestroyed)
 {
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
     for (auto sit = segmentBegin; sit != segmentEnd; ++sit)
     {
-        ManagedAllocation* allocation = *sit;
-        MemPtr oldMemPtr = allocation->GetMemPtr();
-        auto mit = moveMap.find(oldMemPtr.Value());
-        if (mit == moveMap.cend())
+        AllocationHandle handle = *sit;
+        if (handle.Value() != 0)
         {
-            uint64_t n = allocation->Size();
-            std::pair<MemPtr, int32_t> newMemPtrSegmentId = arena.Allocate(n, allocateNewSegment);
-            newMemPtrSegmentId.first.SetHashCode(oldMemPtr.HashCode());
-            allocateNewSegment = false;
-            std::memcpy(newMemPtrSegmentId.first.Value(), oldMemPtr.Value(), n);
-            allocation->SetMemPtr(newMemPtrSegmentId.first);
-            allocation->SetSegmentId(newMemPtrSegmentId.second);
-            moveMap[oldMemPtr.Value()] = newMemPtrSegmentId;
-        }
-        else
-        {
-            MemPtr newMemPtr(mit->second.first);
-            int32_t segmentId = mit->second.second;
-            allocation->SetMemPtr(newMemPtr);
-            allocation->SetSegmentId(segmentId);
+            void* allocation = memoryPool.GetAllocationNoThrowNoLock(handle);
+            if (allocation)
+            {
+                auto mit = moveMap.find(allocation);
+                if (mit == moveMap.cend())
+                {
+                    ManagedAllocationHeader* header = GetAllocationHeader(allocation);
+                    uint32_t n = header->AllocationSize();
+                    void* newAllocWithHeader = nullptr;
+                    int32_t newSegmentId = -1;
+                    arena.Allocate(n, newAllocWithHeader, newSegmentId, allocateNewSegment);
+                    allocateNewSegment = false;
+                    void* movedAllocation = memoryPool.MoveAllocation(newSegmentId, newAllocWithHeader, header);
+                    memoryPool.SetAllocation(handle, movedAllocation);
+                    moveMap[allocation] = movedAllocation;
+                }
+                else
+                {
+                    void* movedAllocation = mit->second;
+                    memoryPool.SetAllocation(handle, movedAllocation);
+                }
+            }
         }
     }
+    memoryPool.DestroyAllocations(toBeDestroyed);
     arena.RemoveSegment(segmentId);
 }
 
 void ManagedMemoryPool::MoveLiveAllocationsToNewSegments(Arena& arena)
 {
-    std::unordered_map<void*, std::pair<MemPtr, int32_t>> moveMap;
-    std::vector<ManagedAllocation*> liveAllocations;
+    std::unordered_map<void*, void*> moveMap;
+    std::vector<AllocationHandle> liveAllocations;
     std::vector<AllocationHandle> toBeDestroyed;
     std::unordered_set<int32_t> liveSegments;
-    for (auto& p : allocations)
+    for (uint64_t i = firstAllocationHandleValue; i < uint64_t(allocations.size()); ++i)
     {
-        ManagedAllocation* allocation = p.second.get();
-        if (allocation->SegmentId() != notGarbageCollectedSegment)
+        AllocationHandle allocationHandle = i;
+        void* allocation = allocations[i];
+        if (allocation)
         {
-            if (machine.GetSegment(allocation->SegmentId())->GetArenaId() == arena.Id())
+            ManagedAllocationHeader* header = GetAllocationHeader(allocation);
+            if (header->SegmentId() != notGarbageCollectedSegment)
             {
-                if (allocation->IsLive())
+                if (machine.GetSegment(header->SegmentId())->GetArenaId() == arena.Id())
                 {
-                    liveAllocations.push_back(allocation);
-                    liveSegments.insert(allocation->SegmentId());
+                    if (header->IsLive() || header->IsReferenced())
+                    {
+                        liveAllocations.push_back(allocationHandle);
+                        liveSegments.insert(header->SegmentId());
+                    }
+                    else
+                    {
+                        toBeDestroyed.push_back(allocationHandle);
+                    }
                 }
-                else if (!allocation->IsPinned())
-                {
-                    toBeDestroyed.push_back(allocation->Handle());
-                }
+            }
+            else
+            {
+                throw std::runtime_error("invalid segment id -1");
             }
         }
     }
+    DestroyAllocations(toBeDestroyed);
     arena.RemoveEmptySegments(liveSegments);
     std::sort(liveAllocations.begin(), liveAllocations.end(), SegmentIdLess());
     int32_t currentSegmentId = -1;
@@ -1116,44 +1161,58 @@ void ManagedMemoryPool::MoveLiveAllocationsToNewSegments(Arena& arena)
     bool firstMove = true;
     for (auto it = liveAllocations.begin(); it != end; ++it)
     {
-        ManagedAllocation* liveAllocation = *it;
-        if (liveAllocation->SegmentId() != currentSegmentId)
+        AllocationHandle liveAllocationHandle = *it;
+        if (liveAllocationHandle.Value() != 0)
         {
-            bool moveSegment = currentSegmentId != -1;
-            if (it - segmentBegin == 1)
+            void* liveAllocation = allocations[liveAllocationHandle.Value()];
+            if (liveAllocation)
             {
-                ManagedAllocation* allocation = *segmentBegin;
-                if (allocation->Size() >= GetSegmentSize())
+                ManagedAllocationHeader* liveAllocationHeader = GetAllocationHeader(liveAllocation);
+                if (liveAllocationHeader->SegmentId() != currentSegmentId)
                 {
-                    moveSegment = false;
+                    bool moveSegment = currentSegmentId != -1;
+                    if (it - segmentBegin == 1)
+                    {
+                        AllocationHandle firstHandle = *segmentBegin;
+                        void* firstAllocation = allocations[firstHandle.Value()];
+                        ManagedAllocationHeader* firstAllocationHeader = GetAllocationHeader(firstAllocation);
+                        if (firstAllocationHeader->AllocationSize() >= GetSegmentSize())
+                        {
+                            moveSegment = false;
+                        }
+                    }
+                    if (moveSegment)
+                    {
+                        MoveSegment(arena, moveMap, currentSegmentId, segmentBegin, it, firstMove, toBeDestroyed);
+                        firstMove = false;
+                    }
+                    currentSegmentId = liveAllocationHeader->SegmentId();
+                    segmentBegin = it;
                 }
             }
-            if (moveSegment)
-            {
-                MoveSegment(arena, moveMap, currentSegmentId, segmentBegin, it, firstMove);
-                firstMove = false;
-            }
-            currentSegmentId = liveAllocation->SegmentId();
-            segmentBegin = it;
         }
     }
     bool moveSegment = currentSegmentId != -1;
     if (end - segmentBegin == 1)
     {
-        ManagedAllocation* allocation = *segmentBegin;
-        if (allocation->Size() >= GetSegmentSize())
+        AllocationHandle singletonHandle = *segmentBegin;
+        if (singletonHandle.Value() != 0)
         {
-            moveSegment = false;
+            void* singleton = allocations[singletonHandle.Value()];
+            if (singleton)
+            {
+                ManagedAllocationHeader* singletonHeader = GetAllocationHeader(singleton);
+                if (singletonHeader->AllocationSize() >= GetSegmentSize())
+                {
+                    moveSegment = false;
+                }
+            }
         }
     }
     if (moveSegment)
     {
-        MoveSegment(arena, moveMap, currentSegmentId, segmentBegin, end, firstMove);
+        MoveSegment(arena, moveMap, currentSegmentId, segmentBegin, end, firstMove, toBeDestroyed);
         firstMove = false;
-    }
-    for (AllocationHandle handle : toBeDestroyed)
-    {
-        DestroyAllocation(handle);
     }
 }
 

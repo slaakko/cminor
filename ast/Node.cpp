@@ -34,7 +34,7 @@ const char* nodeTypeStr[] =
     "compoundStatementNode", "returnStatementNode", "ifStatementNode", "whileStatementNode", "doStatementNode", "forStatementNode", "breakStatementNode", "continueStatementNode", "gotoStatementNode",
     "constructionStatementNode", "assignmentStatementNode", "expressionStatementNode", "emptyStatementNode", "incrementStatementNode", "decrementStatementNode", "forEachStatementNode", 
     "switchStatementNode", "caseStatementNode", "defaultStatementNode", "gotoCaseStatementNode", "gotoDefaultStatementNode", "throwStatementNode", "tryStatementNode", "catchNode", "usingStatementNode",
-    "enumTypeNode", "enumConstantNode", "constantNode", "delegateNode", "classDelegateNode", "refTypeExprNode", "refNode", "defaultNode"
+    "enumTypeNode", "enumConstantNode", "constantNode", "delegateNode", "classDelegateNode", "refTypeExprNode", "refNode", "defaultNode", "lockStatementNode"
 };
 
 std::string NodeTypeStr(NodeType nodeType)
@@ -337,6 +337,7 @@ void NodeInit()
     NodeFactory::Instance().Register(NodeType::refTypeExprNode, new ConcreteNodeCreator<RefTypeExprNode>());
     NodeFactory::Instance().Register(NodeType::refNode, new ConcreteNodeCreator<RefNode>());
     NodeFactory::Instance().Register(NodeType::defaultNode, new ConcreteNodeCreator<DefaultNode>());
+    NodeFactory::Instance().Register(NodeType::lockStatementNode, new ConcreteNodeCreator<LockStatementNode>());
 }
 
 void NodeDone()

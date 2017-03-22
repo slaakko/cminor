@@ -26,11 +26,6 @@ private:
     std::vector<ValueType> parameterTypes;
 };
 
-inline MemPtr ElementPtr(MemPtr memPtr, ValueType valueType, int32_t index)
-{
-    return MemPtr(static_cast<uint8_t*>(memPtr.Value()) + ValueSize(valueType) * index);
-}
-
 class MACHINE_API FieldOffset
 {
 public:
@@ -42,11 +37,6 @@ public:
 private:
     uint32_t value;
 };
-
-inline MemPtr operator+(MemPtr memPtr, FieldOffset offset)
-{
-    return MemPtr(static_cast<uint8_t*>(memPtr.Value()) + offset.Value());
-}
 
 class MACHINE_API Field
 {

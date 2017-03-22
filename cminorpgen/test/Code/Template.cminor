@@ -102,4 +102,69 @@ namespace Code
                 context.value = new TemplateId(context.fromQualifiedId.Name);
             }
             public void A1Action(string match, Span span, string fileName, ref bool pass)
-      
+            {
+                context.value.AddTemplateArg(context.fromTypeExpr);
+            }
+            public void PostQualifiedId(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromQualifiedId = cast<Identifier>(stack.Pop());
+                }
+            }
+            public void PreTypeExpr(Stack<object> stack)
+            {
+                stack.Push(context.ctx);
+            }
+            public void PostTypeExpr(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromTypeExpr = cast<DomObject>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public ParsingContext ctx;
+                public TemplateId value;
+                public Identifier fromQualifiedId;
+                public DomObject fromTypeExpr;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = new Code.IdentifierGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+            Grammar grammar1 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
+            if (grammar1 == null)
+            {
+                grammar1 = new Code.TypeExprGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar1);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRule(new TemplateIdRule("TemplateId", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new ActionParser("A0",
+                                new NonterminalParser("QualifiedId", "QualifiedId", 0)),
+                            new CharParser('<')),
+                        new ListParser(
+                            new ActionParser("A1",
+                                new NonterminalParser("TypeExpr", "TypeExpr", 1)),
+                            new CharParser(','))),
+                    new CharParser('>'))));
+        }
+    }
+}

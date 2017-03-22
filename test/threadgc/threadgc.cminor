@@ -2,6 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
+public static class SynchronizedConsole
+{
+    static SynchronizedConsole()
+    {
+        lck = new object();
+    }
+    public static void WriteLine(string s)
+    {
+        lock (lck)
+        {
+            Console.WriteLine(s);
+        }
+    }
+    private static object lck;
+}
+
 void foo()
 {
     for (int i = 0; i < 100; ++i)
@@ -12,7 +28,7 @@ void foo()
 
 void threadFun(object i)
 {
-    Console.WriteLine("begin:" + i.ToString());
+    SynchronizedConsole.WriteLine("begin:" + i.ToString());
     for (int i = 0; i < 10000; ++i)
     {
         if (i % 100 == 0)
@@ -21,7 +37,7 @@ void threadFun(object i)
         }
         foo();
     }
-    Console.WriteLine("end:" + i.ToString());
+    SynchronizedConsole.WriteLine("end:" + i.ToString());
 }
 
 void main(string[] args)
@@ -37,7 +53,7 @@ void main(string[] args)
         {
             Console.WriteLine("usage: threadgc <n>");
         }
-        Console.WriteLine("begin:main (" + n.ToString() + ")");
+        SynchronizedConsole.WriteLine("begin:main (" + n.ToString() + ")");
         List<Thread> threads = new List<Thread>();
         for (int i = 0; i < n; ++i)
         {
@@ -47,7 +63,7 @@ void main(string[] args)
         {
             thread.Join();
         }
-        Console.WriteLine("end:main");
+        SynchronizedConsole.WriteLine("end:main");
     }
     catch (Exception ex)
     {

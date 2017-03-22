@@ -302,4 +302,47 @@ namespace Syntax
             AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
             AddRuleLink(new RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
             AddRuleLink(new RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
-            AddRuleLink(new RuleLink("Rule", this, "RuleGramm
+            AddRuleLink(new RuleLink("Rule", this, "RuleGrammar.Rule"));
+            AddRule(new GrammarRule("Grammar", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("grammar"),
+                                new ActionParser("A0",
+                                    new ExpectationParser(
+                                        new NonterminalParser("name", "Identifier", 0)))),
+                            new ExpectationParser(
+                                new CharParser('{'))),
+                        new NonterminalParser("GrammarContent", "GrammarContent", 2)),
+                    new ExpectationParser(
+                        new CharParser('}')))));
+            AddRule(new GrammarContentRule("GrammarContent", GetScope(),
+                new KleeneStarParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new NonterminalParser("StartClause", "StartClause", 1),
+                                new NonterminalParser("SkipClause", "SkipClause", 1)),
+                            new NonterminalParser("RuleLink", "RuleLink", 1)),
+                        new ActionParser("A0",
+                            new NonterminalParser("Rule", "Rule", 2))))));
+            AddRule(new StartClauseRule("StartClause", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new KeywordParser("start"),
+                        new ExpectationParser(
+                            new NonterminalParser("strt", "Identifier", 0))),
+                    new ActionParser("A0",
+                        new CharParser(';')))));
+            AddRule(new SkipClauseRule("SkipClause", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new KeywordParser("skip"),
+                        new ExpectationParser(
+                            new NonterminalParser("skp", "QualifiedId", 0))),
+                    new ActionParser("A0",
+                        new CharParser(';')))));
+        }
+    }
+}

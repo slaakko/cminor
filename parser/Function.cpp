@@ -358,6 +358,8 @@ public:
         a10ActionParser->SetAction(new cminor::parsing::MemberParsingAction<OperatorFunctionGroupIdRule>(this, &OperatorFunctionGroupIdRule::A10Action));
         cminor::parsing::ActionParser* a11ActionParser = GetAction("A11");
         a11ActionParser->SetAction(new cminor::parsing::MemberParsingAction<OperatorFunctionGroupIdRule>(this, &OperatorFunctionGroupIdRule::A11Action));
+        cminor::parsing::ActionParser* a12ActionParser = GetAction("A12");
+        a12ActionParser->SetAction(new cminor::parsing::MemberParsingAction<OperatorFunctionGroupIdRule>(this, &OperatorFunctionGroupIdRule::A12Action));
         cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
         typeExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<OperatorFunctionGroupIdRule>(this, &OperatorFunctionGroupIdRule::PreTypeExpr));
         typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<OperatorFunctionGroupIdRule>(this, &OperatorFunctionGroupIdRule::PostTypeExpr));
@@ -400,13 +402,17 @@ public:
     }
     void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new FunctionGroupIdNode(span, "operator^");
+        context.value = new FunctionGroupIdNode(span, "operator%");
     }
     void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new FunctionGroupIdNode(span, "operator!");
+        context.value = new FunctionGroupIdNode(span, "operator^");
     }
     void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new FunctionGroupIdNode(span, "operator!");
+    }
+    void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = new FunctionGroupIdNode(span, "operator()");
     }
@@ -703,16 +709,16 @@ private:
 void FunctionGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.StatementGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::StatementGrammar::Create(pd);
+        grammar0 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar1)
     {
-        grammar1 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar1 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar1);
     cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.SpecifierGrammar");
@@ -721,44 +727,44 @@ void FunctionGrammar::GetReferencedGrammars()
         grammar2 = cminor::parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.KeywordGrammar");
     if (!grammar3)
     {
-        grammar3 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar3 = cminor::parser::KeywordGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parsing.stdlib");
+    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.StatementGrammar");
     if (!grammar4)
     {
-        grammar4 = cminor::parsing::stdlib::Create(pd);
+        grammar4 = cminor::parser::StatementGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    cminor::parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parser.KeywordGrammar");
+    cminor::parsing::Grammar* grammar5 = pd->GetGrammar("cminor.parser.ParameterGrammar");
     if (!grammar5)
     {
-        grammar5 = cminor::parser::KeywordGrammar::Create(pd);
+        grammar5 = cminor::parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
-    cminor::parsing::Grammar* grammar6 = pd->GetGrammar("cminor.parser.ParameterGrammar");
+    cminor::parsing::Grammar* grammar6 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
     if (!grammar6)
     {
-        grammar6 = cminor::parser::ParameterGrammar::Create(pd);
+        grammar6 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar6);
 }
 
 void FunctionGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-    AddRuleLink(new cminor::parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-    AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
-    AddRuleLink(new cminor::parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-    AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
-    AddRuleLink(new cminor::parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("string", this, "cminor.parsing.stdlib.string"));
     AddRuleLink(new cminor::parsing::RuleLink("long", this, "cminor.parsing.stdlib.long"));
+    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
+    AddRuleLink(new cminor::parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
+    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
+    AddRuleLink(new cminor::parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+    AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new cminor::parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+    AddRuleLink(new cminor::parsing::RuleLink("string", this, "cminor.parsing.stdlib.string"));
+    AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
+    AddRuleLink(new cminor::parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new cminor::parsing::RuleLink("bool", this, "cminor.parsing.stdlib.bool"));
     AddRule(new FunctionRule("Function", GetScope(),
         new cminor::parsing::ActionParser("A0",
@@ -800,38 +806,41 @@ void FunctionGrammar::CreateRules()
                                         new cminor::parsing::AlternativeParser(
                                             new cminor::parsing::AlternativeParser(
                                                 new cminor::parsing::AlternativeParser(
-                                                    new cminor::parsing::ActionParser("A0",
-                                                        new cminor::parsing::DifferenceParser(
-                                                            new cminor::parsing::StringParser("<<"),
-                                                            new cminor::parsing::SequenceParser(
+                                                    new cminor::parsing::AlternativeParser(
+                                                        new cminor::parsing::ActionParser("A0",
+                                                            new cminor::parsing::DifferenceParser(
+                                                                new cminor::parsing::StringParser("<<"),
                                                                 new cminor::parsing::SequenceParser(
                                                                     new cminor::parsing::SequenceParser(
-                                                                        new cminor::parsing::CharParser('<'),
-                                                                        new cminor::parsing::CharParser('<')),
-                                                                    new cminor::parsing::ListParser(
-                                                                        new cminor::parsing::ActionParser("A1",
-                                                                            new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)),
-                                                                        new cminor::parsing::CharParser(','))),
-                                                                new cminor::parsing::CharParser('>')))),
-                                                    new cminor::parsing::ActionParser("A2",
-                                                        new cminor::parsing::StringParser(">>"))),
-                                                new cminor::parsing::ActionParser("A3",
-                                                    new cminor::parsing::StringParser("=="))),
-                                            new cminor::parsing::ActionParser("A4",
-                                                new cminor::parsing::CharParser('<'))),
-                                        new cminor::parsing::ActionParser("A5",
-                                            new cminor::parsing::CharParser('+'))),
-                                    new cminor::parsing::ActionParser("A6",
-                                        new cminor::parsing::CharParser('-'))),
-                                new cminor::parsing::ActionParser("A7",
-                                    new cminor::parsing::CharParser('*'))),
-                            new cminor::parsing::ActionParser("A8",
-                                new cminor::parsing::CharParser('/'))),
-                        new cminor::parsing::ActionParser("A9",
+                                                                        new cminor::parsing::SequenceParser(
+                                                                            new cminor::parsing::CharParser('<'),
+                                                                            new cminor::parsing::CharParser('<')),
+                                                                        new cminor::parsing::ListParser(
+                                                                            new cminor::parsing::ActionParser("A1",
+                                                                                new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)),
+                                                                            new cminor::parsing::CharParser(','))),
+                                                                    new cminor::parsing::CharParser('>')))),
+                                                        new cminor::parsing::ActionParser("A2",
+                                                            new cminor::parsing::StringParser(">>"))),
+                                                    new cminor::parsing::ActionParser("A3",
+                                                        new cminor::parsing::StringParser("=="))),
+                                                new cminor::parsing::ActionParser("A4",
+                                                    new cminor::parsing::CharParser('<'))),
+                                            new cminor::parsing::ActionParser("A5",
+                                                new cminor::parsing::CharParser('+'))),
+                                        new cminor::parsing::ActionParser("A6",
+                                            new cminor::parsing::CharParser('-'))),
+                                    new cminor::parsing::ActionParser("A7",
+                                        new cminor::parsing::CharParser('*'))),
+                                new cminor::parsing::ActionParser("A8",
+                                    new cminor::parsing::CharParser('/'))),
+                            new cminor::parsing::ActionParser("A9",
+                                new cminor::parsing::CharParser('%'))),
+                        new cminor::parsing::ActionParser("A10",
                             new cminor::parsing::CharParser('^'))),
-                    new cminor::parsing::ActionParser("A10",
+                    new cminor::parsing::ActionParser("A11",
                         new cminor::parsing::CharParser('!'))),
-                new cminor::parsing::ActionParser("A11",
+                new cminor::parsing::ActionParser("A12",
                     new cminor::parsing::StringParser("()"))))));
     AddRule(new AttributesRule("Attributes", GetScope(),
         new cminor::parsing::SequenceParser(

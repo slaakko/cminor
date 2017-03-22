@@ -473,6 +473,23 @@ private:
     std::unique_ptr<StatementNode> statement;
 };
 
+class LockStatementNode : public StatementNode
+{
+public:
+    LockStatementNode(const Span& span_);
+    LockStatementNode(const Span& span_, Node* expr_, StatementNode* statement_);
+    NodeType GetNodeType() const override { return NodeType::lockStatementNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Write(AstWriter& writer) override;
+    void Read(AstReader& reader) override;
+    void Accept(Visitor& visitor) override;
+    Node* Expr() const { return expr.get(); }
+    StatementNode* Statement() const { return statement.get(); }
+private:
+    std::unique_ptr<Node> expr;
+    std::unique_ptr<StatementNode> statement;
+};
+
 } } // namespace cminor::ast
 
 #endif // CMINOR_AST_STATEMENT_INCLUDED

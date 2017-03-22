@@ -198,4 +198,40 @@ namespace Code
                                             new AlternativeParser(
                                                 new AlternativeParser(
                                                     new AlternativeParser(
-                                          
+                                                        new AlternativeParser(
+                                                            new AlternativeParser(
+                                                                new AlternativeParser(
+                                                                    new AlternativeParser(
+                                                                        new ActionParser("A0",
+                                                                            new KeywordParser("bool")),
+                                                                        new ActionParser("A1",
+                                                                            new KeywordParser("char"))),
+                                                                    new ActionParser("A2",
+                                                                        new KeywordParser("void"))),
+                                                                new ActionParser("A3",
+                                                                    new KeywordParser("sbyte"))),
+                                                            new ActionParser("A4",
+                                                                new KeywordParser("byte"))),
+                                                        new ActionParser("A5",
+                                                            new KeywordParser("short"))),
+                                                    new ActionParser("A6",
+                                                        new KeywordParser("ushort"))),
+                                                new ActionParser("A7",
+                                                    new KeywordParser("int"))),
+                                            new ActionParser("A8",
+                                                new KeywordParser("uint"))),
+                                        new ActionParser("A9",
+                                            new KeywordParser("long"))),
+                                    new ActionParser("A10",
+                                        new KeywordParser("ulong"))),
+                                new ActionParser("A11",
+                                    new KeywordParser("float"))),
+                            new ActionParser("A12",
+                                new KeywordParser("double"))),
+                        new ActionParser("A13",
+                            new KeywordParser("object"))),
+                    new ActionParser("A14",
+                        new KeywordParser("string")))));
+        }
+    }
+}

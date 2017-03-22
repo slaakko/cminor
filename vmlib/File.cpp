@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <unordered_map>
 #include <memory>
+#include <mutex>
+#include <atomic>
 
 namespace cminor { namespace vmlib {
 
@@ -15,9 +17,9 @@ std::string FileModeStr(FileMode mode)
 {
     switch (mode)
     {
-    case FileMode::append: return "append";
-    case FileMode::create: return "create";
-    case FileMode::open: return "open";
+        case FileMode::append: return "append";
+        case FileMode::create: return "create";
+        case FileMode::open: return "open";
     }
     return std::string();
 }
@@ -26,9 +28,9 @@ std::string FileAccessStr(FileAccess access)
 {
     switch (access)
     {
-    case FileAccess::read: return "read";
-    case FileAccess::readWrite: return "read/write";
-    case FileAccess::write: return "write";
+        case FileAccess::read: return "read";
+        case FileAccess::readWrite: return "read/write";
+        case FileAccess::write: return "write";
     }
     return std::string();
 }
@@ -45,10 +47,14 @@ public:
     int32_t ReadFile(int32_t fileHandle, uint8_t* buffer, int32_t bufferSize);
     ~FileTable();
 private:
+    const int32_t maxNoLockFileHandles = 256;
     static std::unique_ptr<FileTable> instance;
-    std::unordered_map<int32_t, FILE*> files;
-    std::unordered_map<int32_t, std::string> filePaths;
-    int32_t nextFileHandle;
+    std::vector<FILE*> files;
+    std::vector<std::string> filePaths;
+    std::unordered_map<int32_t, FILE*> fileMap;
+    std::unordered_map<int32_t, std::string> filePathMap;
+    std::atomic<int32_t> nextFileHandle;
+    std::mutex mtx;
     FileTable();
 };
 
@@ -72,6 +78,8 @@ FileTable& FileTable::Instance()
 
 FileTable::FileTable() : nextFileHandle(3)
 {
+    files.resize(maxNoLockFileHandles);
+    filePaths.resize(maxNoLockFileHandles);
     files[0] = stdin;
     files[1] = stdout;
     files[2] = stderr;
@@ -81,13 +89,19 @@ FileTable::~FileTable()
 {
     try
     {
-        for (const auto& p : files)
+        for (FILE* file : files)
         {
-            int32_t fileHandle = p.first;
-            FILE* file = p.second;
-            if (file != stdin && file != stdout && file != stderr)
+            if (file && file != stdin && file != stdout && file != stderr)
             {
-                fclose(file);
+                std::fclose(file);
+            }
+        }
+        for (const auto& p : fileMap)
+        {
+            FILE* file = p.second;
+            if (file)
+            {
+                std::fclose(p.second);
             }
         }
     }
@@ -150,19 +164,31 @@ int32_t FileTable::OpenFile(const std::string& filePath, FileMode mode, FileAcce
         throw FileSystemError("could not open '" + filePath + "': " + strerror(errno));
     }
     int32_t fileHandle = nextFileHandle++;
-    files[fileHandle] = file;
-    filePaths[fileHandle] = filePath;
+    if (fileHandle < maxNoLockFileHandles)
+    {
+        files[fileHandle] = file;
+        filePaths[fileHandle] = filePath;
+    }
+    else
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        fileMap[fileHandle] = file;
+        filePathMap[fileHandle] = filePath;
+    }
     return fileHandle;
 }
 
 void FileTable::CloseFile(int32_t fileHandle)
 {
     if (fileHandle == 0 || fileHandle == 1 || fileHandle == 2) return;
-    auto it = files.find(fileHandle);
-    if (it != files.cend())
+    if (fileHandle < 0)
     {
-        FILE* file = it->second;
-        files.erase(fileHandle);
+        throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
+    }
+    else if (fileHandle < maxNoLockFileHandles)
+    {
+        FILE* file = files[fileHandle];
+        files[fileHandle] = nullptr;
         int result = std::fclose(file);
         if (result != 0)
         {
@@ -172,52 +198,110 @@ void FileTable::CloseFile(int32_t fileHandle)
     }
     else
     {
-        throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
+        std::lock_guard<std::mutex> lock(mtx);
+        auto it = fileMap.find(fileHandle);
+        if (it != fileMap.cend())
+        {
+            FILE* file = it->second;
+            fileMap.erase(fileHandle);
+            int result = std::fclose(file);
+            if (result != 0)
+            {
+                std::string filePath = filePathMap[fileHandle];
+                throw FileSystemError("could not close '" + filePath + "': " + strerror(errno));
+            }
+        }
+        else
+        {
+            throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
+        }
     }
 }
 
 void FileTable::WriteFile(int32_t fileHandle, const uint8_t* buffer, int32_t count)
 {
-    auto it = files.find(fileHandle);
-    if (it != files.cend())
+    FILE* file = nullptr;
+    if (fileHandle < 0)
     {
-        FILE* file = it->second;
-        int32_t result = int32_t(std::fwrite(buffer, 1, count, file));
-        if (result != count)
-        {
-            std::string filePath = filePaths[fileHandle];
-            throw FileSystemError("could not write to '" + filePath + "': " + strerror(errno));
-        }
+        throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
+    }
+    else if (fileHandle < maxNoLockFileHandles)
+    {
+        file = files[fileHandle];
     }
     else
     {
-        throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
+        std::lock_guard<std::mutex> lock(mtx);
+        auto it = fileMap.find(fileHandle);
+        if (it != fileMap.cend())
+        {
+            file = it->second;
+        }
+        else
+        {
+            throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
+        }
+    }
+    int32_t result = int32_t(std::fwrite(buffer, 1, count, file));
+    if (result != count)
+    {
+        std::string filePath;
+        if (fileHandle < maxNoLockFileHandles)
+        {
+            filePath = filePaths[fileHandle];
+        }
+        else
+        {
+            filePath = filePathMap[fileHandle];
+        }
+        throw FileSystemError("could not write to '" + filePath + "': " + strerror(errno));
     }
 }
 
 int32_t FileTable::ReadFile(int32_t fileHandle, uint8_t* buffer, int32_t bufferSize)
 {
-    auto it = files.find(fileHandle);
-    if (it != files.cend())
-    {
-        FILE* file = it->second;
-        int32_t result = int32_t(std::fread(buffer, 1, bufferSize, file));
-        if (result < bufferSize)
-        {
-            int error = ferror(file);
-            if (error == 0)
-            {
-                return result;
-            }
-            std::string filePath = filePaths[fileHandle];
-            throw FileSystemError("could not read from '" + filePath + "': " + strerror(errno));
-        }
-        return result;
-    }
-    else
+    FILE* file = nullptr;
+    if (fileHandle < 0)
     {
         throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
     }
+    else if (fileHandle < maxNoLockFileHandles)
+    {
+        file = files[fileHandle];
+    }
+    else
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        auto it = fileMap.find(fileHandle);
+        if (it != fileMap.cend())
+        {
+            file = it->second;
+        }
+        else
+        {
+            throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
+        }
+    }
+    int32_t result = int32_t(std::fread(buffer, 1, bufferSize, file));
+    if (result < bufferSize)
+    {
+        int error = ferror(file);
+        if (error == 0)
+        {
+            return result;
+        }
+        std::string filePath;
+        if (fileHandle < maxNoLockFileHandles)
+        {
+            filePath = filePaths[fileHandle];
+        }
+        else
+        {
+            filePath = filePathMap[fileHandle];
+        }
+        throw FileSystemError("could not read from '" + filePath + "': " + strerror(errno));
+    }
+    return result;
 }
 
 int32_t OpenFile(const std::string& filePath, FileMode mode, FileAccess access)

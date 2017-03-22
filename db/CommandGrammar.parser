@@ -10,6 +10,7 @@ namespace cminor.db
     grammar CommandGrammar
     {
         using stdlib.int;
+        using stdlib.qualified_id;
         skip Spaces;
 
         Command : Command*
@@ -25,6 +26,7 @@ namespace cminor.db
             |   (("list" | "t") token(FilePath:lfp ':' int:line)){ value = new ListCommand(lfp, line); }
             |   (("list" | "t") int:lline){ value = new ListCommand("", lline); }
             |   ("list" | "t"){ value = new ListCommand("", -1); }
+            |   (("print" | "p") QualifiedId:name){ value = new PrintCommand(name); }
             |   (("local" | "l") int:ln){ value = new LocalCommand(ln); }
             |   (("operand" | "o") int:sn){ value = new OperandCommand(sn); }
             |   (("allocation" | "a") int:ah){ value = new AllocationCommand(ah); }
@@ -43,6 +45,10 @@ namespace cminor.db
             ::= token((([a-zA-Z] ':')? [^: ]+){ value = std::string(matchBegin, matchEnd); } | 
                 ('"' ([^"]+){ value = std::string(matchBegin, matchEnd); } '"') | 
                 ('<' ([^>]+){ value = std::string(matchBegin, matchEnd); } '>'))
+            ;
+
+        QualifiedId : std::string
+            ::= qualified_id{ value = qualified_id; }
             ;
     }
 }

@@ -46,7 +46,7 @@ public:
     Layout& StaticLayout() { return staticLayout; }
     const Layout& StaticLayout() const { return staticLayout; }
     void AllocateStaticData();
-    bool HasStaticData() const { return staticData.Value() != nullptr; }
+    bool HasStaticData() const { return staticData != nullptr; }
     void SetStaticField(IntegralValue fieldValue, int32_t index);
     IntegralValue GetStaticField(int32_t index) const;
 private:
@@ -55,7 +55,7 @@ private:
     std::recursive_mutex initMtx;
     Constant staticConstructorName;
     Layout staticLayout;
-    MemPtr staticData;
+    void* staticData;
 };
 
 class MACHINE_API ClassData

@@ -448,6 +448,7 @@ void Function::AddInst(std::unique_ptr<Instruction>&& inst)
             emitter->DoSetPCRangeEnd(instructionIndex);
         }
         emitter->SatisfyIndexRequests(instructionIndex);
+        emitter->AddingInst(instructionIndex);
     }
     instructions.push_back(std::move(inst));
 }

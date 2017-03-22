@@ -60,6 +60,8 @@ private:
     std::unordered_set<int32_t> breakpoints;
 };
 
+class AllocationContext;
+
 class MACHINE_API Thread
 {
 public:
@@ -115,6 +117,10 @@ public:
     void SetExceptionPtr(std::exception_ptr exceptionPtr_) { exceptionPtr = exceptionPtr_; }
     MutexOwner& Owner() { return owner; }
     Mutex& Mtx() { return mtx; }
+    AllocationContext* GetAllocationContext() { return allocationContext.get(); }
+    void PushAllocationHandle(AllocationHandle handle) { allocationHandleStack.push(handle); }
+    AllocationHandle PopAllocationHandle() { AllocationHandle handle = allocationHandleStack.top();  allocationHandleStack.pop(); return handle; }
+    bool HasAllocationHandles() const { return !allocationHandleStack.empty(); }
 private:
     Stack stack;
     int32_t id;
@@ -141,6 +147,8 @@ private:
     std::exception_ptr exceptionPtr;
     MutexOwner owner;
     Mutex mtx;
+    std::unique_ptr<AllocationContext> allocationContext;
+    std::stack<AllocationHandle> allocationHandleStack;
     void RunToEnd();
     void FindExceptionBlock(Frame* frame);
     bool DispatchToHandlerOrFinally(Frame* frame);

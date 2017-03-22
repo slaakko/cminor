@@ -28,12 +28,15 @@ public:
     int32_t FirstInstIndex() const { return firstInstIndex; }
     void SetFirstInstIndex(int32_t firstInstIndex_);
     void AddJumpToThis(Instruction* instruction);
+    void SetContainerScope(ContainerScope* containerScope_) { containerScope = containerScope_; }
+    ContainerScope* GetContainerScope() const { return containerScope; }
 private:
     BoundStatement* parent;
     std::string label;
     Span span;
     int32_t firstInstIndex;
     std::vector<Instruction*> jumpsToThis;
+    ContainerScope* containerScope;
 };
 
 class BoundCompoundStatement : public BoundStatement

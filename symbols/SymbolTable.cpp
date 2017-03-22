@@ -110,6 +110,7 @@ void SymbolTable::BeginFunction(FunctionNode& functionNode)
     }
     MapNode(functionNode, function);
     ContainerScope* functionScope = function->GetContainerScope();
+    functionScope->SetId(function->GetNextContainerScopeId());
     ContainerScope* containerScope = container->GetContainerScope();
     functionScope->SetParent(containerScope);
     BeginContainer(function);
@@ -133,6 +134,7 @@ void SymbolTable::BeginStaticConstructor(StaticConstructorNode& staticConstructo
     function->SetGroupNameConstant(nameConstant);
     MapNode(staticConstructorNode, function);
     ContainerScope* functionScope = function->GetContainerScope();
+    functionScope->SetId(function->GetNextContainerScopeId());
     ContainerScope* containerScope = container->GetContainerScope();
     functionScope->SetParent(containerScope);
     BeginContainer(function);
@@ -156,6 +158,7 @@ void SymbolTable::BeginConstructor(ConstructorNode& constructorNode)
     function->SetGroupNameConstant(nameConstant);
     MapNode(constructorNode, function);
     ContainerScope* functionScope = function->GetContainerScope();
+    functionScope->SetId(function->GetNextContainerScopeId());
     ContainerScope* containerScope = container->GetContainerScope();
     functionScope->SetParent(containerScope);
     BeginContainer(function);
@@ -189,6 +192,7 @@ void SymbolTable::BeginMemberFunction(MemberFunctionNode& memberFunctionNode)
     function->SetGroupNameConstant(groupNameConstant);
     MapNode(memberFunctionNode, function);
     ContainerScope* functionScope = function->GetContainerScope();
+    functionScope->SetId(function->GetNextContainerScopeId());
     ContainerScope* containerScope = container->GetContainerScope();
     functionScope->SetParent(containerScope);
     BeginContainer(function);
@@ -322,6 +326,11 @@ void SymbolTable::BeginDeclarationBlock(Node& node)
     DeclarationBlock* declarationBlock = new DeclarationBlock(node.GetSpan(), nameConstant);
     declarationBlock->SetAssembly(assembly);
     ContainerScope* declarationBlockScope = declarationBlock->GetContainerScope();
+    if (!function)
+    {
+        throw std::runtime_error("function not set");
+    }
+    declarationBlockScope->SetId(function->GetNextContainerScopeId());
     ContainerScope* containerScope = container->GetContainerScope();
     declarationBlockScope->SetParent(containerScope);
     container->AddSymbol(std::unique_ptr<Symbol>(declarationBlock));
@@ -397,11 +406,13 @@ void SymbolTable::BeginPropertyGetter(PropertyNode& propertyNode)
     utf32_string getterName = U"@get";
     Constant getterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(getterName.c_str())));
     PropertyGetterFunctionSymbol* getter = new PropertyGetterFunctionSymbol(propertyNode.Getter()->GetSpan(), getterNameConstant);
+    function = getter;
     getter->SetAssembly(assembly);
     getter->SetGroupNameConstant(getterNameConstant);
     getter->SetPublic();
     ContainerScope* containerScope = container->GetContainerScope();
     ContainerScope* getterScope = getter->GetContainerScope();
+    getterScope->SetId(getter->GetNextContainerScopeId());
     getterScope->SetParent(containerScope);
     container->AddSymbol(std::unique_ptr<Symbol>(getter));
     BeginContainer(getter);
@@ -433,11 +444,13 @@ void SymbolTable::BeginPropertySetter(PropertyNode& propertyNode)
     utf32_string setterName = U"@set";
     Constant setterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(setterName.c_str())));
     PropertySetterFunctionSymbol* setter = new PropertySetterFunctionSymbol(propertyNode.Setter()->GetSpan(), setterNameConstant);
+    function = setter;
     setter->SetAssembly(assembly);
     setter->SetGroupNameConstant(setterNameConstant);
     setter->SetPublic();
     ContainerScope* containerScope = container->GetContainerScope();
     ContainerScope* setterScope = setter->GetContainerScope();
+    setterScope->SetId(setter->GetNextContainerScopeId());
     setterScope->SetParent(containerScope);
     container->AddSymbol(std::unique_ptr<Symbol>(setter));
     BeginContainer(setter);
@@ -493,11 +506,13 @@ void SymbolTable::BeginIndexerGetter(IndexerNode& indexerNode)
     utf32_string getterName = U"@get";
     Constant getterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(getterName.c_str())));
     IndexerGetterFunctionSymbol* getter = new IndexerGetterFunctionSymbol(indexerNode.Getter()->GetSpan(), getterNameConstant);
+    function = getter;
     getter->SetAssembly(assembly);
     getter->SetGroupNameConstant(getterNameConstant);
     getter->SetPublic();
     ContainerScope* containerScope = container->GetContainerScope();
     ContainerScope* getterScope = getter->GetContainerScope();
+    getterScope->SetId(getter->GetNextContainerScopeId());
     getterScope->SetParent(containerScope);
     container->AddSymbol(std::unique_ptr<Symbol>(getter));
     BeginContainer(getter);
@@ -534,11 +549,13 @@ void SymbolTable::BeginIndexerSetter(IndexerNode& indexerNode)
     utf32_string setterName = U"@set";
     Constant setterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(setterName.c_str())));
     IndexerSetterFunctionSymbol* setter = new IndexerSetterFunctionSymbol(indexerNode.Setter()->GetSpan(), setterNameConstant);
+    function = setter;
     setter->SetAssembly(assembly);
     setter->SetGroupNameConstant(setterNameConstant);
     setter->SetPublic();
     ContainerScope* containerScope = container->GetContainerScope();
     ContainerScope* setterScope = setter->GetContainerScope();
+    setterScope->SetId(setter->GetNextContainerScopeId());
     setterScope->SetParent(containerScope);
     container->AddSymbol(std::unique_ptr<Symbol>(setter));
     BeginContainer(setter);
@@ -927,6 +944,7 @@ TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* eleme
         ArrayGetEnumeratorMemberFunctionSymbol* getEnumerator = new ArrayGetEnumeratorMemberFunctionSymbol(arrayNode.GetSpan(), getEnumeratorName);
         getEnumerator->SetAssembly(assembly);
         getEnumerator->SetPublic();
+        getEnumerator->GetContainerScope()->SetId(getEnumerator->GetNextContainerScopeId());
         Constant thisParamName = constantPool.GetConstant(constantPool.Install(U"this"));
         ParameterSymbol* thisParam = new ParameterSymbol(arrayNode.GetSpan(), thisParamName);
         thisParam->SetAssembly(assembly);

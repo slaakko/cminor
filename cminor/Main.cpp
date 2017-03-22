@@ -139,7 +139,7 @@ void PrintHelp(HelpTopics helpTopics)
             "       Run debug version of the virtual machine.\n" <<
             "   --native (-n)" <<
             "       Run program built with --native option.\n" <<
-            "   --trace (-t)\n" <<
+            "   --trace (-r)\n" <<
             "       Trace execution of native program to stderr (used with --native).\n" <<
             "   --stats (-a)\n" <<
             "       Print statistics.\n" <<
@@ -149,6 +149,12 @@ void PrintHelp(HelpTopics helpTopics)
             "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
             "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n" <<
             "       Default is 16 MB.\n" <<
+            "   --thread-pages=N (-t=N)\n" <<
+            "       Set the number of thread-specific memory allocation context pages to N.\n" <<
+            "       Default is 2 pages (for 4K system memory page size this is 8K).\n" <<
+            "       When N > 0, memory allocator of the virtual machine allocates extra memory\n" <<
+            "       whose size is N * <system memory page size> for the thread making the allocation.\n" <<
+            "       Thread can consume this extra memory without any further locking.\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
@@ -164,6 +170,12 @@ void PrintHelp(HelpTopics helpTopics)
             "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
             "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n" <<
             "       Default is 16 MB.\n" <<
+            "   --thread-pages=N (-t=N)\n" <<
+            "       Set the number of thread-specific memory allocation context pages to N.\n" <<
+            "       Default is 2 pages (for 4K system memory page size this is 8K).\n" <<
+            "       When N > 0, memory allocator of the virtual machine allocates extra memory\n" <<
+            "       whose size is N * <system memory page size> for the thread making the allocation.\n" <<
+            "       Thread can consume this extra memory without any further locking.\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
@@ -330,7 +342,7 @@ int main(int argc, const char** argv)
                         {
                             runOptions.push_back(arg);
                         }
-                        else if (arg == "-t" || arg == "--trace")
+                        else if (arg == "-r" || arg == "--trace")
                         {
                             runOptions.push_back(arg);
                         }
@@ -352,6 +364,10 @@ int main(int argc, const char** argv)
                                     runOptions.push_back(arg);
                                 }
                                 else if (components[0] == "-p" || components[0] == "--pool-threshold")
+                                {
+                                    runOptions.push_back(arg);
+                                }
+                                else if (components[0] == "-t" || components[0] == "--thread-pages")
                                 {
                                     runOptions.push_back(arg);
                                 }
@@ -396,11 +412,15 @@ int main(int argc, const char** argv)
                                 }
                                 else if (components[0] == "-p" || components[0] == "--pool-threshold")
                                 {
-                                    runOptions.push_back(arg);
+                                    debugOptions.push_back(arg);
+                                }
+                                else if (components[0] == "-t" || components[0] == "--thread-pages")
+                                {
+                                    debugOptions.push_back(arg);
                                 }
                                 else
                                 {
-                                    throw std::runtime_error("unknown run option '" + arg + "'");
+                                    throw std::runtime_error("unknown debug option '" + arg + "'");
                                 }
                             }
                         }

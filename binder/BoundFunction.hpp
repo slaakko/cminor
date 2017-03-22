@@ -21,11 +21,14 @@ public:
     std::string NextTempVarName();
     void SetHasGotos() { hasGotos = true; }
     bool HasGotos() const { return hasGotos; }
+    void SetContainerScope(ContainerScope* containerScope_) { containerScope = containerScope_; }
+    ContainerScope* GetContainerScope() const { return containerScope; }
 private:
     FunctionSymbol* functionSymbol;
     std::unique_ptr<BoundCompoundStatement> body;
     int nextTempVarNumber;
     bool hasGotos;
+    ContainerScope* containerScope;
 };
 
 } } // namespace cminor::binder

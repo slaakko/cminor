@@ -91,17 +91,19 @@ private:
     bool setPCRangeEnd;
     ExceptionBlock* currentExceptionBlock;
     std::vector<std::unique_ptr<Instruction>> nextInsts;
+    uint32_t currentContainerScopeId;
     void GenJumpingBoolCode();
     void Backpatch(std::vector<Instruction*>& set, int32_t target);
     void Merge(std::vector<Instruction*>& fromSet, std::vector<Instruction*>& toSet);
     void ExitBlocks(BoundCompoundStatement* targetBlock);
     void AddNextInst(std::unique_ptr<Instruction>&& nextInst);
+    void AddingInst(int32_t pc) override;
 };
 
 EmitterVisitor::EmitterVisitor(Machine& machine_, BoundCompileUnit& boundCompileUnit_) : 
     machine(machine_), boundCompileUnit(boundCompileUnit_), boundFunction(nullptr), function(nullptr), nextSet(nullptr), trueSet(nullptr), falseSet(nullptr), breakSet(nullptr), 
     continueSet(nullptr), conDisSet(nullptr), breakTarget(nullptr), continueTarget(nullptr), caseTargets(nullptr), gotoCaseJumps(nullptr), gotoDefaultJumps(nullptr), genJumpingBoolCode(false), 
-    createPCRange(false), setPCRangeEnd(false), currentExceptionBlock(nullptr)
+    createPCRange(false), setPCRangeEnd(false), currentExceptionBlock(nullptr), currentContainerScopeId(-1)
 {
 }
 
@@ -153,6 +155,11 @@ void EmitterVisitor::ExitBlocks(BoundCompoundStatement* targetBlock)
 void EmitterVisitor::AddNextInst(std::unique_ptr<Instruction>&& nextInst)
 {
     nextInsts.push_back(std::move(nextInst));
+}
+
+void EmitterVisitor::AddingInst(int32_t pc) 
+{
+    boundFunction->GetFunctionSymbol()->MapPCToContainerScopeId(pc, currentContainerScopeId);
 }
 
 bool EmitterVisitor::CreatePCRange() const
@@ -232,6 +239,8 @@ void EmitterVisitor::Visit(BoundFunction& boundFunction)
     Emitter* prevEmitter = function->GetEmitter();
     function->SetEmitter(this);
     this->boundFunction = &boundFunction;
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundFunction.GetContainerScope()->NonDefaultId();
     if (boundFunction.Body())
     {
         boundFunction.Body()->Accept(*this);
@@ -242,10 +251,13 @@ void EmitterVisitor::Visit(BoundFunction& boundFunction)
     }
     function->SetEmitter(prevEmitter);
     function = prevFunction;
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundCompoundStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundCompoundStatement.GetSpan().LineNumber());
     blockStack.push_back(&boundCompoundStatement);
     bool setFirstInstIndex = false;
@@ -311,10 +323,13 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
         }
     }
     blockStack.pop_back();
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundReturnStatement& boundReturnStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundReturnStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundReturnStatement.GetSpan().LineNumber());
     BoundFunctionCall* returnFunctionCall = boundReturnStatement.ReturnFunctionCall();
     if (returnFunctionCall)
@@ -329,10 +344,13 @@ void EmitterVisitor::Visit(BoundReturnStatement& boundReturnStatement)
     std::unique_ptr<Instruction> inst = machine.CreateInst("jump");
     inst->SetTarget(endOfFunction);
     function->AddInst(std::move(inst));
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundIfStatement& boundIfStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundIfStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundIfStatement.GetSpan().LineNumber());
     std::vector<Instruction*>* prevTrueSet = trueSet;
     std::vector<Instruction*>* prevFalseSet = falseSet;
@@ -371,10 +389,13 @@ void EmitterVisitor::Visit(BoundIfStatement& boundIfStatement)
     }
     trueSet = prevTrueSet;
     falseSet = prevFalseSet;
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundWhileStatement& boundWhileStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundWhileStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundWhileStatement.GetSpan().LineNumber());
     BoundStatement* prevBreakTarget = breakTarget;
     breakTarget = &boundWhileStatement;
@@ -428,10 +449,13 @@ void EmitterVisitor::Visit(BoundWhileStatement& boundWhileStatement)
     continueSet = prevContinueSet;
     breakTarget = prevBreakTarget;
     continueTarget = prevContinueTarget;
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundDoStatement& boundDoStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundDoStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundDoStatement.GetSpan().LineNumber());
     BoundStatement* prevBreakTarget = breakTarget;
     breakTarget = &boundDoStatement;
@@ -480,10 +504,13 @@ void EmitterVisitor::Visit(BoundDoStatement& boundDoStatement)
     continueSet = prevContinueSet;
     breakTarget = prevBreakTarget;
     continueTarget = prevContinueTarget;
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundForStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundForStatement.GetSpan().LineNumber());
     BoundStatement* prevBreakTarget = breakTarget;
     breakTarget = &boundForStatement;
@@ -552,10 +579,13 @@ void EmitterVisitor::Visit(BoundForStatement& boundForStatement)
     continueSet = prevContinueSet;
     breakTarget = prevBreakTarget;
     continueTarget = prevContinueTarget;
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundSwitchStatement& boundSwitchStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundSwitchStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundSwitchStatement.GetSpan().LineNumber());
     BoundStatement* prevBreakTarget = breakTarget;
     breakTarget = &boundSwitchStatement;
@@ -675,10 +705,13 @@ void EmitterVisitor::Visit(BoundSwitchStatement& boundSwitchStatement)
     Merge(break_, *nextSet);
     breakSet = prevBreakSet;
     breakTarget = prevBreakTarget;
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundCaseStatement& boundCaseStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundCaseStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundCaseStatement.GetSpan().LineNumber());
     InstIndexRequest startCase;
     AddIndexRequest(&startCase);
@@ -690,20 +723,26 @@ void EmitterVisitor::Visit(BoundCaseStatement& boundCaseStatement)
     {
         caseTargets->push_back(std::make_pair(caseValue, caseTarget));
     }
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundDefaultStatement& boundDefaultStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundDefaultStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundDefaultStatement.GetSpan().LineNumber());
     InstIndexRequest startDefault;
     AddIndexRequest(&startDefault);
     boundDefaultStatement.CompoundStatement()->Accept(*this);
     function->MapPCToSourceLine(startDefault.Index(), boundDefaultStatement.GetSpan().LineNumber());
     boundDefaultStatement.SetFirstInstIndex(startDefault.Index());
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundGotoCaseStatement& boundGotoCaseStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundGotoCaseStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundGotoCaseStatement.GetSpan().LineNumber());
     ExitBlocks(breakTarget->Block());
     if (breakTarget->FirstInstIndex() != -1 && breakTarget->FirstInstIndex() < function->NumInsts())
@@ -715,10 +754,13 @@ void EmitterVisitor::Visit(BoundGotoCaseStatement& boundGotoCaseStatement)
     Instruction* gotoCaseJump = jump.get();
     function->AddInst(std::move(jump));
     gotoCaseJumps->insert(std::make_pair(boundGotoCaseStatement.CaseValue(), gotoCaseJump));
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundGotoDefaultStatement& boundGotoDefaultStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundGotoDefaultStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundGotoDefaultStatement.GetSpan().LineNumber());
     ExitBlocks(breakTarget->Block());
     if (breakTarget->FirstInstIndex() != -1 && breakTarget->FirstInstIndex() < function->NumInsts())
@@ -730,10 +772,13 @@ void EmitterVisitor::Visit(BoundGotoDefaultStatement& boundGotoDefaultStatement)
     Instruction* gotoDefaultJump = jump.get();
     function->AddInst(std::move(jump));
     gotoDefaultJumps->push_back(gotoDefaultJump);
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundBreakStatement& boundBreakStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundBreakStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundBreakStatement.GetSpan().LineNumber());
     Assert(breakSet, "break set not set");
     BoundCompoundStatement* targetBlock = breakTarget->Parent()->Block();
@@ -741,10 +786,13 @@ void EmitterVisitor::Visit(BoundBreakStatement& boundBreakStatement)
     std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
     breakSet->push_back(jump.get());
     function->AddInst(std::move(jump));
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundContinueStatement& boundContinueStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundContinueStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundContinueStatement.GetSpan().LineNumber());
     Assert(continueSet, "continue set not set");
     BoundCompoundStatement* targetBlock = continueTarget->Parent()->Block();
@@ -752,10 +800,13 @@ void EmitterVisitor::Visit(BoundContinueStatement& boundContinueStatement)
     std::unique_ptr<Instruction> jump = machine.CreateInst("jump");
     continueSet->push_back(jump.get());
     function->AddInst(std::move(jump));
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundGotoStatement& boundGotoStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundGotoStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundGotoStatement.GetSpan().LineNumber());
     BoundCompoundStatement* targetBlock = boundGotoStatement.TargetBlock();
     ExitBlocks(targetBlock);
@@ -774,30 +825,39 @@ void EmitterVisitor::Visit(BoundGotoStatement& boundGotoStatement)
         boundGotoStatement.TargetStatement()->AddJumpToThis(jump.get());
     }
     function->AddInst(std::move(jump));
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundConstructionStatement& boundConstructionStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundConstructionStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundConstructionStatement.GetSpan().LineNumber());
     std::vector<Instruction*>* prevConDisSet = conDisSet;
     std::vector<Instruction*> conDis;
     conDisSet = &conDis;
     boundConstructionStatement.ConstructorCall()->Accept(*this);
     conDisSet = prevConDisSet;
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundAssignmentStatement& boundAssignmentStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundAssignmentStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundAssignmentStatement.GetSpan().LineNumber());
     std::vector<Instruction*>* prevConDisSet = conDisSet;
     std::vector<Instruction*> conDis;
     conDisSet = &conDis;
     boundAssignmentStatement.AssignmentCall()->Accept(*this);
     conDisSet = prevConDisSet;
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundExpressionStatement& boundExpressionStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundExpressionStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundExpressionStatement.GetSpan().LineNumber());
     std::vector<Instruction*>* prevConDisSet = conDisSet;
     std::vector<Instruction*> conDis;
@@ -808,17 +868,23 @@ void EmitterVisitor::Visit(BoundExpressionStatement& boundExpressionStatement)
     {
         function->AddInst(machine.CreateInst("pop"));
     }
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundEmptyStatement& boundEmptyStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundEmptyStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundEmptyStatement.GetSpan().LineNumber());
     std::unique_ptr<Instruction> nop = machine.CreateInst("nop");
     function->AddInst(std::move(nop));
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundThrowStatement& boundThrowStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundThrowStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundThrowStatement.GetSpan().LineNumber());
     if (boundThrowStatement.Expression())
     {
@@ -838,10 +904,13 @@ void EmitterVisitor::Visit(BoundThrowStatement& boundThrowStatement)
         function->AddInst(std::move(rethrowInst));
         function->MapPCToSourceLine(startRethrow.Index(), CurrentSourceLine());
     }
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundTryStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundTryStatement.GetSpan().LineNumber());
     InstIndexRequest startTry;
     AddIndexRequest(&startTry);
@@ -946,10 +1015,13 @@ void EmitterVisitor::Visit(BoundTryStatement& boundTryStatement)
         createPCRange = false;
         setPCRangeEnd = false;
     }
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundCatchStatement& boundCatchStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundCatchStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundCatchStatement.GetSpan().LineNumber());
     std::unique_ptr<CatchBlock> catchBlock(new CatchBlock(currentExceptionBlock->GetNextCatchBlockId()));
     boundCatchStatement.SetCatchBlockId(catchBlock->Id());
@@ -971,10 +1043,13 @@ void EmitterVisitor::Visit(BoundCatchStatement& boundCatchStatement)
     boundCatchStatement.CatchBlock()->Accept(*this);
     int32_t catchBlockStart = startCatch.Index();
     catchBlockPtr->SetCatchBlockStart(catchBlockStart);
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundStaticInitStatement& boundStaticInitStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundStaticInitStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundStaticInitStatement.GetSpan().LineNumber());
     std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
     StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
@@ -982,10 +1057,13 @@ void EmitterVisitor::Visit(BoundStaticInitStatement& boundStaticInitStatement)
     staticInitInst->SetTypeName(boundStaticInitStatement.ClassNameConstant());
     function->AddInst(std::move(inst));
     function->SetCanThrow();
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundDoneStaticInitStatement& boundDoneStaticInitStatement)
 {
+    uint32_t prevContainerScopeId = currentContainerScopeId;
+    currentContainerScopeId = boundDoneStaticInitStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundDoneStaticInitStatement.GetSpan().LineNumber());
     std::unique_ptr<Instruction> inst = machine.CreateInst("donestaticinit");
     DoneStaticInitInst* doneStaticInitInst = dynamic_cast<DoneStaticInitInst*>(inst.get());
@@ -993,6 +1071,7 @@ void EmitterVisitor::Visit(BoundDoneStaticInitStatement& boundDoneStaticInitStat
     doneStaticInitInst->SetTypeName(boundDoneStaticInitStatement.ClassNameConstant());
     function->AddInst(std::move(inst));
     function->SetCanThrow();
+    currentContainerScopeId = prevContainerScopeId;
 }
 
 void EmitterVisitor::Visit(BoundLiteral& boundLiteral)

@@ -207,6 +207,7 @@ namespace cminor.parser
         Catch(ParsingContext* ctx): CatchNode*;
         Finally(ParsingContext* ctx): CompoundStatementNode*;
         UsingStatement(ParsingContext* ctx): StatementNode*;
+        LockStatement(ParsingContext* ctx): StatementNode*;
     }
     grammar TemplateGrammar
     {

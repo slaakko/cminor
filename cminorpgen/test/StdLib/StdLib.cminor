@@ -1421,4 +1421,15 @@ namespace System.Text.Parsing
                             new SequenceParser(
                                 new ActionParser("A1",
                                     new CharParser('"')),
-                                new KleeneSta
+                                new KleeneStarParser(
+                                    new AlternativeParser(
+                                        new ActionParser("A2",
+                                            new PositiveParser(
+                                                new CharSetParser("\"\\\r\n", true))),
+                                        new ActionParser("A3",
+                                            new NonterminalParser("escape", "escape", 0))))),
+                            new ExpectationParser(
+                                new CharParser('"')))))));
+        }
+    }
+}

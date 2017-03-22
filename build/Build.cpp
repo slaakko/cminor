@@ -125,6 +125,7 @@ BoundCompoundStatement* CreateBodyForArrayGetEnumeratorMemberFunctionSymbol(Boun
     newNode->AddArgument(new ThisNode(span));
     bodyNode.AddStatement(new ReturnStatementNode(span, newNode));
     boundCompileUnit.GetAssembly().GetSymbolTable().BeginContainer(arrayType);
+    boundCompileUnit.GetAssembly().GetSymbolTable().SetFunction(boundFunction->GetFunctionSymbol());
     SymbolCreatorVisitor symbolCreatorVisitor(boundCompileUnit.GetAssembly());
     bodyNode.Accept(symbolCreatorVisitor);
     boundCompileUnit.GetAssembly().GetSymbolTable().EndContainer();
@@ -150,11 +151,13 @@ void GenerateCodeForCreatedArrays(Assembly& assembly, std::unordered_set<ClassTe
         for (ConstructorSymbol* ctor : arrayType->Constructors())
         {
             std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(ctor));
+            boundFunction->SetContainerScope(ctor->GetContainerScope());
             synthesizedCompileUnit.AddBoundNode(std::move(boundFunction));
         }
         for (MemberFunctionSymbol* memFun : arrayType->MemberFunctions())
         {
             std::unique_ptr<BoundFunction> boundFunction(new BoundFunction(memFun));
+            boundFunction->SetContainerScope(memFun->GetContainerScope());
             if (ArrayGetEnumeratorMemberFunctionSymbol* getEnumeratorMemFun = dynamic_cast<ArrayGetEnumeratorMemberFunctionSymbol*>(memFun))
             {
                 boundFunction->SetBody(std::unique_ptr<BoundCompoundStatement>(CreateBodyForArrayGetEnumeratorMemberFunctionSymbol(synthesizedCompileUnit, boundFunction.get(), arrayType, 

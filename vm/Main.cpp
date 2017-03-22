@@ -8,7 +8,7 @@
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Class.hpp>
-#include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/Runtime.hpp>
 #include <cminor/machine/CminorException.hpp>
 #include <cminor/machine/Stats.hpp>
 #include <cminor/symbols/Symbol.hpp>
@@ -20,11 +20,13 @@
 #include <cminor/ast/Project.hpp>
 #include <cminor/vmlib/VmFunction.hpp>
 #include <cminor/vmlib/File.hpp>
+#include <cminor/vmlib/Threading.hpp>
 #include <cminor/util/Path.hpp>
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/jit/JitCompiler.hpp>
 #include <llvm/Support/TargetSelect.h>
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 #include <stdexcept>
 #include <chrono>
 #include <cminor/util/Unicode.hpp>
@@ -53,6 +55,7 @@ struct InitDone
         InitAssembly();
         InitVmFunctions(vmFunctionNamePool);
         FileInit();
+        ThreadingInit();
 #ifdef GC_LOGGING
         OpenLog();
 #endif
@@ -62,6 +65,7 @@ struct InitDone
 #ifdef GC_LOGGING
         CloseLog();
 #endif
+        ThreadingDone();
         FileDone();
         DoneVmFunctions();
         DoneAssembly();
@@ -93,7 +97,7 @@ void PrintHelp()
         "       Use just-in-time compilation.\n" <<
         "   --native (-n)\n" <<
         "       Run program built with --native option.\n"
-        "   --trace (-t)\n" <<
+        "   --trace (-r)\n" <<
         "       Trace execution of native program to stderr (used with --native).\n" <<
         "   --stats (-a)\n" <<
         "       Print statistics.\n" <<
@@ -103,6 +107,12 @@ void PrintHelp()
         "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
         "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n"
         "       Default is 16 MB.\n" <<
+        "   --thread-pages=N (-t=N)\n" <<
+        "       Set the number of thread-specific memory allocation context pages to N.\n" <<
+        "       Default is 2 pages (for 4K system memory page size this is 8K).\n" <<
+        "       When N > 0, memory allocator of the virtual machine allocates extra memory\n" <<
+        "       whose size is N * <system memory page size> for the thread making the allocation.\n" <<
+        "       Thread can consume this extra memory without any further locking.\n" <<
         std::endl;
 }
 
@@ -158,7 +168,7 @@ int main(int argc, const char** argv)
                         {
                             native = true;
                         }
-                        else if (arg == "-t" || arg == "--trace")
+                        else if (arg == "-r" || arg == "--trace")
                         {
                             trace = true;
                         }
@@ -175,29 +185,18 @@ int main(int argc, const char** argv)
                             }
                             if (components[0] == "-s" || components[0] == "--segment-size")
                             {
-                                std::stringstream s;
-                                s.str(components[1]);
-                                if (!(s >> segmentSizeMB))
-                                {
-                                    throw std::runtime_error("segment size not of an integer type: " + arg);
-                                }
-                                else
-                                {
-                                    SetSegmentSize(segmentSizeMB * 1024 * 1024);
-                                }
+                                segmentSizeMB = boost::lexical_cast<uint64_t>(components[1]);
+                                SetSegmentSize(segmentSizeMB * 1024 * 1024);
                             }
                             else if (components[0] == "-p" || components[0] == "--pool-threshold")
                             {
-                                std::stringstream s;
-                                s.str(components[1]);
-                                if (!(s >> poolThresholdMB))
-                                {
-                                    throw std::runtime_error("pool threshold not of an integer type: " + arg);
-                                }
-                                else
-                                {
-                                    SetPoolThreshold(poolThresholdMB * 1024 * 1024);
-                                }
+                                poolThresholdMB = boost::lexical_cast<int>(components[1]);
+                                SetPoolThreshold(poolThresholdMB * 1024 * 1024);
+                            }
+                            else if (components[0] == "-t" || components[0] == "--thread-pages")
+                            {
+                                uint8_t threadPages = boost::lexical_cast<uint8_t>(components[1]);
+                                SetNumAllocationContextPages(threadPages);
                             }
                             else
                             {

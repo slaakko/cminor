@@ -135,5 +135,8 @@ namespace System
         {
             return Absolute<double>.Value(x);
         }
+
+        [vmf=pow]
+        public static extern double Pow(double base_, int exponent);
     }
 }

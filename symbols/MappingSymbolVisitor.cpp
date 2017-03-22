@@ -65,6 +65,7 @@ void MappingSymbolVisitor::Visit(FunctionNode& functionNode)
     Assert(functionSymbol, "function symbol expected");
     targetAssembly.GetSymbolTable().MapNode(functionNode, functionSymbol);
     targetAssembly.GetSymbolTable().BeginContainer(functionSymbol);
+    targetAssembly.GetSymbolTable().SetFunction(functionSymbol);
     functionSymbol->SetAssembly(&targetAssembly);
     functionSymbol->SetProject();
     ConstantPool& constantPool = targetAssembly.GetConstantPool();
@@ -103,6 +104,7 @@ void MappingSymbolVisitor::Visit(StaticConstructorNode& staticConstructorNode)
     Assert(staticConstructorSymbol, "static constructor symbol expected");
     targetAssembly.GetSymbolTable().MapNode(staticConstructorNode, staticConstructorSymbol);
     targetAssembly.GetSymbolTable().BeginContainer(staticConstructorSymbol);
+    targetAssembly.GetSymbolTable().SetFunction(staticConstructorSymbol);
     staticConstructorSymbol->SetAssembly(&targetAssembly);
     staticConstructorSymbol->SetProject();
     ConstantPool& constantPool = targetAssembly.GetConstantPool();
@@ -128,6 +130,7 @@ void MappingSymbolVisitor::Visit(ConstructorNode& constructorNode)
     Assert(constructorSymbol, "constructor symbol expected");
     targetAssembly.GetSymbolTable().MapNode(constructorNode, constructorSymbol);
     targetAssembly.GetSymbolTable().BeginContainer(constructorSymbol);
+    targetAssembly.GetSymbolTable().SetFunction(constructorSymbol);
     int n = constructorNode.Parameters().Count();
     for (int i = 0; i < n; ++i)
     {
@@ -159,6 +162,7 @@ void MappingSymbolVisitor::Visit(MemberFunctionNode& memberFunctionNode)
     Assert(memberFunctionSymbol, "member function symbol expected");
     targetAssembly.GetSymbolTable().MapNode(memberFunctionNode, memberFunctionSymbol);
     targetAssembly.GetSymbolTable().BeginContainer(memberFunctionSymbol);
+    targetAssembly.GetSymbolTable().SetFunction(memberFunctionSymbol);
     int n = memberFunctionNode.Parameters().Count();
     for (int i = 0; i < n; ++i)
     {
@@ -224,6 +228,7 @@ void MappingSymbolVisitor::Visit(PropertyNode& propertyNode)
             utf32_string fullName = propertySymbol->FullName();
             constantPool.Install(StringPtr(fullName.c_str()));
 
+            targetAssembly.GetSymbolTable().SetFunction(propertySymbol->Getter());
             propertySymbol->Getter()->SetAssembly(&targetAssembly);
             propertySymbol->Getter()->SetProject();
             constantPool.Install(propertySymbol->Getter()->Name());
@@ -259,6 +264,7 @@ void MappingSymbolVisitor::Visit(PropertyNode& propertyNode)
             utf32_string fullName = propertySymbol->FullName();
             constantPool.Install(StringPtr(fullName.c_str()));
 
+            targetAssembly.GetSymbolTable().SetFunction(propertySymbol->Setter());
             propertySymbol->Setter()->SetAssembly(&targetAssembly);
             propertySymbol->Setter()->SetProject();
             constantPool.Install(propertySymbol->Setter()->Name());
@@ -303,6 +309,7 @@ void MappingSymbolVisitor::Visit(IndexerNode& indexerNode)
             utf32_string fullName = indexerSymbol->FullName();
             constantPool.Install(StringPtr(fullName.c_str()));
 
+            targetAssembly.GetSymbolTable().SetFunction(indexerSymbol->Getter());
             indexerSymbol->Getter()->SetAssembly(&targetAssembly);
             indexerSymbol->Getter()->SetProject();
             constantPool.Install(indexerSymbol->Getter()->Name());
@@ -338,6 +345,7 @@ void MappingSymbolVisitor::Visit(IndexerNode& indexerNode)
             utf32_string fullName = indexerSymbol->FullName();
             constantPool.Install(StringPtr(fullName.c_str()));
 
+            targetAssembly.GetSymbolTable().SetFunction(indexerSymbol->Setter());
             indexerSymbol->Setter()->SetAssembly(&targetAssembly);
             indexerSymbol->Setter()->SetProject();
             constantPool.Install(indexerSymbol->Setter()->Name());

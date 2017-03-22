@@ -139,6 +139,15 @@ public:
     void Execute(Shell& shell) override;
 };
 
+class PrintCommand : public Command
+{
+public:
+    PrintCommand(const std::string& name_);
+    void Execute(Shell& shell) override;
+private:
+    std::string name;
+};
+
 } } // namespace cminor::db
 
 #endif // CMINOR_DB_COMMAND_INCLUDED

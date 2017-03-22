@@ -1,0 +1,59 @@
+using System;
+using System.Threading;
+
+public class Queue
+{
+    public Queue()
+    {
+        this.roomVar = new ConditionVariable();
+        this.lck = new object();
+        this.room = false;
+        this.waiting = false;
+    }
+    public void Wait()
+    {
+        Console.WriteLine("> wait");
+        lock (lck)
+        {
+            waiting = true;
+            roomVar.Wait(lck, ref room);
+        }
+        Console.WriteLine("< wait");
+    }
+    public void Signal()
+    {
+        Console.WriteLine("> signal");
+        lock (lck)
+        {
+            room = true;
+            roomVar.NotifyOne();
+        }
+        Console.WriteLine("< signal");
+    }
+    public void Waiting()
+    {
+        Console.WriteLine("> waiting");
+        while (!waiting) ;
+        Console.WriteLine("< waiting");
+    }
+    private ConditionVariable roomVar;
+    private object lck;
+    private bool room;
+    private bool waiting;
+}
+
+void main()
+{
+    try
+    {
+        Queue queue = new Queue();
+        Thread thread = Thread.StartMethod(queue.Wait);
+        queue.Waiting();
+        queue.Signal();
+        thread.Join();
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+    }
+}

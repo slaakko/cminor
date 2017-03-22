@@ -7,7 +7,7 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/OsInterface.hpp>
-#include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/Runtime.hpp>
 #include <cminor/machine/Log.hpp>
 #include <chrono>
 
@@ -61,8 +61,12 @@ ThreadExitSetter::~ThreadExitSetter()
 
 Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
     stack(*this), id(id_), machine(machine_), fun(fun_), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), 
-    exceptionObjectType(nullptr), nextVariableReferenceId(1), threadHandle(0), functionStack(nullptr), nativeId(-1), owner('0' + id), mtx('0' + id)
+    exceptionObjectType(nullptr), nextVariableReferenceId(1), threadHandle(0), functionStack(nullptr), nativeId(-1), owner('0' + id), mtx('0' + id), allocationContext(nullptr)
 {
+    if (GetNumAllocationContextPages() > 0)
+    {
+        allocationContext.reset(new AllocationContext());
+    }
     stack.AllocateFrame(fun);
 }
 
@@ -379,8 +383,11 @@ void Thread::HandleException(ObjectReference exception_)
         handlingException = true;
         exception = exception_;
         Frame* frame = stack.CurrentFrame();
-        Object& exceptionObject = GetManagedMemoryPool().GetObject(exception);
-        exceptionObjectType = exceptionObject.GetType();
+        std::unique_lock<std::recursive_mutex> lock(GetManagedMemoryPool().AllocationsMutex());
+        void* object = GetManagedMemoryPool().GetObject(exception, lock);
+        ManagedAllocationHeader* header = GetAllocationHeader(object);
+        ObjectHeader* objectHeader = &header->objectHeader;
+        exceptionObjectType = objectHeader->GetType();
         FindExceptionBlock(frame);
     }
     catch (const NullReferenceException& ex)
@@ -423,8 +430,11 @@ void Thread::EndCatch()
     Assert(handlingException, "not handling exception");
     Assert(!exception.IsNull(), "exception is null");
     handlingException = false;
-    Object& exceptionObject = GetManagedMemoryPool().GetObject(exception);
-    exceptionObject.Unpin();
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+    void* object = memoryPool.GetObject(exception, lock);
+    ManagedAllocationHeader* header = GetAllocationHeader(object);
+    header->Unreference();
     exception = ObjectReference(0);
     Assert(!stack.IsEmpty(), "stack is empty");
     Frame* frame = stack.CurrentFrame();

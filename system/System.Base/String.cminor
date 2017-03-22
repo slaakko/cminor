@@ -5,7 +5,7 @@ namespace System
 {
     public class String : Enumerable
     {
-        [VmFunctionName=System.String.Constructor.CharArray]
+        [vmf=ca2s]
         public extern String(char[] chars);
         public String(char c, int count) : this(MakeCharArray(c, count))
         {

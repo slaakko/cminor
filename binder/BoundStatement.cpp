@@ -8,7 +8,7 @@
 
 namespace cminor { namespace binder {
 
-BoundStatement::BoundStatement(Assembly& assembly_) : BoundNode(assembly_), parent(nullptr), firstInstIndex(-1)
+BoundStatement::BoundStatement(Assembly& assembly_) : BoundNode(assembly_), parent(nullptr), firstInstIndex(-1), containerScope(nullptr)
 {
 }
 

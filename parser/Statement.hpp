@@ -1,5 +1,5 @@
-#ifndef Statement_hpp_13768
-#define Statement_hpp_13768
+#ifndef Statement_hpp_7338
+#define Statement_hpp_7338
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -56,8 +56,9 @@ private:
     class CatchRule;
     class FinallyRule;
     class UsingStatementRule;
+    class LockStatementRule;
 };
 
 } } // namespace cminor.parser
 
-#endif // Statement_hpp_13768
+#endif // Statement_hpp_7338

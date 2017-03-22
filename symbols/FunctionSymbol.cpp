@@ -50,7 +50,8 @@ std::string FunctionSymbolFlagStr(FunctionSymbolFlags flags)
     return s;
 }
 
-FunctionSymbol::FunctionSymbol(const Span& span_, Constant name_) : ContainerSymbol(span_, name_), returnType(nullptr), flags(FunctionSymbolFlags::none), machineFunction(nullptr), declarationBlockId(0)
+FunctionSymbol::FunctionSymbol(const Span& span_, Constant name_) : 
+    ContainerSymbol(span_, name_), returnType(nullptr), flags(FunctionSymbolFlags::none), machineFunction(nullptr), declarationBlockId(0), nextContainerScopeId(0)
 {
 }
 
@@ -60,12 +61,12 @@ void FunctionSymbol::Write(SymbolWriter& writer)
     ConstantId groupNameId = GetAssembly()->GetConstantPool().GetIdFor(groupName);
     Assert(groupNameId != noConstantId, "no id for group name found from constant pool");
     groupNameId.Write(writer.AsMachineWriter());
-    if (vmFunctionName.Value().AsStringLiteral() != nullptr)
+    if (vmf.Value().AsStringLiteral() != nullptr)
     {
         writer.AsMachineWriter().Put(true);
-        ConstantId vmFunctionNameId = GetAssembly()->GetConstantPool().GetIdFor(vmFunctionName);
-        Assert(vmFunctionNameId != noConstantId, "no id for vm function id");
-        vmFunctionNameId.Write(writer.AsMachineWriter());
+        ConstantId vmfid = GetAssembly()->GetConstantPool().GetIdFor(vmf);
+        Assert(vmfid != noConstantId, "no id for vm function id");
+        vmfid.Write(writer.AsMachineWriter());
     }
     else
     {
@@ -86,10 +87,18 @@ void FunctionSymbol::Write(SymbolWriter& writer)
     {
         writer.AsMachineWriter().PutEncodedUInt(machineFunction->Id());
     }
+    uint32_t n = uint32_t(pcContainerScopeIdMap.size());
+    writer.AsMachineWriter().PutEncodedUInt(n);
+    for (const std::pair<uint32_t, uint32_t>& p : pcContainerScopeIdMap)
+    {
+        writer.AsMachineWriter().PutEncodedUInt(p.first);
+        writer.AsMachineWriter().PutEncodedUInt(p.second);
+    }
 }
 
 void FunctionSymbol::Read(SymbolReader& reader)
 {
+    reader.SetCurrentFunctionSymbol(this);
     reader.ResetLocalVariables();
     ContainerSymbol::Read(reader);
     ConstantId groupNameId;
@@ -98,9 +107,9 @@ void FunctionSymbol::Read(SymbolReader& reader)
     bool hasVmFunctionId = reader.GetBool();
     if (hasVmFunctionId)
     {
-        ConstantId vmFunctionNameId;
-        vmFunctionNameId.Read(reader);
-        vmFunctionName = reader.GetAssembly()->GetConstantPool().GetConstant(vmFunctionNameId);
+        ConstantId vmfid;
+        vmfid.Read(reader);
+        vmf = reader.GetAssembly()->GetConstantPool().GetConstant(vmfid);
     }
     ConstantId returnTypeNameId;
     returnTypeNameId.Read(reader);
@@ -121,9 +130,16 @@ void FunctionSymbol::Read(SymbolReader& reader)
         }
         FunctionTable::AddFunction(machineFunction, reader.ReadingClassTemplateSpecialization());
     }
+    uint32_t n = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        uint32_t pc = reader.GetEncodedUInt();
+        uint32_t containerScopeId = reader.GetEncodedUInt();
+        pcContainerScopeIdMap[pc] = containerScopeId;
+    }
     std::vector<LocalVariableSymbol*> readLocalVariables = reader.GetLocalVariables();
-    int n = int(readLocalVariables.size());
-    for (int i = 0; i < n; ++i)
+    int nl = int(readLocalVariables.size());
+    for (int i = 0; i < nl; ++i)
     {
         LocalVariableSymbol* localVariable = readLocalVariables[i];
         AddLocalVariable(localVariable);
@@ -420,12 +436,12 @@ void FunctionSymbol::CreateMachineFunction()
     machineFunction->AddInst(GetAssembly()->GetMachine().CreateInst("gcpoll"));
     if (IsExternal() && !IsDerived())
     {
-        Assert(vmFunctionName.Value().AsStringLiteral() != nullptr, "vm function name not set");
+        Assert(vmf.Value().AsStringLiteral() != nullptr, "vm function name not set");
         std::unique_ptr<Instruction> vmCallInst = GetAssembly()->GetMachine().CreateInst("callvm");
         ConstantPool& constantPool = GetAssembly()->GetConstantPool();
-        ConstantId vmFunctionNameId = constantPool.GetIdFor(vmFunctionName);
-        Assert(vmFunctionNameId != noConstantId, "got no constant id");
-        vmCallInst->SetIndex(int32_t(vmFunctionNameId.Value()));
+        ConstantId vmfid = constantPool.GetIdFor(vmf);
+        Assert(vmfid != noConstantId, "got no constant id");
+        vmCallInst->SetIndex(int32_t(vmfid.Value()));
         machineFunction->AddInst(std::move(vmCallInst));
         std::unique_ptr<Instruction> jmpEofInst = GetAssembly()->GetMachine().CreateInst("jump");
         jmpEofInst->SetTarget(endOfFunction);
@@ -434,10 +450,10 @@ void FunctionSymbol::CreateMachineFunction()
     }
 }
 
-void FunctionSymbol::SetVmFunctionName(StringPtr vmFunctionName_)
+void FunctionSymbol::SetVmf(StringPtr vmf_)
 {
     ConstantPool& constantPool = GetAssembly()->GetConstantPool();
-    vmFunctionName = constantPool.GetConstant(constantPool.Install(vmFunctionName_));
+    vmf = constantPool.GetConstant(constantPool.Install(vmf_));
 }
 
 void FunctionSymbol::DumpHeader(CodeFormatter& formatter)
@@ -448,6 +464,31 @@ void FunctionSymbol::DumpHeader(CodeFormatter& formatter)
         returnTypeStr = ": " + ToUtf8(returnType->FullName());
     }
     formatter.WriteLine(TypeString() + " " + ToUtf8(Name().Value()) + returnTypeStr);
+}
+
+void FunctionSymbol::MapContainerScope(uint32_t containerScopeId, ContainerScope* containerScope)
+{
+    containerScopeMap[containerScopeId] = containerScope;
+}
+
+void FunctionSymbol::MapPCToContainerScopeId(uint32_t pc, uint32_t containerScopeId)
+{
+    pcContainerScopeIdMap[pc] = containerScopeId;
+}
+
+ContainerScope* FunctionSymbol::GetMappedContainerScopeForPC(uint32_t pc) const
+{
+    auto it = pcContainerScopeIdMap.find(pc);
+    if (it != pcContainerScopeIdMap.cend())
+    {
+        uint32_t containerScopeId = it->second;
+        auto it  = containerScopeMap.find(containerScopeId);
+        if (it != containerScopeMap.cend())
+        {
+            return it->second;
+        }
+    }
+    return nullptr;
 }
 
 StaticConstructorSymbol::StaticConstructorSymbol(const Span& span_, Constant name_) : FunctionSymbol(span_, name_)
@@ -685,12 +726,12 @@ void ConstructorSymbol::CreateMachineFunction()
     }
     if (IsExternal())
     {
-        Assert(VmFunctionName().Value().AsStringLiteral() != nullptr, "vm function name not set");
+        Assert(Vmf().Value().AsStringLiteral() != nullptr, "vmf not set");
         std::unique_ptr<Instruction> vmCallInst = GetAssembly()->GetMachine().CreateInst("callvm");
         ConstantPool& constantPool = GetAssembly()->GetConstantPool();
-        ConstantId vmFunctionNameId = constantPool.GetIdFor(VmFunctionName());
-        Assert(vmFunctionNameId != noConstantId, "got no constant id");
-        vmCallInst->SetIndex(int32_t(vmFunctionNameId.Value()));
+        ConstantId vmfid = constantPool.GetIdFor(Vmf());
+        Assert(vmfid != noConstantId, "got no constant id");
+        vmCallInst->SetIndex(int32_t(vmfid.Value()));
         MachineFunction()->AddInst(std::move(vmCallInst));
         std::unique_ptr<Instruction> jmpEofInst = GetAssembly()->GetMachine().CreateInst("jump");
         jmpEofInst->SetTarget(endOfFunction);

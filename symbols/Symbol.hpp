@@ -236,11 +236,15 @@ public:
     NamespaceSymbol* Ns() const;
     NamespaceSymbol* CreateNamespace(StringPtr qualifiedNsName, const Span& span);
     void Clear();
+    uint32_t Id() const { return id; }
+    void SetId(uint32_t id_) { id = id_; }
+    uint32_t NonDefaultId() const;
 private:
     ContainerScope* base;
     ContainerScope* parent;
     ContainerSymbol* container;
     std::unordered_map<StringPtr, Symbol*, StringPtrHash> symbolMap;
+    uint32_t id;
 };
 
 class FileScope : public Scope

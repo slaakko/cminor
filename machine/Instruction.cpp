@@ -1927,15 +1927,16 @@ void InterfaceCallInst::Execute(Frame& frame)
         IntegralValue interfaceObjectValue = frame.OpStack().GetValue(numArgs);
         Assert(interfaceObjectValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference interfaceObject(interfaceObjectValue.Value());
-        IntegralValue receiverField = GetManagedMemoryPool().GetField(interfaceObject, 0);
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        IntegralValue receiverField = memoryPool.GetField(interfaceObject, 0);
         Assert(receiverField.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference receiver(receiverField.Value());
-        IntegralValue classDataField = GetManagedMemoryPool().GetField(receiver, 0);
+        IntegralValue classDataField = memoryPool.GetField(receiver, 0);
         Assert(classDataField.GetType() == ValueType::classDataPtr, "class data field expected");
         ClassData* classData = classDataField.AsClassDataPtr();
         if (classData)
         {
-            IntegralValue itabIndex = GetManagedMemoryPool().GetField(interfaceObject, 1);
+            IntegralValue itabIndex = memoryPool.GetField(interfaceObject, 1);
             Assert(itabIndex.GetType() == ValueType::intType, "int expected");
             MethodTable& imt = classData->Imt(itabIndex.AsInt());
             Function* method = imt.GetMethod(imtIndex);
@@ -2117,15 +2118,16 @@ void ClassDelegateCallInst::Execute(Frame& frame)
     IntegralValue classDlgValue = frame.OpStack().Pop();
     Assert(classDlgValue.GetType() == ValueType::objectReference, "object reference expected");
     ObjectReference classDelegateRef(classDlgValue.Value());
-    Object& classDelegateObject = GetManagedMemoryPool().GetObject(classDelegateRef);
-    IntegralValue classObjectValue = classDelegateObject.GetField(1);
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+    IntegralValue classObjectValue = memoryPool.GetField(classDelegateRef, 1, lock);
     if (classObjectValue.Value() == 0)
     {
         NullReferenceException ex("value of class delegate receiver is null");
         ThrowNullReferenceException(ex, frame);
     }
     Assert(classObjectValue.GetType() == ValueType::objectReference, "object reference expected");
-    IntegralValue funValue = classDelegateObject.GetField(2);
+    IntegralValue funValue = memoryPool.GetField(classDelegateRef, 2, lock);
     Assert(funValue.GetType() == ValueType::functionPtr, "function pointer expected");
     Function* fun = funValue.AsFunctionPtr();
     if (!fun)
@@ -2213,14 +2215,16 @@ void SetClassDataInst::Execute(Frame& frame)
         IntegralValue value = frame.OpStack().Pop();
         Assert(value.GetType() == ValueType::objectReference, "object reference operand expected");
         ObjectReference objectReference(value.Value());
-        IntegralValue classDataFieldValue = GetManagedMemoryPool().GetField(objectReference, 0);
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+        IntegralValue classDataFieldValue = memoryPool.GetField(objectReference, 0, lock);
         Assert(classDataFieldValue.GetType() == ValueType::classDataPtr, "class data pointer expected");
         if (!classDataFieldValue.AsClassDataPtr())
         {
             Assert(classData.Value().GetType() == ValueType::classDataPtr, "class data pointer expected");
             ClassData* cd = classData.Value().AsClassDataPtr();
             classDataFieldValue = IntegralValue(cd);
-            GetManagedMemoryPool().SetField(objectReference, 0, classDataFieldValue);
+            memoryPool.SetField(objectReference, 0, classDataFieldValue, lock);
         }
     }
     catch (const NullReferenceException& ex)
@@ -2386,15 +2390,14 @@ void StrLitToStringInst::Execute(Frame& frame)
         const char32_t* strLit = value.AsStringLiteral();
         uint32_t len = static_cast<uint32_t>(StringLen(strLit));
         ClassData* classData = ClassDataTable::GetSystemStringClassData();
-        ObjectReference objectReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), classData->Type());
-        Object& o = GetManagedMemoryPool().GetObject(objectReference);
-        o.Pin();
-        AllocationHandle charsHandle = GetManagedMemoryPool().CreateStringCharsFromLiteral(frame.GetThread(), strLit, len);
-        o.SetField(IntegralValue(classData), 0);
-        o.SetField(IntegralValue(static_cast<int32_t>(len), ValueType::intType), 1);
-        o.SetField(charsHandle, 2);
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+        ObjectReference objectReference = memoryPool.CreateObject(frame.GetThread(), classData->Type(), lock);
+        AllocationHandle charsHandle = memoryPool.CreateStringCharsFromLiteral(frame.GetThread(), strLit, len, lock);
+        memoryPool.SetField(objectReference, 0, IntegralValue(classData), lock);
+        memoryPool.SetField(objectReference, 1, IntegralValue(static_cast<int32_t>(len), ValueType::intType), lock);
+        memoryPool.SetField(objectReference, 2, charsHandle, lock);
         frame.OpStack().Push(objectReference);
-        o.Unpin();
     }
     catch (const NullReferenceException& ex)
     {
@@ -2560,11 +2563,11 @@ void ThrowInst::Execute(Frame& frame)
         IntegralValue exceptionValue = frame.OpStack().Pop();
         Assert(exceptionValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference exception(exceptionValue.Value());
-        Object& exceptionObject = GetManagedMemoryPool().GetObject(exception);
-        exceptionObject.Pin();
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
         utf32_string stackTraceStr = frame.GetThread().GetStackTrace();
-        ObjectReference stackTrace = GetManagedMemoryPool().CreateString(frame.GetThread(), stackTraceStr);
-        exceptionObject.SetField(stackTrace, 2);
+        ObjectReference stackTrace = memoryPool.CreateString(frame.GetThread(), stackTraceStr, lock);
+        memoryPool.SetField(exception, 2, stackTrace, lock);
         frame.GetThread().HandleException(exception);
     }
     catch (const NullReferenceException& ex)
@@ -3300,9 +3303,10 @@ void MemFun2ClassDlgInst::Execute(Frame& frame)
         IntegralValue value = frame.OpStack().Pop();
         Assert(value.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference classDelegateObjectRef(value.Value());
-        Object& object = GetManagedMemoryPool().GetObject(classDelegateObjectRef);
-        object.SetField(classObjectValue, 1);
-        object.SetField(function.Value(), 2);
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+        memoryPool.SetField(classDelegateObjectRef, 1, classObjectValue, lock);
+        memoryPool.SetField(classDelegateObjectRef, 2, function.Value(), lock);
         frame.OpStack().Push(value);
     }
     catch (const NullReferenceException& ex)
@@ -3467,8 +3471,9 @@ void LoadVariableReferenceInst::Handle(Frame& frame, LocalVariableReference* loc
 
 void LoadVariableReferenceInst::Handle(Frame& frame, MemberVariableReference* memberVariableReference)
 {
-    Object& object = GetManagedMemoryPool().GetObject(memberVariableReference->GetObjectReference());
-    IntegralValue value = object.GetField(memberVariableReference->MemberVarIndex());
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+    IntegralValue value = memoryPool.GetField(memberVariableReference->GetObjectReference(), memberVariableReference->MemberVarIndex());
     if (value.GetType() == ValueType::variableReference)
     {
         int32_t variableReferenceId = value.AsInt();
@@ -3535,8 +3540,9 @@ void StoreVariableReferenceInst::Handle(Frame& frame, LocalVariableReference* lo
 
 void StoreVariableReferenceInst::Handle(Frame& frame, MemberVariableReference* memberVariableReference)
 {
-    Object& object = GetManagedMemoryPool().GetObject(memberVariableReference->GetObjectReference());
-    IntegralValue oldValue = object.GetField(memberVariableReference->MemberVarIndex());
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+    IntegralValue oldValue = memoryPool.GetField(memberVariableReference->GetObjectReference(), memberVariableReference->MemberVarIndex(), lock);
     if (oldValue.GetType() == ValueType::variableReference)
     {
         int32_t variableReferenceId = oldValue.AsInt();
@@ -3547,7 +3553,7 @@ void StoreVariableReferenceInst::Handle(Frame& frame, MemberVariableReference* m
     else
     {
         IntegralValue value = frame.OpStack().Pop();
-        object.SetField(value, memberVariableReference->MemberVarIndex());
+        memoryPool.SetField(memberVariableReference->GetObjectReference(), memberVariableReference->MemberVarIndex(), value, lock);
     }
 }
 
@@ -3591,18 +3597,20 @@ void ThrowException(const std::string& message, Frame& frame, const utf32_string
     Type* type = TypeTable::GetType(StringPtr(exceptionTypeName.c_str()));
     ObjectType* objectType = dynamic_cast<ObjectType*>(type);
     Assert(objectType, "object type expected");
-    ObjectReference objectReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+    ObjectReference objectReference = memoryPool.CreateObject(frame.GetThread(), objectType, lock);
     ClassData* classData = ClassDataTable::GetClassData(StringPtr(exceptionTypeName.c_str()));
-    Object& o = GetManagedMemoryPool().GetObject(objectReference);
-    o.Pin();
+    void* object = memoryPool.GetObject(objectReference, lock);
+    ManagedAllocationHeader* header = GetAllocationHeader(object);
+    header->Reference();
     IntegralValue classDataValue(classData);
-    o.SetField(classDataValue, 0);
-    ObjectReference messageStr = GetManagedMemoryPool().CreateString(frame.GetThread(), ToUtf32(message));
-    o.SetField(messageStr, 1);
+    memoryPool.SetField(objectReference, 0, classDataValue, lock);
+    ObjectReference messageStr = memoryPool.CreateString(frame.GetThread(), ToUtf32(message), lock);
+    memoryPool.SetField(objectReference, 1, messageStr, lock);
     frame.OpStack().Push(objectReference);
     ThrowInst throwInst;
     throwInst.Execute(frame);
-    o.Unpin();
 }
 
 MACHINE_API void ThrowSystemException(const SystemException& ex, Frame& frame)

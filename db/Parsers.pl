@@ -5,5 +5,6 @@ namespace cminor.db
         Command: Command*;
         Spaces;
         FilePath: std::string;
+        QualifiedId: std::string;
     }
 }

@@ -1342,13 +1342,15 @@ public:
         try
         {
             ObjectType* objectType = GetBoxedType(valueType);
-            ObjectReference objectReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), objectType);
+            ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+            std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+            ObjectReference objectReference = memoryPool.CreateObject(frame.GetThread(), objectType, lock);
             ClassData* classData = GetClassDataForBoxedType(valueType);
             IntegralValue classDataValue(classData);
-            GetManagedMemoryPool().SetField(objectReference, 0, classDataValue);
+            memoryPool.SetField(objectReference, 0, classDataValue, lock);
             IntegralValue value = frame.OpStack().Pop();
             Assert(value.GetType() == valueType, "value type mismatch");
-            GetManagedMemoryPool().SetField(objectReference, 1, value);
+            memoryPool.SetField(objectReference, 1, value, lock);
             frame.OpStack().Push(objectReference);
         }
         catch (const NullReferenceException& ex)

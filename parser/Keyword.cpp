@@ -63,6 +63,7 @@ KeywordGrammar::KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_): 
     keywords0.push_back("interface");
     keywords0.push_back("internal");
     keywords0.push_back("is");
+    keywords0.push_back("lock");
     keywords0.push_back("long");
     keywords0.push_back("namespace");
     keywords0.push_back("new");

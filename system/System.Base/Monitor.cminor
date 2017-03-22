@@ -1,0 +1,13 @@
+using System;
+
+namespace System.Threading
+{
+    public static class Monitor
+    {
+        [vmf=enterm]
+        public extern static void Enter(object lck);
+
+        [vmf=exitm]
+        public extern static void Exit(object lck);
+    }
+}

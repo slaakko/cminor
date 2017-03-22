@@ -1,0 +1,17 @@
+using System;
+
+void main()
+{
+    try
+    {
+        object lck = new object();
+        lock (lck)
+        {
+            throw new Exception("jee");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.ToString());
+    }
+}

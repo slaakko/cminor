@@ -95,6 +95,7 @@ public:
     FunctionSymbol* GetMainFunction() const { return mainFunction; }
     int GetDeclarationBlockId() const { return declarationBlockId; }
     void SetDeclarationBlockId(int declarationBlockId_) { declarationBlockId = declarationBlockId_; }
+    void SetFunction(FunctionSymbol* function_) { function = function_; }
 private:
     Assembly* assembly;
     NamespaceSymbol globalNs;

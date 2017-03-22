@@ -9,7 +9,8 @@
 
 namespace cminor { namespace binder {
 
-BoundFunction::BoundFunction(FunctionSymbol* functionSymbol_) : BoundNode(*functionSymbol_->GetAssembly()), functionSymbol(functionSymbol_), nextTempVarNumber(0), hasGotos(false)
+BoundFunction::BoundFunction(FunctionSymbol* functionSymbol_) : 
+    BoundNode(*functionSymbol_->GetAssembly()), functionSymbol(functionSymbol_), nextTempVarNumber(0), hasGotos(false), containerScope(nullptr)
 {
 }
 

@@ -38,7 +38,7 @@
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="OsInterface.cpp" />
     <ClCompile Include="Reader.cpp" />
-    <ClCompile Include="RunTime.cpp" />
+    <ClCompile Include="Runtime.cpp" />
     <ClCompile Include="Stack.cpp" />
     <ClCompile Include="Stats.cpp" />
     <ClCompile Include="Thread.cpp" />
@@ -67,7 +67,7 @@
     <ClInclude Include="OperandStack.hpp" />
     <ClInclude Include="OsInterface.hpp" />
     <ClInclude Include="Reader.hpp" />
-    <ClInclude Include="RunTime.hpp" />
+    <ClInclude Include="Runtime.hpp" />
     <ClInclude Include="Stack.hpp" />
     <ClInclude Include="Stats.hpp" />
     <ClInclude Include="Thread.hpp" />

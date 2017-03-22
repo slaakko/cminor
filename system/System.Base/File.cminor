@@ -20,9 +20,9 @@ namespace System.IO
             }
             return string.Empty;
         }
-        [VmFunctionName=System.IO.File.Exists]
+        [vmf=fexists]
         extern public static bool Exists(String filePath);
-        [VmFunctionName=System.IO.File.LastWriteTimeLess]
+        [vmf=writetimeless]
         extern public static bool LastWriteTimeLess(string filePath1, string filePath2);
     }
 }

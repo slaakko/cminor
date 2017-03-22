@@ -11,7 +11,7 @@
 #include <cminor/ast/Project.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Machine.hpp>
-#include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/Runtime.hpp>
 #include <cminor/machine/OsInterface.hpp>
 #include <cminor/machine/Stats.hpp>
 #include <boost/filesystem.hpp>
@@ -583,14 +583,17 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
         {
             throw std::runtime_error("unhandled exception escaped from main (exception object is null)");
         }
-        Object& exceptionObject = GetManagedMemoryPool().GetObject(exceptionObjectReference);
-        Type* type = exceptionObject.GetType();
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        void* exceptionObject = memoryPool.GetObject(exceptionObjectReference);
+        ManagedAllocationHeader* header = GetAllocationHeader(exceptionObject);
+        ObjectHeader* objectHeader = &header->objectHeader;
+        Type* type = objectHeader->GetType();
         errorMessage.append(ToUtf8(type->Name().Value()));
-        if (exceptionObject.FieldCount() < 2)
+        if (memoryPool.GetFieldCount(exceptionObjectReference) < 2)
         {
             throw std::runtime_error("unhandled exception escaped from main (exception object '" + ToUtf8(type->Name().Value()) + "' has fewer than two fields)");
         }
-        IntegralValue messageValue = exceptionObject.GetField(1);
+        IntegralValue messageValue = memoryPool.GetField(exceptionObjectReference, 1);
         if (messageValue.GetType() != ValueType::objectReference)
         {
             throw std::runtime_error("unhandled exception escaped from main (message field of exception object '" + ToUtf8(type->Name().Value()) + "' not of object type)");
@@ -604,7 +607,7 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                 errorMessage.append(": ").append(message);
             }
         }
-        IntegralValue stackTraceValue = exceptionObject.GetField(2);
+        IntegralValue stackTraceValue = memoryPool.GetField(exceptionObjectReference, 2);
         if (stackTraceValue.GetType() != ValueType::objectReference)
         {
             throw std::runtime_error("unhandled exception escaped from main (stack trace field of exception object '" + ToUtf8(type->Name().Value()) + "' not of object type)");

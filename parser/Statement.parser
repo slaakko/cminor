@@ -35,6 +35,7 @@ namespace cminor.parser
             |   ThrowStatement(ctx){ value = ThrowStatement; }
             |   TryStatement(ctx){ value = TryStatement; }
             |   UsingStatement(ctx){ value = UsingStatement; }
+            |   LockStatement(ctx){ value = LockStatement; }
             ;
 
         LabelId : std::string
@@ -221,6 +222,10 @@ namespace cminor.parser
 
         UsingStatement(ParsingContext* ctx) : StatementNode*
             ::= (keyword("using") '('! ConstructionStatementExpression(ctx)! ')'! Statement(ctx)!){ value = new UsingStatementNode(span, ConstructionStatementExpression, Statement); }
+            ;
+
+        LockStatement(ParsingContext* ctx) : StatementNode*
+            ::= (keyword("lock") '('! Expression(ctx)! ')'! Statement(ctx)!){ value = new LockStatementNode(span, Expression, Statement); }
             ;
     }
 }

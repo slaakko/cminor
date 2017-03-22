@@ -122,6 +122,7 @@ class ThrowStatementNode;
 class CatchNode;
 class TryStatementNode;
 class UsingStatementNode;
+class LockStatementNode;
 
 class EnumTypeNode;
 class EnumConstantNode;
@@ -247,6 +248,7 @@ public:
     virtual void Visit(CatchNode& catchNode) {}
     virtual void Visit(TryStatementNode& tryStatementNode) {}
     virtual void Visit(UsingStatementNode& usingStatementNode) {}
+    virtual void Visit(LockStatementNode& lockStatementNode) {}
 
     virtual void Visit(EnumTypeNode& enumTypeNode) {}
     virtual void Visit(EnumConstantNode& enumConstantNode) {}

@@ -8,7 +8,7 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/OsInterface.hpp>
 #include <cminor/machine/Log.hpp>
-#include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/Runtime.hpp>
 
 namespace cminor { namespace machine {
 
@@ -24,17 +24,29 @@ uint64_t GetSegmentSize()
     return segmentSize;
 }
 
+uint8_t numAllocationContextPages = defaultNumAllocationContextPages;
+
+MACHINE_API void SetNumAllocationContextPages(uint8_t numPages)
+{
+    numAllocationContextPages = numPages;
+}
+
+MACHINE_API uint8_t GetNumAllocationContextPages()
+{
+    return numAllocationContextPages;
+}
+
 Segment::Segment(int32_t id_, ArenaId arenaId_, uint64_t pageSize_, uint64_t size_) : 
-    id(id_), arenaId(arenaId_), pageSize(pageSize_), size(size_), mem(ReserveMemory(size)), commit(mem), free(mem), end(mem + size), mtx('S')
+    id(id_), arenaId(arenaId_), pageSize(pageSize_), size(size_), base(ReserveMemory(size)), commit(base), top(base), free(base), end(base + size), mtx('S')
 {
 }
 
 Segment::~Segment()
 {
-    FreeMemory(mem, size);
+    FreeMemory(base, size);
 }
 
-bool Segment::Allocate(uint64_t blockSize, MemPtr& mem)
+bool Segment::Allocate(uint64_t blockSize, void*& ptr)
 {
     LockGuard lock(mtx, gc);
     if (free + blockSize > commit)
@@ -45,17 +57,29 @@ bool Segment::Allocate(uint64_t blockSize, MemPtr& mem)
             uint8_t* commitBase = CommitMemory(commit, commitSize);
             std::memset(commitBase, 0, commitSize);
             commit = commitBase + commitSize;
+            top = commit;
         }
         else
         {
             return false;
         }
     }
-    if (free + blockSize <= commit)
+    else if (free + blockSize > top)
     {
-        MemPtr ptr(free);
+        uint64_t allocSize = pageSize * ((blockSize - 1) / pageSize + 1);
+        if (top + allocSize <= commit)
+        {
+            top += allocSize;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    if (free + blockSize <= top)
+    {
+        ptr = free;
         free += blockSize;
-        mem = ptr;
         return true;
     }
     else
@@ -64,34 +88,88 @@ bool Segment::Allocate(uint64_t blockSize, MemPtr& mem)
     }
 }
 
-bool Segment::Allocate(Thread& thread, uint64_t blockSize, MemPtr& mem, bool requestFullCollection)
+bool Segment::Allocate(Thread& thread, uint64_t blockSize, void*& ptr, bool requestFullCollection, std::unique_lock<std::recursive_mutex>& allocationLock)
 {
-    LockGuard lock(mtx, thread.Owner());
+    LockGuard segmentLock(mtx, thread.Owner());
+    AllocationContext* allocationContext = nullptr;
+    if (arenaId == ArenaId::gen1Arena && numAllocationContextPages > 0)
+    {
+        allocationContext = thread.GetAllocationContext();
+    }
     if (free + blockSize > commit)
     {
         uint64_t commitSize = pageSize * ((blockSize - 1) / pageSize + 1);
+        if (allocationContext)
+        {
+            commitSize += pageSize * numAllocationContextPages;
+        }
         if (commit + commitSize <= end)
         {
             uint8_t* commitBase = CommitMemory(commit, commitSize);
             std::memset(commitBase, 0, commitSize);
             commit = commitBase + commitSize;
+            top = commit;
         }
         else
         {
-            lock.Unlock();
+            if (allocationContext)
+            {
+                allocationContext->Clear();
+            }
+            segmentLock.Unlock();
+            if (allocationLock.owns_lock())
+            {
+                allocationLock.unlock();
+            }
             thread.RequestGc(requestFullCollection);
             return false;
         }
     }
-    if (free + blockSize <= commit)
+    else if (free + blockSize > top)
     {
-        MemPtr ptr(free);
+        uint64_t allocSize = pageSize * ((blockSize - 1) / pageSize + 1);
+        if (allocationContext)
+        {
+            allocSize += pageSize * numAllocationContextPages;
+        }
+        if (top + allocSize <= commit)
+        {
+            top += allocSize;
+        }
+        else
+        {
+            if (allocationContext)
+            {
+                allocationContext->Clear();
+            }
+            segmentLock.Unlock();
+            if (allocationLock.owns_lock())
+            {
+                allocationLock.unlock();
+            }
+            thread.RequestGc(requestFullCollection);
+            return false;
+        }
+    }
+    if (free + blockSize <= top)
+    {
+        ptr = free;
         free += blockSize;
-        mem = ptr;
+        if (allocationContext)
+        {
+            allocationContext->SetSegmentId(id);
+            allocationContext->SetFree(free);
+            allocationContext->SetTop(top);
+            free = top;
+        }
         return true;
     }
     else
     {
+        if (allocationContext)
+        {
+            allocationContext->Clear();
+        }
         return false;
     }
 }
@@ -99,9 +177,14 @@ bool Segment::Allocate(Thread& thread, uint64_t blockSize, MemPtr& mem, bool req
 void Segment::Clear()
 {
     LockGuard lock(garbageCollectorMutex, gc);
-    free = mem;
-    uint64_t n = commit - mem;
-    std::memset(mem, 0, n);
+    free = base;
+    top = base;
+    uint64_t n = commit - base;
+    std::memset(base, 0, n);
+}
+
+AllocationContext::AllocationContext() : segmentId(-1), free(nullptr), top(nullptr)
+{
 }
 
 Arena::Arena(Machine& machine_, ArenaId id_, uint64_t segmentSize_) : machine(machine_), id(id_), pageSize(GetSystemPageSize()), segmentSize(segmentSize_), segmentsMutex('A')
@@ -111,9 +194,9 @@ Arena::Arena(Machine& machine_, ArenaId id_, uint64_t segmentSize_) : machine(ma
     segments.push_back(std::unique_ptr<Segment>(segment));
 }
 
-std::pair<MemPtr, int32_t> Arena::Allocate(uint64_t blockSize)
+void Arena::Allocate(uint64_t blockSize, void*& ptr, int32_t& segmentId)
 {
-    return Allocate(blockSize, false);
+    return Allocate(blockSize, ptr, segmentId, false);
 }
 
 void Arena::Clear()
@@ -164,12 +247,12 @@ GenArena1::GenArena1(Machine& machine_, uint64_t size_) : Arena(machine_, ArenaI
 {
 }
 
-std::pair<MemPtr, int32_t> GenArena1::Allocate(uint64_t blockSize, bool allocateNewSegment)
+void GenArena1::Allocate(uint64_t blockSize, void*& ptr, int32_t& segmentId, bool allocateNewSegment)
 {
     throw std::runtime_error("could not allocate " + std::to_string(blockSize) + " bytes memory from arena " + std::to_string(int(Id())) + ": arena 1 needs a thread");
 }
 
-void GenArena1::Allocate(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int32_t& segmentId)
+void GenArena1::Allocate(Thread& thread, uint64_t blockSize, void*& ptr, int32_t& segmentId, std::unique_lock<std::recursive_mutex>& allocationLock)
 {
     if (blockSize == 0)
     {
@@ -178,8 +261,12 @@ void GenArena1::Allocate(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int
     else
     {
         Segment* segment = Segments().back().get();
-        while (!segment->Allocate(thread, blockSize, memPtr, false))
+        while (!segment->Allocate(thread, blockSize, ptr, false, allocationLock))
         {
+            if (allocationLock.owns_lock())
+            {
+                allocationLock.unlock();
+            }
             thread.WaitUntilGarbageCollected();
         }
         segmentId = segment->Id();
@@ -190,7 +277,7 @@ GenArena2::GenArena2(Machine& machine_, uint64_t size_) : Arena(machine_, ArenaI
 {
 }
 
-std::pair<MemPtr, int32_t> GenArena2::Allocate(uint64_t blockSize, bool allocateNewSegment)
+void GenArena2::Allocate(uint64_t blockSize, void*& ptr, int32_t& segmentId, bool allocateNewSegment)
 {
     if (blockSize > SegmentSize())
     {
@@ -202,10 +289,9 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(uint64_t blockSize, bool allocate
             GetMachine().AddSegment(seg);
             Segments().push_back(std::move(segment));
         }
-        MemPtr mem = MemPtr();
-        if (seg->Allocate(blockSize, mem))
+        if (seg->Allocate(blockSize, ptr))
         {
-            return std::make_pair(mem, seg->Id());
+            segmentId = seg->Id();
         }
         else
         {
@@ -214,12 +300,13 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(uint64_t blockSize, bool allocate
     }
     else
     {
-        MemPtr mem = MemPtr();
         if (!allocateNewSegment)
         {
-            if (Segments().back()->Allocate(blockSize, mem))
+            Segment* seg = Segments().back().get();
+            if (seg->Allocate(blockSize, ptr))
             {
-                return std::make_pair(mem, Segments().back()->Id());
+                segmentId = seg->Id();
+                return;
             }
         }
         GetMachine().GetGarbageCollector().RequestFullCollection();
@@ -230,9 +317,9 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(uint64_t blockSize, bool allocate
             GetMachine().AddSegment(seg);
             Segments().push_back(std::move(segment));
         }
-        if (seg->Allocate(blockSize, mem))
+        if (seg->Allocate(blockSize, ptr))
         {
-            return std::make_pair(mem, seg->Id());
+            segmentId = seg->Id();
         }
         else
         {
@@ -241,7 +328,7 @@ std::pair<MemPtr, int32_t> GenArena2::Allocate(uint64_t blockSize, bool allocate
     }
 }
 
-void GenArena2::Allocate(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int32_t& segmentId)
+void GenArena2::Allocate(Thread& thread, uint64_t blockSize, void*& ptr, int32_t& segmentId, std::unique_lock<std::recursive_mutex>& allocationLock)
 {
     if (blockSize > SegmentSize())
     {
@@ -252,16 +339,25 @@ void GenArena2::Allocate(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int
             GetMachine().AddSegment(seg);
             Segments().push_back(std::move(segment));
         }
-        if (!seg->Allocate(thread, blockSize, memPtr, false))
+        if (seg->Allocate(thread, blockSize, ptr, false, allocationLock))
+        {
+            segmentId = seg->Id();
+        }
+        else
         {
             throw std::runtime_error("could not allocate " + std::to_string(blockSize) + " bytes memory from arena " + std::to_string(int(Id())));
         }
+
     }
     else
     {
         Segment* segment = Segments().back().get();
-        while (!segment->Allocate(thread, blockSize, memPtr, true))
+        while (!segment->Allocate(thread, blockSize, ptr, true, allocationLock))
         {
+            if (allocationLock.owns_lock())
+            {
+                allocationLock.unlock();
+            }
             thread.WaitUntilGarbageCollected();
         }
         segmentId = segment->Id();

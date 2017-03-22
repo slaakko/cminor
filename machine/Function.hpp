@@ -38,6 +38,7 @@ public:
     void AddIndexRequest(InstIndexRequest* request);
     void SatisfyIndexRequests(int32_t index);
     virtual void BackpatchConDisSet(int32_t index) = 0;
+    virtual void AddingInst(int32_t instructionIndex) = 0;
     int32_t CurrentSourceLine() const { return currentSourceLine; }
     void SetCurrentSourceLine(int32_t currentSourceLine_) { currentSourceLine = currentSourceLine_; }
 private:

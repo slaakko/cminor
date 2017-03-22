@@ -58,6 +58,8 @@ public:
     utf32_string MakeFullClassTemplateSpecializationName(const utf32_string& classTemplateSpecializationName);
     bool FoundInClassTemplateSpecializationNames(const utf32_string& fullClassTemplateSpecializationName) const;
     void AddToClassTemplateSpecializationNames(const utf32_string& fullClassTemplateSpecializationName);
+    FunctionSymbol* CurrentFunctionSymbol() const { return currentFunctionSymbol; }
+    void SetCurrentFunctionSymbol(FunctionSymbol* currentFunctionSymbol_) { currentFunctionSymbol = currentFunctionSymbol_; }
 private:
     Assembly* assembly;
     std::vector<LocalVariableSymbol*> localVariables;
@@ -70,6 +72,7 @@ private:
     bool readingClassTemplateSpecialization;
     std::stack<bool> readingClassTemplateSpecializationStack;
     std::vector<utf32_string> currentNamespaceComponents;
+    FunctionSymbol* currentFunctionSymbol;
 };
 
 } } // namespace cminor::symbols

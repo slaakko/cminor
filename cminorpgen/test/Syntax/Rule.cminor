@@ -202,4 +202,85 @@ namespace Syntax
                 contextStack.Push(context);
                 context = new Context();
                 context.ctx = cast<ParsingContext>(stack.Pop());
-                context.rule = cast<RuleParser>(
+                context.rule = cast<RuleParser>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser definitionNonterminalParser = GetNonterminal("definition");
+                definitionNonterminalParser.Pre = Predefinition;
+                definitionNonterminalParser.Post = Postdefinition;
+            }
+            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            {
+                context.rule.Definition = context.fromdefinition;
+            }
+            public void Predefinition(Stack<object> stack)
+            {
+                stack.Push(context.rule.GetScope());
+                stack.Push(context.ctx);
+            }
+            public void Postdefinition(Stack<object> stack, bool matched)
+            {
+                if (matched)
+                {
+                    context.fromdefinition = cast<Parser>(stack.Pop());
+                }
+            }
+            public class Context
+            {
+                public RuleParser rule;
+                public ParsingContext ctx;
+                public Parser fromdefinition;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("Syntax.ElementGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = new Syntax.ElementGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+            Grammar grammar1 = parsingDomain.GetGrammar("Syntax.CompositeGrammar");
+            if (grammar1 == null)
+            {
+                grammar1 = new Syntax.CompositeGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar1);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
+            AddRuleLink(new RuleLink("Signature", this, "ElementGrammar.Signature"));
+            AddRuleLink(new RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
+            AddRule(new RuleRule("Rule", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new ActionParser("A0",
+                            new NonterminalParser("RuleHeader", "RuleHeader", 2)),
+                        new StringParser("::=")),
+                    new NonterminalParser("RuleBody", "RuleBody", 2))));
+            AddRule(new RuleHeaderRule("RuleHeader", GetScope(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("name", "Identifier", 0)),
+                    new NonterminalParser("Signature", "Signature", 2))));
+            AddRule(new RuleBodyRule("RuleBody", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new ExpectationParser(
+                            new NonterminalParser("definition", "Alternative", 2)),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+        }
+    }
+}

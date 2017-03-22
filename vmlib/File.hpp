@@ -36,4 +36,3 @@ void FileDone();
 } } // namespace cminor::vmlib
 
 #endif // CMINOR_VMLIB_FILE_INCLUDED
-

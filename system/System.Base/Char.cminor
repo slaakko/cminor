@@ -1,19 +1,19 @@
 namespace System
 {
-    [VmFunctionName=Vm.System.IsSpace.Char]
+    [vmf=isspace]
     public extern bool IsSpace(char c);
-    [VmFunctionName=Vm.System.IsLetter.Char]
+    [vmf=isletter]
     public extern bool IsLetter(char c);
-    [VmFunctionName=Vm.System.IsDigit.Char]
+    [vmf=isdigit]
     public extern bool IsDigit(char c);
-    [VmFunctionName=Vm.System.IsHexDigit.Char]
+    [vmf=isxdigit]
     public extern bool IsHexDigit(char c);
-    [VmFunctionName=Vm.System.IsPunctuation.Char]
+    [vmf=ispunct]
     public extern bool IsPunctuation(char c);
-    [VmFunctionName=Vm.System.IsPrintable.Char]
+    [vmf=isprint]
     public extern bool IsPrintable(char c);
-    [VmFunctionName=Vm.System.ToLower.Char]
+    [vmf=tolower]
     public extern char ToLower(char c);
-    [VmFunctionName=Vm.System.ToUpper.Char]
+    [vmf=toupper]
     public extern char ToUpper(char c);
 }

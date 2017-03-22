@@ -566,16 +566,16 @@ namespace Syntax
                 grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
+            Grammar grammar1 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
             if (grammar1 == null)
             {
-                grammar1 = new Code.IdentifierGrammar(parsingDomain);
+                grammar1 = new Code.TypeExprGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
-            Grammar grammar2 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
+            Grammar grammar2 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
             if (grammar2 == null)
             {
-                grammar2 = new Code.TypeExprGrammar(parsingDomain);
+                grammar2 = new Code.IdentifierGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar2);
         }
@@ -595,4 +595,76 @@ namespace Syntax
                                     new SequenceParser(
                                         new KeywordParser("using"),
                                         new NonterminalParser("aliasName", "identifier", 0)),
-                   
+                                    new CharParser('=')),
+                                new NonterminalParser("ruleName", "qualified_id", 0)),
+                            new CharParser(';'))),
+                    new ActionParser("A1",
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("using"),
+                                new NonterminalParser("qualified_id", "qualified_id", 0)),
+                            new CharParser(';'))))));
+            AddRule(new SignatureRule("Signature", GetScope(),
+                new SequenceParser(
+                    new OptionalParser(
+                        new NonterminalParser("ParameterList", "ParameterList", 2)),
+                    new OptionalParser(
+                        new NonterminalParser("ReturnType", "ReturnType", 2)))));
+            AddRule(new ParameterListRule("ParameterList", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new CharParser('('),
+                        new ListParser(
+                            new AlternativeParser(
+                                new NonterminalParser("Variable", "Variable", 2),
+                                new NonterminalParser("Parameter", "Parameter", 2)),
+                            new CharParser(','))),
+                    new ExpectationParser(
+                        new CharParser(')')))));
+            AddRule(new VariableRule("Variable", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new KeywordParser("var"),
+                        new NonterminalParser("TypeExpr", "TypeExpr", 1)),
+                    new ActionParser("A0",
+                        new NonterminalParser("Declarator", "Declarator", 0)))));
+            AddRule(new ParameterRule("Parameter", GetScope(),
+                new SequenceParser(
+                    new NonterminalParser("TypeExpr", "TypeExpr", 1),
+                    new ActionParser("A0",
+                        new NonterminalParser("Declarator", "Declarator", 0)))));
+            AddRule(new ReturnTypeRule("ReturnType", GetScope(),
+                new SequenceParser(
+                    new CharParser(':'),
+                    new ActionParser("A0",
+                        new NonterminalParser("TypeExpr", "TypeExpr", 1)))));
+            AddRule(new RuleParser("Keyword", GetScope(),
+                new KeywordListParser("identifier", keywords0)));
+            AddRule(new IdentifierRule("Identifier", GetScope(),
+                new ActionParser("A0",
+                    new DifferenceParser(
+                        new NonterminalParser("identifier", "identifier", 0),
+                        new NonterminalParser("Keyword", "Keyword", 0)))));
+            AddRule(new QualifiedIdRule("QualifiedId", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new SequenceParser(
+                            new NonterminalParser("first", "Identifier", 0),
+                            new KleeneStarParser(
+                                new SequenceParser(
+                                    new CharParser('.'),
+                                    new NonterminalParser("rest", "Identifier", 0))))))));
+            AddRule(new StringArrayRule("StringArray", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new CharParser('['),
+                        new ListParser(
+                            new ActionParser("A0",
+                                new NonterminalParser("str", "string", 0)),
+                            new CharParser(','))),
+                    new ExpectationParser(
+                        new CharParser(']')))));
+        }
+        private List<string> keywords0;
+    }
+}

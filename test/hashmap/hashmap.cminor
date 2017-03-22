@@ -21,7 +21,7 @@ void main()
     try
     {
         HashMap<string, Alpha> h = new HashMap<string, Alpha>();
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < 230; ++i)
         {
             h.Add(new KeyValuePair<string, Alpha>(i.ToString(), new Alpha(i)));
         }

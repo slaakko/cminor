@@ -585,6 +585,12 @@ void ConstantPoolInstallerVisitor::Visit(UsingStatementNode& usingStatementNode)
     usingStatementNode.Statement()->Accept(*this);
 }
 
+void ConstantPoolInstallerVisitor::Visit(LockStatementNode& lockStatementNode)
+{
+    lockStatementNode.Expr()->Accept(*this);
+    lockStatementNode.Statement()->Accept(*this);
+}
+
 void ConstantPoolInstallerVisitor::Visit(EnumTypeNode& enumTypeNode)
 {
     enumTypeNode.Id()->Accept(*this);

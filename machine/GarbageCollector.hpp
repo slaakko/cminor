@@ -29,7 +29,7 @@ enum class GarbageCollectorState
 
 extern std::atomic_bool wantToCollectGarbage;
 
-class GarbageCollector
+class MACHINE_API GarbageCollector
 {
 public:
     GarbageCollector(Machine& machine_);

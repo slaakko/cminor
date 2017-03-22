@@ -20,10 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="File.hpp" />
+    <ClInclude Include="Threading.hpp" />
     <ClInclude Include="VmFunction.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="File.cpp" />
+    <ClCompile Include="Threading.cpp" />
     <ClCompile Include="VmFunction.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

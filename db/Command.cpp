@@ -23,6 +23,7 @@ void HelpCommand::Execute(Shell& shell)
         "s(tep)                : single step\n" << 
         "n(ext)                : step over\n" <<
         "(stac)k               : print stack trace\n" <<
+        "p(rint) <name>        : print value of variable <name>\n" <<
         "l(ocal) <n>           : print value of local <n>\n" <<
         "o(perand) <n>         : print value of operand <n> in operand stack (0 is top)\n" <<
         "a(llocation) <n>      : print info for allocation <n>\n" <<
@@ -138,6 +139,15 @@ void ShowBreakpointsCommand::Execute(Shell& shell)
 void StackCommand::Execute(Shell& shell)
 {
     shell.Stack();
+}
+
+PrintCommand::PrintCommand(const std::string& name_) : name(name_)
+{
+}
+
+void PrintCommand::Execute(Shell& shell)
+{
+    shell.Print(name);
 }
 
 } } // namespace cminor::db

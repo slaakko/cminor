@@ -373,4 +373,36 @@ namespace Syntax
                 new PositiveParser(
                     new NonterminalParser("UsingDeclaration", "UsingDeclaration", 1))));
             AddRule(new UsingDeclarationRule("UsingDeclaration", GetScope(),
-                new Alternati
+                new AlternativeParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("NamespaceImport", "NamespaceImport", 0)),
+                    new ActionParser("A1",
+                        new NonterminalParser("Alias", "Alias", 0)))));
+            AddRule(new NamespaceContentRule("NamespaceContent", GetScope(),
+                new SequenceParser(
+                    new OptionalParser(
+                        new NonterminalParser("UsingDeclarations", "UsingDeclarations", 1)),
+                    new KleeneStarParser(
+                        new AlternativeParser(
+                            new ActionParser("A0",
+                                new NonterminalParser("Grammar", "Grammar", 2)),
+                            new NonterminalParser("Namespace", "Namespace", 2))))));
+            AddRule(new NamespaceRule("Namespace", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("namespace"),
+                                new ActionParser("A0",
+                                    new ExpectationParser(
+                                        new NonterminalParser("ns", "qualified_id", 0)))),
+                            new ExpectationParser(
+                                new CharParser('{'))),
+                        new NonterminalParser("NamespaceContent", "NamespaceContent", 2)),
+                    new ActionParser("A1",
+                        new ExpectationParser(
+                            new CharParser('}'))))));
+            SkipRuleName = "spaces_and_comments";
+        }
+    }
+}

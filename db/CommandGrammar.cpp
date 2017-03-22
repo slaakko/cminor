@@ -131,12 +131,16 @@ public:
         a18ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A18Action));
         cminor::parsing::ActionParser* a19ActionParser = GetAction("A19");
         a19ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A19Action));
+        cminor::parsing::ActionParser* a20ActionParser = GetAction("A20");
+        a20ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CommandRule>(this, &CommandRule::A20Action));
         cminor::parsing::NonterminalParser* lfpNonterminalParser = GetNonterminal("lfp");
         lfpNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CommandRule>(this, &CommandRule::Postlfp));
         cminor::parsing::NonterminalParser* lineNonterminalParser = GetNonterminal("line");
         lineNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CommandRule>(this, &CommandRule::Postline));
         cminor::parsing::NonterminalParser* llineNonterminalParser = GetNonterminal("lline");
         llineNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CommandRule>(this, &CommandRule::Postlline));
+        cminor::parsing::NonterminalParser* nameNonterminalParser = GetNonterminal("name");
+        nameNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CommandRule>(this, &CommandRule::Postname));
         cminor::parsing::NonterminalParser* lnNonterminalParser = GetNonterminal("ln");
         lnNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CommandRule>(this, &CommandRule::Postln));
         cminor::parsing::NonterminalParser* snNonterminalParser = GetNonterminal("sn");
@@ -206,33 +210,37 @@ public:
     }
     void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new LocalCommand(context.fromln);
+        context.value = new PrintCommand(context.fromname);
     }
     void A13Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new OperandCommand(context.fromsn);
+        context.value = new LocalCommand(context.fromln);
     }
     void A14Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new AllocationCommand(context.fromah);
+        context.value = new OperandCommand(context.fromsn);
     }
     void A15Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new FieldCommand(context.fromo, context.fromf);
+        context.value = new AllocationCommand(context.fromah);
     }
     void A16Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new BreakCommand(context.frombfp, context.frombpline);
+        context.value = new FieldCommand(context.fromo, context.fromf);
     }
     void A17Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new BreakCommand("", context.frombpline2);
+        context.value = new BreakCommand(context.frombfp, context.frombpline);
     }
     void A18Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new ClearCommand(context.frombpnum);
+        context.value = new BreakCommand("", context.frombpline2);
     }
     void A19Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new ClearCommand(context.frombpnum);
+    }
+    void A20Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = new PrevCommand;
     }
@@ -260,6 +268,15 @@ public:
         {
             std::unique_ptr<cminor::parsing::Object> fromlline_value = std::move(stack.top());
             context.fromlline = *static_cast<cminor::parsing::ValueObject<int>*>(fromlline_value.get());
+            stack.pop();
+        }
+    }
+    void Postname(cminor::parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<cminor::parsing::Object> fromname_value = std::move(stack.top());
+            context.fromname = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromname_value.get());
             stack.pop();
         }
     }
@@ -347,11 +364,12 @@ public:
 private:
     struct Context
     {
-        Context(): value(), fromlfp(), fromline(), fromlline(), fromln(), fromsn(), fromah(), fromo(), fromf(), frombfp(), frombpline(), frombpline2(), frombpnum() {}
+        Context(): value(), fromlfp(), fromline(), fromlline(), fromname(), fromln(), fromsn(), fromah(), fromo(), fromf(), frombfp(), frombpline(), frombpline2(), frombpnum() {}
         Command* value;
         std::string fromlfp;
         int fromline;
         int fromlline;
+        std::string fromname;
         int fromln;
         int fromsn;
         int fromah;
@@ -419,6 +437,59 @@ private:
     Context context;
 };
 
+class CommandGrammar::QualifiedIdRule : public cminor::parsing::Rule
+{
+public:
+    QualifiedIdRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        SetValueTypeName("std::string");
+    }
+    virtual void Enter(cminor::parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+    }
+    virtual void Leave(cminor::parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<QualifiedIdRule>(this, &QualifiedIdRule::A0Action));
+        cminor::parsing::NonterminalParser* qualified_idNonterminalParser = GetNonterminal("qualified_id");
+        qualified_idNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<QualifiedIdRule>(this, &QualifiedIdRule::Postqualified_id));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromqualified_id;
+    }
+    void Postqualified_id(cminor::parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<cminor::parsing::Object> fromqualified_id_value = std::move(stack.top());
+            context.fromqualified_id = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromqualified_id_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): value(), fromqualified_id() {}
+        std::string value;
+        std::string fromqualified_id;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
 void CommandGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
@@ -433,6 +504,7 @@ void CommandGrammar::GetReferencedGrammars()
 void CommandGrammar::CreateRules()
 {
     AddRuleLink(new cminor::parsing::RuleLink("int", this, "cminor.parsing.stdlib.int"));
+    AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
     AddRule(new CommandRule("Command", GetScope(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
@@ -453,80 +525,87 @@ void CommandGrammar::CreateRules()
                                                                         new cminor::parsing::AlternativeParser(
                                                                             new cminor::parsing::AlternativeParser(
                                                                                 new cminor::parsing::AlternativeParser(
-                                                                                    new cminor::parsing::ActionParser("A0",
-                                                                                        new cminor::parsing::StringParser("start")),
-                                                                                    new cminor::parsing::ActionParser("A1",
-                                                                                        new cminor::parsing::SequenceParser(
-                                                                                            new cminor::parsing::StringParser("show"),
-                                                                                            new cminor::parsing::StringParser("breakpoints")))),
-                                                                                new cminor::parsing::ActionParser("A2",
                                                                                     new cminor::parsing::AlternativeParser(
-                                                                                        new cminor::parsing::StringParser("stack"),
-                                                                                        new cminor::parsing::StringParser("k")))),
-                                                                            new cminor::parsing::ActionParser("A3",
+                                                                                        new cminor::parsing::ActionParser("A0",
+                                                                                            new cminor::parsing::StringParser("start")),
+                                                                                        new cminor::parsing::ActionParser("A1",
+                                                                                            new cminor::parsing::SequenceParser(
+                                                                                                new cminor::parsing::StringParser("show"),
+                                                                                                new cminor::parsing::StringParser("breakpoints")))),
+                                                                                    new cminor::parsing::ActionParser("A2",
+                                                                                        new cminor::parsing::AlternativeParser(
+                                                                                            new cminor::parsing::StringParser("stack"),
+                                                                                            new cminor::parsing::StringParser("k")))),
+                                                                                new cminor::parsing::ActionParser("A3",
+                                                                                    new cminor::parsing::AlternativeParser(
+                                                                                        new cminor::parsing::StringParser("help"),
+                                                                                        new cminor::parsing::StringParser("h")))),
+                                                                            new cminor::parsing::ActionParser("A4",
                                                                                 new cminor::parsing::AlternativeParser(
-                                                                                    new cminor::parsing::StringParser("help"),
-                                                                                    new cminor::parsing::StringParser("h")))),
-                                                                        new cminor::parsing::ActionParser("A4",
+                                                                                    new cminor::parsing::StringParser("exit"),
+                                                                                    new cminor::parsing::StringParser("e")))),
+                                                                        new cminor::parsing::ActionParser("A5",
                                                                             new cminor::parsing::AlternativeParser(
-                                                                                new cminor::parsing::StringParser("exit"),
-                                                                                new cminor::parsing::StringParser("e")))),
-                                                                    new cminor::parsing::ActionParser("A5",
+                                                                                new cminor::parsing::StringParser("quit"),
+                                                                                new cminor::parsing::StringParser("q")))),
+                                                                    new cminor::parsing::ActionParser("A6",
                                                                         new cminor::parsing::AlternativeParser(
-                                                                            new cminor::parsing::StringParser("quit"),
-                                                                            new cminor::parsing::StringParser("q")))),
-                                                                new cminor::parsing::ActionParser("A6",
+                                                                            new cminor::parsing::StringParser("step"),
+                                                                            new cminor::parsing::StringParser("s")))),
+                                                                new cminor::parsing::ActionParser("A7",
                                                                     new cminor::parsing::AlternativeParser(
-                                                                        new cminor::parsing::StringParser("step"),
-                                                                        new cminor::parsing::StringParser("s")))),
-                                                            new cminor::parsing::ActionParser("A7",
+                                                                        new cminor::parsing::StringParser("next"),
+                                                                        new cminor::parsing::StringParser("n")))),
+                                                            new cminor::parsing::ActionParser("A8",
                                                                 new cminor::parsing::AlternativeParser(
-                                                                    new cminor::parsing::StringParser("next"),
-                                                                    new cminor::parsing::StringParser("n")))),
-                                                        new cminor::parsing::ActionParser("A8",
-                                                            new cminor::parsing::AlternativeParser(
-                                                                new cminor::parsing::StringParser("run"),
-                                                                new cminor::parsing::StringParser("r")))),
-                                                    new cminor::parsing::ActionParser("A9",
+                                                                    new cminor::parsing::StringParser("run"),
+                                                                    new cminor::parsing::StringParser("r")))),
+                                                        new cminor::parsing::ActionParser("A9",
+                                                            new cminor::parsing::SequenceParser(
+                                                                new cminor::parsing::AlternativeParser(
+                                                                    new cminor::parsing::StringParser("list"),
+                                                                    new cminor::parsing::StringParser("t")),
+                                                                new cminor::parsing::TokenParser(
+                                                                    new cminor::parsing::SequenceParser(
+                                                                        new cminor::parsing::SequenceParser(
+                                                                            new cminor::parsing::NonterminalParser("lfp", "FilePath", 0),
+                                                                            new cminor::parsing::CharParser(':')),
+                                                                        new cminor::parsing::NonterminalParser("line", "int", 0)))))),
+                                                    new cminor::parsing::ActionParser("A10",
                                                         new cminor::parsing::SequenceParser(
                                                             new cminor::parsing::AlternativeParser(
                                                                 new cminor::parsing::StringParser("list"),
                                                                 new cminor::parsing::StringParser("t")),
-                                                            new cminor::parsing::TokenParser(
-                                                                new cminor::parsing::SequenceParser(
-                                                                    new cminor::parsing::SequenceParser(
-                                                                        new cminor::parsing::NonterminalParser("lfp", "FilePath", 0),
-                                                                        new cminor::parsing::CharParser(':')),
-                                                                    new cminor::parsing::NonterminalParser("line", "int", 0)))))),
-                                                new cminor::parsing::ActionParser("A10",
-                                                    new cminor::parsing::SequenceParser(
-                                                        new cminor::parsing::AlternativeParser(
-                                                            new cminor::parsing::StringParser("list"),
-                                                            new cminor::parsing::StringParser("t")),
-                                                        new cminor::parsing::NonterminalParser("lline", "int", 0)))),
-                                            new cminor::parsing::ActionParser("A11",
-                                                new cminor::parsing::AlternativeParser(
-                                                    new cminor::parsing::StringParser("list"),
-                                                    new cminor::parsing::StringParser("t")))),
-                                        new cminor::parsing::ActionParser("A12",
+                                                            new cminor::parsing::NonterminalParser("lline", "int", 0)))),
+                                                new cminor::parsing::ActionParser("A11",
+                                                    new cminor::parsing::AlternativeParser(
+                                                        new cminor::parsing::StringParser("list"),
+                                                        new cminor::parsing::StringParser("t")))),
+                                            new cminor::parsing::ActionParser("A12",
+                                                new cminor::parsing::SequenceParser(
+                                                    new cminor::parsing::AlternativeParser(
+                                                        new cminor::parsing::StringParser("print"),
+                                                        new cminor::parsing::StringParser("p")),
+                                                    new cminor::parsing::NonterminalParser("name", "QualifiedId", 0)))),
+                                        new cminor::parsing::ActionParser("A13",
                                             new cminor::parsing::SequenceParser(
                                                 new cminor::parsing::AlternativeParser(
                                                     new cminor::parsing::StringParser("local"),
                                                     new cminor::parsing::StringParser("l")),
                                                 new cminor::parsing::NonterminalParser("ln", "int", 0)))),
-                                    new cminor::parsing::ActionParser("A13",
+                                    new cminor::parsing::ActionParser("A14",
                                         new cminor::parsing::SequenceParser(
                                             new cminor::parsing::AlternativeParser(
                                                 new cminor::parsing::StringParser("operand"),
                                                 new cminor::parsing::StringParser("o")),
                                             new cminor::parsing::NonterminalParser("sn", "int", 0)))),
-                                new cminor::parsing::ActionParser("A14",
+                                new cminor::parsing::ActionParser("A15",
                                     new cminor::parsing::SequenceParser(
                                         new cminor::parsing::AlternativeParser(
                                             new cminor::parsing::StringParser("allocation"),
                                             new cminor::parsing::StringParser("a")),
                                         new cminor::parsing::NonterminalParser("ah", "int", 0)))),
-                            new cminor::parsing::ActionParser("A15",
+                            new cminor::parsing::ActionParser("A16",
                                 new cminor::parsing::SequenceParser(
                                     new cminor::parsing::SequenceParser(
                                         new cminor::parsing::AlternativeParser(
@@ -534,7 +613,7 @@ void CommandGrammar::CreateRules()
                                             new cminor::parsing::StringParser("f")),
                                         new cminor::parsing::NonterminalParser("o", "int", 0)),
                                     new cminor::parsing::NonterminalParser("f", "int", 0)))),
-                        new cminor::parsing::ActionParser("A16",
+                        new cminor::parsing::ActionParser("A17",
                             new cminor::parsing::SequenceParser(
                                 new cminor::parsing::AlternativeParser(
                                     new cminor::parsing::StringParser("break"),
@@ -545,20 +624,20 @@ void CommandGrammar::CreateRules()
                                             new cminor::parsing::NonterminalParser("bfp", "FilePath", 0),
                                             new cminor::parsing::CharParser(':')),
                                         new cminor::parsing::NonterminalParser("bpline", "int", 0)))))),
-                    new cminor::parsing::ActionParser("A17",
+                    new cminor::parsing::ActionParser("A18",
                         new cminor::parsing::SequenceParser(
                             new cminor::parsing::AlternativeParser(
                                 new cminor::parsing::StringParser("break"),
                                 new cminor::parsing::StringParser("b")),
                             new cminor::parsing::TokenParser(
                                 new cminor::parsing::NonterminalParser("bpline2", "int", 0))))),
-                new cminor::parsing::ActionParser("A18",
+                new cminor::parsing::ActionParser("A19",
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::AlternativeParser(
                             new cminor::parsing::StringParser("clear"),
                             new cminor::parsing::StringParser("c")),
                         new cminor::parsing::NonterminalParser("bpnum", "int", 0)))),
-            new cminor::parsing::ActionParser("A19",
+            new cminor::parsing::ActionParser("A20",
                 new cminor::parsing::EmptyParser()))));
     AddRule(new cminor::parsing::Rule("Spaces", GetScope(),
         new cminor::parsing::PositiveParser(
@@ -589,6 +668,9 @@ void CommandGrammar::CreateRules()
                             new cminor::parsing::PositiveParser(
                                 new cminor::parsing::CharSetParser(">", true)))),
                     new cminor::parsing::CharParser('>'))))));
+    AddRule(new QualifiedIdRule("QualifiedId", GetScope(),
+        new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::NonterminalParser("qualified_id", "qualified_id", 0))));
     SetSkipRuleName("Spaces");
 }
 

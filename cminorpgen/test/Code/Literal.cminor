@@ -720,4 +720,19 @@ namespace Code
                                                 new HexDigitParser(),
                                                 new HexDigitParser()),
                                             new HexDigitParser()),
-                    
+                                        new HexDigitParser()),
+                                    new HexDigitParser()),
+                                new HexDigitParser()),
+                            new HexDigitParser()),
+                        new HexDigitParser()))));
+            AddRule(new RuleParser("OctalDigitSequence", GetScope(),
+                new PositiveParser(
+                    new TokenParser(
+                        new CharSetParser("0-7")))));
+            AddRule(new RuleParser("Sign", GetScope(),
+                new AlternativeParser(
+                    new CharParser('+'),
+                    new CharParser('-'))));
+        }
+    }
+}

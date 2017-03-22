@@ -8,7 +8,8 @@
 
 namespace cminor { namespace symbols {
 
-SymbolReader::SymbolReader(const std::string& fileName_) : AstReader(fileName_), assembly(nullptr), readingClassTemplateSpecialization(false), classTemplateSpecializationNames(nullptr)
+SymbolReader::SymbolReader(const std::string& fileName_) : 
+    AstReader(fileName_), assembly(nullptr), readingClassTemplateSpecialization(false), classTemplateSpecializationNames(nullptr), currentFunctionSymbol(nullptr)
 {
 }
 

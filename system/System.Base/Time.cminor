@@ -1,0 +1,162 @@
+namespace System
+{
+    public class TimePoint
+    {
+        public TimePoint()
+        {
+            this.nanosecs = 0;
+        }
+        public TimePoint(long nanosecs)
+        {
+            this.nanosecs = nanosecs;
+        }
+        public long Rep
+        {
+            get { return nanosecs; }
+        }
+        private long nanosecs;
+    }
+
+    public bool operator==(TimePoint left, TimePoint right)
+    {
+        return left.Rep == right.Rep;
+    }
+
+    public bool operator<(TimePoint left, TimePoint right)
+    {
+        return left.Rep < right.Rep;
+    }
+    
+    public class Duration
+    {
+        public Duration()
+        {
+            this.nanosecs = 0;
+        }
+        public Duration(long nanosecs)
+        {
+            this.nanosecs = nanosecs;
+        }
+        public long Hours
+        {
+            get { return nanosecs / (3600 * cast<long>(1000000000)); }
+        }
+        public long Minutes
+        {
+            get { return nanosecs / (60 * cast<long>(1000000000)); }
+        }
+        public long Seconds
+        {
+            get { return nanosecs / cast<long>(1000000000); }
+        }
+        public long Milliseconds
+        {
+            get { return nanosecs / cast<long>(1000000); }
+        }
+        public long Microseconds
+        {
+            get { return nanosecs / cast<long>(1000); }
+        }
+        public long Nanoseconds
+        {
+            get { return nanosecs; }
+        }
+        public static Duration FromHours(long hours) 
+        {
+            return new Duration(3600 * cast<long>(1000000000) * hours);
+        }
+        public static Duration FromMinutes(long minutes)
+        {
+            return new Duration(60 * cast<long>(1000000000) * minutes);
+        }
+        public static Duration FromSeconds(long seconds)
+        {
+            return new Duration(cast<long>(1000000000) * seconds);
+        }
+        public static Duration FromMilliseconds(long milliseconds)
+        {
+            return new Duration(cast<long>(1000000) * milliseconds);
+        }
+        public static Duration FromMicroseconds(long microseconds)
+        {
+            return new Duration(cast<long>(1000) * microseconds);
+        }
+        public static Duration FromNanoseconds(long nanoseconds)
+        {
+            return new Duration(nanoseconds);
+        }
+        public long Rep
+        {
+            get { return nanosecs; }
+        }
+        private long nanosecs;
+    }
+
+    public bool operator==(Duration left, Duration right)
+    {
+        return left.Rep == right.Rep;
+    }
+
+    public bool operator<(Duration left, Duration right)
+    {
+        return left.Rep < right.Rep;
+    }
+
+    public Duration operator+(Duration left, Duration right)
+    {
+        return new Duration(left.Rep + right.Rep);
+    }
+
+    public Duration operator-(Duration left, Duration right)
+    {
+        return new Duration(left.Rep - right.Rep);
+    }
+
+    public Duration operator*(Duration left, Duration right)
+    {
+        return new Duration(left.Rep * right.Rep);
+    }
+
+    public Duration operator/(Duration left, Duration right)
+    {
+        return new Duration(left.Rep / right.Rep);
+    }
+
+    public Duration operator%(Duration left, Duration right)
+    {
+        return new Duration(left.Rep % right.Rep);
+    }
+
+    public Duration operator-(TimePoint left, TimePoint right)
+    {
+        return new Duration(left.Rep - right.Rep);
+    }
+
+    public TimePoint operator+(TimePoint tp, Duration dur)
+    {
+        return new TimePoint(tp.Rep + dur.Rep);
+    }
+
+    public TimePoint operator+(Duration dur, TimePoint tp)
+    {
+        return new TimePoint(tp.Rep + dur.Rep);
+    }
+
+    public TimePoint operator-(TimePoint tp, Duration dur)
+    {
+        return new TimePoint(tp.Rep - dur.Rep);
+    }
+
+    [vmf=now]
+    public extern TimePoint Now();
+
+    [vmf=sleep]
+    public extern void SleepFor(Duration dur);
+
+    public void SleepUntil(TimePoint tp)
+    {
+        Duration dur = tp - Now();
+        SleepFor(dur);
+    }
+
+}

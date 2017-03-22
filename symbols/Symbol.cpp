@@ -468,7 +468,7 @@ Scope::~Scope()
 {
 }
 
-ContainerScope::ContainerScope() : base(nullptr), parent(nullptr), container(nullptr)
+ContainerScope::ContainerScope() : base(nullptr), parent(nullptr), container(nullptr), id(-1)
 {
 }
 
@@ -775,6 +775,22 @@ void ContainerScope::Clear()
     symbolMap.clear();
 }
 
+uint32_t ContainerScope::NonDefaultId() const
+{
+    if (id != -1)
+    {
+        return id;
+    }
+    else if (parent)
+    {
+        return parent->NonDefaultId();
+    }
+    else
+    {
+        throw std::runtime_error("non default id not set");
+    }
+}
+
 void FileScope::InstallAlias(ContainerScope* containerScope, AliasNode* aliasNode)
 {
     Assert(containerScope, "container scope is null");
@@ -912,6 +928,13 @@ void ContainerSymbol::Write(SymbolWriter& writer)
     {
         writer.Put(exportSymbols[i]);
     }
+    uint32_t containerScopeId = containerScope.Id();
+    bool hasContainerScopeId = containerScopeId != -1;
+    writer.AsMachineWriter().Put(hasContainerScopeId);
+    if (hasContainerScopeId)
+    {
+        writer.AsMachineWriter().PutEncodedUInt(containerScope.Id());
+    }
 }
 
 void ContainerSymbol::Read(SymbolReader& reader)
@@ -939,6 +962,17 @@ void ContainerSymbol::Read(SymbolReader& reader)
             {
                 reader.AddConversionFun(functionSymbol);
             }
+        }
+    }
+    bool hasContainerScopeId = reader.GetBool();
+    if (hasContainerScopeId)
+    {
+        uint32_t containerScopeId = reader.GetEncodedUInt();
+        containerScope.SetId(containerScopeId);
+        FunctionSymbol* currentFunctionSymbol = reader.CurrentFunctionSymbol();
+        if (currentFunctionSymbol)
+        {
+            currentFunctionSymbol->MapContainerScope(containerScopeId, &containerScope);
         }
     }
     if (GetSymbolType() == SymbolType::namespaceSymbol)
@@ -1489,6 +1523,7 @@ void ClassTypeSymbol::SetSpecifiers(Specifiers specifiers)
     if ((specifiers & Specifiers::static_) != Specifiers::none)
     {
         SetStatic();
+        SetDontCreateDefaultConstructor();
     }
     if ((specifiers & Specifiers::external_) != Specifiers::none)
     {

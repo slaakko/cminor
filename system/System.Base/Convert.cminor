@@ -774,13 +774,10 @@ namespace System
                 {
                     exponent = -exponent;
                 }
-                value = value + cast<T>(Pow(10.0, exponent));
+                value = value + cast<T>(Math.Pow(10.0, exponent));
             }
             x = value;
             return true;
         }
     }
-
-    [VmFunctionName=Vm.System.Pow.Double.Int]
-    public extern double Pow(double base_, int exponent);
 }

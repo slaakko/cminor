@@ -78,12 +78,12 @@ void TypeBinderVisitor::Visit(FunctionNode& functionNode)
         {
             throw Exception("external function cannot have a body", functionNode.GetSpan());
         }
-        utf32_string vmFunctionName = ToUtf32(functionNode.Attributes().GetAttribute("VmFunctionName"));
-        if (vmFunctionName.empty())
+        utf32_string vmf = ToUtf32(functionNode.Attributes().GetAttribute("vmf"));
+        if (vmf.empty())
         {
-            throw Exception("virtual machine function name attribute (VmFunctionName) not set for external function", functionNode.GetSpan());
+            throw Exception("virtual machine function name attribute ('vmf') not set for external function", functionNode.GetSpan());
         }
-        functionSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
+        functionSymbol->SetVmf(StringPtr(vmf.c_str()));
     }
     int n = functionNode.Parameters().Count();
     for (int i = 0; i < n; ++i)
@@ -382,12 +382,12 @@ void TypeBinderVisitor::Visit(StaticConstructorNode& staticConstructorNode)
             {
                 throw Exception("external function cannot have a body", staticConstructorNode.GetSpan());
             }
-            utf32_string vmFunctionName = ToUtf32(staticConstructorNode.Attributes().GetAttribute("VmFunctionName"));
-            if (vmFunctionName.empty())
+            utf32_string vmf = ToUtf32(staticConstructorNode.Attributes().GetAttribute("vmf"));
+            if (vmf.empty())
             {
-                throw Exception("virtual machine function name attribute (VmFunctionName) not set for external function", staticConstructorNode.GetSpan());
+                throw Exception("virtual machine function name attribute ('vmf') not set for external function", staticConstructorNode.GetSpan());
             }
-            staticConstructorSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
+            staticConstructorSymbol->SetVmf(StringPtr(vmf.c_str()));
         }
         staticConstructorSymbol->ComputeName();
     }
@@ -446,12 +446,12 @@ void TypeBinderVisitor::Visit(ConstructorNode& constructorNode)
             {
                 throw Exception("external function cannot have a body", constructorNode.GetSpan());
             }
-            utf32_string vmFunctionName = ToUtf32(constructorNode.Attributes().GetAttribute("VmFunctionName"));
-            if (vmFunctionName.empty())
+            utf32_string vmf = ToUtf32(constructorNode.Attributes().GetAttribute("vmf"));
+            if (vmf.empty())
             {
-                throw Exception("virtual machine function name attribute (VmFunctionName) not set for external function", constructorNode.GetSpan());
+                throw Exception("virtual machine function name attribute ('vmf') not set for external function", constructorNode.GetSpan());
             }
-            constructorSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
+            constructorSymbol->SetVmf(StringPtr(vmf.c_str()));
         }
         int n = constructorNode.Parameters().Count();
         for (int i = 0; i < n; ++i)
@@ -515,12 +515,12 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
             {
                 throw Exception("external function cannot have a body", memberFunctionNode.GetSpan());
             }
-            utf32_string vmFunctionName = ToUtf32(memberFunctionNode.Attributes().GetAttribute("VmFunctionName"));
-            if (vmFunctionName.empty())
+            utf32_string vmf = ToUtf32(memberFunctionNode.Attributes().GetAttribute("vmf"));
+            if (vmf.empty())
             {
-                throw Exception("virtual machine function name attribute (VmFunctionName) not set for external function", memberFunctionNode.GetSpan());
+                throw Exception("virtual machine function name attribute ('vmf') not set for external function", memberFunctionNode.GetSpan());
             }
-            memberFunctionSymbol->SetVmFunctionName(StringPtr(vmFunctionName.c_str()));
+            memberFunctionSymbol->SetVmf(StringPtr(vmf.c_str()));
         }
         if (!memberFunctionSymbol->IsVirtualAbstractOrOverride() && !memberFunctionSymbol->IsNew())
         {

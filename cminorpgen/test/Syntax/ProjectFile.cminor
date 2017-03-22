@@ -316,4 +316,44 @@ namespace Syntax
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRule(new ProjectFileRule("ProjectFile", GetScope(),
                 new SequenceParser(
- 
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("project"),
+                            new ActionParser("A0",
+                                new NonterminalParser("projectName", "qualified_id", 0))),
+                        new CharParser(';')),
+                    new NonterminalParser("ProjectFileContent", "ProjectFileContent", 1))));
+            AddRule(new ProjectFileContentRule("ProjectFileContent", GetScope(),
+                new KleeneStarParser(
+                    new AlternativeParser(
+                        new ActionParser("A0",
+                            new NonterminalParser("Source", "Source", 0)),
+                        new ActionParser("A1",
+                            new NonterminalParser("Reference", "Reference", 0))))));
+            AddRule(new SourceRule("Source", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("source"),
+                            new NonterminalParser("FilePath", "FilePath", 0)),
+                        new CharParser(';')))));
+            AddRule(new ReferenceRule("Reference", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KeywordParser("reference"),
+                            new NonterminalParser("FilePath", "FilePath", 0)),
+                        new CharParser(';')))));
+            AddRule(new FilePathRule("FilePath", GetScope(),
+                new TokenParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new CharParser('<'),
+                            new ActionParser("A0",
+                                new PositiveParser(
+                                    new CharSetParser(">\r\n", true)))),
+                        new CharParser('>')))));
+            SkipRuleName = "spaces_and_comments";
+        }
+    }
+}

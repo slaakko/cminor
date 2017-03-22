@@ -2,6 +2,9 @@ using System;
 
 namespace System.Threading
 {
+    [vmf=cores]
+    public extern int HardwareConcurrency();
+
     public class ThreadingException : SystemException
     {
         public ThreadingException(string message) : base(message)
@@ -63,18 +66,18 @@ namespace System.Threading
         private int id;
     }
 
-    [VmFunctionName=Vm.System.Threading.StartThread.ThreadStartFunction]
+    [vmf=tsf]
     public extern Thread StartThread(ThreadStartFunction fun);
 
-    [VmFunctionName=Vm.System.Threading.StartThread.ThreadStartMethod]
+    [vmf=tsm]
     public extern Thread StartThread(ThreadStartMethod method);
 
-    [VmFunctionName=Vm.System.Threading.StartThread.ParameterizedThreadStartFunction]
+    [vmf=ptsf]
     public extern Thread StartThread(ParameterizedThreadStartFunction fun, object param);
 
-    [VmFunctionName=Vm.System.Threading.StartThread.ParameterizedThreadStartMethod]
+    [vmf=ptsm]
     public extern Thread StartThread(ParameterizedThreadStartMethod method, object param);
 
-    [VmFunctionName=Vm.System.Threading.JoinThread]
+    [vmf=join]
     public extern void JoinThread(Thread thread);
 }

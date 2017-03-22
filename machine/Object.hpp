@@ -130,38 +130,18 @@ inline bool operator==(ObjectReference left, ObjectReference right)
     return left.Value() == right.Value();
 }
 
-class MemPtr
-{
-public:
-    MemPtr() : value(nullptr), hashCode(0) {}
-    MemPtr(void* value_) : value(value_), hashCode(0) {}
-    MemPtr(const char32_t* strValue_) : strValue(strValue_), hashCode(0) {}
-    void* Value() const { return value; }
-    const char32_t* StrValue() const { return strValue; }
-    uint64_t HashCode() const { return hashCode; }
-    void SetHashCode(uint64_t hashCode_) { hashCode = hashCode_; }
-private:
-    union { void* value; const char32_t* strValue; };
-    uint64_t hashCode;
-};
-
-inline bool operator==(MemPtr left, MemPtr right)
-{
-    return left.Value() == right.Value();
-}
-
-inline bool operator<(MemPtr left, MemPtr right)
-{
-    return left.Value() < right.Value();
-}
-
-uint64_t ValueSize(ValueType type);
+uint32_t ValueSize(ValueType type);
 
 enum class AllocationFlags : uint8_t
 {
     none = 0,
     live = 1 << 0,
-    pinned = 1 << 1
+    referenced = 1 << 1,
+    object = 1 << 2,
+    arrayElements = 1 << 3,
+    stringChars = 1 << 4,
+    stringLiteral = 1 << 5,
+    conditionVariable = 1 << 6
 };
 
 inline AllocationFlags operator|(AllocationFlags left, AllocationFlags right)
@@ -179,129 +159,171 @@ inline AllocationFlags operator~(AllocationFlags flag)
     return AllocationFlags(~uint8_t(flag));
 }
 
-class MACHINE_API ManagedAllocation
-{
-public:
-    ManagedAllocation(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, uint64_t size_);
-    virtual ~ManagedAllocation();
-    AllocationHandle Handle() const { return handle; }
-    int32_t SegmentId() const { return segmentId; }
-    void SetSegmentId(int32_t segmentId_) { segmentId = segmentId_; }
-    MemPtr GetMemPtr() const { return memPtr; }
-    void SetMemPtr(MemPtr newMemPtr) { memPtr = newMemPtr; }
-    uint64_t Size() const { return size; }
-    void SetSize(uint64_t size_) { size = size_; }
-    bool IsLive() const { return GetFlag(AllocationFlags::live); }
-    void SetLive() { SetFlag(AllocationFlags::live); }
-    void ResetLive() { ResetFlag(AllocationFlags::live); }
-    void Pin() { SetFlag(AllocationFlags::pinned); }
-    void Unpin() { ResetFlag(AllocationFlags::pinned); }
-    bool IsPinned() const { return GetFlag(AllocationFlags::pinned); }
-    virtual void MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool);
-private:
-    AllocationHandle handle;
-    MemPtr memPtr;
-    int32_t segmentId;
-    uint64_t size;
-    AllocationFlags flags;
-    bool GetFlag(AllocationFlags flag) const { return (flags & flag) != AllocationFlags::none; }
-    void SetFlag(AllocationFlags flag) { flags = flags | flag; }
-    void ResetFlag(AllocationFlags flag) { flags = flags & (~flag); }
-};
+const int32_t lockNotAllocated = -1;
 
-class MACHINE_API Object : public ManagedAllocation
+struct MACHINE_API ObjectHeader
 {
-public:
-    Object(ObjectReference reference_, MemPtr memPtr_, int32_t segmentId_, ObjectType* type_, uint64_t size_);
-    ObjectReference Reference() const { return reference; }
     ObjectType* GetType() const { return type; }
-    IntegralValue GetField(int index) const;
-    void SetField(IntegralValue fieldValue, int index);
-    int32_t FieldCount() const;
-    void MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool) override;
-private:
-    ObjectReference reference;
+    void SetType(ObjectType* type_) { type = type_; }
+    uint64_t HashCode() const { return hashCode; }
+    void SetHashCode(uint64_t hashCode_) { hashCode = hashCode_; }
+
     ObjectType* type;
+    uint64_t hashCode;
 };
 
-class MACHINE_API ArrayElements : public ManagedAllocation
+struct MACHINE_API ArrayElementsHeader
 {
-public:
-    ArrayElements(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, Type* elementType_, int32_t numElements_, uint64_t size_);
     Type* GetElementType() const { return elementType; }
-    IntegralValue GetElement(int32_t index) const;
-    void SetElement(IntegralValue elementValue, int32_t index);
+    void SetElementType(Type* elementType_) { elementType = elementType_; }
     int32_t NumElements() const { return numElements; }
-    void MarkLiveAllocations(std::unordered_set<AllocationHandle, AllocationHandleHash>& checked, ManagedMemoryPool& managedMemoryPool) override;
-private:
+    void SetNumElements(int32_t numElements_) { numElements = numElements_; }
+
     Type* elementType;
     int32_t numElements;
 };
 
-class MACHINE_API StringCharacters : public ManagedAllocation
+struct MACHINE_API StringCharactersHeader
 {
-public:
-    StringCharacters(AllocationHandle handle_, MemPtr memPtr_, int32_t segmentId_, int32_t numChars_, uint64_t size_);
-    IntegralValue GetChar(int32_t index) const;
     int32_t NumChars() const { return numChars; }
-private:
+    void SetNumChars(int32_t numChars_) { numChars = numChars_; }
+    const char32_t* Str() const { return str; }
+    void SetStr(const char32_t* str_) { str = str_; }
+
+    const char32_t* str;
     int32_t numChars;
 };
 
-constexpr uint64_t allocationSize = sizeof(std::unordered_map<AllocationHandle, std::unique_ptr<ManagedAllocation>, AllocationHandleHash>::value_type);
-constexpr uint64_t objectSize = sizeof(Object);
-constexpr uint64_t arrayContentSize = sizeof(ArrayElements);
-constexpr uint64_t stringContentSize = sizeof(StringCharacters);
+struct MACHINE_API ManagedAllocationHeader
+{
+    uint32_t AllocationSize() const { return allocationSize; }
+    void SetAllocationSize(uint32_t allocationSize_) { allocationSize = allocationSize_; }
+    int32_t SegmentId() const { return segmentId; }
+    void SetSegmentId(int32_t segmentId_) { segmentId = segmentId_; }
+    AllocationFlags Flags() const { return flags; }
+    void SetFlags(AllocationFlags flags_) { flags = flags_; }
+    bool IsLive() const { return GetFlag(AllocationFlags::live); }
+    void SetLive() { SetFlag(AllocationFlags::live); }
+    void ResetLive() { ResetFlag(AllocationFlags::live); }
+    void Reference() { SetFlag(AllocationFlags::referenced); }
+    void Unreference() { ResetFlag(AllocationFlags::referenced); }
+    bool IsReferenced() const { return GetFlag(AllocationFlags::referenced); }
+    bool IsObject() const { return GetFlag(AllocationFlags::object); }
+    bool IsArrayElements() const { return GetFlag(AllocationFlags::arrayElements); }
+    bool IsStringCharacters() const { return GetFlag(AllocationFlags::stringChars); }
+    bool IsStringLiteral() const { return GetFlag(AllocationFlags::stringLiteral); }
+    void SetStringLiteral() { SetFlag(AllocationFlags::stringLiteral); }
+    bool IsConditionVariable() const { return GetFlag(AllocationFlags::conditionVariable); }
+    void SetConditionVariable() { SetFlag(AllocationFlags::conditionVariable); }
+    int32_t LockId() const { return lockId; }
+    void SetLockId(int32_t lockId_) { lockId = lockId_; }
+    bool GetFlag(AllocationFlags flag) const { return (flags & flag) != AllocationFlags::none; }
+    void SetFlag(AllocationFlags flag) { flags = flags | flag; }
+    void ResetFlag(AllocationFlags flag) { flags = flags & (~flag); }
+
+    uint32_t allocationSize;
+    int32_t segmentId;
+    std::atomic_int32_t lockId;
+    AllocationFlags flags;
+
+    union
+    {
+        ObjectHeader objectHeader;
+        ArrayElementsHeader arrayElementsHeader;
+        StringCharactersHeader stringCharactersHeader;
+    };
+};
+
+inline ManagedAllocationHeader* GetAllocationHeader(void* allocation) { return static_cast<ManagedAllocationHeader*>(allocation) - 1; }
+inline void* GetAllocationPtr(ManagedAllocationHeader* header) { return header + 1; }
+
+IntegralValue GetObjectField(void* object, int index);
+void SetObjectField(void* object, IntegralValue fieldValue, int index);
+int32_t ObjectFieldCount(void* object);
+
+void MarkObjectLiveAllocations(void* object, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked);
+
+MACHINE_API IntegralValue GetElement(void* arrayElements, int32_t index);
+MACHINE_API void SetElement(void* arrayElements, IntegralValue elementValue, int32_t index);
+MACHINE_API int32_t NumElements(void* arrayElements);
+
+void MarkArrayElementsLiveAllocations(void* arrayElements, std::unordered_set<AllocationHandle, AllocationHandleHash>& checked);
+
+IntegralValue GetChar(void* stringCharacters, int32_t index);
+
+constexpr uint64_t allocationSize = sizeof(void*);
 constexpr uint64_t defaultPoolThreshold = static_cast<uint64_t>(16) * 1024 * 1024;
 
 MACHINE_API void SetPoolThreshold(uint64_t poolThreshold_);
 MACHINE_API uint64_t GetPoolThreshold();
 
+constexpr uint64_t firstAllocationHandleValue = 1;
+
 class MACHINE_API ManagedMemoryPool
 {
 public:
     ManagedMemoryPool(Machine& machine_);
-    ObjectReference CreateObject(Thread& thread, ObjectType* type);
-    ObjectReference CopyObject(Thread& thread, ObjectReference from);
+    AllocationHandle AddAllocation(Thread& thread, ManagedAllocationHeader* header, std::unique_lock<std::recursive_mutex>& lock);
+    void SetAllocation(AllocationHandle handle, void* allocation) { allocations[handle.Value()] = allocation; }
+    void* MoveAllocation(int32_t newSegmentId, void* newAllocWithHeader, ManagedAllocationHeader* header);
     void DestroyAllocation(AllocationHandle handle);
-    Object& GetObject(ObjectReference reference);
-    Object* GetObjectNothrow(ObjectReference reference);
+    void DestroyAllocations(std::vector<AllocationHandle>& toBeDestroyed);
+    ObjectReference CreateObject(Thread& thread, ObjectType* type);
+    ObjectReference CreateObject(Thread& thread, ObjectType* type, std::unique_lock<std::recursive_mutex>& lock);
+    ObjectReference CopyObject(Thread& thread, ObjectReference from);
+    void* GetObject(ObjectReference reference);
+    void* GetObject(ObjectReference reference, std::unique_lock<std::recursive_mutex>& lock);
+    void* GetObjectNoThrow(ObjectReference reference, std::unique_lock<std::recursive_mutex>& lock);
+    void* GetObjectNoThrowNoLock(ObjectReference reference);
+    void* GetAllocation(AllocationHandle handle, std::unique_lock<std::recursive_mutex>& lock);
+    void* GetAllocationNoThrowNoLock(AllocationHandle handle);
     IntegralValue GetField(ObjectReference reference, int32_t fieldIndex);
+    IntegralValue GetField(ObjectReference reference, int32_t fieldIndex, std::unique_lock<std::recursive_mutex>& lock);
     void SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue);
+    void SetField(ObjectReference reference, int32_t fieldIndex, IntegralValue fieldValue, std::unique_lock<std::recursive_mutex>& lock);
+    int32_t GetFieldCount(ObjectReference reference);
     AllocationHandle CreateStringCharsFromLiteral(Thread& thread, const char32_t* strLit, uint32_t len);
+    AllocationHandle CreateStringCharsFromLiteral(Thread& thread, const char32_t* strLit, uint32_t len, std::unique_lock<std::recursive_mutex>& lock);
     std::pair<AllocationHandle, int32_t> CreateStringCharsFromCharArray(Thread& thread, ObjectReference charArray);
+    std::pair<AllocationHandle, int32_t> CreateStringCharsFromCharArray(Thread& thread, ObjectReference charArray, std::unique_lock<std::recursive_mutex>& lock);
     ObjectReference CreateString(Thread& thread, const utf32_string& s);
+    ObjectReference CreateString(Thread& thread, const utf32_string& s, std::unique_lock<std::recursive_mutex>& lock);
     IntegralValue GetStringChar(ObjectReference str, int32_t index);
+    IntegralValue GetStringChar(ObjectReference str, int32_t index, std::unique_lock<std::recursive_mutex>& lock);
     std::string GetUtf8String(ObjectReference str);
     std::vector<uint8_t> GetBytes(ObjectReference arr);
     void SetBytes(ObjectReference arr, const std::vector<uint8_t>& bytes, int32_t count);
     void AllocateArrayElements(Thread& thread, ObjectReference arr, Type* elementType, int32_t length);
+    void AllocateArrayElements(Thread& thread, ObjectReference arr, Type* elementType, int32_t length, std::unique_lock<std::recursive_mutex>& lock);
     IntegralValue GetArrayElement(ObjectReference reference, int32_t index);
     void SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue);
+    void SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue, std::unique_lock<std::recursive_mutex>& lock);
     int32_t GetNumArrayElements(ObjectReference arr);
     ObjectReference CreateStringArray(Thread& thread, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
     void ResetLiveFlags();
     void MoveLiveAllocationsToArena(ArenaId fromArenaId, Arena& toArena);
     void MoveLiveAllocationsToNewSegments(Arena& arena);
-    MemPtr GetMemPtr(AllocationHandle handle);
-    ManagedAllocation* GetAllocation(AllocationHandle handle);
-    ManagedAllocation* GetAllocationNothrow(AllocationHandle handle);
     AllocationHandle PoolRoot() const { return poolRoot; }
+    std::recursive_mutex& AllocationsMutex() { return allocationsMutex; }
 private:
     Machine& machine;
-    std::unordered_map<AllocationHandle, std::unique_ptr<ManagedAllocation>, AllocationHandleHash> allocations;
-    std::atomic_uint64_t nextReferenceValue;
+    std::vector<void*> allocations;
+    std::atomic_uint64_t nextAllocationHandleValue;
     std::recursive_mutex allocationsMutex;
     void ComputeSize();
     void CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle root);
-    uint64_t objectCount;
-    uint64_t arrayContentCount;
-    uint64_t stringContentCount;
     uint64_t prevSize;
     uint64_t size;
     std::atomic<AllocationHandle> poolRoot;
-    std::unordered_map<AllocationHandle, ManagedAllocation*, AllocationHandleHash> deletedAllocations;
 };
+
+typedef void(*DestroyLockFn)(uint32_t);
+
+MACHINE_API void SetDestroyLockFn(DestroyLockFn destroyLock_);
+
+typedef void(*DestroyConditionVariableFn)(int32_t);
+
+MACHINE_API void SetDestroyConditionVariableFn(DestroyConditionVariableFn destroyCondVar_);
 
 } } // namespace cminor::machine
 

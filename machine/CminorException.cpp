@@ -4,7 +4,7 @@
 // =================================
 
 #include <cminor/machine/CminorException.hpp>
-#include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/Runtime.hpp>
 #include <cminor/machine/Class.hpp>
 
 namespace cminor { namespace machine {

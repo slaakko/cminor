@@ -30,6 +30,9 @@ public:
     void Local(int index);
     void Operand(int index);
     void Print(IntegralValue value);
+    void Print(IntegralValue value, CodeFormatter& formatter);
+    void Print(IntegralValue value, TypeSymbol* type, CodeFormatter& formatter);
+    void Print(const std::string& name);
     void RepeatLastCommand();
     void PrintAllocation(int handle);
     void PrintField(int handle, int index);

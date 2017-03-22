@@ -1950,10 +1950,10 @@ namespace Code
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.BasicTypeGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.LiteralGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new Code.BasicTypeGrammar(parsingDomain);
+                grammar0 = new Code.LiteralGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
             Grammar grammar1 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
@@ -1974,10 +1974,10 @@ namespace Code
                 grammar3 = new Code.TypeExprGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar3);
-            Grammar grammar4 = parsingDomain.GetGrammar("Code.LiteralGrammar");
+            Grammar grammar4 = parsingDomain.GetGrammar("Code.BasicTypeGrammar");
             if (grammar4 == null)
             {
-                grammar4 = new Code.LiteralGrammar(parsingDomain);
+                grammar4 = new Code.BasicTypeGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar4);
         }
@@ -2270,4 +2270,26 @@ namespace Code
                             new ExpectationParser(
                                 new CharParser('('))),
                         new ExpectationParser(
-                      
+                            new NonterminalParser("args", "ArgumentList", 2))),
+                    new ExpectationParser(
+                        new CharParser(')')))));
+            AddRule(new ArgumentListRule("ArgumentList", GetScope(),
+                new OptionalParser(
+                    new NonterminalParser("ExpressionList", "ExpressionList", 2))));
+            AddRule(new ExpressionListRule("ExpressionList", GetScope(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new EmptyParser()),
+                    new ActionParser("A1",
+                        new ListParser(
+                            new AlternativeParser(
+                                new SequenceParser(
+                                    new KeywordParser("ref"),
+                                    new ActionParser("A2",
+                                        new NonterminalParser("arg", "Expression", 1))),
+                                new ActionParser("A3",
+                                    new NonterminalParser("Expression", "Expression", 1))),
+                            new CharParser(','))))));
+        }
+    }
+}

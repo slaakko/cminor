@@ -94,21 +94,21 @@ namespace System.IO
         private int fileHandle;
     }
 
-    [VmFunctionName=System.IO.OpenFile]
+    [vmf=fopen]
     internal extern int OpenFile(string filePath, FileMode mode, FileAccess access);
 
-    [VmFunctionName=System.IO.CloseFile]
+    [vmf=fclose]
     internal extern void CloseFile(int fileHandle);
 
-    [VmFunctionName=System.IO.WriteByteToFile]
+    [vmf=fputb]
     internal extern void WriteByteToFile(int fileHandle, byte value);
 
-    [VmFunctionName=System.IO.WriteFile]
+    [vmf=fwrite]
     internal extern void WriteFile(int fileHandle, byte[] buffer, int count);
 
-    [VmFunctionName=System.IO.ReadByteFromFile]
+    [vmf=fgetb]
     internal extern int ReadByteFromFile(int fileHandle);
 
-    [VmFunctionName=System.IO.ReadFile]
+    [vmf=fread]
     internal extern int ReadFile(int fileHandle, byte[] buffer);
 }

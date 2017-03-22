@@ -9,6 +9,7 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/machine/OsInterface.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <stdexcept>
 #include <iostream>
 
@@ -216,7 +217,177 @@ void Shell::Operand(int index)
 void Shell::Print(IntegralValue value)
 {
     CodeFormatter formatter(std::cout);
+    Print(value, formatter);
+}
+
+void Shell::Print(IntegralValue value, CodeFormatter& formatter)
+{
     value.Dump(formatter);
+}
+
+void Shell::Print(IntegralValue value, TypeSymbol* type, CodeFormatter& formatter)
+{
+    if (type->IsArrayType())
+    {
+        ArrayTypeSymbol* arrayType = static_cast<ArrayTypeSymbol*>(type);
+        TypeSymbol* elementType = arrayType->ElementType();
+        IntegralValue length = GetManagedMemoryPool().GetField(ObjectReference(value.Value()), 1);
+        if (length.GetType() != ValueType::intType)
+        {
+            throw std::runtime_error("int type expected");
+        }
+        int n = length.AsInt();
+        formatter.WriteLine("array of " + std::to_string(n) + " '" + ToUtf8(elementType->FullName()) + "':");
+        formatter.WriteLine("[");
+        formatter.IncIndent();
+        IntegralValue elements = GetManagedMemoryPool().GetField(ObjectReference(value.Value()), 2);
+        if (elements.GetType() != ValueType::allocationHandle)
+        {
+            throw std::runtime_error("allocation handle expected");
+        }
+        void* arrayElements = GetManagedMemoryPool().GetAllocationNoThrowNoLock(AllocationHandle(elements.Value()));
+        for (int i = 0; i < n; ++i)
+        {
+            formatter.Write(std::to_string(i) + ": ");
+            IntegralValue elementValue = GetElement(arrayElements, i);
+            Print(elementValue, elementType, formatter);
+        }
+        formatter.DecIndent();
+        formatter.WriteLine("]");
+    }
+    else if (type->IsClassType())
+    {
+        if (type->FullName() == U"System.String")
+        {
+            ObjectReference strReference(value.Value());
+            if (strReference.IsNull())
+            {
+                formatter.WriteLine("null");
+            }
+            else
+            {
+                std::string str = GetManagedMemoryPool().GetUtf8String(strReference);
+                std::string s = "\"" + StringStr(str) + "\"";
+                formatter.WriteLine(s);
+            }
+        }
+        else
+        {
+            ClassTypeSymbol* classType = static_cast<ClassTypeSymbol*>(type);
+            ObjectReference objectRef(value.Value());
+            if (objectRef.IsNull())
+            {
+                formatter.WriteLine("object of class '" + ToUtf8(classType->FullName()) + "': null");
+            }
+            else
+            {
+                formatter.WriteLine("object of class '" + ToUtf8(classType->FullName()) + "':");
+                formatter.WriteLine("{");
+                formatter.IncIndent();
+                int n = int(classType->MemberVariables().size());
+                for (int i = 0; i < n; ++i)
+                {
+                    MemberVariableSymbol* memberVariableSymbol = classType->MemberVariables()[i];
+                    uint32_t index = memberVariableSymbol->Index();
+                    IntegralValue fieldValue = GetManagedMemoryPool().GetField(objectRef, i + 1);
+                    Print(fieldValue, memberVariableSymbol->GetType(), formatter);
+                }
+                formatter.DecIndent();
+                formatter.WriteLine("}");
+            }
+        }
+    }
+    else
+    {
+        Print(value, formatter);
+    }
+}
+
+void Shell::Print(const std::string& name)
+{
+    if (!machine.MainThread().GetStack().IsEmpty())
+    {
+        Frame* frame = machine.MainThread().GetStack().CurrentFrame();
+        Function& fun = frame->Fun();
+        FunctionSymbol* functionSymbol = static_cast<FunctionSymbol*>(fun.FunctionSymbol());
+        ContainerScope* scope = functionSymbol->GetMappedContainerScopeForPC(frame->PC());
+        if (scope)
+        {
+            utf32_string s = ToUtf32(name);
+            Symbol* symbol = scope->Lookup(StringPtr(s.c_str()), ScopeLookup::this_and_base_and_parent);
+            if (symbol)
+            {
+                VariableSymbol* variableSymbol = dynamic_cast<VariableSymbol*>(symbol);
+                if (variableSymbol)
+                {
+                    ParameterSymbol* parameterSymbol = dynamic_cast<ParameterSymbol*>(variableSymbol);
+                    if (parameterSymbol)
+                    {
+                        int index = parameterSymbol->Index();
+                        LocalVariable& localVariable = frame->Local(index);
+                        CodeFormatter formatter(std::cout);
+                        Print(localVariable.GetValue(), parameterSymbol->GetType(), formatter);
+                    }
+                    else
+                    {
+                        LocalVariableSymbol* localVariableSymbol = dynamic_cast<LocalVariableSymbol*>(variableSymbol);
+                        if (localVariableSymbol)
+                        {
+                            int index = localVariableSymbol->Index();
+                            CodeFormatter formatter(std::cout);
+                            LocalVariable& localVariable = frame->Local(index);
+                            Print(localVariable.GetValue(), localVariableSymbol->GetType(), formatter);
+                        }
+                        else
+                        {
+                            MemberVariableSymbol* memberVariableSymbol = dynamic_cast<MemberVariableSymbol*>(variableSymbol);
+                            if (memberVariableSymbol)
+                            {
+                                Symbol* thisSymbol = scope->Lookup(StringPtr(U"this"), ScopeLookup::this_and_base_and_parent);
+                                if (thisSymbol)
+                                {
+                                    LocalVariableSymbol* thisVariableSymbol = dynamic_cast<LocalVariableSymbol*>(thisSymbol);
+                                    if (thisVariableSymbol)
+                                    {
+                                        int thisIndex = thisVariableSymbol->Index();
+                                        LocalVariable& thisVariable = frame->Local(thisIndex);
+                                        int index = memberVariableSymbol->Index();
+                                        CodeFormatter formatter(std::cout);
+                                        IntegralValue fieldValue = GetManagedMemoryPool().GetField(ObjectReference(thisVariable.GetValue().Value()), index);
+                                        Print(fieldValue, memberVariableSymbol->GetType(), formatter);
+                                    }
+                                }
+                                else
+                                {
+                                    throw std::runtime_error("'this' not found from current scope");
+                                }
+                            }
+                            else
+                            {
+                                throw std::runtime_error("symbol '" + name + "' is not a parameter, local variable or member variable symbol");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    throw std::runtime_error("symbol '" + name + "' is not a variable symbol");
+                }
+            }
+            else
+            {
+                throw std::runtime_error("symbol '" + name + "' not found");
+            }
+        }
+        else
+        {
+            throw std::runtime_error("no scope for current instruction");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("no stack frame");
+    }
 }
 
 void Shell::Exit()
@@ -244,44 +415,38 @@ void Shell::PrintAllocation(int handle)
 {
     Frame* frame = machine.MainThread().GetStack().CurrentFrame();
     AllocationHandle allocationHandle(handle);
-    ManagedAllocation* allocation = GetManagedMemoryPool().GetAllocation(allocationHandle);
-    Object* o = dynamic_cast<Object*>(allocation);
-    if (o)
+    void* allocation = GetManagedMemoryPool().GetAllocationNoThrowNoLock(allocationHandle);
+    ManagedAllocationHeader* header = GetAllocationHeader(allocation);
+    if (header->IsObject())
     {
-        ObjectType* type = o->GetType();
+        ObjectHeader* objectHeader = &header->objectHeader;
+        ObjectType* type = objectHeader->GetType();
         utf32_string us = type->Name().Value();
         std::string s = ToUtf8(us);
-        std::cout << "object " << s << " : " << o->FieldCount() << std::endl;
+        std::cout << "object " << s << " : " << GetManagedMemoryPool().GetFieldCount(ObjectReference(allocationHandle.Value())) << std::endl;
     }
-    else
+    else if (header->IsArrayElements())
     {
-        ArrayElements* a = dynamic_cast<ArrayElements*>(allocation);
-        if (a)
+        ArrayElementsHeader* arrayElementsHeader = &header->arrayElementsHeader;
+        Type* type = arrayElementsHeader->GetElementType();
+        std::cout << "array of " << ToUtf8(type->Name().Value()) << " : " << arrayElementsHeader->NumElements() << std::endl;
+    }
+    else if (header->IsStringCharacters())
+    {
+        StringCharactersHeader* stringCharsHeader = &header->stringCharactersHeader;
+        const char32_t* str = stringCharsHeader->Str();
+        int n = stringCharsHeader->NumChars();
+        if (n > 0)
         {
-            Type* type = a->GetElementType();
-            std::cout << "array of " << ToUtf8(type->Name().Value()) << " : " << a->NumElements() << std::endl;
-        }
-        else
-        {
-            StringCharacters* s = dynamic_cast<StringCharacters*>(allocation);
-            if (s)
+            std::cout << "string \"";
+            std::string s;
+            for (int i = 0; i < n; ++i)
             {
-                std::cout << "string \"";
-                std::string str;
-                int n = s->NumChars();
-                for (int i = 0; i < n; ++i)
-                {
-                    IntegralValue v = s->GetChar(i);
-                    char32_t c = v.AsChar();
-                    char d = static_cast<char>(c);
-                    str.append(1, d);
-                }
-                std::cout << str << "\"" << std::endl;
+                char32_t c = str[i];
+                char d = static_cast<char>(c);
+                s.append(1, d);
             }
-            else
-            {
-                throw std::runtime_error("invalid allocation " + std::to_string(handle));
-            }
+            std::cout << s << "\"" << std::endl;
         }
     }
 }
@@ -290,25 +455,17 @@ void Shell::PrintField(int handle, int index)
 {
     Frame* frame = machine.MainThread().GetStack().CurrentFrame();
     AllocationHandle allocationHandle(handle);
-    ManagedAllocation* allocation = GetManagedMemoryPool().GetAllocation(allocationHandle);
-    Object* o = dynamic_cast<Object*>(allocation);
-    if (o)
+    void* allocation = GetManagedMemoryPool().GetAllocationNoThrowNoLock(allocationHandle);
+    ManagedAllocationHeader* header = GetAllocationHeader(allocation);
+    if (header->IsObject())
     {
-        IntegralValue value = o->GetField(index);
+        IntegralValue value = GetManagedMemoryPool().GetField(ObjectReference(allocationHandle.Value()), index);
         Print(value);
     }
-    else
+    else if (header->IsArrayElements())
     {
-        ArrayElements* a = dynamic_cast<ArrayElements*>(allocation);
-        if (a)
-        {
-            IntegralValue value = a->GetElement(index);
-            Print(value);
-        }
-        else
-        {
-            throw std::runtime_error("handle does not denote an object or an array " + std::to_string(handle));
-        }
+        IntegralValue value = GetElement(allocation, index);
+        Print(value);
     }
 }
 

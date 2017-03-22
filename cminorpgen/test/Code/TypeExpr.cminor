@@ -297,10 +297,10 @@ namespace Code
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.BasicTypeGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.ExpressionGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new Code.BasicTypeGrammar(parsingDomain);
+                grammar0 = new Code.ExpressionGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
             Grammar grammar1 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
@@ -308,4 +308,59 @@ namespace Code
             {
                 grammar1 = new Code.IdentifierGrammar(parsingDomain);
             }
-         
+            ReferencedGrammars.Add(grammar1);
+            Grammar grammar2 = parsingDomain.GetGrammar("Code.TemplateGrammar");
+            if (grammar2 == null)
+            {
+                grammar2 = new Code.TemplateGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar2);
+            Grammar grammar3 = parsingDomain.GetGrammar("Code.BasicTypeGrammar");
+            if (grammar3 == null)
+            {
+                grammar3 = new Code.BasicTypeGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar3);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
+            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
+            AddRule(new TypeExprRule("TypeExpr", GetScope(),
+                new ActionParser("A0",
+                    new NonterminalParser("PrefixTypeExpr", "PrefixTypeExpr", 1))));
+            AddRule(new PrefixTypeExprRule("PrefixTypeExpr", GetScope(),
+                new AlternativeParser(
+                    new ActionParser("A0",
+                        new SequenceParser(
+                            new KeywordParser("ref"),
+                            new NonterminalParser("refExpr", "PostfixTypeExpr", 1))),
+                    new ActionParser("A1",
+                        new NonterminalParser("pf", "PostfixTypeExpr", 1)))));
+            AddRule(new PostfixTypeExprRule("PostfixTypeExpr", GetScope(),
+                new SequenceParser(
+                    new NonterminalParser("PrimaryTypeExpr", "PrimaryTypeExpr", 1),
+                    new KleeneStarParser(
+                        new AlternativeParser(
+                            new SequenceParser(
+                                new CharParser('.'),
+                                new ExpectationParser(
+                                    new NonterminalParser("Identifier", "Identifier", 0))),
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new CharParser('['),
+                                    new OptionalParser(
+                                        new NonterminalParser("size", "Expression", 1))),
+                                new ExpectationParser(
+                                    new CharParser(']'))))))));
+            AddRule(new PrimaryTypeExprRule("PrimaryTypeExpr", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new NonterminalParser("BasicType", "BasicType", 0),
+                        new NonterminalParser("TemplateId", "TemplateId", 1)),
+                    new NonterminalParser("Identifier", "Identifier", 0))));
+        }
+    }
+}

@@ -3,8 +3,8 @@
 // Distributed under the MIT license
 // =================================
 
-#ifndef CMINOR_MACHINE_RUN_TIME_INCLUDED
-#define CMINOR_MACHINE_RUN_TIME_INCLUDED
+#ifndef CMINOR_MACHINE_RUNTIME_INCLUDED
+#define CMINOR_MACHINE_RUNTIME_INCLUDED
 #include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/CminorException.hpp>
 #include <stdint.h>
@@ -195,4 +195,4 @@ extern "C" MACHINE_API void RtPollGc();
 
 } } // namespace cminor::machine
 
-#endif // CMINOR_JIT_RUN_TIME_INCLUDED
+#endif // CMINOR_MACHINE_RUNTIME_INCLUDED

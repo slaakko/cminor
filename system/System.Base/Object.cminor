@@ -2,15 +2,15 @@ namespace System
 {
     public class Object
     {
-        [VmFunctionName=Vm.System.Object.ToString]
+        [vmf=o2s]
         public extern virtual string ToString();
-        [VmFunctionName=Vm.System.Object.GetHashCode]
+        [vmf=ohash]
         public extern virtual ulong GetHashCode();
     }
 
-    [VmFunctionName=Vm.System.Object.Equal]
+    [vmf=oeq]
     public extern bool operator==(Object left, Object right);
 
-    [VmFunctionName=Vm.System.Object.Less]
+    [vmf=oless]
     public extern bool operator<(Object left, Object right);
 }

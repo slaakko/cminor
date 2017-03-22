@@ -11,7 +11,7 @@ namespace System.IO
         }
     }
 
-    [VmFunctionName=Vm.System.IO.InternalGetCurrentWorkingDirectory]
+    [vmf=cwd]
     public extern string InternalGetCurrentWorkingDirectory();
 
     public string GetCurrentWorkingDirectory()

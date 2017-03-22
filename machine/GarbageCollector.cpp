@@ -6,7 +6,7 @@
 #include <cminor/machine/GarbageCollector.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Log.hpp>
-#include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/Runtime.hpp>
 #include <cminor/machine/Stats.hpp>
 #include <iostream>
 
@@ -215,15 +215,24 @@ void GarbageCollector::Run()
 void GarbageCollector::CollectGarbage()
 {
     auto start = std::chrono::system_clock::now();
-    machine.GetManagedMemoryPool().ResetLiveFlags();
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    memoryPool.ResetLiveFlags();
     MarkLiveAllocations();
-    machine.GetManagedMemoryPool().MoveLiveAllocationsToArena(ArenaId::gen1Arena, machine.Gen2Arena());
+    memoryPool.MoveLiveAllocationsToArena(ArenaId::gen1Arena, machine.Gen2Arena());
     machine.Gen1Arena().Clear();
     if (fullCollectionRequested)
     {
-        machine.GetManagedMemoryPool().MoveLiveAllocationsToNewSegments(machine.Gen2Arena());
+        memoryPool.MoveLiveAllocationsToNewSegments(machine.Gen2Arena());
     }
     machine.Compact();
+    for (const std::unique_ptr<Thread>& thread : machine.Threads())
+    {
+        AllocationContext* allocationContext = thread->GetAllocationContext();
+        if (allocationContext)
+        {
+            allocationContext->Clear();
+        }
+    }
 #ifdef GC_LOGGING
     std::cout << ".";
 #endif
@@ -238,11 +247,12 @@ inline void GarbageCollector::MarkLiveAllocations(ObjectReference objectReferenc
     if (!objectReference.IsNull() && checked.find(objectReference) == checked.cend())
     {
         checked.insert(objectReference);
-        Object* object = machine.GetManagedMemoryPool().GetObjectNothrow(objectReference);
+        void* object = GetManagedMemoryPool().GetObjectNoThrowNoLock(objectReference);
         if (object)
         {
-            object->SetLive();
-            object->MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
+            ManagedAllocationHeader* header = GetAllocationHeader(object);
+            header->SetLive();
+            MarkObjectLiveAllocations(object, checked);
         }
     }
 }
@@ -250,14 +260,23 @@ inline void GarbageCollector::MarkLiveAllocations(ObjectReference objectReferenc
 void GarbageCollector::MarkLiveAllocations()
 {
     std::unordered_set<AllocationHandle, AllocationHandleHash> checked;
-    AllocationHandle root = machine.GetManagedMemoryPool().PoolRoot();
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    AllocationHandle root = memoryPool.PoolRoot();
     if (root.Value() != 0)
     {
-        ManagedAllocation* allocation = machine.GetManagedMemoryPool().GetAllocationNothrow(root);
+        void* allocation = memoryPool.GetAllocationNoThrowNoLock(root);
         if (allocation)
         {
-            allocation->SetLive();
-            allocation->MarkLiveAllocations(checked, machine.GetManagedMemoryPool());
+            ManagedAllocationHeader* header = GetAllocationHeader(allocation);
+            header->SetLive();
+            if (header->IsObject())
+            {
+                MarkObjectLiveAllocations(allocation, checked);
+            }
+            else if (header->IsArrayElements())
+            {
+                MarkArrayElementsLiveAllocations(allocation, checked);
+            }
         }
     }
     for (const auto& p : ClassDataTable::ClassDataMap())

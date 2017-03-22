@@ -87,8 +87,8 @@ public:
     Function* MachineFunction() const { return machineFunction; }
     virtual void CreateMachineFunction();
     void EmplaceType(TypeSymbol* type, int index) override;
-    void SetVmFunctionName(StringPtr vmFunctionName_);
-    Constant VmFunctionName() const { return vmFunctionName; }
+    void SetVmf(StringPtr vmf);
+    Constant Vmf() const { return vmf; }
     FunctionSymbolFlags GetFlags() const { return flags; }
     virtual bool IsDerived() const { return false; }
     virtual bool IsMemFunToClassDelegateConversion() const { return false; }
@@ -97,15 +97,22 @@ public:
     void SetDeclarationBlockId(int declarationBlockId_) { declarationBlockId = declarationBlockId_; }
     virtual bool IsPropertyGetterOrSetter() const { return false; }
     virtual bool IsIndexerGetterOrSetter() const { return false; }
+    uint32_t GetNextContainerScopeId() { return nextContainerScopeId++; }
+    void MapContainerScope(uint32_t containerScopeId, ContainerScope* containerScope);
+    void MapPCToContainerScopeId(uint32_t pc, uint32_t containerScopeId);
+    ContainerScope* GetMappedContainerScopeForPC(uint32_t pc) const;
 private:
     Constant groupName;
-    Constant vmFunctionName;
+    Constant vmf;
     std::vector<ParameterSymbol*> parameters;
     std::vector<LocalVariableSymbol*> localVariables;
     TypeSymbol* returnType;
     FunctionSymbolFlags flags;
     Function* machineFunction;
     int declarationBlockId;
+    uint32_t nextContainerScopeId;
+    std::unordered_map<uint32_t, ContainerScope*> containerScopeMap;
+    std::unordered_map<uint32_t, uint32_t> pcContainerScopeIdMap;
 };
 
 class StaticConstructorSymbol : public FunctionSymbol

@@ -831,15 +831,24 @@ std::unique_ptr<Instruction> Machine::DecodeInst(Reader& reader)
     return std::unique_ptr<Instruction>(clonedInst);
 }
 
-void Machine::AllocateMemory(Thread& thread, uint64_t blockSize, MemPtr& memPtr, int32_t& segmentId)
+void Machine::AllocateMemory(Thread& thread, uint64_t blockSize, void*& ptr, int32_t& segmentId, std::unique_lock<std::recursive_mutex>& allocationLock)
 {
     if (blockSize <= defaultLargeObjectThresholdSize)
     {
-        gen1Arena->Allocate(thread, blockSize, memPtr, segmentId);
+        AllocationContext* allocationContext = thread.GetAllocationContext();
+        if (allocationContext)
+        {
+            bool allocationSucceeded = allocationContext->Allocate(blockSize, ptr, segmentId);
+            if (allocationSucceeded)
+            {
+                return;
+            }
+        }
+        gen1Arena->Allocate(thread, blockSize, ptr, segmentId, allocationLock);
     }
     else
     {
-        gen2Arena->Allocate(thread, blockSize, memPtr, segmentId);
+        gen2Arena->Allocate(thread, blockSize, ptr, segmentId, allocationLock);
     }
 }
 

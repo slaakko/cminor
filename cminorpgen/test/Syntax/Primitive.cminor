@@ -1182,4 +1182,30 @@ namespace Syntax
                                 new NonterminalParser("selector", "QualifiedId", 0))),
                         new ExpectationParser(
                             new CharParser(','))),
-                    new ActionParse
+                    new ActionParser("A1",
+                        new ExpectationParser(
+                            new NonterminalParser("StringArray", "StringArray", 1))))));
+            AddRule(new EmptyRule("Empty", GetScope(),
+                new ActionParser("A0",
+                    new KeywordParser("empty"))));
+            AddRule(new SpaceRule("Space", GetScope(),
+                new ActionParser("A0",
+                    new KeywordParser("space"))));
+            AddRule(new AnyCharRule("AnyChar", GetScope(),
+                new ActionParser("A0",
+                    new KeywordParser("anychar"))));
+            AddRule(new LetterRule("Letter", GetScope(),
+                new ActionParser("A0",
+                    new KeywordParser("letter"))));
+            AddRule(new DigitRule("Digit", GetScope(),
+                new ActionParser("A0",
+                    new KeywordParser("digit"))));
+            AddRule(new HexDigitRule("HexDigit", GetScope(),
+                new ActionParser("A0",
+                    new KeywordParser("hexdigit"))));
+            AddRule(new PunctuationRule("Punctuation", GetScope(),
+                new ActionParser("A0",
+                    new KeywordParser("punctuation"))));
+        }
+    }
+}

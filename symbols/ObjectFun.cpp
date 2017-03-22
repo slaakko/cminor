@@ -15,6 +15,7 @@ void CreateDefaultConstructor(Assembly& assembly, ClassTypeSymbol* classTypeSymb
 {
     ConstantPool& constantPool = assembly.GetConstantPool();
     ConstructorSymbol* defaultConstructorSymbol = new ConstructorSymbol(Span(), constantPool.GetEmptyStringConstant());
+    defaultConstructorSymbol->GetContainerScope()->SetId(defaultConstructorSymbol->GetNextContainerScopeId());
     defaultConstructorSymbol->SetAssembly(&assembly);
     defaultConstructorSymbol->SetPublic();
     defaultConstructorSymbol->SetGroupNameConstant(constantPool.GetConstant(constantPool.Install(U"@constructor")));
@@ -31,6 +32,7 @@ void CreateArraySizeConstructor(Assembly& assembly, ArrayTypeSymbol* arrayTypeSy
 {
     ConstantPool& constantPool = assembly.GetConstantPool();
     ArraySizeConstructorSymbol* arraySizeConstructorSymbol = new ArraySizeConstructorSymbol(Span(), constantPool.GetEmptyStringConstant());
+    arraySizeConstructorSymbol->GetContainerScope()->SetId(arraySizeConstructorSymbol->GetNextContainerScopeId());
     arraySizeConstructorSymbol->SetAssembly(&assembly);
     arraySizeConstructorSymbol->SetPublic();
     arraySizeConstructorSymbol->SetGroupNameConstant(constantPool.GetConstant(constantPool.Install(U"@constructor")));

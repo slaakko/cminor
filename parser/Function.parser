@@ -51,6 +51,7 @@ namespace cminor.parser
             |   '-'{ value = new FunctionGroupIdNode(span, "operator-"); }
             |   '*'{ value = new FunctionGroupIdNode(span, "operator*"); }
             |   '/'{ value = new FunctionGroupIdNode(span, "operator/"); }
+            |   '%'{ value = new FunctionGroupIdNode(span, "operator%"); }
             |   '^'{ value = new FunctionGroupIdNode(span, "operator^"); }
             |   '!'{ value = new FunctionGroupIdNode(span, "operator!"); }
             |   "()"{ value = new FunctionGroupIdNode(span, "operator()"); }

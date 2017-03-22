@@ -1190,4 +1190,40 @@ void UsingStatementNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+LockStatementNode::LockStatementNode(const Span& span_) : StatementNode(span_)
+{
+}
+
+LockStatementNode::LockStatementNode(const Span& span_, Node* expr_, StatementNode* statement_) : StatementNode(span_), expr(expr_), statement(statement_)
+{
+    expr->SetParent(this);
+    statement->SetParent(this);
+}
+
+Node* LockStatementNode::Clone(CloneContext& cloneContext) const
+{
+    return new LockStatementNode(GetSpan(), expr->Clone(cloneContext), static_cast<StatementNode*>(statement->Clone(cloneContext)));
+}
+
+void LockStatementNode::Write(AstWriter& writer)
+{
+    StatementNode::Write(writer);
+    writer.Put(expr.get());
+    writer.Put(statement.get());
+}
+
+void LockStatementNode::Read(AstReader& reader)
+{
+    StatementNode::Read(reader);
+    expr.reset(reader.GetNode());
+    expr->SetParent(this);
+    statement.reset(reader.GetStatementNode());
+    statement->SetParent(this);
+}
+
+void LockStatementNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 } } // namespace cminor::ast

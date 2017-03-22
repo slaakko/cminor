@@ -687,4 +687,20 @@ namespace Syntax
                         new SequenceParser(
                             new CharParser('%'),
                             new ActionParser("A1",
-                                new NonterminalParser("right", "Po
+                                new NonterminalParser("right", "Postfix", 2)))))));
+            AddRule(new PostfixRule("Postfix", GetScope(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("Primary", "Primary", 2)),
+                    new OptionalParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new ActionParser("A1",
+                                    new CharParser('*')),
+                                new ActionParser("A2",
+                                    new CharParser('+'))),
+                            new ActionParser("A3",
+                                new CharParser('?')))))));
+        }
+    }
+}

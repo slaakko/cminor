@@ -5,13 +5,16 @@
 
 #include <cminor/vmlib/VmFunction.hpp>
 #include <cminor/vmlib/File.hpp>
+#include <cminor/vmlib/Threading.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Type.hpp>
 #include <cminor/machine/Machine.hpp>
-#include <cminor/machine/RunTime.hpp>
+#include <cminor/machine/Runtime.hpp>
 #include <boost/filesystem.hpp>
 #include <cctype>
+#include <chrono>
+#include <thread>
 
 namespace cminor { namespace vmlib {
 
@@ -24,7 +27,7 @@ public:
 
 VmSystemPowDoubleInt::VmSystemPowDoubleInt(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Pow.Double.Int"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"pow"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -50,7 +53,7 @@ public:
 
 VmSystemIsSpaceChar::VmSystemIsSpaceChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsSpace.Char"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"isspace"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -72,7 +75,7 @@ public:
 
 VmSystemIsLetterChar::VmSystemIsLetterChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsLetter.Char"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"isletter"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -94,7 +97,7 @@ public:
 
 VmSystemIsDigitChar::VmSystemIsDigitChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsDigit.Char"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"isdigit"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -116,7 +119,7 @@ public:
 
 VmSystemIsHexDigitChar::VmSystemIsHexDigitChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsHexDigit.Char"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"isxdigit"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -138,7 +141,7 @@ public:
 
 VmSystemIsPunctuationChar::VmSystemIsPunctuationChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsPunctuation.Char"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"ispunct"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -160,7 +163,7 @@ public:
 
 VmSystemIsPrintableChar::VmSystemIsPrintableChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IsPrintable.Char"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"isprint"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -182,7 +185,7 @@ public:
 
 VmSystemToLowerChar::VmSystemToLowerChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.ToLower.Char"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"tolower"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -204,7 +207,7 @@ public:
 
 VmSystemToUpperChar::VmSystemToUpperChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.ToUpper.Char"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"toupper"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -226,7 +229,7 @@ public:
 
 VmSystemObjectToString::VmSystemObjectToString(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Object.ToString"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"o2s"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -274,7 +277,7 @@ public:
 
 VmSystemObjectGetHashCode::VmSystemObjectGetHashCode(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Object.GetHashCode"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"ohash"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -290,8 +293,12 @@ void VmSystemObjectGetHashCode::Execute(Frame& frame)
     }
     else
     {
-        MemPtr memPtr = GetManagedMemoryPool().GetMemPtr(reference);
-        uint64_t hashCode = memPtr.HashCode();
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+        void* object = memoryPool.GetObject(reference, lock);
+        ManagedAllocationHeader* header = GetAllocationHeader(object);
+        ObjectHeader* objectHeader = &header->objectHeader;
+        uint64_t hashCode = objectHeader->HashCode();
         frame.OpStack().Push(IntegralValue(hashCode, ValueType::ulongType));
     }
 }
@@ -305,7 +312,7 @@ public:
 
 VmSystemObjectEqual::VmSystemObjectEqual(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Object.Equal"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"oeq"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -331,11 +338,11 @@ void VmSystemObjectEqual::Execute(Frame& frame)
         }
         else
         {
-            Object& left = GetManagedMemoryPool().GetObject(leftRef);
-            MemPtr leftMem = left.GetMemPtr();
-            Object& right = GetManagedMemoryPool().GetObject(rightRef);
-            MemPtr rightMem = right.GetMemPtr();
-            result = leftMem == rightMem;
+            ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+            std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+            void* left = memoryPool.GetObjectNoThrowNoLock(leftRef);
+            void* right = memoryPool.GetObjectNoThrowNoLock(rightRef);
+            result = left == right;
         }
         frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
     }
@@ -366,7 +373,7 @@ public:
 
 VmSystemObjectLess::VmSystemObjectLess(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Object.Less"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"oless"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -396,11 +403,11 @@ void VmSystemObjectLess::Execute(Frame& frame)
         }
         else
         {
-            Object& left = GetManagedMemoryPool().GetObject(leftRef);
-            MemPtr leftMem = left.GetMemPtr();
-            Object& right = GetManagedMemoryPool().GetObject(rightRef);
-            MemPtr rightMem = right.GetMemPtr();
-            result = leftMem < rightMem;
+            ManagedMemoryPool& pool = GetManagedMemoryPool();
+            std::unique_lock<std::recursive_mutex> lock(pool.AllocationsMutex());
+            void* left = pool.GetObjectNoThrowNoLock(leftRef);
+            void* right = pool.GetObjectNoThrowNoLock(rightRef);
+            result = left < right;
         }
         frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
     }
@@ -431,7 +438,7 @@ public:
 
 VmSystemStringConstructorCharArray::VmSystemStringConstructorCharArray(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"System.String.Constructor.CharArray"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"ca2s"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -446,12 +453,13 @@ void VmSystemStringConstructorCharArray::Execute(Frame& frame)
         IntegralValue charArrayValue = frame.Local(1).GetValue();
         Assert(charArrayValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference charArrayRef(charArrayValue.Value());
-        std::pair<AllocationHandle, int32_t> stringCharactersHandleStringSLengthPair = GetManagedMemoryPool().CreateStringCharsFromCharArray(frame.GetThread(), charArrayRef);
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+        std::pair<AllocationHandle, int32_t> stringCharactersHandleStringSLengthPair = memoryPool.CreateStringCharsFromCharArray(frame.GetThread(), charArrayRef, lock);
         AllocationHandle stringCharactersHandle = stringCharactersHandleStringSLengthPair.first;
         int32_t stringLength = stringCharactersHandleStringSLengthPair.second;
-        Object& str = GetManagedMemoryPool().GetObject(stringRef);
-        str.SetField(IntegralValue(stringLength, ValueType::intType), 1);
-        str.SetField(IntegralValue(stringCharactersHandle.Value(), ValueType::allocationHandle), 2);
+        memoryPool.SetField(stringRef, 1, IntegralValue(stringLength, ValueType::intType), lock);
+        memoryPool.SetField(stringRef, 2, IntegralValue(stringCharactersHandle.Value(), ValueType::allocationHandle), lock);
     }
     catch (const NullReferenceException& ex)
     {
@@ -480,7 +488,7 @@ public:
 
 VmSystemIOOpenFile::VmSystemIOOpenFile(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.OpenFile"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"fopen"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -537,7 +545,7 @@ public:
 
 VmSystemIOCloseFile::VmSystemIOCloseFile(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.CloseFile"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"fclose"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -578,7 +586,7 @@ public:
 
 VmSystemIOWriteByteToFile::VmSystemIOWriteByteToFile(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.WriteByteToFile"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"fputb"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -622,7 +630,7 @@ public:
 
 VmSystemIOWriteFile::VmSystemIOWriteFile(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.WriteFile"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"fwrite"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -686,7 +694,7 @@ public:
 
 VmSystemIOReadByteFromFile::VmSystemIOReadByteFromFile(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.ReadByteFromFile"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"fgetb"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -728,7 +736,7 @@ public:
 
 VmSystemIOReadFile::VmSystemIOReadFile(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.ReadFile"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"fread"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -744,11 +752,12 @@ void VmSystemIOReadFile::Execute(Frame& frame)
         Assert(bufferValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference buffer(bufferValue.Value());
         std::vector<uint8_t> bytes;
-        bytes.resize(GetManagedMemoryPool().GetNumArrayElements(buffer));
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        bytes.resize(memoryPool.GetNumArrayElements(buffer));
         int32_t result = ReadFile(fileHandle, &bytes[0], int32_t(bytes.size()));
         if (result > 0)
         {
-            GetManagedMemoryPool().SetBytes(buffer, bytes, result);
+            memoryPool.SetBytes(buffer, bytes, result);
         }
         frame.OpStack().Push(IntegralValue(result, ValueType::intType));
     }
@@ -795,7 +804,7 @@ public:
 
 VmSystemIOFileExists::VmSystemIOFileExists(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.File.Exists"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"fexists"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -838,7 +847,7 @@ public:
 
 VmSystemIOLastWriteTimeLess::VmSystemIOLastWriteTimeLess(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"System.IO.File.LastWriteTimeLess"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"writetimeless"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -850,11 +859,12 @@ void VmSystemIOLastWriteTimeLess::Execute(Frame& frame)
         IntegralValue firstFilePathValue = frame.Local(0).GetValue();
         Assert(firstFilePathValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference firstFilePathStr(firstFilePathValue.Value());
-        std::string firstFilePath = GetManagedMemoryPool().GetUtf8String(firstFilePathStr);
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::string firstFilePath = memoryPool.GetUtf8String(firstFilePathStr);
         IntegralValue secondFilePathValue = frame.Local(1).GetValue();
         Assert(secondFilePathValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference secondFilePathStr(secondFilePathValue.Value());
-        std::string secondFilePath = GetManagedMemoryPool().GetUtf8String(secondFilePathStr);
+        std::string secondFilePath = memoryPool.GetUtf8String(secondFilePathStr);
         bool less = boost::filesystem::last_write_time(firstFilePath) < boost::filesystem::last_write_time(secondFilePath);
         frame.OpStack().Push(IntegralValue(less, ValueType::boolType));
     }
@@ -885,7 +895,7 @@ public:
 
 VmSystemGetEnvironmentVariable::VmSystemGetEnvironmentVariable(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.GetEnvironmentVariable"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"getenv"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -895,13 +905,14 @@ void VmSystemGetEnvironmentVariable::Execute(Frame& frame)
     IntegralValue environmentVarNameValue = frame.Local(0).GetValue();
     Assert(environmentVarNameValue.GetType() == ValueType::objectReference, "object reference expected");
     ObjectReference environmentVarName(environmentVarNameValue.Value());
-    std::string envVarName = GetManagedMemoryPool().GetUtf8String(environmentVarName);
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    std::string envVarName = memoryPool.GetUtf8String(environmentVarName);
     char* value = std::getenv(envVarName.c_str());
     if (value)
     {
         std::string s(value);
         utf32_string us = ToUtf32(s);
-        ObjectReference envVarValue = GetManagedMemoryPool().CreateString(frame.GetThread(), us);
+        ObjectReference envVarValue = memoryPool.CreateString(frame.GetThread(), us);
         frame.OpStack().Push(envVarValue);
     }
     else
@@ -919,7 +930,7 @@ public:
 
 VmSystemGetPathSeparatorChar::VmSystemGetPathSeparatorChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.GetPathSeparatorChar"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"pathsep"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -943,7 +954,7 @@ public:
 
 VmSystemIOInternalGetCurrentWorkingDirectory::VmSystemIOInternalGetCurrentWorkingDirectory(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.IO.InternalGetCurrentWorkingDirectory"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"cwd"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -965,7 +976,7 @@ public:
 
 VmSystemThreadingStartThreadWithThreadStartFunction::VmSystemThreadingStartThreadWithThreadStartFunction(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Threading.StartThread.ThreadStartFunction"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"tsf"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -983,9 +994,11 @@ void VmSystemThreadingStartThreadWithThreadStartFunction::Execute(Frame& frame)
         }
         int threadId = GetMachine().StartThread(fun, RunThreadKind::function, ObjectReference(0), ObjectReference(0));
         ClassData* threadClassData = ClassDataTable::GetClassData(U"System.Threading.Thread");
-        ObjectReference threadReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), threadClassData->Type());
-        GetManagedMemoryPool().SetField(threadReference, 0, IntegralValue(threadClassData));
-        GetManagedMemoryPool().SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType));
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex(), std::defer_lock_t());
+        ObjectReference threadReference = memoryPool.CreateObject(frame.GetThread(), threadClassData->Type(), lock);
+        memoryPool.SetField(threadReference, 0, IntegralValue(threadClassData), lock);
+        memoryPool.SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType), lock);
         frame.OpStack().Push(threadReference);
     }
     catch (const NullReferenceException& ex)
@@ -1007,7 +1020,7 @@ public:
 
 VmSystemThreadingStartThreadWithThreadStartMethod::VmSystemThreadingStartThreadWithThreadStartMethod(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Threading.StartThread.ThreadStartMethod"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"tsm"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -1023,18 +1036,19 @@ void VmSystemThreadingStartThreadWithThreadStartMethod::Execute(Frame& frame)
         {
             throw NullReferenceException("provided class delegate is null");
         }
-        Object& object = GetManagedMemoryPool().GetObject(classDelegateObject);
-        IntegralValue classObjectValue = object.GetField(1);
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex(), std::defer_lock_t());
+        IntegralValue classObjectValue = memoryPool.GetField(classDelegateObject, 1, lock);
         Assert(classObjectValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference receiver(classObjectValue.Value());
-        IntegralValue functionValue = object.GetField(2);
+        IntegralValue functionValue = memoryPool.GetField(classDelegateObject, 2, lock);
         Assert(functionValue.GetType() == ValueType::functionPtr, "function pointer expected");
         Function* fun = functionValue.AsFunctionPtr();
         int threadId = GetMachine().StartThread(fun, RunThreadKind::method, receiver, ObjectReference(0));
         ClassData* threadClassData = ClassDataTable::GetClassData(U"System.Threading.Thread");
-        ObjectReference threadReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), threadClassData->Type());
-        GetManagedMemoryPool().SetField(threadReference, 0, IntegralValue(threadClassData));
-        GetManagedMemoryPool().SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType));
+        ObjectReference threadReference = memoryPool.CreateObject(frame.GetThread(), threadClassData->Type(), lock);
+        memoryPool.SetField(threadReference, 0, IntegralValue(threadClassData), lock);
+        memoryPool.SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType), lock);
         frame.OpStack().Push(threadReference);
     }
     catch (const NullReferenceException& ex)
@@ -1056,7 +1070,7 @@ public:
 
 VmSystemThreadingStartThreadWithParameterizedThreadStartFunction::VmSystemThreadingStartThreadWithParameterizedThreadStartFunction(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Threading.StartThread.ParameterizedThreadStartFunction"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"ptsf"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -1077,9 +1091,11 @@ void VmSystemThreadingStartThreadWithParameterizedThreadStartFunction::Execute(F
         ObjectReference arg(argValue.Value());
         int threadId = GetMachine().StartThread(fun, RunThreadKind::functionWithParam, ObjectReference(0), arg);
         ClassData* threadClassData = ClassDataTable::GetClassData(U"System.Threading.Thread");
-        ObjectReference threadReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), threadClassData->Type());
-        GetManagedMemoryPool().SetField(threadReference, 0, IntegralValue(threadClassData));
-        GetManagedMemoryPool().SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType));
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex(), std::defer_lock_t());
+        ObjectReference threadReference = memoryPool.CreateObject(frame.GetThread(), threadClassData->Type(), lock);
+        memoryPool.SetField(threadReference, 0, IntegralValue(threadClassData), lock);
+        memoryPool.SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType), lock);
         frame.OpStack().Push(threadReference);
     }
     catch (const NullReferenceException& ex)
@@ -1101,7 +1117,7 @@ public:
 
 VmSystemThreadingStartThreadWithParameterizedThreadStartMethod::VmSystemThreadingStartThreadWithParameterizedThreadStartMethod(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Threading.StartThread.ParameterizedThreadStartMethod"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"ptsm"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -1117,11 +1133,13 @@ void VmSystemThreadingStartThreadWithParameterizedThreadStartMethod::Execute(Fra
         {
             throw NullReferenceException("provided class delegate is null");
         }
-        Object& object = GetManagedMemoryPool().GetObject(classDelegateObject);
-        IntegralValue classObjectValue = object.GetField(1);
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex(), std::defer_lock_t());
+        void* object = memoryPool.GetObject(classDelegateObject, lock);
+        IntegralValue classObjectValue = memoryPool.GetField(classDelegateObject, 1, lock);
         Assert(classObjectValue.GetType() == ValueType::objectReference, "object reference expected");
         ObjectReference receiver(classObjectValue.Value());
-        IntegralValue functionValue = object.GetField(2);
+        IntegralValue functionValue = memoryPool.GetField(classDelegateObject, 2, lock);
         Assert(functionValue.GetType() == ValueType::functionPtr, "function pointer expected");
         Function* fun = functionValue.AsFunctionPtr();
         IntegralValue argValue = frame.Local(1).GetValue();
@@ -1129,9 +1147,9 @@ void VmSystemThreadingStartThreadWithParameterizedThreadStartMethod::Execute(Fra
         ObjectReference arg(argValue.Value());
         int threadId = GetMachine().StartThread(fun, RunThreadKind::methodWithParam, receiver, arg);
         ClassData* threadClassData = ClassDataTable::GetClassData(U"System.Threading.Thread");
-        ObjectReference threadReference = GetManagedMemoryPool().CreateObject(frame.GetThread(), threadClassData->Type());
-        GetManagedMemoryPool().SetField(threadReference, 0, IntegralValue(threadClassData));
-        GetManagedMemoryPool().SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType));
+        ObjectReference threadReference = memoryPool.CreateObject(frame.GetThread(), threadClassData->Type(), lock);
+        memoryPool.SetField(threadReference, 0, IntegralValue(threadClassData), lock);
+        memoryPool.SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType), lock);
         frame.OpStack().Push(threadReference);
     }
     catch (const NullReferenceException& ex)
@@ -1153,7 +1171,7 @@ public:
 
 VmSystemThreadingJoinThread::VmSystemThreadingJoinThread(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"Vm.System.Threading.JoinThread"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"join"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -1185,13 +1203,14 @@ void VmSystemThreadingJoinThread::Execute(Frame& frame)
         ObjectReference threadRefefence(threadValue.Value());
         if (threadRefefence.IsNull())
         {
-            throw new NullReferenceException("tried to join null thread");
+            throw NullReferenceException("tried to join null thread");
         }
         IntegralValue threadIdValue = GetManagedMemoryPool().GetField(threadRefefence, 1);
         Assert(threadIdValue.GetType() == ValueType::intType, "int expected");
         int threadId = threadIdValue.AsInt();
         WaitingSetter waiting(frame.GetThread());
         GetMachine().JoinThread(threadId);
+        GetMachine().GetGarbageCollector().WaitForIdle(frame.GetThread());
     }
     catch (const NullReferenceException& ex)
     {
@@ -1208,6 +1227,464 @@ void VmSystemThreadingJoinThread::Execute(Frame& frame)
             throw;
         }
         ThrowThreadingException(ex, frame);
+    }
+}
+
+class VmSystemThreadingEnterMonitor : public VmFunction
+{
+public:
+    VmSystemThreadingEnterMonitor(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingEnterMonitor::VmSystemThreadingEnterMonitor(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"enterm"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingEnterMonitor::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue lockValue = frame.Local(0).GetValue();
+        ObjectReference lockReference(lockValue.Value());
+        if (lockReference.IsNull())
+        {
+            throw NullReferenceException("tried to enter monitor with null object reference");
+        }
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+        void* lockObject = memoryPool.GetObject(lockReference, lock);
+        ManagedAllocationHeader* header = GetAllocationHeader(lockObject);
+        header->Reference();
+        lock.unlock();
+        Thread& thread = frame.GetThread();
+        WaitingSetter waiting(thread);
+        EnterMonitor(header);
+        lockObject = memoryPool.GetObject(lockReference, lock);
+        header = GetAllocationHeader(lockObject);
+        header->Unreference();
+        GetMachine().GetGarbageCollector().WaitForIdle(thread);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+}
+
+class VmSystemThreadingExitMonitor : public VmFunction
+{
+public:
+    VmSystemThreadingExitMonitor(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingExitMonitor::VmSystemThreadingExitMonitor(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"exitm"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingExitMonitor::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue lockValue = frame.Local(0).GetValue();
+        ObjectReference lockReference(lockValue.Value());
+        if (lockReference.IsNull())
+        {
+            throw NullReferenceException("tried to exit monitor with null object reference");
+        }
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+        void* lockObject = memoryPool.GetObject(lockReference, lock);
+        ManagedAllocationHeader* header = GetAllocationHeader(lockObject);
+        header->Reference();
+        lock.unlock();
+        ExitMonitor(header);
+        lockObject = memoryPool.GetObject(lockReference, lock);
+        header = GetAllocationHeader(lockObject);
+        header->Unreference();
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+}
+
+class VmSystemThreadingConditionVariableConstructor : public VmFunction
+{
+public:
+    VmSystemThreadingConditionVariableConstructor(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingConditionVariableConstructor::VmSystemThreadingConditionVariableConstructor(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"initcv"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingConditionVariableConstructor::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue condVarValue = frame.Local(0).GetValue();
+        ObjectReference condVarRefefence(condVarValue.Value());
+        if (condVarRefefence.IsNull())
+        {
+            throw NullReferenceException("tried to construct a condition variable with a null reference");
+        }
+        int32_t condVarId = CreateConditionVariable();
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+        void* condVarObject = memoryPool.GetObject(condVarRefefence, lock);
+        ManagedAllocationHeader* header = GetAllocationHeader(condVarObject);
+        header->SetConditionVariable();
+        memoryPool.SetField(condVarRefefence, 1, IntegralValue(condVarId, ValueType::intType), lock);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+}
+
+class VmSystemThreadingConditionVariableNotifyOne : public VmFunction
+{
+public:
+    VmSystemThreadingConditionVariableNotifyOne(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingConditionVariableNotifyOne::VmSystemThreadingConditionVariableNotifyOne(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"notifyone"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingConditionVariableNotifyOne::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue condVarValue = frame.Local(0).GetValue();
+        ObjectReference condVarRefefence(condVarValue.Value());
+        if (condVarRefefence.IsNull())
+        {
+            throw NullReferenceException("tried to notify a condition variable with a null object reference");
+        }
+        IntegralValue condVarIdValue = GetManagedMemoryPool().GetField(condVarRefefence, 1);
+        Assert(condVarIdValue.GetType() == ValueType::intType, "int expected");
+        int32_t condVarId = condVarIdValue.AsInt();
+        NotifyOne(condVarId);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+}
+
+class VmSystemThreadingConditionVariableNotifyAll : public VmFunction
+{
+public:
+    VmSystemThreadingConditionVariableNotifyAll(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingConditionVariableNotifyAll::VmSystemThreadingConditionVariableNotifyAll(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"notifyall"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingConditionVariableNotifyAll::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue condVarValue = frame.Local(0).GetValue();
+        ObjectReference condVarRefefence(condVarValue.Value());
+        if (condVarRefefence.IsNull())
+        {
+            throw NullReferenceException("tried to notify a condition variable with a null object reference");
+        }
+        IntegralValue condVarIdValue = GetManagedMemoryPool().GetField(condVarRefefence, 1);
+        Assert(condVarIdValue.GetType() == ValueType::intType, "int expected");
+        int32_t condVarId = condVarIdValue.AsInt();
+        NotifyAll(condVarId);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+}
+
+class VmSystemThreadingConditionVariableWait : public VmFunction
+{
+public:
+    VmSystemThreadingConditionVariableWait(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingConditionVariableWait::VmSystemThreadingConditionVariableWait(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"waitcv"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingConditionVariableWait::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue condVarValue = frame.Local(0).GetValue();
+        ObjectReference condVarRefefence(condVarValue.Value());
+        if (condVarRefefence.IsNull())
+        {
+            throw NullReferenceException("tried to wait a condition variable whose value is null object reference");
+        }
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+        IntegralValue condVarIdValue = memoryPool.GetField(condVarRefefence, 1, lock);
+        Assert(condVarIdValue.GetType() == ValueType::intType, "int expected");
+        int32_t condVarId = condVarIdValue.AsInt();
+        IntegralValue lockObjectValue = frame.Local(1).GetValue();
+        ObjectReference lockObjectReference(lockObjectValue.Value());
+        if (lockObjectReference.IsNull())
+        {
+            throw NullReferenceException("tried to wait a condition variable with null lock object");
+        }
+        void* lockObject = memoryPool.GetObject(lockObjectReference, lock);
+        ManagedAllocationHeader* header = GetAllocationHeader(lockObject);
+        if (header->LockId() == lockNotAllocated)
+        {
+            throw ThreadingException("condition variable must be waited inside a lock statement");
+        }
+        int32_t lockId = header->LockId();
+        lock.unlock();
+        Thread& thread = frame.GetThread();
+        WaitingSetter waiting(thread);
+        WaitConditionVariable(condVarId, lockId);
+        GetMachine().GetGarbageCollector().WaitForIdle(thread);
+    }
+    catch (const ThreadingException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowThreadingException(ex, frame);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+}
+
+class VmSystemThreadingConditionVariableWaitFor : public VmFunction
+{
+public:
+    VmSystemThreadingConditionVariableWaitFor(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingConditionVariableWaitFor::VmSystemThreadingConditionVariableWaitFor(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"waitcvfor"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingConditionVariableWaitFor::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue condVarValue = frame.Local(0).GetValue();
+        ObjectReference condVarRefefence(condVarValue.Value());
+        if (condVarRefefence.IsNull())
+        {
+            throw NullReferenceException("tried to wait a condition variable whose value is null object reference");
+        }
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+        IntegralValue condVarIdValue = memoryPool.GetField(condVarRefefence, 1, lock);
+        Assert(condVarIdValue.GetType() == ValueType::intType, "int expected");
+        int32_t condVarId = condVarIdValue.AsInt();
+        IntegralValue lockObjectValue = frame.Local(1).GetValue();
+        ObjectReference lockObjectReference(lockObjectValue.Value());
+        if (lockObjectReference.IsNull())
+        {
+            throw NullReferenceException("tried to wait a condition variable with null lock object");
+        }
+        void* lockObject = memoryPool.GetObject(lockObjectReference, lock);
+        ManagedAllocationHeader* header = GetAllocationHeader(lockObject);
+        if (header->LockId() == lockNotAllocated)
+        {
+            throw ThreadingException("condition variable must be waited inside a lock statement");
+        }
+        IntegralValue durationValue(frame.Local(1).GetValue());
+        ObjectReference durationRef(durationValue.Value());
+        IntegralValue nanosecondValue = memoryPool.GetField(durationRef, 1, lock);
+        int64_t nanosecondCount = nanosecondValue.AsLong();
+        if (nanosecondCount < 0) return;
+        std::chrono::nanoseconds duration{ nanosecondCount };
+        Thread& thread = frame.GetThread();
+        WaitingSetter waiting(thread);
+        int32_t lockId = header->LockId();
+        lock.unlock();
+        CondVarStatus status = WaitConditionVariable(condVarId, lockId, duration);
+        GetMachine().GetGarbageCollector().WaitForIdle(thread);
+        frame.OpStack().Push(IntegralValue(static_cast<uint8_t>(status), ValueType::byteType));
+    }
+    catch (const std::exception& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw SystemException(ex.what());
+        }
+        ThrowSystemException(SystemException(ex.what()), frame);
+    }
+    catch (const ThreadingException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowThreadingException(ex, frame);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+}
+
+class VmSystemThreadingHardwareConcurrency : public VmFunction
+{
+public:
+    VmSystemThreadingHardwareConcurrency(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemThreadingHardwareConcurrency::VmSystemThreadingHardwareConcurrency(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"cores"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemThreadingHardwareConcurrency::Execute(Frame& frame)
+{
+    int cores = std::thread::hardware_concurrency();
+    frame.OpStack().Push(IntegralValue(cores, ValueType::intType));
+}
+
+class VmSystemTimePointNow : public VmFunction
+{
+public:
+    VmSystemTimePointNow(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemTimePointNow::VmSystemTimePointNow(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"now"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemTimePointNow::Execute(Frame& frame)
+{
+    try
+    {
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        ClassData* timePointClassData = ClassDataTable::GetClassData(U"System.TimePoint");
+        ObjectType* timePointType = timePointClassData->Type();
+        std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
+        ObjectReference timePointReference = memoryPool.CreateObject(frame.GetThread(), timePointType, lock);
+        memoryPool.SetField(timePointReference, 0, IntegralValue(timePointClassData), lock);
+        std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock().now();
+        int64_t nanoseconds = std::chrono::time_point_cast<std::chrono::nanoseconds>(now).time_since_epoch().count();
+        memoryPool.SetField(timePointReference, 1, IntegralValue(static_cast<uint64_t>(nanoseconds), ValueType::longType), lock);
+        frame.OpStack().Push(timePointReference);
+    }
+    catch (const std::exception& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw SystemException(ex.what());
+        }
+        ThrowSystemException(SystemException(ex.what()), frame);
+    }
+}
+
+class VmSystemSleepFor : public VmFunction
+{
+public:
+    VmSystemSleepFor(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemSleepFor::VmSystemSleepFor(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"sleep"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemSleepFor::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue durationValue = frame.Local(0).GetValue();
+        ObjectReference durationRef(durationValue.Value());
+        IntegralValue nanosecondValue = GetManagedMemoryPool().GetField(durationRef, 1);
+        int64_t nanosecondCount = nanosecondValue.AsLong();
+        if (nanosecondCount < 0) return;
+        std::chrono::nanoseconds duration{ nanosecondCount };
+        Thread& thread = frame.GetThread();
+        WaitingSetter waiting(thread);
+        std::this_thread::sleep_for(duration);
+        GetMachine().GetGarbageCollector().WaitForIdle(thread);
+    }
+    catch (const std::exception& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw SystemException(ex.what());
+        }
+        ThrowSystemException(SystemException(ex.what()), frame);
     }
 }
 
@@ -1271,6 +1748,16 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingStartThreadWithParameterizedThreadStartFunction(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingStartThreadWithParameterizedThreadStartMethod(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingJoinThread(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingEnterMonitor(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingExitMonitor(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingConditionVariableConstructor(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingConditionVariableNotifyOne(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingConditionVariableNotifyAll(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingConditionVariableWait(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingConditionVariableWaitFor(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemTimePointNow(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemSleepFor(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingHardwareConcurrency(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool)

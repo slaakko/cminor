@@ -14,10 +14,12 @@
 #include <cminor/ast/Project.hpp>
 #include <cminor/vmlib/VmFunction.hpp>
 #include <cminor/vmlib/File.hpp>
+#include <cminor/vmlib/Threading.hpp>
 #include <cminor/db/Shell.hpp>
 #include <cminor/pl/InitDone.hpp>
 #include <cminor/util/Path.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 #include <sstream>
 
 using namespace cminor::machine;
@@ -42,11 +44,13 @@ struct InitDone
         InitAssembly();
         InitVmFunctions(vmFunctionNamePool);
         FileInit();
+        ThreadingInit();
         cminor::parsing::Init();
     }
     ~InitDone()
     {
         cminor::parsing::Done();
+        ThreadingDone();
         FileDone();
         DoneVmFunctions();
         DoneAssembly();
@@ -79,6 +83,12 @@ void PrintHelp()
         "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
         "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n" <<
         "       Default is 16 MB.\n" <<
+        "   --thread-pages=N (-t=N)\n" <<
+        "       Set the number of thread-specific memory allocation context pages to N.\n" <<
+        "       Default is 2 pages (for 4K system memory page size this is 8K).\n" <<
+        "       When N > 0, memory allocator of the virtual machine allocates extra memory\n" <<
+        "       whose size is N * <system memory page size> for the thread making the allocation.\n" <<
+        "       Thread can consume this extra memory without any further locking.\n" <<
         std::endl;
 }
 
@@ -125,29 +135,18 @@ int main(int argc, const char** argv)
                             }
                             if (components[0] == "-s" || components[0] == "--segment-size")
                             {
-                                std::stringstream s;
-                                s.str(components[1]);
-                                if (!(s >> segmentSizeMB))
-                                {
-                                    throw std::runtime_error("segment size not of an integer type: " + arg);
-                                }
-                                else
-                                {
-                                    SetSegmentSize(segmentSizeMB * 1024 * 1024);
-                                }
+                                segmentSizeMB = boost::lexical_cast<uint64_t>(components[1]);
+                                SetSegmentSize(segmentSizeMB * 1024 * 1024);
                             }
                             else if (components[0] == "-p" || components[0] == "--pool-threshold")
                             {
-                                std::stringstream s;
-                                s.str(components[1]);
-                                if (!(s >> poolThresholdMB))
-                                {
-                                    throw std::runtime_error("pool threshold not of an integer type: " + arg);
-                                }
-                                else
-                                {
-                                    SetPoolThreshold(poolThresholdMB * 1024 * 1024);
-                                }
+                                poolThresholdMB = boost::lexical_cast<uint64_t>(components[1]);
+                                SetPoolThreshold(poolThresholdMB * 1024 * 1024);
+                            }
+                            else if (components[0] == "-t" || components[0] == "--thread-pages")
+                            {
+                                uint8_t threadPages = boost::lexical_cast<uint8_t>(components[1]);
+                                SetNumAllocationContextPages(threadPages);
                             }
                             else
                             {
