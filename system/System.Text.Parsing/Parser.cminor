@@ -9,7 +9,7 @@ namespace System.Text.Parsing
         {
             this.info = info;
         }
-        public abstract Match Parse(Scanner scanner, Stack<object> stack);
+        public abstract Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData);
         public string Info
         {
             get { return info; }

@@ -21,6 +21,8 @@ namespace Code
         {
             Stack<object> stack = new Stack<object>();
             Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
             System.IO.StreamWriter log = Log;
             XmlLog xmlLog = null;
             try
@@ -32,7 +34,7 @@ namespace Code
                     xmlLog.WriteBeginRule("parse");
                     xmlLog.IncIndent();
                 }
-                Match match = Parse(scanner, stack);
+                Match match = Parse(scanner, stack, parsingData);
                 Span stop = scanner.SpanValue;
                 if (log != null)
                 {
@@ -64,23 +66,23 @@ namespace Code
         }
         public class NamespaceImportRule : System.Text.Parsing.RuleParser
         {
-            public NamespaceImportRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public NamespaceImportRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 ValueTypeName = "NamespaceImport";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
@@ -89,44 +91,44 @@ namespace Code
                 NonterminalParser qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
                 qualifiedIdNonterminalParser.Post = PostQualifiedId;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new NamespaceImport(context.fromQualifiedId.Name);
             }
-            public void PostQualifiedId(Stack<object> stack, bool matched)
+            public void PostQualifiedId(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     context.fromQualifiedId = cast<Identifier>(stack.Pop());
                 }
             }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public NamespaceImport value;
                 public Identifier fromQualifiedId;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class AliasRule : System.Text.Parsing.RuleParser
         {
-            public AliasRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public AliasRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 ValueTypeName = "Alias";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
@@ -137,32 +139,33 @@ namespace Code
                 NonterminalParser qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
                 qualifiedIdNonterminalParser.Post = PostQualifiedId;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new Alias(context.fromIdentifier.Name, context.fromQualifiedId.Name);
             }
-            public void PostIdentifier(Stack<object> stack, bool matched)
+            public void PostIdentifier(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     context.fromIdentifier = cast<Identifier>(stack.Pop());
                 }
             }
-            public void PostQualifiedId(Stack<object> stack, bool matched)
+            public void PostQualifiedId(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     context.fromQualifiedId = cast<Identifier>(stack.Pop());
                 }
             }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public Alias value;
                 public Identifier fromIdentifier;
                 public Identifier fromQualifiedId;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public override void GetReferencedGrammars()
         {
@@ -178,14 +181,14 @@ namespace Code
         {
             AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-            AddRule(new NamespaceImportRule("NamespaceImport", GetScope(),
+            AddRule(new NamespaceImportRule("NamespaceImport", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
                     new SequenceParser(
                         new KeywordParser("using"),
                         new NonterminalParser("QualifiedId", "QualifiedId", 0)),
                     new ActionParser("A0",
                         new CharParser(';')))));
-            AddRule(new AliasRule("Alias", GetScope(),
+            AddRule(new AliasRule("Alias", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
                     new SequenceParser(
                         new SequenceParser(

@@ -12,6 +12,7 @@ source <Match.cminor>;
 source <Namespace.cminor>;
 source <Nonterminal.cminor>;
 source <Parser.cminor>;
+source <ParsingData.cminor>;
 source <ParsingDomain.cminor>;
 source <ParsingObject.cminor>;
 source <Primitive.cminor>;

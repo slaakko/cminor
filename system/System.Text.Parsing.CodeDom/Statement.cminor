@@ -52,6 +52,11 @@ namespace System.Text.Parsing.CodeDom
             base.Print(formatter);
             formatter.WriteLine("{");
             formatter.IncIndent();
+			if (formatter.Start)
+			{
+				formatter.WriteLine(formatter.StartText);
+				formatter.Start = false;
+			}
             foreach (Statement statement in statements)
             {
                 statement.Print(formatter);

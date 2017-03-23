@@ -21,6 +21,8 @@ namespace Syntax
         {
             Stack<object> stack = new Stack<object>();
             Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
             System.IO.StreamWriter log = Log;
             XmlLog xmlLog = null;
             try
@@ -33,7 +35,7 @@ namespace Syntax
                     xmlLog.IncIndent();
                 }
                 stack.Push(parsingDomain);
-                Match match = Parse(scanner, stack);
+                Match match = Parse(scanner, stack, parsingData);
                 Span stop = scanner.SpanValue;
                 if (log != null)
                 {
@@ -63,21 +65,21 @@ namespace Syntax
         }
         public class LibraryFileRule : System.Text.Parsing.RuleParser
         {
-            public LibraryFileRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public LibraryFileRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingDomain", "parsingDomain"));
                 LocalVariables.Add(new AttrOrVar("ParsingContext", "ctx"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.parsingDomain = cast<ParsingDomain>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
-                context = contextStack.Pop();
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
@@ -86,41 +88,41 @@ namespace Syntax
                 NonterminalParser namespaceContentNonterminalParser = GetNonterminal("NamespaceContent");
                 namespaceContentNonterminalParser.Pre = PreNamespaceContent;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = new ParsingContext();
             }
-            public void PreNamespaceContent(Stack<object> stack)
+            public void PreNamespaceContent(Stack<object> stack, ParsingData parsingData)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 stack.Push(context.parsingDomain);
                 stack.Push(context.ctx);
             }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingDomain parsingDomain;
                 public ParsingContext ctx;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class NamespaceContentRule : System.Text.Parsing.RuleParser
         {
-            public NamespaceContentRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public NamespaceContentRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingDomain", "parsingDomain"));
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
                 context.parsingDomain = cast<ParsingDomain>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
-                context = contextStack.Pop();
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
@@ -132,54 +134,56 @@ namespace Syntax
                 NonterminalParser namespaceNonterminalParser = GetNonterminal("Namespace");
                 namespaceNonterminalParser.Pre = PreNamespace;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.parsingDomain.AddGrammar(context.fromGrammar);
             }
-            public void PreGrammar(Stack<object> stack)
+            public void PreGrammar(Stack<object> stack, ParsingData parsingData)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 stack.Push(context.parsingDomain.CurrentNamespace.GetScope());
                 stack.Push(context.ctx);
             }
-            public void PostGrammar(Stack<object> stack, bool matched)
+            public void PostGrammar(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     context.fromGrammar = cast<Grammar>(stack.Pop());
                 }
             }
-            public void PreNamespace(Stack<object> stack)
+            public void PreNamespace(Stack<object> stack, ParsingData parsingData)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 stack.Push(context.parsingDomain);
                 stack.Push(context.ctx);
             }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingDomain parsingDomain;
                 public ParsingContext ctx;
                 public Grammar fromGrammar;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class NamespaceRule : System.Text.Parsing.RuleParser
         {
-            public NamespaceRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public NamespaceRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingDomain", "parsingDomain"));
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
                 context.parsingDomain = cast<ParsingDomain>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
-                context = contextStack.Pop();
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
@@ -192,58 +196,60 @@ namespace Syntax
                 NonterminalParser namespaceContentNonterminalParser = GetNonterminal("NamespaceContent");
                 namespaceContentNonterminalParser.Pre = PreNamespaceContent;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.parsingDomain.BeginNamespace(context.fromns);
             }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.parsingDomain.EndNamespace();
             }
-            public void Postns(Stack<object> stack, bool matched)
+            public void Postns(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     context.fromns = cast<string>(stack.Pop());
                 }
             }
-            public void PreNamespaceContent(Stack<object> stack)
+            public void PreNamespaceContent(Stack<object> stack, ParsingData parsingData)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 stack.Push(context.parsingDomain);
                 stack.Push(context.ctx);
             }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingDomain parsingDomain;
                 public ParsingContext ctx;
                 public string fromns;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class GrammarRule : System.Text.Parsing.RuleParser
         {
-            public GrammarRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public GrammarRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("Scope", "enclosingScope"));
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "Grammar";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
                 context.enclosingScope = cast<Scope>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
@@ -254,51 +260,52 @@ namespace Syntax
                 NonterminalParser grammarContentNonterminalParser = GetNonterminal("GrammarContent");
                 grammarContentNonterminalParser.Pre = PreGrammarContent;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new Grammar(context.fromgrammarName, context.enclosingScope);
                 context.value.Ns = context.enclosingScope.Ns;
             }
-            public void PostgrammarName(Stack<object> stack, bool matched)
+            public void PostgrammarName(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     context.fromgrammarName = cast<string>(stack.Pop());
                 }
             }
-            public void PreGrammarContent(Stack<object> stack)
+            public void PreGrammarContent(Stack<object> stack, ParsingData parsingData)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 stack.Push(context.value);
                 stack.Push(context.ctx);
             }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public Scope enclosingScope;
                 public ParsingContext ctx;
                 public Grammar value;
                 public string fromgrammarName;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class GrammarContentRule : System.Text.Parsing.RuleParser
         {
-            public GrammarContentRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public GrammarContentRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("Grammar", "grammar"));
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
                 context.grammar = cast<Grammar>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
-                context = contextStack.Pop();
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
@@ -308,54 +315,55 @@ namespace Syntax
                 ruleNonterminalParser.Pre = PreRule;
                 ruleNonterminalParser.Post = PostRule;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.grammar.AddRule(context.fromRule);
             }
-            public void PreRule(Stack<object> stack)
+            public void PreRule(Stack<object> stack, ParsingData parsingData)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 stack.Push(context.grammar.GetScope());
                 stack.Push(context.ctx);
             }
-            public void PostRule(Stack<object> stack, bool matched)
+            public void PostRule(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     context.fromRule = cast<RuleParser>(stack.Pop());
                 }
             }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public Grammar grammar;
                 public ParsingContext ctx;
                 public RuleParser fromRule;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class RuleRule : System.Text.Parsing.RuleParser
         {
-            public RuleRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public RuleRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("Scope", "enclosingScope"));
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "RuleParser";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
                 context.enclosingScope = cast<Scope>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
@@ -366,31 +374,32 @@ namespace Syntax
                 NonterminalParser signatureNonterminalParser = GetNonterminal("Signature");
                 signatureNonterminalParser.Pre = PreSignature;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new RuleParser(context.fromruleName, context.enclosingScope);
             }
-            public void PostruleName(Stack<object> stack, bool matched)
+            public void PostruleName(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     context.fromruleName = cast<string>(stack.Pop());
                 }
             }
-            public void PreSignature(Stack<object> stack)
+            public void PreSignature(Stack<object> stack, ParsingData parsingData)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 stack.Push(context.value);
                 stack.Push(context.ctx);
             }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public Scope enclosingScope;
                 public ParsingContext ctx;
                 public RuleParser value;
                 public string fromruleName;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public override void GetReferencedGrammars()
         {
@@ -415,18 +424,18 @@ namespace Syntax
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
             AddRuleLink(new RuleLink("Signature", this, "ElementGrammar.Signature"));
-            AddRule(new LibraryFileRule("LibraryFile", GetScope(),
+            AddRule(new LibraryFileRule("LibraryFile", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
                     new ActionParser("A0",
                         new EmptyParser()),
                     new NonterminalParser("NamespaceContent", "NamespaceContent", 2))));
-            AddRule(new NamespaceContentRule("NamespaceContent", GetScope(),
+            AddRule(new NamespaceContentRule("NamespaceContent", GetScope(), Domain.GetNextRuleId(),
                 new KleeneStarParser(
                     new AlternativeParser(
                         new ActionParser("A0",
                             new NonterminalParser("Grammar", "Grammar", 2)),
                         new NonterminalParser("Namespace", "Namespace", 2)))));
-            AddRule(new NamespaceRule("Namespace", GetScope(),
+            AddRule(new NamespaceRule("Namespace", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
                     new SequenceParser(
                         new SequenceParser(
@@ -441,7 +450,7 @@ namespace Syntax
                     new ActionParser("A1",
                         new ExpectationParser(
                             new CharParser('}'))))));
-            AddRule(new GrammarRule("Grammar", GetScope(),
+            AddRule(new GrammarRule("Grammar", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
                     new SequenceParser(
                         new SequenceParser(
@@ -455,11 +464,11 @@ namespace Syntax
                         new NonterminalParser("GrammarContent", "GrammarContent", 2)),
                     new ExpectationParser(
                         new CharParser('}')))));
-            AddRule(new GrammarContentRule("GrammarContent", GetScope(),
+            AddRule(new GrammarContentRule("GrammarContent", GetScope(), Domain.GetNextRuleId(),
                 new KleeneStarParser(
                     new ActionParser("A0",
                         new NonterminalParser("Rule", "Rule", 2)))));
-            AddRule(new RuleRule("Rule", GetScope(),
+            AddRule(new RuleRule("Rule", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
                     new SequenceParser(
                         new ActionParser("A0",

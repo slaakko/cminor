@@ -15,7 +15,7 @@ namespace System.Text.Parsing
         }
         private IdentifierChars()
         {
-            rule = new RuleParser("identifier_chars", null, 
+            rule = new RuleParser("identifier_chars", null, -1,
                 new PositiveParser(
                     new AlternativeParser(
                         new AlternativeParser(
@@ -44,9 +44,9 @@ namespace System.Text.Parsing
             this.keywordStringParser = new StringParser(keyword);
             CreateKeywordRule();
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
-            return keywordRule.Parse(scanner, stack);
+            return keywordRule.Parse(scanner, stack, parsingData);
         }
         public  override void Accept(Visitor visitor)
         {
@@ -67,7 +67,7 @@ namespace System.Text.Parsing
         }
         private void CreateKeywordRule()
         {
-            keywordRule = new RuleParser(keyword, null,
+            keywordRule = new RuleParser(keyword, null, -1,
                 new DifferenceParser(
                     keywordStringParser,
                     new TokenParser(
@@ -93,12 +93,12 @@ namespace System.Text.Parsing
                 this.keywords.Add(keyword);
             }
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             if (selectorRule != null)
             {
                 Span save = scanner.SpanValue;
-                Match match = selectorRule.Parse(scanner, stack);
+                Match match = selectorRule.Parse(scanner, stack, parsingData);
                 if (match.Hit)
                 {
                     string s = scanner.Content.Substring(save.Start, scanner.SpanValue.Start - save.Start);

@@ -21,6 +21,8 @@ namespace Code
         {
             Stack<object> stack = new Stack<object>();
             Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
             System.IO.StreamWriter log = Log;
             XmlLog xmlLog = null;
             try
@@ -32,7 +34,7 @@ namespace Code
                     xmlLog.WriteBeginRule("parse");
                     xmlLog.IncIndent();
                 }
-                Match match = Parse(scanner, stack);
+                Match match = Parse(scanner, stack, parsingData);
                 Span stop = scanner.SpanValue;
                 if (log != null)
                 {
@@ -64,23 +66,23 @@ namespace Code
         }
         public class BasicTypeRule : System.Text.Parsing.RuleParser
         {
-            public BasicTypeRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public BasicTypeRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 ValueTypeName = "Type";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
@@ -115,79 +117,92 @@ namespace Code
                 ActionParser a14ActionParser = GetAction("A14");
                 a14ActionParser.Action = A14Action;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new BoolType();
             }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new CharType();
             }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
+            public void A2Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new VoidType();
             }
-            public void A3Action(string match, Span span, string fileName, ref bool pass)
+            public void A3Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new SByteType();
             }
-            public void A4Action(string match, Span span, string fileName, ref bool pass)
+            public void A4Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new ByteType();
             }
-            public void A5Action(string match, Span span, string fileName, ref bool pass)
+            public void A5Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new ShortType();
             }
-            public void A6Action(string match, Span span, string fileName, ref bool pass)
+            public void A6Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new UShortType();
             }
-            public void A7Action(string match, Span span, string fileName, ref bool pass)
+            public void A7Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new IntType();
             }
-            public void A8Action(string match, Span span, string fileName, ref bool pass)
+            public void A8Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new UIntType();
             }
-            public void A9Action(string match, Span span, string fileName, ref bool pass)
+            public void A9Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new LongType();
             }
-            public void A10Action(string match, Span span, string fileName, ref bool pass)
+            public void A10Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new ULongType();
             }
-            public void A11Action(string match, Span span, string fileName, ref bool pass)
+            public void A11Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new FloatType();
             }
-            public void A12Action(string match, Span span, string fileName, ref bool pass)
+            public void A12Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new DoubleType();
             }
-            public void A13Action(string match, Span span, string fileName, ref bool pass)
+            public void A13Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new ObjectType();
             }
-            public void A14Action(string match, Span span, string fileName, ref bool pass)
+            public void A14Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new StringType();
             }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public Type value;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public override void GetReferencedGrammars()
         {
         }
         public override void CreateRules()
         {
-            AddRule(new BasicTypeRule("BasicType", GetScope(),
+            AddRule(new BasicTypeRule("BasicType", GetScope(), Domain.GetNextRuleId(),
                 new AlternativeParser(
                     new AlternativeParser(
                         new AlternativeParser(

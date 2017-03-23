@@ -44,10 +44,10 @@ namespace System.Text.Parsing
         public OptionalParser(Parser child) : base("optional", child, child.Info + "?")
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             Span save = scanner.SpanValue;
-            Match match = Child.Parse(scanner, stack);
+            Match match = Child.Parse(scanner, stack, parsingData);
             if (match.Hit)
             {
                 return match;
@@ -68,16 +68,16 @@ namespace System.Text.Parsing
         public PositiveParser(Parser child) : base("positive", child, child.Info + "+")
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
-            Match match = Child.Parse(scanner, stack);
+            Match match = Child.Parse(scanner, stack, parsingData);
             if (match.Hit)
             {
                 for (;;)
                 {
                     Span save = scanner.SpanValue;
                     scanner.Skip();
-                    Match next = Child.Parse(scanner, stack);
+                    Match next = Child.Parse(scanner, stack, parsingData);
                     if (next.Hit)
                     {
                         match.Concatenate(next);
@@ -104,7 +104,7 @@ namespace System.Text.Parsing
         public KleeneStarParser(Parser child) : base("kleene", child, child.Info + "*")
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             Match match = Match.Empty;
             bool first = true;
@@ -119,7 +119,7 @@ namespace System.Text.Parsing
                 {
                     scanner.Skip();
                 }
-                Match next = Child.Parse(scanner, stack);
+                Match next = Child.Parse(scanner, stack, parsingData);
                 if (next.Hit)
                 {
                     match.Concatenate(next);
@@ -145,13 +145,13 @@ namespace System.Text.Parsing
         public ExpectationParser(Parser child) : base("expectation", child, child.Info + "!")
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             Span expectationSpan = scanner.SpanValue;
             Match match = Match.Nothing;
             try
             {
-                match = Child.Parse(scanner, stack);
+                match = Child.Parse(scanner, stack, parsingData);
             }
             catch (ExpectationFailure ex)
             {
@@ -179,10 +179,10 @@ namespace System.Text.Parsing
         public TokenParser(Parser child) : base("token", child, child.Info)
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             scanner.BeginToken();
-            Match match = Child.Parse(scanner, stack);
+            Match match = Child.Parse(scanner, stack, parsingData);
             scanner.EndToken();
             return match;
         }
@@ -199,13 +199,13 @@ namespace System.Text.Parsing
         public SequenceParser(Parser left, Parser right) : base("sequence", left, right, left.Info)
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
-            Match left = Left.Parse(scanner, stack);
+            Match left = Left.Parse(scanner, stack, parsingData);
             if (left.Hit)
             {
                 scanner.Skip();
-                Match right = Right.Parse(scanner, stack);
+                Match right = Right.Parse(scanner, stack, parsingData);
                 if (right.Hit)
                 {
                     left.Concatenate(right);
@@ -229,16 +229,16 @@ namespace System.Text.Parsing
         public AlternativeParser(Parser left, Parser right) : base("alternative", left, right, left.Info + " | " + right.Info)
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             Span save = scanner.SpanValue;
-            Match left = Left.Parse(scanner, stack);
+            Match left = Left.Parse(scanner, stack, parsingData);
             if (left.Hit)
             {
                 return left;
             }
             scanner.SpanValue = save;
-            return Right.Parse(scanner, stack);
+            return Right.Parse(scanner, stack, parsingData);
         }
         public override void Accept(Visitor visitor)
         {
@@ -255,16 +255,16 @@ namespace System.Text.Parsing
         public DifferenceParser(Parser left, Parser right) : base("difference", left, right, left.Info + " - " + right.Info)
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             Span save = scanner.SpanValue;
-            Match left = Left.Parse(scanner, stack);
+            Match left = Left.Parse(scanner, stack, parsingData);
             if (left.Hit)
             {
                 Span temp = scanner.SpanValue;
                 scanner.SpanValue = save;
                 save = temp;
-                Match right = Right.Parse(scanner, stack);
+                Match right = Right.Parse(scanner, stack, parsingData);
                 if (!right.Hit || right.Length < left.Length)
                 {
                     scanner.SpanValue = save;
@@ -288,14 +288,14 @@ namespace System.Text.Parsing
         public ExclusiveOrParser(Parser left, Parser right) : base("exclusive_or", left, right, left.Info + " ^ " + right.Info)
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             Span save = scanner.SpanValue;
-            Match left = Left.Parse(scanner, stack);
+            Match left = Left.Parse(scanner, stack, parsingData);
             Span temp = scanner.SpanValue;
             scanner.SpanValue = save;
             save = temp;
-            Match right = Right.Parse(scanner, stack);
+            Match right = Right.Parse(scanner, stack, parsingData);
             bool hit = right.Hit;
             if (left.Hit)
             {
@@ -327,14 +327,14 @@ namespace System.Text.Parsing
         public IntersectionParser(Parser left, Parser right) : base("intersection", left, right, left.Info + " & " + right.Info)
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             Span save = scanner.SpanValue;
-            Match left = Left.Parse(scanner, stack);
+            Match left = Left.Parse(scanner, stack, parsingData);
             if (left.Hit)
             {
                 scanner.SpanValue = save;
-                Match right = Right.Parse(scanner, stack);
+                Match right = Right.Parse(scanner, stack, parsingData);
                 if (left.Length == right.Length)
                 {
                     return left;
@@ -359,9 +359,9 @@ namespace System.Text.Parsing
             this.left = left;
             this.right = right;
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
-            return Child.Parse(scanner, stack);
+            return Child.Parse(scanner, stack, parsingData);
         }
         public override void Accept(Visitor visitor)
         {

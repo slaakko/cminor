@@ -74,10 +74,22 @@ namespace System.Text
             get { return line; }
             set { line = value; }
         }
+        public bool Start
+        {
+            get { return start; }
+            set { start = value; }
+        }
+        public string StartText
+        {
+            get { return startText; }
+            set { startText = value; }
+        }
         private StreamWriter writer;
         private int indent;
         private int indentSize;
         private bool atBeginningOfLine;
         private int line;
+        private bool start;
+        private string startText;
     }
 }

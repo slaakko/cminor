@@ -15,6 +15,7 @@ namespace System.Text.Parsing
             this.namespaceMap = new HashMap<string, Namespace>();
             this.namespaceStack = new Stack<Namespace>();
             namespaceMap[currentNamespace.FullName] = currentNamespace;
+			this.nextRuleId = 0;
         }
         public Grammar GetGrammar(string grammarName)
         {
@@ -75,6 +76,16 @@ namespace System.Text.Parsing
         {
             currentNamespace = namespaceStack.Pop();
         }
+		public int GetNextRuleId()
+		{
+			int nxtRuleId = nextRuleId;
+			++nextRuleId;
+			return nxtRuleId;
+		}
+		public int NumRules
+		{
+			get { return nextRuleId; }
+		}
         public Namespace GlobalNamespace 
         {
             get { return globalNamespace; }
@@ -93,5 +104,6 @@ namespace System.Text.Parsing
         private Namespace currentNamespace;
         private HashMap<string, Namespace> namespaceMap;
         private Stack<Namespace> namespaceStack;
+		private int nextRuleId;
     }
 }

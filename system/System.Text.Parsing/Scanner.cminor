@@ -41,7 +41,7 @@ namespace System.Text.Parsing
                 BeginToken();
                 skipping = true;
                 Stack<object> stack = new Stack<object>();
-                Match match = skipper.Parse(this, stack);
+                Match match = skipper.Parse(this, stack, parsingData);
                 skipping = false;
                 EndToken();
                 if (!match.Hit)
@@ -116,6 +116,11 @@ namespace System.Text.Parsing
                 return content.Substring(span.Start, LineEndIndex - span.Start);
             }
         }
+		public ParsingData Data
+		{
+			get { return parsingData; }
+			set { parsingData = value; }
+		}
         private string content;
         private Span span;
         private string fileName;
@@ -124,5 +129,6 @@ namespace System.Text.Parsing
         private bool atBeginningOfLine;
         private int tokenCounter;
         private XmlLog log;
+		private ParsingData parsingData;
     }
 }

@@ -4,9 +4,9 @@ using System.Text.Parsing.CodeDom;
 
 namespace System.Text.Parsing
 {
-    public class delegate void ParsingAction(string match, Span span, string fileName, ref bool pass);
+    public class delegate void ParsingAction(string match, Span span, string fileName, ParsingData parsingData, ref bool pass);
 
-    public class delegate void FailureAction();
+    public class delegate void FailureAction(ParsingData parsingData);
 
     public class ActionParser : UnaryParser
     {
@@ -49,10 +49,10 @@ namespace System.Text.Parsing
             get { return failureCode; }
             set { failureCode = value; }
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             Span actionSpan = scanner.SpanValue;
-            Match match = Child.Parse(scanner, stack);
+            Match match = Child.Parse(scanner, stack, parsingData);
             if (match.Hit)
             {
                 if (action != null)
@@ -60,7 +60,7 @@ namespace System.Text.Parsing
                     bool pass = true;
                     actionSpan.End = scanner.SpanValue.Start;
                     string match = scanner.Content.Substring(actionSpan.Start, actionSpan.End - actionSpan.Start);
-                    action(match, actionSpan, scanner.FileName, ref pass);
+                    action(match, actionSpan, scanner.FileName, parsingData, ref pass);
                     if (!pass)
                     {
                         return Match.Nothing;
@@ -69,7 +69,7 @@ namespace System.Text.Parsing
             }
             else if (failureAction != null)
             {
-                failureAction();
+                failureAction(parsingData);
             }
             return match;
         }

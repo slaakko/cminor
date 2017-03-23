@@ -13,7 +13,7 @@ namespace System.Text.Parsing
         {
             get { return c; }
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             if (!scanner.AtEnd)
             {
@@ -42,7 +42,7 @@ namespace System.Text.Parsing
         {
             get { return s; }
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             Match match = Match.Empty;
             int i = 0;
@@ -126,7 +126,7 @@ namespace System.Text.Parsing
         {
             get { return inverse; }
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             if (!scanner.AtEnd)
             {
@@ -195,7 +195,7 @@ namespace System.Text.Parsing
         public EmptyParser() : base("empty", "<empty>")
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             return Match.Empty;
         }
@@ -210,7 +210,7 @@ namespace System.Text.Parsing
         public SpaceParser() : base("space", "<space>")
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             if (!scanner.AtEnd)
             {
@@ -233,7 +233,7 @@ namespace System.Text.Parsing
         public LetterParser() : base("letter", "<letter>")
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             if (!scanner.AtEnd)
             {
@@ -256,7 +256,7 @@ namespace System.Text.Parsing
         public DigitParser() : base("digit", "<digit>")
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             if (!scanner.AtEnd)
             {
@@ -279,7 +279,7 @@ namespace System.Text.Parsing
         public HexDigitParser() : base("hexdigit", "<hexdigit>")
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             if (!scanner.AtEnd)
             {
@@ -302,7 +302,7 @@ namespace System.Text.Parsing
         public PunctuationParser() : base("punctuation", "<punctuation>")
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             if (!scanner.AtEnd)
             {
@@ -325,7 +325,7 @@ namespace System.Text.Parsing
         public AnyCharParser() : base("anyChar", "<anyChar>")
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             if (!scanner.AtEnd)
             {

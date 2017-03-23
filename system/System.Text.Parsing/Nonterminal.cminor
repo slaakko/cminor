@@ -4,9 +4,9 @@ using System.Text.Parsing.CodeDom;
 
 namespace System.Text.Parsing
 {
-    public class delegate void PreCall(Stack<object> stack);
+    public class delegate void PreCall(Stack<object> stack, ParsingData parsingData);
 
-    public class delegate void PostCall(Stack<object> stack, bool matched);
+    public class delegate void PostCall(Stack<object> stack, ParsingData parsingData, bool matched);
 
     public class NonterminalArgumentAdder : DomObject
     {
@@ -42,18 +42,18 @@ namespace System.Text.Parsing
         {
             arguments.Add(argument);
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             if (rule != null)
             {
                 if (preCall != null)
                 {
-                    preCall(stack);
+                    preCall(stack, parsingData);
                 }
-                Match match = rule.Parse(scanner, stack);
+                Match match = rule.Parse(scanner, stack, parsingData);
                 if (postCall != null)
                 {
-                    postCall(stack, match.Hit);
+                    postCall(stack, parsingData, match.Hit);
                 }
                 return match;
             }

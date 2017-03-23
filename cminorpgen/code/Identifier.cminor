@@ -21,6 +21,8 @@ namespace Code
         {
             Stack<object> stack = new Stack<object>();
             Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
             System.IO.StreamWriter log = Log;
             XmlLog xmlLog = null;
             try
@@ -32,7 +34,7 @@ namespace Code
                     xmlLog.WriteBeginRule("parse");
                     xmlLog.IncIndent();
                 }
-                Match match = Parse(scanner, stack);
+                Match match = Parse(scanner, stack, parsingData);
                 Span stop = scanner.SpanValue;
                 if (log != null)
                 {
@@ -64,23 +66,23 @@ namespace Code
         }
         public class IdentifierRule : System.Text.Parsing.RuleParser
         {
-            public IdentifierRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public IdentifierRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 ValueTypeName = "Identifier";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
@@ -89,44 +91,44 @@ namespace Code
                 NonterminalParser identifierNonterminalParser = GetNonterminal("identifier");
                 identifierNonterminalParser.Post = Postidentifier;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new System.Text.Parsing.CodeDom.Identifier(match);
             }
-            public void Postidentifier(Stack<object> stack, bool matched)
+            public void Postidentifier(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     context.fromidentifier = cast<string>(stack.Pop());
                 }
             }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public Identifier value;
                 public string fromidentifier;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class QualifiedIdRule : System.Text.Parsing.RuleParser
         {
-            public QualifiedIdRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public QualifiedIdRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 ValueTypeName = "Identifier";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
@@ -135,24 +137,24 @@ namespace Code
                 NonterminalParser identifierNonterminalParser = GetNonterminal("Identifier");
                 identifierNonterminalParser.Post = PostIdentifier;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new System.Text.Parsing.CodeDom.Identifier(match);
             }
-            public void PostIdentifier(Stack<object> stack, bool matched)
+            public void PostIdentifier(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     context.fromIdentifier = cast<Identifier>(stack.Pop());
                 }
             }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public Identifier value;
                 public Identifier fromIdentifier;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public override void GetReferencedGrammars()
         {
@@ -174,12 +176,12 @@ namespace Code
         {
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
             AddRuleLink(new RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
-            AddRule(new IdentifierRule("Identifier", GetScope(),
+            AddRule(new IdentifierRule("Identifier", GetScope(), Domain.GetNextRuleId(),
                 new ActionParser("A0",
                     new DifferenceParser(
                         new NonterminalParser("identifier", "identifier", 0),
                         new NonterminalParser("Keyword", "Keyword", 0)))));
-            AddRule(new QualifiedIdRule("QualifiedId", GetScope(),
+            AddRule(new QualifiedIdRule("QualifiedId", GetScope(), Domain.GetNextRuleId(),
                 new ActionParser("A0",
                     new TokenParser(
                         new ListParser(

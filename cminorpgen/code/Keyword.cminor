@@ -90,7 +90,7 @@ namespace Code
         public override void CreateRules()
         {
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
-            AddRule(new RuleParser("Keyword", GetScope(),
+            AddRule(new RuleParser("Keyword", GetScope(), Domain.GetNextRuleId(),
                 new KeywordListParser("identifier", keywords0)));
         }
         private List<string> keywords0;

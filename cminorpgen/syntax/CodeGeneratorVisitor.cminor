@@ -65,7 +65,6 @@ namespace Syntax
                     foreach (AttrOrVar attr in startRule.InheritedAttributes)
                     {
                         parameters.Append(", ").Append(attr.Type).Append(" ").Append(attr.Name);
-
                     }
                 }
             }
@@ -98,6 +97,8 @@ namespace Syntax
                     formatter.IncIndent();
                     formatter.WriteLine("Stack<object> stack = new Stack<object>();");
                     formatter.WriteLine("Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);");
+                    formatter.WriteLine("ParsingData parsingData = new ParsingData(Domain.NumRules);");
+                    formatter.WriteLine("scanner.Data = parsingData;");
                     formatter.WriteLine("System.IO.StreamWriter log = Log;");
                     formatter.WriteLine("XmlLog xmlLog = null;");
                     formatter.WriteLine("try");
@@ -116,7 +117,7 @@ namespace Syntax
                     {
                         formatter.WriteLine("stack.Push(" + attr.Name + ");");
                     }
-                    formatter.WriteLine("Match match = Parse(scanner, stack);");
+                    formatter.WriteLine("Match match = Parse(scanner, stack, parsingData);");
                     formatter.WriteLine("Span stop = scanner.SpanValue;");
                     formatter.WriteLine("if (log != null)");
                     formatter.WriteLine("{");
@@ -173,7 +174,7 @@ namespace Syntax
                     formatter.WriteLine("{");
                     formatter.IncIndent();
                     // constructor:
-                    formatter.WriteLine("public " + rule.SpecializedTypeName + "(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)");
+                    formatter.WriteLine("public " + rule.SpecializedTypeName + "(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)");
                     formatter.WriteLine("{");
                     formatter.IncIndent();
                     foreach (AttrOrVar attr in rule.InheritedAttributes)
@@ -188,15 +189,14 @@ namespace Syntax
                     {
                         formatter.WriteLine("LocalVariables.Add(new AttrOrVar(\"" + var.Type + "\", \"" + var.Name + "\"));");
                     }
-                    formatter.WriteLine("contextStack = new Stack<Context>();");
                     formatter.DecIndent();
                     formatter.WriteLine("}");
                     // enter:
-                    formatter.WriteLine("public override void Enter(Stack<object> stack)");
+                    formatter.WriteLine("public override void Enter(Stack<object> stack, ParsingData parsingData)");
                     formatter.WriteLine("{");
                     formatter.IncIndent();
-                    formatter.WriteLine("contextStack.Push(context);");
-                    formatter.WriteLine("context = new Context();");
+                    formatter.WriteLine("parsingData.PushContext(Id, new Context());");
+                    formatter.WriteLine("Context context = cast<Context>(parsingData.GetContext(Id));");
                     int n = rule.InheritedAttributes.Count;
                     for (int i = n - 1; i >= 0; --i)
                     {
@@ -206,9 +206,10 @@ namespace Syntax
                     formatter.DecIndent();
                     formatter.WriteLine("}");
                     // leave:
-                    formatter.WriteLine("public override void Leave(Stack<object> stack, bool matched)");
+                    formatter.WriteLine("public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)");
                     formatter.WriteLine("{");
                     formatter.IncIndent();
+                    formatter.WriteLine("Context context = cast<Context>(parsingData.GetContext(Id));");
                     if (!string.IsNullOrEmpty(rule.ValueTypeName))
                     {
                         formatter.WriteLine("if (matched)");
@@ -218,7 +219,7 @@ namespace Syntax
                         formatter.DecIndent();
                         formatter.WriteLine("}");
                     }
-                    formatter.WriteLine("context = contextStack.Pop();");
+                    formatter.WriteLine("parsingData.PopContext(Id);");
                     formatter.DecIndent();
                     formatter.WriteLine("}");
                     // link:
@@ -255,12 +256,16 @@ namespace Syntax
                     // action methods:
                     foreach (ActionParser action in rule.Actions)
                     {
-                        formatter.WriteLine("public void " + action.MethodName + "(string match, Span span, string fileName, ref bool pass)");
+                        formatter.WriteLine("public void " + action.MethodName + "(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)");
+                        formatter.StartText = "Context context = cast<Context>(parsingData.GetContext(Id));";
+                        formatter.Start = true;
                         action.SuccessCode.Print(formatter);
                         System.Text.Parsing.CodeDom.CompoundStatement failureCode = action.FailureCode;
                         if (failureCode != null)
                         {
-                            formatter.WriteLine("public void " + action.MethodName + "Fail()");
+                            formatter.WriteLine("public void " + action.MethodName + "Fail(ParsingData parsingData)");
+                            formatter.StartText = "Context context = cast<Context>(parsingData.GetContext(Id));";
+                            formatter.Start = true;
                             failureCode.Print(formatter);
                         }
                     }
@@ -271,9 +276,10 @@ namespace Syntax
                         {
                             if (nonterminal.Arguments.Count > 0)
                             {
-                                formatter.WriteLine("public void " + nonterminal.PreCallMethodName + "(Stack<object> stack)");
+                                formatter.WriteLine("public void " + nonterminal.PreCallMethodName + "(Stack<object> stack, ParsingData parsingData)");
                                 formatter.WriteLine("{");
                                 formatter.IncIndent();
+                                formatter.WriteLine("Context context = cast<Context>(parsingData.GetContext(Id));");
                                 int n = nonterminal.Arguments.Count;
                                 for (int i = 0; i < n; ++i)
                                 {
@@ -288,9 +294,10 @@ namespace Syntax
                             }
                             if (!string.IsNullOrEmpty(nonterminal.Rule.ValueTypeName))
                             {
-                                formatter.WriteLine("public void " + nonterminal.PostCallMethodName + "(Stack<object> stack, bool matched)");
+                                formatter.WriteLine("public void " + nonterminal.PostCallMethodName + "(Stack<object> stack, ParsingData parsingData, bool matched)");
                                 formatter.WriteLine("{");
                                 formatter.IncIndent();
+                                formatter.WriteLine("Context context = cast<Context>(parsingData.GetContext(Id));");
                                 formatter.WriteLine("if (matched)");
                                 formatter.WriteLine("{");
                                 formatter.IncIndent();
@@ -303,7 +310,7 @@ namespace Syntax
                         }
                     }
                     // Context:
-                    formatter.WriteLine("public class Context");
+                    formatter.WriteLine("public class Context : System.Text.Parsing.Context");
                     formatter.WriteLine("{");
                     formatter.IncIndent();
                     foreach (AttrOrVar attr in rule.InheritedAttributes)
@@ -327,8 +334,6 @@ namespace Syntax
                     }
                     formatter.DecIndent();
                     formatter.WriteLine("}");
-                    formatter.WriteLine("private Stack<Context> contextStack;");
-                    formatter.WriteLine("private Context context;");
                     formatter.DecIndent();
                     formatter.WriteLine("}");
                 }
@@ -460,11 +465,11 @@ namespace Syntax
         {
             if (rule.Specialized)
             {
-                formatter.Write("AddRule(new " + rule.SpecializedTypeName + "(\""  + rule.Name + "\", GetScope(),");
+                formatter.Write("AddRule(new " + rule.SpecializedTypeName + "(\""  + rule.Name + "\", GetScope(), Domain.GetNextRuleId(),");
             }
             else
             {
-                formatter.Write("AddRule(new RuleParser(\"" + rule.Name + "\", GetScope(),");
+                formatter.Write("AddRule(new RuleParser(\"" + rule.Name + "\", GetScope(), Domain.GetNextRuleId(),");
             }
             formatter.IncIndent();
             formatter.WriteLine();

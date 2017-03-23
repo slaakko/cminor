@@ -24,11 +24,12 @@ namespace System.Text.Parsing
 
     public class RuleParser : Parser
     {
-        public RuleParser(string name, Scope enclosingScope) : this(name, enclosingScope, null)
+        public RuleParser(string name, Scope enclosingScope) : this(name, enclosingScope, -1, null)
         {
         }
-        public RuleParser(string name, Scope enclosingScope, Parser definition) : base(name, "<" + name + ">")
+        public RuleParser(string name, Scope enclosingScope, int id, Parser definition) : base(name, "<" + name + ">")
         {
+			this.id = id;
             this.definition = definition;
             this.inheritedAttributes = new List<AttrOrVar>();
             this.localVariables = new List<AttrOrVar>();
@@ -37,6 +38,10 @@ namespace System.Text.Parsing
             this.nonterminals = new List<NonterminalParser>();
             ContainerScope = new Scope(name, enclosingScope);
         }
+		public int Id
+		{
+			get { return id; }
+		}
         public Parser Definition
         {
             get { return definition; }
@@ -143,13 +148,13 @@ namespace System.Text.Parsing
         public virtual void Link()
         {
         }
-        public virtual void Enter(Stack<object> stack)
+        public virtual void Enter(Stack<object> stack, ParsingData parsingData)
         {
         }
-        public virtual void Leave(Stack<object> stack, bool matched)
+        public virtual void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
         {
         }
-        public override Match Parse(Scanner scanner, Stack<object> stack)
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
         {
             bool writeToLog = !scanner.Skipping && scanner.Log != null;
             if (writeToLog)
@@ -161,13 +166,13 @@ namespace System.Text.Parsing
                 log.IncIndent();
             }
             int startIndex = scanner.SpanValue.Start;
-            Enter(stack);
+            Enter(stack, parsingData);
             Match match = Match.Nothing;
             if (definition != null)
             {
-                match = definition.Parse(scanner, stack);
+                match = definition.Parse(scanner, stack, parsingData);
             }
-            Leave(stack, match.Hit);
+            Leave(stack, parsingData, match.Hit);
             if (writeToLog)
             {
                 XmlLog log = scanner.Log;
@@ -230,6 +235,7 @@ namespace System.Text.Parsing
                 }
             }
         }
+		private int id;
         private Parser definition;
         private List<AttrOrVar> inheritedAttributes;
         private List<AttrOrVar> localVariables;

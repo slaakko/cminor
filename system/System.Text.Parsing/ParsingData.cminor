@@ -1,0 +1,45 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text.Parsing
+{
+    public abstract class Context
+    {
+    }
+
+    public class RuleData
+    {
+		public RuleData()
+		{
+			contextStack = new Stack<Context>();
+		}
+        public Context context;
+        public Stack<Context> contextStack;
+    }
+
+    public class ParsingData
+    {
+        public ParsingData(int numRules)
+        {
+            ruleData = new RuleData[numRules];
+            for (int i = 0; i < numRules; ++i)
+			{
+				ruleData[i] = new RuleData();
+			}
+        }
+        public void PushContext(int ruleId, Context context)
+        {
+            ruleData[ruleId].contextStack.Push(ruleData[ruleId].context);
+            ruleData[ruleId].context = context;
+        }
+        public void PopContext(int ruleId)
+        {
+            ruleData[ruleId].context = ruleData[ruleId].contextStack.Pop();
+        }
+        public Context GetContext(int ruleId)
+        {
+            return ruleData[ruleId].context;
+        }
+        private RuleData[] ruleData;
+    }
+}
