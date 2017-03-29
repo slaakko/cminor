@@ -1,0 +1,51 @@
+using System;
+using System.IO;
+using System.Unicode;
+using System.Text;
+using UnicodeBin;
+
+internal string PathToUnicodeDirectory() 
+{
+	string cminorRoot = GetEnvironmentVariable("CMINOR_ROOT");
+	return Path.Combine(cminorRoot, "unicode");
+}
+
+internal int main()
+{
+    try
+    {
+		Console.WriteLine("Constructing character info map...");
+        CharacterInfoMap.Construct();
+		string unicodeDirPath = PathToUnicodeDirectory();
+        string unicodeDataFilePath = Path.Combine(unicodeDirPath, "UnicodeData.txt");
+        string unicodeBinFilePath = Path.Combine(unicodeDirPath, "unicode.bin");
+        UnicodeDataGrammar grammar = new UnicodeDataGrammar();
+		Console.WriteLine("Reading unicode data from " + unicodeDataFilePath + "...");
+		StringBuilder s = new StringBuilder();
+		using (StreamReader unicodeStream = File.OpenRead(unicodeDataFilePath))
+		{
+			string line = unicodeStream.ReadLine();
+			while (line != null)
+			{
+				s.Append(line).Append("\n");
+				line  = unicodeStream.ReadLine();
+			}
+		}
+		Console.WriteLine("Constructing unicode data string...");
+		string unicodeData = s.ToString();
+		Console.WriteLine("Parsing unicode data...");
+        grammar.Parse(unicodeData, 0, unicodeDataFilePath);
+		Console.WriteLine("Writing unicode.bin...");
+		using (BufferedStream unicodeBin = new BufferedStream(new FileStream(unicodeBinFilePath, FileMode.create, FileAccess.write)))
+		{
+			CharacterInfoMap.Instance.Write(unicodeBin);
+		}
+		Console.WriteLine("Done.");
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+        return 1;
+    }
+    return 0;
+}

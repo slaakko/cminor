@@ -1345,12 +1345,10 @@ extern "C" MACHINE_API uint64_t RtStrLitToString(const char32_t* strLitValue)
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
         ObjectReference objectReference = memoryPool.CreateObject(thread, classData->Type(), lock);
-        void* object = memoryPool.GetObject(objectReference, lock);
-        ManagedAllocationHeader* header = GetAllocationHeader(object);
         AllocationHandle charsHandle = memoryPool.CreateStringCharsFromLiteral(thread, strLitValue, len, lock);
-        SetObjectField(object, IntegralValue(classData), 0);
-        SetObjectField(object, IntegralValue(static_cast<int32_t>(len), ValueType::intType), 1);
-        SetObjectField(object, charsHandle, 2);
+		memoryPool.SetField(objectReference, 0, IntegralValue(classData), lock);
+		memoryPool.SetField(objectReference, 1, IntegralValue(static_cast<int32_t>(len), ValueType::intType), lock);
+		memoryPool.SetField(objectReference, 2, charsHandle, lock);
         return objectReference.Value();
     }
     catch (const SystemException& ex)

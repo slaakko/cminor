@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Text;
 
 namespace System.Unicode
 {
@@ -289,4 +291,465 @@ namespace System.Unicode
         }
         private Stream stream;
     }
+
+    public enum Category : uint
+    {
+        none = 0u,
+        letterUpper = 1u << 0u,                 // Lu
+        letterLower = 1u << 1u,                 // Ll
+        letterCased = 1u << 2u,                 // LC 
+        letterModifier = 1u << 3u,              // Lm
+        letterOther = 1u << 4u,                 // Lo
+        letterTitle = 1u << 5u,                 // Lt
+        letter = letterUpper | letterLower | letterCased | letterModifier | letterOther | letterTitle,
+        markSpacing = 1u << 6u,                 // Mc
+        markEnclosing = 1u << 7u,               // Me
+        markNonspacing = 1u << 8u,              // Mn
+        mark = markSpacing | markEnclosing | markNonspacing,
+        numberDecimal = 1u << 9u,               // Nd
+        numberLetter = 1u << 10u,               // Nl
+        numberOther = 1u << 11u,                // No
+        number = numberDecimal | numberLetter | numberOther,
+        punctuationConnector = 1u << 12u,       // Pc
+        punctuationDash = 1u << 13u,            // Pd
+        punctuationClose = 1u << 14u,           // Pe
+        punctuationFinalQuote = 1u << 15u,      // Pf
+        punctuationInitialQuote = 1u << 16u,    // Pi
+        punctuationOther = 1u << 17u,           // Po
+        punctuationOpen = 1u << 18u,            // Ps
+        punctuation = punctuationConnector | punctuationDash | punctuationClose | punctuationFinalQuote | punctuationInitialQuote | punctuationOther | punctuationOpen,
+        symbolCurrency = 1u << 19u,             // Sc
+        symbolModifier = 1u << 20u,             // Sk
+        symbolMath = 1u << 21u,                 // Sm
+        symbolOther = 1u << 22u,                // So
+        symbol = symbolCurrency | symbolModifier | symbolMath | symbolOther,
+        separatorLine = 1u << 23u,              // Zl
+        separatorParagraph = 1u << 24u,         // Zp
+        separatorSpace = 1u << 25u,             // Zs
+        separator = separatorLine | separatorParagraph | separatorSpace
+    }
+
+    public class CategoryMap
+    {
+        static CategoryMap()
+        {
+			instance = new CategoryMap();
+        }
+        public static CategoryMap Instance
+        {
+            get { return instance; }
+        }
+        private CategoryMap()
+        {
+			strCategoryMap = new HashMap<string, Category>();
+			categoryStrMap = new HashMap<uint, string>();
+            strCategoryMap["Lu"] = Category.letterUpper;
+            categoryStrMap[Category.letterUpper] = "Lu";
+            strCategoryMap["Ll"] = Category.letterLower;
+            categoryStrMap[Category.letterLower] = "Ll";
+            strCategoryMap["LC"] = Category.letterCased;
+            categoryStrMap[Category.letterCased] = "LC";
+            strCategoryMap["Lm"] = Category.letterModifier;
+            categoryStrMap[Category.letterModifier] = "Lm";
+            strCategoryMap["Lo"] = Category.letterOther;
+            categoryStrMap[Category.letterOther] = "Lo";
+            strCategoryMap["Lt"] = Category.letterTitle;
+            categoryStrMap[Category.letterTitle] = "Lt";
+            strCategoryMap["Mc"] = Category.markSpacing;
+            categoryStrMap[Category.markSpacing] = "Mc";
+            strCategoryMap["Me"] = Category.markEnclosing;
+            categoryStrMap[Category.markEnclosing] = "Me";
+            strCategoryMap["Mn"] = Category.markNonspacing;
+            categoryStrMap[Category.markNonspacing] = "Mn";
+            strCategoryMap["Nd"] = Category.numberDecimal;
+            categoryStrMap[Category.numberDecimal] = "Nd";
+            strCategoryMap["Nl"] = Category.numberLetter;
+            categoryStrMap[Category.numberLetter] = "Nl";
+            strCategoryMap["No"] = Category.numberOther;
+            categoryStrMap[Category.numberOther] = "No";
+            strCategoryMap["Pc"] = Category.punctuationConnector;
+            categoryStrMap[Category.punctuationConnector] = "Pc";
+            strCategoryMap["Pd"] = Category.punctuationDash;
+            categoryStrMap[Category.punctuationDash] = "Pd";
+            strCategoryMap["Pe"] = Category.punctuationClose;
+            categoryStrMap[Category.punctuationClose] = "Pe";
+            strCategoryMap["Pf"] = Category.punctuationFinalQuote;
+            categoryStrMap[Category.punctuationFinalQuote] = "Pf";
+            strCategoryMap["Pi"] = Category.punctuationInitialQuote;
+            categoryStrMap[Category.punctuationInitialQuote] = "Pi";
+            strCategoryMap["Po"] = Category.punctuationOther;
+            categoryStrMap[Category.punctuationOther] = "Po";
+            strCategoryMap["Ps"] = Category.punctuationOpen;
+            categoryStrMap[Category.punctuationOpen] = "Ps";
+            strCategoryMap["Sc"] = Category.symbolCurrency;
+            categoryStrMap[Category.symbolCurrency] = "Sc";
+            strCategoryMap["Sk"] = Category.symbolModifier;
+            categoryStrMap[Category.symbolModifier] = "Sk";
+            strCategoryMap["Sm"] = Category.symbolMath;
+            categoryStrMap[Category.symbolMath] = "Sm";
+            strCategoryMap["So"] = Category.symbolOther;
+            categoryStrMap[Category.symbolOther] = "So";
+            strCategoryMap["Zl"] = Category.separatorLine;
+            categoryStrMap[Category.separatorLine] = "Zl";
+            strCategoryMap["Zp"] = Category.separatorParagraph;
+            categoryStrMap[Category.separatorParagraph] ="Zp";
+            strCategoryMap["Zs"] = Category.separatorSpace;
+            categoryStrMap[Category.separatorSpace] = "Zs";
+        }
+        public Category GetCategory(string categoryName) 
+        {
+			Category category = Category.none;
+			if (strCategoryMap.TryGetValue(categoryName, ref category))
+			{
+				return category;
+			}
+            return Category.none;
+        }
+        public string GetCategoryName(Category category)
+        {
+			string categoryName;
+			if (categoryStrMap.TryGetValue(cast<uint>(category), ref categoryName))
+			{
+				return categoryName;
+			}
+			return string.Empty;
+        }
+        private HashMap<string, Category> strCategoryMap;
+        private HashMap<uint, string> categoryStrMap;
+        private static CategoryMap instance;
+    }
+
+    public class CharacterInfo
+    {
+        public CharacterInfo()
+        {
+			this.code = cast<char>(0u);
+			this.name = string.Empty;
+			this.category = Category.none;
+			this.toLower = cast<char>(0u);
+			this.toUpper = cast<char>(0u);
+        }
+        public CharacterInfo(char code, string name, Category category, char toLower, char toUpper) 
+        {
+			this.code = code;
+			this.name = name;
+			this.category = category;
+			this.toLower = toLower;
+			this.toUpper = toUpper;
+        }
+        public char Code
+        {
+            get { return code; }
+        }
+        public string Name
+        {
+			get { return name; }
+        }
+        public Category Cat 
+        {
+            get { return category; }
+        }
+        public char Lower
+        {
+            get { return toLower; }
+        }
+        public char Upper
+        {
+            get { return toUpper; }
+        }
+        public bool IsLetter
+        {
+            get { return (category & Category.letter) != Category.none; }
+        }
+        public bool IsMark
+        {
+            get { return (category & Category.mark) != Category.none; }
+        }
+        public bool IsNumber
+        {
+            get { return (category & Category.number) != Category.none; }
+        }
+        public bool IsPunctuation
+        {
+            get { return (category & Category.punctuation) != Category.none; }
+        }
+        public bool IsSymbol
+        {
+            get { return (category & Category.symbol) != Category.none; }
+        }
+        public bool IsSeparator
+        {
+            get { return (category & Category.separator) != Category.none; }
+        }
+        public void Read(Stream unicodeBin, Utf8Decoder decoder)
+        {
+            code = cast<char>(ReadUInt(unicodeBin));
+            name = ReadString(decoder);
+            category = cast<Category>(ReadUInt(unicodeBin));
+            toLower = cast<char>(ReadUInt(unicodeBin));
+            toUpper = cast<char>(ReadUInt(unicodeBin));
+        }
+        public void Write(Stream unicodeBin, Utf8Encoder encoder)
+        {
+			WriteUInt(unicodeBin, cast<uint>(code));
+			WriteString(unicodeBin, name, encoder);
+			WriteUInt(unicodeBin, cast<uint>(category));
+			WriteUInt(unicodeBin, cast<uint>(toLower));
+			WriteUInt(unicodeBin, cast<uint>(toUpper));
+        }
+        private char code;
+        private string name;
+        private Category category;
+        private char toLower;
+        private char toUpper;
+    }
+
+	internal string PathToUnicodeDirectory() 
+	{
+		string cminorRoot = GetEnvironmentVariable("CMINOR_ROOT");
+		return Path.Combine(cminorRoot, "unicode");
+	}
+
+    public class CharacterInfoMap
+    {
+        public static void Load()
+        {
+            if (instance == null)
+            {
+                instance = new CharacterInfoMap(true);
+            }            
+        }
+        public static void Construct()
+        {
+            if (instance == null)
+            {
+                instance = new CharacterInfoMap(false);
+            }            
+        }
+        private CharacterInfoMap(bool read)
+        {
+			map = new HashMap<char, CharacterInfo>();
+			infos = new List<CharacterInfo>();
+            if (read)
+            {
+                string unicodeBinFilePath = Path.Combine(PathToUnicodeDirectory(), "unicode.bin");
+				Stream unicodeBin = new BufferedStream(new FileStream(unicodeBinFilePath, FileMode.open));
+                Read(unicodeBin);
+            }            
+        }
+        public static CharacterInfoMap Instance
+        {
+            get { return instance; }
+        }
+        public void Read(Stream unicodeBin)
+        {
+			Utf8Decoder decoder = new Utf8Decoder(unicodeBin);
+            uint n = ReadUInt(unicodeBin);
+            for (uint i = 0u; i < n; ++i)
+            {
+                CharacterInfo info = new CharacterInfo();
+                info.Read(unicodeBin, decoder);
+                infos.Add(info);
+                map[info.Code] = info;
+            }
+        }
+        public void Write(Stream unicodeBin)
+        {
+			Utf8Encoder encoder = new Utf8Encoder(unicodeBin);
+            uint n = cast<uint>(infos.Count);
+            WriteUInt(unicodeBin, n);
+            for (uint i = 0u; i < n; ++i)
+            {
+                infos[cast<int>(i)].Write(unicodeBin, encoder);
+            }
+        }
+        public void Add(CharacterInfo characterInfo)
+        {
+            infos.Add(characterInfo);
+        }
+        public CharacterInfo GetCharacterInfo(char c)
+        {
+			CharacterInfo info;
+			if (map.TryGetValue(c, ref info))
+			{
+				return info;
+			}
+            return null;
+        }
+        private static CharacterInfoMap instance;
+        private HashMap<char, CharacterInfo> map;
+        private List<CharacterInfo> infos;
+    }
+
+    public Category GetCategory(char c)
+    {
+        CharacterInfoMap.Load();
+        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
+        if (info != null)
+        {
+            return info.Cat;
+        }
+        return Category.none;
+    }
+
+    public string GetCategoryName(Category category)
+    {
+        return CategoryMap.Instance.GetCategoryName(category);
+    }
+
+    public string GetCharacterName(char c)
+    {
+        CharacterInfoMap.Load();
+        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
+        if (info != null)
+        {
+            return info.Name;
+        }
+        return string.Empty;
+    }
+
+    public char ToLower(char c)
+    {
+        CharacterInfoMap.Load();
+        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
+        if (info != null)
+        {
+            char toLower = info.Lower;
+            if (toLower != cast<char>(0u))
+            {
+                return toLower;
+            }
+        }
+        return c;
+    }
+
+	public char ToUpper(char c)
+    {
+        CharacterInfoMap.Load();
+        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
+        if (info != null)
+        {
+            char toUpper = info.Upper;
+            if (toUpper != cast<char>(0u))
+            {
+                return toUpper;
+            }
+        }
+        return c;
+    }
+
+    public bool IsLetter(char c)
+    {
+        CharacterInfoMap.Load();
+        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
+        if (info != null)
+        {
+            return info.IsLetter;
+        }
+        return false;
+    }
+
+    public bool IsLower(char c)
+    {
+        return GetCategory(c) == Category.letterLower; 
+    }
+    
+    public bool IsUpper(char c)
+    {
+        return GetCategory(c) == Category.letterUpper;
+    }
+    
+    public bool IsMark(char c)
+    {
+        CharacterInfoMap.Load();
+        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
+        if (info != null)
+        {
+            return info.IsMark;
+        }
+        return false;
+    }
+    
+    public bool IsNumber(char c)
+    {
+        CharacterInfoMap.Load();
+        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
+        if (info != null)
+        {
+            return info.IsNumber;
+        }
+        return false;
+    }
+    
+    public bool IsPunctuation(char c)
+    {
+        CharacterInfoMap.Load();
+        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
+        if (info != null)
+        {
+            return info.IsPunctuation;
+        }
+        return false;
+    }
+    
+    public bool IsSymbol(char c)
+    {
+        CharacterInfoMap.Load();
+        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
+        if (info != null)
+        {
+            return info.IsSymbol;
+        }
+        return false;
+    }
+    
+    public bool IsSeparator(char c)
+    {
+        CharacterInfoMap.Load();
+        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
+        if (info != null)
+        {
+            return info.IsSeparator;
+        }
+        return false;
+    }
+
+	internal uint ReadUInt(Stream s)
+	{
+		byte x0 = cast<byte>(s.ReadByte());
+		byte x1 = cast<byte>(s.ReadByte());
+		byte x2 = cast<byte>(s.ReadByte());
+		byte x3 = cast<byte>(s.ReadByte());
+		return cast<uint>(x0) << 24u | cast<uint>(x1) << 16u | cast<uint>(x2) << 8u | cast<uint>(x3);
+	}
+
+	internal void WriteUInt(Stream s, uint x)
+	{
+		byte x0 = cast<byte>(x >> 24u);
+		byte x1 = cast<byte>(x >> 16u);
+		byte x2 = cast<byte>(x >> 8u);
+		byte x3 = cast<byte>(x);
+		s.WriteByte(x0);
+		s.WriteByte(x1);
+		s.WriteByte(x2);
+		s.WriteByte(x3);
+	}
+
+	internal string ReadString(Utf8Decoder decoder)
+	{
+		StringBuilder b = new StringBuilder;
+		uint x = decoder.Decode();
+		while (x != 0u)
+		{
+			b.Append(cast<char>(x));
+			x = decoder.Decode();
+		}
+		return b.ToString();
+	}
+
+	internal void WriteString(Stream stream, string s, Utf8Encoder encoder)
+	{
+		encoder.Encode(s);
+		stream.WriteByte(0u);
+	}
 }

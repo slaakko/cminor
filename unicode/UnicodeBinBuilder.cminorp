@@ -1,0 +1,3 @@
+project UnicodeBinBuilder;
+source <UnicodeData.cminor>;
+source <Main.cminor>;
