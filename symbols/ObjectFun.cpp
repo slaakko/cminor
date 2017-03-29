@@ -71,7 +71,6 @@ void ObjectCopyInit::GenerateCall(Machine& machine, Assembly& assembly, Function
     Assert(objects.size() == 2, "init needs two objects");
     GenObject* source = objects[1];
     source->GenLoad(machine, function);
-    //function.AddInst(machine.CreateInst("gcpoint"));
     std::unique_ptr<Instruction> inst = machine.CreateInst("copy", "object");
     function.AddInst(std::move(inst));
     GenObject* target = objects[0];
@@ -99,7 +98,6 @@ void ObjectAssignment::GenerateCall(Machine& machine, Assembly& assembly, Functi
     Assert(objects.size() == 2, "assign needs two objects");
     GenObject* source = objects[1];
     source->GenLoad(machine, function);
-    //function.AddInst(machine.CreateInst("gcpoint"));
     std::unique_ptr<Instruction> inst = machine.CreateInst("copy", "object");
     function.AddInst(std::move(inst));
     GenObject* target = objects[0];

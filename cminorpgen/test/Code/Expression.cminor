@@ -17,1969 +17,572 @@ namespace Code
             CreateRules();
             Link();
         }
-        public DomObject Parse(string content, int fileIndex, string fileName, ParsingContext ctx)
-        {
-            Stack<object> stack = new Stack<object>();
-            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
-            System.IO.StreamWriter log = Log;
-            XmlLog xmlLog = null;
-            try
-            {
-                if (log != null)
-                {
-                    xmlLog = new XmlLog(log);
-                    scanner.Log = xmlLog;
-                    xmlLog.WriteBeginRule("parse");
-                    xmlLog.IncIndent();
-                }
-                stack.Push(ctx);
-                Match match = Parse(scanner, stack);
-                Span stop = scanner.SpanValue;
-                if (log != null)
-                {
-                    xmlLog.DecIndent();
-                    xmlLog.WriteEndRule("parse");
-                }
-                if (!match.Hit || stop.Start != content.Length)
-                {
-                    RuleParser startRule = StartRule;
-                    if (startRule != null)
-                    {
-                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
-                    }
-                    else
-                    {
-                        throw new Exception("grammar '" + Name + "' has no start rule");
-                    }
-                }
-            }
-            finally
-            {
-                if (xmlLog != null)
-                {
-                    xmlLog.Close();
-                }
-            }
-            DomObject result = cast<DomObject>(stack.Pop());
-            return result;
-        }
         public class ExpressionRule : System.Text.Parsing.RuleParser
         {
-            public ExpressionRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public ExpressionRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                NonterminalParser disjunctionNonterminalParser = GetNonterminal("Disjunction");
-                disjunctionNonterminalParser.Pre = PreDisjunction;
-                disjunctionNonterminalParser.Post = PostDisjunction;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromDisjunction;
-            }
-            public void PreDisjunction(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostDisjunction(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromDisjunction = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
-                public DomObject fromDisjunction;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class DisjunctionRule : System.Text.Parsing.RuleParser
         {
-            public DisjunctionRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public DisjunctionRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                NonterminalParser leftNonterminalParser = GetNonterminal("left");
-                leftNonterminalParser.Pre = Preleft;
-                leftNonterminalParser.Post = Postleft;
-                NonterminalParser rightNonterminalParser = GetNonterminal("right");
-                rightNonterminalParser.Pre = Preright;
-                rightNonterminalParser.Post = Postright;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromleft;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new Disjunction(context.value, context.fromright);
-            }
-            public void Preleft(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postleft(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromleft = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void Preright(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postright(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromright = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
-                public DomObject fromleft;
-                public DomObject fromright;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class ConjunctionRule : System.Text.Parsing.RuleParser
         {
-            public ConjunctionRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public ConjunctionRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                NonterminalParser leftNonterminalParser = GetNonterminal("left");
-                leftNonterminalParser.Pre = Preleft;
-                leftNonterminalParser.Post = Postleft;
-                NonterminalParser rightNonterminalParser = GetNonterminal("right");
-                rightNonterminalParser.Pre = Preright;
-                rightNonterminalParser.Post = Postright;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromleft;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new Conjunction(context.value, context.fromright);
-            }
-            public void Preleft(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postleft(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromleft = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void Preright(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postright(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromright = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
-                public DomObject fromleft;
-                public DomObject fromright;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class BitOrRule : System.Text.Parsing.RuleParser
         {
-            public BitOrRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public BitOrRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                NonterminalParser leftNonterminalParser = GetNonterminal("left");
-                leftNonterminalParser.Pre = Preleft;
-                leftNonterminalParser.Post = Postleft;
-                NonterminalParser rightNonterminalParser = GetNonterminal("right");
-                rightNonterminalParser.Pre = Preright;
-                rightNonterminalParser.Post = Postright;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromleft;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new BitOr(context.value, context.fromright);
-            }
-            public void Preleft(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postleft(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromleft = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void Preright(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postright(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromright = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
-                public DomObject fromleft;
-                public DomObject fromright;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class BitXorRule : System.Text.Parsing.RuleParser
         {
-            public BitXorRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public BitXorRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                NonterminalParser leftNonterminalParser = GetNonterminal("left");
-                leftNonterminalParser.Pre = Preleft;
-                leftNonterminalParser.Post = Postleft;
-                NonterminalParser rightNonterminalParser = GetNonterminal("right");
-                rightNonterminalParser.Pre = Preright;
-                rightNonterminalParser.Post = Postright;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromleft;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new BitXor(context.value, context.fromright);
-            }
-            public void Preleft(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postleft(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromleft = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void Preright(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postright(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromright = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
-                public DomObject fromleft;
-                public DomObject fromright;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class BitAndRule : System.Text.Parsing.RuleParser
         {
-            public BitAndRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public BitAndRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                NonterminalParser leftNonterminalParser = GetNonterminal("left");
-                leftNonterminalParser.Pre = Preleft;
-                leftNonterminalParser.Post = Postleft;
-                NonterminalParser rightNonterminalParser = GetNonterminal("right");
-                rightNonterminalParser.Pre = Preright;
-                rightNonterminalParser.Post = Postright;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromleft;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new BitAnd(context.value, context.fromright);
-            }
-            public void Preleft(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postleft(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromleft = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void Preright(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postright(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromright = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
-                public DomObject fromleft;
-                public DomObject fromright;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class EqualityRule : System.Text.Parsing.RuleParser
         {
-            public EqualityRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public EqualityRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
                 LocalVariables.Add(new AttrOrVar("Operator", "op"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                ActionParser a3ActionParser = GetAction("A3");
-                a3ActionParser.Action = A3Action;
-                NonterminalParser leftNonterminalParser = GetNonterminal("left");
-                leftNonterminalParser.Pre = Preleft;
-                leftNonterminalParser.Post = Postleft;
-                NonterminalParser rightNonterminalParser = GetNonterminal("right");
-                rightNonterminalParser.Pre = Preright;
-                rightNonterminalParser.Post = Postright;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromleft;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.equal;
-                }
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.notEqual;
-                }
-            }
-            public void A3Action(string match, Span span, string fileName, ref bool pass)
-            {
-                switch (context.op)
-                {
-                    case Operator.equal:
-                    {
-                        context.value = new Equal(context.value, context.fromright);
-                        break;
-                    }
-                    case Operator.notEqual:
-                    {
-                        context.value = new NotEqual(context.value, context.fromright);
-                        break;
-                    }
-                }
-            }
-            public void Preleft(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postleft(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromleft = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void Preright(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postright(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromright = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
                 public Operator op;
-                public DomObject fromleft;
-                public DomObject fromright;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class RelationalRule : System.Text.Parsing.RuleParser
         {
-            public RelationalRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public RelationalRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
                 LocalVariables.Add(new AttrOrVar("Operator", "op"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                ActionParser a3ActionParser = GetAction("A3");
-                a3ActionParser.Action = A3Action;
-                ActionParser a4ActionParser = GetAction("A4");
-                a4ActionParser.Action = A4Action;
-                ActionParser a5ActionParser = GetAction("A5");
-                a5ActionParser.Action = A5Action;
-                ActionParser a6ActionParser = GetAction("A6");
-                a6ActionParser.Action = A6Action;
-                ActionParser a7ActionParser = GetAction("A7");
-                a7ActionParser.Action = A7Action;
-                NonterminalParser leftNonterminalParser = GetNonterminal("left");
-                leftNonterminalParser.Pre = Preleft;
-                leftNonterminalParser.Post = Postleft;
-                NonterminalParser isTypeNonterminalParser = GetNonterminal("isType");
-                isTypeNonterminalParser.Pre = PreisType;
-                isTypeNonterminalParser.Post = PostisType;
-                NonterminalParser asTypeNonterminalParser = GetNonterminal("asType");
-                asTypeNonterminalParser.Pre = PreasType;
-                asTypeNonterminalParser.Post = PostasType;
-                NonterminalParser rightNonterminalParser = GetNonterminal("right");
-                rightNonterminalParser.Pre = Preright;
-                rightNonterminalParser.Post = Postright;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromleft;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.lessOrEqual;
-                }
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.greaterOrEqual;
-                }
-            }
-            public void A3Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.less;
-                }
-            }
-            public void A4Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.greater;
-                }
-            }
-            public void A5Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments()) pass = false;
-                else
-                {
-                    context.op = Operator.is_;
-                    context.ctx.PushParsingIsOrAs(true);
-                }
-            }
-            public void A6Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments()) pass = false;
-                else
-                {
-                    context.op = Operator.as_;
-                    context.ctx.PushParsingIsOrAs(true);
-                }
-            }
-            public void A7Action(string match, Span span, string fileName, ref bool pass)
-            {
-                switch (context.op)
-                {
-                    case Operator.less:
-                    {
-                        context.value = new Less(context.value, context.fromright);
-                        break;
-                    }
-                    case Operator.greater:
-                    {
-                        context.value = new Greater(context.value, context.fromright);
-                        break;
-                    }
-                    case Operator.lessOrEqual:
-                    {
-                        context.value = new LessOrEqual(context.value, context.fromright);
-                        break;
-                    }
-                    case Operator.greaterOrEqual:
-                    {
-                        context.value = new GreaterOrEqual(context.value, context.fromright);
-                        break;
-                    }
-                    case Operator.is_:
-                    {
-                        context.value = new IsExpression(context.value, context.fromisType);
-                        break;
-                    }
-                    case Operator.as_:
-                    {
-                        context.value = new AsExpression(context.value, context.fromasType);
-                        break;
-                    }
-                }
-            }
-            public void Preleft(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postleft(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromleft = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void PreisType(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostisType(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromisType = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void PreasType(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostasType(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromasType = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void Preright(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postright(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromright = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
                 public Operator op;
-                public DomObject fromleft;
-                public DomObject fromisType;
-                public DomObject fromasType;
-                public DomObject fromright;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class ShiftRule : System.Text.Parsing.RuleParser
         {
-            public ShiftRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public ShiftRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
                 LocalVariables.Add(new AttrOrVar("Operator", "op"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                ActionParser a3ActionParser = GetAction("A3");
-                a3ActionParser.Action = A3Action;
-                ActionParser a4ActionParser = GetAction("A4");
-                a4ActionParser.Action = A4Action;
-                ActionParser a5ActionParser = GetAction("A5");
-                a5ActionParser.Action = A5Action;
-                a5ActionParser.Failure = A5ActionFail;
-                NonterminalParser leftNonterminalParser = GetNonterminal("left");
-                leftNonterminalParser.Pre = Preleft;
-                leftNonterminalParser.Post = Postleft;
-                NonterminalParser rightNonterminalParser = GetNonterminal("right");
-                rightNonterminalParser.Pre = Preright;
-                rightNonterminalParser.Post = Postright;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromleft;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.shiftLeft;
-                }
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.shiftRight;
-                }
-            }
-            public void A3Action(string match, Span span, string fileName, ref bool pass)
-            {
-                switch (context.op)
-                {
-                    case Operator.shiftLeft:
-                    {
-                        context.value = new ShiftLeft(context.value, context.fromright);
-                        break;
-                    }
-                    case Operator.shiftRight:
-                    {
-                        context.value = new ShiftRight(context.value, context.fromright);
-                        break;
-                    }
-                }
-            }
-            public void A4Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.ctx.BeginParsingArguments();
-            }
-            public void A5Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.ctx.EndParsingArguments();
-            }
-            public void A5ActionFail()
-            {
-                context.ctx.EndParsingArguments();
-            }
-            public void Preleft(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postleft(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromleft = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void Preright(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postright(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromright = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
                 public Operator op;
-                public DomObject fromleft;
-                public DomObject fromright;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class AdditiveRule : System.Text.Parsing.RuleParser
         {
-            public AdditiveRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public AdditiveRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
                 LocalVariables.Add(new AttrOrVar("Operator", "op"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                ActionParser a3ActionParser = GetAction("A3");
-                a3ActionParser.Action = A3Action;
-                NonterminalParser leftNonterminalParser = GetNonterminal("left");
-                leftNonterminalParser.Pre = Preleft;
-                leftNonterminalParser.Post = Postleft;
-                NonterminalParser rightNonterminalParser = GetNonterminal("right");
-                rightNonterminalParser.Pre = Preright;
-                rightNonterminalParser.Post = Postright;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromleft;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.add;
-                }
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.sub;
-                }
-            }
-            public void A3Action(string match, Span span, string fileName, ref bool pass)
-            {
-                switch (context.op)
-                {
-                    case Operator.add:
-                    {
-                        context.value = new Add(context.value, context.fromright);
-                        break;
-                    }
-                    case Operator.sub:
-                    {
-                        context.value = new Sub(context.value, context.fromright);
-                        break;
-                    }
-                }
-            }
-            public void Preleft(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postleft(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromleft = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void Preright(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postright(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromright = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
                 public Operator op;
-                public DomObject fromleft;
-                public DomObject fromright;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class MultiplicativeRule : System.Text.Parsing.RuleParser
         {
-            public MultiplicativeRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public MultiplicativeRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
                 LocalVariables.Add(new AttrOrVar("Operator", "op"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                ActionParser a3ActionParser = GetAction("A3");
-                a3ActionParser.Action = A3Action;
-                ActionParser a4ActionParser = GetAction("A4");
-                a4ActionParser.Action = A4Action;
-                NonterminalParser leftNonterminalParser = GetNonterminal("left");
-                leftNonterminalParser.Pre = Preleft;
-                leftNonterminalParser.Post = Postleft;
-                NonterminalParser rightNonterminalParser = GetNonterminal("right");
-                rightNonterminalParser.Pre = Preright;
-                rightNonterminalParser.Post = Postright;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromleft;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.mul;
-                }
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.div;
-                }
-            }
-            public void A3Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingLvalue() || context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments())
-                {
-                    pass = false;
-                }
-                else
-                {
-                    context.op = Operator.rem;
-                }
-            }
-            public void A4Action(string match, Span span, string fileName, ref bool pass)
-            {
-                switch (context.op)
-                {
-                    case Operator.mul:
-                    {
-                        context.value = new Mul(context.value, context.fromright);
-                        break;
-                    }
-                    case Operator.div:
-                    {
-                        context.value = new Div(context.value, context.fromright);
-                        break;
-                    }
-                    case Operator.rem:
-                    {
-                        context.value = new Rem(context.value, context.fromright);
-                        break;
-                    }
-                }
-            }
-            public void Preleft(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postleft(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromleft = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void Preright(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postright(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromright = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
                 public Operator op;
-                public DomObject fromleft;
-                public DomObject fromright;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class PrefixRule : System.Text.Parsing.RuleParser
         {
-            public PrefixRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public PrefixRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
                 LocalVariables.Add(new AttrOrVar("Operator", "op"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                ActionParser a3ActionParser = GetAction("A3");
-                a3ActionParser.Action = A3Action;
-                ActionParser a4ActionParser = GetAction("A4");
-                a4ActionParser.Action = A4Action;
-                ActionParser a5ActionParser = GetAction("A5");
-                a5ActionParser.Action = A5Action;
-                NonterminalParser prefixNonterminalParser = GetNonterminal("prefix");
-                prefixNonterminalParser.Pre = Preprefix;
-                prefixNonterminalParser.Post = Postprefix;
-                NonterminalParser postfixNonterminalParser = GetNonterminal("Postfix");
-                postfixNonterminalParser.Pre = PrePostfix;
-                postfixNonterminalParser.Post = PostPostfix;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments()) pass = false; else context.op = Operator.unaryMinus;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments()) pass = false; else context.op = Operator.unaryPlus;
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments()) pass = false; else context.op = Operator.not_;
-            }
-            public void A3Action(string match, Span span, string fileName, ref bool pass)
-            {
-                if (context.ctx.ParsingSimpleStatement() && !context.ctx.ParsingArguments()) pass = false; else context.op = Operator.complement;
-            }
-            public void A4Action(string match, Span span, string fileName, ref bool pass)
-            {
-                switch (context.op)
-                {
-                    case Operator.unaryMinus:
-                    {
-                        context.value = new UnaryMinus(context.fromprefix);
-                        break;
-                    }
-                    case Operator.unaryPlus:
-                    {
-                        context.value = new UnaryPlus(context.fromprefix);
-                        break;
-                    }
-                    case Operator.not_:
-                    {
-                        context.value = new Not(context.fromprefix);
-                        break;
-                    }
-                    case Operator.complement:
-                    {
-                        context.value = new Complement(context.fromprefix);
-                        break;
-                    }
-                }
-            }
-            public void A5Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromPostfix;
-            }
-            public void Preprefix(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postprefix(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromprefix = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void PrePostfix(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostPostfix(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromPostfix = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
                 public Operator op;
-                public DomObject fromprefix;
-                public DomObject fromPostfix;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class PostfixRule : System.Text.Parsing.RuleParser
         {
-            public PostfixRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public PostfixRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                ActionParser a3ActionParser = GetAction("A3");
-                a3ActionParser.Action = A3Action;
-                a3ActionParser.Failure = A3ActionFail;
-                ActionParser a4ActionParser = GetAction("A4");
-                a4ActionParser.Action = A4Action;
-                ActionParser a5ActionParser = GetAction("A5");
-                a5ActionParser.Action = A5Action;
-                NonterminalParser primaryNonterminalParser = GetNonterminal("Primary");
-                primaryNonterminalParser.Pre = PrePrimary;
-                primaryNonterminalParser.Post = PostPrimary;
-                NonterminalParser dotMemberIdNonterminalParser = GetNonterminal("dotMemberId");
-                dotMemberIdNonterminalParser.Post = PostdotMemberId;
-                NonterminalParser indexNonterminalParser = GetNonterminal("index");
-                indexNonterminalParser.Pre = Preindex;
-                indexNonterminalParser.Post = Postindex;
-                NonterminalParser argumentListNonterminalParser = GetNonterminal("ArgumentList");
-                argumentListNonterminalParser.Pre = PreArgumentList;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromPrimary;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new DotExpression(context.value, context.fromdotMemberId);
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.ctx.PushParsingLvalue(false);
-                context.ctx.PushParsingSimpleStatement(false);
-            }
-            public void A3Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.ctx.PopParsingLvalue();
-                context.ctx.PopParsingSimpleStatement();
-            }
-            public void A3ActionFail()
-            {
-                context.ctx.PopParsingLvalue();
-                context.ctx.PopParsingSimpleStatement();
-            }
-            public void A4Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new IndexExpression(context.value, context.fromindex);
-            }
-            public void A5Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new InvokeExpression(context.value);
-            }
-            public void PrePrimary(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostPrimary(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromPrimary = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void PostdotMemberId(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromdotMemberId = cast<Identifier>(stack.Pop());
-                }
-            }
-            public void Preindex(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postindex(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromindex = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void PreArgumentList(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-                stack.Push(context.value);
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
-                public DomObject fromPrimary;
-                public Identifier fromdotMemberId;
-                public DomObject fromindex;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class PrimaryRule : System.Text.Parsing.RuleParser
         {
-            public PrimaryRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public PrimaryRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                ActionParser a3ActionParser = GetAction("A3");
-                a3ActionParser.Action = A3Action;
-                ActionParser a4ActionParser = GetAction("A4");
-                a4ActionParser.Action = A4Action;
-                ActionParser a5ActionParser = GetAction("A5");
-                a5ActionParser.Action = A5Action;
-                ActionParser a6ActionParser = GetAction("A6");
-                a6ActionParser.Action = A6Action;
-                ActionParser a7ActionParser = GetAction("A7");
-                a7ActionParser.Action = A7Action;
-                ActionParser a8ActionParser = GetAction("A8");
-                a8ActionParser.Action = A8Action;
-                ActionParser a9ActionParser = GetAction("A9");
-                a9ActionParser.Action = A9Action;
-                NonterminalParser expressionNonterminalParser = GetNonterminal("Expression");
-                expressionNonterminalParser.Pre = PreExpression;
-                expressionNonterminalParser.Post = PostExpression;
-                NonterminalParser literalNonterminalParser = GetNonterminal("Literal");
-                literalNonterminalParser.Post = PostLiteral;
-                NonterminalParser basicTypeNonterminalParser = GetNonterminal("BasicType");
-                basicTypeNonterminalParser.Post = PostBasicType;
-                NonterminalParser templateIdNonterminalParser = GetNonterminal("TemplateId");
-                templateIdNonterminalParser.Pre = PreTemplateId;
-                templateIdNonterminalParser.Post = PostTemplateId;
-                NonterminalParser idNonterminalParser = GetNonterminal("id");
-                idNonterminalParser.Post = Postid;
-                NonterminalParser typeExprNonterminalParser = GetNonterminal("TypeExpr");
-                typeExprNonterminalParser.Pre = PreTypeExpr;
-                typeExprNonterminalParser.Post = PostTypeExpr;
-                NonterminalParser castExprNonterminalParser = GetNonterminal("CastExpr");
-                castExprNonterminalParser.Pre = PreCastExpr;
-                castExprNonterminalParser.Post = PostCastExpr;
-                NonterminalParser newExprNonterminalParser = GetNonterminal("NewExpr");
-                newExprNonterminalParser.Pre = PreNewExpr;
-                newExprNonterminalParser.Post = PostNewExpr;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromExpression;
-                context.value.Parens = true;
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromLiteral;
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromBasicType;
-            }
-            public void A3Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromTemplateId;
-            }
-            public void A4Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromid;
-            }
-            public void A5Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new This();
-            }
-            public void A6Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new Base();
-            }
-            public void A7Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new DefaultExpression(context.fromTypeExpr);
-            }
-            public void A8Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromCastExpr;
-            }
-            public void A9Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = context.fromNewExpr;
-            }
-            public void PreExpression(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostExpression(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromExpression = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void PostLiteral(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromLiteral = cast<Literal>(stack.Pop());
-                }
-            }
-            public void PostBasicType(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromBasicType = cast<Type>(stack.Pop());
-                }
-            }
-            public void PreTemplateId(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostTemplateId(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromTemplateId = cast<TemplateId>(stack.Pop());
-                }
-            }
-            public void Postid(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromid = cast<Identifier>(stack.Pop());
-                }
-            }
-            public void PreTypeExpr(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostTypeExpr(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromTypeExpr = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void PreCastExpr(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostCastExpr(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromCastExpr = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void PreNewExpr(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostNewExpr(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromNewExpr = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
-                public DomObject fromExpression;
-                public Literal fromLiteral;
-                public Type fromBasicType;
-                public TemplateId fromTemplateId;
-                public Identifier fromid;
-                public DomObject fromTypeExpr;
-                public DomObject fromCastExpr;
-                public DomObject fromNewExpr;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class CastExprRule : System.Text.Parsing.RuleParser
         {
-            public CastExprRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public CastExprRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                NonterminalParser typeExprNonterminalParser = GetNonterminal("typeExpr");
-                typeExprNonterminalParser.Pre = PretypeExpr;
-                typeExprNonterminalParser.Post = PosttypeExpr;
-                NonterminalParser sourceExprNonterminalParser = GetNonterminal("sourceExpr");
-                sourceExprNonterminalParser.Pre = PresourceExpr;
-                sourceExprNonterminalParser.Post = PostsourceExpr;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new CastExpression(context.fromtypeExpr, context.fromsourceExpr);
-            }
-            public void PretypeExpr(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PosttypeExpr(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromtypeExpr = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void PresourceExpr(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostsourceExpr(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromsourceExpr = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
-                public DomObject fromtypeExpr;
-                public DomObject fromsourceExpr;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class NewExprRule : System.Text.Parsing.RuleParser
         {
-            public NewExprRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public NewExprRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 ValueTypeName = "DomObject";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                NonterminalParser typeNonterminalParser = GetNonterminal("type");
-                typeNonterminalParser.Pre = Pretype;
-                typeNonterminalParser.Post = Posttype;
-                NonterminalParser argsNonterminalParser = GetNonterminal("args");
-                argsNonterminalParser.Pre = Preargs;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new NewExpression(context.fromtype);
-            }
-            public void Pretype(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Posttype(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromtype = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void Preargs(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-                stack.Push(context.value);
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject value;
-                public DomObject fromtype;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class ArgumentListRule : System.Text.Parsing.RuleParser
         {
-            public ArgumentListRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public ArgumentListRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 InheritedAttributes.Add(new AttrOrVar("DomObject", "o"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.o = cast<DomObject>(stack.Pop());
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
-                context = contextStack.Pop();
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                NonterminalParser expressionListNonterminalParser = GetNonterminal("ExpressionList");
-                expressionListNonterminalParser.Pre = PreExpressionList;
             }
-            public void PreExpressionList(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-                stack.Push(context.o);
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject o;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class ExpressionListRule : System.Text.Parsing.RuleParser
         {
-            public ExpressionListRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public ExpressionListRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 InheritedAttributes.Add(new AttrOrVar("ParsingContext", "ctx"));
                 InheritedAttributes.Add(new AttrOrVar("DomObject", "o"));
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 context.o = cast<DomObject>(stack.Pop());
                 context.ctx = cast<ParsingContext>(stack.Pop());
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
-                context = contextStack.Pop();
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                ActionParser a1ActionParser = GetAction("A1");
-                a1ActionParser.Action = A1Action;
-                a1ActionParser.Failure = A1ActionFail;
-                ActionParser a2ActionParser = GetAction("A2");
-                a2ActionParser.Action = A2Action;
-                ActionParser a3ActionParser = GetAction("A3");
-                a3ActionParser.Action = A3Action;
-                NonterminalParser argNonterminalParser = GetNonterminal("arg");
-                argNonterminalParser.Pre = Prearg;
-                argNonterminalParser.Post = Postarg;
-                NonterminalParser expressionNonterminalParser = GetNonterminal("Expression");
-                expressionNonterminalParser.Pre = PreExpression;
-                expressionNonterminalParser.Post = PostExpression;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.ctx.BeginParsingArguments();
-            }
-            public void A1Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.ctx.EndParsingArguments();
-            }
-            public void A1ActionFail()
-            {
-                context.ctx.EndParsingArguments();
-            }
-            public void A2Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.o.AddArgument(new RefExpression(context.fromarg));
-            }
-            public void A3Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.o.AddArgument(context.fromExpression);
-            }
-            public void Prearg(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void Postarg(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromarg = cast<DomObject>(stack.Pop());
-                }
-            }
-            public void PreExpression(Stack<object> stack)
-            {
-                stack.Push(context.ctx);
-            }
-            public void PostExpression(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromExpression = cast<DomObject>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public ParsingContext ctx;
                 public DomObject o;
-                public DomObject fromarg;
-                public DomObject fromExpression;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public override void GetReferencedGrammars()
         {
-            ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.LiteralGrammar");
-            if (grammar0 == null)
-            {
-                grammar0 = new Code.LiteralGrammar(parsingDomain);
-            }
-            ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
-            if (grammar1 == null)
-            {
-                grammar1 = new Code.IdentifierGrammar(parsingDomain);
-            }
-            ReferencedGrammars.Add(grammar1);
-            Grammar grammar2 = parsingDomain.GetGrammar("Code.TemplateGrammar");
-            if (grammar2 == null)
-            {
-                grammar2 = new Code.TemplateGrammar(parsingDomain);
-            }
-            ReferencedGrammars.Add(grammar2);
-            Grammar grammar3 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
-            if (grammar3 == null)
-            {
-                grammar3 = new Code.TypeExprGrammar(parsingDomain);
-            }
-            ReferencedGrammars.Add(grammar3);
-            Grammar grammar4 = parsingDomain.GetGrammar("Code.BasicTypeGrammar");
-            if (grammar4 == null)
-            {
-                grammar4 = new Code.BasicTypeGrammar(parsingDomain);
-            }
-            ReferencedGrammars.Add(grammar4);
         }
         public override void CreateRules()
         {
@@ -1989,85 +592,85 @@ namespace Code
             AddRuleLink(new RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
             AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
             AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-            AddRule(new ExpressionRule("Expression", GetScope(),
-                new ActionParser("A0",
+            AddRule(new ExpressionRule("Expression", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("",
                     new NonterminalParser("Disjunction", "Disjunction", 1))));
-            AddRule(new DisjunctionRule("Disjunction", GetScope(),
+            AddRule(new DisjunctionRule("Disjunction", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new NonterminalParser("left", "Conjunction", 1)),
                     new KleeneStarParser(
                         new SequenceParser(
-                            new ActionParser("A1",
+                            new ActionParser("",
                                 new StringParser("||")),
-                            new ActionParser("A2",
+                            new ActionParser("",
                                 new ExpectationParser(
                                     new NonterminalParser("right", "Conjunction", 1))))))));
-            AddRule(new ConjunctionRule("Conjunction", GetScope(),
+            AddRule(new ConjunctionRule("Conjunction", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new NonterminalParser("left", "BitOr", 1)),
                     new KleeneStarParser(
                         new SequenceParser(
-                            new ActionParser("A1",
+                            new ActionParser("",
                                 new StringParser("&&")),
-                            new ActionParser("A2",
+                            new ActionParser("",
                                 new ExpectationParser(
                                     new NonterminalParser("right", "BitOr", 1))))))));
-            AddRule(new BitOrRule("BitOr", GetScope(),
+            AddRule(new BitOrRule("BitOr", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new NonterminalParser("left", "BitXor", 1)),
                     new KleeneStarParser(
                         new SequenceParser(
-                            new ActionParser("A1",
+                            new ActionParser("",
                                 new DifferenceParser(
                                     new CharParser('|'),
                                     new StringParser("||"))),
-                            new ActionParser("A2",
+                            new ActionParser("",
                                 new ExpectationParser(
                                     new NonterminalParser("right", "BitXor", 1))))))));
-            AddRule(new BitXorRule("BitXor", GetScope(),
+            AddRule(new BitXorRule("BitXor", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new NonterminalParser("left", "BitAnd", 1)),
                     new KleeneStarParser(
                         new SequenceParser(
-                            new ActionParser("A1",
+                            new ActionParser("",
                                 new CharParser('^')),
-                            new ActionParser("A2",
+                            new ActionParser("",
                                 new ExpectationParser(
                                     new NonterminalParser("right", "BitAnd", 1))))))));
-            AddRule(new BitAndRule("BitAnd", GetScope(),
+            AddRule(new BitAndRule("BitAnd", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new NonterminalParser("left", "Equality", 1)),
                     new KleeneStarParser(
                         new SequenceParser(
-                            new ActionParser("A1",
+                            new ActionParser("",
                                 new DifferenceParser(
                                     new CharParser('&'),
                                     new StringParser("&&"))),
-                            new ActionParser("A2",
+                            new ActionParser("",
                                 new ExpectationParser(
                                     new NonterminalParser("right", "Equality", 1))))))));
-            AddRule(new EqualityRule("Equality", GetScope(),
+            AddRule(new EqualityRule("Equality", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new NonterminalParser("left", "Relational", 1)),
                     new KleeneStarParser(
                         new SequenceParser(
                             new AlternativeParser(
-                                new ActionParser("A1",
+                                new ActionParser("",
                                     new StringParser("==")),
-                                new ActionParser("A2",
+                                new ActionParser("",
                                     new StringParser("!="))),
-                            new ActionParser("A3",
+                            new ActionParser("",
                                 new ExpectationParser(
                                     new NonterminalParser("right", "Relational", 1))))))));
-            AddRule(new RelationalRule("Relational", GetScope(),
+            AddRule(new RelationalRule("Relational", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new NonterminalParser("left", "Shift", 1)),
                     new KleeneStarParser(
                         new SequenceParser(
@@ -2076,126 +679,126 @@ namespace Code
                                     new AlternativeParser(
                                         new AlternativeParser(
                                             new AlternativeParser(
-                                                new ActionParser("A1",
+                                                new ActionParser("",
                                                     new DifferenceParser(
                                                         new StringParser("<="),
                                                         new StringParser("<=>"))),
-                                                new ActionParser("A2",
+                                                new ActionParser("",
                                                     new StringParser(">="))),
-                                            new ActionParser("A3",
+                                            new ActionParser("",
                                                 new DifferenceParser(
                                                     new CharParser('<'),
                                                     new AlternativeParser(
                                                         new StringParser("<<"),
                                                         new StringParser("<=>"))))),
-                                        new ActionParser("A4",
+                                        new ActionParser("",
                                             new DifferenceParser(
                                                 new CharParser('>'),
                                                 new StringParser(">>")))),
                                     new SequenceParser(
-                                        new ActionParser("A5",
+                                        new ActionParser("",
                                             new KeywordParser("is")),
                                         new NonterminalParser("isType", "TypeExpr", 1))),
                                 new SequenceParser(
-                                    new ActionParser("A6",
+                                    new ActionParser("",
                                         new KeywordParser("as")),
                                     new NonterminalParser("asType", "TypeExpr", 1))),
-                            new ActionParser("A7",
+                            new ActionParser("",
                                 new NonterminalParser("right", "Shift", 1)))))));
-            AddRule(new ShiftRule("Shift", GetScope(),
+            AddRule(new ShiftRule("Shift", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new NonterminalParser("left", "Additive", 1)),
                     new KleeneStarParser(
                         new SequenceParser(
                             new AlternativeParser(
-                                new ActionParser("A1",
+                                new ActionParser("",
                                     new StringParser("<<")),
-                                new ActionParser("A2",
+                                new ActionParser("",
                                     new StringParser(">>"))),
-                            new ActionParser("A3",
+                            new ActionParser("",
                                 new SequenceParser(
-                                    new ActionParser("A4",
+                                    new ActionParser("",
                                         new EmptyParser()),
-                                    new ActionParser("A5",
+                                    new ActionParser("",
                                         new ExpectationParser(
                                             new NonterminalParser("right", "Additive", 1))))))))));
-            AddRule(new AdditiveRule("Additive", GetScope(),
+            AddRule(new AdditiveRule("Additive", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new NonterminalParser("left", "Multiplicative", 1)),
                     new KleeneStarParser(
                         new SequenceParser(
                             new AlternativeParser(
-                                new ActionParser("A1",
+                                new ActionParser("",
                                     new CharParser('+')),
-                                new ActionParser("A2",
+                                new ActionParser("",
                                     new CharParser('-'))),
-                            new ActionParser("A3",
+                            new ActionParser("",
                                 new ExpectationParser(
                                     new NonterminalParser("right", "Multiplicative", 1))))))));
-            AddRule(new MultiplicativeRule("Multiplicative", GetScope(),
+            AddRule(new MultiplicativeRule("Multiplicative", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new NonterminalParser("left", "Prefix", 1)),
                     new KleeneStarParser(
                         new SequenceParser(
                             new AlternativeParser(
                                 new AlternativeParser(
-                                    new ActionParser("A1",
+                                    new ActionParser("",
                                         new CharParser('*')),
-                                    new ActionParser("A2",
+                                    new ActionParser("",
                                         new CharParser('/'))),
-                                new ActionParser("A3",
+                                new ActionParser("",
                                     new CharParser('%'))),
-                            new ActionParser("A4",
+                            new ActionParser("",
                                 new NonterminalParser("right", "Prefix", 1)))))));
-            AddRule(new PrefixRule("Prefix", GetScope(),
+            AddRule(new PrefixRule("Prefix", GetScope(), Domain.GetNextRuleId(),
                 new AlternativeParser(
                     new SequenceParser(
                         new AlternativeParser(
                             new AlternativeParser(
                                 new AlternativeParser(
-                                    new ActionParser("A0",
+                                    new ActionParser("",
                                         new CharParser('-')),
-                                    new ActionParser("A1",
+                                    new ActionParser("",
                                         new CharParser('+'))),
-                                new ActionParser("A2",
+                                new ActionParser("",
                                     new DifferenceParser(
                                         new CharParser('!'),
                                         new StringParser("!=")))),
-                            new ActionParser("A3",
+                            new ActionParser("",
                                 new CharParser('~'))),
-                        new ActionParser("A4",
+                        new ActionParser("",
                             new NonterminalParser("prefix", "Prefix", 1))),
-                    new ActionParser("A5",
+                    new ActionParser("",
                         new NonterminalParser("Postfix", "Postfix", 1)))));
-            AddRule(new PostfixRule("Postfix", GetScope(),
+            AddRule(new PostfixRule("Postfix", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new NonterminalParser("Primary", "Primary", 1)),
                     new KleeneStarParser(
                         new AlternativeParser(
                             new AlternativeParser(
                                 new SequenceParser(
                                     new CharParser('.'),
-                                    new ActionParser("A1",
+                                    new ActionParser("",
                                         new NonterminalParser("dotMemberId", "Identifier", 0))),
                                 new SequenceParser(
                                     new SequenceParser(
-                                        new ActionParser("A2",
+                                        new ActionParser("",
                                             new CharParser('[')),
-                                        new ActionParser("A3",
+                                        new ActionParser("",
                                             new NonterminalParser("index", "Expression", 1))),
-                                    new ActionParser("A4",
+                                    new ActionParser("",
                                         new CharParser(']')))),
                             new SequenceParser(
                                 new SequenceParser(
-                                    new ActionParser("A5",
+                                    new ActionParser("",
                                         new CharParser('(')),
                                     new NonterminalParser("ArgumentList", "ArgumentList", 2)),
                                 new CharParser(')')))))));
-            AddRule(new PrimaryRule("Primary", GetScope(),
+            AddRule(new PrimaryRule("Primary", GetScope(), Domain.GetNextRuleId(),
                 new AlternativeParser(
                     new AlternativeParser(
                         new AlternativeParser(
@@ -2205,25 +808,25 @@ namespace Code
                                         new AlternativeParser(
                                             new AlternativeParser(
                                                 new AlternativeParser(
-                                                    new ActionParser("A0",
+                                                    new ActionParser("",
                                                         new SequenceParser(
                                                             new SequenceParser(
                                                                 new CharParser('('),
                                                                 new NonterminalParser("Expression", "Expression", 1)),
                                                             new CharParser(')'))),
-                                                    new ActionParser("A1",
+                                                    new ActionParser("",
                                                         new NonterminalParser("Literal", "Literal", 0))),
-                                                new ActionParser("A2",
+                                                new ActionParser("",
                                                     new NonterminalParser("BasicType", "BasicType", 0))),
-                                            new ActionParser("A3",
+                                            new ActionParser("",
                                                 new NonterminalParser("TemplateId", "TemplateId", 1))),
-                                        new ActionParser("A4",
+                                        new ActionParser("",
                                             new NonterminalParser("id", "Identifier", 0))),
-                                    new ActionParser("A5",
+                                    new ActionParser("",
                                         new KeywordParser("this"))),
-                                new ActionParser("A6",
+                                new ActionParser("",
                                     new KeywordParser("base"))),
-                            new ActionParser("A7",
+                            new ActionParser("",
                                 new SequenceParser(
                                     new SequenceParser(
                                         new SequenceParser(
@@ -2233,12 +836,12 @@ namespace Code
                                             new NonterminalParser("TypeExpr", "TypeExpr", 1))),
                                     new ExpectationParser(
                                         new CharParser(')'))))),
-                        new ActionParser("A8",
+                        new ActionParser("",
                             new NonterminalParser("CastExpr", "CastExpr", 1))),
-                    new ActionParser("A9",
+                    new ActionParser("",
                         new NonterminalParser("NewExpr", "NewExpr", 1)))));
-            AddRule(new CastExprRule("CastExpr", GetScope(),
-                new ActionParser("A0",
+            AddRule(new CastExprRule("CastExpr", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("",
                     new SequenceParser(
                         new SequenceParser(
                             new SequenceParser(
@@ -2258,13 +861,13 @@ namespace Code
                                 new NonterminalParser("sourceExpr", "Expression", 1))),
                         new ExpectationParser(
                             new CharParser(')'))))));
-            AddRule(new NewExprRule("NewExpr", GetScope(),
+            AddRule(new NewExprRule("NewExpr", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
                     new SequenceParser(
                         new SequenceParser(
                             new SequenceParser(
                                 new KeywordParser("new"),
-                                new ActionParser("A0",
+                                new ActionParser("",
                                     new ExpectationParser(
                                         new NonterminalParser("type", "TypeExpr", 1)))),
                             new ExpectationParser(
@@ -2273,21 +876,21 @@ namespace Code
                             new NonterminalParser("args", "ArgumentList", 2))),
                     new ExpectationParser(
                         new CharParser(')')))));
-            AddRule(new ArgumentListRule("ArgumentList", GetScope(),
+            AddRule(new ArgumentListRule("ArgumentList", GetScope(), Domain.GetNextRuleId(),
                 new OptionalParser(
                     new NonterminalParser("ExpressionList", "ExpressionList", 2))));
-            AddRule(new ExpressionListRule("ExpressionList", GetScope(),
+            AddRule(new ExpressionListRule("ExpressionList", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new EmptyParser()),
-                    new ActionParser("A1",
+                    new ActionParser("",
                         new ListParser(
                             new AlternativeParser(
                                 new SequenceParser(
                                     new KeywordParser("ref"),
-                                    new ActionParser("A2",
+                                    new ActionParser("",
                                         new NonterminalParser("arg", "Expression", 1))),
-                                new ActionParser("A3",
+                                new ActionParser("",
                                     new NonterminalParser("Expression", "Expression", 1))),
                             new CharParser(','))))));
         }

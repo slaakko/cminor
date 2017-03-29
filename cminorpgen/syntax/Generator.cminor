@@ -2,11 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Parsing;
+using System.Threading;
 
 namespace Syntax
 {
     public static class Flags
     {
+		static Flags()
+		{
+			 forceCodeGen = false;
+			 debug = false;
+			 numThreads = -1;
+		}
         public static bool ForceCodeGen
         {
             get { return forceCodeGen; }
@@ -17,8 +24,14 @@ namespace Syntax
             get { return debug; }
             set { debug = value; }
         }
+		public static int NumThreads
+		{
+			get { return numThreads; }
+			set { numThreads = value; }
+		}
         private static bool forceCodeGen;
         private static bool debug;
+		private static int numThreads;
     }
 
     internal string ResolveReferenceFilePath(string relativeReferenceFilePath, string projectBasePath, List<string> libraryDirectories)
@@ -38,6 +51,130 @@ namespace Syntax
         }
         throw new Exception("library file '" + relativeReferenceFilePath + "' not found");
     }
+
+	internal List<ParserFileContent> ParseSourcesInMainThread(ParserFileGrammar parserFileGrammar, List<string> sourceFilePaths, ParsingDomain parsingDomain)
+	{
+		List<ParserFileContent> parserFiles = new List<ParserFileContent>();
+        int sourceFileIndex = 0;
+        foreach (string sourceFilePath in sourceFilePaths)
+        {
+            Console.WriteLine("> " + sourceFilePath);
+            string sourceFileContent = File.ReadAllText(sourceFilePath);
+            ParserFileContent parserFileContent = parserFileGrammar.Parse(sourceFileContent, sourceFileIndex, sourceFilePath, sourceFileIndex, parsingDomain);
+            parserFiles.Add(parserFileContent);
+            ++sourceFileIndex;
+        }
+		return parserFiles;
+	}
+
+	internal class ParserData
+	{
+		public ParserData(ParserFileGrammar parserFileGrammar, List<string> sourceFilePaths, List<ParserFileContent> parserFiles, List<int> fileIndeces, List<Exception> exceptions, 
+			List<ParsingDomain> parsingDomains)
+		{
+			this.parserFileGrammar = parserFileGrammar;
+			this.sourceFilePaths = sourceFilePaths;
+			this.parserFiles = parserFiles;
+			this.fileIndeces = fileIndeces;
+			this.exceptions = exceptions;
+			this.parsingDomains = parsingDomains;
+			this.filePos = 0;
+			this.lck = new object();
+			this.stop = false;
+		}
+		public ParserFileGrammar parserFileGrammar;
+		public List<string> sourceFilePaths;
+		public List<ParserFileContent> parserFiles;
+		public List<int> fileIndeces;
+		public List<Exception> exceptions;
+		public List<ParsingDomain> parsingDomains;
+		public int filePos;
+		public object lck;
+		public bool stop;
+	}
+
+	internal void ParseSourceFiles(object data)
+	{
+		ParserData parserData = cast<ParserData>(data);
+		ParserFileGrammar parserFileGrammar = parserData.parserFileGrammar;
+		int sourceFileIndex = -1;
+		try
+		{
+			while (!parserData.stop)
+			{
+				string sourceFilePath;
+				lock (parserData.lck)
+				{
+					if (parserData.filePos >= parserData.fileIndeces.Count) return;
+					sourceFileIndex = parserData.fileIndeces[parserData.filePos];
+					++parserData.filePos;
+					sourceFilePath = parserData.sourceFilePaths[sourceFileIndex];
+					Console.WriteLine("> " + sourceFilePath);
+				}
+				ParsingDomain parsingDomain = parserData.parsingDomains[sourceFileIndex];
+	            string sourceFileContent = File.ReadAllText(sourceFilePath);
+		        ParserFileContent parserFileContent = parserFileGrammar.Parse(sourceFileContent, sourceFileIndex, sourceFilePath, sourceFileIndex, parsingDomain);
+				parserData.parserFiles[sourceFileIndex] = parserFileContent;
+			}
+		}
+		catch (Exception ex)
+		{
+			if (sourceFileIndex != -1)
+			{
+				parserData.exceptions[sourceFileIndex] = ex;
+				parserData.stop = true;
+			}
+		}
+	}
+
+	internal List<ParserFileContent> ParseSourcesConcurrently(ParserFileGrammar parserFileGrammar, List<string> sourceFilePaths, ParsingDomain parsingDomain, int numThreads)
+	{
+		int n = sourceFilePaths.Count;
+		List<int> fileIndeces = new List<int>();
+		for (int i = 0; i < n; ++i)
+		{
+			fileIndeces.Add(i);
+		}
+		List<Exception> exceptions = new List<Exception>();
+		exceptions.Resize(n);
+		List<ParserFileContent> parserFiles = new List<ParserFileContent>();
+		parserFiles.Resize(n);
+		List<ParsingDomain> parsingDomains = new List<ParsingDomain>();
+		for (int i = 0; i < n; ++i)
+		{
+			ParsingDomain pd = new ParsingDomain();
+			pd.Import(parsingDomain, true);
+			parsingDomains.Add(pd);
+		}
+		ParserData parserData = new ParserData(parserFileGrammar, sourceFilePaths, parserFiles, fileIndeces, exceptions, parsingDomains);
+		List<Thread> threads = new List<Thread>();
+		for (int i = 0; i < numThreads; ++i)
+		{
+			threads.Add(Thread.StartFunction(ParseSourceFiles, parserData));
+			if (parserData.stop) break;
+		}
+		int numThreadsStarted = threads.Count;
+		for (int i = 0; i < numThreadsStarted; ++i)
+		{
+			threads[i].Join();
+		}
+		for (int i = 0; i < n; ++i)
+		{
+			if (parserData.exceptions[i] != null)
+			{
+				Rethrow(parserData.exceptions[i]);
+			}
+		}
+		for (int i = 0; i < n; ++i)
+		{
+			ParsingDomain pd = parserData.parsingDomains[i];
+			if (pd != null)
+			{
+				parsingDomain.Import(pd, false);
+			}
+		}
+		return parserFiles;
+	}
 
     public void Generate(string projectFilePath, List<string> libraryDirectories)
     {
@@ -64,19 +201,24 @@ namespace Syntax
             libraryFileGrammar.Parse(libraryFileContent, libraryFileIndex, referenceFilePath, parsingDomain);
             ++libraryFileIndex;
         }
-        Console.WriteLine("Parsing source files...");
-        List<ParserFileContent> parserFiles = new List<ParserFileContent>();
         List<string> sourceFilePaths = project.SourceFiles;
         FileInfo.Instance.Files = sourceFilePaths;
-        int sourceFileIndex = 0;
-        foreach (string sourceFilePath in sourceFilePaths)
-        {
-            Console.WriteLine("> " + sourceFilePath);
-            string sourceFileContent = File.ReadAllText(sourceFilePath);
-            ParserFileContent parserFileContent = parserFileGrammar.Parse(sourceFileContent, sourceFileIndex, sourceFilePath, sourceFileIndex, parsingDomain);
-            parserFiles.Add(parserFileContent);
-            ++sourceFileIndex;
-        }
+		List<ParserFileContent> parserFiles;
+		int numThreads = Flags.NumThreads;
+		if (numThreads == -1) 
+		{
+			numThreads = HardwareConcurrency();
+		}
+		if (numThreads == 0)
+		{
+	        Console.WriteLine("Parsing source files...");
+			parserFiles = ParseSourcesInMainThread(parserFileGrammar, sourceFilePaths, parsingDomain);
+		}
+		else
+		{
+			Console.WriteLine("Parsing source files using " + numThreads.ToString() + " threads...");
+			parserFiles = ParseSourcesConcurrently(parserFileGrammar, sourceFilePaths, parsingDomain, numThreads);
+		}
         Console.WriteLine("Linking...");
         System.Text.Parsing.Link(parsingDomain);
         Console.WriteLine("Expanding code...");

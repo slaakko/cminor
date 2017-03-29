@@ -77,7 +77,10 @@ void PrintHelp()
         "options:\n\n" <<
         "   --help (-h)\n" <<
         "       Print this help message.\n" <<
-        "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
+		"   --gcactions (-g)\n" <<
+		"       Print garbage collections actions to stderr.\n" <<
+		"       [G]=collecting garbage, [F]=performing full collection.\n" <<
+		"   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
         "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
         "       Default is 16 MB.\n" <<
         "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
@@ -85,7 +88,7 @@ void PrintHelp()
         "       Default is 16 MB.\n" <<
         "   --thread-pages=N (-t=N)\n" <<
         "       Set the number of thread-specific memory allocation context pages to N.\n" <<
-        "       Default is 2 pages (for 4K system memory page size this is 8K).\n" <<
+        "       Default is 2 pages (for typical 4K system memory page size this is 8K).\n" <<
         "       When N > 0, memory allocator of the virtual machine allocates extra memory\n" <<
         "       whose size is N * <system memory page size> for the thread making the allocation.\n" <<
         "       Thread can consume this extra memory without any further locking.\n" <<
@@ -112,6 +115,7 @@ int main(int argc, const char** argv)
         std::vector<std::string> arguments;
         uint64_t segmentSizeMB = 0;
         uint64_t poolThresholdMB = 0;
+		bool printGcActions = false;
         for (int i = 1; i < argc; ++i)
         {
             std::string arg = argv[i];
@@ -126,7 +130,11 @@ int main(int argc, const char** argv)
                             PrintHelp();
                             return 0;
                         }
-                        else if (arg.find('=', 0) != std::string::npos)
+						else if (arg == "-g" || arg == "--gcactions")
+						{
+							printGcActions = true;
+						}
+						else if (arg.find('=', 0) != std::string::npos)
                         {
                             std::vector<std::string> components = Split(arg, '=');
                             if (components.size() != 2)
@@ -188,6 +196,10 @@ int main(int argc, const char** argv)
         }
         SetDebugging();
         Machine machine;
+		if (printGcActions)
+		{
+			machine.GetGarbageCollector().SetPrintActions();
+		}
         Assembly assembly(machine);
         assembly.Load(assemblyFilePath);
         std::vector<utf32_string> programArguments;

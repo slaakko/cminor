@@ -396,7 +396,11 @@ BoundProperty::BoundProperty(Assembly& assembly_, TypeSymbol* type_, PropertySym
 
 void BoundProperty::SetClassObject(std::unique_ptr<BoundExpression>&& classObject_)
 {
-    classObject = std::move(classObject_);
+	if (propertySymbol->Parent()->Name() == U"Grammar" && propertySymbol->Name() == U"Ns")
+	{
+		int x = 0;
+	}
+	classObject = std::move(classObject_);
 }
 
 void BoundProperty::GenLoad(Machine& machine, Function& function)
@@ -429,7 +433,11 @@ void BoundProperty::GenLoad(Machine& machine, Function& function)
 
 void BoundProperty::GenStore(Machine& machine, Function& function)
 {
-    if (classObject)
+	if (propertySymbol->Parent()->Name() == U"Grammar" && propertySymbol->Name() == U"Ns")
+	{
+		int x = 0;
+	}
+	if (classObject)
     {
         classObject->GenLoad(machine, function);
     }
@@ -450,11 +458,11 @@ void BoundProperty::GenStore(Machine& machine, Function& function)
             function.SetCanThrow();
         }
     }
-    else
-    {
-        std::unique_ptr<Instruction> swapInst = machine.CreateInst("swap");
-        function.AddInst(std::move(swapInst));
-    }
+	else
+	{
+		std::unique_ptr<Instruction> swapInst = machine.CreateInst("swap");
+		function.AddInst(std::move(swapInst));
+	}
     std::vector<GenObject*> emptyObjects;
     Assert(propertySymbol->Setter(), "property has no setter");
     propertySymbol->Setter()->GenerateCall(machine, GetAssembly(), function, emptyObjects, 0);
@@ -984,7 +992,6 @@ BoundNewExpression::BoundNewExpression(BoundFunctionCall* boundFunctionCall_, Ty
 
 void BoundNewExpression::GenLoad(Machine& machine, Function& function) 
 {
-    //function.AddInst(machine.CreateInst("gcpoint"));
     std::unique_ptr<Instruction> createInst;
     createInst = machine.CreateInst("createo");
     ConstantPool& constantPool = GetAssembly().GetConstantPool();

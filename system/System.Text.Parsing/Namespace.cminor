@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Parsing.CodeDom;
 
 namespace System.Text.Parsing
@@ -15,6 +16,26 @@ namespace System.Text.Parsing
             GetScope().Accept(visitor);
             visitor.EndVisit(this);
         }
+		public void Import(Namespace that, ParsingDomain targetDomain, bool importExternals)
+		{
+			targetDomain.BeginNamespace(that.Name);
+			foreach (KeyValuePair<string, ParsingObject> p in that.ContainerScope.FullNameMap)
+			{
+				ParsingObject o = p.Value;
+				if (!importExternals && o.External) continue;
+				if (o is Grammar)
+				{
+					Grammar grammar = cast<Grammar>(o);
+					grammar.EnclosingScope = targetDomain.CurrentScope;
+					targetDomain.AddGrammar(grammar);
+				}
+				else if (o is Namespace)
+				{
+					Import(cast<Namespace>(o), targetDomain, importExternals);
+				}
+			}
+			targetDomain.EndNamespace();
+		}
     }
 
     public class UsingObject : ParsingObject

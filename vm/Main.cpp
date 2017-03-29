@@ -101,7 +101,10 @@ void PrintHelp()
         "       Trace execution of native program to stderr (used with --native).\n" <<
         "   --stats (-a)\n" <<
         "       Print statistics.\n" <<
-        "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
+		"   --gcactions (-g)\n" <<
+		"       Print garbage collections actions to stderr.\n" <<
+		"       [G]=collecting garbage, [F]=performing full collection.\n" <<
+		"   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
         "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
         "       Default is 16 MB.\n" << 
         "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
@@ -109,7 +112,7 @@ void PrintHelp()
         "       Default is 16 MB.\n" <<
         "   --thread-pages=N (-t=N)\n" <<
         "       Set the number of thread-specific memory allocation context pages to N.\n" <<
-        "       Default is 2 pages (for 4K system memory page size this is 8K).\n" <<
+        "       Default is 2 pages (for typical 4K system memory page size this is 8K).\n" <<
         "       When N > 0, memory allocator of the virtual machine allocates extra memory\n" <<
         "       whose size is N * <system memory page size> for the thread making the allocation.\n" <<
         "       Thread can consume this extra memory without any further locking.\n" <<
@@ -126,6 +129,7 @@ int main(int argc, const char** argv)
     auto startVm = std::chrono::system_clock::now();
     int programReturnValue = 0;
     bool printStats = false;
+	bool printGcActions = false;
     try
     {
         if (argc < 2)
@@ -176,7 +180,11 @@ int main(int argc, const char** argv)
                         {
                             printStats = true;
                         }
-                        else if (arg.find('=', 0) != std::string::npos)
+						else if (arg == "-g" || arg == "--gcactions")
+						{
+							printGcActions = true;
+						}
+						else if (arg.find('=', 0) != std::string::npos)
                         {
                             std::vector<std::string> components = Split(arg, '=');
                             if (components.size() != 2)
@@ -256,6 +264,10 @@ int main(int argc, const char** argv)
                 std::cout << "tracing enabled" << std::endl;
             }
         }
+		if (printGcActions)
+		{
+			machine.GetGarbageCollector().SetPrintActions();
+		}
         if (jit && native)
         {
             throw std::runtime_error("--native and --jit are mutually exclusive options");

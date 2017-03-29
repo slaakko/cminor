@@ -152,6 +152,10 @@ namespace System.Text.Parsing
                 p.Value.Accept(visitor);
             }
         }
+		public HashMap<string, ParsingObject> FullNameMap
+		{
+			get { return fullNameMap; }
+		}
         private string name;
         private Namespace ns;
         private HashMap<string, ParsingObject> fullNameMap;

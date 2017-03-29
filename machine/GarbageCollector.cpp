@@ -19,7 +19,7 @@ std::atomic_bool wantToCollectGarbage = false;
 Mutex garbageCollectorMutex('G');
 
 GarbageCollector::GarbageCollector(Machine& machine_) : machine(machine_), state(GarbageCollectorState::idle), started(false), collectionRequested(false), fullCollectionRequested(false), 
-    idle(true), collected(false), error(false)
+    idle(true), collected(false), error(false), printActions(false)
 {
 }
 
@@ -214,6 +214,10 @@ void GarbageCollector::Run()
 
 void GarbageCollector::CollectGarbage()
 {
+	if (printActions)
+	{
+		std::cerr << "[G]";
+	}
     auto start = std::chrono::system_clock::now();
     ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
     memoryPool.ResetLiveFlags();
@@ -222,7 +226,11 @@ void GarbageCollector::CollectGarbage()
     machine.Gen1Arena().Clear();
     if (fullCollectionRequested)
     {
-        memoryPool.MoveLiveAllocationsToNewSegments(machine.Gen2Arena());
+		if (printActions)
+		{
+			std::cerr << "[F]";
+		}
+		memoryPool.MoveLiveAllocationsToNewSegments(machine.Gen2Arena());
     }
     machine.Compact();
     for (const std::unique_ptr<Thread>& thread : machine.Threads())
@@ -261,24 +269,6 @@ void GarbageCollector::MarkLiveAllocations()
 {
     std::unordered_set<AllocationHandle, AllocationHandleHash> checked;
     ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
-    AllocationHandle root = memoryPool.PoolRoot();
-    if (root.Value() != 0)
-    {
-        void* allocation = memoryPool.GetAllocationNoThrowNoLock(root);
-        if (allocation)
-        {
-            ManagedAllocationHeader* header = GetAllocationHeader(allocation);
-            header->SetLive();
-            if (header->IsObject())
-            {
-                MarkObjectLiveAllocations(allocation, checked);
-            }
-            else if (header->IsArrayElements())
-            {
-                MarkArrayElementsLiveAllocations(allocation, checked);
-            }
-        }
-    }
     for (const auto& p : ClassDataTable::ClassDataMap())
     {
         ClassData* classData = p.second;

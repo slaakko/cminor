@@ -303,18 +303,12 @@ public:
     void ResetLiveFlags();
     void MoveLiveAllocationsToArena(ArenaId fromArenaId, Arena& toArena);
     void MoveLiveAllocationsToNewSegments(Arena& arena);
-    AllocationHandle PoolRoot() const { return poolRoot; }
     std::recursive_mutex& AllocationsMutex() { return allocationsMutex; }
 private:
     Machine& machine;
     std::vector<void*> allocations;
     std::atomic_uint64_t nextAllocationHandleValue;
     std::recursive_mutex allocationsMutex;
-    void ComputeSize();
-    void CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle root);
-    uint64_t prevSize;
-    uint64_t size;
-    std::atomic<AllocationHandle> poolRoot;
 };
 
 typedef void(*DestroyLockFn)(uint32_t);

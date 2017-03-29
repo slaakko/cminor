@@ -17,175 +17,77 @@ namespace Code
             CreateRules();
             Link();
         }
-        public NamespaceImport Parse(string content, int fileIndex, string fileName)
-        {
-            Stack<object> stack = new Stack<object>();
-            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
-            System.IO.StreamWriter log = Log;
-            XmlLog xmlLog = null;
-            try
-            {
-                if (log != null)
-                {
-                    xmlLog = new XmlLog(log);
-                    scanner.Log = xmlLog;
-                    xmlLog.WriteBeginRule("parse");
-                    xmlLog.IncIndent();
-                }
-                Match match = Parse(scanner, stack);
-                Span stop = scanner.SpanValue;
-                if (log != null)
-                {
-                    xmlLog.DecIndent();
-                    xmlLog.WriteEndRule("parse");
-                }
-                if (!match.Hit || stop.Start != content.Length)
-                {
-                    RuleParser startRule = StartRule;
-                    if (startRule != null)
-                    {
-                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
-                    }
-                    else
-                    {
-                        throw new Exception("grammar '" + Name + "' has no start rule");
-                    }
-                }
-            }
-            finally
-            {
-                if (xmlLog != null)
-                {
-                    xmlLog.Close();
-                }
-            }
-            NamespaceImport result = cast<NamespaceImport>(stack.Pop());
-            return result;
-        }
         public class NamespaceImportRule : System.Text.Parsing.RuleParser
         {
-            public NamespaceImportRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public NamespaceImportRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 ValueTypeName = "NamespaceImport";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                NonterminalParser qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
-                qualifiedIdNonterminalParser.Post = PostQualifiedId;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new NamespaceImport(context.fromQualifiedId.Name);
-            }
-            public void PostQualifiedId(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromQualifiedId = cast<Identifier>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public NamespaceImport value;
-                public Identifier fromQualifiedId;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public class AliasRule : System.Text.Parsing.RuleParser
         {
-            public AliasRule(string name, Scope enclosingScope, Parser definition) : base(name, enclosingScope, definition)
+            public AliasRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 ValueTypeName = "Alias";
-                contextStack = new Stack<Context>();
             }
-            public override void Enter(Stack<object> stack)
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
             {
-                contextStack.Push(context);
-                context = new Context();
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
             }
-            public override void Leave(Stack<object> stack, bool matched)
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
             {
+                Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     stack.Push(context.value);
                 }
-                context = contextStack.Pop();
+                parsingData.PopContext(Id);
             }
             public override void Link()
             {
-                ActionParser a0ActionParser = GetAction("A0");
-                a0ActionParser.Action = A0Action;
-                NonterminalParser identifierNonterminalParser = GetNonterminal("Identifier");
-                identifierNonterminalParser.Post = PostIdentifier;
-                NonterminalParser qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
-                qualifiedIdNonterminalParser.Post = PostQualifiedId;
             }
-            public void A0Action(string match, Span span, string fileName, ref bool pass)
-            {
-                context.value = new Alias(context.fromIdentifier.Name, context.fromQualifiedId.Name);
-            }
-            public void PostIdentifier(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromIdentifier = cast<Identifier>(stack.Pop());
-                }
-            }
-            public void PostQualifiedId(Stack<object> stack, bool matched)
-            {
-                if (matched)
-                {
-                    context.fromQualifiedId = cast<Identifier>(stack.Pop());
-                }
-            }
-            public class Context
+            public class Context : System.Text.Parsing.Context
             {
                 public Alias value;
-                public Identifier fromIdentifier;
-                public Identifier fromQualifiedId;
             }
-            private Stack<Context> contextStack;
-            private Context context;
         }
         public override void GetReferencedGrammars()
         {
-            ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
-            if (grammar0 == null)
-            {
-                grammar0 = new Code.IdentifierGrammar(parsingDomain);
-            }
-            ReferencedGrammars.Add(grammar0);
         }
         public override void CreateRules()
         {
             AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-            AddRule(new NamespaceImportRule("NamespaceImport", GetScope(),
+            AddRule(new NamespaceImportRule("NamespaceImport", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
                     new SequenceParser(
                         new KeywordParser("using"),
                         new NonterminalParser("QualifiedId", "QualifiedId", 0)),
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new CharParser(';')))));
-            AddRule(new AliasRule("Alias", GetScope(),
+            AddRule(new AliasRule("Alias", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
                     new SequenceParser(
                         new SequenceParser(
@@ -194,7 +96,7 @@ namespace Code
                                 new NonterminalParser("Identifier", "Identifier", 0)),
                             new CharParser('=')),
                         new NonterminalParser("QualifiedId", "QualifiedId", 0)),
-                    new ActionParser("A0",
+                    new ActionParser("",
                         new CharParser(';')))));
         }
     }

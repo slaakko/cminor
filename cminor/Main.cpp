@@ -143,7 +143,10 @@ void PrintHelp(HelpTopics helpTopics)
             "       Trace execution of native program to stderr (used with --native).\n" <<
             "   --stats (-a)\n" <<
             "       Print statistics.\n" <<
-            "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
+			"   --gcactions (-g)\n" <<
+			"       Print garbage collections actions to stderr.\n" <<
+			"       [G]=collecting garbage, [F]=performing full collection.\n" <<
+			"   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
             "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
             "       Default is 16 MB.\n" <<
             "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
@@ -151,7 +154,7 @@ void PrintHelp(HelpTopics helpTopics)
             "       Default is 16 MB.\n" <<
             "   --thread-pages=N (-t=N)\n" <<
             "       Set the number of thread-specific memory allocation context pages to N.\n" <<
-            "       Default is 2 pages (for 4K system memory page size this is 8K).\n" <<
+            "       Default is 2 pages (for typical 4K system memory page size this is 8K).\n" <<
             "       When N > 0, memory allocator of the virtual machine allocates extra memory\n" <<
             "       whose size is N * <system memory page size> for the thread making the allocation.\n" <<
             "       Thread can consume this extra memory without any further locking.\n" <<
@@ -164,7 +167,10 @@ void PrintHelp(HelpTopics helpTopics)
             "cminor debug [debug-options] PROGRAM.cminora [program-arguments]\n\n" <<
             "Debug PROGRAM.cminora with given program-arguments.\n\n"
             "debug-options:\n\n" <<
-            "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
+			"   --gcactions (-g)\n" <<
+			"       Print garbage collections actions to stderr.\n" <<
+			"       G=collecting garbage, F=performing full collection, P=managed memory pool threshold exceeded.\n" <<
+			"   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
             "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
             "       Default is 16 MB.\n" <<
             "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
@@ -350,6 +356,10 @@ int main(int argc, const char** argv)
                         {
                             runOptions.push_back(arg);
                         }
+						else if (arg == "-g" || arg == "--gcactions")
+						{
+							runOptions.push_back(arg);
+						}
                         else if (arg.find('=', 0) != std::string::npos)
                         {
                             std::vector<std::string> components = Split(arg, '=');
@@ -395,7 +405,11 @@ int main(int argc, const char** argv)
                     {
                         globalOptions.push_back(arg);
                     }
-                    else if (!arg.empty() && arg[0] == '-')
+					else if (arg == "-g" || arg == "--gcactions")
+					{
+						debugOptions.push_back(arg);
+					}
+					else if (!arg.empty() && arg[0] == '-')
                     {
                         if (arg.find('=', 0) != std::string::npos)
                         {

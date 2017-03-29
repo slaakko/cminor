@@ -365,6 +365,10 @@ void StatementBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(memberFunctionNode);
     MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(symbol);
     Assert(memberFunctionSymbol, "member function symbol expected");
+	if (memberFunctionSymbol->GroupName() == U"AddGrammar")
+	{
+		int x = 0;
+	}
     if (memberFunctionSymbol->IsAbstract()) return;
     if (instantiateRequested)
     {
@@ -888,7 +892,8 @@ void StatementBinderVisitor::Visit(AssignmentStatementNode& assignmentStatementN
 void StatementBinderVisitor::Visit(ExpressionStatementNode& expressionStatementNode)
 {
     std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, expressionStatementNode.Expression());
-    statement.reset(new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::move(expression)));
+	BoundExpressionStatement* boundExpressionStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::move(expression));
+    statement.reset(boundExpressionStatement);
     statement->SetContainerScope(containerScope);
 }
 
@@ -960,10 +965,12 @@ void StatementBinderVisitor::Visit(ForEachStatementNode& forEachStatementNode)
     loopBody->AddStatement(constructLoopVar);
     loopBody->AddStatement(static_cast<StatementNode*>(forEachStatementNode.Action()->Clone(cloneContext)));
     ExpressionStatementNode* moveNext = new ExpressionStatementNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "MoveNext"))));
-    loopBody->AddStatement(moveNext);
-    WhileStatementNode* whileNotEnd = new WhileStatementNode(span, new NotNode(span, 
-        new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "AtEnd")))), loopBody);
-    forEachBlock.AddStatement(whileNotEnd);
+	ForStatementNode* forStatement = new ForStatementNode(span, 
+		new EmptyStatementNode(span), 
+		new NotNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "AtEnd")))),
+		moveNext, 
+		loopBody);
+	forEachBlock.AddStatement(forStatement);
     int declarationBlockId = function->GetFunctionSymbol()->DeclarationBlockId();
     boundCompileUnit.GetAssembly().GetSymbolTable().SetDeclarationBlockId(declarationBlockId);
     boundCompileUnit.GetAssembly().GetSymbolTable().BeginContainer(containerScope->Container());

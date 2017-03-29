@@ -42,6 +42,7 @@ internal void PrintHelp()
     Console.WriteLine("-F | --force         : force code generation");
     Console.WriteLine("-h | --help          : print help");
     Console.WriteLine("(-L | --lib) <paths> : add paths to library directories");
+	Console.WriteLine("-t=N | --threads=N   : use N threads");
     Console.WriteLine("paths separated by \";\" (Windows) or \":\" (Linux)");
 }
 
@@ -80,6 +81,30 @@ internal int main(string[] args)
                     PrintHelp();
                     return 0;
                 }
+				else if (arg.IndexOf('=') != -1)
+				{
+					List<string> components = arg.Split('=');
+					if (components.Count == 2)
+					{
+						if (components[0] == "-t" || components[0] == "--threads")
+						{
+							int n = int.Parse(components[1]);
+							Syntax.Flags.NumThreads = n;
+						}
+						else
+						{
+							throw new Exception("unknown argument " + arg);
+						}
+					}
+					else
+					{
+						throw new Exception("unknown argument " + arg);
+					}
+				}
+				else
+				{
+					throw new Exception("unknown argument " + arg);
+				}
             }
             else if (prevWasL)
             {

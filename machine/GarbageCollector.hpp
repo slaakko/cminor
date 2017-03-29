@@ -44,6 +44,8 @@ public:
     std::exception_ptr Exception() const { return exception; }
     void SetException(std::exception_ptr exception_) { exception = exception_; error = true; }
     std::condition_variable& WantToCollectGarbageCond() { return wantToCollectGarbageCond; }
+	bool PrintActions() const { return printActions; }
+	void SetPrintActions() { printActions = true; }
 private:
     Machine& machine;
     std::atomic<GarbageCollectorState> state;
@@ -57,6 +59,7 @@ private:
     bool started;
     bool error;
     std::exception_ptr exception;
+	bool printActions;
     bool fullCollectionRequested;
     void SetState(GarbageCollectorState state_);
     void WaitForGarbageCollection();

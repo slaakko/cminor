@@ -239,6 +239,10 @@ void EmitterVisitor::Visit(BoundFunction& boundFunction)
     Emitter* prevEmitter = function->GetEmitter();
     function->SetEmitter(this);
     this->boundFunction = &boundFunction;
+	if (boundFunction.GetFunctionSymbol()->Name() == U"AddGrammar(System.Text.Parsing.ParsingDomain this, System.Text.Parsing.Grammar grammar)")
+	{
+		int x = 0;
+	}
     uint32_t prevContainerScopeId = currentContainerScopeId;
     currentContainerScopeId = boundFunction.GetContainerScope()->NonDefaultId();
     if (boundFunction.Body())

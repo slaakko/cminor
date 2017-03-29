@@ -19,63 +19,67 @@ namespace System.Text.Parsing
         }
         public Grammar GetGrammar(string grammarName)
         {
-            Grammar grammar;
-            if (grammarMap.TryGetValue(grammarName, ref grammar))
-            {
-                return grammar;
-            }
-            return null;
+			Grammar grammar;
+			if (grammarMap.TryGetValue(grammarName, ref grammar))
+			{
+				return grammar;
+			}
+			return null;
         }
         public void AddGrammar(Grammar grammar)
         {
-            string grammarFullName = grammar.FullName;
-            if (!grammarMap.ContainsKey(grammarFullName))
-            {
-                grammarMap[grammarFullName] = grammar;
-                grammar.Ns = currentNamespace;
-                grammar.AddToScope();
-            }
+			string grammarFullName = grammar.FullName;
+			if (!grammarMap.ContainsKey(grammarFullName))
+			{
+				grammarMap[grammarFullName] = grammar;
+				grammar.Ns = currentNamespace;
+				grammar.AddToScope();
+			}
         }
         public Scope GetNamespaceScope(string fullNamespaceName)
         {
-            if (string.IsNullOrEmpty(fullNamespaceName))
-            {
-                return globalScope;
-            }
-            Namespace ns = globalScope.GetNamespace(fullNamespaceName);
-            if (ns == null)
-            {
-                ns = new Namespace(fullNamespaceName, globalScope);
-                globalScope.AddNamespace(ns);
-            }
-            return ns.GetScope();
+			if (string.IsNullOrEmpty(fullNamespaceName))
+			{
+				return globalScope;
+			}
+			Namespace ns = globalScope.GetNamespace(fullNamespaceName);
+			if (ns == null)
+			{
+				ns = new Namespace(fullNamespaceName, globalScope);
+				globalScope.AddNamespace(ns);
+			}
+			return ns.GetScope();
         }
         public void BeginNamespace(string ns)
         {
-            string fullNamespaceName = ns;
-            if (!string.IsNullOrEmpty(currentNamespace.FullName))
-            {
-                fullNamespaceName = currentNamespace.FullName + "." + ns;
-            }
-            namespaceStack.Push(currentNamespace);
-            Namespace ns_;
-            if (namespaceMap.TryGetValue(fullNamespaceName, ref ns_))
-            {
-                currentNamespace = ns_;
-            }
-            else
-            {
-                Namespace newNs = new Namespace(fullNamespaceName, globalScope);
-                newNs.GetScope().Ns = newNs;
-                namespaceMap[newNs.FullName] = newNs;
-                currentNamespace = newNs;
-                globalScope.AddNamespace(newNs);
-            }
+			string fullNamespaceName = ns;
+			if (!string.IsNullOrEmpty(currentNamespace.FullName))
+			{
+				fullNamespaceName = currentNamespace.FullName + "." + ns;
+			}
+			namespaceStack.Push(currentNamespace);
+			Namespace ns_;
+			if (namespaceMap.TryGetValue(fullNamespaceName, ref ns_))
+			{
+				currentNamespace = ns_;
+			}
+			else
+			{
+				Namespace newNs = new Namespace(fullNamespaceName, globalScope);
+				newNs.GetScope().Ns = newNs;
+				namespaceMap[newNs.FullName] = newNs;
+				currentNamespace = newNs;
+				globalScope.AddNamespace(newNs);
+			}
         }
         public void EndNamespace()
         {
             currentNamespace = namespaceStack.Pop();
         }
+		public void Import(ParsingDomain pd, bool importExternals)
+		{
+			globalNamespace.Import(pd.globalNamespace, this, importExternals);
+		}
 		public int GetNextRuleId()
 		{
 			int nxtRuleId = nextRuleId;

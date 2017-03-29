@@ -1606,101 +1606,44 @@ int NumberOfAncestors(ClassTypeSymbol* classType)
     return numAncestors;
 }
 
-void AssignPriorities(std::vector<ClassTypeSymbol*>& leaves)
-{
-    for (ClassTypeSymbol* leaf : leaves)
-    {
-        int priority = leaf->Level();
-        leaf->SetPriority(priority);
-        ClassTypeSymbol* base = leaf->BaseClass();
-        while (base)
-        {
-            if (base->Priority() < priority)
-            {
-                base->SetPriority(priority);
-            }
-            else
-            {
-                priority = base->Priority();
-            }
-            base = base->BaseClass();
-        }
-    }
-}
-
 struct PriorityGreater
 {
     bool operator()(ClassTypeSymbol* left, ClassTypeSymbol* right) const
     {
-        if (left->Level() < right->Level())
-        {
-            return true;
-        }
-        else if (right->Level() < left->Level())
-        {
-            return false;
-        }
-        else if (left->Priority() > right->Priority())
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+		if (left->Level() < right->Level()) return true;
+		return false;
     }
 };
 
 void AssignKeys(std::vector<ClassTypeSymbol*>& classesByPriority)
 {
     uint64_t key = 2;
-    uint64_t minLevelKey = key;
-    uint64_t maxLevelKey = key;
-    int predLevel = -1;
-    std::unordered_set<ClassTypeSymbol*> bases;
     for (ClassTypeSymbol* cls : classesByPriority)
     {
-        int level = cls->Level();
-        if (level == 0)
-        {
-            cls->SetKey(key);
-            key = cminor::machine::NextPrime(key + 1);
-            maxLevelKey = key;
-        }
-        else
-        {
-            if (predLevel != level)
-            {
-                bases.clear();
-                bases.insert(cls->BaseClass());
-                key = cminor::machine::NextPrime(maxLevelKey + 1);
-                minLevelKey = key;
-                cls->SetKey(key);
-                key = cminor::machine::NextPrime(key + 1);
-                maxLevelKey = key;
-            }
-            else
-            {
-                if (bases.find(cls->BaseClass()) == bases.end())
-                {
-                    key = minLevelKey;
-                }
-                bases.insert(cls->BaseClass());
-                cls->SetKey(key);
-                key = cminor::machine::NextPrime(key + 1);
-                if (key > maxLevelKey)
-                {
-                    maxLevelKey = key;
-                }
-            }
-            predLevel = level;
-        }
-    }
+		if (cls->Name() == U"Namespace")
+		{
+			int x = 0;
+		}
+		else if (cls->Name() == U"Grammar")
+		{
+			int x = 0;
+		}
+		cls->SetKey(key);
+		key = cminor::util::NextPrime(key + 1);
+	}
 }
 
 uint64_t ComputeCid(ClassTypeSymbol* classType)
 {
-    uint64_t cid = classType->Key();
+	if (classType->Name() == U"Namespace")
+	{
+		int x = 0;
+	}
+	else if (classType->Name() == U"Grammar")
+	{
+		int x = 0;
+	}
+	uint64_t cid = classType->Key();
     ClassTypeSymbol* base = classType->BaseClass();
     while (base)
     {
@@ -1720,31 +1663,31 @@ void AssignCids(std::vector<ClassTypeSymbol*>& classesByPriority)
 
 void AssignClassTypeIds(const std::vector<ClassTypeSymbol*>& classTypes)
 {
-    for (ClassTypeSymbol* classType : classTypes)
+	for (ClassTypeSymbol* classType : classTypes)
     {
+		if (classType->IsClassDelegateType()) continue;
         classType->SetLevel(NumberOfAncestors(classType));
-        if (classType->BaseClass())
-        {
-            classType->BaseClass()->SetNonLeaf();
-        }
     }
-    std::vector<ClassTypeSymbol*> leaves;
-    for (ClassTypeSymbol* classType : classTypes)
-    {
-        if (!classType->IsNonLeaf())
-        {
-            leaves.push_back(classType);
-        }
-    }
-    AssignPriorities(leaves);
     std::vector<ClassTypeSymbol*> classesByPriority;
     for (ClassTypeSymbol* classType : classTypes)
     {
+		if (classType->IsClassDelegateType()) continue;
         classesByPriority.push_back(classType);
     }
     std::sort(classesByPriority.begin(), classesByPriority.end(), PriorityGreater());
     AssignKeys(classesByPriority);
     AssignCids(classesByPriority);
+#ifdef DEBUG_CLASS_IDS
+	std::ofstream cls("C:\\Temp\\cls.txt");
+	for (ClassTypeSymbol* classType : classesByPriority)
+	{
+		cls << ToUtf8(classType->FullName()) <<
+			" : level = " << classType->Level() <<
+			" : key = " << classType->Key() <<
+			" : cid = " << classType->Cid() << 
+			std::endl;
+	}
+#endif
 }
 
 void Link(const std::vector<CallInst*>& callInstructions, const std::vector<Fun2DlgInst*>& fun2DlgInstructions,

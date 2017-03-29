@@ -192,10 +192,6 @@ void BasicTypeConversion::EmplaceType(TypeSymbol* type, int index)
 
 void BasicTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
-    if (createsObject)
-    {
-        //function.AddInst(machine.CreateInst("gcpoint"));
-    }
     std::unique_ptr<Instruction> inst =  machine.CreateInst(conversionInstructionName);
     function.AddInst(std::move(inst));
 }

@@ -804,7 +804,6 @@ void ArraySizeConstructorSymbol::CreateMachineFunction()
     std::unique_ptr<Instruction> loadSizeLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.1");
     MachineFunction()->AddInst(std::move(loadSizeLocal));
 
-    //MachineFunction()->AddInst(GetAssembly()->GetMachine().CreateInst("gcpoint"));
     std::unique_ptr<Instruction> allocElems = GetAssembly()->GetMachine().CreateInst("allocelems");
     AllocateArrayElementsInst* allocElemsInst = dynamic_cast<AllocateArrayElementsInst*>(allocElems.get());
 
@@ -1191,7 +1190,6 @@ ClassToInterfaceConversion::ClassToInterfaceConversion(const Span& span_, Consta
 
 void ClassToInterfaceConversion::GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start)
 {
-    //function.AddInst(machine.CreateInst("gcpoint"));
     std::unique_ptr<Instruction> createInst;
     createInst = machine.CreateInst("createo");
     ConstantPool& constantPool = assembly.GetConstantPool();

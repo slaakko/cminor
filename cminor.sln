@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ast", "ast\ast.vcxproj", "{AC9F303E-D58B-4C7F-BCD7-A309BAE5E60C}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -42,6 +42,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "build", "build\build.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "compiler", "compiler\compiler.vcxproj", "{6AA9B650-648F-426A-82BF-AE180FEBFF4C}"
 	ProjectSection(ProjectDependencies) = postProject
+		{661F980D-B08A-340F-B42B-3D7375EC63D1} = {661F980D-B08A-340F-B42B-3D7375EC63D1}
 		{8E77B61E-97DD-4D11-8C81-8009C534F38A} = {8E77B61E-97DD-4D11-8C81-8009C534F38A}
 		{AC9F303E-D58B-4C7F-BCD7-A309BAE5E60C} = {AC9F303E-D58B-4C7F-BCD7-A309BAE5E60C}
 		{832C864C-F397-4F8E-8C3C-6AF6DC71227E} = {832C864C-F397-4F8E-8C3C-6AF6DC71227E}

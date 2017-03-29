@@ -399,7 +399,7 @@ uint64_t GetPoolThreshold()
     return poolThreshold;
 }
 
-ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextAllocationHandleValue(firstAllocationHandleValue), prevSize(0), size(0), poolRoot(AllocationHandle(0))
+ManagedMemoryPool::ManagedMemoryPool(Machine& machine_) : machine(machine_), nextAllocationHandleValue(firstAllocationHandleValue)
 {
 }
 
@@ -425,16 +425,12 @@ AllocationHandle ManagedMemoryPool::AddAllocation(Thread& thread, ManagedAllocat
     }
     else
     {
-        CheckSize(thread, lock, allocationHandle);
-        if (!lock.owns_lock())
-        {
-            lock.lock();    // CheckSize might release the lock, ensure that it is owned again...
-        }
+		void* allocationPtr = GetAllocationPtr(header);
         while (allocationHandle.Value() >= uint64_t(allocations.size()))
         {
             allocations.push_back(nullptr);
         }
-        allocations[allocationHandle.Value()] = GetAllocationPtr(header);
+		allocations[allocationHandle.Value()] = allocationPtr;
     }
     return allocationHandle;
 }
@@ -983,27 +979,6 @@ ObjectReference ManagedMemoryPool::CreateStringArray(Thread& thread, const std::
         SetArrayElement(arrayReference, i, str, lock);
     }
     return arrayReference;
-}
-
-void ManagedMemoryPool::ComputeSize()
-{
-    uint64_t allocationCapacity = allocations.capacity();
-    size = sizeof(allocations) + allocationCapacity * allocationSize;
-}
-
-void ManagedMemoryPool::CheckSize(Thread& thread, std::unique_lock<std::recursive_mutex>& lock, AllocationHandle root)
-{
-    ComputeSize();
-    uint64_t sizeDiff = size - prevSize;
-    if (sizeDiff >= GetPoolThreshold())
-    {
-        poolRoot = root;
-        lock.unlock();
-        thread.RequestGc(false);
-        thread.WaitUntilGarbageCollected();
-        ComputeSize();
-        prevSize = size;
-    }
 }
 
 void ManagedMemoryPool::ResetLiveFlags()
