@@ -69,7 +69,10 @@ namespace System.Text.Parsing
 				newNs.GetScope().Ns = newNs;
 				namespaceMap[newNs.FullName] = newNs;
 				currentNamespace = newNs;
-				globalScope.AddNamespace(newNs);
+				if (globalScope.GetNamespace(newNs.FullName) == null)
+				{
+					globalScope.AddNamespace(newNs);
+				}
 			}
         }
         public void EndNamespace()

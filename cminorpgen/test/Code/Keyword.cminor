@@ -79,6 +79,13 @@ namespace Code
         }
         public override void GetReferencedGrammars()
         {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
         }
         public override void CreateRules()
         {

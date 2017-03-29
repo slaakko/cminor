@@ -17,6 +17,53 @@ namespace Code
             CreateRules();
             Link();
         }
+        public Literal Parse(string content, int fileIndex, string fileName)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                Match match = Parse(scanner, stack, parsingData);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+            Literal result = cast<Literal>(stack.Pop());
+            return result;
+        }
         public class LiteralRule : System.Text.Parsing.RuleParser
         {
             public LiteralRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
@@ -39,10 +86,118 @@ namespace Code
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                ActionParser a2ActionParser = GetAction("A2");
+                a2ActionParser.Action = A2Action;
+                ActionParser a3ActionParser = GetAction("A3");
+                a3ActionParser.Action = A3Action;
+                ActionParser a4ActionParser = GetAction("A4");
+                a4ActionParser.Action = A4Action;
+                ActionParser a5ActionParser = GetAction("A5");
+                a5ActionParser.Action = A5Action;
+                NonterminalParser booleanLiteralNonterminalParser = GetNonterminal("BooleanLiteral");
+                booleanLiteralNonterminalParser.Post = PostBooleanLiteral;
+                NonterminalParser floatingLiteralNonterminalParser = GetNonterminal("FloatingLiteral");
+                floatingLiteralNonterminalParser.Post = PostFloatingLiteral;
+                NonterminalParser integerLiteralNonterminalParser = GetNonterminal("IntegerLiteral");
+                integerLiteralNonterminalParser.Post = PostIntegerLiteral;
+                NonterminalParser charLiteralNonterminalParser = GetNonterminal("CharLiteral");
+                charLiteralNonterminalParser.Post = PostCharLiteral;
+                NonterminalParser stringLiteralNonterminalParser = GetNonterminal("StringLiteral");
+                stringLiteralNonterminalParser.Post = PostStringLiteral;
+                NonterminalParser nullLiteralNonterminalParser = GetNonterminal("NullLiteral");
+                nullLiteralNonterminalParser.Post = PostNullLiteral;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromBooleanLiteral;
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromFloatingLiteral;
+            }
+            public void A2Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromIntegerLiteral;
+            }
+            public void A3Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromCharLiteral;
+            }
+            public void A4Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromStringLiteral;
+            }
+            public void A5Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromNullLiteral;
+            }
+            public void PostBooleanLiteral(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromBooleanLiteral = cast<Literal>(stack.Pop());
+                }
+            }
+            public void PostFloatingLiteral(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromFloatingLiteral = cast<Literal>(stack.Pop());
+                }
+            }
+            public void PostIntegerLiteral(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromIntegerLiteral = cast<Literal>(stack.Pop());
+                }
+            }
+            public void PostCharLiteral(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromCharLiteral = cast<Literal>(stack.Pop());
+                }
+            }
+            public void PostStringLiteral(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromStringLiteral = cast<Literal>(stack.Pop());
+                }
+            }
+            public void PostNullLiteral(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromNullLiteral = cast<Literal>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public Literal value;
+                public Literal fromBooleanLiteral;
+                public Literal fromFloatingLiteral;
+                public Literal fromIntegerLiteral;
+                public Literal fromCharLiteral;
+                public Literal fromStringLiteral;
+                public Literal fromNullLiteral;
             }
         }
         public class BooleanLiteralRule : System.Text.Parsing.RuleParser
@@ -67,6 +222,20 @@ namespace Code
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new Literal(match);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new Literal(match);
             }
             public class Context : System.Text.Parsing.Context
             {
@@ -95,10 +264,35 @@ namespace Code
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser floatingLiteralValueNonterminalParser = GetNonterminal("FloatingLiteralValue");
+                floatingLiteralValueNonterminalParser.Post = PostFloatingLiteralValue;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new Literal(context.fromFloatingLiteralValue + match);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new Literal(context.fromFloatingLiteralValue);
+            }
+            public void PostFloatingLiteralValue(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromFloatingLiteralValue = cast<string>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public Literal value;
+                public string fromFloatingLiteralValue;
             }
         }
         public class FloatingLiteralValueRule : System.Text.Parsing.RuleParser
@@ -123,6 +317,13 @@ namespace Code
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
             }
             public class Context : System.Text.Parsing.Context
             {
@@ -151,10 +352,35 @@ namespace Code
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser integerLiteralValueNonterminalParser = GetNonterminal("IntegerLiteralValue");
+                integerLiteralValueNonterminalParser.Post = PostIntegerLiteralValue;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new Literal(context.fromIntegerLiteralValue + match);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new Literal(context.fromIntegerLiteralValue);
+            }
+            public void PostIntegerLiteralValue(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromIntegerLiteralValue = cast<string>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public Literal value;
+                public string fromIntegerLiteralValue;
             }
         }
         public class IntegerLiteralValueRule : System.Text.Parsing.RuleParser
@@ -179,6 +405,13 @@ namespace Code
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
             }
             public class Context : System.Text.Parsing.Context
             {
@@ -207,6 +440,13 @@ namespace Code
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new Literal(match);
             }
             public class Context : System.Text.Parsing.Context
             {
@@ -235,6 +475,20 @@ namespace Code
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new Literal(match);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new Literal(match);
             }
             public class Context : System.Text.Parsing.Context
             {
@@ -263,6 +517,13 @@ namespace Code
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new Literal(match);
             }
             public class Context : System.Text.Parsing.Context
             {
@@ -280,35 +541,35 @@ namespace Code
                         new AlternativeParser(
                             new AlternativeParser(
                                 new AlternativeParser(
-                                    new ActionParser("",
+                                    new ActionParser("A0",
                                         new NonterminalParser("BooleanLiteral", "BooleanLiteral", 0)),
-                                    new ActionParser("",
+                                    new ActionParser("A1",
                                         new NonterminalParser("FloatingLiteral", "FloatingLiteral", 0))),
-                                new ActionParser("",
+                                new ActionParser("A2",
                                     new NonterminalParser("IntegerLiteral", "IntegerLiteral", 0))),
-                            new ActionParser("",
+                            new ActionParser("A3",
                                 new NonterminalParser("CharLiteral", "CharLiteral", 0))),
-                        new ActionParser("",
+                        new ActionParser("A4",
                             new NonterminalParser("StringLiteral", "StringLiteral", 0))),
-                    new ActionParser("",
+                    new ActionParser("A5",
                         new NonterminalParser("NullLiteral", "NullLiteral", 0)))));
             AddRule(new BooleanLiteralRule("BooleanLiteral", GetScope(), Domain.GetNextRuleId(),
                 new AlternativeParser(
-                    new ActionParser("",
+                    new ActionParser("A0",
                         new KeywordParser("true")),
-                    new ActionParser("",
+                    new ActionParser("A1",
                         new KeywordParser("false")))));
             AddRule(new FloatingLiteralRule("FloatingLiteral", GetScope(), Domain.GetNextRuleId(),
                 new TokenParser(
                     new SequenceParser(
                         new NonterminalParser("FloatingLiteralValue", "FloatingLiteralValue", 0),
                         new AlternativeParser(
-                            new ActionParser("",
+                            new ActionParser("A0",
                                 new CharSetParser("fF")),
-                            new ActionParser("",
+                            new ActionParser("A1",
                                 new EmptyParser()))))));
             AddRule(new FloatingLiteralValueRule("FloatingLiteralValue", GetScope(), Domain.GetNextRuleId(),
-                new ActionParser("",
+                new ActionParser("A0",
                     new TokenParser(
                         new AlternativeParser(
                             new NonterminalParser("FractionalFloatingLiteral", "FractionalFloatingLiteral", 0),
@@ -347,12 +608,12 @@ namespace Code
                     new SequenceParser(
                         new NonterminalParser("IntegerLiteralValue", "IntegerLiteralValue", 0),
                         new AlternativeParser(
-                            new ActionParser("",
+                            new ActionParser("A0",
                                 new CharSetParser("uU")),
-                            new ActionParser("",
+                            new ActionParser("A1",
                                 new EmptyParser()))))));
             AddRule(new IntegerLiteralValueRule("IntegerLiteralValue", GetScope(), Domain.GetNextRuleId(),
-                new ActionParser("",
+                new ActionParser("A0",
                     new TokenParser(
                         new AlternativeParser(
                             new NonterminalParser("HexIntegerLiteral", "HexIntegerLiteral", 0),
@@ -367,7 +628,7 @@ namespace Code
             AddRule(new RuleParser("DecIntegerLiteral", GetScope(), Domain.GetNextRuleId(),
                 new NonterminalParser("DecDigitSequence", "DecDigitSequence", 0)));
             AddRule(new CharLiteralRule("CharLiteral", GetScope(), Domain.GetNextRuleId(),
-                new ActionParser("",
+                new ActionParser("A0",
                     new TokenParser(
                         new SequenceParser(
                             new SequenceParser(
@@ -382,13 +643,13 @@ namespace Code
                 new AlternativeParser(
                     new SequenceParser(
                         new CharParser('@'),
-                        new ActionParser("",
+                        new ActionParser("A0",
                             new TokenParser(
                                 new SequenceParser(
                                     new CharParser('"'),
                                     new KleeneStarParser(
                                         new CharSetParser("\"", true)))))),
-                    new ActionParser("",
+                    new ActionParser("A1",
                         new TokenParser(
                             new SequenceParser(
                                 new SequenceParser(
@@ -401,7 +662,7 @@ namespace Code
                                 new ExpectationParser(
                                     new CharParser('"'))))))));
             AddRule(new NullLiteralRule("NullLiteral", GetScope(), Domain.GetNextRuleId(),
-                new ActionParser("",
+                new ActionParser("A0",
                     new KeywordParser("null"))));
             AddRule(new RuleParser("CharEscape", GetScope(), Domain.GetNextRuleId(),
                 new TokenParser(

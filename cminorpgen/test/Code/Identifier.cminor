@@ -17,6 +17,53 @@ namespace Code
             CreateRules();
             Link();
         }
+        public Identifier Parse(string content, int fileIndex, string fileName)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                Match match = Parse(scanner, stack, parsingData);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+            Identifier result = cast<Identifier>(stack.Pop());
+            return result;
+        }
         public class IdentifierRule : System.Text.Parsing.RuleParser
         {
             public IdentifierRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
@@ -39,10 +86,28 @@ namespace Code
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser identifierNonterminalParser = GetNonterminal("identifier");
+                identifierNonterminalParser.Post = Postidentifier;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new System.Text.Parsing.CodeDom.Identifier(match);
+            }
+            public void Postidentifier(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromidentifier = cast<string>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public Identifier value;
+                public string fromidentifier;
             }
         }
         public class QualifiedIdRule : System.Text.Parsing.RuleParser
@@ -67,26 +132,57 @@ namespace Code
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser.Post = PostIdentifier;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new System.Text.Parsing.CodeDom.Identifier(match);
+            }
+            public void PostIdentifier(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromIdentifier = cast<Identifier>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public Identifier value;
+                public Identifier fromIdentifier;
             }
         }
         public override void GetReferencedGrammars()
         {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.KeywordGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = new Code.KeywordGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+            Grammar grammar1 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar1 == null)
+            {
+                grammar1 = new System.Text.Parsing.stdlib(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar1);
         }
         public override void CreateRules()
         {
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
             AddRuleLink(new RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
             AddRule(new IdentifierRule("Identifier", GetScope(), Domain.GetNextRuleId(),
-                new ActionParser("",
+                new ActionParser("A0",
                     new DifferenceParser(
                         new NonterminalParser("identifier", "identifier", 0),
                         new NonterminalParser("Keyword", "Keyword", 0)))));
             AddRule(new QualifiedIdRule("QualifiedId", GetScope(), Domain.GetNextRuleId(),
-                new ActionParser("",
+                new ActionParser("A0",
                     new TokenParser(
                         new ListParser(
                             new NonterminalParser("Identifier", "Identifier", 0),

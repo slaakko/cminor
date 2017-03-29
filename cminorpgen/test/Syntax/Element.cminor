@@ -34,6 +34,52 @@ namespace Syntax
             CreateRules();
             Link();
         }
+        public void Parse(string content, int fileIndex, string fileName, Grammar grammar)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                stack.Push(grammar);
+                Match match = Parse(scanner, stack, parsingData);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+        }
         public class RuleLinkRule : System.Text.Parsing.RuleParser
         {
             public RuleLinkRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
@@ -53,10 +99,61 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser aliasNameNonterminalParser = GetNonterminal("aliasName");
+                aliasNameNonterminalParser.Post = PostaliasName;
+                NonterminalParser ruleNameNonterminalParser = GetNonterminal("ruleName");
+                ruleNameNonterminalParser.Post = PostruleName;
+                NonterminalParser qualified_idNonterminalParser = GetNonterminal("qualified_id");
+                qualified_idNonterminalParser.Post = Postqualified_id;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                RuleLink link = new RuleLink(context.fromaliasName, context.grammar, context.fromruleName);
+                link.SpanValue = span;
+                context.grammar.AddRuleLink(link);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                RuleLink link = new RuleLink(context.grammar, context.fromqualified_id);
+                link.SpanValue = span;
+                context.grammar.AddRuleLink(link);
+            }
+            public void PostaliasName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromaliasName = cast<string>(stack.Pop());
+                }
+            }
+            public void PostruleName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromruleName = cast<string>(stack.Pop());
+                }
+            }
+            public void Postqualified_id(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromqualified_id = cast<string>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public Grammar grammar;
+                public string fromaliasName;
+                public string fromruleName;
+                public string fromqualified_id;
             }
         }
         public class SignatureRule : System.Text.Parsing.RuleParser
@@ -80,6 +177,22 @@ namespace Syntax
             }
             public override void Link()
             {
+                NonterminalParser parameterListNonterminalParser = GetNonterminal("ParameterList");
+                parameterListNonterminalParser.Pre = PreParameterList;
+                NonterminalParser returnTypeNonterminalParser = GetNonterminal("ReturnType");
+                returnTypeNonterminalParser.Pre = PreReturnType;
+            }
+            public void PreParameterList(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.rule);
+                stack.Push(context.ctx);
+            }
+            public void PreReturnType(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.rule);
+                stack.Push(context.ctx);
             }
             public class Context : System.Text.Parsing.Context
             {
@@ -108,6 +221,22 @@ namespace Syntax
             }
             public override void Link()
             {
+                NonterminalParser variableNonterminalParser = GetNonterminal("Variable");
+                variableNonterminalParser.Pre = PreVariable;
+                NonterminalParser parameterNonterminalParser = GetNonterminal("Parameter");
+                parameterNonterminalParser.Pre = PreParameter;
+            }
+            public void PreVariable(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.rule);
+                stack.Push(context.ctx);
+            }
+            public void PreParameter(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.rule);
+                stack.Push(context.ctx);
             }
             public class Context : System.Text.Parsing.Context
             {
@@ -136,11 +265,46 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser.Pre = PreTypeExpr;
+                typeExprNonterminalParser.Post = PostTypeExpr;
+                NonterminalParser declaratorNonterminalParser = GetNonterminal("Declarator");
+                declaratorNonterminalParser.Post = PostDeclarator;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.rule.LocalVariables.Add(new AttrOrVar(context.fromTypeExpr.Name, context.fromDeclarator.Name));
+            }
+            public void PreTypeExpr(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.ctx);
+            }
+            public void PostTypeExpr(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromTypeExpr = cast<DomObject>(stack.Pop());
+                }
+            }
+            public void PostDeclarator(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromDeclarator = cast<Identifier>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public RuleParser rule;
                 public ParsingContext ctx;
+                public DomObject fromTypeExpr;
+                public Identifier fromDeclarator;
             }
         }
         public class ParameterRule : System.Text.Parsing.RuleParser
@@ -164,11 +328,46 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser.Pre = PreTypeExpr;
+                typeExprNonterminalParser.Post = PostTypeExpr;
+                NonterminalParser declaratorNonterminalParser = GetNonterminal("Declarator");
+                declaratorNonterminalParser.Post = PostDeclarator;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.rule.InheritedAttributes.Add(new AttrOrVar(context.fromTypeExpr.Name, context.fromDeclarator.Name));
+            }
+            public void PreTypeExpr(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.ctx);
+            }
+            public void PostTypeExpr(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromTypeExpr = cast<DomObject>(stack.Pop());
+                }
+            }
+            public void PostDeclarator(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromDeclarator = cast<Identifier>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public RuleParser rule;
                 public ParsingContext ctx;
+                public DomObject fromTypeExpr;
+                public Identifier fromDeclarator;
             }
         }
         public class ReturnTypeRule : System.Text.Parsing.RuleParser
@@ -192,11 +391,35 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser.Pre = PreTypeExpr;
+                typeExprNonterminalParser.Post = PostTypeExpr;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.rule.ValueTypeName = context.fromTypeExpr.Name;
+            }
+            public void PreTypeExpr(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.ctx);
+            }
+            public void PostTypeExpr(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromTypeExpr = cast<DomObject>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public RuleParser rule;
                 public ParsingContext ctx;
+                public DomObject fromTypeExpr;
             }
         }
         public class IdentifierRule : System.Text.Parsing.RuleParser
@@ -221,10 +444,28 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser identifierNonterminalParser = GetNonterminal("identifier");
+                identifierNonterminalParser.Post = Postidentifier;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
+            }
+            public void Postidentifier(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromidentifier = cast<string>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public string value;
+                public string fromidentifier;
             }
         }
         public class QualifiedIdRule : System.Text.Parsing.RuleParser
@@ -249,10 +490,39 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser firstNonterminalParser = GetNonterminal("first");
+                firstNonterminalParser.Post = Postfirst;
+                NonterminalParser restNonterminalParser = GetNonterminal("rest");
+                restNonterminalParser.Post = Postrest;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
+            }
+            public void Postfirst(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromfirst = cast<string>(stack.Pop());
+                }
+            }
+            public void Postrest(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromrest = cast<string>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public string value;
+                public string fromfirst;
+                public string fromrest;
             }
         }
         public class StringArrayRule : System.Text.Parsing.RuleParser
@@ -274,14 +544,51 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser strNonterminalParser = GetNonterminal("str");
+                strNonterminalParser.Post = Poststr;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.array.Add(context.fromstr);
+            }
+            public void Poststr(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromstr = cast<string>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public List<string> array;
+                public string fromstr;
             }
         }
         public override void GetReferencedGrammars()
         {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = new Code.IdentifierGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+            Grammar grammar1 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
+            if (grammar1 == null)
+            {
+                grammar1 = new Code.TypeExprGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar1);
+            Grammar grammar2 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar2 == null)
+            {
+                grammar2 = new System.Text.Parsing.stdlib(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar2);
         }
         public override void CreateRules()
         {
@@ -292,7 +599,7 @@ namespace Syntax
             AddRuleLink(new RuleLink("TypeExpr", this, "Code.TypeExprGrammar.TypeExpr"));
             AddRule(new RuleLinkRule("RuleLink", GetScope(), Domain.GetNextRuleId(),
                 new AlternativeParser(
-                    new ActionParser("",
+                    new ActionParser("A0",
                         new SequenceParser(
                             new SequenceParser(
                                 new SequenceParser(
@@ -302,7 +609,7 @@ namespace Syntax
                                     new CharParser('=')),
                                 new NonterminalParser("ruleName", "qualified_id", 0)),
                             new CharParser(';'))),
-                    new ActionParser("",
+                    new ActionParser("A1",
                         new SequenceParser(
                             new SequenceParser(
                                 new KeywordParser("using"),
@@ -330,27 +637,27 @@ namespace Syntax
                     new SequenceParser(
                         new KeywordParser("var"),
                         new NonterminalParser("TypeExpr", "TypeExpr", 1)),
-                    new ActionParser("",
+                    new ActionParser("A0",
                         new NonterminalParser("Declarator", "Declarator", 0)))));
             AddRule(new ParameterRule("Parameter", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
                     new NonterminalParser("TypeExpr", "TypeExpr", 1),
-                    new ActionParser("",
+                    new ActionParser("A0",
                         new NonterminalParser("Declarator", "Declarator", 0)))));
             AddRule(new ReturnTypeRule("ReturnType", GetScope(), Domain.GetNextRuleId(),
                 new SequenceParser(
                     new CharParser(':'),
-                    new ActionParser("",
+                    new ActionParser("A0",
                         new NonterminalParser("TypeExpr", "TypeExpr", 1)))));
             AddRule(new RuleParser("Keyword", GetScope(), Domain.GetNextRuleId(),
                 new KeywordListParser("identifier", keywords0)));
             AddRule(new IdentifierRule("Identifier", GetScope(), Domain.GetNextRuleId(),
-                new ActionParser("",
+                new ActionParser("A0",
                     new DifferenceParser(
                         new NonterminalParser("identifier", "identifier", 0),
                         new NonterminalParser("Keyword", "Keyword", 0)))));
             AddRule(new QualifiedIdRule("QualifiedId", GetScope(), Domain.GetNextRuleId(),
-                new ActionParser("",
+                new ActionParser("A0",
                     new TokenParser(
                         new SequenceParser(
                             new NonterminalParser("first", "Identifier", 0),
@@ -363,7 +670,7 @@ namespace Syntax
                     new SequenceParser(
                         new CharParser('['),
                         new ListParser(
-                            new ActionParser("",
+                            new ActionParser("A0",
                                 new NonterminalParser("str", "string", 0)),
                             new CharParser(','))),
                     new ExpectationParser(

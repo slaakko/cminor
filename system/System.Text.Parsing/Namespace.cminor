@@ -22,9 +22,9 @@ namespace System.Text.Parsing
 			foreach (KeyValuePair<string, ParsingObject> p in that.ContainerScope.FullNameMap)
 			{
 				ParsingObject o = p.Value;
-				if (!importExternals && o.External) continue;
 				if (o is Grammar)
 				{
+					if (!importExternals && o.External) continue;
 					Grammar grammar = cast<Grammar>(o);
 					grammar.EnclosingScope = targetDomain.CurrentScope;
 					targetDomain.AddGrammar(grammar);

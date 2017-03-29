@@ -16,6 +16,53 @@ namespace Syntax
             CreateRules();
             Link();
         }
+        public Project Parse(string content, int fileIndex, string fileName)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                Match match = Parse(scanner, stack, parsingData);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+            Project result = cast<Project>(stack.Pop());
+            return result;
+        }
         public class ProjectFileRule : System.Text.Parsing.RuleParser
         {
             public ProjectFileRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
@@ -38,10 +85,35 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser projectNameNonterminalParser = GetNonterminal("projectName");
+                projectNameNonterminalParser.Post = PostprojectName;
+                NonterminalParser projectFileContentNonterminalParser = GetNonterminal("ProjectFileContent");
+                projectFileContentNonterminalParser.Pre = PreProjectFileContent;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new Project(context.fromprojectName, fileName);
+            }
+            public void PostprojectName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromprojectName = cast<string>(stack.Pop());
+                }
+            }
+            public void PreProjectFileContent(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.value);
             }
             public class Context : System.Text.Parsing.Context
             {
                 public Project value;
+                public string fromprojectName;
             }
         }
         public class ProjectFileContentRule : System.Text.Parsing.RuleParser
@@ -63,10 +135,46 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser sourceNonterminalParser = GetNonterminal("Source");
+                sourceNonterminalParser.Post = PostSource;
+                NonterminalParser referenceNonterminalParser = GetNonterminal("Reference");
+                referenceNonterminalParser.Post = PostReference;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.project.AddSourceFile(context.fromSource);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.project.AddReferenceFile(context.fromReference);
+            }
+            public void PostSource(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromSource = cast<string>(stack.Pop());
+                }
+            }
+            public void PostReference(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromReference = cast<string>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public Project project;
+                public string fromSource;
+                public string fromReference;
             }
         }
         public class SourceRule : System.Text.Parsing.RuleParser
@@ -91,10 +199,28 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser filePathNonterminalParser = GetNonterminal("FilePath");
+                filePathNonterminalParser.Post = PostFilePath;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromFilePath;
+            }
+            public void PostFilePath(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromFilePath = cast<string>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public string value;
+                public string fromFilePath;
             }
         }
         public class ReferenceRule : System.Text.Parsing.RuleParser
@@ -119,10 +245,28 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser filePathNonterminalParser = GetNonterminal("FilePath");
+                filePathNonterminalParser.Post = PostFilePath;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromFilePath;
+            }
+            public void PostFilePath(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromFilePath = cast<string>(stack.Pop());
+                }
             }
             public class Context : System.Text.Parsing.Context
             {
                 public string value;
+                public string fromFilePath;
             }
         }
         public class FilePathRule : System.Text.Parsing.RuleParser
@@ -147,6 +291,13 @@ namespace Syntax
             }
             public override void Link()
             {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
             }
             public class Context : System.Text.Parsing.Context
             {
@@ -155,6 +306,13 @@ namespace Syntax
         }
         public override void GetReferencedGrammars()
         {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
         }
         public override void CreateRules()
         {
@@ -165,26 +323,26 @@ namespace Syntax
                     new SequenceParser(
                         new SequenceParser(
                             new KeywordParser("project"),
-                            new ActionParser("",
+                            new ActionParser("A0",
                                 new NonterminalParser("projectName", "qualified_id", 0))),
                         new CharParser(';')),
                     new NonterminalParser("ProjectFileContent", "ProjectFileContent", 1))));
             AddRule(new ProjectFileContentRule("ProjectFileContent", GetScope(), Domain.GetNextRuleId(),
                 new KleeneStarParser(
                     new AlternativeParser(
-                        new ActionParser("",
+                        new ActionParser("A0",
                             new NonterminalParser("Source", "Source", 0)),
-                        new ActionParser("",
+                        new ActionParser("A1",
                             new NonterminalParser("Reference", "Reference", 0))))));
             AddRule(new SourceRule("Source", GetScope(), Domain.GetNextRuleId(),
-                new ActionParser("",
+                new ActionParser("A0",
                     new SequenceParser(
                         new SequenceParser(
                             new KeywordParser("source"),
                             new NonterminalParser("FilePath", "FilePath", 0)),
                         new CharParser(';')))));
             AddRule(new ReferenceRule("Reference", GetScope(), Domain.GetNextRuleId(),
-                new ActionParser("",
+                new ActionParser("A0",
                     new SequenceParser(
                         new SequenceParser(
                             new KeywordParser("reference"),
@@ -195,7 +353,7 @@ namespace Syntax
                     new SequenceParser(
                         new SequenceParser(
                             new CharParser('<'),
-                            new ActionParser("",
+                            new ActionParser("A0",
                                 new PositiveParser(
                                     new CharSetParser(">\r\n", true)))),
                         new CharParser('>')))));
