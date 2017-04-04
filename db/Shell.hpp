@@ -41,6 +41,8 @@ public:
     void Clear(int bp);
     void ShowBreakpoints();
     void Stack();
+    void SwitchToTextMode();
+    void SwitchToBinaryMode();
 private:
     Machine& machine;
     bool exit;

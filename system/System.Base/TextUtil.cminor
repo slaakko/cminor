@@ -24,7 +24,7 @@ namespace System.Text
             case '\0': return "\\0";
             default:
             {
-                if (char.IsPrintable(c))
+                if (char.IsCPrintable(c))
                 {
                     return new string(c, 1);
                 }

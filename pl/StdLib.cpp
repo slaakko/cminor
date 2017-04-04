@@ -8,6 +8,7 @@
 #include <cminor/pl/StdLib.hpp>
 #include <cminor/pl/XmlLog.hpp>
 #include <sstream>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace parsing {
 
@@ -531,6 +532,7 @@ public:
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = std::string(matchBegin, matchEnd);
+        pass = cminor::util::unicode::IsIdentifier(cminor::util::ToUtf32(context->value));
     }
 private:
     struct Context : cminor::parsing::Context
@@ -973,14 +975,18 @@ void stdlib::CreateRules()
             new cminor::parsing::TokenParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::AlternativeParser(
-                        new cminor::parsing::LetterParser(),
-                        new cminor::parsing::CharParser('_')),
+                        new cminor::parsing::AlternativeParser(
+                            new cminor::parsing::LetterParser(),
+                            new cminor::parsing::CharParser('_')),
+                        new cminor::parsing::CharSetParser("0x80-0xFF")),
                     new cminor::parsing::KleeneStarParser(
                         new cminor::parsing::AlternativeParser(
                             new cminor::parsing::AlternativeParser(
-                                new cminor::parsing::LetterParser(),
-                                new cminor::parsing::DigitParser()),
-                            new cminor::parsing::CharParser('_'))))))));
+                                new cminor::parsing::AlternativeParser(
+                                    new cminor::parsing::LetterParser(),
+                                    new cminor::parsing::DigitParser()),
+                                new cminor::parsing::CharParser('_')),
+                            new cminor::parsing::CharSetParser("0x80-0xFF"))))))));
     AddRule(new qualified_idRule("qualified_id", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::TokenParser(

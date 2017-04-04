@@ -17,7 +17,7 @@ namespace System.IO
             {
                 throw new ArgumentOutOfRangeException("invalid bufferSize");
             }
-            this.stream = stream;
+            this.baseStream = stream;
             this.buf = new byte[bufferSize];
             this.pos = buf.Length;
             this.bytesAvailable = 0;
@@ -26,7 +26,7 @@ namespace System.IO
         public override void Close()
         {
             Flush();
-            stream.Close();
+            baseStream.Close();
         }
         public override void WriteByte(byte value)
         {
@@ -94,20 +94,31 @@ namespace System.IO
         {
             if (end != 0)
             {
-                stream.Write(buf, end);
+                baseStream.Write(buf, end);
                 end = 0;
             }
         }
+        public override void Seek(int pos, Origin origin)
+        {
+            Flush();
+            bytesAvailable = 0;
+            baseStream.Seek(pos, origin);
+        }
+        public override int Tell()
+        {
+            Flush();
+            return baseStream.Tell() - bytesAvailable;
+        }
         public Stream BaseStream
         {
-            get { return stream; }
+            get { return baseStream; }
         }
         private void FillBuf()
         {
-            bytesAvailable = stream.Read(buf);
+            bytesAvailable = baseStream.Read(buf);
             pos = 0;
         }
-        private Stream stream;
+        private Stream baseStream;
         private byte[] buf;
         private int pos;
         private int bytesAvailable;

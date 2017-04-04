@@ -23,6 +23,7 @@
 #include <cminor/vmlib/Threading.hpp>
 #include <cminor/util/Path.hpp>
 #include <cminor/util/TextUtils.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cminor/jit/JitCompiler.hpp>
 #include <llvm/Support/TargetSelect.h>
 #include <boost/filesystem.hpp>
@@ -56,6 +57,7 @@ struct InitDone
         InitVmFunctions(vmFunctionNamePool);
         FileInit();
         ThreadingInit();
+		cminor::util::unicode::Init();
 #ifdef GC_LOGGING
         OpenLog();
 #endif
@@ -65,6 +67,7 @@ struct InitDone
 #ifdef GC_LOGGING
         CloseLog();
 #endif
+		cminor::util::unicode::Done();
         ThreadingDone();
         FileDone();
         DoneVmFunctions();
@@ -107,9 +110,6 @@ void PrintHelp()
 		"   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
         "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
         "       Default is 16 MB.\n" << 
-        "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
-        "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n"
-        "       Default is 16 MB.\n" <<
         "   --thread-pages=N (-t=N)\n" <<
         "       Set the number of thread-specific memory allocation context pages to N.\n" <<
         "       Default is 2 pages (for typical 4K system memory page size this is 8K).\n" <<
@@ -195,11 +195,6 @@ int main(int argc, const char** argv)
                             {
                                 segmentSizeMB = boost::lexical_cast<uint64_t>(components[1]);
                                 SetSegmentSize(segmentSizeMB * 1024 * 1024);
-                            }
-                            else if (components[0] == "-p" || components[0] == "--pool-threshold")
-                            {
-                                poolThresholdMB = boost::lexical_cast<int>(components[1]);
-                                SetPoolThreshold(poolThresholdMB * 1024 * 1024);
                             }
                             else if (components[0] == "-t" || components[0] == "--thread-pages")
                             {

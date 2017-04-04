@@ -5,7 +5,9 @@
 
 #include <cminor/vmlib/File.hpp>
 #include <cminor/machine/Error.hpp>
-#include <stdio.h>
+#include <cminor/machine/OsInterface.hpp>
+#include <cminor/machine/Machine.hpp>
+#include <cstdio>
 #include <unordered_map>
 #include <memory>
 #include <mutex>
@@ -45,6 +47,9 @@ public:
     void CloseFile(int32_t fileHandle);
     void WriteFile(int32_t fileHandle, const uint8_t* buffer, int32_t count);
     int32_t ReadFile(int32_t fileHandle, uint8_t* buffer, int32_t bufferSize);
+    void SeekFile(int32_t fileHandle, int32_t pos, Origin origin);
+    int32_t TellFile(int32_t fileHandle);
+    bool HandlesSetToBinaryMode() const { return handlesSetToBinaryMode; }
     ~FileTable();
 private:
     const int32_t maxNoLockFileHandles = 256;
@@ -55,6 +60,7 @@ private:
     std::unordered_map<int32_t, std::string> filePathMap;
     std::atomic<int32_t> nextFileHandle;
     std::mutex mtx;
+    bool handlesSetToBinaryMode;
     FileTable();
 };
 
@@ -76,19 +82,29 @@ FileTable& FileTable::Instance()
     return *instance;
 }
 
-FileTable::FileTable() : nextFileHandle(3)
+FileTable::FileTable() : nextFileHandle(3), handlesSetToBinaryMode(false)
 {
     files.resize(maxNoLockFileHandles);
     filePaths.resize(maxNoLockFileHandles);
+    SetHandleToBinaryMode(0);
     files[0] = stdin;
+    SetHandleToBinaryMode(1);
     files[1] = stdout;
+    SetHandleToBinaryMode(2);
     files[2] = stderr;
+    handlesSetToBinaryMode = true;
 }
 
 FileTable::~FileTable()
 {
     try
     {
+        if (handlesSetToBinaryMode)
+        {
+            SetHandleToTextMode(0);
+            SetHandleToTextMode(1);
+            SetHandleToTextMode(2);
+        }
         for (FILE* file : files)
         {
             if (file && file != stdin && file != stdout && file != stderr)
@@ -121,11 +137,11 @@ int32_t FileTable::OpenFile(const std::string& filePath, FileMode mode, FileAcce
         }
         if (access == FileAccess::write)
         {
-            modeStr = "a";
+            modeStr = "ab";
         }
         else if (access == FileAccess::read)
         {
-            modeStr = "a+";
+            modeStr = "a+b";
         }
     }
     else if (mode == FileMode::create)
@@ -136,29 +152,29 @@ int32_t FileTable::OpenFile(const std::string& filePath, FileMode mode, FileAcce
         }
         if (access == FileAccess::write)
         {
-            modeStr = "w";
+            modeStr = "wb";
         }
         else if (access == FileAccess::readWrite)
         {
-            modeStr = "w+";
+            modeStr = "w+b";
         }
     }
     else if (mode == FileMode::open)
     {
         if (access == FileAccess::read)
         {
-            modeStr = "r";
+            modeStr = "rb";
         }
         else if (access == FileAccess::readWrite)
         {
-            modeStr = "r+";
+            modeStr = "r+b";
         }
     }
     if (modeStr.empty())
     {
         throw FileSystemError("invalid file access '" + FileAccessStr(access) + "' for file mode '" + FileModeStr(mode));
     }
-    FILE* file = fopen(filePath.c_str(), modeStr.c_str());
+    FILE* file = std::fopen(filePath.c_str(), modeStr.c_str());
     if (!file)
     {
         throw FileSystemError("could not open '" + filePath + "': " + strerror(errno));
@@ -304,6 +320,94 @@ int32_t FileTable::ReadFile(int32_t fileHandle, uint8_t* buffer, int32_t bufferS
     return result;
 }
 
+void FileTable::SeekFile(int32_t fileHandle, int32_t pos, Origin origin)
+{
+    FILE* file = nullptr;
+    if (fileHandle < 0)
+    {
+        throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
+    }
+    else if (fileHandle < maxNoLockFileHandles)
+    {
+        file = files[fileHandle];
+    }
+    else
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        auto it = fileMap.find(fileHandle);
+        if (it != fileMap.cend())
+        {
+            file = it->second;
+        }
+        else
+        {
+            throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
+        }
+    }
+    int orig = 0;
+    switch (origin)
+    {
+        case Origin::seekSet: orig = SEEK_SET; break;
+        case Origin::seekCur: orig = SEEK_CUR; break;
+        case Origin::seekEnd: orig = SEEK_END; break;
+    }
+    int result = std::fseek(file, pos, orig);
+    if (result != 0)
+    {
+        std::string filePath;
+        if (fileHandle < maxNoLockFileHandles)
+        {
+            filePath = filePaths[fileHandle];
+        }
+        else
+        {
+            filePath = filePathMap[fileHandle];
+        }
+        throw FileSystemError("could not seek file '" + filePath + "': " + strerror(errno));
+    }
+}
+
+int32_t FileTable::TellFile(int32_t fileHandle)
+{
+    FILE* file = nullptr;
+    if (fileHandle < 0)
+    {
+        throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
+    }
+    else if (fileHandle < maxNoLockFileHandles)
+    {
+        file = files[fileHandle];
+    }
+    else
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        auto it = fileMap.find(fileHandle);
+        if (it != fileMap.cend())
+        {
+            file = it->second;
+        }
+        else
+        {
+            throw FileSystemError("invalid file handle " + std::to_string(fileHandle));
+        }
+    }
+    int32_t result = std::ftell(file);
+    if (result == -1)
+    {
+        std::string filePath;
+        if (fileHandle < maxNoLockFileHandles)
+        {
+            filePath = filePaths[fileHandle];
+        }
+        else
+        {
+            filePath = filePathMap[fileHandle];
+        }
+        throw FileSystemError("could not tell file position for '" + filePath + "': " + strerror(errno));
+    }
+    return result;
+}
+
 int32_t OpenFile(const std::string& filePath, FileMode mode, FileAccess access)
 {
     return FileTable::Instance().OpenFile(filePath, mode, access);
@@ -339,6 +443,21 @@ int32_t ReadByteFromFile(int32_t fileHandle)
         return -1;
     }
     return value;
+}
+
+void SeekFile(int32_t fileHandle, int32_t pos, Origin origin)
+{
+    FileTable::Instance().SeekFile(fileHandle, pos, origin);
+}
+
+int32_t TellFile(int32_t fileHandle)
+{
+    return FileTable::Instance().TellFile(fileHandle);
+}
+
+bool HandlesSetToBinaryMode()
+{
+    return FileTable::Instance().HandlesSetToBinaryMode();
 }
 
 void FileInit()

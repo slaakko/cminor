@@ -118,7 +118,7 @@ namespace System.Text.Parsing
                 {
                     return "NonterminalParser";
                 }
-                return new string(char.ToLower(Name[0]), 1) + Name.Substring(1) + "NonterminalParser";
+                return new string(char.ToCLower(Name[0]), 1) + Name.Substring(1) + "NonterminalParser";
             }
         }
         public bool Specialized

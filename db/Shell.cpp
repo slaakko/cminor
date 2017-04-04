@@ -10,10 +10,26 @@
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/machine/OsInterface.hpp>
 #include <cminor/util/TextUtils.hpp>
+#include <cminor/vmlib/File.hpp>
 #include <stdexcept>
 #include <iostream>
 
 namespace cminor { namespace db {
+
+using namespace cminor::vmlib;
+
+struct BinaryModeChanger
+{
+    BinaryModeChanger(Shell& shell_) : shell(shell_)
+    {
+        shell.SwitchToBinaryMode();
+    }
+    ~BinaryModeChanger()
+    {
+        shell.SwitchToTextMode();
+    }
+    Shell& shell;
+};
 
 Shell::Shell(Machine& machine_) : machine(machine_), exit(false), numListLines(10), currentLineNumber(0), currentSourceFile(nullptr), ended(false), argsArrayObjectType(nullptr)
 {
@@ -32,6 +48,7 @@ void Shell::StartMachine()
 
 void Shell::Run(FunctionSymbol* mainFun_, Assembly& assembly, const std::vector<utf32_string>& programArguments_)
 {
+    SwitchToTextMode();
     mainFun = mainFun_;
     programArguments = programArguments_;
     argsArrayObjectType = nullptr;
@@ -131,6 +148,7 @@ void Shell::Step()
     }
     else
     {
+        BinaryModeChanger changer(*this);
         machine.MainThread().Step();
         if (!machine.MainThread().GetStack().IsEmpty())
         {
@@ -151,6 +169,7 @@ void Shell::Next()
     }
     else
     {
+        BinaryModeChanger changer(*this);
         machine.MainThread().Next();
         if (!machine.MainThread().GetStack().IsEmpty())
         {
@@ -171,6 +190,7 @@ void Shell::Run()
     }
     else
     {
+        BinaryModeChanger changer(*this);
         machine.MainThread().RunDebug();
         if (!machine.MainThread().GetStack().IsEmpty())
         {
@@ -553,6 +573,26 @@ void Shell::Stack()
     Frame* frame = machine.MainThread().GetStack().CurrentFrame();
     std::string stackTrace = ToUtf8(frame->GetThread().GetStackTrace());
     std::cout << stackTrace << std::endl;
+}
+
+void Shell::SwitchToTextMode()
+{
+    if (HandlesSetToBinaryMode())
+    {
+        SetHandleToTextMode(0);
+        SetHandleToTextMode(1);
+        SetHandleToTextMode(2);
+    }
+}
+
+void Shell::SwitchToBinaryMode()
+{
+    if (HandlesSetToBinaryMode())
+    {
+        SetHandleToBinaryMode(0);
+        SetHandleToBinaryMode(1);
+        SetHandleToBinaryMode(2);
+    }
 }
 
 } } // namespace cminor::db

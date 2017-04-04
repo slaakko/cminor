@@ -46,9 +46,11 @@ struct InitDone
         FileInit();
         ThreadingInit();
         cminor::parsing::Init();
+		cminor::util::unicode::Init();
     }
     ~InitDone()
     {
+		cminor::util::unicode::Done();
         cminor::parsing::Done();
         ThreadingDone();
         FileDone();
@@ -82,9 +84,6 @@ void PrintHelp()
 		"       [G]=collecting garbage, [F]=performing full collection.\n" <<
 		"   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
         "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
-        "       Default is 16 MB.\n" <<
-        "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
-        "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n" <<
         "       Default is 16 MB.\n" <<
         "   --thread-pages=N (-t=N)\n" <<
         "       Set the number of thread-specific memory allocation context pages to N.\n" <<
@@ -145,11 +144,6 @@ int main(int argc, const char** argv)
                             {
                                 segmentSizeMB = boost::lexical_cast<uint64_t>(components[1]);
                                 SetSegmentSize(segmentSizeMB * 1024 * 1024);
-                            }
-                            else if (components[0] == "-p" || components[0] == "--pool-threshold")
-                            {
-                                poolThresholdMB = boost::lexical_cast<uint64_t>(components[1]);
-                                SetPoolThreshold(poolThresholdMB * 1024 * 1024);
                             }
                             else if (components[0] == "-t" || components[0] == "--thread-pages")
                             {

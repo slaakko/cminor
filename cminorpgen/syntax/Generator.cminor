@@ -181,6 +181,10 @@ namespace Syntax
         Console.WriteLine("Parsing project file '" + projectFilePath + "'...");
         ParsingDomain projectParsingDomain = new ParsingDomain();
         ProjectFileGrammar projectFileGrammar = new ProjectFileGrammar(projectParsingDomain);
+        if (Flags.Debug)
+        {
+            projectFileGrammar.Log = Console.Out;
+        }
         LibraryFileGrammar libraryFileGrammar = new LibraryFileGrammar(projectParsingDomain);
         ParserFileGrammar parserFileGrammar = new ParserFileGrammar(projectParsingDomain);
         if (Flags.Debug)

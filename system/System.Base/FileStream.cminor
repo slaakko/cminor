@@ -16,6 +16,11 @@ namespace System.IO
         read, readWrite, write
     }
 
+    public enum Origin : byte
+    {
+        seekSet, seekCur, seekEnd
+    }
+
     public class FileStream : Stream, Closable
     {
         public FileStream(int fileHandle, FileAccess access)
@@ -44,7 +49,7 @@ namespace System.IO
         }
         public override void Close()
         {
-            if (fileHandle != -1)
+            if (fileHandle != -1 && fileHandle != stdin && fileHandle != stdout && fileHandle != stderr)
             {
                 CloseFile(fileHandle);
                 fileHandle = -1;
@@ -77,6 +82,14 @@ namespace System.IO
                 throw new ArgumentNullException("provided buffer is null");
             }
             return ReadFile(fileHandle, buffer);
+        }
+        public override void Seek(int pos, Origin origin)
+        {
+            SeekFile(fileHandle, pos, origin);
+        }
+        public override int Tell()
+        {
+            return TellFile(fileHandle);
         }
         private FileAccess DefaultAccess(FileMode mode)
         {
@@ -111,4 +124,10 @@ namespace System.IO
 
     [vmf=fread]
     internal extern int ReadFile(int fileHandle, byte[] buffer);
+
+    [vmf=fseek]
+    internal extern void SeekFile(int fileHandle, int pos, Origin origin);
+
+    [vmf=ftell]
+    internal extern int TellFile(int fileHandle);
 }

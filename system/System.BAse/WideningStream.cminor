@@ -1,0 +1,48 @@
+using System;
+
+namespace System.IO
+{
+    public class WideningStream : Stream, Closable
+    {
+        public WideningStream(Stream stream)
+        {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("provided stream is null");
+            }
+            this.baseStream = stream;
+        }
+        public override void WriteByte(byte value)
+        {
+            if (value == cast<byte>('\n'))
+            {
+                baseStream.WriteByte(cast<byte>('\r'));
+            }
+            baseStream.WriteByte(value);
+        }
+        public override void Write(byte[] buffer, int count)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                WriteByte(buffer[i]);
+            }
+        }
+        public override int ReadByte()
+        {
+            return baseStream.ReadByte();
+        }
+        public override int Read(byte[] buffer)
+        {
+            return baseStream.Read(buffer);
+        }
+        public override void Flush()
+        {
+            baseStream.Flush();
+        }
+        public override void Close()
+        {
+            baseStream.Close();
+        }
+        private Stream baseStream;
+    }
+}

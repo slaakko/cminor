@@ -1,0 +1,14 @@
+using System;
+using System.Collections.Generic;
+
+void main()
+{
+    List<bool> list = new List<bool>();
+    list.Add(true);
+    list.Add(false);
+    foreach (bool x in list)
+    {
+        if (x) continue;
+        Console.WriteLine(x);
+    }
+}

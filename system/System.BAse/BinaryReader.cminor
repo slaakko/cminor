@@ -1,0 +1,139 @@
+using System;
+using System.Text;
+using System.Unicode;
+
+namespace System.IO
+{
+	public class UnexpectedEndOfFileException : Exception
+	{
+		public UnexpectedEndOfFileException(string message) : base(message)
+		{
+		}
+	}
+
+	public void ThrowUxpectedEndOfFile()
+	{
+		throw new UnexpectedEndOfFileException("unexpected end of file");
+	}
+
+	public class BinaryReader : Closable
+	{
+		public BinaryReader(Stream stream)
+		{
+            if (stream == null)
+            {
+                throw new ArgumentNullException("provided stream is null");
+            }
+			this.stream = stream;
+			this.stringDecoder = new Utf8Decoder(stream);
+		}
+		public void Close()
+        {
+            stream.Close();
+        }
+		public bool ReadBool()
+		{
+			byte x = ReadByte();
+			return cast<bool>(x);
+		}
+		public char ReadChar()
+		{
+			uint x = ReadUInt();
+			return cast<char>(x);
+		}
+		public string ReadString()
+		{
+			StringBuilder b = new StringBuilder();
+			uint x = stringDecoder.Decode();
+			while (x != 0u)
+			{
+				b.Append(cast<char>(x));
+                x = stringDecoder.Decode();
+			}
+			return b.ToString();
+		}
+		public sbyte ReadSByte()
+		{
+			byte x = ReadByte();
+			return cast<sbyte>(x);
+		}
+		public byte ReadByte()
+		{
+			int x = stream.ReadByte();
+			if (x == -1)
+			{
+				ThrowUxpectedEndOfFile();
+			}
+            return cast<byte>(x);
+		}
+		public short ReadShort()
+		{
+			ushort x = ReadUShort();
+			return cast<short>(x);
+		}
+		public ushort ReadUShort()
+		{
+			byte x0 = ReadByte();
+			byte x1 = ReadByte();
+			ushort x = cast<ushort>(x0) << 8u | cast<ushort>(x1);
+			return x;
+		}
+		public int ReadInt()
+		{
+			uint x = ReadUInt();
+			return cast<int>(x);
+		}
+		public uint ReadUInt()
+		{
+			byte x0 = ReadByte();
+			byte x1 = ReadByte();
+			byte x2 = ReadByte();
+			byte x3 = ReadByte();
+			uint x = cast<uint>(x0) << 24u | cast<uint>(x1) << 16u | cast<uint>(x2) << 8u | cast<uint>(x3);
+			return x;
+		}
+		public long ReadLong()
+		{
+			ulong x = ReadULong();
+			return cast<long>(x);
+		}
+		public ulong ReadULong()
+		{
+			byte x0 = ReadByte();
+			byte x1 = ReadByte();
+			byte x2 = ReadByte();
+			byte x3 = ReadByte();
+			byte x4 = ReadByte();
+			byte x5 = ReadByte();
+			byte x6 = ReadByte();
+			byte x7 = ReadByte();
+			ulong x = cast<ulong>(x0) << 56u | cast<ulong>(x1) << 48u | cast<ulong>(x2) << 40u | cast<ulong>(x3) << 32u | 
+				cast<ulong>(x4) << 24u | cast<ulong>(x5) << 16u | cast<ulong>(x6) << 8u | cast<ulong>(x7);
+			return x;
+		}
+		public float ReadFloat()
+		{
+			uint x = ReadUInt();
+			return cast<float>(x);
+		}
+		public double ReadDouble()
+		{
+			ulong x = ReadULong();
+			return cast<double>(x);
+		}
+        public void Seek(int pos, Origin origin)
+        {
+            stream.Seek(pos, origin);
+        }
+        public int Tell()
+        {
+            return stream.Tell();
+        }
+        public Stream ContainedStream
+        {
+            get { return stream; }
+        }
+		private Stream stream;
+		private Utf8Decoder stringDecoder;
+	}
+}

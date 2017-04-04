@@ -24,12 +24,20 @@ enum class FileAccess : uint8_t
     read, readWrite, write
 };
 
+enum class Origin : uint8_t
+{
+    seekSet, seekCur, seekEnd
+};
+
 int32_t OpenFile(const std::string& filePath, FileMode mode, FileAccess access);
 void CloseFile(int32_t fileHandle);
 void WriteByteToFile(int32_t fileHandle, uint8_t value);
 void WriteFile(int32_t fileHandle, const uint8_t* buffer, int32_t count);
 int32_t ReadByteFromFile(int32_t fileHandle);
 int32_t ReadFile(int32_t fileHandle, uint8_t* buffer, int32_t bufferSize);
+void SeekFile(int32_t fileHandle, int32_t pos, Origin origin);
+int32_t TellFile(int32_t fileHandle);
+bool HandlesSetToBinaryMode();
 void FileInit();
 void FileDone();
 

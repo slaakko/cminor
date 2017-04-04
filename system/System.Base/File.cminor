@@ -4,15 +4,37 @@ namespace System.IO
 {
     public static class File
     {
-        public static StreamWriter CreateText(String filePath)
+        public static StreamWriter CreateText(string filePath)
         {
-            return new StreamWriter(new BufferedStream(new FileStream(filePath, FileMode.create, FileAccess.write)));
+            if (System.GetPlatform() == System.Platform.windows)
+            {
+                return new StreamWriter(new WideningStream(new BufferedStream(new FileStream(filePath, FileMode.create, FileAccess.write))));
+            }
+            else
+            {
+                return new StreamWriter(new BufferedStream(new FileStream(filePath, FileMode.create, FileAccess.write)));
+            }
         }
-        public static StreamReader OpenRead(String filePath)
+		public static BinaryWriter CreateBinary(string filePath)
+		{
+			return new BinaryWriter(new BufferedStream(new FileStream(filePath, FileMode.create, FileAccess.write)));
+		}
+        public static StreamReader OpenRead(string filePath)
         {
-            return new StreamReader(new BufferedStream(new FileStream(filePath, FileMode.open, FileAccess.read)));
+			if (System.GetPlatform() == System.Platform.windows)
+			{
+				return new StreamReader(new NarrowingStream(new BufferedStream(new FileStream(filePath, FileMode.open, FileAccess.read))));
+			}
+            else
+            {
+                return new StreamReader(new BufferedStream(new FileStream(filePath, FileMode.open, FileAccess.read)));
+            }
         }
-        public static string ReadAllText(String filePath)
+		public static BinaryReader OpenBinary(string filePath)
+		{
+			return new BinaryReader(new BufferedStream(new FileStream(filePath, FileMode.open, FileAccess.read)));
+		}
+        public static string ReadAllText(string filePath)
         {
             using (StreamReader reader = OpenRead(filePath))
             {
@@ -21,7 +43,7 @@ namespace System.IO
             return string.Empty;
         }
         [vmf=fexists]
-        extern public static bool Exists(String filePath);
+        extern public static bool Exists(string filePath);
         [vmf=writetimeless]
         extern public static bool LastWriteTimeLess(string filePath1, string filePath2);
     }

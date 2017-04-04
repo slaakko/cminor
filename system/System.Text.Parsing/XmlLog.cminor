@@ -13,10 +13,7 @@ namespace System.Text.Parsing
         }
         public void Close()
         {
-            if (writer.DoClose)
-            {
-                writer.Close();
-            }
+            writer.Close();
         }
         public void IncIndent()
         {
@@ -79,7 +76,7 @@ namespace System.Text.Parsing
             case '\v': return "\\v";
             default:
             {
-                if (char.IsPrintable(c))
+                if (char.IsCPrintable(c))
                 {
                     return c.ToString();
                 }

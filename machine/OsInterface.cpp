@@ -11,6 +11,8 @@
     #define WIN32_LEAN_AND_MEAN
     #include <Windows.h>
     #include <winnt.h>
+#include <io.h>
+#include <fcntl.h>
 #else
     #include <unistd.h>
     #include <sys/mman.h>
@@ -170,6 +172,16 @@ MACHINE_API void* ResolveSymbolAddress(void* sharedLibraryHandle, const std::str
     return symbolAddress;
 }
 
+MACHINE_API void SetHandleToBinaryMode(int handle)
+{
+    _setmode(handle, _O_BINARY);
+}
+
+MACHINE_API void SetHandleToTextMode(int handle)
+{
+    _setmode(handle, _O_TEXT);
+}
+
 #else
 
 uint64_t GetSystemPageSize()
@@ -218,6 +230,14 @@ void WriteInGreenToConsole(const std::string& line)
     {
         std::cout << line << std::endl;
     }
+}
+
+MACHINE_API void SetHandleToBinaryMode(int handle)
+{
+}
+
+MACHINE_API void SetHandleToTextMode(int handle)
+{
 }
 
 #endif 

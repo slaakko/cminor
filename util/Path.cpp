@@ -13,7 +13,7 @@
 #include <cctype>
 #ifdef _WIN32
     #include <direct.h>
-#elif defined(__linux) || defined(__unix) || defined(__posix)
+#elif defined(__linux) || defined(__unix) || defined(__posix) || defined(__unix__)
     #include <unistd.h>
 #endif
 

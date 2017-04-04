@@ -149,9 +149,6 @@ void PrintHelp(HelpTopics helpTopics)
 			"   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
             "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
             "       Default is 16 MB.\n" <<
-            "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
-            "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n" <<
-            "       Default is 16 MB.\n" <<
             "   --thread-pages=N (-t=N)\n" <<
             "       Set the number of thread-specific memory allocation context pages to N.\n" <<
             "       Default is 2 pages (for typical 4K system memory page size this is 8K).\n" <<
@@ -172,9 +169,6 @@ void PrintHelp(HelpTopics helpTopics)
 			"       G=collecting garbage, F=performing full collection, P=managed memory pool threshold exceeded.\n" <<
 			"   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
             "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
-            "       Default is 16 MB.\n" <<
-            "   --pool-threshold=POOL-THRESHOLD (-p=POOL-THRESHOLD)\n" <<
-            "       POOL-THRESHOLD is the grow threshold of the managed memory pool in megabytes.\n" <<
             "       Default is 16 MB.\n" <<
             "   --thread-pages=N (-t=N)\n" <<
             "       Set the number of thread-specific memory allocation context pages to N.\n" <<
@@ -373,10 +367,6 @@ int main(int argc, const char** argv)
                                 {
                                     runOptions.push_back(arg);
                                 }
-                                else if (components[0] == "-p" || components[0] == "--pool-threshold")
-                                {
-                                    runOptions.push_back(arg);
-                                }
                                 else if (components[0] == "-t" || components[0] == "--thread-pages")
                                 {
                                     runOptions.push_back(arg);
@@ -421,10 +411,6 @@ int main(int argc, const char** argv)
                             else
                             {
                                 if (components[0] == "-s" || components[0] == "--segment-size")
-                                {
-                                    debugOptions.push_back(arg);
-                                }
-                                else if (components[0] == "-p" || components[0] == "--pool-threshold")
                                 {
                                     debugOptions.push_back(arg);
                                 }

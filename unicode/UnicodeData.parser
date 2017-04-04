@@ -13,12 +13,13 @@ namespace UnicodeBin
             ;
 
         characterData
-            ::= (codepoint:code ';' name ';' category ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' 
+            ::= (codepoint:code ';' name ';' category ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';'
 				codepoint:upper? ';' codepoint:lower? 
                 (anychar - newline)* newline)
             {
-                CharacterInfo characterInfo = new CharacterInfo(cast<char>(code), name, CategoryMap.Instance.GetCategory(category), cast<char>(lower), cast<char>(upper));
-                CharacterInfoMap.Instance.Add(characterInfo);
+                CharacterInfo characterInfo = new CharacterInfo(cast<char>(code), CategoryMap.Instance.GetCategory(category), cast<char>(lower), cast<char>(upper));
+                CharacterInfoMap.Instance.AddCharInfo(characterInfo);
+                CharacterInfoMap.Instance.AddCharName(cast<char>(code), name);
             }
             ;
 

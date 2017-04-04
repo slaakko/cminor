@@ -5,4 +5,21 @@ namespace System
 
     [vmf=pathsep]
     public extern char GetPathSeparatorChar();
+
+    public enum Platform : byte
+    {
+        unknown = 0u, windows = 1u, unix = 2u
+    }
+
+    [vmf=platform]
+    public extern Platform GetPlatform();
+
+    public string EnvironmentNewLine() 
+    {
+        if (GetPlatform() == Platform.windows)
+        {
+            return "\r\n";
+        }
+        return "\n";
+    }
 }

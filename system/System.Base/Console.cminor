@@ -6,12 +6,25 @@ namespace System
     {
         static Console()
         {
-            inStream = new StreamReader(new FileStream(stdin, FileAccess.read));
-            inStream.DoClose = false;
-            outStream = new StreamWriter(new FileStream(stdout, FileAccess.write));
-            outStream.DoClose = false;
-            errStream = new StreamWriter(new FileStream(stderr, FileAccess.write));
-            errStream.DoClose = false;
+            bool inWindows = System.GetPlatform() == System.Platform.windows;
+            Stream inBaseStream = new FileStream(stdin, FileAccess.read);
+            if (inWindows)
+            {
+                inBaseStream = new NarrowingStream(inBaseStream);
+            }
+            inStream = new StreamReader(inBaseStream);
+            Stream outBaseStream = new FileStream(stdout, FileAccess.write);
+            if (inWindows)
+            {
+                outBaseStream = new WideningStream(outBaseStream);
+            }
+            outStream = new StreamWriter(outBaseStream);
+            Stream errBaseStream = new FileStream(stderr, FileAccess.write);
+            if (inWindows)
+            {
+                errBaseStream = new WideningStream(errBaseStream);
+            }
+            errStream = new StreamWriter(errBaseStream);
         }
         public static int Read()
         {

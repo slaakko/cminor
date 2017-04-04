@@ -161,12 +161,12 @@ namespace System
         public string Trim()
         {
             int b = 0;
-            while (b < length && char.IsSpace(this[b])) 
+            while (b < length && char.IsCSpace(this[b])) 
             {
                 ++b;
             }
             int e = length - 1;
-            while (e >= b && char.IsSpace(this[e]))
+            while (e >= b && char.IsCSpace(this[e]))
             {
                 --e;
             }

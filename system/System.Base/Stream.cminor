@@ -11,6 +11,14 @@ namespace System.IO
         public virtual void Flush()
         {
         }
+        public virtual void Seek(int pos, Origin origin)
+        {
+            throw new FileSystemException("this stream does not support seek");
+        }
+        public virtual int Tell()
+        {
+            throw new FileSystemException("this stream does not support tell");
+        }
         public abstract void Close();
     }
 }

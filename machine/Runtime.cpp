@@ -197,6 +197,14 @@ extern "C" MACHINE_API void RtEnterFunction(void* functionStackEntry)
     {
         std::cerr << "> " << ToUtf8(entry->function->CallName().Value().AsStringLiteral()) << std::endl;
     }
+    if (entry->function->MangledName() == "WriteBeginRule_XmlLog_C9701B4E3844A755DB09D9FE1B1E509CB1BDC718")
+    {
+        int x = 0;
+    }
+    if (entry->function->MangledName() == "Parse_RuleParser_2EF880CEFEC9C56F0B3EC9AA728B8FF7F5C257FB")
+    {
+        int x = 0;
+    }
     entry->next = functionStack;
     functionStack = entry;
 }

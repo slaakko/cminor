@@ -1,0 +1,59 @@
+using System;
+using System.Threading;
+
+public class ExceptionCapture
+{
+    public Exception Ex
+    {
+        get { return ex; }
+        set { ex = value; }
+    }
+    private Exception ex;
+}
+
+public class MyException : Exception
+{
+    public MyException(string message) : base(message)
+    {
+    }
+}
+
+public void bar()
+{
+    throw new MyException("my_exception");
+}
+
+public void foo(object arg)
+{
+    ExceptionCapture capture = cast<ExceptionCapture>(arg);
+    try
+    {
+        bar();
+    }
+    catch (Exception ex)
+    {
+        capture.Ex = ex;
+    }
+}
+
+internal void main()
+{
+    try
+    {
+        ExceptionCapture capture = new ExceptionCapture();
+        Thread thread = Thread.StartFunction(foo, capture);
+        thread.Join();
+        if (capture.Ex != null)
+        {
+            Rethrow(capture.Ex);
+        }
+    }
+    catch (MyException ex)
+    {
+        Console.Error.WriteLine("caught my_exception: " + ex.ToString());
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine("caught generic exception: " + ex.ToString());
+    }
+}

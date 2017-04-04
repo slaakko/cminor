@@ -18,6 +18,36 @@
 
 namespace cminor { namespace vmlib {
 
+enum class Platform : uint8_t
+{
+	unknown = 0, windows = 1, unix = 2
+};
+
+class VmSystemPlatform : public VmFunction
+{
+public:
+	VmSystemPlatform(ConstantPool& constantPool);
+	void Execute(Frame& frame) override;
+};
+
+VmSystemPlatform::VmSystemPlatform(ConstantPool& constantPool)
+{
+	Constant name = constantPool.GetConstant(constantPool.Install(U"platform"));
+	SetName(name);
+	VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemPlatform::Execute(Frame& frame)
+{
+	Platform platform = Platform::unknown;
+#if defined(_WIN32) || defined(WIN32)
+	platform = Platform::windows;
+#elif defined(__unix__) || defined(__unix) || defined(__posix) || defined(__linux)
+	platform = Platform::unix;
+#endif
+	frame.OpStack().Push(IntegralValue(uint8_t(platform), ValueType::byteType));
+}
+
 class VmSystemPowDoubleInt : public VmFunction
 {
 public:
@@ -44,21 +74,21 @@ void VmSystemPowDoubleInt::Execute(Frame& frame)
 #pragma warning(default : 4244)
 }
 
-class VmSystemIsSpaceChar : public VmFunction
+class VmSystemIsCSpaceChar : public VmFunction
 {
 public:
-    VmSystemIsSpaceChar(ConstantPool& constantPool);
+    VmSystemIsCSpaceChar(ConstantPool& constantPool);
     void Execute(Frame& frame) override;
 };
 
-VmSystemIsSpaceChar::VmSystemIsSpaceChar(ConstantPool& constantPool)
+VmSystemIsCSpaceChar::VmSystemIsCSpaceChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"isspace"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"iscspace"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
 
-void VmSystemIsSpaceChar::Execute(Frame& frame)
+void VmSystemIsCSpaceChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
@@ -66,43 +96,65 @@ void VmSystemIsSpaceChar::Execute(Frame& frame)
     frame.OpStack().Push(IntegralValue(isSpace, ValueType::boolType));
 }
 
-class VmSystemIsLetterChar : public VmFunction
+class VmSystemIsCAlphaChar : public VmFunction
 {
 public:
-    VmSystemIsLetterChar(ConstantPool& constantPool);
+	VmSystemIsCAlphaChar(ConstantPool& constantPool);
+	void Execute(Frame& frame) override;
+};
+
+VmSystemIsCAlphaChar::VmSystemIsCAlphaChar(ConstantPool& constantPool)
+{
+	Constant name = constantPool.GetConstant(constantPool.Install(U"iscalpha"));
+	SetName(name);
+	VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemIsCAlphaChar::Execute(Frame& frame)
+{
+	IntegralValue value = frame.Local(0).GetValue();
+	char32_t c = value.AsChar();
+	bool isAlpha = std::isalpha(char(c));
+	frame.OpStack().Push(IntegralValue(isAlpha, ValueType::boolType));
+}
+
+class VmSystemIsCAlnumChar : public VmFunction
+{
+public:
+	VmSystemIsCAlnumChar(ConstantPool& constantPool);
+	void Execute(Frame& frame) override;
+};
+
+VmSystemIsCAlnumChar::VmSystemIsCAlnumChar(ConstantPool& constantPool)
+{
+	Constant name = constantPool.GetConstant(constantPool.Install(U"iscalnum"));
+	SetName(name);
+	VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemIsCAlnumChar::Execute(Frame& frame)
+{
+	IntegralValue value = frame.Local(0).GetValue();
+	char32_t c = value.AsChar();
+	bool isalnum = std::isalnum(char(c));
+	frame.OpStack().Push(IntegralValue(isalnum, ValueType::boolType));
+}
+
+class VmSystemIsCDigitChar : public VmFunction
+{
+public:
+    VmSystemIsCDigitChar(ConstantPool& constantPool);
     void Execute(Frame& frame) override;
 };
 
-VmSystemIsLetterChar::VmSystemIsLetterChar(ConstantPool& constantPool)
+VmSystemIsCDigitChar::VmSystemIsCDigitChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"isletter"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"iscdigit"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
 
-void VmSystemIsLetterChar::Execute(Frame& frame)
-{
-    IntegralValue value = frame.Local(0).GetValue();
-    char32_t c = value.AsChar();
-    bool isLetter = std::isalpha(char(c));
-    frame.OpStack().Push(IntegralValue(isLetter, ValueType::boolType));
-}
-
-class VmSystemIsDigitChar : public VmFunction
-{
-public:
-    VmSystemIsDigitChar(ConstantPool& constantPool);
-    void Execute(Frame& frame) override;
-};
-
-VmSystemIsDigitChar::VmSystemIsDigitChar(ConstantPool& constantPool)
-{
-    Constant name = constantPool.GetConstant(constantPool.Install(U"isdigit"));
-    SetName(name);
-    VmFunctionTable::RegisterVmFunction(this);
-}
-
-void VmSystemIsDigitChar::Execute(Frame& frame)
+void VmSystemIsCDigitChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
@@ -110,21 +162,21 @@ void VmSystemIsDigitChar::Execute(Frame& frame)
     frame.OpStack().Push(IntegralValue(isDigit, ValueType::boolType));
 }
 
-class VmSystemIsHexDigitChar : public VmFunction
+class VmSystemIsCHexDigitChar : public VmFunction
 {
 public:
-    VmSystemIsHexDigitChar(ConstantPool& constantPool);
+    VmSystemIsCHexDigitChar(ConstantPool& constantPool);
     void Execute(Frame& frame) override;
 };
 
-VmSystemIsHexDigitChar::VmSystemIsHexDigitChar(ConstantPool& constantPool)
+VmSystemIsCHexDigitChar::VmSystemIsCHexDigitChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"isxdigit"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"iscxdigit"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
 
-void VmSystemIsHexDigitChar::Execute(Frame& frame)
+void VmSystemIsCHexDigitChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
@@ -132,43 +184,43 @@ void VmSystemIsHexDigitChar::Execute(Frame& frame)
     frame.OpStack().Push(IntegralValue(isHexDigit, ValueType::boolType));
 }
 
-class VmSystemIsPunctuationChar : public VmFunction
+class VmSystemIsCPunctuationChar : public VmFunction
 {
 public:
-    VmSystemIsPunctuationChar(ConstantPool& constantPool);
+	VmSystemIsCPunctuationChar(ConstantPool& constantPool);
+	void Execute(Frame& frame) override;
+};
+
+VmSystemIsCPunctuationChar::VmSystemIsCPunctuationChar(ConstantPool& constantPool)
+{
+	Constant name = constantPool.GetConstant(constantPool.Install(U"iscpunct"));
+	SetName(name);
+	VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemIsCPunctuationChar::Execute(Frame& frame)
+{
+	IntegralValue value = frame.Local(0).GetValue();
+	char32_t c = value.AsChar();
+	bool isPunctuation = std::ispunct(char(c));
+	frame.OpStack().Push(IntegralValue(isPunctuation, ValueType::boolType));
+}
+
+class VmSystemIsCPrintableChar : public VmFunction
+{
+public:
+    VmSystemIsCPrintableChar(ConstantPool& constantPool);
     void Execute(Frame& frame) override;
 };
 
-VmSystemIsPunctuationChar::VmSystemIsPunctuationChar(ConstantPool& constantPool)
+VmSystemIsCPrintableChar::VmSystemIsCPrintableChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"ispunct"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"iscprint"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
 
-void VmSystemIsPunctuationChar::Execute(Frame& frame)
-{
-    IntegralValue value = frame.Local(0).GetValue();
-    char32_t c = value.AsChar();
-    bool isPunctuation = std::ispunct(char(c));
-    frame.OpStack().Push(IntegralValue(isPunctuation, ValueType::boolType));
-}
-
-class VmSystemIsPrintableChar : public VmFunction
-{
-public:
-    VmSystemIsPrintableChar(ConstantPool& constantPool);
-    void Execute(Frame& frame) override;
-};
-
-VmSystemIsPrintableChar::VmSystemIsPrintableChar(ConstantPool& constantPool)
-{
-    Constant name = constantPool.GetConstant(constantPool.Install(U"isprint"));
-    SetName(name);
-    VmFunctionTable::RegisterVmFunction(this);
-}
-
-void VmSystemIsPrintableChar::Execute(Frame& frame)
+void VmSystemIsCPrintableChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
@@ -176,48 +228,92 @@ void VmSystemIsPrintableChar::Execute(Frame& frame)
     frame.OpStack().Push(IntegralValue(isPrintable, ValueType::boolType));
 }
 
-class VmSystemToLowerChar : public VmFunction
+class VmSystemIsCLowerChar : public VmFunction
 {
 public:
-    VmSystemToLowerChar(ConstantPool& constantPool);
+    VmSystemIsCLowerChar(ConstantPool& constantPool);
     void Execute(Frame& frame) override;
 };
 
-VmSystemToLowerChar::VmSystemToLowerChar(ConstantPool& constantPool)
+VmSystemIsCLowerChar::VmSystemIsCLowerChar(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"islower"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemIsCLowerChar::Execute(Frame& frame)
+{
+    IntegralValue value = frame.Local(0).GetValue();
+    char32_t c = value.AsChar();
+    bool isLower = std::islower(char(c));
+    frame.OpStack().Push(IntegralValue(isLower, ValueType::boolType));
+}
+
+class VmSystemIsCUpperChar : public VmFunction
+{
+public:
+    VmSystemIsCUpperChar(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIsCUpperChar::VmSystemIsCUpperChar(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"isupper"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemIsCUpperChar::Execute(Frame& frame)
+{
+    IntegralValue value = frame.Local(0).GetValue();
+    char32_t c = value.AsChar();
+    bool isUpper = std::isupper(char(c));
+    frame.OpStack().Push(IntegralValue(isUpper, ValueType::boolType));
+}
+
+class VmSystemToCLowerChar : public VmFunction
+{
+public:
+    VmSystemToCLowerChar(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemToCLowerChar::VmSystemToCLowerChar(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"tolower"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
 
-void VmSystemToLowerChar::Execute(Frame& frame)
+void VmSystemToCLowerChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    c = std::tolower(char(c));
-    frame.OpStack().Push(IntegralValue(c, ValueType::charType));
+    char32_t toLower = std::tolower(char(c));
+    frame.OpStack().Push(IntegralValue(toLower, ValueType::charType));
 }
 
-class VmSystemToUpperChar : public VmFunction
+class VmSystemToCUpperChar : public VmFunction
 {
 public:
-    VmSystemToUpperChar(ConstantPool& constantPool);
+    VmSystemToCUpperChar(ConstantPool& constantPool);
     void Execute(Frame& frame) override;
 };
 
-VmSystemToUpperChar::VmSystemToUpperChar(ConstantPool& constantPool)
+VmSystemToCUpperChar::VmSystemToCUpperChar(ConstantPool& constantPool)
 {
     Constant name = constantPool.GetConstant(constantPool.Install(U"toupper"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
 
-void VmSystemToUpperChar::Execute(Frame& frame)
+void VmSystemToCUpperChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    c = std::toupper(char(c));
-    frame.OpStack().Push(IntegralValue(c, ValueType::charType));
+    char32_t toUpper = std::toupper(char(c));
+    frame.OpStack().Push(IntegralValue(toUpper, ValueType::charType));
 }
 
 class VmSystemObjectToString : public VmFunction
@@ -792,6 +888,78 @@ void VmSystemIOReadFile::Execute(Frame& frame)
             throw;
         }
         ThrowSystemException(ex, frame);
+    }
+}
+
+class VmSystemIOSeekFile : public VmFunction
+{
+public:
+    VmSystemIOSeekFile(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIOSeekFile::VmSystemIOSeekFile(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"fseek"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemIOSeekFile::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue fileHandleValue = frame.Local(0).GetValue();
+        Assert(fileHandleValue.GetType() == ValueType::intType, "int expected");
+        int32_t fileHandle = fileHandleValue.AsInt();
+        IntegralValue posValue = frame.Local(1).GetValue();
+        Assert(posValue.GetType() == ValueType::intType, "int expected");
+        int32_t pos = posValue.AsInt();
+        IntegralValue originValue = frame.Local(2).GetValue();
+        Assert(originValue.GetType() == ValueType::byteType, "byte expected");
+        SeekFile(fileHandle, pos, Origin(originValue.AsByte()));
+    }
+    catch (const FileSystemError& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowFileSystemException(ex, frame);
+    }
+}
+
+class VmSystemIOTellFile : public VmFunction
+{
+public:
+    VmSystemIOTellFile(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemIOTellFile::VmSystemIOTellFile(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"ftell"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemIOTellFile::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue fileHandleValue = frame.Local(0).GetValue();
+        Assert(fileHandleValue.GetType() == ValueType::intType, "int expected");
+        int32_t fileHandle = fileHandleValue.AsInt();
+        int32_t filePos = TellFile(fileHandle);
+        frame.OpStack().Push(IntegralValue(filePos, ValueType::intType));
+    }
+    catch (const FileSystemError& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowFileSystemException(ex, frame);
     }
 }
 
@@ -1751,15 +1919,19 @@ void VmFunctionPool::Done()
 
 void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
 {
+	vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemPlatform(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemPowDoubleInt(constantPool)));
-    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsSpaceChar(constantPool)));
-    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsLetterChar(constantPool)));
-    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsDigitChar(constantPool)));
-    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsHexDigitChar(constantPool)));
-    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsPunctuationChar(constantPool)));
-    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsPrintableChar(constantPool)));
-    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemToLowerChar(constantPool)));
-    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemToUpperChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCSpaceChar(constantPool)));
+	vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCAlphaChar(constantPool)));
+	vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCAlnumChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCDigitChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCHexDigitChar(constantPool)));
+	vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCPunctuationChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCPrintableChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCLowerChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCUpperChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemToCLowerChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemToCUpperChar(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectToString(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectGetHashCode(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemObjectEqual(constantPool)));
@@ -1770,6 +1942,8 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOWriteFile(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOReadByteFromFile(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOReadFile(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOSeekFile(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOTellFile(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOFileExists(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOLastWriteTimeLess(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemGetEnvironmentVariable(constantPool)));

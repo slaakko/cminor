@@ -26,6 +26,8 @@ void CloseThreadHandle(uint64_t threadHandle);
 MACHINE_API void* LoadSharedLibrary(const std::string& sharedLibraryFilePath);
 MACHINE_API void FreeSharedLibrary(void* sharedLibraryHandle);
 MACHINE_API void* ResolveSymbolAddress(void* sharedLibraryHandle, const std::string& sharedLibraryFilePath, const std::string& symbolName);
+MACHINE_API void SetHandleToBinaryMode(int handle);
+MACHINE_API void SetHandleToTextMode(int handle);
 
 } } // namespace cminor::machine
 

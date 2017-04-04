@@ -18,6 +18,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::disjunctionNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
+    bool ContainsDisjunctionOrConjuctionNode() const override { return true; }
 };
 
 class ConjunctionNode : public BinaryNode
@@ -28,6 +29,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::conjunctionNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
+    bool ContainsDisjunctionOrConjuctionNode() const override { return true; }
 };
 
 class BitOrNode : public BinaryNode
@@ -242,6 +244,7 @@ public:
     void Accept(Visitor& visitor) override;
     Node* Expr() const { return expr.get(); }
     Node* TargetTypeExpr() const { return targetTypeExpr.get(); }
+    bool ContainsDisjunctionOrConjuctionNode() const override { return expr->ContainsDisjunctionOrConjuctionNode(); }
 private:
     std::unique_ptr<Node> expr;
     std::unique_ptr<Node> targetTypeExpr;

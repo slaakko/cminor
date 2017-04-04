@@ -36,8 +36,13 @@ MACHINE_API uint8_t GetNumAllocationContextPages()
     return numAllocationContextPages;
 }
 
+inline uint64_t AlignedSize(uint64_t pageSize, uint64_t size)
+{
+    return pageSize * ((size - 1) / pageSize + 1);
+}
+
 Segment::Segment(int32_t id_, ArenaId arenaId_, uint64_t pageSize_, uint64_t size_) : 
-    id(id_), arenaId(arenaId_), pageSize(pageSize_), size(size_), base(ReserveMemory(size)), commit(base), top(base), free(base), end(base + size), mtx('S')
+    id(id_), arenaId(arenaId_), pageSize(pageSize_), size(AlignedSize(pageSize, size_)), base(ReserveMemory(size)), commit(base), top(base), free(base), end(base + size), mtx('S')
 {
 }
 
@@ -51,7 +56,7 @@ bool Segment::Allocate(uint64_t blockSize, void*& ptr)
     LockGuard lock(mtx, gc);
     if (free + blockSize > commit)
     {
-        uint64_t commitSize = pageSize * ((blockSize - 1) / pageSize + 1);
+        uint64_t commitSize = AlignedSize(pageSize, blockSize);
         if (commit + commitSize <= end)
         {
             uint8_t* commitBase = CommitMemory(commit, commitSize);
@@ -66,7 +71,7 @@ bool Segment::Allocate(uint64_t blockSize, void*& ptr)
     }
     else if (free + blockSize > top)
     {
-        uint64_t allocSize = pageSize * ((blockSize - 1) / pageSize + 1);
+        uint64_t allocSize = AlignedSize(pageSize, blockSize);
         if (top + allocSize <= commit)
         {
             top += allocSize;
@@ -98,7 +103,7 @@ bool Segment::Allocate(Thread& thread, uint64_t blockSize, void*& ptr, bool requ
     }
     if (free + blockSize > commit)
     {
-        uint64_t commitSize = pageSize * ((blockSize - 1) / pageSize + 1);
+        uint64_t commitSize = AlignedSize(pageSize, blockSize);
         if (allocationContext)
         {
             commitSize += pageSize * numAllocationContextPages;
@@ -127,7 +132,7 @@ bool Segment::Allocate(Thread& thread, uint64_t blockSize, void*& ptr, bool requ
     }
     else if (free + blockSize > top)
     {
-        uint64_t allocSize = pageSize * ((blockSize - 1) / pageSize + 1);
+        uint64_t allocSize = AlignedSize(pageSize, blockSize);
         if (allocationContext)
         {
             allocSize += pageSize * numAllocationContextPages;
@@ -332,6 +337,11 @@ void GenArena2::Allocate(Thread& thread, uint64_t blockSize, void*& ptr, int32_t
 {
     if (blockSize > SegmentSize())
     {
+        if (allocationLock.owns_lock())
+        {
+            allocationLock.unlock();
+        }
+        thread.RequestGc(true);
         Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), blockSize);
         std::unique_ptr<Segment> segment(seg);
         {
@@ -339,7 +349,7 @@ void GenArena2::Allocate(Thread& thread, uint64_t blockSize, void*& ptr, int32_t
             GetMachine().AddSegment(seg);
             Segments().push_back(std::move(segment));
         }
-        if (seg->Allocate(thread, blockSize, ptr, true, allocationLock))
+        if (seg->Allocate(blockSize, ptr))
         {
             segmentId = seg->Id();
         }

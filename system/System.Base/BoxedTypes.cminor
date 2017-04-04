@@ -314,28 +314,100 @@ namespace System
         }
         public static bool IsSpace(char c)
         {
-            return System.IsSpace(c);
+            return System.IsCSpace(c);
+        }
+        public static bool IsSeparator(char c)
+        {
+            return System.Unicode.IsSeparator(c);
         }
         public static bool IsLetter(char c)
         {
-            return System.IsLetter(c);
+            return System.Unicode.IsLetter(c);
         }
-        public static bool IsDigit(char c)
+		public static bool IsLower(char c)
+		{
+			return System.Unicode.IsLower(c);
+		}
+		public static bool IsUpper(char c)
+		{
+			return System.Unicode.IsUpper(c);
+		}
+        public static bool IsNumber(char c)
         {
-            return System.IsDigit(c);
-        }
-        public static bool IsHexDigit(char c)
-        {
-            return System.IsHexDigit(c);
+            return System.Unicode.IsNumber(c);
         }
         public static bool IsPunctuation(char c)
         {
-            return System.IsPunctuation(c);
+            return System.Unicode.IsPunctuation(c);
         }
-        public static bool IsPrintable(char c)
+        public static char ToLower(char c)
         {
-            return System.IsPrintable(c);
+            return System.Unicode.ToLower(c);
         }
+        public static char ToUpper(char c)
+        {
+            return System.Unicode.ToUpper(c);
+        }
+        public static Unicode.Category GetUnicodeCategory(char c)
+        {
+            return System.Unicode.GetCategory(c);
+        }
+        public static string UnicodeName(char c)
+        {
+            return System.Unicode.GetCharacterName(c);
+        }
+        public static bool IsCSpace(char c)
+        {
+            return System.IsCSpace(c);
+        }
+        public static bool IsCLower(char c)
+        {
+            return System.IsCLower(c);
+        }
+        public static bool IsCUpper(char c)
+        {
+            return System.IsCUpper(c);
+        }
+        public static bool IsCAlpha(char c)
+        {
+            return System.IsCAlpha(c);
+        }
+        public static bool IsCAlnum(char c)
+        {
+            return System.IsCAlnum(c);
+        }
+		public static bool IsCDigit(char c)
+		{
+			return System.IsCDigit(c);
+		}
+        public static bool IsCHexDigit(char c)
+        {
+            return System.IsCHexDigit(c);
+        }
+        public static bool IsCPunctuation(char c)
+        {
+            return System.IsCPunctuation(c);
+        }
+        public static bool IsCPrintable(char c)
+        {
+            return System.IsCPrintable(c);
+        }
+        public static char ToCLower(char c)
+        {
+            return System.ToCLower(c);
+        }
+        public static char ToCUpper(char c)
+        {
+            return System.ToCUpper(c);
+        }
+		public static char NL
+		{
+			get { return '\n'; }
+		}
+		public static char CR
+		{
+			get { return '\r'; }
+		}
         public static char Parse(string s)
         {
             return System.ParseChar(s);
@@ -343,14 +415,6 @@ namespace System
         public static bool TryParse(string s, ref char value)
         {
             return System.TryParseChar(s, ref value);
-        }
-        public static char ToLower(char c)
-        {
-            return System.ToLower(c);
-        }
-        public static char ToUpper(char c)
-        {
-            return System.ToUpper(c);
         }
         public char value;
     }

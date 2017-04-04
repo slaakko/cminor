@@ -64,6 +64,7 @@ public:
     virtual bool IsBreakEnclosingStatementNode() const { return false; }
     virtual bool IsContinueEnclosingStatementNode() const { return false; }
     virtual bool IsUnsignedTypeNode() const { return false; }
+    virtual bool ContainsDisjunctionOrConjuctionNode() const { return false; }
     uint32_t SymbolId() const { return symbolId; }
     void SetSymbolId(uint32_t symbolId_) { symbolId = symbolId_; }
 private:
@@ -81,6 +82,7 @@ public:
     void Read(AstReader& reader) override;
     Node* Child() const { return child.get(); }
     void Accept(Visitor& visitor) override;
+    bool ContainsDisjunctionOrConjuctionNode() const override { return child->ContainsDisjunctionOrConjuctionNode(); }
 private:
     std::unique_ptr<Node> child;
 };
@@ -95,6 +97,7 @@ public:
     Node* Left() const { return left.get(); }
     Node* Right() const { return right.get(); }
     void Accept(Visitor& visitor) override;
+    bool ContainsDisjunctionOrConjuctionNode() const override { return left->ContainsDisjunctionOrConjuctionNode() || right->ContainsDisjunctionOrConjuctionNode(); }
 private:
     std::unique_ptr<Node> left;
     std::unique_ptr<Node> right;

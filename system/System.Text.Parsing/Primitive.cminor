@@ -214,7 +214,7 @@ namespace System.Text.Parsing
         {
             if (!scanner.AtEnd)
             {
-                if (char.IsSpace(scanner.Char))
+                if (char.IsCSpace(scanner.Char))
                 {
                     scanner.Advance();
                     return Match.One;
@@ -237,7 +237,7 @@ namespace System.Text.Parsing
         {
             if (!scanner.AtEnd)
             {
-                if (char.IsLetter(scanner.Char))
+                if (char.IsCAlpha(scanner.Char))
                 {
                     scanner.Advance();
                     return Match.One;
@@ -260,7 +260,7 @@ namespace System.Text.Parsing
         {
             if (!scanner.AtEnd)
             {
-                if (char.IsDigit(scanner.Char))
+                if (char.IsCDigit(scanner.Char))
                 {
                     scanner.Advance();
                     return Match.One;
@@ -283,7 +283,7 @@ namespace System.Text.Parsing
         {
             if (!scanner.AtEnd)
             {
-                if (char.IsHexDigit(scanner.Char))
+                if (char.IsCHexDigit(scanner.Char))
                 {
                     scanner.Advance();
                     return Match.One;
@@ -306,7 +306,7 @@ namespace System.Text.Parsing
         {
             if (!scanner.AtEnd)
             {
-                if (char.IsPunctuation(scanner.Char))
+                if (char.IsCPunctuation(scanner.Char))
                 {
                     scanner.Advance();
                     return Match.One;

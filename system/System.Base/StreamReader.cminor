@@ -16,7 +16,6 @@ namespace System.IO
             this.decoder = new Utf8Decoder(stream);
             this.buffered = false;
             this.buffer = cast<uint>(-1);
-            this.close = true;
         }
         public void Close()
         {
@@ -110,6 +109,10 @@ namespace System.IO
             buffered = true;
             buffer = cast<uint>(x);
         }
+        public Stream ContainedStream
+        {
+            get { return stream; }
+        }
         private uint Get(bool peek)
         {
             if (buffered)
@@ -131,15 +134,9 @@ namespace System.IO
                 return x;
             }
         }
-        public bool DoClose
-        {
-            get { return close; }
-            set { close = value; }
-        }
         private Stream stream;
         private Utf8Decoder decoder;
         private bool buffered;
         private uint buffer;
-        private bool close;
     }
 }

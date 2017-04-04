@@ -1,0 +1,25 @@
+namespace System
+{
+    [vmf=iscspace]
+    public extern bool IsCSpace(char c);
+    [vmf=iscalpha]
+    public extern bool IsCAlpha(char c);
+    [vmf=iscalnum]
+    public extern bool IsCAlnum(char c);
+    [vmf=iscdigit]
+    public extern bool IsCDigit(char c);
+    [vmf=iscxdigit]
+    public extern bool IsCHexDigit(char c);
+    [vmf=icspunct]
+    public extern bool IsCPunctuation(char c);
+    [vmf=iscprint]
+    public extern bool IsCPrintable(char c);
+    [vmf=islower]
+    public extern bool IsCLower(char c);
+    [vmf=isupper]
+    public extern bool IsCUpper(char c);
+    [vmf=tolower]
+    public extern char ToCLower(char c);
+    [vmf=toupper]
+    public extern char ToCUpper(char c);
+}

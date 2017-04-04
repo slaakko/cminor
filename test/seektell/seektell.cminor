@@ -1,0 +1,32 @@
+using System;
+using System.IO;
+using System.Unicode;
+
+void main()
+{
+    try
+    {
+        string unicodeBinFilePath = Path.Combine(PathToUnicodeDirectory(), "unicode.bin");
+        using (FileStream unicodeBinFile = new FileStream(unicodeBinFilePath, FileMode.open))
+        {
+            int pos = unicodeBinFile.Tell();
+            if (pos != 0)
+            {
+                throw new Exception("tell bug");
+            }
+            unicodeBinFile.Seek(0, Origin.seekSet);
+            int pos0 = unicodeBinFile.Tell();
+            if (pos0 != 0)
+            {
+                throw new Exception("tell bug");
+            }
+            unicodeBinFile.Seek(0, Origin.seekEnd);
+            int pos1 = unicodeBinFile.Tell();
+            Console.WriteLine(pos1);
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+    }
+}

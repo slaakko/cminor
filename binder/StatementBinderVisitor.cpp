@@ -20,6 +20,7 @@
 #include <cminor/ast/CompileUnit.hpp>
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
+#include <cminor/ast/BasicType.hpp>
 
 namespace cminor { namespace binder {
 
@@ -602,7 +603,9 @@ void StatementBinderVisitor::Visit(CompoundStatementNode& compoundStatementNode)
 {
     ContainerScope* prevContainerScope = containerScope;
     containerScope = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(compoundStatementNode)->GetContainerScope();
+    BoundCompoundStatement* prevCompound = compoundStatement;
     std::unique_ptr<BoundCompoundStatement> boundCompoundStatement(new BoundCompoundStatement(boundCompileUnit.GetAssembly()));
+    compoundStatement = boundCompoundStatement.get();
     boundCompoundStatement->SetContainerScope(containerScope);
     boundCompoundStatement->SetBeginBraceSpan(compoundStatementNode.BeginBraceSpan());
     boundCompoundStatement->SetEndBraceSpan(compoundStatementNode.EndBraceSpan());
@@ -625,6 +628,7 @@ void StatementBinderVisitor::Visit(CompoundStatementNode& compoundStatementNode)
     {
         statement->SetLabel(compoundStatementNode.Label()->Label());
     }
+    compoundStatement = prevCompound;
 }
 
 void StatementBinderVisitor::Visit(ReturnStatementNode& returnStatementNode)
@@ -847,6 +851,25 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(constructionStatementNode);
     LocalVariableSymbol* localVariableSymbol = dynamic_cast<LocalVariableSymbol*>(symbol);
     Assert(localVariableSymbol, "local variable symbol expected");
+    if (localVariableSymbol->GetType() == boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Boolean") && 
+        constructionStatementNode.Initializer() && 
+        constructionStatementNode.Initializer()->ContainsDisjunctionOrConjuctionNode())
+    {
+        CloneContext cloneContext; 
+        const Span& span = constructionStatementNode.GetSpan();
+        ConstructionStatementNode constructFalse(span, new BoolNode(span), static_cast<IdentifierNode*>(constructionStatementNode.Id()->Clone(cloneContext)));
+        constructFalse.SetInitializer(new BooleanLiteralNode(span, false));
+        IfStatementNode ifStatementNode(span, constructionStatementNode.Initializer()->Clone(cloneContext),
+            new AssignmentStatementNode(span, static_cast<IdentifierNode*>(constructionStatementNode.Id()->Clone(cloneContext)), new BooleanLiteralNode(span, true)), nullptr);
+        boundCompileUnit.GetAssembly().GetSymbolTable().MapNode(constructFalse, localVariableSymbol);
+        TypeBinderVisitor typeBinder(boundCompileUnit);
+        constructFalse.Accept(typeBinder);
+        ifStatementNode.Accept(typeBinder);
+        constructFalse.Accept(*this);
+        compoundStatement->AddStatement(std::unique_ptr<BoundStatement>(ReleaseStatement()));
+        ifStatementNode.Accept(*this);
+        return;
+    }
     std::vector<std::unique_ptr<BoundExpression>> arguments;
     BoundExpression* localVariable = new BoundLocalVariable(boundCompileUnit.GetAssembly(), localVariableSymbol->GetType(), localVariableSymbol);
     arguments.push_back(std::unique_ptr<BoundExpression>(localVariable));
@@ -870,6 +893,18 @@ void StatementBinderVisitor::Visit(ConstructionStatementNode& constructionStatem
 
 void StatementBinderVisitor::Visit(AssignmentStatementNode& assignmentStatementNode)
 {
+    if (assignmentStatementNode.SourceExpr()->ContainsDisjunctionOrConjuctionNode())
+    {
+        CloneContext cloneContext;
+        const Span& span = assignmentStatementNode.GetSpan();
+        IfStatementNode ifStatementNode(span, assignmentStatementNode.SourceExpr()->Clone(cloneContext),
+            new AssignmentStatementNode(span, assignmentStatementNode.TargetExpr()->Clone(cloneContext), new BooleanLiteralNode(span, true)),
+            new AssignmentStatementNode(span, assignmentStatementNode.TargetExpr()->Clone(cloneContext), new BooleanLiteralNode(span, false)));
+        TypeBinderVisitor typeBinder(boundCompileUnit);
+        ifStatementNode.Accept(typeBinder);
+        ifStatementNode.Accept(*this);
+        return;
+    }
     std::unique_ptr<BoundExpression> target = BindExpression(boundCompileUnit, function, containerScope, assignmentStatementNode.TargetExpr(), true);
     TypeSymbol* targetType = target->GetType();
     bool assignDelegateType = targetType->IsDelegateType();

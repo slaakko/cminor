@@ -7,7 +7,7 @@ internal string CminorRoot()
     string root = GetEnvironmentVariable("CMINOR_ROOT");
     if (string.IsNullOrEmpty(root))
     {
-        throw new Exception("CMINOR_ROOT environment variable not set");
+        throw new Exception("CMINOR_ROOT environment variable not set (set it to point /path/to/cminor directory)");
     }
     return root;
 }
@@ -30,20 +30,26 @@ internal void AddToLibraryDirectories(string paths, List<string> libraryDirector
 
 internal string Version()
 {
-    return "1.0.0";
+    return "0.1.0";
 }
 
 internal void PrintHelp()
 {
     Console.WriteLine("Cminor Parser Generator version " + Version());
+    Console.WriteLine();
     Console.WriteLine("Usage: cminorpgen [options] { projectfile.pp }");
+    Console.WriteLine();
     Console.WriteLine("options:");
-    Console.WriteLine("-d | --debug         : debug parsing to stdout");
-    Console.WriteLine("-F | --force         : force code generation");
-    Console.WriteLine("-h | --help          : print help");
-    Console.WriteLine("(-L | --lib) <paths> : add paths to library directories");
-	Console.WriteLine("-t=N | --threads=N   : use N threads");
-    Console.WriteLine("paths separated by \";\" (Windows) or \":\" (Linux)");
+    Console.WriteLine("-d | --debug:");
+    Console.WriteLine("    Debug parsing to stdout.");
+    Console.WriteLine("-F | --force:");
+    Console.WriteLine("    Force code generation.");
+    Console.WriteLine("-h | --help:");
+    Console.WriteLine("    Print help.");
+    Console.WriteLine("-L <paths> | --lib <paths>:");
+    Console.WriteLine("    Add paths separated by \";\" (Windows) or \":\" (Linux) to library directories.");
+	Console.WriteLine("-t=N | --threads=N:");
+    Console.WriteLine("    Use N threads (N=0: use only main thread).");
 }
 
 internal int main(string[] args)
@@ -67,6 +73,7 @@ internal int main(string[] args)
                 if (arg == "-d" || arg == "--debug")
                 {
                     Syntax.Flags.Debug = true;
+                    Syntax.Flags.NumThreads = 0;
                 }
                 else if (arg == "-F" || arg == "--force")
                 {

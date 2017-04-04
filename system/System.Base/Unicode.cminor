@@ -5,6 +5,21 @@ using System.Text;
 
 namespace System.Unicode
 {
+	public string PathToUnicodeDirectory()
+	{
+		string cminorRoot = GetEnvironmentVariable("CMINOR_ROOT");
+		if (string.IsNullOrEmpty(cminorRoot))
+		{
+			throw new Exception("CMINOR_ROOT environment variable not set (set it to point to /path/to/cminor directory)");
+		}
+		return Path.Combine(cminorRoot, "unicode");
+	}
+
+    public string PathToUnicodeBinFile()
+    {
+        return Path.Combine(PathToUnicodeDirectory(), "unicode.bin");
+    }
+
     public class EncodingException : Exception
     {
         public EncodingException(string message) : base(message)
@@ -424,15 +439,13 @@ namespace System.Unicode
         public CharacterInfo()
         {
 			this.code = cast<char>(0u);
-			this.name = string.Empty;
 			this.category = Category.none;
 			this.toLower = cast<char>(0u);
 			this.toUpper = cast<char>(0u);
         }
-        public CharacterInfo(char code, string name, Category category, char toLower, char toUpper) 
+        public CharacterInfo(char code, Category category, char toLower, char toUpper) 
         {
 			this.code = code;
-			this.name = name;
 			this.category = category;
 			this.toLower = toLower;
 			this.toUpper = toUpper;
@@ -440,10 +453,6 @@ namespace System.Unicode
         public char Code
         {
             get { return code; }
-        }
-        public string Name
-        {
-			get { return name; }
         }
         public Category Cat 
         {
@@ -481,109 +490,414 @@ namespace System.Unicode
         {
             get { return (category & Category.separator) != Category.none; }
         }
-        public void Read(Stream unicodeBin, Utf8Decoder decoder)
+        public void Read(BinaryReader unicodeBinReader)
         {
-            code = cast<char>(ReadUInt(unicodeBin));
-            name = ReadString(decoder);
-            category = cast<Category>(ReadUInt(unicodeBin));
-            toLower = cast<char>(ReadUInt(unicodeBin));
-            toUpper = cast<char>(ReadUInt(unicodeBin));
+            code = unicodeBinReader.ReadChar();
+            category = cast<Category>(unicodeBinReader.ReadUInt());
+            toLower = unicodeBinReader.ReadChar();
+            toUpper = unicodeBinReader.ReadChar();
         }
-        public void Write(Stream unicodeBin, Utf8Encoder encoder)
+        public void Write(BinaryWriter unicodeBinWriter)
         {
-			WriteUInt(unicodeBin, cast<uint>(code));
-			WriteString(unicodeBin, name, encoder);
-			WriteUInt(unicodeBin, cast<uint>(category));
-			WriteUInt(unicodeBin, cast<uint>(toLower));
-			WriteUInt(unicodeBin, cast<uint>(toUpper));
+			unicodeBinWriter.Write(code);
+			unicodeBinWriter.Write(cast<uint>(category));
+			unicodeBinWriter.Write(toLower);
+			unicodeBinWriter.Write(toUpper);
         }
         private char code;
-        private string name;
         private Category category;
         private char toLower;
         private char toUpper;
     }
 
-	internal string PathToUnicodeDirectory() 
-	{
-		string cminorRoot = GetEnvironmentVariable("CMINOR_ROOT");
-		return Path.Combine(cminorRoot, "unicode");
-	}
+    public class UnicodeBinHeader
+    {
+        public UnicodeBinHeader()
+        {
+            this.numCharInfoPages = 0u;
+            this.startCharNameTable = 0u;
+            this.startCharInfoPagesPos = 0u;
+            this.headerMagic = "UNICODE1";
+        }
+        public void Write(BinaryWriter writer)
+        {
+            foreach (char c in headerMagic)
+            {
+                byte b = cast<byte>(c);
+                writer.Write(b);
+            }
+            writer.Write(numCharInfoPages);
+            writer.Write(startCharNameTable);
+        }
+        public void Read(BinaryReader reader)
+        {
+            int headerMagicLen = headerMagic.Length;
+            StringBuilder headerMagicBuilder = new StringBuilder();
+            for (int i = 0; i < headerMagicLen; ++i)
+            {
+                byte b = reader.ReadByte();
+                headerMagicBuilder.Append(cast<char>(b));
+            }
+            string magic = headerMagicBuilder.ToString();
+            if (magic != headerMagic)
+            {
+                if (magic.Substring(0, headerMagicLen - 1) != headerMagic.Substring(0, headerMagicLen - 1))
+                {
+                    throw new Exception("invalid unicode.bin header magic (not '" + headerMagic + "')");
+                }
+                if (magic.Substring(headerMagicLen - 1) != headerMagic.Substring(headerMagicLen - 1))
+                {
+                    throw new Exception("invalid unicode.bin version ('" + magic.Substring(headerMagicLen - 1) + "' read, '" + headerMagic.Substring(headerMagicLen - 1) + "' expected");
+                }
+            }
+            numCharInfoPages = reader.ReadUInt();
+            startCharNameTable  = reader.ReadUInt();
+            startCharInfoPagesPos = cast<uint>(reader.Tell());
+        }
+        public uint NumCharInfoPages
+        {
+            get { return numCharInfoPages; }
+            set { numCharInfoPages = value; }
+        }
+        public uint StartCharNameTable
+        {
+            get { return startCharNameTable; }
+            set { startCharNameTable = value; }
+        }
+        public uint StartCharInfoPagesPos
+        {
+            get { return startCharInfoPagesPos; }
+        }
+        private uint numCharInfoPages;
+        private uint startCharNameTable;
+        private uint startCharInfoPagesPos;
+        private string headerMagic;
+    }
+
+    public const uint numCharactersInPage = 4096u;
+    public const uint charInfoPageSize = cast<uint>(4u) * 4u * numCharactersInPage;
+    public const uint numNamesInPage = 4096u;
+
+    public class CharInfoPage
+    {
+        public CharInfoPage()
+        {
+            charInfos = new CharacterInfo[cast<int>(numCharactersInPage)];
+        }
+        public void Read(BinaryReader reader)
+        {
+            int n = charInfos.Length;
+            for (int i = 0; i < n; ++i)
+            {
+                CharacterInfo charInfo = new CharacterInfo();
+                charInfo.Read(reader);
+                charInfos[i] = charInfo;
+            }
+        }
+        public void Write(BinaryWriter writer)
+        {
+            CharacterInfo emptyCharInfo = new CharacterInfo();
+            foreach (CharacterInfo charInfo in charInfos)
+            {
+                if (charInfo == null)
+                {
+                    emptyCharInfo.Write(writer);
+                }
+                else
+                {
+                    charInfo.Write(writer);
+                }
+            }
+        }
+        public CharacterInfo this[int index]
+        {
+            get { return charInfos[index]; }
+            set { charInfos[index] = value; }
+        }
+        CharacterInfo[] charInfos;
+    }
+
+    public class CharNameTableHeader
+    {
+        public CharNameTableHeader()
+        {
+            this.numCharNamePages = 0u;
+            this.pageStarts = null;
+        }
+        public void Write(BinaryWriter writer)
+        {
+            writer.Write(numCharNamePages);
+            foreach (uint pageStart in pageStarts)
+            {
+                writer.Write(pageStart);
+            }
+        }
+        public void Read(BinaryReader reader)
+        {
+            numCharNamePages = reader.ReadUInt();
+            pageStarts = new uint[cast<int>(numCharNamePages)];
+            for (uint i = 0u; i < numCharNamePages; ++i)
+            {
+                pageStarts[cast<int>(i)] = reader.ReadUInt();
+            }
+        }
+        public uint NumCharNamePages
+        {
+            get 
+            { 
+                return numCharNamePages; 
+            }
+            set 
+            { 
+                numCharNamePages = value; 
+                pageStarts = new uint[cast<int>(numCharNamePages)];
+            }
+        }
+        public uint GetPageStart(int pageIndex)
+        {
+            return pageStarts[pageIndex];
+        }
+        public void SetPageStart(int pageIndex, uint pageStart)
+        {
+            pageStarts[pageIndex] = pageStart;
+        }
+        private uint numCharNamePages;
+        private uint[] pageStarts;
+    }
+
+    public class CharNamePage
+    {
+        public CharNamePage()
+        {
+            this.charNames = new string[cast<int>(numNamesInPage)];
+        }
+        public void Write(BinaryWriter writer)
+        {
+            foreach (string charName in charNames)
+            {
+                writer.Write(charName);
+            }
+        }
+        public void Read(BinaryReader reader)
+        {
+            for (uint i = 0u; i < numNamesInPage; ++i)
+            {
+                string charName = reader.ReadString();
+                charNames[cast<int>(i)] = charName;
+            }
+        }
+        public string this[int index]
+        {
+            get { return charNames[index]; }
+            set { charNames[index] = value; }
+        }
+        private string[] charNames;
+    }
 
     public class CharacterInfoMap
     {
-        public static void Load()
+        static CharacterInfoMap()
         {
-            if (instance == null)
-            {
-                instance = new CharacterInfoMap(true);
-            }            
-        }
-        public static void Construct()
-        {
-            if (instance == null)
-            {
-                instance = new CharacterInfoMap(false);
-            }            
-        }
-        private CharacterInfoMap(bool read)
-        {
-			map = new HashMap<char, CharacterInfo>();
-			infos = new List<CharacterInfo>();
-            if (read)
-            {
-                string unicodeBinFilePath = Path.Combine(PathToUnicodeDirectory(), "unicode.bin");
-				Stream unicodeBin = new BufferedStream(new FileStream(unicodeBinFilePath, FileMode.open));
-                Read(unicodeBin);
-            }            
+            instance = new CharacterInfoMap();
         }
         public static CharacterInfoMap Instance
         {
             get { return instance; }
         }
-        public void Read(Stream unicodeBin)
+        private CharacterInfoMap()
         {
-			Utf8Decoder decoder = new Utf8Decoder(unicodeBin);
-            uint n = ReadUInt(unicodeBin);
-            for (uint i = 0u; i < n; ++i)
+            this.header = null;
+            this.charInfoPages = new List<CharInfoPage>();
+            this.nameTableHeader = null;
+            this.charNamePages = new List<CharNamePage>();
+        }
+        public void Write()
+        {
+            using (BinaryWriter writer = File.CreateBinary(PathToUnicodeBinFile()))
             {
-                CharacterInfo info = new CharacterInfo();
-                info.Read(unicodeBin, decoder);
-                infos.Add(info);
-                map[info.Code] = info;
+                header = new UnicodeBinHeader();
+                header.NumCharInfoPages = cast<uint>(charInfoPages.Count);
+                header.Write(writer);
+                CharInfoPage emptyCharInfoPage = new CharInfoPage();
+                foreach (CharInfoPage page in charInfoPages)
+                {
+                    if (page == null)
+                    {
+                        emptyCharInfoPage.Write(writer);
+                    }
+                    else
+                    {
+                        page.Write(writer);
+                    }
+                }
+                header.StartCharNameTable = cast<uint>(writer.Tell());
+                nameTableHeader = new CharNameTableHeader();
+                nameTableHeader.NumCharNamePages = cast<uint>(charNamePages.Count);
+                nameTableHeader.Write(writer);
+                CharNamePage emptyNamePage = new CharNamePage();
+                for (int i = 0; i < charNamePages.Count; ++i)
+                {
+                    CharNamePage page = charNamePages[i];
+                    uint pageStart = cast<uint>(writer.Tell());
+                    nameTableHeader.SetPageStart(i, pageStart);
+                    if (page == null)
+                    {
+                        emptyNamePage.Write(writer);
+                    }
+                    else
+                    {
+                        page.Write(writer);
+                    }
+                }
+                writer.Seek(cast<int>(header.StartCharNameTable), Origin.seekSet);
+                nameTableHeader.Write(writer);
+                writer.Seek(0, Origin.seekSet);
+                header.Write(writer);
             }
         }
-        public void Write(Stream unicodeBin)
+        public void AddCharInfo(CharacterInfo characterInfo)
         {
-			Utf8Encoder encoder = new Utf8Encoder(unicodeBin);
-            uint n = cast<uint>(infos.Count);
-            WriteUInt(unicodeBin, n);
-            for (uint i = 0u; i < n; ++i)
+            char c = characterInfo.Code;
+            CharInfoPage page = GetCharInfoPage(c);
+            if (page == null)
             {
-                infos[cast<int>(i)].Write(unicodeBin, encoder);
+                page = new CharInfoPage();
+                SetCharInfoPage(c, page);
             }
+            uint charIndex = cast<uint>(c);
+            uint infoIndex = charIndex % numCharactersInPage;
+            page[cast<int>(infoIndex)] = characterInfo;
         }
-        public void Add(CharacterInfo characterInfo)
+        public void AddCharName(char c, string charName)
         {
-            infos.Add(characterInfo);
+            CharNamePage page = GetCharNamePage(c);
+            if (page == null)
+            {
+                page = new CharNamePage();
+                SetCharNamePage(c, page);
+            }
+            uint charIndex = cast<uint>(c);
+            uint nameIndex = charIndex % numNamesInPage;
+            page[cast<int>(nameIndex)] = charName;
         }
         public CharacterInfo GetCharacterInfo(char c)
         {
-			CharacterInfo info;
-			if (map.TryGetValue(c, ref info))
-			{
-				return info;
-			}
+            CharInfoPage page = GetCharInfoPage(c);
+            if (page == null)
+            {
+                page = new CharInfoPage();
+                using (BinaryReader reader = File.OpenBinary(PathToUnicodeBinFile()))
+                {
+                    if (header == null)
+                    {
+                        header = new UnicodeBinHeader();
+                        header.Read(reader);
+                    }
+                    uint charIndex = cast<uint>(c);
+                    uint pageNumber = charIndex / numCharactersInPage;
+                    uint numPages = header.NumCharInfoPages;
+                    if (pageNumber < numPages)
+                    {
+                        reader.Seek(cast<int>(header.StartCharInfoPagesPos) + cast<int>(pageNumber) * cast<int>(charInfoPageSize), Origin.seekSet);
+                        page.Read(reader);
+                        SetCharInfoPage(c, page);
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+            }
+            uint charIndex = cast<uint>(c);
+            uint infoIndex = charIndex % numCharactersInPage;
+            CharacterInfo info = page[cast<int>(infoIndex)];
+            if (info.Code == c)
+            {
+                return info;
+            }
             return null;
         }
+        public string GetCharacterName(char c)
+        {
+            CharNamePage page = GetCharNamePage(c);
+            if (page == null)
+            {
+                page = new CharNamePage();
+                using (BinaryReader reader = File.OpenBinary(PathToUnicodeBinFile()))
+                {
+                    if (header == null)
+                    {
+                        header = new UnicodeBinHeader();
+                        header.Read(reader);
+                    }
+                    if (nameTableHeader == null)
+                    {
+                        nameTableHeader = new CharNameTableHeader();
+                        reader.Seek(cast<int>(header.StartCharNameTable), Origin.seekSet);
+                        nameTableHeader.Read(reader);
+                    }
+                    uint charIndex = cast<uint>(c);
+                    uint pageNumber = charIndex / numCharactersInPage;
+                    uint numPages = nameTableHeader.NumCharNamePages;
+                    if (pageNumber < numPages)
+                    {
+                        uint pageStart = nameTableHeader.GetPageStart(cast<int>(pageNumber));
+                        reader.Seek(cast<int>(pageStart), Origin.seekSet);
+                        page.Read(reader);
+                        SetCharNamePage(c, page);
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+            }
+            uint charIndex = cast<uint>(c);
+            uint nameIndex = charIndex % numNamesInPage;
+            string charName = page[cast<int>(nameIndex)];
+            return charName;
+        }
+        private CharInfoPage GetCharInfoPage(char c)
+        {
+            uint charIndex = cast<uint>(c);
+            uint pageNumber = charIndex / numCharactersInPage;
+            while (pageNumber >= cast<uint>(charInfoPages.Count))
+            {
+                charInfoPages.Add(null);
+            }
+            return charInfoPages[cast<int>(pageNumber)];
+        }
+        private void SetCharInfoPage(char c, CharInfoPage page)
+        {
+            uint charIndex = cast<uint>(c);
+            uint pageNumber = charIndex / numCharactersInPage;
+            charInfoPages[cast<int>(pageNumber)] = page;
+        }
+        private CharNamePage GetCharNamePage(char c)
+        {
+            uint charIndex = cast<uint>(c);
+            uint pageNumber = charIndex / numNamesInPage;
+            while (pageNumber >= cast<uint>(charNamePages.Count))
+            {
+                charNamePages.Add(null);
+            }
+            return charNamePages[cast<int>(pageNumber)];
+        }
+        private void SetCharNamePage(char c, CharNamePage page)
+        {
+            uint charIndex = cast<uint>(c);
+            uint pageNumber = charIndex / numNamesInPage;
+            charNamePages[cast<int>(pageNumber)] = page;
+        }
         private static CharacterInfoMap instance;
-        private HashMap<char, CharacterInfo> map;
-        private List<CharacterInfo> infos;
+        private UnicodeBinHeader header;
+        private List<CharInfoPage> charInfoPages;
+        private CharNameTableHeader nameTableHeader;
+        private List<CharNamePage> charNamePages;
     }
 
     public Category GetCategory(char c)
     {
-        CharacterInfoMap.Load();
         CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
         if (info != null)
         {
@@ -599,18 +913,11 @@ namespace System.Unicode
 
     public string GetCharacterName(char c)
     {
-        CharacterInfoMap.Load();
-        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
-        if (info != null)
-        {
-            return info.Name;
-        }
-        return string.Empty;
+        return CharacterInfoMap.Instance.GetCharacterName(c);
     }
 
     public char ToLower(char c)
     {
-        CharacterInfoMap.Load();
         CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
         if (info != null)
         {
@@ -625,7 +932,6 @@ namespace System.Unicode
 
 	public char ToUpper(char c)
     {
-        CharacterInfoMap.Load();
         CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
         if (info != null)
         {
@@ -640,7 +946,6 @@ namespace System.Unicode
 
     public bool IsLetter(char c)
     {
-        CharacterInfoMap.Load();
         CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
         if (info != null)
         {
@@ -661,7 +966,6 @@ namespace System.Unicode
     
     public bool IsMark(char c)
     {
-        CharacterInfoMap.Load();
         CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
         if (info != null)
         {
@@ -672,7 +976,6 @@ namespace System.Unicode
     
     public bool IsNumber(char c)
     {
-        CharacterInfoMap.Load();
         CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
         if (info != null)
         {
@@ -683,7 +986,6 @@ namespace System.Unicode
     
     public bool IsPunctuation(char c)
     {
-        CharacterInfoMap.Load();
         CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
         if (info != null)
         {
@@ -694,7 +996,6 @@ namespace System.Unicode
     
     public bool IsSymbol(char c)
     {
-        CharacterInfoMap.Load();
         CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
         if (info != null)
         {
@@ -705,7 +1006,6 @@ namespace System.Unicode
     
     public bool IsSeparator(char c)
     {
-        CharacterInfoMap.Load();
         CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
         if (info != null)
         {
@@ -713,43 +1013,4 @@ namespace System.Unicode
         }
         return false;
     }
-
-	internal uint ReadUInt(Stream s)
-	{
-		byte x0 = cast<byte>(s.ReadByte());
-		byte x1 = cast<byte>(s.ReadByte());
-		byte x2 = cast<byte>(s.ReadByte());
-		byte x3 = cast<byte>(s.ReadByte());
-		return cast<uint>(x0) << 24u | cast<uint>(x1) << 16u | cast<uint>(x2) << 8u | cast<uint>(x3);
-	}
-
-	internal void WriteUInt(Stream s, uint x)
-	{
-		byte x0 = cast<byte>(x >> 24u);
-		byte x1 = cast<byte>(x >> 16u);
-		byte x2 = cast<byte>(x >> 8u);
-		byte x3 = cast<byte>(x);
-		s.WriteByte(x0);
-		s.WriteByte(x1);
-		s.WriteByte(x2);
-		s.WriteByte(x3);
-	}
-
-	internal string ReadString(Utf8Decoder decoder)
-	{
-		StringBuilder b = new StringBuilder;
-		uint x = decoder.Decode();
-		while (x != 0u)
-		{
-			b.Append(cast<char>(x));
-			x = decoder.Decode();
-		}
-		return b.ToString();
-	}
-
-	internal void WriteString(Stream stream, string s, Utf8Encoder encoder)
-	{
-		encoder.Encode(s);
-		stream.WriteByte(0u);
-	}
 }

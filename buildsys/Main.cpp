@@ -63,9 +63,11 @@ struct InitDone
         InitAssembly();
         InitWarning();
         cminor::parsing::Init();
+		cminor::util::unicode::Init();
     }
     ~InitDone()
     {
+		cminor::util::unicode::Done();
         cminor::parsing::Done();
         DoneWarning();
         DoneAssembly();

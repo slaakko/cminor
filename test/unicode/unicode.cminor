@@ -1,0 +1,115 @@
+using System;
+using System.Unicode;
+
+void main()
+{
+    try
+    {
+        string aName = char.UnicodeName('a');
+        Console.WriteLine("unicode character name for a is " + aName);
+        TimePoint s = Now();
+        if (char.IsLetter('a'))
+        {
+            Console.WriteLine("a is letter");
+        }
+        else
+        {
+            Console.WriteLine("error: a is not a letter");
+        }
+        TimePoint e = Now();
+        Duration d = e - s;
+        Console.WriteLine("IsLetter took " + d.Milliseconds.ToString() + " ms when executed first time");
+        s = Now();
+        if (char.IsLetter('a'))
+        {
+            Console.WriteLine("a is letter");
+        }
+        else
+        {
+            Console.WriteLine("a is not a letter");
+        }
+        e = Now();
+        d = e - s;
+        Console.WriteLine("IsLetter took " + d.Milliseconds.ToString() + " ms when executed second time");
+        if (char.IsSpace(' '))
+        {
+            Console.WriteLine("blank is space character");
+        }
+        else 
+        {
+            Console.WriteLine("error: blank is not a space character");
+        }
+        if (char.IsSpace('\n'))
+        {
+            Console.WriteLine("\\n is space");
+        }
+        else 
+        {
+            Console.WriteLine("error: \\n is not a space character");
+        }        
+        if (char.IsSpace('\r'))
+        {
+            Console.WriteLine("\\r is space");
+        }
+        else 
+        {
+            Console.WriteLine("error: \\r is not a space character");
+        }        
+        if (char.IsSpace('\t'))
+        {
+            Console.WriteLine("\\t is space");
+        }
+        else 
+        {
+            Console.WriteLine("error: \\r is not a space character");
+        }        
+        if (char.IsSpace('\v'))
+        {
+            Console.WriteLine("\\v is space character");
+        }
+        else 
+        {
+            Console.WriteLine("error: \\v is not a space character");
+        }        
+        if (char.IsSeparator(' '))
+        {
+            Console.WriteLine("blank is separator");
+        }
+        else
+        {
+            Console.WriteLine("error: blank is not separator");
+        }
+        for (int i = 0; i < 10; ++i)
+        {
+            char c = cast<char>(cast<int>('0') + cast<int>(i));
+            if (char.IsNumber(c))
+            {
+                Console.WriteLine(c.ToString() + " is number");
+            }
+            else
+            {
+                Console.WriteLine("error: " + c.ToString() + " is not a number");
+            }
+        }
+        if (char.IsPunctuation('.'))
+        {
+            Console.WriteLine(". is punctuation");
+        }
+        else
+        {
+            Console.WriteLine("error: . is not punctuation");
+        }
+        if (char.IsPunctuation(','))
+        {
+            Console.WriteLine(", is punctuation");
+        }
+        else
+        {
+            Console.WriteLine("error: , is not punctuation");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.ToString());
+    }
+}

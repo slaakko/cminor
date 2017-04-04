@@ -50,8 +50,9 @@ namespace UnicodeBin
             public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
                 Context context = cast<Context>(parsingData.GetContext(Id));
-                CharacterInfo characterInfo = new CharacterInfo(cast<char>(context.fromcode), context.fromname, CategoryMap.Instance.GetCategory(context.fromcategory), cast<char>(context.fromlower), cast<char>(context.fromupper));
-                CharacterInfoMap.Instance.Add(characterInfo);
+                CharacterInfo characterInfo = new CharacterInfo(cast<char>(context.fromcode), CategoryMap.Instance.GetCategory(context.fromcategory), cast<char>(context.fromlower), cast<char>(context.fromupper));
+                CharacterInfoMap.Instance.AddCharInfo(characterInfo);
+                CharacterInfoMap.Instance.AddCharName(cast<char>(context.fromcode), context.fromname);
             }
             public void Postcode(Stack<object> stack, ParsingData parsingData, bool matched)
             {
@@ -265,15 +266,11 @@ namespace UnicodeBin
                                                                                                                         new SequenceParser(
                                                                                                                             new SequenceParser(
                                                                                                                                 new SequenceParser(
-                                                                                                                                    new SequenceParser(
-                                                                                                                                        new SequenceParser(
-                                                                                                                                            new NonterminalParser("code", "codepoint", 0),
-                                                                                                                                            new CharParser(';')),
-                                                                                                                                        new NonterminalParser("name", "name", 0)),
+                                                                                                                                    new NonterminalParser("code", "codepoint", 0),
                                                                                                                                     new CharParser(';')),
-                                                                                                                                new NonterminalParser("category", "category", 0)),
+                                                                                                                                new NonterminalParser("name", "name", 0)),
                                                                                                                             new CharParser(';')),
-                                                                                                                        new NonterminalParser("ignore", "ignore", 0)),
+                                                                                                                        new NonterminalParser("category", "category", 0)),
                                                                                                                     new CharParser(';')),
                                                                                                                 new NonterminalParser("ignore", "ignore", 0)),
                                                                                                             new CharParser(';')),

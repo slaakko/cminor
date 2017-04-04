@@ -51,6 +51,7 @@ namespace System.Text.Parsing
             Scanner scanner = new Scanner(content, fileIndex, fileName, skipRule);
 			ParsingData parsingData = new ParsingData(Domain.NumRules);
 			scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
             XmlLog xmlLog = null;
             try
             {

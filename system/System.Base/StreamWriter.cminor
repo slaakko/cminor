@@ -13,7 +13,6 @@ namespace System.IO
             }
             this.stream = stream;
             this.encoder = new Utf8Encoder(stream);
-            this.close = true;
         }
         public void Close()
         {
@@ -144,13 +143,11 @@ namespace System.IO
             Write(x);
             WriteLine();
         }
-        public bool DoClose
+        public Stream ContainedStream
         {
-            get { return close; }
-            set { close = value; }
+            get { return stream; }
         }
         private Stream stream;
         private Utf8Encoder encoder;
-        private bool close;
     }
 }
