@@ -1,0 +1,81 @@
+using System;
+using System.Collections.Generic;
+
+void TestIntSet()
+{
+    Set<int> intSet = new Set<int>();
+    foreach (int x in intSet)
+    {
+        Console.WriteLine("error: int set not empty");
+    }
+    bool added = intSet.Add(1);
+    if (!added)
+    {
+        Console.WriteLine("error: not added");
+    }
+    Console.WriteLine("---");
+    foreach (int x in intSet)
+    {
+        Console.WriteLine(x);
+    }
+    Console.WriteLine("---");
+    added = intSet.Add(1);
+    if (added)
+    {
+        Console.WriteLine("error: duplicate added");
+    }
+    added = intSet.Add(0);
+    if (!added)
+    {
+        Console.WriteLine("error: not added");
+    }
+    Console.WriteLine("---");
+    foreach (int x in intSet)
+    {
+        Console.WriteLine(x);
+    }
+    Console.WriteLine("---");
+    added = intSet.Add(0);
+    if (added)
+    {
+        Console.WriteLine("error: duplicate added");
+    }
+    added = intSet.Add(2);
+    if (!added)
+    {
+        Console.WriteLine("error: not added");
+    }
+    Console.WriteLine("---");
+    foreach (int x in intSet)
+    {
+        Console.WriteLine(x);
+    }
+    Console.WriteLine("---");
+    for (int i = 0; i < 10; ++i)
+    {
+        int x = cast<int>(Random());
+        intSet.Add(x);
+    }
+    Console.WriteLine("---");
+    foreach (int x in intSet)
+    {
+        Console.WriteLine(x);
+    }
+    Console.WriteLine("---");
+    bool removed = intSet.Remove(0);
+    if (!removed)
+    {
+        Console.WriteLine("error: not removed");
+    }
+    Console.WriteLine("---");
+    foreach (int x in intSet)
+    {
+        Console.WriteLine(x);
+    }
+    Console.WriteLine("---");
+}
+
+void main()
+{
+    TestIntSet();
+}

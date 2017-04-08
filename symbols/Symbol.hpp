@@ -754,6 +754,7 @@ class ClassTemplateSpecializationSymbol : public ClassTypeSymbol
 {
 public:
     ClassTemplateSpecializationSymbol(const Span& span_, Constant name_);
+    ~ClassTemplateSpecializationSymbol() override;
     SymbolType GetSymbolType() const override { return SymbolType::classTemplateSpecializationSymbol; }
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;

@@ -18,18 +18,31 @@ void foo()
     RtThrowException(o);
 }
 
-MACHINE_API void ThrowCatch()
+void ThrowCatch()
 {
     try
     {
         cd = ClassDataTable::GetClassData(U"System.Exception");
         foo();
     }
-    catch (const CminorException&)
+    catch (const CminorException& ex)
     {
+        uint64_t x = ex.ExceptionObjectReference();
         if (RtHandleException(cd))
         {
         }
+    }
+}
+
+void CatchAll()
+{
+    try
+    {
+        foo();
+    }
+    catch (...)
+    {
+        throw;
     }
 }
 

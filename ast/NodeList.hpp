@@ -53,6 +53,7 @@ public:
             nodes.push_back(std::unique_ptr<T>(asTNode));
         }
     }
+    std::vector<std::unique_ptr<T>>& Nodes() { return nodes; }
 private:
     std::vector<std::unique_ptr<T>> nodes;
 };

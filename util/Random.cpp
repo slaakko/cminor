@@ -61,16 +61,17 @@ private:
     static const uint32_t upperMask = 0x80000000u;
     static const uint32_t lowerMask = 0x7fffffffu;
 public:
-    static bool Initialized()
+    MT();
+    bool Initialized()
     {
         return initialized;
     }
-    static void InitWithRandomSeed()
+    void InitWithRandomSeed()
     {
         uint32_t seed = get_random_seed_from_system();
         Init(seed);
     }
-    static void Init(uint32_t seed)
+    void Init(uint32_t seed)
     {
         initialized = true;
         mt[0] = seed;
@@ -81,7 +82,7 @@ public:
         mag[0] = 0u;
         mag[1] = matrixA;
     }
-    static uint32_t GenRand()
+    uint32_t GenRand()
     {
         uint32_t y = 0u;
         if (mti >= n)
@@ -109,29 +110,42 @@ public:
         return y;
     }
 private:
-    static int32_t mti;
-    static uint32_t mt[n];
-    static uint32_t mag[2];
-    static bool initialized;
+    bool initialized;
+    int32_t mti;
+    uint32_t mt[n];
+    uint32_t mag[2];
 };
 
-int32_t MT::mti = 0;
-uint32_t MT::mt[n];
-uint32_t MT::mag[2];
-bool MT::initialized = false;
+MT::MT() : initialized(false), mti(0), mt(), mag()
+{
+}
+
+#ifdef _WIN32
+    __declspec(thread) MT* mt = nullptr;
+#else
+    __thread MT* mt = nullptr;
+#endif
 
 void InitMt(uint32_t seed)
 {
-    MT::Init(seed);
+    if (mt == nullptr)
+    {
+        mt = new MT();
+    }
+    mt->Init(seed);
 }
 
 uint32_t Random()
 {
-    if (!MT::Initialized())
+    if (mt == nullptr)
     {
-        MT::InitWithRandomSeed();
+        mt = new MT();
     }
-    return MT::GenRand();
+    if (!mt->Initialized())
+    {
+        mt->InitWithRandomSeed();
+    }
+    return mt->GenRand();
 }
 
 uint64_t Random64()

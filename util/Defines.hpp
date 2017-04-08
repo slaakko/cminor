@@ -20,4 +20,4 @@
     #endif
 #endif 
 
-#endif CMINOR_UTIL_DEFINES_INCLUDED
+#endif // CMINOR_UTIL_DEFINES_INCLUDED

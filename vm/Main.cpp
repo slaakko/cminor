@@ -24,8 +24,6 @@
 #include <cminor/util/Path.hpp>
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/util/Unicode.hpp>
-#include <cminor/jit/JitCompiler.hpp>
-#include <llvm/Support/TargetSelect.h>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <stdexcept>
@@ -35,11 +33,9 @@
 #include <sstream>
 
 using namespace cminor::machine;
-using namespace cminor::jit;
 using namespace cminor::symbols;
 using namespace cminor::ast;
 using namespace cminor::vmlib;
-using namespace llvm;
 
 struct InitDone
 {
@@ -96,8 +92,6 @@ void PrintHelp()
         "       Verbose output." <<
         "   --help (-h)\n" <<
         "       Print this help message.\n" <<
-        "   --jit (-j)\n" <<
-        "       Use just-in-time compilation.\n" <<
         "   --native (-n)\n" <<
         "       Run program built with --native option.\n"
         "   --trace (-r)\n" <<
@@ -163,10 +157,6 @@ int main(int argc, const char** argv)
                         else if (arg == "-v" || arg == "--verbose")
                         {
                             SetGlobalFlag(GlobalFlags::verbose);
-                        }
-                        else if (arg == "-j" || arg == "--jit")
-                        {
-                            jit = true;
                         }
                         else if (arg == "-n" || arg == "--native")
                         {
@@ -263,26 +253,13 @@ int main(int argc, const char** argv)
 		{
 			machine.GetGarbageCollector().SetPrintActions();
 		}
-        if (jit && native)
-        {
-            throw std::runtime_error("--native and --jit are mutually exclusive options");
-        }
-        else if (!jit && !native)
+        if (!native)
         {
             programReturnValue = assembly.RunIntermediateCode(programArguments);
         }
-        else if (native)
+        else
         {
             programReturnValue = assembly.RunNative(programArguments);
-        }
-        else if (jit)
-        {
-            InitializeNativeTarget();
-            InitializeNativeTargetAsmPrinter();
-            InitializeNativeTargetAsmParser();
-            Function* main = FunctionTable::GetMain();
-            JitCompiler jitCompiler(*main);
-            programReturnValue = jitCompiler.ProgramReturnValue();
         }
     }
     catch (const Exception& ex)

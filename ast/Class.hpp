@@ -15,6 +15,7 @@ class ClassNode : public Node
 public:
     ClassNode(const Span& span_);
     ClassNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_);
+    ~ClassNode() override;
     NodeType GetNodeType() const override { return NodeType::classNode; }
     void AddBaseClassOrInterface(Node* baseClassOrInterface);
     void AddMember(Node* member);

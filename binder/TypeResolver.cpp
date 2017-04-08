@@ -188,6 +188,7 @@ void TypeResolverVisitor::Visit(TemplateIdNode& templateIdNode)
 {
     std::vector<TypeSymbol*> typeArguments;
     TypeSymbol* primaryType = ResolveType(boundCompileUnit, containerScope, templateIdNode.Primary());
+    boundCompileUnit.GetAssembly().GetConstantPool().Install(primaryType->Name());
     ClassTypeSymbol* primaryClassTemplate = dynamic_cast<ClassTypeSymbol*>(primaryType);
     if (!primaryClassTemplate || !primaryClassTemplate->IsClassTemplate())
     {
@@ -197,6 +198,7 @@ void TypeResolverVisitor::Visit(TemplateIdNode& templateIdNode)
     for (int i = 0; i < n; ++i)
     {
         TypeSymbol* typeArgument = ResolveType(boundCompileUnit, containerScope, templateIdNode.TemplateArguments()[i]);
+        boundCompileUnit.GetAssembly().GetConstantPool().Install(typeArgument->Name());
         typeArguments.push_back(typeArgument);
     }
     ClassTemplateSpecializationSymbol* classTemplateSpecialization = boundCompileUnit.GetAssembly().GetSymbolTable().MakeClassTemplateSpecialization(primaryClassTemplate, typeArguments, 
@@ -265,6 +267,7 @@ TypeSymbol* ResolveType(BoundCompileUnit& boundCompileUnit, ContainerScope* cont
     {
         throw Exception("incomplete type expression", typeExprNode->GetSpan());
     }
+    boundCompileUnit.GetAssembly().GetConstantPool().Install(type->Name());
     return type;
 }
 

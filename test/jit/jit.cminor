@@ -1,6 +1,0 @@
-using System;
-
-int main()
-{
-    return 10;
-}

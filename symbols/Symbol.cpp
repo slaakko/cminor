@@ -21,6 +21,7 @@
 #include <cminor/util/Util.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <boost/filesystem.hpp>
+#include <iostream>
 
 namespace cminor { namespace symbols {
 
@@ -2005,6 +2006,11 @@ void InterfaceTypeSymbol::SetSpecifiers(Specifiers specifiers)
 ClassTemplateSpecializationSymbol::ClassTemplateSpecializationSymbol(const Span& span_, Constant name_) : 
     ClassTypeSymbol(span_, name_), key(), assemblyId(-1), globalNsPos(-1)
 {
+}
+
+ClassTemplateSpecializationSymbol::~ClassTemplateSpecializationSymbol()
+{
+    //std::cout << ToUtf8(Name().Value()) << std::endl;
 }
 
 void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)

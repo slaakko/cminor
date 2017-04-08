@@ -840,9 +840,13 @@ void ExpressionBinder::Visit(DotNode& dotNode)
                         bp->SetClassObject(std::unique_ptr<BoundExpression>(classObject));
                     }
                 }
+                else if (BoundTypeExpression* tp = dynamic_cast<BoundTypeExpression*>(expression.get()))
+                {
+                    delete classObject;
+                }
                 else
                 {
-                    throw Exception("symbol '" + dotNode.MemberStr() + "' does not denote a function group, member variable or property", dotNode.MemberId()->GetSpan());
+                    throw Exception("symbol '" + dotNode.MemberStr() + "' does not denote a function group, member variable, property or type", dotNode.MemberId()->GetSpan());
                 }
             }
             else

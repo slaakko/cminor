@@ -21,6 +21,10 @@ ClassNode::ClassNode(const Span& span_, Specifiers specifiers_, IdentifierNode* 
     id->SetParent(this);
 }
 
+ClassNode::~ClassNode()
+{
+}
+
 void ClassNode::AddBaseClassOrInterface(Node* baseClassOrInterface)
 {
     baseClassOrInterface->SetParent(this);
@@ -152,7 +156,6 @@ void InitializerNode::Read(AstReader& reader)
     arguments.SetParent(this);
 }
 
-
 BaseInitializerNode::BaseInitializerNode(const Span& span_) : InitializerNode(span_)
 {
 }
@@ -163,7 +166,7 @@ Node* BaseInitializerNode::Clone(CloneContext& cloneContext) const
     int n = Arguments().Count();
     for (int i = 0; i < n; ++i)
     {
-        clone->AddArgument(Arguments()[i]);
+        clone->AddArgument(Arguments()[i]->Clone(cloneContext));
     }
     return clone;
 }
@@ -183,7 +186,7 @@ Node* ThisInitializerNode::Clone(CloneContext& cloneContext) const
     int n = Arguments().Count();
     for (int i = 0; i < n; ++i)
     {
-        clone->AddArgument(Arguments()[i]);
+        clone->AddArgument(Arguments()[i]->Clone(cloneContext));
     }
     return clone;
 }

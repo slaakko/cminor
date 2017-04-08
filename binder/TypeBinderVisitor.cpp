@@ -213,6 +213,10 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
                 Assert(baseClassNode, "class node expected");
                 BindClass(baseClassSymbol, *baseClassNode);
             }
+            else
+            {
+                constantPool.Install(baseClassSymbol->Name());
+            }
             if (classTypeSymbol->BaseClass())
             {
                 throw Exception("class type can have at most one base class", classTypeSymbol->GetSpan(), baseClassSymbol->GetSpan());

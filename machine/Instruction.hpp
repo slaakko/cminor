@@ -93,7 +93,7 @@ public:
     Instruction* Clone() const override { return new InvalidInst(*this); }
     void Encode(Writer& writer) override;
     Instruction* Decode(Reader& reader) override;
-    void Execute(Frame& frame);
+    void Execute(Frame& frame) override;
     void Accept(MachineFunctionVisitor& visitor) override;
 };
 

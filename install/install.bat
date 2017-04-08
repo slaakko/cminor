@@ -12,8 +12,8 @@ xcopy ..\x64\Release\cminorrt.dll ..\bin /Y
 xcopy ..\x64\Release\cminorpg.exe ..\bin /Y
 xcopy ..\x64\Release\cminorvm.exe ..\bin /Y
 xcopy ..\x64\Debug\cminorvmd.exe ..\bin /Y
-xcopy "C:\Programming\llvm-3.9.1-release\build\Release\bin\llc.exe" ..\bin /Y
-xcopy "C:\Programming\llvm-3.9.1-release\build\Release\bin\opt.exe" ..\bin /Y
-xcopy "C:\Programming\llvm-3.9.1-release\build\Release\bin\lld-link.exe" ..\bin /Y
+xcopy "C:\Programming\llvm-4.0.0.src\build\Release\bin\llc.exe" ..\bin /Y
+xcopy "C:\Programming\llvm-4.0.0.src\build\Release\bin\opt.exe" ..\bin /Y
+xcopy "C:\Program Files\LLVM\bin\lld-link.exe" ..\bin /Y
 xcopy ..\x64\Release\cminormachine.lib ..\lib /Y
 xcopy ..\x64\Release\cminorrt.lib ..\lib /Y

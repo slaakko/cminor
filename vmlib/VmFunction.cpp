@@ -11,6 +11,7 @@
 #include <cminor/machine/Type.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Runtime.hpp>
+#include <cminor/util/Random.hpp>
 #include <boost/filesystem.hpp>
 #include <cctype>
 #include <chrono>
@@ -1888,6 +1889,68 @@ void VmSystemRethrow::Execute(Frame& frame)
     }
 }
 
+class VmSystemInitRand : public VmFunction
+{
+public:
+    VmSystemInitRand(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemInitRand::VmSystemInitRand(ConstantPool& constantPool) 
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"initrand"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemInitRand::Execute(Frame& frame)
+{
+    IntegralValue seedValue = frame.Local(0).GetValue();
+    Assert(seedValue.GetType() == ValueType::uintType, "uint expected");
+    uint32_t seed = seedValue.AsUInt();
+    InitMt(seed);
+}
+
+class VmSystemRandom : public VmFunction
+{
+public:
+    VmSystemRandom(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemRandom::VmSystemRandom(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"random"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemRandom::Execute(Frame& frame)
+{
+    uint32_t r = Random();
+    frame.OpStack().Push(IntegralValue(r, ValueType::uintType));
+}
+
+class VmSystemRand64 : public VmFunction
+{
+public:
+    VmSystemRand64(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemRand64::VmSystemRand64(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"rand64"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemRand64::Execute(Frame& frame)
+{
+    uint64_t r = Random64();
+    frame.OpStack().Push(IntegralValue(r, ValueType::ulongType));
+}
+
 class VmFunctionPool
 {
 public:
@@ -1965,6 +2028,9 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemSleepFor(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemThreadingHardwareConcurrency(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemRethrow(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemInitRand(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemRandom(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemRand64(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool)

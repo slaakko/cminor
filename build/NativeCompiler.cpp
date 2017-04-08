@@ -678,19 +678,9 @@ void NativeCompilerImpl::CreateCatchPad()
 void NativeCompilerImpl::CreateCatchPadWindows()
 {
     ArgVector catchPadArgs;
-    llvm::Constant* cminorExceptionTypeDescriptorVar = module->getOrInsertGlobal("??_R0?AVCminorException@machine@cminor@@@8", PointerType::get(GetType(ValueType::byteType), 0));
-    catchPadArgs.push_back(cminorExceptionTypeDescriptorVar);
-    catchPadArgs.push_back(builder.getInt32(8));
-    auto it = exceptionObjectVariables.find(currentCatchSectionExceptionBlockId);
-    if (it != exceptionObjectVariables.cend())
-    {
-        llvm::Value* exceptionObjectVariable = it->second;
-        catchPadArgs.push_back(exceptionObjectVariable);
-    }
-    else
-    {
-        throw std::runtime_error("exception object variable for exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not found");
-    }
+    catchPadArgs.push_back(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
+    catchPadArgs.push_back(GetConstantInt(ValueType::intType, IntegralValue(64, ValueType::intType)));
+    catchPadArgs.push_back(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
     llvm::CatchPadInst* catchPad = builder.CreateCatchPad(currentPad, catchPadArgs);
     padStack.push_back(currentPad);
     currentPad = catchPad;
