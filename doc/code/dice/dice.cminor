@@ -1,0 +1,11 @@
+using System;
+
+int HeitäNoppaa()
+{
+    return cast<int>(Random() % 6u + 1u);
+}
+
+void main()
+{
+    Console.WriteLine(HeitäNoppaa());
+}

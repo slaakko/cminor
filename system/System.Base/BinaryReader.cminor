@@ -133,6 +133,17 @@ namespace System.IO
         {
             get { return stream; }
         }
+        public int StreamSize
+        {
+            get
+            {
+                int pos = Tell();
+                Seek(0, Origin.seekEnd);
+                int size = Tell();
+                Seek(pos, Origin.seekSet);
+                return size;
+            }
+        }
 		private Stream stream;
 		private Utf8Decoder stringDecoder;
 	}

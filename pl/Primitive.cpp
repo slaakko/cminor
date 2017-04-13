@@ -131,7 +131,8 @@ Match CharSetParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* pa
 {
     if (!scanner.AtEnd())
     {
-        if (bits[(unsigned char)scanner.GetChar()] != inverse)
+        unsigned char c = (unsigned char)scanner.GetChar();
+        if (bits[c] != inverse)
         {
             ++scanner;
             return Match::One();
@@ -167,7 +168,8 @@ Match SpaceParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* pars
 {
     if (!scanner.AtEnd())
     {
-        if (std::isspace(scanner.GetChar()))
+        unsigned char c = (unsigned char)scanner.GetChar();
+        if (std::isspace(c))
         {
             ++scanner;
             return Match::One();
@@ -189,7 +191,8 @@ Match LetterParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* par
 {
     if (!scanner.AtEnd())
     {
-        if (std::isalpha(scanner.GetChar()))
+        unsigned char c = (unsigned char)scanner.GetChar();
+        if (std::isalpha(c))
         {
             ++scanner;
             return Match::One();
@@ -211,7 +214,8 @@ Match DigitParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* pars
 {
     if (!scanner.AtEnd())
     {
-        if (std::isdigit(scanner.GetChar()))
+        unsigned char c = (unsigned char)scanner.GetChar();
+        if (std::isdigit(c))
         {
             ++scanner;
             return Match::One();
@@ -233,7 +237,8 @@ Match HexDigitParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* p
 {
     if (!scanner.AtEnd())
     {
-        if (std::isxdigit(scanner.GetChar()))
+        int c = scanner.GetChar();
+        if (std::isxdigit(c))
         {
             ++scanner;
             return Match::One();
@@ -255,7 +260,8 @@ Match PunctuationParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData
 {
     if (!scanner.AtEnd())
     {
-        if (std::ispunct(scanner.GetChar()))
+        int c = scanner.GetChar();
+        if (std::ispunct(c))
         {
             ++scanner;
             return Match::One();
@@ -288,5 +294,27 @@ void AnyCharParser::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+RangeParser::RangeParser(int start_, int end_): Parser("range", "range(" + std::to_string(start_) + "," + std::to_string(end_) + ")"), start(start_), end(end_)
+{
+}
+
+Match RangeParser::Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData)
+{
+    if (!scanner.AtEnd())
+    {
+        unsigned char c = (unsigned char)scanner.GetChar();
+        if (c >= start && c <= end)
+        {
+            ++scanner;
+            return Match::One();
+        }
+    }
+    return Match::Nothing();
+}
+
+void RangeParser::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
 
 } } // namespace cminor::parsing

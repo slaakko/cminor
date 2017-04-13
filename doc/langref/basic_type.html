@@ -30,18 +30,18 @@
         <td class="rulename" id="basic-value-type">basic-value-type</td>
         <td class="prodsep">&rarr;</td>
         <td class="rulecontent">
-            <span class="kw">bool</span>
-            <span class="kw">char</span>
-            <span class="kw">sbyte</span>
-            <span class="kw">byte</span>
-            <span class="kw">short</span>
-            <span class="kw">ushort</span>
-            <span class="kw">int</span>
-            <span class="kw">uint</span>
-            <span class="kw">long</span>
-            <span class="kw">ulong</span>
-            <span class="kw">float</span>
-            <span class="kw">double</span>
+            <span class="kw">bool</span> |
+            <span class="kw">char</span> | 
+            <span class="kw">sbyte</span> |
+            <span class="kw">byte</span> |
+            <span class="kw">short</span> |
+            <span class="kw">ushort</span> |
+            <span class="kw">int</span> |
+            <span class="kw">uint</span> |
+            <span class="kw">long</span> |
+            <span class="kw">ulong</span> |
+            <span class="kw">float</span> | 
+            <span class="kw">double</span> |
             <span class="kw">void</span>
         </td>
     </tr>
@@ -49,8 +49,164 @@
         <td class="rulename" id="basic-reference-type">basic-reference-type</td>
         <td class="prodsep">&rarr;</td>
         <td class="rulecontent">
-            <span class="kw">object</span>
+            <span class="kw">object</span> |
             <span class="kw">string</span>
+        </td>
+    </tr>
+</table>
+
+<table class="type">
+    <tr>
+        <th class="type">
+            Type
+        </th>
+        <th class="type">
+            Alternative name
+        </th>
+        <th class="type">
+            Range of values inclusive
+        </th>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">bool</span>
+        </td>
+        <td class="type">
+            System.Boolean
+        </td>
+        <td>
+            <span class="kw">true</span> | <span class="kw">false</span>
+        </td>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">char</span>
+        </td>
+        <td class="type">
+            System.Char
+        </td>
+        <td>
+            ['\U00000000', '\U0010FFFD']
+        </td>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">sbyte</span>
+        </td>
+        <td class="type">
+            System.Int8
+        </td>
+        <td>
+            [-128, 127]
+        </td>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">byte</span>
+        </td>
+        <td class="type">
+            System.UInt8
+        </td>
+        <td>
+            [0u, 255u]
+        </td>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">short</span>
+        </td>
+        <td class="type">
+            System.Int16
+        </td>
+        <td>
+            [-32768, 32768]
+        </td>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">ushort</span>
+        </td>
+        <td class="type">
+            System.UInt16
+        </td>
+        <td>
+            [0u, 65535u]
+        </td>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">int</span>
+        </td>
+        <td class="type">
+            System.Int32
+        </td>
+        <td>
+            [-2147483648, 2147483647]
+        </td>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">uint</span>
+        </td>
+        <td class="type">
+            System.UInt32
+        </td>
+        <td>
+            [0u, 4294967295u]
+        </td>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">long</span>
+        </td>
+        <td class="type">
+            System.Int64
+        </td>
+        <td>
+            [-9223372036854775808, -9223372036854775807]
+        </td>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">ulong</span>
+        </td>
+        <td class="type">
+            System.UInt64
+        </td>
+        <td>
+            [0u, 18446744073709551615u]
+        </td>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">float</span>
+        </td>
+        <td class="type">
+            System.Float
+        </td>
+        <td>
+            [2<sup>−126</sup> ≈ 1.18 × 10<sup>−38</sup>, (2 − 2<sup>−23</sup>) × 2<sup>127</sup> ≈ 3.402823 × 10<sup>38</sup>]
+        </td>
+    </tr>
+    <tr>
+        <td class="type">
+            <span class="kw">double</span>
+        </td>
+        <td class="type">
+            System.Double
+        </td>
+        <td>
+            [±2.23<span style="margin:0 .15em 0 .25em">×</span>10<sup>−<span style="white-space:nowrap">308</span></sup>, ±1.80<span style="margin:0 .15em 0 .25em">×</span>10<sup><span style="white-space:nowrap">308</span></sup>]
+        </td>
+    </tr>
+    <tr>
+        <td class="bottommiddle">
+            <span class="kw">void</span>
+        </td>
+        <td class="bottommiddle">
+            System.Void
+        </td>
+        <td class="bottom">
         </td>
     </tr>
 </table>

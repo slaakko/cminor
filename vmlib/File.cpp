@@ -84,6 +84,8 @@ FileTable& FileTable::Instance()
 
 FileTable::FileTable() : nextFileHandle(3), handlesSetToBinaryMode(false)
 {
+    std::fflush(stdout);
+    std::fflush(stderr);
     files.resize(maxNoLockFileHandles);
     filePaths.resize(maxNoLockFileHandles);
     SetHandleToBinaryMode(0);
@@ -99,6 +101,8 @@ FileTable::~FileTable()
 {
     try
     {
+        std::fflush(stdout);
+        std::fflush(stderr);
         if (handlesSetToBinaryMode)
         {
             SetHandleToTextMode(0);

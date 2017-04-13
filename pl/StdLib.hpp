@@ -1,5 +1,5 @@
-#ifndef StdLib_hpp_28845
-#define StdLib_hpp_28845
+#ifndef StdLib_hpp_1319
+#define StdLib_hpp_1319
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -35,4 +35,4 @@ private:
 
 } } // namespace cminor.parsing
 
-#endif // StdLib_hpp_28845
+#endif // StdLib_hpp_1319

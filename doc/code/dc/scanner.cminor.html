@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>scanner.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">Calculator</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Scanner</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Scanner</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">input</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">input</span> <span class="other">=</span> <span class="identifier">input</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">NextToken</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">SkipWhiteSpace</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">pos</span> <span class="other">&lt;</span> <span class="identifier">input.Length</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="keyword">char</span><span class="other">.</span><span class="identifier">IsNumber</span><span class="other">(</span><span class="identifier">input</span><span class="other">[</span><span class="identifier">pos</span><span class="other">]</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">StringBuilder</span> <span class="identifier">numberBuilder</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">while</span> <span class="other">(</span><span class="identifier">pos</span> <span class="other">&lt;</span> <span class="identifier">input.Length</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="other">(</span><span class="keyword">char</span><span class="other">.</span><span class="identifier">IsNumber</span><span class="other">(</span><span class="identifier">input</span><span class="other">[</span><span class="identifier">pos</span><span class="other">]</span><span class="other">)</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">input</span><span class="other">[</span><span class="identifier">pos</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;.&apos;</span><span class="other">)</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">numberBuilder.Append</span><span class="other">(</span><span class="identifier">input</span><span class="other">[</span><span class="identifier">pos</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">+</span><span class="other">+</span><span class="identifier">pos</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">string</span> <span class="identifier">numberStr</span> <span class="other">=</span> <span class="identifier">numberBuilder.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">double</span> <span class="identifier">number</span> <span class="other">=</span> <span class="keyword">double</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">numberStr</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">token</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">NumberToken</span><span class="other">(</span><span class="identifier">number</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="keyword">char</span><span class="other">.</span><span class="identifier">IsLetter</span><span class="other">(</span><span class="identifier">input</span><span class="other">[</span><span class="identifier">pos</span><span class="other">]</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">StringBuilder</span> <span class="identifier">variableNameBuilder</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">while</span> <span class="other">(</span><span class="identifier">pos</span> <span class="other">&lt;</span> <span class="identifier">input.Length</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="keyword">char</span><span class="other">.</span><span class="identifier">IsLetter</span><span class="other">(</span><span class="identifier">input</span><span class="other">[</span><span class="identifier">pos</span><span class="other">]</span><span class="other">)</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">variableNameBuilder.Append</span><span class="other">(</span><span class="identifier">input</span><span class="other">[</span><span class="identifier">pos</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">+</span><span class="other">+</span><span class="identifier">pos</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">string</span> <span class="identifier">variableName</span> <span class="other">=</span> <span class="identifier">variableNameBuilder.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">variableName</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;print&quot;</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">token</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">PrintToken</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="identifier">token</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">VariableNameToken</span><span class="other">(</span><span class="identifier">variableName</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">token</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">OperatorToken</span><span class="other">(</span><span class="identifier">input</span><span class="other">[</span><span class="identifier">pos</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">pos</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="identifier">token</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">EndToken</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Rewind</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">pos</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Token</span> <span class="identifier">CurrentToken</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">token</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">SkipWhiteSpace</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">pos</span> <span class="other">&lt;</span> <span class="identifier">input.Length</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="keyword">char</span><span class="other">.</span><span class="identifier">IsSpace</span><span class="other">(</span><span class="identifier">input</span><span class="other">[</span><span class="identifier">pos</span><span class="other">]</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="other">+</span><span class="other">+</span><span class="identifier">pos</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">Token</span> <span class="identifier">token</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">string</span> <span class="identifier">input</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">pos</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

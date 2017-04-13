@@ -1,0 +1,38 @@
+using System;
+using System.Collections.Generic;
+
+namespace Calculator
+{
+    public class SymbolTable
+    {
+        public SymbolTable()
+        {
+            variableMap = new Map<string, double>();
+        }
+        public void SetVariable(string variableName, double variableValue)
+        {
+            variableMap[variableName] = variableValue;
+        }
+        public double GetVariableValue(string variableName)
+        {
+            double value;
+            if (variableMap.TryGetValue(variableName, ref value))
+            {
+                return value;
+            }
+            else
+            {
+                throw new VariableNotFoundException("variable '" + variableName + "' not found");
+            }
+        }
+        public void Print()
+        {
+            Console.WriteLine("variables:");
+            foreach (KeyValuePair<string, double> pair in variableMap)
+            {
+                Console.WriteLine(pair.Key + " = " + pair.Value.ToString());
+            }
+        }
+        private Map<string, double> variableMap;
+    }
+}

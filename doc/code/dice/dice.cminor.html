@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>dice.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">int</span> <span class="identifier">HeitäNoppaa</span><span class="other">(</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">Random</span><span class="other">(</span><span class="other">)</span> <span class="other">%</span> <span class="number">6u</span> <span class="other">+</span> <span class="number">1u</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+
+<span class="keyword">void</span> <span class="identifier">main</span><span class="other">(</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="identifier">HeitäNoppaa</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

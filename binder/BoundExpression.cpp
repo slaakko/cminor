@@ -396,10 +396,6 @@ BoundProperty::BoundProperty(Assembly& assembly_, TypeSymbol* type_, PropertySym
 
 void BoundProperty::SetClassObject(std::unique_ptr<BoundExpression>&& classObject_)
 {
-	if (propertySymbol->Parent()->Name() == U"Grammar" && propertySymbol->Name() == U"Ns")
-	{
-		int x = 0;
-	}
 	classObject = std::move(classObject_);
 }
 
@@ -433,10 +429,6 @@ void BoundProperty::GenLoad(Machine& machine, Function& function)
 
 void BoundProperty::GenStore(Machine& machine, Function& function)
 {
-	if (propertySymbol->Parent()->Name() == U"Grammar" && propertySymbol->Name() == U"Ns")
-	{
-		int x = 0;
-	}
 	if (classObject)
     {
         classObject->GenLoad(machine, function);

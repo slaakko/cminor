@@ -978,7 +978,7 @@ void stdlib::CreateRules()
                         new cminor::parsing::AlternativeParser(
                             new cminor::parsing::LetterParser(),
                             new cminor::parsing::CharParser('_')),
-                        new cminor::parsing::CharSetParser("0x80-0xFF")),
+                        new cminor::parsing::RangeParser(128, 255)),
                     new cminor::parsing::KleeneStarParser(
                         new cminor::parsing::AlternativeParser(
                             new cminor::parsing::AlternativeParser(
@@ -986,7 +986,7 @@ void stdlib::CreateRules()
                                     new cminor::parsing::LetterParser(),
                                     new cminor::parsing::DigitParser()),
                                 new cminor::parsing::CharParser('_')),
-                            new cminor::parsing::CharSetParser("0x80-0xFF"))))))));
+                            new cminor::parsing::RangeParser(128, 255))))))));
     AddRule(new qualified_idRule("qualified_id", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::TokenParser(

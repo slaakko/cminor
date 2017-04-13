@@ -31,47 +31,107 @@
         3.1 Building the Project
     </h3>
 
+    <p>
+        Besides to intermediate code, Cminor programs can also be compiled to native object code by using the <em>--native</em> switch:
+    </p>
+
     <div class="commands">
-        > cminor build hello.cminorp
+        > cminor build --native hello.cminorp
     </div>
 
     <h3 id="running">
         3.2 Running the Hello World Program
     </h3>
 
+    <p>
+        Programs compiled to native object code can be run either by interpreting the intermediate instructions:
+    </p>
+
     <div class="commands">
         > cminor run assembly/debug/hello.cminora<br/>
         Hello, world!
     </div>
+
+    <p>
+        or by executing native object code in the virtual machine by giving the <em>--native</em> switch to the run command:
+    </p>
+
+    <div class="commands">
+        > cminor run --native assembly/debug/hello.cminora<br />
+        Hello, world!
+    </div>
+
+    <p>
+        Executing large programs by interpreting the intermediate instructions takes about twice as long as executing the native object code with runtime support.
+    </p>
 
     <h3 id="dumping">
         3.3 Inspecting the Contents of an Assembly
     </h3>
 
     <p>
+        Cminor assembly file contains intermediate representation of compiled functions, a constant pool, a hierarchical symbol table and 
+        mappings between native and intermediate functions.
+    </p>
+
+    <p>
         To inspect the contents of an assembly file, 
-        we use the <span code>cminor dump</span> command.
-        The dump contains virtual machine instructions for each compiled function.
-        After that symbols of the hierarchical symbol table are printed.
+        we use the <em>cminor dump</em> command.
+
+        By giving <em>--header</em> switch we can print general information about an assembly:
+
     </p>
 
     <div class="commands">
-        > cminor dump assembly/debug/hello.cminora hello.dump<br/>
-        > type hello.dump<br />
-        main() [internal System.Void main()]<br/>
+        > cminor dump --header assembly/debug/hello.cminora hello.header<br />
+        > type hello.header<br />
+ASSEMBLY HEADER<br />
+        <br />
+assembly name: hello<br />
+assembly format: 1<br />
+assembly flags: native<br />
+original file path: C:/Users/Seppo/cminor/doc/code/hello/assembly/debug/hello.cminora<br />
+file path read from: C:/Users/Seppo/cminor/doc/code/hello/assembly/debug/hello.cminora<br />
+native target triple: x86_64-pc-windows-msvc<br />
+native shared library file name: hello.dll<br />
+native import library file name: hello.lib<br />
+    ...
+    </div>
+
+    <p>
+        By giving the <em>--functions</em> switch we can print just the function table:
+    </p>
+
+    <div class="commands">
+        > cminor dump --functions assembly/debug/hello.cminora hello.functions<br />
+        > type hello.functions<br />
+
+        FUNCTION TABLE<br />
+        <br />
+        FUNCTION #0<br />
+        <br />
+        call name: main()<br />
+        group name: main<br />
+        full name: internal export System.Void main()<br />
+        mangled name: main_entry_point<br />
+        flags: exported canThrow<br />
+        source file path: C:/Users/Seppo/cminor/doc/code/hello/hello.cminor<br />
+        0 parameters:<br />
+        0 locals:<br />
+        returns: System.Void<br />
+        code:
+        <br />
         {<br />
         <div style="margin-left: 20px;">
             0    BC    receive<br />
-            1    C3    enterblock<br />
-            2    B9    loadconstant.b 128<br />
-            3    DE    slit2s<br />
-            4    C0    call System.Console.WriteLine(System.String)<br />
-            5    C4    exitblock<br />
+            1    F2    gcpoll<br />
+            2    C3    enterblock<br />
+            3    BA    loadconstant.s 643<br />
+            4    E3    slit2s<br />
+            5    C0    call System.Console.WriteLine(System.String)<br />
+            6    C4    exitblock<br />
         </div>
         }<br />
-        namespace<br />
-        {<br />
-        ...<br />
     </div>
 
 </body>

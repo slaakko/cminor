@@ -48,6 +48,7 @@ class MACHINE_API IntegralValue
 public:
     IntegralValue() : value(0), type(ValueType::none) {}
     IntegralValue(uint64_t value_, ValueType type_) : value(value_), type(type_) {}
+    IntegralValue(double value_, ValueType type_) : dblValue(value_), type(type_) {}
     IntegralValue(uint8_t* value_) : memPtr(value_), type(ValueType::memPtr) {}
     IntegralValue(const char32_t* value_) : strValue(value_), type(ValueType::stringLiteral) {}
     IntegralValue(Function* value_) : funPtr(value_), type(ValueType::functionPtr) {}
@@ -64,8 +65,8 @@ public:
     uint32_t AsUInt() const { return static_cast<uint32_t>(value); }
     int64_t AsLong() const { return static_cast<int64_t>(value); }
     uint64_t AsULong() const { return static_cast<uint64_t>(value); }
-    float AsFloat() const { return static_cast<float>(value); }
-    double AsDouble() const { return static_cast<double>(value); }
+    float AsFloat() const { return static_cast<float>(dblValue); }
+    double AsDouble() const { return dblValue; }
     char32_t AsChar() const { return static_cast<char32_t>(value); }
     uint8_t* AsMemPtr() const { return memPtr; }
     const char32_t* AsStringLiteral() const { return strValue; }
@@ -76,8 +77,9 @@ public:
     void Read(Reader& reader);
     void Dump(CodeFormatter& formatter);
     std::string ValueStr();
+    const void* ValuePtr() const { return &value; }
 private:
-    union { uint64_t value; uint8_t* memPtr; const char32_t* strValue; Function* funPtr; ClassData* classDataPtr; Type* typePtr;  };
+    union { uint64_t value; double dblValue; uint8_t* memPtr; const char32_t* strValue; Function* funPtr; ClassData* classDataPtr; Type* typePtr; };
     ValueType type;
 };
 
@@ -97,7 +99,7 @@ struct IntegralValueHash
 class AllocationHandle : public IntegralValue
 {
 public:
-    AllocationHandle() : IntegralValue(0, ValueType::allocationHandle) {}
+    AllocationHandle() : IntegralValue(static_cast<uint64_t>(0), ValueType::allocationHandle) {}
     AllocationHandle(uint64_t value_, ValueType type_) : IntegralValue(value_, type_) {}
     AllocationHandle(uint64_t value_) : IntegralValue(value_, ValueType::allocationHandle) {}
 };

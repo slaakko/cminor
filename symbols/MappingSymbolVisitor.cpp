@@ -448,6 +448,60 @@ void MappingSymbolVisitor::Visit(ForStatementNode& forStatementNode)
     }
 }
 
+void MappingSymbolVisitor::Visit(SwitchStatementNode& switchStatementNode)
+{
+    int n = switchStatementNode.Cases().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        CaseStatementNode* caseS = switchStatementNode.Cases()[i];
+        caseS->Accept(*this);
+    }
+    if (switchStatementNode.Default())
+    {
+        switchStatementNode.Default()->Accept(*this);
+    }
+}
+
+void MappingSymbolVisitor::Visit(CaseStatementNode& caseStatementNode)
+{
+    int n = caseStatementNode.Statements().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        StatementNode* s = caseStatementNode.Statements()[i];
+        s->Accept(*this);
+    }
+}
+
+void MappingSymbolVisitor::Visit(DefaultStatementNode& defaultStatementNode) 
+{
+    int n = defaultStatementNode.Statements().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        StatementNode* s = defaultStatementNode.Statements()[i];
+        s->Accept(*this);
+    }
+}
+
+void MappingSymbolVisitor::Visit(TryStatementNode& tryStatementNode)
+{
+    tryStatementNode.TryBlock()->Accept(*this); 
+    int n = tryStatementNode.Catches().Count();
+    for (int i = 0; i < n; ++i)
+    {
+        CatchNode* catchNode = tryStatementNode.Catches()[i];
+        catchNode->Accept(*this);
+    }
+    if (tryStatementNode.FinallyBlock())
+    {
+        tryStatementNode.FinallyBlock()->Accept(*this);
+    }
+}
+
+void MappingSymbolVisitor::Visit(CatchNode& catchNode)
+{
+    catchNode.CatchBlock()->Accept(*this);
+}
+
 void MappingSymbolVisitor::Visit(ConstructionStatementNode& constructionStatementNode)
 {
     Symbol* symbol = sourceAssembly->GetSymbolTable().GetSymbolNothrow(constructionStatementNode.SymbolId());

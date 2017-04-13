@@ -679,7 +679,7 @@ void NativeCompilerImpl::CreateCatchPadWindows()
 {
     ArgVector catchPadArgs;
     catchPadArgs.push_back(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
-    catchPadArgs.push_back(GetConstantInt(ValueType::intType, IntegralValue(64, ValueType::intType)));
+    catchPadArgs.push_back(GetConstantInt(ValueType::intType, IntegralValue(static_cast<uint64_t>(64), ValueType::intType)));
     catchPadArgs.push_back(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
     llvm::CatchPadInst* catchPad = builder.CreateCatchPad(currentPad, catchPadArgs);
     padStack.push_back(currentPad);
@@ -2829,13 +2829,21 @@ void NativeCompilerImpl::VisitBeginCatchSectionInst(BeginCatchSectionInst& instr
         llvm::BasicBlock* unwindTarget = it->second;
         currentBasicBlock = unwindTarget;
         builder.SetInsertPoint(currentBasicBlock);
-        llvm::BasicBlock* terminateTarget = nullptr;
+        llvm::BasicBlock* parentUnwindTarget = nullptr;
+        if (currentExceptionBlockId != -1)
+        {
+            auto pit = unwindTargets.find(currentExceptionBlockId);
+            if (pit != unwindTargets.cend())
+            {
+                parentUnwindTarget = pit->second;
+            }
+        }
         llvm::Value* parentPad = currentPad;
         if (parentPad == nullptr)
         {
             parentPad = llvm::ConstantTokenNone::get(context);
         }
-        llvm::CatchSwitchInst* catchSwitch = builder.CreateCatchSwitch(parentPad, terminateTarget, 1);
+        llvm::CatchSwitchInst* catchSwitch = builder.CreateCatchSwitch(parentPad, parentUnwindTarget, 1);
         padStack.push_back(currentPad);
         currentPad = catchSwitch;
         padKindStack.push_back(currentPadKind);

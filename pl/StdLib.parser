@@ -110,7 +110,7 @@ namespace cminor.parsing
         bool: bool                          ::= keyword("true"){ value = true; } | keyword("false"){ value = false; }
                                             ;
 
-        identifier: std::string             ::= token((letter | '_' | [0x80-0xFF]) (letter | digit | '_' | [0x80-0xFF])*)
+        identifier: std::string             ::= token((letter | '_' | range(128, 255)) (letter | digit | '_' | range(128, 255))*)
                                             {
                                                 value = std::string(matchBegin, matchEnd);
 												pass = cminor::util::unicode::IsIdentifier(cminor::util::ToUtf32(value));

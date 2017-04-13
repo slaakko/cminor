@@ -7,6 +7,7 @@
 #include <cminor/cpg/cpgsyntax/CodeGenerator.hpp>
 #include <cminor/pl/InitDone.hpp>
 #include <cminor/util/TextUtils.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <iostream>
 #include <string>
 #include <stdlib.h>
@@ -23,9 +24,11 @@ public:
     InitDone()
     {
         cminor::parsing::Init();
+        cminor::util::unicode::Init();
     }
     ~InitDone()
     {
+        cminor::util::unicode::Done();
         cminor::parsing::Done();
     }
 };

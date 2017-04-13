@@ -174,10 +174,9 @@ namespace System.Collections.Generic
                     }
                     bucket = bucket.Next;
                 }
-                return null;
+                return default(ValueType);
             }
         }
-
         public void AddOrReplace(ValueType value)
         {
             InitBuckets();

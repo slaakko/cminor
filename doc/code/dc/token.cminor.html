@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>token.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">Calculator</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="identifier">Token</span>
+    <span class="other">{</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">PrintToken</span> <span class="other">:</span> <span class="identifier">Token</span>
+    <span class="other">{</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">NumberToken</span> <span class="other">:</span> <span class="identifier">Token</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">NumberToken</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">double</span> <span class="identifier">Value</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">double</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">VariableNameToken</span> <span class="other">:</span> <span class="identifier">Token</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">VariableNameToken</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">variableName</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">variableName</span> <span class="other">=</span> <span class="identifier">variableName</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">VariableName</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">variableName</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">string</span> <span class="identifier">variableName</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">OperatorToken</span> <span class="other">:</span> <span class="identifier">Token</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">OperatorToken</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">operatorChar</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">operatorChar</span> <span class="other">=</span> <span class="identifier">operatorChar</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">char</span> <span class="identifier">Char</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">operatorChar</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsAdditiveOperator</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">operatorChar</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;+&apos;</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">operatorChar</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;-&apos;</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsMultiplicativeOperator</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">operatorChar</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;*&apos;</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">operatorChar</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;/&apos;</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">char</span> <span class="identifier">operatorChar</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">EndToken</span> <span class="other">:</span> <span class="identifier">Token</span>
+    <span class="other">{</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

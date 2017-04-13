@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>main.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">Calculator</span><span class="other">;</span>
+
+<span class="comment">// ====================================================================</span>
+<span class="comment">//</span>
+<span class="comment">//  Desk Calculator</span>
+<span class="comment">//  ---------------</span>
+<span class="comment">//</span>
+<span class="comment">//  Author: S. Laakko</span>
+<span class="comment">//</span>
+<span class="comment">//  COMMANDS:</span>
+<span class="comment">//</span>
+<span class="comment">//      print           - print current values of variables</span>
+<span class="comment">//      &lt;var&gt; = &lt;expr&gt;  - evaluate &lt;expr&gt; and assign its value to &lt;var&gt;</span>
+<span class="comment">//      &lt;expr&gt;          - evaluate &lt;expr&gt; and print its value</span>
+<span class="comment">//</span>
+<span class="comment">//  SYNTAX:</span>
+<span class="comment">//</span>
+<span class="comment">//      &lt;expr&gt;          ::= &lt;term&gt; ((&apos;+&apos; | &apos;-&apos;) &lt;term&gt;)*</span>
+<span class="comment">//      &lt;term&gt;          ::= &lt;factor&gt; ((&apos;*&apos; | &apos;/&apos;) &lt;factor&gt;)*</span>
+<span class="comment">//      &lt;factor&gt;        ::= (&apos;+&apos; | &apos;-&apos;)? &lt;primary&gt;</span>
+<span class="comment">//      &lt;primary&gt;       ::= &lt;number&gt; | &lt;var&gt; | &apos;(&apos; &lt;expr&gt; &apos;)&apos;</span>
+<span class="comment">//      &lt;number&gt;        ::= DIGIT+ (&apos;.&apos; DIGIT+)?</span>
+<span class="comment">//      &lt;var&gt;           ::= LETTER+</span>
+<span class="comment">//</span>
+<span class="comment">// ====================================================================</span>
+
+<span class="keyword">int</span> <span class="identifier">main</span><span class="other">(</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="keyword">try</span>
+    <span class="other">{</span>
+        <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;desk calculator&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;enter command, or CTRL-Z to end:&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">SymbolTable</span> <span class="identifier">symbolTable</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">SymbolTable</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">Console.Write</span><span class="other">(</span><span class="string">&quot;&gt; &quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">string</span> <span class="identifier">line</span> <span class="other">=</span> <span class="identifier">Console.ReadLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">while</span> <span class="other">(</span><span class="identifier">line</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">try</span>
+            <span class="other">{</span>
+                <span class="identifier">Parse</span><span class="other">(</span><span class="identifier">line</span><span class="other">,</span> <span class="identifier">symbolTable</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">ParsingException</span> <span class="identifier">ex</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Console.Error.WriteLine</span><span class="other">(</span><span class="string">&quot;error: &quot;</span> <span class="other">+</span> <span class="identifier">ex.Message</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">DivisionByZeroException</span> <span class="identifier">ex</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Console.Error.WriteLine</span><span class="other">(</span><span class="string">&quot;error: &quot;</span> <span class="other">+</span> <span class="identifier">ex.Message</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">VariableNotFoundException</span> <span class="identifier">ex</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Console.Error.WriteLine</span><span class="other">(</span><span class="string">&quot;error: &quot;</span> <span class="other">+</span> <span class="identifier">ex.Message</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">ConversionException</span> <span class="identifier">ex</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Console.Error.WriteLine</span><span class="other">(</span><span class="string">&quot;error: &quot;</span> <span class="other">+</span> <span class="identifier">ex.Message</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">Console.Write</span><span class="other">(</span><span class="string">&quot;&gt; &quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">line</span> <span class="other">=</span> <span class="identifier">Console.ReadLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;bye!&quot;</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">Exception</span> <span class="identifier">ex</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">Console.Error.WriteLine</span><span class="other">(</span><span class="identifier">ex.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">return</span> <span class="number">1</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">return</span> <span class="number">0</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

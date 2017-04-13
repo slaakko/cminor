@@ -39,6 +39,7 @@ class NonterminalParser;
 class Grammar;
 class KeywordParser;
 class KeywordListParser;
+class RangeParser;
 
 class Visitor
 {
@@ -53,6 +54,7 @@ public:
     virtual void Visit(HexDigitParser& parser) {}
     virtual void Visit(PunctuationParser& parser) {}
     virtual void Visit(AnyCharParser& parser) {}
+    virtual void Visit(RangeParser& parser) {}    
     virtual void BeginVisit(OptionalParser& parser) {}
     virtual void EndVisit(OptionalParser& parser) {}
     virtual void BeginVisit(PositiveParser& parser) {}

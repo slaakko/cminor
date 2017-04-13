@@ -1,5 +1,5 @@
-#ifndef Primitive_hpp_5596
-#define Primitive_hpp_5596
+#ifndef Primitive_hpp_31289
+#define Primitive_hpp_31289
 
 #include <cminor/pl/Grammar.hpp>
 #include <cminor/pl/Keyword.hpp>
@@ -35,8 +35,9 @@ private:
     class DigitRule;
     class HexDigitRule;
     class PunctuationRule;
+    class RangeRule;
 };
 
 } } // namespace cpg.syntax
 
-#endif // Primitive_hpp_5596
+#endif // Primitive_hpp_31289

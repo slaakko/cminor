@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Calculator</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2>7 Larger Example - Creating a Desk Calculator</h2>
+
+    <p>
+        To illustrate features of Cminor language in a somewhat more realistic context,
+        we go through creating a desk calculator in this chapter.
+    </p>
+
+    <h3 id="exceptions">
+        7.1 Error Handling
+    </h3>
+
+    <p>
+        Error handling in Cminor programs is best implemented using exceptions, because 
+        exceptions separate concerns of detecting an error condition and handling it using 
+        close to minimal code devoted to error handling.
+    </p>
+
+    <p>
+        For example, in the following main function, there are two nested try blocks,
+        where the inner block handles known errors caused by incomplete or otherwise 
+        invalid input &ndash; <span class="code">ParsingException</span>, 
+        trying to divide by zero &ndash; <span class="code">DivisionByZeroException</span>, 
+        referring to a nonexisting variable &ndash; <span class="code">VariableNotFoundException</span>,
+        or trying to parse badly formatted string to a number &ndash; <span class="code">System.ConversionException</span>. 
+        These user errors are handled by printing just the error message represented by the
+        <span class="code">Message</span> property of <span class="code">System.Exception</span> class.
+    </p>
+
+    <p>
+        The outer try block handles all remaining errors, or errors that "should not happen".
+        The <span class="code">System.Exception.ToString()</span> method prints the 
+        call stack along with the error message, so that exact source code position of the error can be found.
+    </p>
+
+    <p>
+        The main loop consists of reading a line of input from the console, parsing and processing it, and also handling errorneous input.
+        Then next line of input is read and processed, and so on, until user enters EOF (CTRL-Z) followed by an ENTER to end the loop.
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/main.cminor.html" height="1080px" width="600px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        Here are the exception classes for various error conditions. In Cminor as in C# all exception classes must be derived from the
+        <span class="code">System.Exception</span> class. By catching <span class="code">System.Exception</span> class all exceptions can be handled.
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/error.cminor.html" height="520px" width="600px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="nonmemberfunctions">
+        7.2 Nonmember Functions
+    </h3>
+
+    <p>
+        Unlike C#, Cminor contains nonmember functions, also called "free functions". They are functionally equivalent to <em>static</em> member functions in C#.
+        Nonmember functions can be used to implement program logic that does not naturally belong to any class. 
+        Also operator functions <strong>operator+</strong>, <strong>operator-</strong>, <strong>operator*</strong>, and so on, are required to be nonmember functions in Cminor.
+    </p>
+
+    <p>
+        The following code creates an object of a <span class="code">Scanner</span> class that is used to break up the input into <em>tokens</em> and also to skip any whitespace in input.
+        Then the first token is read. If it is a <span class="code">PrintToken</span> the current contents of variables are printed.
+        Otherwise if it is a variable name token, and the next token is '=', an expression is parsed and its value is assigned to a variable.
+        Otherwise the input is rewound and an expression is parsed and its value is printed:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/parse.cminor.html" height="780px" width="600px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        An expression of the form "<span class="code">x <strong>is</strong> C</span>", tests if the class of expression <span class="code">x</span> is equal to class <span class="code">C</span>,
+        or derived from it. If that is the case the value of expression "<span class="code">x <strong>is</strong> C</span>" is <span class="code"><strong>true</strong></span>,
+        otherwise it's <span class="code"><strong>false</strong></span>. The language implementation of <strong>is</strong>-expression in Cminor does not need to crawl the class hierarchy,
+        because in intermediate code link time, each class is assigned an identifier of type <span class="code"><strong>ulong</strong></span> that is a product of prime factors.
+        The <strong>is</strong> test is reduced to an integer divisibility test: <br />"<span class="code">(id of class of x) % (id of class C) == 0"</span>.
+        This scheme is invented by Michael Gibbs and Bjarne Stroustrup and described in the article <a href="http://www.stroustrup.com/fast_dynamic_casting.pdf">Fast Dynamic Casting</a>
+        authored by them. The implementation of this scheme in Cminor is simpler than implementation for C++ described in the article because Cminor lacks multiple inheritance.
+    </p>
+
+    <h3 id="inheritance">
+        7.3 Inheritance
+    </h3>
+
+    <p>
+        As already mentioned Cminor lacks multiple inheritance, but it allows a class to implement any number of <em>interfaces</em>. 
+        However in this simple program interfaces are not used.
+        Here are the various token classes. The <span class="code">Token</span> class is <em>abstract</em> meaning an object of it cannot be created. 
+        A class that contains abstract member functions, must also be declared abstract.
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/token.cminor.html" height="1000px" width="600px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="properties">
+        7.4 Properties
+    </h3>
+
+    <p>
+        In Cminor a class may have <em>properties</em> that can be read-only &ndash; having a <em>getter</em>, write-only &ndash; having a <em>setter</em>, 
+        or read-write &ndash; having both getter and a setter. In the code above classes <span class="code">NumberToken</span>, <span class="code">VariableNameToken</span> and 
+        <span class="code">OperatorToken</span> have read-only properties. Unlike in C#, properties in Cminor cannot be polymorphic &ndash; <em>virtual</em>, abstract or <em>overridden</em>.
+        Properties can be static in Cminor, however. Static properties are accessed using <span class="code">ClassName.PropertyName</span> notation.
+    </p>
+
+    <h3 id="boxing">
+        7.5 Boxing and Unboxing
+    </h3>
+    
+    <p>
+        Like in C#, values of <a href="../langref/basic_type.html">basic types</a> are automatically <em>boxed</em> when needed, 
+        meaning an object containing a value of a basic type is created. For example, statement <span class="code"><strong>object</strong> x = 1;</span> creates
+        an object of <span class="code">BoxedInt8</span> class and places an <span class="code"><strong>sbyte</strong></span> value 1 into that object.
+        The reverse operation of <em>unboxing</em> converts an object of boxed value type back to an instance of basic value type. 
+        Unboxing must be performed explicitly by using a <em>cast</em>. For example, <span class="code"><strong>sbyte</strong> y = <strong>cast</strong>&lt;sbyte&gt;(x);</span>.
+        If the type of <span class="code">x</span> is not <span class="code">BoxedInt8</span>, an exception of class <span class="code">System.InvalidCastException</span> is thrown.
+        The Cminor system library source file <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/BoxedTypes.cminor">BoxedTypes.cminor</a> contains the boxed types and 
+        their operations. Explicit type conversion, <em>casting</em> is performed using syntax <span class="code"><strong>cast</strong>&lt;sbyte&gt;(x)</span>, not using the 
+        C# syntax <span class="code">(<strong>sbyte</strong>)x</span>, because this way casts can be found from source code with search tools using regular expressions.
+    </p>
+
+    <h3 id="unicode">
+        7.6 Unicode
+    </h3>
+
+    <p>
+        Cminor contains minimal support for Unicode, not perfect, but usable at least in western Europe countries where the author is from.
+        The support is implemented as static member functions of the <span class="code">System.BoxedChar</span> class
+        (see <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/BoxedTypes.cminor">BoxedTypes.cminor</a>).
+        For example, <span class="code"><strong>char</strong>.IsLetter(x)</span> returns true if character <span class="code">x</span>
+        has Unicode letter character category. The following <span class="code">Scanner</span> class illustrates using character classification functions
+        <span class="code"><strong>char</strong>.IsLetter(<strong>char</strong>)</span> and <span class="code"><strong>char</strong>.IsNumber(<strong>char</strong>)</span>
+        and also parsing a <span class="code"><strong>double</strong></span> to a string &ndash; <span class="code"><strong>double</strong>.Parse(<strong>string</strong>)</span>:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/scanner.cminor.html" height="1200px" width="720px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="collections">
+        7.7 Generic Collections
+    </h3>
+
+    <p>
+        Cminor system library has the following generic collections implemented as templates:
+        <ul>
+            <li>
+                <span class="code">System.Collections.Generic.List&lt;T&gt;</span> is a class template for storing a sequence of values that can be accessed
+                with subscripting operator <span class="code"><strong>[]</strong></span> in constant time.
+                (See <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/List.cminor">List.cminor</a> for the implementation).
+            </li>
+            <li>
+                <span class="code">System.Collections.Generic.Set&lt;T&gt;</span> is a class template for storing unique elements in a red-black tree.
+                The elements must form a set ordered by the less than operator.
+                (See <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/Set.cminor">Set.cminor</a> for the implementation).
+            </li>
+            <li>
+                <span class="code">System.Collections.Generic.Map&lt;KeyType, ValueType&gt;</span> is an associative collection 
+                for storing unique key-value pairs in a red-black tree.
+                The keys must form a set ordered by the less than operator.
+                (See <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/Map.cminor">Map.cminor</a> for the implementation).
+            </li>
+        </ul>
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/symbols.cminor.html" height="600px" width="720px" style="border:none;"></iframe>
+    </div>
+</body>

@@ -46,7 +46,7 @@ void VmSystemPlatform::Execute(Frame& frame)
 #elif defined(__unix__) || defined(__unix) || defined(__posix) || defined(__linux)
 	platform = Platform::unix;
 #endif
-	frame.OpStack().Push(IntegralValue(uint8_t(platform), ValueType::byteType));
+	frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(uint8_t(platform)), ValueType::byteType));
 }
 
 class VmSystemPowDoubleInt : public VmFunction
@@ -94,7 +94,7 @@ void VmSystemIsCSpaceChar::Execute(Frame& frame)
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
     bool isSpace = std::isspace(char(c));
-    frame.OpStack().Push(IntegralValue(isSpace, ValueType::boolType));
+    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(isSpace), ValueType::boolType));
 }
 
 class VmSystemIsCAlphaChar : public VmFunction
@@ -116,7 +116,7 @@ void VmSystemIsCAlphaChar::Execute(Frame& frame)
 	IntegralValue value = frame.Local(0).GetValue();
 	char32_t c = value.AsChar();
 	bool isAlpha = std::isalpha(char(c));
-	frame.OpStack().Push(IntegralValue(isAlpha, ValueType::boolType));
+	frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(isAlpha), ValueType::boolType));
 }
 
 class VmSystemIsCAlnumChar : public VmFunction
@@ -138,7 +138,7 @@ void VmSystemIsCAlnumChar::Execute(Frame& frame)
 	IntegralValue value = frame.Local(0).GetValue();
 	char32_t c = value.AsChar();
 	bool isalnum = std::isalnum(char(c));
-	frame.OpStack().Push(IntegralValue(isalnum, ValueType::boolType));
+	frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(isalnum), ValueType::boolType));
 }
 
 class VmSystemIsCDigitChar : public VmFunction
@@ -160,7 +160,7 @@ void VmSystemIsCDigitChar::Execute(Frame& frame)
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
     bool isDigit = std::isdigit(char(c));
-    frame.OpStack().Push(IntegralValue(isDigit, ValueType::boolType));
+    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(isDigit), ValueType::boolType));
 }
 
 class VmSystemIsCHexDigitChar : public VmFunction
@@ -182,7 +182,7 @@ void VmSystemIsCHexDigitChar::Execute(Frame& frame)
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
     bool isHexDigit = std::isxdigit(char(c));
-    frame.OpStack().Push(IntegralValue(isHexDigit, ValueType::boolType));
+    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(isHexDigit), ValueType::boolType));
 }
 
 class VmSystemIsCPunctuationChar : public VmFunction
@@ -204,7 +204,7 @@ void VmSystemIsCPunctuationChar::Execute(Frame& frame)
 	IntegralValue value = frame.Local(0).GetValue();
 	char32_t c = value.AsChar();
 	bool isPunctuation = std::ispunct(char(c));
-	frame.OpStack().Push(IntegralValue(isPunctuation, ValueType::boolType));
+	frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(isPunctuation), ValueType::boolType));
 }
 
 class VmSystemIsCPrintableChar : public VmFunction
@@ -226,7 +226,7 @@ void VmSystemIsCPrintableChar::Execute(Frame& frame)
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
     bool isPrintable = std::isprint(char(c));
-    frame.OpStack().Push(IntegralValue(isPrintable, ValueType::boolType));
+    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(isPrintable), ValueType::boolType));
 }
 
 class VmSystemIsCLowerChar : public VmFunction
@@ -248,7 +248,7 @@ void VmSystemIsCLowerChar::Execute(Frame& frame)
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
     bool isLower = std::islower(char(c));
-    frame.OpStack().Push(IntegralValue(isLower, ValueType::boolType));
+    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(isLower), ValueType::boolType));
 }
 
 class VmSystemIsCUpperChar : public VmFunction
@@ -270,7 +270,7 @@ void VmSystemIsCUpperChar::Execute(Frame& frame)
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
     bool isUpper = std::isupper(char(c));
-    frame.OpStack().Push(IntegralValue(isUpper, ValueType::boolType));
+    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(isUpper), ValueType::boolType));
 }
 
 class VmSystemToCLowerChar : public VmFunction
@@ -292,7 +292,7 @@ void VmSystemToCLowerChar::Execute(Frame& frame)
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
     char32_t toLower = std::tolower(char(c));
-    frame.OpStack().Push(IntegralValue(toLower, ValueType::charType));
+    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(toLower), ValueType::charType));
 }
 
 class VmSystemToCUpperChar : public VmFunction
@@ -314,7 +314,7 @@ void VmSystemToCUpperChar::Execute(Frame& frame)
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
     char32_t toUpper = std::toupper(char(c));
-    frame.OpStack().Push(IntegralValue(toUpper, ValueType::charType));
+    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(toUpper), ValueType::charType));
 }
 
 class VmSystemObjectToString : public VmFunction
@@ -386,7 +386,7 @@ void VmSystemObjectGetHashCode::Execute(Frame& frame)
     ObjectReference reference(value.Value());
     if (reference.IsNull())
     {
-        frame.OpStack().Push(IntegralValue(0, ValueType::ulongType));
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(0), ValueType::ulongType));
     }
     else
     {
@@ -441,7 +441,7 @@ void VmSystemObjectEqual::Execute(Frame& frame)
             void* right = memoryPool.GetObjectNoThrowNoLock(rightRef);
             result = left == right;
         }
-        frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(result), ValueType::boolType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -506,7 +506,7 @@ void VmSystemObjectLess::Execute(Frame& frame)
             void* right = pool.GetObjectNoThrowNoLock(rightRef);
             result = left < right;
         }
-        frame.OpStack().Push(IntegralValue(result, ValueType::boolType));
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(result), ValueType::boolType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -555,8 +555,8 @@ void VmSystemStringConstructorCharArray::Execute(Frame& frame)
         std::pair<AllocationHandle, int32_t> stringCharactersHandleStringSLengthPair = memoryPool.CreateStringCharsFromCharArray(frame.GetThread(), charArrayRef, lock);
         AllocationHandle stringCharactersHandle = stringCharactersHandleStringSLengthPair.first;
         int32_t stringLength = stringCharactersHandleStringSLengthPair.second;
-        memoryPool.SetField(stringRef, 1, IntegralValue(stringLength, ValueType::intType), lock);
-        memoryPool.SetField(stringRef, 2, IntegralValue(stringCharactersHandle.Value(), ValueType::allocationHandle), lock);
+        memoryPool.SetField(stringRef, 1, IntegralValue(static_cast<uint64_t>(stringLength), ValueType::intType), lock);
+        memoryPool.SetField(stringRef, 2, IntegralValue(static_cast<uint64_t>(stringCharactersHandle.Value()), ValueType::allocationHandle), lock);
     }
     catch (const NullReferenceException& ex)
     {
@@ -605,7 +605,7 @@ void VmSystemIOOpenFile::Execute(Frame& frame)
         Assert(accessValue.GetType() == ValueType::byteType, "byte expected");
         FileAccess access = static_cast<FileAccess>(accessValue.AsByte());
         int32_t fileHandle = OpenFile(filePath, mode, access);
-        frame.OpStack().Push(IntegralValue(fileHandle, ValueType::intType));
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(fileHandle), ValueType::intType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -804,7 +804,7 @@ void VmSystemIOReadByteFromFile::Execute(Frame& frame)
         Assert(fileHandleValue.GetType() == ValueType::intType, "int expected");
         int32_t fileHandle = fileHandleValue.AsInt();
         int32_t value = ReadByteFromFile(fileHandle);
-        frame.OpStack().Push(IntegralValue(value, ValueType::intType));
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(value), ValueType::intType));
     }
     catch (const FileSystemError& ex)
     {
@@ -856,7 +856,7 @@ void VmSystemIOReadFile::Execute(Frame& frame)
         {
             memoryPool.SetBytes(buffer, bytes, result);
         }
-        frame.OpStack().Push(IntegralValue(result, ValueType::intType));
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(result), ValueType::intType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -952,7 +952,7 @@ void VmSystemIOTellFile::Execute(Frame& frame)
         Assert(fileHandleValue.GetType() == ValueType::intType, "int expected");
         int32_t fileHandle = fileHandleValue.AsInt();
         int32_t filePos = TellFile(fileHandle);
-        frame.OpStack().Push(IntegralValue(filePos, ValueType::intType));
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(filePos), ValueType::intType));
     }
     catch (const FileSystemError& ex)
     {
@@ -987,7 +987,7 @@ void VmSystemIOFileExists::Execute(Frame& frame)
         ObjectReference filePathStr(filePathValue.Value());
         std::string filePath = GetManagedMemoryPool().GetUtf8String(filePathStr);
         bool exists = boost::filesystem::exists(filePath);
-        frame.OpStack().Push(IntegralValue(exists, ValueType::boolType));
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(exists), ValueType::boolType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -1035,7 +1035,7 @@ void VmSystemIOLastWriteTimeLess::Execute(Frame& frame)
         ObjectReference secondFilePathStr(secondFilePathValue.Value());
         std::string secondFilePath = memoryPool.GetUtf8String(secondFilePathStr);
         bool less = boost::filesystem::last_write_time(firstFilePath) < boost::filesystem::last_write_time(secondFilePath);
-        frame.OpStack().Push(IntegralValue(less, ValueType::boolType));
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(less), ValueType::boolType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -1111,7 +1111,7 @@ void VmSystemGetPathSeparatorChar::Execute(Frame& frame)
 #else
     char32_t s = ':';
 #endif
-    frame.OpStack().Push(IntegralValue(s, ValueType::charType));
+    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(s), ValueType::charType));
 }
 
 class VmSystemIOInternalGetCurrentWorkingDirectory : public VmFunction
@@ -1167,7 +1167,7 @@ void VmSystemThreadingStartThreadWithThreadStartFunction::Execute(Frame& frame)
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex(), std::defer_lock_t());
         ObjectReference threadReference = memoryPool.CreateObject(frame.GetThread(), threadClassData->Type(), lock);
         memoryPool.SetField(threadReference, 0, IntegralValue(threadClassData), lock);
-        memoryPool.SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType), lock);
+        memoryPool.SetField(threadReference, 1, IntegralValue(static_cast<uint64_t>(threadId), ValueType::intType), lock);
         frame.OpStack().Push(threadReference);
     }
     catch (const NullReferenceException& ex)
@@ -1217,7 +1217,7 @@ void VmSystemThreadingStartThreadWithThreadStartMethod::Execute(Frame& frame)
         ClassData* threadClassData = ClassDataTable::GetClassData(U"System.Threading.Thread");
         ObjectReference threadReference = memoryPool.CreateObject(frame.GetThread(), threadClassData->Type(), lock);
         memoryPool.SetField(threadReference, 0, IntegralValue(threadClassData), lock);
-        memoryPool.SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType), lock);
+        memoryPool.SetField(threadReference, 1, IntegralValue(static_cast<uint64_t>(threadId), ValueType::intType), lock);
         frame.OpStack().Push(threadReference);
     }
     catch (const NullReferenceException& ex)
@@ -1264,7 +1264,7 @@ void VmSystemThreadingStartThreadWithParameterizedThreadStartFunction::Execute(F
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex(), std::defer_lock_t());
         ObjectReference threadReference = memoryPool.CreateObject(frame.GetThread(), threadClassData->Type(), lock);
         memoryPool.SetField(threadReference, 0, IntegralValue(threadClassData), lock);
-        memoryPool.SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType), lock);
+        memoryPool.SetField(threadReference, 1, IntegralValue(static_cast<uint64_t>(threadId), ValueType::intType), lock);
         frame.OpStack().Push(threadReference);
     }
     catch (const NullReferenceException& ex)
@@ -1318,7 +1318,7 @@ void VmSystemThreadingStartThreadWithParameterizedThreadStartMethod::Execute(Fra
         ClassData* threadClassData = ClassDataTable::GetClassData(U"System.Threading.Thread");
         ObjectReference threadReference = memoryPool.CreateObject(frame.GetThread(), threadClassData->Type(), lock);
         memoryPool.SetField(threadReference, 0, IntegralValue(threadClassData), lock);
-        memoryPool.SetField(threadReference, 1, IntegralValue(threadId, ValueType::intType), lock);
+        memoryPool.SetField(threadReference, 1, IntegralValue(static_cast<uint64_t>(threadId), ValueType::intType), lock);
         frame.OpStack().Push(threadReference);
     }
     catch (const NullReferenceException& ex)
@@ -1522,7 +1522,7 @@ void VmSystemThreadingConditionVariableConstructor::Execute(Frame& frame)
         void* condVarObject = memoryPool.GetObject(condVarRefefence, lock);
         ManagedAllocationHeader* header = GetAllocationHeader(condVarObject);
         header->SetConditionVariable();
-        memoryPool.SetField(condVarRefefence, 1, IntegralValue(condVarId, ValueType::intType), lock);
+        memoryPool.SetField(condVarRefefence, 1, IntegralValue(static_cast<uint64_t>(condVarId), ValueType::intType), lock);
     }
     catch (const NullReferenceException& ex)
     {
@@ -1731,7 +1731,7 @@ void VmSystemThreadingConditionVariableWaitFor::Execute(Frame& frame)
         lock.unlock();
         CondVarStatus status = WaitConditionVariable(condVarId, lockId, duration);
         GetMachine().GetGarbageCollector().WaitForIdle(thread);
-        frame.OpStack().Push(IntegralValue(static_cast<uint8_t>(status), ValueType::byteType));
+        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(static_cast<uint8_t>(status)), ValueType::byteType));
     }
     catch (const std::exception& ex)
     {
@@ -1776,7 +1776,7 @@ VmSystemThreadingHardwareConcurrency::VmSystemThreadingHardwareConcurrency(Const
 void VmSystemThreadingHardwareConcurrency::Execute(Frame& frame)
 {
     int cores = std::thread::hardware_concurrency();
-    frame.OpStack().Push(IntegralValue(cores, ValueType::intType));
+    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(cores), ValueType::intType));
 }
 
 class VmSystemTimePointNow : public VmFunction
@@ -1928,7 +1928,7 @@ VmSystemRandom::VmSystemRandom(ConstantPool& constantPool)
 void VmSystemRandom::Execute(Frame& frame)
 {
     uint32_t r = Random();
-    frame.OpStack().Push(IntegralValue(r, ValueType::uintType));
+    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(r), ValueType::uintType));
 }
 
 class VmSystemRand64 : public VmFunction

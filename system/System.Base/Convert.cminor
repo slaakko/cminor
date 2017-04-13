@@ -33,7 +33,7 @@ namespace System
             do
             {
                 byte b = cast<byte>(x & 0xFFu);
-                s.Append(HexChar(b & 0x0Fu)).Append(HexChar(b & 0xF0u));
+                s.Append(HexChar(b & 0x0Fu)).Append(HexChar(b >> 4u));
                 x = x >> 8u;
             }
             while (x != 0u);
@@ -289,7 +289,6 @@ namespace System
         {
             throw new ConversionException("hex word cannot be parsed from string \"" + s + "\"");
         }
-
     }
 
     public bool TryParseHexWord(string s, ref ushort value)
@@ -344,7 +343,6 @@ namespace System
         {
             throw new ConversionException("hex dword cannot be parsed from string \"" + s + "\"");
         }
-
     }
 
     public bool TryParseHexDWord(string s, ref uint value)
@@ -652,42 +650,44 @@ namespace System
         public static bool Parse(string s, ref T x)
         {
             T value = cast<T>(0.0);
-            if (s == "")
+            if (string.IsNullOrEmpty(s))
             {
                 return false;
             }
             bool negative = false;
+            int start = 0;
+            if (s[0] == '+')
+            {
+                ++start;
+            }
+            else if (s[0] == '-')
+            {
+                negative = true;
+                ++start;
+            }
             int state = 0;
             T d = cast<T>(10.0);
             int exponent = 0;
             bool negativeExponent = false;
-            foreach (char c in s)
+            int n = s.Length;
+            for (int i = start; i < n; ++i)
             {
+                char c = s[i];
                 switch (state)
                 {
                     case 0: 
                     {
-                        if (c == '+')
+                        if (c >= '0' && c <= '9')
                         {
-                            state = 1;
-                        }
-                        else if (c == '-')
-                        {
-                            negative = true;
-                            state = 1;
-                        }
-                        else if (c >= '0' && c <= '9')
-                        {
-                            value = cast<int>(c) - cast<int>('0');
-                            state = 1;
+                            value = 10 * value + (cast<int>(c) - cast<int>('0'));
                         }
                         else if (c == '.')
                         {
-                            state = 2;
+                            state = 1;
                         }
-                        else
+                        else if (c == 'e' || c == 'E')
                         {   
-                            return false;
+                            state = 2;
                         }
                         break;
                     }
@@ -695,62 +695,42 @@ namespace System
                     {
                         if (c >= '0' && c <= '9')
                         {
-                            value = 10 * value + cast<int>(c) - cast<int>('0');
-                        }
-                        else if (c == '.')
-                        {
-                            state = 2;
+                            value = value + (cast<int>(c) - cast<int>('0')) / d;
+                            d = 10 * d;
                         }
                         else if (c == 'e' || c == 'E')
                         {
-                            state = 3;
+                            state = 2;
+                        }
+                        else 
+                        {
+                            return false;
                         }
                         break;
                     }
                     case 2:
                     {
-                        if (c >= '0' && c <= '9')
-                        {
-                            value = value + (cast<int>(c) - cast<int>('0')) / d;
-                            d = d * cast<T>(10.0);
-                        }
-                        else if (c == 'e' || c == 'E')
+                        if (c == '+')
                         {
                             state = 3;
                         }
-                        else
+                        else if (c == '-')
                         {
-                            return false;
+                            negativeExponent = true;
+                            state = 3;
+                        }
+                        else if (c >= '0' && c <= '9')
+                        {
+                            exponent = cast<int>(c) - cast<int>('0');
+                            state = 3;
                         }
                         break;
                     }
                     case 3:
                     {
-                        if (c == '+')
-                        {
-                            state = 4;
-                        }
-                        else if (c == '-')
-                        {
-                            negativeExponent = true;
-                            state = 4;
-                        }
-                        else if (c >= '0' && c <= '9')
-                        {
-                            exponent = cast<int>(c) - cast<int>('0');
-                            state = 4;
-                        }
-                        else
-                        {
-                            return false;
-                        }
-                        break;
-                    }
-                    case 4:
-                    {
                         if (c >= '0' && c <= '9')
                         {
-                            exponent = 10 * exponent + cast<int>(c) - cast<int>('0');
+                            exponent = 10 * exponent + (cast<int>(c) - cast<int>('0'));
                         }
                         else
                         {
@@ -759,10 +739,6 @@ namespace System
                         break;
                     }
                 }
-            }
-            if (state == 0)
-            {
-                return false;
             }
             if (negative)
             {
@@ -774,7 +750,7 @@ namespace System
                 {
                     exponent = -exponent;
                 }
-                value = value + cast<T>(Math.Pow(10.0, exponent));
+                value = value * cast<T>(Math.Pow(10.0, exponent));
             }
             x = value;
             return true;

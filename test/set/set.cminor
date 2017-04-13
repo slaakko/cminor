@@ -51,10 +51,12 @@ void TestIntSet()
         Console.WriteLine(x);
     }
     Console.WriteLine("---");
+    List<int> list = new List<int>();
     for (int i = 0; i < 10; ++i)
     {
         int x = cast<int>(Random());
         intSet.Add(x);
+        list.Add(x);
     }
     Console.WriteLine("---");
     foreach (int x in intSet)
@@ -73,6 +75,42 @@ void TestIntSet()
         Console.WriteLine(x);
     }
     Console.WriteLine("---");
+    removed = intSet.Remove(1);
+    if (!removed)
+    {
+        Console.WriteLine("error: not removed");
+    }
+    Console.WriteLine("---");
+    foreach (int x in intSet)
+    {
+        Console.WriteLine(x);
+    }
+    Console.WriteLine("---");
+    removed = intSet.Remove(2);
+    if (!removed)
+    {
+        Console.WriteLine("error: not removed");
+    }
+    Console.WriteLine("---");
+    foreach (int x in intSet)
+    {
+        Console.WriteLine(x);
+    }
+    Console.WriteLine("---");
+    foreach (int x in list)
+    {
+        removed = intSet.Remove(x);
+        if (!removed)
+        {
+            Console.WriteLine("error: not removed");
+        }
+        Console.WriteLine("---");
+        foreach (int x in intSet)
+        {
+            Console.WriteLine(x);
+        }
+        Console.WriteLine("---");
+    }
 }
 
 void main()

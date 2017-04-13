@@ -1233,16 +1233,6 @@ utf32_string ToUpper(const utf32_string& s)
 
 bool IsIdentifier(const utf32_string& s)
 {
-    if (s.empty()) return false;
-    char32_t first = s[0];
-    if (!std::isalpha(char(first)) && first != U'_') return false;
-    int n = int(s.length());
-    for (int i = 1; i < n; ++i)
-    {
-        char32_t c = s[i];
-        if (!std::isalnum(char(c)) && c != U'_') return false;
-    }
-/*
 	char32_t first = s[0];
 	if (!IsLetter(first) && first != U'_') return false;
 	int n = int(s.length());
@@ -1251,7 +1241,6 @@ bool IsIdentifier(const utf32_string& s)
 		char32_t c = s[i];
 		if (!IsLetter(c) && !IsNumber(c) && c != U'_') return false;
 	}
-    */
     return true;
 }
 

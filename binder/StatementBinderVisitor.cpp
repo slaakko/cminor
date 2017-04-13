@@ -366,10 +366,6 @@ void StatementBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
     Symbol* symbol = boundCompileUnit.GetAssembly().GetSymbolTable().GetSymbol(memberFunctionNode);
     MemberFunctionSymbol* memberFunctionSymbol = dynamic_cast<MemberFunctionSymbol*>(symbol);
     Assert(memberFunctionSymbol, "member function symbol expected");
-	if (memberFunctionSymbol->GroupName() == U"AddGrammar")
-	{
-		int x = 0;
-	}
     if (memberFunctionSymbol->IsAbstract()) return;
     if (instantiateRequested)
     {

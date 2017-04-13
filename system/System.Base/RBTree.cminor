@@ -556,6 +556,51 @@ namespace System.Collections.Generic
             }
             return false;
         }
+        public ValueType this[KeyType key]
+        {
+            get 
+            {
+                RedBlackTreeNode<ValueType> n = Root;
+                while (n != null)
+                {
+                    if (key < KeyOf(n.Value))
+                    {
+                        n = cast<RedBlackTreeNode<ValueType>>(n.Left);
+                    }
+                    else if (KeyOf(n.Value) < key)
+                    {
+                        n = cast<RedBlackTreeNode<ValueType>>(n.Right);
+                    }
+                    else
+                    {
+                        return n.Value;
+                    }
+                }
+                return default(ValueType);
+            }
+        }
+        public void AddOrReplace(ValueType value)
+        {
+            KeyType key = KeyOf(value);
+            RedBlackTreeNode<ValueType> n = Root;
+            while (n != null)
+            {
+                if (key < KeyOf(n.Value))
+                {
+                    n = cast<RedBlackTreeNode<ValueType>>(n.Left);
+                }
+                else if (KeyOf(n.Value) < key)
+                {
+                    n = cast<RedBlackTreeNode<ValueType>>(n.Right);
+                }
+                else
+                {
+                    n.Value = value;
+                    return;
+                }
+            }
+            Add(value);
+        }
         public int Count
         {
             get { return count; }

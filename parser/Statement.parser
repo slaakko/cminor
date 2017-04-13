@@ -213,7 +213,6 @@ namespace cminor.parser
 
         Catch(ParsingContext* ctx) : CatchNode*
             ::= (keyword("catch") '('! TypeExpr(ctx)! Identifier! ')'! CompoundStatement(ctx):catchBlock1){ value = new CatchNode(span, TypeExpr, Identifier, catchBlock1); }
-            |   (keyword("catch") CompoundStatement(ctx):catchBlock2){ value = new CatchNode(span, catchBlock2); }
             ;
 
         Finally(ParsingContext* ctx) : CompoundStatementNode*

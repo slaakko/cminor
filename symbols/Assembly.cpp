@@ -1620,14 +1620,6 @@ void AssignKeys(std::vector<ClassTypeSymbol*>& classesByPriority)
     uint64_t key = 2;
     for (ClassTypeSymbol* cls : classesByPriority)
     {
-		if (cls->Name() == U"Namespace")
-		{
-			int x = 0;
-		}
-		else if (cls->Name() == U"Grammar")
-		{
-			int x = 0;
-		}
 		cls->SetKey(key);
 		key = cminor::util::NextPrime(key + 1);
 	}
@@ -1635,14 +1627,6 @@ void AssignKeys(std::vector<ClassTypeSymbol*>& classesByPriority)
 
 uint64_t ComputeCid(ClassTypeSymbol* classType)
 {
-	if (classType->Name() == U"Namespace")
-	{
-		int x = 0;
-	}
-	else if (classType->Name() == U"Grammar")
-	{
-		int x = 0;
-	}
 	uint64_t cid = classType->Key();
     ClassTypeSymbol* base = classType->BaseClass();
     while (base)

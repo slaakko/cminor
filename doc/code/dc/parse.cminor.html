@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>parse.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="comment">// ...</span>
+<span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">input</span><span class="other">,</span> <span class="identifier">SymbolTable</span> <span class="identifier">symbolTable</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="identifier">Scanner</span> <span class="identifier">scanner</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">Scanner</span><span class="other">(</span><span class="identifier">input</span><span class="other">)</span><span class="other">;</span>
+    <span class="identifier">scanner.NextToken</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">scanner.CurrentToken</span> <span class="keyword">is</span> <span class="identifier">PrintToken</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">symbolTable.Print</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">return</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">scanner.CurrentToken</span> <span class="keyword">is</span> <span class="identifier">VariableNameToken</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">VariableNameToken</span> <span class="identifier">token</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">VariableNameToken</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">scanner.CurrentToken</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">string</span> <span class="identifier">variableName</span> <span class="other">=</span> <span class="identifier">token.VariableName</span><span class="other">;</span>
+        <span class="identifier">scanner.NextToken</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">scanner.CurrentToken</span> <span class="keyword">is</span> <span class="identifier">OperatorToken</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">OperatorToken</span> <span class="identifier">token</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">OperatorToken</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">scanner.CurrentToken</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">token.Char</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;=&apos;</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">scanner.NextToken</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">double</span> <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">Expr</span><span class="other">(</span><span class="identifier">scanner</span><span class="other">,</span> <span class="identifier">symbolTable</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">Token</span> <span class="identifier">token</span> <span class="other">=</span> <span class="identifier">scanner.CurrentToken</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">token</span> <span class="keyword">is</span> <span class="identifier">EndToken</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">symbolTable.SetVariable</span><span class="other">(</span><span class="identifier">variableName</span><span class="other">,</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="identifier">variableName</span> <span class="other">+</span> <span class="string">&quot; = &quot;</span> <span class="other">+</span> <span class="identifier">value.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">return</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ParsingException</span><span class="other">(</span><span class="string">&quot;invalid input&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+    <span class="identifier">scanner.Rewind</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="identifier">scanner.NextToken</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="keyword">double</span> <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">Expr</span><span class="other">(</span><span class="identifier">scanner</span><span class="other">,</span> <span class="identifier">symbolTable</span><span class="other">)</span><span class="other">;</span>
+    <span class="identifier">Token</span> <span class="identifier">token</span> <span class="other">=</span> <span class="identifier">scanner.CurrentToken</span><span class="other">;</span>
+    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">token</span> <span class="keyword">is</span> <span class="identifier">EndToken</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;= &quot;</span> <span class="other">+</span> <span class="identifier">value.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">else</span>
+    <span class="other">{</span>
+        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ParsingException</span><span class="other">(</span><span class="string">&quot;invalid input&quot;</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+<span class="other">/</span><span class="other">/</span> <span class="other">.</span><span class="other">.</span><span class="other">.</span></pre>
+</body>
+</html>

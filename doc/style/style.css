@@ -33,6 +33,35 @@ table.grammar
     max-width: 800px;
 }
 
+table.type 
+{
+    background-color: ghostwhite;
+    margin: 20px;
+    padding: 20px;
+    max-width: 800px;
+}
+
+th.type
+{
+    border-bottom: 1px solid black
+}
+
+td.type
+{
+    border-right: 1px solid black
+}
+
+td.bottom 
+{
+    border-bottom: 1px solid black
+}
+
+td.bottommiddle 
+{
+    border-right: 1px solid black;
+    border-bottom: 1px solid black
+}
+
 .commands
 {
     background-color: aliceblue;

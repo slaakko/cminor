@@ -56,7 +56,7 @@ namespace cpg.syntax
 
         Keyword             ::= keyword_list(identifier, 
                                 [   "using", "grammar", "start", "end", "skip", "token", "keyword", "keyword_list", 
-                                    "empty", "space", "anychar", "letter", "digit", "hexdigit", "punctuation", "var", "cc"
+                                    "empty", "space", "anychar", "letter", "digit", "hexdigit", "punctuation", "var", "cc", "range"
                                 ])
                             ;
 

@@ -14,16 +14,21 @@
     <p>
         The Cminor compiler assumes that source files have implicit UTF-8 encoding.
         UTF-8 byte order mark EF BB BF can be used in the start of a source file,
-        but it's not required.
+        but it's not required. If you use non-ASCII characters in a source file, 
+        remember to save it using UTF-8 encoding.
     </p>
 
     <p>
         All the string literals contained in source files are converted from UTF-8 to 
-        UTF-32 representation internally. The Cminor string and character types have internal UTF-32 encoding.
+        UTF-32 representation internally. The string and character types have internal UTF-32 encoding.
+        This way characters (or "glyphs") and character codes (the Unicode code points representing them) 
+        have one-to-one correspondence.
     </p>
 
     <p>
-        The output encoding of strings and characters is UTF-8.
+        The output encoding of strings and characters is UTF-8. 
+        This works fine for file output, but unfortunately for console output on Windows it means that for example non-Latin letters generate garbage output,
+        because the author has not found a way to put Windows console window to UTF-8 mode.
     </p>
 
     <h3 id="chinese">
@@ -32,8 +37,8 @@
 
     <p>
         Here's the contents of program <span class="code">encoding.cminor</span> that prints 
-        word "Hello" followed by the word "world" in chinese:
-    </p>
+        word "Hello" followed by the word "world" in chinese to file <span class="code">hello.txt</span>:
+</p>
 
     <div class="program">
         <iframe src="../code/encoding/encoding.cminor.html" height="320px" width="600px" style="border:none;"></iframe>
@@ -42,6 +47,20 @@
     <p>
         It is good practice that programs containing I/O or other code that can fail handle exceptions by using <span class="code">try</span> statements.
     </p>
+
+    <h3 id="identifiers">
+        5.2 Unicode in Identifiers
+    </h3>
+
+    <p>
+        Besides to string and character literals, identifiers in source code naming functions, classes, variables and so on can also contain non-Latin Unicode letters.
+        Here's the contents of program <span class="code">dice.cminor</span> that has function "HeitäNoppaa" containing Finnish letter 'ä' 
+        (represented as 0xC3 0xA4 using UTF-8 encoding). The name of the function means "play dice" in Finnish:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dice/dice.cminor.html" height="320px" width="600px" style="border:none;"></iframe>
+    </div>
 
 </body>
 </html>

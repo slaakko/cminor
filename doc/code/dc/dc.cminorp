@@ -1,0 +1,7 @@
+project dc;
+source <error.cminor>;
+source <main.cminor>;
+source <parser.cminor>;
+source <scanner.cminor>;
+source <symbols.cminor>;
+source <token.cminor>;

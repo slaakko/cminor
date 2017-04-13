@@ -1,0 +1,77 @@
+using System;
+using System.Text;
+
+namespace Calculator
+{
+    public class Scanner
+    {
+        public Scanner(string input)
+        {
+            this.input = input;
+        }
+        public void NextToken()
+        {
+            SkipWhiteSpace();
+            if (pos < input.Length)
+            {
+                if (char.IsNumber(input[pos]))
+                {
+                    StringBuilder numberBuilder = new StringBuilder();
+                    while (pos < input.Length && (char.IsNumber(input[pos]) || input[pos] == '.'))
+                    {
+                        numberBuilder.Append(input[pos]);
+                        ++pos;
+                    }
+                    string numberStr = numberBuilder.ToString();
+                    double number = double.Parse(numberStr);
+                    token = new NumberToken(number);
+                }
+                else if (char.IsLetter(input[pos]))
+                {
+                    StringBuilder variableNameBuilder = new StringBuilder();
+                    while (pos < input.Length && char.IsLetter(input[pos]))
+                    {
+                        variableNameBuilder.Append(input[pos]);
+                        ++pos;
+                    }
+                    string variableName = variableNameBuilder.ToString();
+                    if (variableName == "print")
+                    {
+                        token = new PrintToken();
+                    }
+                    else
+                    {
+                        token = new VariableNameToken(variableName);
+                    }
+                }
+                else
+                {
+                    token = new OperatorToken(input[pos]);
+                    ++pos;
+                }
+            }
+            else
+            {
+                token = new EndToken();
+            }
+        }
+        public void Rewind()
+        {
+            pos = 0;
+        }
+        public Token CurrentToken
+        {
+            get { return token; }
+        }
+        private void SkipWhiteSpace()
+        {
+            while (pos < input.Length && char.IsSpace(input[pos]))
+            {
+                ++pos;
+            }
+        }
+        private Token token;
+        private string input;
+        private int pos;
+    }
+}

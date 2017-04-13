@@ -580,6 +580,11 @@ void CodeGeneratorVisitor::Visit(AnyCharParser& parser)
     cppFormatter.Write("new cminor::parsing::AnyCharParser()");
 }
 
+void CodeGeneratorVisitor::Visit(RangeParser& parser)
+{
+    cppFormatter.Write("new cminor::parsing::RangeParser(" + std::to_string(parser.Start()) + ", " + std::to_string(parser.End()) + ")");
+}
+
 void CodeGeneratorVisitor::Visit(NonterminalParser& parser)
 {
     cppFormatter.Write("new cminor::parsing::NonterminalParser(\"" + parser.Name() + "\", \"" + parser.RuleName() + "\", " + 

@@ -113,6 +113,19 @@ public:
     virtual void Accept(Visitor& visitor);
 };
 
+class RangeParser : public Parser
+{
+public:
+    RangeParser(int start_, int end_);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack, ParsingData* parsingData);
+    virtual void Accept(Visitor& visitor);
+    int Start() const { return start; }
+    int End() const { return end; }
+private:
+    int start;
+    int end;
+};
+
 } } // namespace cminor::parsing
 
 #endif // CMINOR_PARSING_PRIMITIVE_INCLUDED

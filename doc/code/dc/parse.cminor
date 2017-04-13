@@ -1,0 +1,50 @@
+// ...
+public void Parse(string input, SymbolTable symbolTable)
+{
+    Scanner scanner = new Scanner(input);
+    scanner.NextToken();
+    if (scanner.CurrentToken is PrintToken)
+    {
+        symbolTable.Print();
+        return;
+    }
+    else if (scanner.CurrentToken is VariableNameToken)
+    {
+        VariableNameToken token = cast<VariableNameToken>(scanner.CurrentToken);
+        string variableName = token.VariableName;
+        scanner.NextToken();
+        if (scanner.CurrentToken is OperatorToken)
+        {
+            OperatorToken token = cast<OperatorToken>(scanner.CurrentToken);
+            if (token.Char == '=')
+            {
+                scanner.NextToken();
+                double value = Expr(scanner, symbolTable);
+                Token token = scanner.CurrentToken;
+                if (token is EndToken)
+                {
+                    symbolTable.SetVariable(variableName, value);
+                    Console.WriteLine(variableName + " = " + value.ToString());
+                    return;
+                }
+                else
+                {
+                    throw new ParsingException("invalid input");
+                }
+            }
+        }
+    }
+    scanner.Rewind();
+    scanner.NextToken();
+    double value = Expr(scanner, symbolTable);
+    Token token = scanner.CurrentToken;
+    if (token is EndToken)
+    {
+        Console.WriteLine("= " + value.ToString());
+    }
+    else
+    {
+        throw new ParsingException("invalid input");
+    }
+}
+// ...

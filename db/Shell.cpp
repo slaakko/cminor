@@ -579,6 +579,8 @@ void Shell::SwitchToTextMode()
 {
     if (HandlesSetToBinaryMode())
     {
+        std::fflush(stdout);
+        std::fflush(stderr);
         SetHandleToTextMode(0);
         SetHandleToTextMode(1);
         SetHandleToTextMode(2);
@@ -589,6 +591,8 @@ void Shell::SwitchToBinaryMode()
 {
     if (HandlesSetToBinaryMode())
     {
+        std::fflush(stdout);
+        std::fflush(stderr);
         SetHandleToBinaryMode(0);
         SetHandleToBinaryMode(1);
         SetHandleToBinaryMode(2);

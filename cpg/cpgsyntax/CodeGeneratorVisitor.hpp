@@ -35,6 +35,7 @@ public:
     virtual void Visit(HexDigitParser& parser);
     virtual void Visit(PunctuationParser& parser);
     virtual void Visit(AnyCharParser& parser);
+    virtual void Visit(RangeParser& parser);
     virtual void Visit(NonterminalParser& parser);
     virtual void Visit(RuleLink& link);
     virtual void BeginVisit(Rule& parser);

@@ -159,18 +159,18 @@ IntegralValue StaticClassData::GetStaticField(int32_t index) const
     void* fieldPtr = static_cast<uint8_t*>(staticData) + field.Offset().Value();
     switch (field.GetType())
     {
-        case ValueType::boolType: return IntegralValue(*static_cast<bool*>(fieldPtr), field.GetType());
-        case ValueType::sbyteType: return IntegralValue(*static_cast<int8_t*>(fieldPtr), field.GetType());
-        case ValueType::byteType: return IntegralValue(*static_cast<uint8_t*>(fieldPtr), field.GetType());
-        case ValueType::shortType: return IntegralValue(*static_cast<int16_t*>(fieldPtr), field.GetType());
-        case ValueType::ushortType: return IntegralValue(*static_cast<uint16_t*>(fieldPtr), field.GetType());
-        case ValueType::intType: return IntegralValue(*static_cast<int32_t*>(fieldPtr), field.GetType());
-        case ValueType::uintType: return IntegralValue(*static_cast<uint32_t*>(fieldPtr), field.GetType());
-        case ValueType::longType: return IntegralValue(*static_cast<int64_t*>(fieldPtr), field.GetType());
-        case ValueType::ulongType: return IntegralValue(*static_cast<uint64_t*>(fieldPtr), field.GetType());
-        case ValueType::floatType: return IntegralValue(static_cast<uint64_t>(*static_cast<float*>(fieldPtr)), field.GetType());
-        case ValueType::doubleType: return IntegralValue(static_cast<uint64_t>(*static_cast<double*>(fieldPtr)), field.GetType());
-        case ValueType::charType: return IntegralValue(*static_cast<char32_t*>(fieldPtr), field.GetType());
+        case ValueType::boolType: return IntegralValue(static_cast<uint64_t>(*static_cast<bool*>(fieldPtr)), field.GetType());
+        case ValueType::sbyteType: return IntegralValue(static_cast<uint64_t>(*static_cast<int8_t*>(fieldPtr)), field.GetType());
+        case ValueType::byteType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint8_t*>(fieldPtr)), field.GetType());
+        case ValueType::shortType: return IntegralValue(static_cast<uint64_t>(*static_cast<int16_t*>(fieldPtr)), field.GetType());
+        case ValueType::ushortType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint16_t*>(fieldPtr)), field.GetType());
+        case ValueType::intType: return IntegralValue(static_cast<uint64_t>(*static_cast<int32_t*>(fieldPtr)), field.GetType());
+        case ValueType::uintType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint32_t*>(fieldPtr)), field.GetType());
+        case ValueType::longType: return IntegralValue(static_cast<uint64_t>(*static_cast<int64_t*>(fieldPtr)), field.GetType());
+        case ValueType::ulongType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint64_t*>(fieldPtr)), field.GetType());
+        case ValueType::floatType: return IntegralValue(static_cast<double>(*static_cast<float*>(fieldPtr)), field.GetType());
+        case ValueType::doubleType: return IntegralValue(static_cast<double>(*static_cast<double*>(fieldPtr)), field.GetType());
+        case ValueType::charType: return IntegralValue(static_cast<uint64_t>(*static_cast<char32_t*>(fieldPtr)), field.GetType());
         case ValueType::memPtr: return IntegralValue(static_cast<uint8_t*>(fieldPtr));
         case ValueType::classDataPtr: return IntegralValue(*static_cast<ClassData**>(fieldPtr));
         case ValueType::typePtr: return IntegralValue(*static_cast<ObjectType**>(fieldPtr));

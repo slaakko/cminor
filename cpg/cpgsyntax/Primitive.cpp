@@ -118,6 +118,8 @@ public:
         a10ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PrimitiveRule>(this, &PrimitiveRule::A10Action));
         cminor::parsing::ActionParser* a11ActionParser = GetAction("A11");
         a11ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PrimitiveRule>(this, &PrimitiveRule::A11Action));
+        cminor::parsing::ActionParser* a12ActionParser = GetAction("A12");
+        a12ActionParser->SetAction(new cminor::parsing::MemberParsingAction<PrimitiveRule>(this, &PrimitiveRule::A12Action));
         cminor::parsing::NonterminalParser* charNonterminalParser = GetNonterminal("Char");
         charNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PrimitiveRule>(this, &PrimitiveRule::PostChar));
         cminor::parsing::NonterminalParser* stringNonterminalParser = GetNonterminal("String");
@@ -142,6 +144,8 @@ public:
         hexDigitNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PrimitiveRule>(this, &PrimitiveRule::PostHexDigit));
         cminor::parsing::NonterminalParser* punctuationNonterminalParser = GetNonterminal("Punctuation");
         punctuationNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PrimitiveRule>(this, &PrimitiveRule::PostPunctuation));
+        cminor::parsing::NonterminalParser* rangeNonterminalParser = GetNonterminal("Range");
+        rangeNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<PrimitiveRule>(this, &PrimitiveRule::PostRange));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
@@ -202,6 +206,11 @@ public:
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromPunctuation;
+    }
+    void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = context->fromRange;
     }
     void PostChar(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
     {
@@ -323,10 +332,20 @@ public:
             stack.pop();
         }
     }
+    void PostRange(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
+    {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        if (matched)
+        {
+            std::unique_ptr<cminor::parsing::Object> fromRange_value = std::move(stack.top());
+            context->fromRange = *static_cast<cminor::parsing::ValueObject<cminor::parsing::Parser*>*>(fromRange_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context : cminor::parsing::Context
     {
-        Context(): value(), fromChar(), fromString(), fromCharSet(), fromKeyword(), fromKeywordList(), fromEmpty(), fromSpace(), fromAnyChar(), fromLetter(), fromDigit(), fromHexDigit(), fromPunctuation() {}
+        Context(): value(), fromChar(), fromString(), fromCharSet(), fromKeyword(), fromKeywordList(), fromEmpty(), fromSpace(), fromAnyChar(), fromLetter(), fromDigit(), fromHexDigit(), fromPunctuation(), fromRange() {}
         cminor::parsing::Parser* value;
         cminor::parsing::Parser* fromChar;
         cminor::parsing::Parser* fromString;
@@ -340,6 +359,7 @@ private:
         cminor::parsing::Parser* fromDigit;
         cminor::parsing::Parser* fromHexDigit;
         cminor::parsing::Parser* fromPunctuation;
+        cminor::parsing::Parser* fromRange;
     };
 };
 
@@ -1176,19 +1196,85 @@ private:
     };
 };
 
+class PrimitiveGrammar::RangeRule : public cminor::parsing::Rule
+{
+public:
+    RangeRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+        cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
+    {
+        SetValueTypeName("cminor::parsing::Parser*");
+    }
+    virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
+    {
+        parsingData->PushContext(Id(), new Context());
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+    }
+    virtual void Leave(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData, bool matched)
+    {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        if (matched)
+        {
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<cminor::parsing::Parser*>(context->value)));
+        }
+        parsingData->PopContext(Id());
+    }
+    virtual void Link()
+    {
+        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<RangeRule>(this, &RangeRule::A0Action));
+        cminor::parsing::NonterminalParser* sNonterminalParser = GetNonterminal("s");
+        sNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<RangeRule>(this, &RangeRule::Posts));
+        cminor::parsing::NonterminalParser* eNonterminalParser = GetNonterminal("e");
+        eNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<RangeRule>(this, &RangeRule::Poste));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        context->value = new RangeParser(context->froms, context->frome);
+    }
+    void Posts(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
+    {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        if (matched)
+        {
+            std::unique_ptr<cminor::parsing::Object> froms_value = std::move(stack.top());
+            context->froms = *static_cast<cminor::parsing::ValueObject<int>*>(froms_value.get());
+            stack.pop();
+        }
+    }
+    void Poste(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
+    {
+        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
+        if (matched)
+        {
+            std::unique_ptr<cminor::parsing::Object> frome_value = std::move(stack.top());
+            context->frome = *static_cast<cminor::parsing::ValueObject<int>*>(frome_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context : cminor::parsing::Context
+    {
+        Context(): value(), froms(), frome() {}
+        cminor::parsing::Parser* value;
+        int froms;
+        int frome;
+    };
+};
+
 void PrimitiveGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cpg.syntax.ElementGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = cpg::syntax::ElementGrammar::Create(pd);
+        grammar0 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cpg.syntax.ElementGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parsing::stdlib::Create(pd);
+        grammar1 = cpg::syntax::ElementGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
@@ -1196,10 +1282,11 @@ void PrimitiveGrammar::GetReferencedGrammars()
 void PrimitiveGrammar::CreateRules()
 {
     AddRuleLink(new cminor::parsing::RuleLink("char", this, "cminor.parsing.stdlib.char"));
+    AddRuleLink(new cminor::parsing::RuleLink("string", this, "cminor.parsing.stdlib.string"));
     AddRuleLink(new cminor::parsing::RuleLink("StringArray", this, "ElementGrammar.StringArray"));
     AddRuleLink(new cminor::parsing::RuleLink("escape", this, "cminor.parsing.stdlib.escape"));
-    AddRuleLink(new cminor::parsing::RuleLink("string", this, "cminor.parsing.stdlib.string"));
     AddRuleLink(new cminor::parsing::RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
+    AddRuleLink(new cminor::parsing::RuleLink("int", this, "cminor.parsing.stdlib.int"));
     AddRule(new PrimitiveRule("Primitive", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
@@ -1212,30 +1299,33 @@ void PrimitiveGrammar::CreateRules()
                                         new cminor::parsing::AlternativeParser(
                                             new cminor::parsing::AlternativeParser(
                                                 new cminor::parsing::AlternativeParser(
-                                                    new cminor::parsing::ActionParser("A0",
-                                                        new cminor::parsing::NonterminalParser("Char", "Char", 0)),
-                                                    new cminor::parsing::ActionParser("A1",
-                                                        new cminor::parsing::NonterminalParser("String", "String", 0))),
-                                                new cminor::parsing::ActionParser("A2",
-                                                    new cminor::parsing::NonterminalParser("CharSet", "CharSet", 0))),
-                                            new cminor::parsing::ActionParser("A3",
-                                                new cminor::parsing::NonterminalParser("Keyword", "Keyword", 0))),
-                                        new cminor::parsing::ActionParser("A4",
-                                            new cminor::parsing::NonterminalParser("KeywordList", "KeywordList", 0))),
-                                    new cminor::parsing::ActionParser("A5",
-                                        new cminor::parsing::NonterminalParser("Empty", "Empty", 0))),
-                                new cminor::parsing::ActionParser("A6",
-                                    new cminor::parsing::NonterminalParser("Space", "Space", 0))),
-                            new cminor::parsing::ActionParser("A7",
-                                new cminor::parsing::NonterminalParser("AnyChar", "AnyChar", 0))),
-                        new cminor::parsing::ActionParser("A8",
-                            new cminor::parsing::NonterminalParser("Letter", "Letter", 0))),
-                    new cminor::parsing::ActionParser("A9",
-                        new cminor::parsing::NonterminalParser("Digit", "Digit", 0))),
-                new cminor::parsing::ActionParser("A10",
-                    new cminor::parsing::NonterminalParser("HexDigit", "HexDigit", 0))),
-            new cminor::parsing::ActionParser("A11",
-                new cminor::parsing::NonterminalParser("Punctuation", "Punctuation", 0)))));
+                                                    new cminor::parsing::AlternativeParser(
+                                                        new cminor::parsing::ActionParser("A0",
+                                                            new cminor::parsing::NonterminalParser("Char", "Char", 0)),
+                                                        new cminor::parsing::ActionParser("A1",
+                                                            new cminor::parsing::NonterminalParser("String", "String", 0))),
+                                                    new cminor::parsing::ActionParser("A2",
+                                                        new cminor::parsing::NonterminalParser("CharSet", "CharSet", 0))),
+                                                new cminor::parsing::ActionParser("A3",
+                                                    new cminor::parsing::NonterminalParser("Keyword", "Keyword", 0))),
+                                            new cminor::parsing::ActionParser("A4",
+                                                new cminor::parsing::NonterminalParser("KeywordList", "KeywordList", 0))),
+                                        new cminor::parsing::ActionParser("A5",
+                                            new cminor::parsing::NonterminalParser("Empty", "Empty", 0))),
+                                    new cminor::parsing::ActionParser("A6",
+                                        new cminor::parsing::NonterminalParser("Space", "Space", 0))),
+                                new cminor::parsing::ActionParser("A7",
+                                    new cminor::parsing::NonterminalParser("AnyChar", "AnyChar", 0))),
+                            new cminor::parsing::ActionParser("A8",
+                                new cminor::parsing::NonterminalParser("Letter", "Letter", 0))),
+                        new cminor::parsing::ActionParser("A9",
+                            new cminor::parsing::NonterminalParser("Digit", "Digit", 0))),
+                    new cminor::parsing::ActionParser("A10",
+                        new cminor::parsing::NonterminalParser("HexDigit", "HexDigit", 0))),
+                new cminor::parsing::ActionParser("A11",
+                    new cminor::parsing::NonterminalParser("Punctuation", "Punctuation", 0))),
+            new cminor::parsing::ActionParser("A12",
+                new cminor::parsing::NonterminalParser("Range", "Range", 0)))));
     AddRule(new CharRule("Char", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::NonterminalParser("chr", "char", 0))));
@@ -1339,6 +1429,24 @@ void PrimitiveGrammar::CreateRules()
     AddRule(new PunctuationRule("Punctuation", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::KeywordParser("punctuation"))));
+    AddRule(new RangeRule("Range", GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::SequenceParser(
+                            new cminor::parsing::SequenceParser(
+                                new cminor::parsing::KeywordParser("range"),
+                                new cminor::parsing::ExpectationParser(
+                                    new cminor::parsing::CharParser('('))),
+                            new cminor::parsing::ExpectationParser(
+                                new cminor::parsing::NonterminalParser("s", "int", 0))),
+                        new cminor::parsing::ExpectationParser(
+                            new cminor::parsing::CharParser(','))),
+                    new cminor::parsing::ExpectationParser(
+                        new cminor::parsing::NonterminalParser("e", "int", 0))),
+                new cminor::parsing::ExpectationParser(
+                    new cminor::parsing::CharParser(')'))))));
 }
 
 } } // namespace cpg.syntax

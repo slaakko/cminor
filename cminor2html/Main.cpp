@@ -10,6 +10,7 @@
 #include <cminor/pl/InitDone.hpp>
 #include <cminor/util/CodeFormatter.hpp>
 #include <cminor/util/MappedInputFile.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <cminor/machine/Error.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -175,7 +176,9 @@ void HtmlSourceTokenFormatter::Spaces(const std::string& token)
 
 void HtmlSourceTokenFormatter::Comment(const std::string& token)
 {
-    formatter->Write("<span class=\"comment\">" + HtmlEscape(token) + "</span>");
+    std::string trimmedToken = Trim(token);
+    formatter->Write("<span class=\"comment\">" + HtmlEscape(trimmedToken) + "</span>");
+    formatter->WriteLine();
 }
 
 void HtmlSourceTokenFormatter::NewLine(const std::string& token)
@@ -298,9 +301,11 @@ struct InitDone
     InitDone()
     {
         cminor::parsing::Init();
+        cminor::util::unicode::Init();
     }
     ~InitDone()
     {
+        cminor::util::unicode::Done();
         cminor::parsing::Done();
     }
 };

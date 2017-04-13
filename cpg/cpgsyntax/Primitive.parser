@@ -14,6 +14,7 @@ namespace cpg.syntax
         using stdlib.char;
         using stdlib.string;
         using stdlib.escape;
+        using stdlib.int;
         using ElementGrammar.QualifiedId;
         using ElementGrammar.StringArray;
 
@@ -30,6 +31,7 @@ namespace cpg.syntax
                         |   Digit{ value = Digit; }
                         |   HexDigit{ value = HexDigit; }
                         |   Punctuation{ value = Punctuation; }
+                        |   Range{ value = Range; }
                         ;
 
         Char: cminor::parsing::Parser*
@@ -43,7 +45,7 @@ namespace cpg.syntax
         CharSet(var bool inverse, var std::string s): cminor::parsing::Parser*
                         ::= token
                             (   '['
-                                ('^'{ inverse = true; })? 
+                                ('^'{ inverse = true; })?
                                 (CharSetRange{ s.append(CharSetRange); })*
                                 ']'!
                             )
@@ -53,9 +55,9 @@ namespace cpg.syntax
                             ;
 
         CharSetRange: std::string
-                        ::= CharSetChar:first 
+                            ::= CharSetChar:first
                             ('-' CharSetChar:last
-                                { 
+                                {
                                     value.append(1, first);
                                     value.append(1, '-');
                                     value.append(1, last);
@@ -63,8 +65,9 @@ namespace cpg.syntax
                             |   empty{ value.append(1, first); }
                             )
                             ;
-                            
-        CharSetChar: char   ::= [^\\\]]{ value = *matchBegin; }
+
+        CharSetChar: char
+                            ::= [^\\\]]{ value = *matchBegin; }
                             |   escape{ value = escape; }
                             ;
 
@@ -113,6 +116,10 @@ namespace cpg.syntax
 
         Punctuation: cminor::parsing::Parser*
                             ::= keyword("punctuation"){ value = new PunctuationParser(); }
+                            ;
+
+        Range: cminor::parsing::Parser*
+                            ::= (keyword("range") '('! int:s! ','! int:e! ')'!){ value = new RangeParser(s, e); }
                             ;
     }
 }

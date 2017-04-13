@@ -45,6 +45,7 @@ ElementGrammar::ElementGrammar(cminor::parsing::ParsingDomain* parsingDomain_): 
     keywords0.push_back("keyword_list");
     keywords0.push_back("letter");
     keywords0.push_back("punctuation");
+    keywords0.push_back("range");
     keywords0.push_back("skip");
     keywords0.push_back("space");
     keywords0.push_back("start");
@@ -619,27 +620,27 @@ private:
 void ElementGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cpg.cpp.DeclaratorGrammar");
     if (!grammar0)
     {
-        grammar0 = cminor::parsing::stdlib::Create(pd);
+        grammar0 = cpg::cpp::DeclaratorGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cpg.cpp.DeclaratorGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar1)
     {
-        grammar1 = cpg::cpp::DeclaratorGrammar::Create(pd);
+        grammar1 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void ElementGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("string", this, "cminor.parsing.stdlib.string"));
+    AddRuleLink(new cminor::parsing::RuleLink("TypeId", this, "cpg.cpp.DeclaratorGrammar.TypeId"));
     AddRuleLink(new cminor::parsing::RuleLink("qualified_id", this, "cminor.parsing.stdlib.qualified_id"));
     AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("TypeId", this, "cpg.cpp.DeclaratorGrammar.TypeId"));
     AddRuleLink(new cminor::parsing::RuleLink("Declarator", this, "cpg.cpp.DeclaratorGrammar.Declarator"));
+    AddRuleLink(new cminor::parsing::RuleLink("string", this, "cminor.parsing.stdlib.string"));
     AddRule(new RuleLinkRule("RuleLink", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::ActionParser("A0",

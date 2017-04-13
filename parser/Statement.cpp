@@ -3516,8 +3516,6 @@ public:
     {
         cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CatchRule>(this, &CatchRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CatchRule>(this, &CatchRule::A1Action));
         cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
         typeExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<CatchRule>(this, &CatchRule::PreTypeExpr));
         typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CatchRule>(this, &CatchRule::PostTypeExpr));
@@ -3526,19 +3524,11 @@ public:
         cminor::parsing::NonterminalParser* catchBlock1NonterminalParser = GetNonterminal("catchBlock1");
         catchBlock1NonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<CatchRule>(this, &CatchRule::PrecatchBlock1));
         catchBlock1NonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CatchRule>(this, &CatchRule::PostcatchBlock1));
-        cminor::parsing::NonterminalParser* catchBlock2NonterminalParser = GetNonterminal("catchBlock2");
-        catchBlock2NonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<CatchRule>(this, &CatchRule::PrecatchBlock2));
-        catchBlock2NonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CatchRule>(this, &CatchRule::PostcatchBlock2));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new CatchNode(span, context->fromTypeExpr, context->fromIdentifier, context->fromcatchBlock1);
-    }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
-    {
-        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = new CatchNode(span, context->fromcatchBlock2);
     }
     void PreTypeExpr(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
     {
@@ -3580,31 +3570,15 @@ public:
             stack.pop();
         }
     }
-    void PrecatchBlock2(cminor::parsing::ObjectStack& stack, ParsingData* parsingData)
-    {
-        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<ParsingContext*>(context->ctx)));
-    }
-    void PostcatchBlock2(cminor::parsing::ObjectStack& stack, ParsingData* parsingData, bool matched)
-    {
-        Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        if (matched)
-        {
-            std::unique_ptr<cminor::parsing::Object> fromcatchBlock2_value = std::move(stack.top());
-            context->fromcatchBlock2 = *static_cast<cminor::parsing::ValueObject<CompoundStatementNode*>*>(fromcatchBlock2_value.get());
-            stack.pop();
-        }
-    }
 private:
     struct Context : cminor::parsing::Context
     {
-        Context(): ctx(), value(), fromTypeExpr(), fromIdentifier(), fromcatchBlock1(), fromcatchBlock2() {}
+        Context(): ctx(), value(), fromTypeExpr(), fromIdentifier(), fromcatchBlock1() {}
         ParsingContext* ctx;
         CatchNode* value;
         Node* fromTypeExpr;
         IdentifierNode* fromIdentifier;
         CompoundStatementNode* fromcatchBlock1;
-        CompoundStatementNode* fromcatchBlock2;
     };
 };
 
@@ -3841,16 +3815,16 @@ private:
 void StatementGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = cminor::parser::ExpressionGrammar::Create(pd);
+        grammar0 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parsing.stdlib");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
     if (!grammar1)
     {
-        grammar1 = cminor::parsing::stdlib::Create(pd);
+        grammar1 = cminor::parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
     cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
@@ -3875,10 +3849,10 @@ void StatementGrammar::GetReferencedGrammars()
 
 void StatementGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
     AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
+    AddRuleLink(new cminor::parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
     AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new cminor::parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
     AddRule(new StatementRule("Statement", GetScope(), GetParsingDomain()->GetNextRuleId(),
@@ -4322,27 +4296,22 @@ void StatementGrammar::CreateRules()
                 new cminor::parsing::ActionParser("A3",
                     new cminor::parsing::NonterminalParser("fin", "Finally", 1))))));
     AddRule(new CatchRule("Catch", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::AlternativeParser(
-            new cminor::parsing::ActionParser("A0",
+        new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::SequenceParser(
                             new cminor::parsing::SequenceParser(
-                                new cminor::parsing::SequenceParser(
-                                    new cminor::parsing::KeywordParser("catch"),
-                                    new cminor::parsing::ExpectationParser(
-                                        new cminor::parsing::CharParser('('))),
+                                new cminor::parsing::KeywordParser("catch"),
                                 new cminor::parsing::ExpectationParser(
-                                    new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1))),
+                                    new cminor::parsing::CharParser('('))),
                             new cminor::parsing::ExpectationParser(
-                                new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                                new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1))),
                         new cminor::parsing::ExpectationParser(
-                            new cminor::parsing::CharParser(')'))),
-                    new cminor::parsing::NonterminalParser("catchBlock1", "CompoundStatement", 1))),
-            new cminor::parsing::ActionParser("A1",
-                new cminor::parsing::SequenceParser(
-                    new cminor::parsing::KeywordParser("catch"),
-                    new cminor::parsing::NonterminalParser("catchBlock2", "CompoundStatement", 1))))));
+                            new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                    new cminor::parsing::ExpectationParser(
+                        new cminor::parsing::CharParser(')'))),
+                new cminor::parsing::NonterminalParser("catchBlock1", "CompoundStatement", 1)))));
     AddRule(new FinallyRule("Finally", GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ActionParser("A0",
             new cminor::parsing::SequenceParser(
