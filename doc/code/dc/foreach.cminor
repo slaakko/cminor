@@ -1,0 +1,7 @@
+System.Enumerable @enumerable = collection;
+System.Enumerator @enumerator = @enumerable.GetEnumerator();
+for ( ; @enumerator.AtEnd(); @enumerator.MoveNext())
+{
+    Type x = cast<Type>(@enumerator.GetCurrent());
+    statement;
+}

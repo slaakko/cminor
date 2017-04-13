@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>factor.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="comment">// ...</span>
+<span class="keyword">public</span> <span class="keyword">double</span> <span class="identifier">Factor</span><span class="other">(</span><span class="identifier">Scanner</span> <span class="identifier">scanner</span><span class="other">,</span> <span class="identifier">SymbolTable</span> <span class="identifier">symbolTable</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="identifier">Token</span> <span class="identifier">token</span> <span class="other">=</span> <span class="identifier">scanner.CurrentToken</span><span class="other">;</span>
+    <span class="identifier">OperatorToken</span> <span class="identifier">op</span> <span class="other">=</span> <span class="identifier">token</span> <span class="keyword">as</span> <span class="identifier">OperatorToken</span><span class="other">;</span>
+    <span class="keyword">bool</span> <span class="identifier">neg</span> <span class="other">=</span> <span class="keyword">false</span><span class="other">;</span>
+    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">op</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">op.IsAdditiveOperator</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">op.Char</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;-&apos;</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">neg</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="identifier">scanner.NextToken</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">double</span> <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">Primary</span><span class="other">(</span><span class="identifier">scanner</span><span class="other">,</span> <span class="identifier">symbolTable</span><span class="other">)</span><span class="other">;</span>
+    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">neg</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="other">-</span><span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+<span class="other">}</span>
+<span class="comment">// ...</span>
+</pre>
+</body>
+</html>

@@ -1,1 +1,1 @@
-cminor2html --style ../../style/code.css error.cminor main.cminor parser.cminor parse.cminor scanner.cminor symbols.cminor token.cminor dc.cminorp
+cminor2html --style ../../style/code.css error.cminor main.cminor parser.cminor parse.cminor expr.cminor term.cminor factor.cminor primary.cminor foreach.cminor syntax.cminor scanner.cminor symbols.cminor token.cminor dc.cminorp

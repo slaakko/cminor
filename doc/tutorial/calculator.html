@@ -7,7 +7,7 @@
     <link rel="stylesheet" type="text/css" href="../style/style.css" />
 </head>
 <body>
-    <h2>7 Larger Example - Creating a Desk Calculator</h2>
+    <h2>7 Larger Example &ndash; Creating a Desk Calculator</h2>
 
     <p>
         To illustrate features of Cminor language in a somewhat more realistic context,
@@ -173,10 +173,131 @@
                 The keys must form a set ordered by the less than operator.
                 (See <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/Map.cminor">Map.cminor</a> for the implementation).
             </li>
+            <li>
+                <span class="code">System.Collections.Generic.HashSet&lt;T&gt;</span> is a class template for storing unique elements in a hash table.
+                The elements must implement virtual <span class="code">GetHashCode</span> member function. 
+                This condition is satisfied for all class types and boxed value types, but the default implementation for class types can be overridden if needed.
+                The default implementation in the <span class="code">System.Object</span> class generates an artificial random hash code for the object in the object creation time.
+                The hash code stays the same during the lifetime of the object though the object may be moved by the garbage collector.
+                For this reason the memory address of the object is not used as a hash code, as is the case for pointer types in C++ for example.
+                (See <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/HashSet.cminor">HashSet.cminor</a> for the implementation).
+            </li>
+            <li>
+                <span class="code">System.Collections.Generic.HashMap&lt;KeyType, ValueType&gt;</span> is an associative collection 
+                for storing unique key-value pairs in a hash table.
+                The keys must implement virtual <span class="code">GetHashCode</span> member function. This condition is satisfied for all class types and boxed value types, 
+                but the default implementation for class types can be overridden if needed.
+                (See <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/HashMap.cminor">HashMap.cminor</a> for the implementation).
+            </li>
         </ul>
+    </p>
+
+    <p>
+        The calculator stores the values of variables in a <span class="code">System.Collections.Generic.Map&lt;string, double&gt;</span>
+        by mapping the name of the variable to the value of the variable.
+        If the key of an element is not already found in the map, the subscripting operator of the map inserts the element to the map.
+        Otherwise, if the key is already found in the map, a new value replaces the old value in the map.
     </p>
 
     <div class="program">
         <iframe src="../code/dc/symbols.cminor.html" height="600px" width="720px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        Each collection class implements an interface called <span class="code">Enumerable</span>. 
+        (See <a href="https://github.com/slaakko/cminor/blob/master/system/System.Base/Enumerator.cminor">Enumerator.cminor</a> for the implementation).
+        An <span class="code">Enumerable</span> class has a member function called <span class="code">GetEnumerator()</span> that returns an 
+        object that in turn implements an interface called <span class="code">Enumerator</span>.
+        The <span class="code">Enumerator</span> interface differs from the C# language interface of the same name by providing a simplified functionality.
+        The Cminor <span class="code">Enumerator</span> interface has three functions instead of two: 
+        <ol>
+            <li>
+                <span class="code">AtEnd()</span> should return <span class="code"><strong>true</strong></span> if the sequence of elements is empty or already enumerated,
+                <span class="code"><strong>false</strong></span> otherwise.
+            </li>
+            <li>
+                <span class="code">GetCurrent()</span> should return the current element as an object.
+            </li>
+            <li>
+                <span class="code">MoveNext()</span> should move the enumerator one position forward in the sequence to be enumerated.
+            </li>
+        </ol>
+    </p>
+
+    <p>
+        The <span class="code">Print()</span> member function of the <span class="code">SymbolTable</span> class above uses enumerator interface implicitly to enumerate
+        all the variables in the map, because the <strong>foreach</strong> statement is implemented in terms of <span class="code">Enumerable</span> and 
+        <span class="code">Enumerator</span> interfaces: statement <span class="code"><strong>foreach</strong> (Type x <strong>in</strong> collection) { statement; }</span> 
+        is rougly equivalent to the following pseudo-code:
+        <div class="program">
+            <iframe src="../code/dc/foreach.cminor.html" height="140px" width="600px" style="border:none;"></iframe>
+        </div>
+    </p>
+
+    <h3 id="parser">
+        7.8 Implementing a Parser
+    </h3>
+
+    <p>
+        A parser can be implemented by hand using so called recursive-descent functions, or functions that call each other
+        possibly recursively. The syntax we are trying parse is as follows:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/syntax.cminor.html" height="100px" width="720px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        The <span class="code">&lt;expr&gt; production is implemented by the following <span class="code">Expr()</span> function:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/expr.cminor.html" height="480px" width="720px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        The expression "<span class="code">x <strong>as</strong> C</span>" is functionally equavalent to the similar C# language construct:
+        If class of <span class="code">x</span> is class <span class="code">C</span> or derived from <span class="code">C</span> the 
+        result of the <span class="code"><strong>as</strong></span> expression is <span class="code">x</span> converted to 
+        <span class="code">C</span>, otherwise it is <span class="code"><strong>null</strong></span>.
+        The class-of test is implemented using similar integer divisibility expression in terms of class identifiers as for the 
+        <span class="code"><strong>is</strong></span>-expression.
+    </p>
+
+    <p>
+        The <span class="code">&lt;term&gt; production is implemented by the following <span class="code">Term()</span> function:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/term.cminor.html" height="540px" width="720px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        The <span class="code">&lt;factor&gt; production is implemented by the following <span class="code">Factor()</span> function:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/factor.cminor.html" height="360px" width="720px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        Here comes finally the implementation of the <span class="code">&lt;primary&gt;</span> production:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/primary.cminor.html" height="740px" width="720px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        When the primary starts with the left parenthesis the <span class="code">Primary</span> function calls the <span class="code">Expr</span>
+        function to parse a subexpression recursively.
+    </p>
+
+    <p>
+        That closes up the calculator example. Here's the entire source code for the parser portion of the example:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/dc/parser.cminor.html" height="2740px" width="720px" style="border:none;"></iframe>
     </div>
 </body>

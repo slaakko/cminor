@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>foreach.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="identifier">System.Enumerable</span> <span class="other">@</span><span class="identifier">enumerable</span> <span class="other">=</span> <span class="identifier">collection</span><span class="other">;</span>
+<span class="identifier">System.Enumerator</span> <span class="other">@</span><span class="identifier">enumerator</span> <span class="other">=</span> <span class="other">@</span><span class="identifier">enumerable.GetEnumerator</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+<span class="keyword">for</span> <span class="other">(</span> <span class="other">;</span> <span class="other">@</span><span class="identifier">enumerator.AtEnd</span><span class="other">(</span><span class="other">)</span><span class="other">;</span> <span class="other">@</span><span class="identifier">enumerator.MoveNext</span><span class="other">(</span><span class="other">)</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="identifier">Type</span> <span class="identifier">x</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">Type</span><span class="other">&gt;</span><span class="other">(</span><span class="other">@</span><span class="identifier">enumerator.GetCurrent</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+    <span class="identifier">statement</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

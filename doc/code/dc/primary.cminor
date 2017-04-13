@@ -1,0 +1,47 @@
+// ...
+public double Primary(Scanner scanner, SymbolTable symbolTable)
+{
+    Token token = scanner.CurrentToken;
+    NumberToken number = token as NumberToken;
+    if (number != null)
+    {
+        double value = number.Value;
+        scanner.NextToken();
+        return value;
+    }
+    else
+    {
+        VariableNameToken variableNameToken = token as VariableNameToken;
+        if (variableNameToken != null)
+        {
+            double value = symbolTable.GetVariableValue(variableNameToken.VariableName);
+            scanner.NextToken();
+            return value;
+        }
+        else
+        {
+            OperatorToken op = token as OperatorToken;
+            if (op != null && op.Char == '(')
+            {
+                scanner.NextToken();
+                double value = Expr(scanner, symbolTable);
+                token = scanner.CurrentToken;
+                op = token as OperatorToken;
+                if (op != null && op.Char == ')')
+                {
+                    scanner.NextToken();
+                    return value;
+                }
+                else
+                {
+                    throw new ParsingException("')' expected");
+                }
+            }
+            else
+            {
+                throw new ParsingException("number, variable name or subexpression expected");
+            }
+        }
+    }
+}
+// ...

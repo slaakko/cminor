@@ -1,0 +1,29 @@
+// ...
+public double Expr(Scanner scanner, SymbolTable symbolTable)
+{
+    double value = Term(scanner, symbolTable);
+    Token token = scanner.CurrentToken;
+    OperatorToken op = token as OperatorToken;
+    while (op != null && op.IsAdditiveOperator)
+    {
+        char opChar = op.Char;
+        scanner.NextToken();
+        double right = Term(scanner, symbolTable);
+        if (opChar == '+')
+        {
+            value = value + right;
+        }
+        else if (opChar == '-')
+        {
+            value = value - right;
+        }
+        else
+        {
+            throw new LogicErrorException("logic error");
+        }
+        token = scanner.CurrentToken;
+        op = token as OperatorToken;
+    }
+    return value;
+}
+// ...

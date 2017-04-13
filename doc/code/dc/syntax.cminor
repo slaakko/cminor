@@ -1,0 +1,4 @@
+//      <expr>          ::= <term> (('+' | '-') <term>)*
+//      <term>          ::= <factor> (('*' | '/') <factor>)*
+//      <factor>        ::= ('+' | '-')? <primary>
+//      <primary>       ::= <number> | <var> | '(' <expr> ')'

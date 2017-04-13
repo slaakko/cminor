@@ -1,0 +1,22 @@
+// ...
+public double Factor(Scanner scanner, SymbolTable symbolTable)
+{
+    Token token = scanner.CurrentToken;
+    OperatorToken op = token as OperatorToken;
+    bool neg = false;
+    if (op != null && op.IsAdditiveOperator)
+    {
+        if (op.Char == '-')
+        {
+            neg = true;
+        }
+        scanner.NextToken();
+    }
+    double value = Primary(scanner, symbolTable);
+    if (neg)
+    {
+        return -value;
+    }
+    return value;
+}
+// ...

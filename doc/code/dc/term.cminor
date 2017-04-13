@@ -1,0 +1,33 @@
+// ...
+public double Term(Scanner scanner, SymbolTable symbolTable)
+{
+    double value = Factor(scanner, symbolTable);
+    Token token = scanner.CurrentToken;
+    OperatorToken op = token as OperatorToken;
+    while (op != null && op.IsMultiplicativeOperator)
+    {
+        char opChar = op.Char;
+        scanner.NextToken();
+        double right = Factor(scanner, symbolTable);
+        if (opChar == '*')
+        {
+            value = value * right;
+        }
+        else if (opChar == '/')
+        {
+            if (right == 0)
+            {
+                throw new DivisionByZeroException("division by zero");
+            }
+            value = value / right;
+        }
+        else
+        {
+            throw new LogicErrorException("logic error");
+        }
+        token = scanner.CurrentToken;
+        op = token as OperatorToken;
+    }
+    return value;
+}
+// ...
