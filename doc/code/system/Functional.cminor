@@ -1,0 +1,10 @@
+namespace System
+{
+    public class Identity<T>
+    {
+        public T operator()(T x)
+        {
+            return x;
+        }
+    }
+}

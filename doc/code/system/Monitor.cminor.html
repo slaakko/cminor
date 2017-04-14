@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Monitor.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Threading</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">Monitor</span>
+    <span class="other">{</span>
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">enterm</span><span class="other">]</span>
+        <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Enter</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">)</span><span class="other">;</span>
+
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">exitm</span><span class="other">]</span>
+        <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Exit</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

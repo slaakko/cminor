@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Unicode.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.IO</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Collections.Generic</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Unicode</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">PathToUnicodeDirectory</span><span class="other">(</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">string</span> <span class="identifier">cminorRoot</span> <span class="other">=</span> <span class="identifier">GetEnvironmentVariable</span><span class="other">(</span><span class="string">&quot;CMINOR_ROOT&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">cminorRoot</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">Exception</span><span class="other">(</span><span class="string">&quot;CMINOR_ROOT environment variable not set (set it to point to /path/to/cminor directory)&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="identifier">Path.Combine</span><span class="other">(</span><span class="identifier">cminorRoot</span><span class="other">,</span> <span class="string">&quot;unicode&quot;</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">PathToUnicodeBinFile</span><span class="other">(</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">Path.Combine</span><span class="other">(</span><span class="identifier">PathToUnicodeDirectory</span><span class="other">(</span><span class="other">)</span><span class="other">,</span> <span class="string">&quot;unicode.bin&quot;</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">EncodingException</span> <span class="other">:</span> <span class="identifier">Exception</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">EncodingException</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">base</span><span class="other">(</span><span class="identifier">message</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">DecodingException</span> <span class="other">:</span> <span class="identifier">Exception</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">DecodingException</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">base</span><span class="other">(</span><span class="identifier">message</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Utf8Encoder</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Utf8Encoder</span><span class="other">(</span><span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">stream</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided stream is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">stream</span> <span class="other">=</span> <span class="identifier">stream</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Encode</span><span class="other">(</span><span class="identifier">String</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided string is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">s.Length</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">char</span> <span class="identifier">c</span> <span class="other">=</span> <span class="identifier">s</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+                <span class="keyword">uint</span> <span class="identifier">value</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">value</span> <span class="other">&lt;</span> <span class="number">0x80u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">Put</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span> <span class="other">&amp;</span> <span class="number">0x7Fu</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">value</span> <span class="other">&lt;</span> <span class="number">0x800u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">b1</span> <span class="other">=</span> <span class="number">0x80u</span><span class="other">;</span>
+                    <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">b1</span> <span class="other">=</span> <span class="identifier">b1</span> <span class="other">|</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">i</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">byte</span> <span class="identifier">b0</span> <span class="other">=</span> <span class="number">0xC0u</span><span class="other">;</span>
+                    <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">5u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">b0</span> <span class="other">=</span> <span class="identifier">b0</span> <span class="other">|</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">i</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="identifier">Put</span><span class="other">(</span><span class="identifier">b0</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">Put</span><span class="other">(</span><span class="identifier">b1</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">value</span> <span class="other">&lt;</span> <span class="number">0x10000u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">b2</span> <span class="other">=</span> <span class="number">0x80u</span><span class="other">;</span>
+                    <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">b2</span> <span class="other">=</span> <span class="identifier">b2</span> <span class="other">|</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">i</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">byte</span> <span class="identifier">b1</span> <span class="other">=</span> <span class="number">0x80u</span><span class="other">;</span>
+                    <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">b1</span> <span class="other">=</span> <span class="identifier">b1</span> <span class="other">|</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">i</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">byte</span> <span class="identifier">b0</span> <span class="other">=</span> <span class="number">0xE0u</span><span class="other">;</span>
+                    <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">4u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">b0</span> <span class="other">=</span> <span class="identifier">b0</span> <span class="other">|</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">i</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="identifier">Put</span><span class="other">(</span><span class="identifier">b0</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">Put</span><span class="other">(</span><span class="identifier">b1</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">Put</span><span class="other">(</span><span class="identifier">b2</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">value</span> <span class="other">&lt;</span> <span class="number">0x110000u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">b3</span> <span class="other">=</span> <span class="number">0x80u</span><span class="other">;</span>
+                    <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">b3</span> <span class="other">=</span> <span class="identifier">b3</span> <span class="other">|</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">i</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">byte</span> <span class="identifier">b2</span> <span class="other">=</span> <span class="number">0x80u</span><span class="other">;</span>
+                    <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">b2</span> <span class="other">=</span> <span class="identifier">b2</span> <span class="other">|</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">i</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">byte</span> <span class="identifier">b1</span> <span class="other">=</span> <span class="number">0x80u</span><span class="other">;</span>
+                    <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">b1</span> <span class="other">=</span> <span class="identifier">b1</span> <span class="other">|</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">i</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">byte</span> <span class="identifier">b0</span> <span class="other">=</span> <span class="number">0xF0u</span><span class="other">;</span>
+                    <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">3u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">b0</span> <span class="other">=</span> <span class="identifier">b0</span> <span class="other">|</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">i</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="identifier">Put</span><span class="other">(</span><span class="identifier">b0</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">Put</span><span class="other">(</span><span class="identifier">b1</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">Put</span><span class="other">(</span><span class="identifier">b2</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">Put</span><span class="other">(</span><span class="identifier">b3</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">EncodingException</span><span class="other">(</span><span class="string">&quot;could not encode: invalid Unicode code point&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">Put</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">stream.WriteByte</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Utf8Decoder</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Utf8Decoder</span><span class="other">(</span><span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">stream</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided stream is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">stream</span> <span class="other">=</span> <span class="identifier">stream</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">uint</span> <span class="identifier">Decode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">Get</span><span class="other">(</span><span class="keyword">true</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">=</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span> 
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="other">-</span><span class="number">1</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">byte</span> <span class="identifier">b</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">b</span> <span class="other">&amp;</span> <span class="number">0x80u</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="number">0u</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">b</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">b</span> <span class="other">&amp;</span> <span class="number">0xE0u</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="number">0xC0u</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">uint</span> <span class="identifier">result</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+                <span class="keyword">byte</span> <span class="identifier">b1</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">Get</span><span class="other">(</span><span class="keyword">false</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">b1</span> <span class="other">&amp;</span> <span class="number">0xC0u</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="number">0x80u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">DecodingException</span><span class="other">(</span><span class="string">&quot;could not decode: invalid byte sequence&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">byte</span> <span class="identifier">shift</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">bit</span> <span class="other">=</span> <span class="identifier">b1</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">b1</span> <span class="other">=</span> <span class="identifier">b1</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">result</span> <span class="other">=</span> <span class="identifier">result</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bit</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">shift</span><span class="other">;</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">shift</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">byte</span> <span class="identifier">b0</span> <span class="other">=</span> <span class="identifier">b</span><span class="other">;</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">5u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">bit</span> <span class="other">=</span> <span class="identifier">b0</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">b0</span> <span class="other">=</span> <span class="identifier">b0</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">result</span> <span class="other">=</span> <span class="identifier">result</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bit</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">shift</span><span class="other">;</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">shift</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">return</span> <span class="identifier">result</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">b</span> <span class="other">&amp;</span> <span class="number">0xF0u</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="number">0xE0u</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">uint</span> <span class="identifier">result</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+                <span class="keyword">byte</span> <span class="identifier">b1</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">Get</span><span class="other">(</span><span class="keyword">false</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">byte</span> <span class="identifier">b2</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">Get</span><span class="other">(</span><span class="keyword">false</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">b2</span> <span class="other">&amp;</span> <span class="number">0xC0u</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="number">0x80u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">DecodingException</span><span class="other">(</span><span class="string">&quot;could not decode: invalid byte sequence&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">byte</span> <span class="identifier">shift</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">bit</span> <span class="other">=</span> <span class="identifier">b2</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">b2</span> <span class="other">=</span> <span class="identifier">b2</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">result</span> <span class="other">=</span> <span class="identifier">result</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bit</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">shift</span><span class="other">;</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">shift</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">b1</span> <span class="other">&amp;</span> <span class="number">0xC0u</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="number">0x80u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">DecodingException</span><span class="other">(</span><span class="string">&quot;could not decode: invalid byte sequence&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">bit</span> <span class="other">=</span> <span class="identifier">b1</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">b1</span> <span class="other">=</span> <span class="identifier">b1</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">result</span> <span class="other">=</span> <span class="identifier">result</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bit</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">shift</span><span class="other">;</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">shift</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">byte</span> <span class="identifier">b0</span> <span class="other">=</span> <span class="identifier">b</span><span class="other">;</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">4u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">bit</span> <span class="other">=</span> <span class="identifier">b0</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">b0</span> <span class="other">=</span> <span class="identifier">b0</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">result</span> <span class="other">=</span> <span class="identifier">result</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bit</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">shift</span><span class="other">;</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">shift</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">return</span> <span class="identifier">result</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">b</span> <span class="other">&amp;</span> <span class="number">0xF8u</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="number">0xF0u</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">uint</span> <span class="identifier">result</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+                <span class="keyword">byte</span> <span class="identifier">b1</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">Get</span><span class="other">(</span><span class="keyword">false</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">byte</span> <span class="identifier">b2</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">Get</span><span class="other">(</span><span class="keyword">false</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">byte</span> <span class="identifier">b3</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">Get</span><span class="other">(</span><span class="keyword">false</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">b3</span> <span class="other">&amp;</span> <span class="number">0xC0u</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="number">0x80u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">DecodingException</span><span class="other">(</span><span class="string">&quot;could not decode: invalid byte sequence&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">byte</span> <span class="identifier">shift</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">bit</span> <span class="other">=</span> <span class="identifier">b3</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">b3</span> <span class="other">=</span> <span class="identifier">b3</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">result</span> <span class="other">=</span> <span class="identifier">result</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bit</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">shift</span><span class="other">;</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">shift</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">b2</span> <span class="other">&amp;</span> <span class="number">0xC0u</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="number">0x80u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">DecodingException</span><span class="other">(</span><span class="string">&quot;could not decode: invalid byte sequence&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">bit</span> <span class="other">=</span> <span class="identifier">b2</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">b2</span> <span class="other">=</span> <span class="identifier">b2</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">result</span> <span class="other">=</span> <span class="identifier">result</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bit</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">shift</span><span class="other">;</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">shift</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">b1</span> <span class="other">&amp;</span> <span class="number">0xC0u</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="number">0x80u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">DecodingException</span><span class="other">(</span><span class="string">&quot;could not decode: invalid byte sequence&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">6u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">bit</span> <span class="other">=</span> <span class="identifier">b1</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">b1</span> <span class="other">=</span> <span class="identifier">b1</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">result</span> <span class="other">=</span> <span class="identifier">result</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bit</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">shift</span><span class="other">;</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">shift</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">byte</span> <span class="identifier">b0</span> <span class="other">=</span> <span class="identifier">b</span><span class="other">;</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">3u</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">byte</span> <span class="identifier">bit</span> <span class="other">=</span> <span class="identifier">b0</span> <span class="other">&amp;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">b0</span> <span class="other">=</span> <span class="identifier">b0</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1u</span><span class="other">;</span>
+                    <span class="identifier">result</span> <span class="other">=</span> <span class="identifier">result</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bit</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">shift</span><span class="other">;</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">shift</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">return</span> <span class="identifier">result</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">DecodingException</span><span class="other">(</span><span class="string">&quot;could not decode: invalid byte sequence&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">Get</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">acceptEof</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">stream.ReadByte</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">=</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">acceptEof</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="other">-</span><span class="number">1</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">DecodingException</span><span class="other">(</span><span class="string">&quot;could not decode: unexpected end of file&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">x</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">enum</span> <span class="identifier">Category</span> <span class="other">:</span> <span class="keyword">uint</span>
+    <span class="other">{</span>
+        <span class="identifier">none</span> <span class="other">=</span> <span class="number">0u</span><span class="other">,</span>
+        <span class="identifier">letterUpper</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">0u</span><span class="other">,</span>                 <span class="comment">// Lu</span>
+        <span class="identifier">letterLower</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">1u</span><span class="other">,</span>                 <span class="comment">// Ll</span>
+        <span class="identifier">letterCased</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">2u</span><span class="other">,</span>                 <span class="comment">// LC</span>
+        <span class="identifier">letterModifier</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">3u</span><span class="other">,</span>              <span class="comment">// Lm</span>
+        <span class="identifier">letterOther</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">4u</span><span class="other">,</span>                 <span class="comment">// Lo</span>
+        <span class="identifier">letterTitle</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">5u</span><span class="other">,</span>                 <span class="comment">// Lt</span>
+        <span class="identifier">letter</span> <span class="other">=</span> <span class="identifier">letterUpper</span> <span class="other">|</span> <span class="identifier">letterLower</span> <span class="other">|</span> <span class="identifier">letterCased</span> <span class="other">|</span> <span class="identifier">letterModifier</span> <span class="other">|</span> <span class="identifier">letterOther</span> <span class="other">|</span> <span class="identifier">letterTitle</span><span class="other">,</span>
+        <span class="identifier">markSpacing</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">6u</span><span class="other">,</span>                 <span class="comment">// Mc</span>
+        <span class="identifier">markEnclosing</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">7u</span><span class="other">,</span>               <span class="comment">// Me</span>
+        <span class="identifier">markNonspacing</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">8u</span><span class="other">,</span>              <span class="comment">// Mn</span>
+        <span class="identifier">mark</span> <span class="other">=</span> <span class="identifier">markSpacing</span> <span class="other">|</span> <span class="identifier">markEnclosing</span> <span class="other">|</span> <span class="identifier">markNonspacing</span><span class="other">,</span>
+        <span class="identifier">numberDecimal</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">9u</span><span class="other">,</span>               <span class="comment">// Nd</span>
+        <span class="identifier">numberLetter</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">10u</span><span class="other">,</span>               <span class="comment">// Nl</span>
+        <span class="identifier">numberOther</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">11u</span><span class="other">,</span>                <span class="comment">// No</span>
+        <span class="identifier">number</span> <span class="other">=</span> <span class="identifier">numberDecimal</span> <span class="other">|</span> <span class="identifier">numberLetter</span> <span class="other">|</span> <span class="identifier">numberOther</span><span class="other">,</span>
+        <span class="identifier">punctuationConnector</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">12u</span><span class="other">,</span>       <span class="comment">// Pc</span>
+        <span class="identifier">punctuationDash</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">13u</span><span class="other">,</span>            <span class="comment">// Pd</span>
+        <span class="identifier">punctuationClose</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">14u</span><span class="other">,</span>           <span class="comment">// Pe</span>
+        <span class="identifier">punctuationFinalQuote</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">15u</span><span class="other">,</span>      <span class="comment">// Pf</span>
+        <span class="identifier">punctuationInitialQuote</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">16u</span><span class="other">,</span>    <span class="comment">// Pi</span>
+        <span class="identifier">punctuationOther</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">17u</span><span class="other">,</span>           <span class="comment">// Po</span>
+        <span class="identifier">punctuationOpen</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">18u</span><span class="other">,</span>            <span class="comment">// Ps</span>
+        <span class="identifier">punctuation</span> <span class="other">=</span> <span class="identifier">punctuationConnector</span> <span class="other">|</span> <span class="identifier">punctuationDash</span> <span class="other">|</span> <span class="identifier">punctuationClose</span> <span class="other">|</span> <span class="identifier">punctuationFinalQuote</span> <span class="other">|</span> <span class="identifier">punctuationInitialQuote</span> <span class="other">|</span> <span class="identifier">punctuationOther</span> <span class="other">|</span> <span class="identifier">punctuationOpen</span><span class="other">,</span>
+        <span class="identifier">symbolCurrency</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">19u</span><span class="other">,</span>             <span class="comment">// Sc</span>
+        <span class="identifier">symbolModifier</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">20u</span><span class="other">,</span>             <span class="comment">// Sk</span>
+        <span class="identifier">symbolMath</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">21u</span><span class="other">,</span>                 <span class="comment">// Sm</span>
+        <span class="identifier">symbolOther</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">22u</span><span class="other">,</span>                <span class="comment">// So</span>
+        <span class="identifier">symbol</span> <span class="other">=</span> <span class="identifier">symbolCurrency</span> <span class="other">|</span> <span class="identifier">symbolModifier</span> <span class="other">|</span> <span class="identifier">symbolMath</span> <span class="other">|</span> <span class="identifier">symbolOther</span><span class="other">,</span>
+        <span class="identifier">separatorLine</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">23u</span><span class="other">,</span>              <span class="comment">// Zl</span>
+        <span class="identifier">separatorParagraph</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">24u</span><span class="other">,</span>         <span class="comment">// Zp</span>
+        <span class="identifier">separatorSpace</span> <span class="other">=</span> <span class="number">1u</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">25u</span><span class="other">,</span>             <span class="comment">// Zs</span>
+        <span class="identifier">separator</span> <span class="other">=</span> <span class="identifier">separatorLine</span> <span class="other">|</span> <span class="identifier">separatorParagraph</span> <span class="other">|</span> <span class="identifier">separatorSpace</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">CategoryMap</span>
+    <span class="other">{</span>
+        <span class="keyword">static</span> <span class="identifier">CategoryMap</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">instance</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CategoryMap</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">CategoryMap</span> <span class="identifier">Instance</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">instance</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">CategoryMap</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">strCategoryMap</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">HashMap</span><span class="other">&lt;</span><span class="keyword">string</span><span class="other">,</span> <span class="identifier">Category</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">HashMap</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">,</span> <span class="keyword">string</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Lu&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.letterUpper</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.letterUpper</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Lu&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Ll&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.letterLower</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.letterLower</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Ll&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;LC&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.letterCased</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.letterCased</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;LC&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Lm&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.letterModifier</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.letterModifier</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Lm&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Lo&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.letterOther</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.letterOther</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Lo&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Lt&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.letterTitle</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.letterTitle</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Lt&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Mc&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.markSpacing</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.markSpacing</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Mc&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Me&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.markEnclosing</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.markEnclosing</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Me&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Mn&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.markNonspacing</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.markNonspacing</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Mn&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Nd&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.numberDecimal</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.numberDecimal</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Nd&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Nl&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.numberLetter</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.numberLetter</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Nl&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;No&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.numberOther</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.numberOther</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;No&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Pc&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.punctuationConnector</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.punctuationConnector</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Pc&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Pd&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.punctuationDash</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.punctuationDash</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Pd&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Pe&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.punctuationClose</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.punctuationClose</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Pe&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Pf&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.punctuationFinalQuote</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.punctuationFinalQuote</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Pf&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Pi&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.punctuationInitialQuote</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.punctuationInitialQuote</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Pi&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Po&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.punctuationOther</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.punctuationOther</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Po&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Ps&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.punctuationOpen</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.punctuationOpen</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Ps&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Sc&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.symbolCurrency</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.symbolCurrency</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Sc&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Sk&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.symbolModifier</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.symbolModifier</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Sk&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Sm&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.symbolMath</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.symbolMath</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Sm&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;So&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.symbolOther</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.symbolOther</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;So&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Zl&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.separatorLine</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.separatorLine</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Zl&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Zp&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.separatorParagraph</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.separatorParagraph</span><span class="other">]</span> <span class="other">=</span><span class="string">&quot;Zp&quot;</span><span class="other">;</span>
+            <span class="identifier">strCategoryMap</span><span class="other">[</span><span class="string">&quot;Zs&quot;</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">Category.separatorSpace</span><span class="other">;</span>
+            <span class="identifier">categoryStrMap</span><span class="other">[</span><span class="identifier">Category.separatorSpace</span><span class="other">]</span> <span class="other">=</span> <span class="string">&quot;Zs&quot;</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Category</span> <span class="identifier">GetCategory</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">categoryName</span><span class="other">)</span> 
+        <span class="other">{</span>
+            <span class="identifier">Category</span> <span class="identifier">category</span> <span class="other">=</span> <span class="identifier">Category.none</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">strCategoryMap.TryGetValue</span><span class="other">(</span><span class="identifier">categoryName</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">category</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">category</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">Category.none</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">GetCategoryName</span><span class="other">(</span><span class="identifier">Category</span> <span class="identifier">category</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">string</span> <span class="identifier">categoryName</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">categoryStrMap.TryGetValue</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">category</span><span class="other">)</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">categoryName</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">categoryName</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">string</span><span class="other">.</span><span class="identifier">Empty</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">HashMap</span><span class="other">&lt;</span><span class="keyword">string</span><span class="other">,</span> <span class="identifier">Category</span><span class="other">&gt;</span> <span class="identifier">strCategoryMap</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">HashMap</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">,</span> <span class="keyword">string</span><span class="other">&gt;</span> <span class="identifier">categoryStrMap</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">static</span> <span class="identifier">CategoryMap</span> <span class="identifier">instance</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">CharacterInfo</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">CharacterInfo</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">code</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="number">0u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">category</span> <span class="other">=</span> <span class="identifier">Category.none</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">toLower</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="number">0u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">toUpper</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="number">0u</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">CharacterInfo</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">code</span><span class="other">,</span> <span class="identifier">Category</span> <span class="identifier">category</span><span class="other">,</span> <span class="keyword">char</span> <span class="identifier">toLower</span><span class="other">,</span> <span class="keyword">char</span> <span class="identifier">toUpper</span><span class="other">)</span> 
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">code</span> <span class="other">=</span> <span class="identifier">code</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">category</span> <span class="other">=</span> <span class="identifier">category</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">toLower</span> <span class="other">=</span> <span class="identifier">toLower</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">toUpper</span> <span class="other">=</span> <span class="identifier">toUpper</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">char</span> <span class="identifier">Code</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">code</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Category</span> <span class="identifier">Cat</span> 
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">category</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">char</span> <span class="identifier">Lower</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">toLower</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">char</span> <span class="identifier">Upper</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">toUpper</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsLetter</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="other">(</span><span class="identifier">category</span> <span class="other">&amp;</span> <span class="identifier">Category.letter</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">Category.none</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsMark</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="other">(</span><span class="identifier">category</span> <span class="other">&amp;</span> <span class="identifier">Category.mark</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">Category.none</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsNumber</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="other">(</span><span class="identifier">category</span> <span class="other">&amp;</span> <span class="identifier">Category.number</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">Category.none</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsPunctuation</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="other">(</span><span class="identifier">category</span> <span class="other">&amp;</span> <span class="identifier">Category.punctuation</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">Category.none</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsSymbol</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="other">(</span><span class="identifier">category</span> <span class="other">&amp;</span> <span class="identifier">Category.symbol</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">Category.none</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsSeparator</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="other">(</span><span class="identifier">category</span> <span class="other">&amp;</span> <span class="identifier">Category.separator</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">Category.none</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Read</span><span class="other">(</span><span class="identifier">BinaryReader</span> <span class="identifier">unicodeBinReader</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">code</span> <span class="other">=</span> <span class="identifier">unicodeBinReader.ReadChar</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">category</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">Category</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">unicodeBinReader.ReadUInt</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">toLower</span> <span class="other">=</span> <span class="identifier">unicodeBinReader.ReadChar</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">toUpper</span> <span class="other">=</span> <span class="identifier">unicodeBinReader.ReadChar</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="identifier">BinaryWriter</span> <span class="identifier">unicodeBinWriter</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">unicodeBinWriter.Write</span><span class="other">(</span><span class="identifier">code</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">unicodeBinWriter.Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">category</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">unicodeBinWriter.Write</span><span class="other">(</span><span class="identifier">toLower</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">unicodeBinWriter.Write</span><span class="other">(</span><span class="identifier">toUpper</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">char</span> <span class="identifier">code</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">Category</span> <span class="identifier">category</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">char</span> <span class="identifier">toLower</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">char</span> <span class="identifier">toUpper</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">UnicodeBinHeader</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">UnicodeBinHeader</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">numCharInfoPages</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">startCharNameTable</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">startCharInfoPagesPos</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">headerMagic</span> <span class="other">=</span> <span class="string">&quot;UNICODE1&quot;</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="identifier">BinaryWriter</span> <span class="identifier">writer</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">foreach</span> <span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span> <span class="keyword">in</span> <span class="identifier">headerMagic</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">byte</span> <span class="identifier">b</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">writer.Write</span><span class="other">(</span><span class="identifier">b</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">writer.Write</span><span class="other">(</span><span class="identifier">numCharInfoPages</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">writer.Write</span><span class="other">(</span><span class="identifier">startCharNameTable</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Read</span><span class="other">(</span><span class="identifier">BinaryReader</span> <span class="identifier">reader</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">headerMagicLen</span> <span class="other">=</span> <span class="identifier">headerMagic.Length</span><span class="other">;</span>
+            <span class="identifier">StringBuilder</span> <span class="identifier">headerMagicBuilder</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">headerMagicLen</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">byte</span> <span class="identifier">b</span> <span class="other">=</span> <span class="identifier">reader.ReadByte</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">headerMagicBuilder.Append</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">b</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">string</span> <span class="identifier">magic</span> <span class="other">=</span> <span class="identifier">headerMagicBuilder.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">magic</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">headerMagic</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">magic.Substring</span><span class="other">(</span><span class="number">0</span><span class="other">,</span> <span class="identifier">headerMagicLen</span> <span class="other">-</span> <span class="number">1</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">headerMagic.Substring</span><span class="other">(</span><span class="number">0</span><span class="other">,</span> <span class="identifier">headerMagicLen</span> <span class="other">-</span> <span class="number">1</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">Exception</span><span class="other">(</span><span class="string">&quot;invalid unicode.bin header magic (not &apos;&quot;</span> <span class="other">+</span> <span class="identifier">headerMagic</span> <span class="other">+</span> <span class="string">&quot;&apos;)&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">magic.Substring</span><span class="other">(</span><span class="identifier">headerMagicLen</span> <span class="other">-</span> <span class="number">1</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">headerMagic.Substring</span><span class="other">(</span><span class="identifier">headerMagicLen</span> <span class="other">-</span> <span class="number">1</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">Exception</span><span class="other">(</span><span class="string">&quot;invalid unicode.bin version (&apos;&quot;</span> <span class="other">+</span> <span class="identifier">magic.Substring</span><span class="other">(</span><span class="identifier">headerMagicLen</span> <span class="other">-</span> <span class="number">1</span><span class="other">)</span> <span class="other">+</span> <span class="string">&quot;&apos; read, &apos;&quot;</span> <span class="other">+</span> <span class="identifier">headerMagic.Substring</span><span class="other">(</span><span class="identifier">headerMagicLen</span> <span class="other">-</span> <span class="number">1</span><span class="other">)</span> <span class="other">+</span> <span class="string">&quot;&apos; expected&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="identifier">numCharInfoPages</span> <span class="other">=</span> <span class="identifier">reader.ReadUInt</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">startCharNameTable</span>  <span class="other">=</span> <span class="identifier">reader.ReadUInt</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">startCharInfoPagesPos</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">reader.Tell</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">uint</span> <span class="identifier">NumCharInfoPages</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">numCharInfoPages</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">numCharInfoPages</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">uint</span> <span class="identifier">StartCharNameTable</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">startCharNameTable</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">startCharNameTable</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">uint</span> <span class="identifier">StartCharInfoPagesPos</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">startCharInfoPagesPos</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">uint</span> <span class="identifier">numCharInfoPages</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">uint</span> <span class="identifier">startCharNameTable</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">uint</span> <span class="identifier">startCharInfoPagesPos</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">string</span> <span class="identifier">headerMagic</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">uint</span> <span class="identifier">numCharactersInPage</span> <span class="other">=</span> <span class="number">4096u</span><span class="other">;</span>
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">uint</span> <span class="identifier">charInfoPageSize</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="number">4u</span><span class="other">)</span> <span class="other">*</span> <span class="number">4u</span> <span class="other">*</span> <span class="identifier">numCharactersInPage</span><span class="other">;</span>
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">uint</span> <span class="identifier">numNamesInPage</span> <span class="other">=</span> <span class="number">4096u</span><span class="other">;</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">CharInfoPage</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">CharInfoPage</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">charInfos</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharacterInfo</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">numCharactersInPage</span><span class="other">)</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Read</span><span class="other">(</span><span class="identifier">BinaryReader</span> <span class="identifier">reader</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">charInfos.Length</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">CharacterInfo</span> <span class="identifier">charInfo</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharacterInfo</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">charInfo.Read</span><span class="other">(</span><span class="identifier">reader</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">charInfos</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">charInfo</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="identifier">BinaryWriter</span> <span class="identifier">writer</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">CharacterInfo</span> <span class="identifier">emptyCharInfo</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharacterInfo</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">foreach</span> <span class="other">(</span><span class="identifier">CharacterInfo</span> <span class="identifier">charInfo</span> <span class="keyword">in</span> <span class="identifier">charInfos</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">charInfo</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">emptyCharInfo.Write</span><span class="other">(</span><span class="identifier">writer</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">charInfo.Write</span><span class="other">(</span><span class="identifier">writer</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">CharacterInfo</span> <span class="keyword">this</span><span class="other">[</span><span class="keyword">int</span> <span class="identifier">index</span><span class="other">]</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">charInfos</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">charInfos</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="identifier">CharacterInfo</span><span class="other">[</span><span class="other">]</span> <span class="identifier">charInfos</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">CharNameTableHeader</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">CharNameTableHeader</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">numCharNamePages</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">pageStarts</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="identifier">BinaryWriter</span> <span class="identifier">writer</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">writer.Write</span><span class="other">(</span><span class="identifier">numCharNamePages</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">foreach</span> <span class="other">(</span><span class="keyword">uint</span> <span class="identifier">pageStart</span> <span class="keyword">in</span> <span class="identifier">pageStarts</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">writer.Write</span><span class="other">(</span><span class="identifier">pageStart</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Read</span><span class="other">(</span><span class="identifier">BinaryReader</span> <span class="identifier">reader</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">numCharNamePages</span> <span class="other">=</span> <span class="identifier">reader.ReadUInt</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">pageStarts</span> <span class="other">=</span> <span class="keyword">new</span> <span class="keyword">uint</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">numCharNamePages</span><span class="other">)</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">uint</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">numCharNamePages</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">pageStarts</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">i</span><span class="other">)</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">reader.ReadUInt</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">uint</span> <span class="identifier">NumCharNamePages</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> 
+            <span class="other">{</span> 
+                <span class="keyword">return</span> <span class="identifier">numCharNamePages</span><span class="other">;</span> 
+            <span class="other">}</span>
+            <span class="identifier">set</span> 
+            <span class="other">{</span> 
+                <span class="identifier">numCharNamePages</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> 
+                <span class="identifier">pageStarts</span> <span class="other">=</span> <span class="keyword">new</span> <span class="keyword">uint</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">numCharNamePages</span><span class="other">)</span><span class="other">]</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">uint</span> <span class="identifier">GetPageStart</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">pageIndex</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">pageStarts</span><span class="other">[</span><span class="identifier">pageIndex</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">SetPageStart</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">pageIndex</span><span class="other">,</span> <span class="keyword">uint</span> <span class="identifier">pageStart</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">pageStarts</span><span class="other">[</span><span class="identifier">pageIndex</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">pageStart</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">uint</span> <span class="identifier">numCharNamePages</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">uint</span><span class="other">[</span><span class="other">]</span> <span class="identifier">pageStarts</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">CharNamePage</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">CharNamePage</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">charNames</span> <span class="other">=</span> <span class="keyword">new</span> <span class="keyword">string</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">numNamesInPage</span><span class="other">)</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="identifier">BinaryWriter</span> <span class="identifier">writer</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">foreach</span> <span class="other">(</span><span class="keyword">string</span> <span class="identifier">charName</span> <span class="keyword">in</span> <span class="identifier">charNames</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">writer.Write</span><span class="other">(</span><span class="identifier">charName</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Read</span><span class="other">(</span><span class="identifier">BinaryReader</span> <span class="identifier">reader</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">uint</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">numNamesInPage</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">string</span> <span class="identifier">charName</span> <span class="other">=</span> <span class="identifier">reader.ReadString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">charNames</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">i</span><span class="other">)</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">charName</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="keyword">this</span><span class="other">[</span><span class="keyword">int</span> <span class="identifier">index</span><span class="other">]</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">charNames</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">charNames</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">string</span><span class="other">[</span><span class="other">]</span> <span class="identifier">charNames</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">CharacterInfoMap</span>
+    <span class="other">{</span>
+        <span class="keyword">static</span> <span class="identifier">CharacterInfoMap</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">instance</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharacterInfoMap</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">CharacterInfoMap</span> <span class="identifier">Instance</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">instance</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">CharacterInfoMap</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">header</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">charInfoPages</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">CharInfoPage</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">nameTableHeader</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">charNamePages</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">CharNamePage</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">using</span> <span class="other">(</span><span class="identifier">BinaryWriter</span> <span class="identifier">writer</span> <span class="other">=</span> <span class="identifier">File.CreateBinary</span><span class="other">(</span><span class="identifier">PathToUnicodeBinFile</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">header</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">UnicodeBinHeader</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">header.NumCharInfoPages</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">charInfoPages.Count</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">header.Write</span><span class="other">(</span><span class="identifier">writer</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">CharInfoPage</span> <span class="identifier">emptyCharInfoPage</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharInfoPage</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">foreach</span> <span class="other">(</span><span class="identifier">CharInfoPage</span> <span class="identifier">page</span> <span class="keyword">in</span> <span class="identifier">charInfoPages</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">page</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">emptyCharInfoPage.Write</span><span class="other">(</span><span class="identifier">writer</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="identifier">page.Write</span><span class="other">(</span><span class="identifier">writer</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+                <span class="identifier">header.StartCharNameTable</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">writer.Tell</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">nameTableHeader</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharNameTableHeader</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">nameTableHeader.NumCharNamePages</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">charNamePages.Count</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">nameTableHeader.Write</span><span class="other">(</span><span class="identifier">writer</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">CharNamePage</span> <span class="identifier">emptyNamePage</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharNamePage</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">charNamePages.Count</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">CharNamePage</span> <span class="identifier">page</span> <span class="other">=</span> <span class="identifier">charNamePages</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+                    <span class="keyword">uint</span> <span class="identifier">pageStart</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">writer.Tell</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">nameTableHeader.SetPageStart</span><span class="other">(</span><span class="identifier">i</span><span class="other">,</span> <span class="identifier">pageStart</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">page</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">emptyNamePage.Write</span><span class="other">(</span><span class="identifier">writer</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="identifier">page.Write</span><span class="other">(</span><span class="identifier">writer</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+                <span class="identifier">writer.Seek</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">header.StartCharNameTable</span><span class="other">)</span><span class="other">,</span> <span class="identifier">Origin.seekSet</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">nameTableHeader.Write</span><span class="other">(</span><span class="identifier">writer</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">writer.Seek</span><span class="other">(</span><span class="number">0</span><span class="other">,</span> <span class="identifier">Origin.seekSet</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">header.Write</span><span class="other">(</span><span class="identifier">writer</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">AddCharInfo</span><span class="other">(</span><span class="identifier">CharacterInfo</span> <span class="identifier">characterInfo</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">char</span> <span class="identifier">c</span> <span class="other">=</span> <span class="identifier">characterInfo.Code</span><span class="other">;</span>
+            <span class="identifier">CharInfoPage</span> <span class="identifier">page</span> <span class="other">=</span> <span class="identifier">GetCharInfoPage</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">page</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">page</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharInfoPage</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">SetCharInfoPage</span><span class="other">(</span><span class="identifier">c</span><span class="other">,</span> <span class="identifier">page</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">uint</span> <span class="identifier">charIndex</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">infoIndex</span> <span class="other">=</span> <span class="identifier">charIndex</span> <span class="other">%</span> <span class="identifier">numCharactersInPage</span><span class="other">;</span>
+            <span class="identifier">page</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">infoIndex</span><span class="other">)</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">characterInfo</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">AddCharName</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">charName</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">CharNamePage</span> <span class="identifier">page</span> <span class="other">=</span> <span class="identifier">GetCharNamePage</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">page</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">page</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharNamePage</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">SetCharNamePage</span><span class="other">(</span><span class="identifier">c</span><span class="other">,</span> <span class="identifier">page</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">uint</span> <span class="identifier">charIndex</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">nameIndex</span> <span class="other">=</span> <span class="identifier">charIndex</span> <span class="other">%</span> <span class="identifier">numNamesInPage</span><span class="other">;</span>
+            <span class="identifier">page</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">nameIndex</span><span class="other">)</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">charName</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">CharacterInfo</span> <span class="identifier">GetCharacterInfo</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">CharInfoPage</span> <span class="identifier">page</span> <span class="other">=</span> <span class="identifier">GetCharInfoPage</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">page</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">page</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharInfoPage</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">using</span> <span class="other">(</span><span class="identifier">BinaryReader</span> <span class="identifier">reader</span> <span class="other">=</span> <span class="identifier">File.OpenBinary</span><span class="other">(</span><span class="identifier">PathToUnicodeBinFile</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">header</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">header</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">UnicodeBinHeader</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">header.Read</span><span class="other">(</span><span class="identifier">reader</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">uint</span> <span class="identifier">charIndex</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">uint</span> <span class="identifier">pageNumber</span> <span class="other">=</span> <span class="identifier">charIndex</span> <span class="other">/</span> <span class="identifier">numCharactersInPage</span><span class="other">;</span>
+                    <span class="keyword">uint</span> <span class="identifier">numPages</span> <span class="other">=</span> <span class="identifier">header.NumCharInfoPages</span><span class="other">;</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">pageNumber</span> <span class="other">&lt;</span> <span class="identifier">numPages</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">reader.Seek</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">header.StartCharInfoPagesPos</span><span class="other">)</span> <span class="other">+</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">pageNumber</span><span class="other">)</span> <span class="other">*</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">charInfoPageSize</span><span class="other">)</span><span class="other">,</span> <span class="identifier">Origin.seekSet</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">page.Read</span><span class="other">(</span><span class="identifier">reader</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">SetCharInfoPage</span><span class="other">(</span><span class="identifier">c</span><span class="other">,</span> <span class="identifier">page</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="keyword">null</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">uint</span> <span class="identifier">charIndex</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">infoIndex</span> <span class="other">=</span> <span class="identifier">charIndex</span> <span class="other">%</span> <span class="identifier">numCharactersInPage</span><span class="other">;</span>
+            <span class="identifier">CharacterInfo</span> <span class="identifier">info</span> <span class="other">=</span> <span class="identifier">page</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">infoIndex</span><span class="other">)</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">info.Code</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">c</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">info</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">null</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">GetCharacterName</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">CharNamePage</span> <span class="identifier">page</span> <span class="other">=</span> <span class="identifier">GetCharNamePage</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">page</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">page</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharNamePage</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">using</span> <span class="other">(</span><span class="identifier">BinaryReader</span> <span class="identifier">reader</span> <span class="other">=</span> <span class="identifier">File.OpenBinary</span><span class="other">(</span><span class="identifier">PathToUnicodeBinFile</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">header</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">header</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">UnicodeBinHeader</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">header.Read</span><span class="other">(</span><span class="identifier">reader</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">nameTableHeader</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">nameTableHeader</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CharNameTableHeader</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">reader.Seek</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">header.StartCharNameTable</span><span class="other">)</span><span class="other">,</span> <span class="identifier">Origin.seekSet</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">nameTableHeader.Read</span><span class="other">(</span><span class="identifier">reader</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">uint</span> <span class="identifier">charIndex</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">uint</span> <span class="identifier">pageNumber</span> <span class="other">=</span> <span class="identifier">charIndex</span> <span class="other">/</span> <span class="identifier">numCharactersInPage</span><span class="other">;</span>
+                    <span class="keyword">uint</span> <span class="identifier">numPages</span> <span class="other">=</span> <span class="identifier">nameTableHeader.NumCharNamePages</span><span class="other">;</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">pageNumber</span> <span class="other">&lt;</span> <span class="identifier">numPages</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="keyword">uint</span> <span class="identifier">pageStart</span> <span class="other">=</span> <span class="identifier">nameTableHeader.GetPageStart</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">pageNumber</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">reader.Seek</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">pageStart</span><span class="other">)</span><span class="other">,</span> <span class="identifier">Origin.seekSet</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">page.Read</span><span class="other">(</span><span class="identifier">reader</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">SetCharNamePage</span><span class="other">(</span><span class="identifier">c</span><span class="other">,</span> <span class="identifier">page</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="keyword">null</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">uint</span> <span class="identifier">charIndex</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">nameIndex</span> <span class="other">=</span> <span class="identifier">charIndex</span> <span class="other">%</span> <span class="identifier">numNamesInPage</span><span class="other">;</span>
+            <span class="keyword">string</span> <span class="identifier">charName</span> <span class="other">=</span> <span class="identifier">page</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">nameIndex</span><span class="other">)</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">charName</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">CharInfoPage</span> <span class="identifier">GetCharInfoPage</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">uint</span> <span class="identifier">charIndex</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">pageNumber</span> <span class="other">=</span> <span class="identifier">charIndex</span> <span class="other">/</span> <span class="identifier">numCharactersInPage</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">pageNumber</span> <span class="other">&gt;</span><span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">charInfoPages.Count</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">charInfoPages.Add</span><span class="other">(</span><span class="keyword">null</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">charInfoPages</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">pageNumber</span><span class="other">)</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">SetCharInfoPage</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">,</span> <span class="identifier">CharInfoPage</span> <span class="identifier">page</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">uint</span> <span class="identifier">charIndex</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">pageNumber</span> <span class="other">=</span> <span class="identifier">charIndex</span> <span class="other">/</span> <span class="identifier">numCharactersInPage</span><span class="other">;</span>
+            <span class="identifier">charInfoPages</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">pageNumber</span><span class="other">)</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">page</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">CharNamePage</span> <span class="identifier">GetCharNamePage</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">uint</span> <span class="identifier">charIndex</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">pageNumber</span> <span class="other">=</span> <span class="identifier">charIndex</span> <span class="other">/</span> <span class="identifier">numNamesInPage</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">pageNumber</span> <span class="other">&gt;</span><span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">charNamePages.Count</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">charNamePages.Add</span><span class="other">(</span><span class="keyword">null</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">charNamePages</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">pageNumber</span><span class="other">)</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">SetCharNamePage</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">,</span> <span class="identifier">CharNamePage</span> <span class="identifier">page</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">uint</span> <span class="identifier">charIndex</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">pageNumber</span> <span class="other">=</span> <span class="identifier">charIndex</span> <span class="other">/</span> <span class="identifier">numNamesInPage</span><span class="other">;</span>
+            <span class="identifier">charNamePages</span><span class="other">[</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">pageNumber</span><span class="other">)</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">page</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">static</span> <span class="identifier">CharacterInfoMap</span> <span class="identifier">instance</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">UnicodeBinHeader</span> <span class="identifier">header</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">CharInfoPage</span><span class="other">&gt;</span> <span class="identifier">charInfoPages</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">CharNameTableHeader</span> <span class="identifier">nameTableHeader</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">CharNamePage</span><span class="other">&gt;</span> <span class="identifier">charNamePages</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="identifier">Category</span> <span class="identifier">GetCategory</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">CharacterInfo</span> <span class="identifier">info</span> <span class="other">=</span> <span class="identifier">CharacterInfoMap.Instance.GetCharacterInfo</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">info</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">info.Cat</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="identifier">Category.none</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">GetCategoryName</span><span class="other">(</span><span class="identifier">Category</span> <span class="identifier">category</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">CategoryMap.Instance.GetCategoryName</span><span class="other">(</span><span class="identifier">category</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">GetCharacterName</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">CharacterInfoMap.Instance.GetCharacterName</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">char</span> <span class="identifier">ToLower</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">CharacterInfo</span> <span class="identifier">info</span> <span class="other">=</span> <span class="identifier">CharacterInfoMap.Instance.GetCharacterInfo</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">info</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">char</span> <span class="identifier">toLower</span> <span class="other">=</span> <span class="identifier">info.Lower</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">toLower</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="number">0u</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">toLower</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="identifier">c</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">char</span> <span class="identifier">ToUpper</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">CharacterInfo</span> <span class="identifier">info</span> <span class="other">=</span> <span class="identifier">CharacterInfoMap.Instance.GetCharacterInfo</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">info</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">char</span> <span class="identifier">toUpper</span> <span class="other">=</span> <span class="identifier">info.Upper</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">toUpper</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="number">0u</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">toUpper</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="identifier">c</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsLetter</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">CharacterInfo</span> <span class="identifier">info</span> <span class="other">=</span> <span class="identifier">CharacterInfoMap.Instance.GetCharacterInfo</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">info</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">info.IsLetter</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsLower</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">GetCategory</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Category.letterLower</span><span class="other">;</span> 
+    <span class="other">}</span>
+    
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsUpper</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">GetCategory</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Category.letterUpper</span><span class="other">;</span>
+    <span class="other">}</span>
+    
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsMark</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">CharacterInfo</span> <span class="identifier">info</span> <span class="other">=</span> <span class="identifier">CharacterInfoMap.Instance.GetCharacterInfo</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">info</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">info.IsMark</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+    <span class="other">}</span>
+    
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsNumber</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">CharacterInfo</span> <span class="identifier">info</span> <span class="other">=</span> <span class="identifier">CharacterInfoMap.Instance.GetCharacterInfo</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">info</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">info.IsNumber</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+    <span class="other">}</span>
+    
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsPunctuation</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">CharacterInfo</span> <span class="identifier">info</span> <span class="other">=</span> <span class="identifier">CharacterInfoMap.Instance.GetCharacterInfo</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">info</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">info.IsPunctuation</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+    <span class="other">}</span>
+    
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsSymbol</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">CharacterInfo</span> <span class="identifier">info</span> <span class="other">=</span> <span class="identifier">CharacterInfoMap.Instance.GetCharacterInfo</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">info</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">info.IsSymbol</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+    <span class="other">}</span>
+    
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsSeparator</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">CharacterInfo</span> <span class="identifier">info</span> <span class="other">=</span> <span class="identifier">CharacterInfoMap.Instance.GetCharacterInfo</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">info</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">info.IsSeparator</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Random.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">namespace</span> <span class="identifier">System</span>
+<span class="other">{</span>
+<span class="comment">//  If InitRand(uint) function is not called, the random number generator is initialized with a random seed obtained from the system.</span>
+<span class="comment">//  Random number generator is thread safe (each application thread has its own generator instance).</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">initrand</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">void</span> <span class="identifier">InitRand</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">seed</span><span class="other">)</span><span class="other">;</span> 
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">random</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">uint</span> <span class="identifier">Random</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">rand64</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">ulong</span> <span class="identifier">Random64</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

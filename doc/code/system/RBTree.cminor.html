@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>RBTree.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Collections.Generic</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">RedBlackTreeNodeBase</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">enum</span> <span class="identifier">Color</span> <span class="other">{</span> <span class="identifier">red</span><span class="other">,</span> <span class="identifier">black</span> <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="identifier">RedBlackTreeNodeBase</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">parent</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">color</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">parent</span> <span class="other">=</span> <span class="identifier">parent</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">left</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">right</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Color</span> <span class="identifier">NodeColor</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">color</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">color</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">Parent</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">parent</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">parent</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">Left</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">left</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">left</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">Right</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">right</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">right</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsHeaderNode</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">color</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.red</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">parent</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">parent.parent</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">this</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">Min</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">n</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">n.Left</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">n.Left</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">n</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">Max</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">n</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">n.Right</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">n.Right</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">n</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">Prev</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">n</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n.IsHeaderNode</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">n.Right</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n.Left</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">Max</span><span class="other">(</span><span class="identifier">n.Left</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">u</span> <span class="other">=</span> <span class="identifier">n.Parent</span><span class="other">;</span>
+                <span class="keyword">while</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">u.Left</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">u</span><span class="other">;</span>
+                    <span class="identifier">u</span> <span class="other">=</span> <span class="identifier">u.Parent</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">return</span> <span class="identifier">u</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">Next</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">n</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n.Right</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">Min</span><span class="other">(</span><span class="identifier">n.Right</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">u</span> <span class="other">=</span> <span class="identifier">n.Parent</span><span class="other">;</span>
+                <span class="keyword">while</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">u.Right</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">u</span><span class="other">;</span>
+                    <span class="identifier">u</span> <span class="other">=</span> <span class="identifier">u.Parent</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n.Right</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">u</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">return</span> <span class="identifier">n</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">RebalanceAfterInsert</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">n</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">root</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">n.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.red</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">r</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">n.Parent.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.red</span><span class="other">)</span>
+            <span class="other">{</span>   
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n.Parent</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">n.Parent.Parent.Left</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">u</span> <span class="other">=</span> <span class="identifier">n.Parent.Parent.Right</span><span class="other">;</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">u</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">u.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.red</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">n.Parent.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                        <span class="identifier">u.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                        <span class="identifier">n.Parent.Parent.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.red</span><span class="other">;</span>
+                        <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">n.Parent.Parent</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">n.Parent.Right</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">n.Parent</span><span class="other">;</span>
+                            <span class="identifier">RotateLeft</span><span class="other">(</span><span class="identifier">n</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+                            <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="identifier">n.Parent.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                        <span class="identifier">n.Parent.Parent.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.red</span><span class="other">;</span>
+                        <span class="identifier">RotateRight</span><span class="other">(</span><span class="identifier">n.Parent.Parent</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">u</span> <span class="other">=</span> <span class="identifier">n.Parent.Parent.Left</span><span class="other">;</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">u</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">u.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.red</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">n.Parent.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                        <span class="identifier">u.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                        <span class="identifier">n.Parent.Parent.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.red</span><span class="other">;</span>
+                        <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">n.Parent.Parent</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">n.Parent.Left</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">n.Parent</span><span class="other">;</span>
+                            <span class="identifier">RotateRight</span><span class="other">(</span><span class="identifier">n</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+                            <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="identifier">n.Parent.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                        <span class="identifier">n.Parent.Parent.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.red</span><span class="other">;</span>
+                        <span class="identifier">RotateLeft</span><span class="other">(</span><span class="identifier">n.Parent.Parent</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+            <span class="identifier">r.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">RebalanceForRemove</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">z</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">root</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">leftmost</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">rightmost</span><span class="other">)</span> 
+        <span class="other">{</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">y</span> <span class="other">=</span> <span class="identifier">z</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">x</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">p</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">y.Left</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">y.Right</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">y.Right</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">y.Left</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">y</span> <span class="other">=</span> <span class="identifier">y.Right</span><span class="other">;</span>
+                    <span class="keyword">while</span> <span class="other">(</span><span class="identifier">y.Left</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">y</span> <span class="other">=</span> <span class="identifier">y.Left</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">y.Right</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">y</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">z</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">z.Left.Parent</span> <span class="other">=</span> <span class="identifier">y</span><span class="other">;</span>
+                <span class="identifier">y.Left</span> <span class="other">=</span> <span class="identifier">z.Left</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">y</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">z.Right</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">y.Parent</span><span class="other">;</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">x.Parent</span> <span class="other">=</span> <span class="identifier">y.Parent</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="identifier">y.Parent.Left</span> <span class="other">=</span> <span class="identifier">x</span><span class="other">;</span>
+                    <span class="identifier">y.Right</span> <span class="other">=</span> <span class="identifier">z.Right</span><span class="other">;</span>
+                    <span class="identifier">z.Right.Parent</span> <span class="other">=</span> <span class="identifier">y</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">y</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">r</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">z</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">root</span> <span class="other">=</span> <span class="identifier">y</span><span class="other">;</span>
+                    <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">z.Parent.Left</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">z</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">z.Parent.Left</span> <span class="other">=</span> <span class="identifier">y</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">z.Parent.Right</span> <span class="other">=</span> <span class="identifier">y</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">y.Parent</span> <span class="other">=</span> <span class="identifier">z.Parent</span><span class="other">;</span>
+                <span class="identifier">Color</span> <span class="identifier">c</span> <span class="other">=</span> <span class="identifier">y.NodeColor</span><span class="other">;</span>
+                <span class="identifier">y.NodeColor</span> <span class="other">=</span> <span class="identifier">z.NodeColor</span><span class="other">;</span>
+                <span class="identifier">z.NodeColor</span> <span class="other">=</span> <span class="identifier">c</span><span class="other">;</span>
+                <span class="identifier">y</span> <span class="other">=</span> <span class="identifier">z</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">y.Parent</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">x.Parent</span> <span class="other">=</span> <span class="identifier">y.Parent</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">r</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">z</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">root</span> <span class="other">=</span> <span class="identifier">x</span><span class="other">;</span>
+                    <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">z.Parent.Left</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">z</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">z.Parent.Left</span> <span class="other">=</span> <span class="identifier">x</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="identifier">z.Parent.Right</span> <span class="other">=</span> <span class="identifier">x</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+                <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">lm</span> <span class="other">=</span> <span class="identifier">leftmost</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lm</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">z</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">z.Right</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">leftmost</span> <span class="other">=</span> <span class="identifier">z.Parent</span><span class="other">;</span>
+                        <span class="identifier">lm</span> <span class="other">=</span> <span class="identifier">leftmost</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span> 
+                        <span class="identifier">leftmost</span> <span class="other">=</span> <span class="identifier">Min</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">lm</span> <span class="other">=</span> <span class="identifier">leftmost</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+                <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">rm</span> <span class="other">=</span> <span class="identifier">rightmost</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">rm</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">z</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">z.Left</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">rightmost</span> <span class="other">=</span> <span class="identifier">z.Parent</span><span class="other">;</span>
+                        <span class="identifier">rm</span> <span class="other">=</span> <span class="identifier">rightmost</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="identifier">rightmost</span> <span class="other">=</span> <span class="identifier">Max</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">rm</span> <span class="other">=</span> <span class="identifier">rightmost</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">y.NodeColor</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">Color.red</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                <span class="keyword">while</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">r</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">x.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.black</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">p.Left</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">w</span> <span class="other">=</span> <span class="identifier">p.Right</span><span class="other">;</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.red</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">w.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                            <span class="identifier">p.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.red</span><span class="other">;</span>
+                            <span class="identifier">RotateLeft</span><span class="other">(</span><span class="identifier">p</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+                            <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                            <span class="identifier">w</span> <span class="other">=</span> <span class="identifier">p.Right</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">w.Left</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">w.Left.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.black</span><span class="other">)</span> <span class="other">&amp;</span><span class="other">&amp;</span> 
+                            <span class="other">(</span><span class="identifier">w.Right</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">w.Right.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.black</span><span class="other">)</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">w.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.red</span><span class="other">;</span>
+                            <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">p</span><span class="other">;</span>
+                            <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">p.Parent</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span>
+                        <span class="other">{</span>
+                            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w.Right</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">w.Right.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.black</span><span class="other">)</span>
+                            <span class="other">{</span>
+                                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w.Left</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                                <span class="other">{</span>
+                                    <span class="identifier">w.Left.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                                <span class="other">}</span>
+                                <span class="identifier">w.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.red</span><span class="other">;</span>
+                                <span class="identifier">RotateRight</span><span class="other">(</span><span class="identifier">w</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+                                <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                                <span class="identifier">w</span> <span class="other">=</span> <span class="identifier">p.Right</span><span class="other">;</span>
+                            <span class="other">}</span>
+                            <span class="identifier">w.NodeColor</span> <span class="other">=</span> <span class="identifier">p.NodeColor</span><span class="other">;</span>
+                            <span class="identifier">p.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w.Right</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                            <span class="other">{</span>
+                                <span class="identifier">w.Right.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                            <span class="other">}</span>
+                            <span class="identifier">RotateLeft</span><span class="other">(</span><span class="identifier">p</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+                            <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                            <span class="keyword">break</span><span class="other">;</span>
+                        <span class="other">}</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">w</span> <span class="other">=</span> <span class="identifier">p.Left</span><span class="other">;</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.red</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">w.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                            <span class="identifier">p.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.red</span><span class="other">;</span>
+                            <span class="identifier">RotateRight</span><span class="other">(</span><span class="identifier">p</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+                            <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                            <span class="identifier">w</span> <span class="other">=</span> <span class="identifier">p.Left</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="other">(</span><span class="identifier">w.Right</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">w.Right.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.black</span><span class="other">)</span> <span class="other">&amp;</span><span class="other">&amp;</span> 
+                            <span class="other">(</span><span class="identifier">w.Left</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">w.Left.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.black</span><span class="other">)</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">w.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.red</span><span class="other">;</span>
+                            <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">p</span><span class="other">;</span>
+                            <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">p.Parent</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span>
+                        <span class="other">{</span>
+                            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w.Left</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">w.Left.NodeColor</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Color.black</span><span class="other">)</span>
+                            <span class="other">{</span>
+                                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w.Right</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                                <span class="other">{</span>
+                                    <span class="identifier">w.Right.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                                <span class="other">}</span>
+                                <span class="identifier">w.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.red</span><span class="other">;</span>
+                                <span class="identifier">RotateLeft</span><span class="other">(</span><span class="identifier">w</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+                                <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                                <span class="identifier">w</span> <span class="other">=</span> <span class="identifier">p.Left</span><span class="other">;</span>
+                            <span class="other">}</span>
+                            <span class="identifier">w.NodeColor</span> <span class="other">=</span> <span class="identifier">p.NodeColor</span><span class="other">;</span>
+                            <span class="identifier">p.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w.Left</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                            <span class="other">{</span>
+                                <span class="identifier">w.Left.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+                            <span class="other">}</span>
+                            <span class="identifier">RotateRight</span><span class="other">(</span><span class="identifier">p</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+                            <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+                            <span class="keyword">break</span><span class="other">;</span>
+                        <span class="other">}</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">x.NodeColor</span> <span class="other">=</span> <span class="identifier">Color.black</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">RotateLeft</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">n</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">root</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">u</span> <span class="other">=</span> <span class="identifier">n.Right</span><span class="other">;</span>
+            <span class="identifier">n.Right</span> <span class="other">=</span> <span class="identifier">u.Left</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">u.Left</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">u.Left.Parent</span> <span class="other">=</span> <span class="identifier">n</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">u.Parent</span> <span class="other">=</span> <span class="identifier">n.Parent</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">r</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">u</span><span class="other">;</span>
+                <span class="identifier">root</span> <span class="other">=</span> <span class="identifier">r</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">n.Parent.Left</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">n.Parent.Left</span> <span class="other">=</span> <span class="identifier">u</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="identifier">n.Parent.Right</span> <span class="other">=</span> <span class="identifier">u</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">u.Left</span> <span class="other">=</span> <span class="identifier">n</span><span class="other">;</span>
+            <span class="identifier">n.Parent</span> <span class="other">=</span> <span class="identifier">u</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">RotateRight</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">n</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">root</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">u</span> <span class="other">=</span> <span class="identifier">n.Left</span><span class="other">;</span>
+            <span class="identifier">n.Left</span> <span class="other">=</span> <span class="identifier">u.Right</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">u.Right</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">u.Right.Parent</span> <span class="other">=</span> <span class="identifier">n</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">u.Parent</span> <span class="other">=</span> <span class="identifier">n.Parent</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">r</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">r</span> <span class="other">=</span> <span class="identifier">u</span><span class="other">;</span>
+                <span class="identifier">root</span> <span class="other">=</span> <span class="identifier">r</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">n.Parent.Right</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">n.Parent.Right</span> <span class="other">=</span> <span class="identifier">u</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="identifier">n.Parent.Left</span> <span class="other">=</span> <span class="identifier">u</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">u.Right</span> <span class="other">=</span> <span class="identifier">n</span><span class="other">;</span>
+            <span class="identifier">n.Parent</span> <span class="other">=</span> <span class="identifier">u</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">Color</span> <span class="identifier">color</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">parent</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">left</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">right</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="other">:</span> <span class="identifier">RedBlackTreeNodeBase</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">RedBlackTreeNode</span><span class="other">(</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">base</span><span class="other">(</span><span class="keyword">null</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">val</span> <span class="other">=</span> <span class="keyword">default</span><span class="other">(</span><span class="identifier">T</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">RedBlackTreeNode</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">val</span><span class="other">,</span> <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">parent</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">base</span><span class="other">(</span><span class="identifier">parent</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">val</span> <span class="other">=</span> <span class="identifier">val</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="identifier">Value</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">val</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">val</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">T</span> <span class="identifier">val</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">RedBlackTree</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">,</span> <span class="identifier">KeyOfValue</span><span class="other">&gt;</span> <span class="other">:</span> <span class="identifier">Enumerable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">RedBlackTree</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">count</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">header</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">header.NodeColor</span> <span class="other">=</span> <span class="identifier">RedBlackTreeNodeBase.Color.red</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">header.Left</span> <span class="other">=</span> <span class="identifier">header</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">header.Right</span> <span class="other">=</span> <span class="identifier">header</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">keyOf</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">KeyOfValue</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Clear</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">header.Left</span> <span class="other">=</span> <span class="identifier">header</span><span class="other">;</span>
+            <span class="identifier">header.Right</span> <span class="other">=</span> <span class="identifier">header</span><span class="other">;</span>
+            <span class="identifier">count</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Enumerator</span> <span class="identifier">GetEnumerator</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">leftmost</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">header.Left</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">end</span> <span class="other">=</span> <span class="identifier">header</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">RedBlackTreeEnumerator</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">leftmost</span><span class="other">,</span> <span class="identifier">end</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Add</span><span class="other">(</span><span class="identifier">ValueType</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">Root</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">header</span><span class="other">;</span>
+            <span class="keyword">bool</span> <span class="identifier">less</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">x</span><span class="other">;</span>
+                <span class="identifier">less</span> <span class="other">=</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span> <span class="other">&lt;</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">x.Value</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">less</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">x</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x.Left</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">x</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x.Right</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">j</span> <span class="other">=</span> <span class="identifier">p</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">less</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">j</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">header.Left</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">Add</span><span class="other">(</span><span class="identifier">x</span><span class="other">,</span> <span class="identifier">p</span><span class="other">,</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">j</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase.Prev</span><span class="other">(</span><span class="identifier">j</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">j.Value</span><span class="other">)</span> <span class="other">&lt;</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Add</span><span class="other">(</span><span class="identifier">x</span><span class="other">,</span> <span class="identifier">p</span><span class="other">,</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Remove</span><span class="other">(</span><span class="identifier">KeyType</span> <span class="identifier">key</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">Root</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">key</span> <span class="other">&lt;</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">n.Value</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">n</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">n.Left</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">n.Value</span><span class="other">)</span> <span class="other">&lt;</span> <span class="identifier">key</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">n</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">n.Right</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">break</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">count</span> <span class="other">=</span><span class="other">=</span> <span class="number">1</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">Clear</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">Remove</span><span class="other">(</span><span class="identifier">n</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Contains</span><span class="other">(</span><span class="identifier">KeyType</span> <span class="identifier">key</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">Root</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">key</span> <span class="other">&lt;</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">n.Value</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">n</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">n.Left</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">n.Value</span><span class="other">)</span> <span class="other">&lt;</span> <span class="identifier">key</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">n</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">n.Right</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">ValueType</span> <span class="keyword">this</span><span class="other">[</span><span class="identifier">KeyType</span> <span class="identifier">key</span><span class="other">]</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> 
+            <span class="other">{</span>
+                <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">Root</span><span class="other">;</span>
+                <span class="keyword">while</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">key</span> <span class="other">&lt;</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">n.Value</span><span class="other">)</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">n</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">n.Left</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">n.Value</span><span class="other">)</span> <span class="other">&lt;</span> <span class="identifier">key</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">n</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">n.Right</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="identifier">n.Value</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+                <span class="keyword">return</span> <span class="keyword">default</span><span class="other">(</span><span class="identifier">ValueType</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">AddOrReplace</span><span class="other">(</span><span class="identifier">ValueType</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">KeyType</span> <span class="identifier">key</span> <span class="other">=</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">Root</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">key</span> <span class="other">&lt;</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">n.Value</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">n</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">n.Left</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">n.Value</span><span class="other">)</span> <span class="other">&lt;</span> <span class="identifier">key</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">n</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">n.Right</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">n.Value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+                    <span class="keyword">return</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="identifier">Add</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Count</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">count</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">Add</span><span class="other">(</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">p</span><span class="other">,</span> <span class="identifier">ValueType</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">n</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span><span class="other">,</span> <span class="identifier">p</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">p</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">header</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span> <span class="other">&lt;</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">p.Value</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">p.Left</span> <span class="other">=</span> <span class="identifier">n</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">p</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">header</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">header.Parent</span> <span class="other">=</span> <span class="identifier">n</span><span class="other">;</span>
+                    <span class="identifier">header.Right</span> <span class="other">=</span> <span class="identifier">n</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">p</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">header.Left</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">header.Left</span> <span class="other">=</span> <span class="identifier">n</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="identifier">p.Right</span> <span class="other">=</span> <span class="identifier">n</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">p</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">header.Right</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">header.Right</span> <span class="other">=</span> <span class="identifier">n</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">root</span> <span class="other">=</span> <span class="identifier">Root</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNodeBase.RebalanceAfterInsert</span><span class="other">(</span><span class="identifier">n</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">header.Parent</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">root</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">+</span><span class="other">+</span><span class="identifier">count</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">Remove</span><span class="other">(</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">node</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">root</span> <span class="other">=</span> <span class="identifier">Root</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">lm</span> <span class="other">=</span> <span class="identifier">header.Left</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNodeBase</span> <span class="identifier">rm</span> <span class="other">=</span> <span class="identifier">header.Right</span><span class="other">;</span>
+            <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">toRemove</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase.RebalanceForRemove</span><span class="other">(</span><span class="identifier">node</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">root</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">lm</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">rm</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">header.Parent</span> <span class="other">=</span> <span class="identifier">root</span><span class="other">;</span>
+            <span class="identifier">header.Left</span> <span class="other">=</span> <span class="identifier">lm</span><span class="other">;</span>
+            <span class="identifier">header.Right</span> <span class="other">=</span> <span class="identifier">rm</span><span class="other">;</span>
+            <span class="identifier">toRemove.Left</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="identifier">toRemove.Right</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="identifier">toRemove.Parent</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="other">-</span><span class="other">-</span><span class="identifier">count</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">Root</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">header.Parent</span><span class="other">)</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">KeyType</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">ValueType</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">keyOf</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">count</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">header</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">KeyOfValue</span> <span class="identifier">keyOf</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">RedBlackTreeEnumerator</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="other">:</span> <span class="identifier">Enumerator</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">RedBlackTreeEnumerator</span><span class="other">(</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="identifier">cur</span><span class="other">,</span> <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="identifier">end</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">cur</span> <span class="other">=</span> <span class="identifier">cur</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">end</span> <span class="other">=</span> <span class="identifier">end</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">AtEnd</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">cur</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">end</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">object</span> <span class="identifier">GetCurrent</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">cur.Value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">MoveNext</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">cur</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">RedBlackTreeNodeBase.Next</span><span class="other">(</span><span class="identifier">cur</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="identifier">cur</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">RedBlackTreeNode</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="identifier">end</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

@@ -1,0 +1,14 @@
+namespace System
+{
+    public interface Enumerator
+    {
+        bool AtEnd();
+        object GetCurrent();
+        void MoveNext();
+    }
+
+    public interface Enumerable
+    {
+        Enumerator GetEnumerator();
+    }
+}

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>StreamWriter.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Unicode</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.IO</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">StreamWriter</span> <span class="other">:</span> <span class="identifier">Closable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">StreamWriter</span><span class="other">(</span><span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">stream</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided stream is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">stream</span> <span class="other">=</span> <span class="identifier">stream</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">encoder</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">Utf8Encoder</span><span class="other">(</span><span class="identifier">stream</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Close</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">stream.Close</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided string is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">encoder.Encode</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="string">&quot;\n&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">sbyte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">sbyte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">short</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">short</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Stream</span> <span class="identifier">ContainedStream</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">stream</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">Utf8Encoder</span> <span class="identifier">encoder</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

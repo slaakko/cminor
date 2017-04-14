@@ -1,0 +1,66 @@
+using System;
+
+namespace System.Collections.Generic
+{
+    public class Map<KeyType, ValueType> : Enumerable
+    {
+        public Map()
+        {
+            tree = new RedBlackTree<KeyType, KeyValuePair<KeyType, ValueType>, ExtractKey<KeyType, ValueType>>();
+        }
+        public Enumerator GetEnumerator()
+        {
+            return tree.GetEnumerator();
+        }
+        public void Clear()
+        {
+            tree.Clear();
+        }
+        public int Count
+        {
+            get { return tree.Count; }
+        }
+        public bool Add(KeyValuePair<KeyType, ValueType> keyValuePair)
+        {
+            return tree.Add(keyValuePair);
+        }
+        public bool Remove(KeyType key)
+        {
+            return tree.Remove(key);
+        }
+        public bool ContainsKey(KeyType key)
+        {
+            return tree.Contains(key);
+        }
+        public ValueType this[KeyType key]
+        {
+            get
+            {
+                KeyValuePair<KeyType, ValueType> pair = tree[key];
+                if (pair != null)
+                {
+                    return pair.Value;
+                }
+                else
+                {
+                    throw new KeyNotFoundException("key '" + key.ToString() + "' not found");
+                }
+            }
+            set
+            {
+                tree.AddOrReplace(new KeyValuePair<KeyType, ValueType>(key, value));
+            }
+        }
+        public bool TryGetValue(KeyType key, ref ValueType value)
+        {
+            KeyValuePair<KeyType, ValueType> pair = tree[key];
+            if (pair != null)
+            {
+                value = pair.Value;
+                return true;
+            }
+            return false;
+        }
+        private RedBlackTree<KeyType, KeyValuePair<KeyType, ValueType>, ExtractKey<KeyType, ValueType>> tree;
+    }
+}

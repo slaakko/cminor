@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>List.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Collections.Generic</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="other">:</span> <span class="identifier">Enumerable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">List</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">items</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">count</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">List</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">capacity</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">capacity</span> <span class="other">&lt;</span> <span class="number">0</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentOutOfRangeException</span><span class="other">(</span><span class="string">&quot;invalid capacity&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span> 
+            <span class="other">{</span>
+                <span class="keyword">this</span><span class="other">.</span><span class="identifier">items</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">T</span><span class="other">[</span><span class="identifier">capacity</span><span class="other">]</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">count</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Add</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">item</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">items</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">items.Length</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">count</span> <span class="other">&gt;</span><span class="other">=</span> <span class="identifier">n</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">n</span> <span class="other">=</span> <span class="number">2</span> <span class="other">*</span> <span class="identifier">n</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">&lt;</span> <span class="number">4</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">n</span> <span class="other">=</span> <span class="number">4</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">T</span><span class="other">[</span><span class="other">]</span> <span class="identifier">newItems</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">T</span><span class="other">[</span><span class="identifier">n</span><span class="other">]</span><span class="other">;</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">count</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">newItems</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">items</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">items</span> <span class="other">=</span> <span class="identifier">newItems</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">items</span><span class="other">[</span><span class="identifier">count</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">item</span><span class="other">;</span>
+            <span class="other">+</span><span class="other">+</span><span class="identifier">count</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">AddRange</span><span class="other">(</span><span class="identifier">Enumerable</span> <span class="identifier">range</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">foreach</span> <span class="other">(</span><span class="identifier">T</span> <span class="identifier">item</span> <span class="keyword">in</span> <span class="identifier">range</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Add</span><span class="other">(</span><span class="identifier">item</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">BinarySearch</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">item</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">len</span> <span class="other">=</span> <span class="identifier">count</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">first</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">len</span> <span class="other">&gt;</span> <span class="number">0</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">int</span> <span class="identifier">half</span> <span class="other">=</span> <span class="identifier">len</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">1</span><span class="other">;</span>
+                <span class="keyword">int</span> <span class="identifier">middle</span> <span class="other">=</span> <span class="identifier">first</span> <span class="other">+</span> <span class="identifier">half</span><span class="other">;</span>
+                <span class="identifier">T</span> <span class="identifier">m</span> <span class="other">=</span> <span class="identifier">items</span><span class="other">[</span><span class="identifier">middle</span><span class="other">]</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">item</span> <span class="other">&gt;</span> <span class="identifier">m</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">first</span> <span class="other">=</span> <span class="identifier">middle</span> <span class="other">+</span> <span class="number">1</span><span class="other">;</span>
+                    <span class="identifier">len</span> <span class="other">=</span> <span class="identifier">len</span> <span class="other">-</span> <span class="identifier">half</span> <span class="other">-</span> <span class="number">1</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">len</span> <span class="other">=</span> <span class="identifier">half</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">first</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Remove</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">item</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">count</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">items</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">item</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">RemoveAt</span><span class="other">(</span><span class="identifier">i</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">RemoveAt</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">index</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">count</span> <span class="other">-</span> <span class="number">1</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="identifier">index</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">items</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">items</span><span class="other">[</span><span class="identifier">i</span> <span class="other">+</span> <span class="number">1</span><span class="other">]</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">items</span><span class="other">[</span><span class="identifier">n</span><span class="other">]</span> <span class="other">=</span> <span class="keyword">default</span><span class="other">(</span><span class="identifier">T</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">-</span><span class="other">-</span><span class="identifier">count</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Resize</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">newCount</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">T</span><span class="other">[</span><span class="other">]</span> <span class="identifier">newItems</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">T</span><span class="other">[</span><span class="identifier">newCount</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">Math.Min</span><span class="other">(</span><span class="identifier">count</span><span class="other">,</span> <span class="identifier">newCount</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">newItems</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">items</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">items</span> <span class="other">=</span> <span class="identifier">newItems</span><span class="other">;</span>
+            <span class="identifier">count</span> <span class="other">=</span> <span class="identifier">newCount</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Clear</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">items</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="identifier">count</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">T</span><span class="other">[</span><span class="other">]</span> <span class="identifier">ToArray</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">T</span><span class="other">[</span><span class="other">]</span> <span class="identifier">arr</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">T</span><span class="other">[</span><span class="identifier">count</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">count</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">arr</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">items</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">arr</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Reverse</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">j</span> <span class="other">=</span> <span class="identifier">count</span> <span class="other">-</span> <span class="number">1</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">j</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">T</span> <span class="identifier">temp</span> <span class="other">=</span> <span class="identifier">items</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+                <span class="identifier">items</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">items</span><span class="other">[</span><span class="identifier">j</span><span class="other">]</span><span class="other">;</span>
+                <span class="identifier">items</span><span class="other">[</span><span class="identifier">j</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">temp</span><span class="other">;</span>
+                <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">;</span>
+                <span class="other">-</span><span class="other">-</span><span class="identifier">j</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Enumerator</span> <span class="identifier">GetEnumerator</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">ListEnumerator</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="keyword">this</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">this</span><span class="other">[</span><span class="keyword">int</span> <span class="identifier">index</span><span class="other">]</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">items</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">items</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Count</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">count</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Capacity</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">items</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span> <span class="keyword">return</span> <span class="number">0</span><span class="other">;</span> <span class="keyword">else</span> <span class="keyword">return</span> <span class="identifier">items.Length</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">T</span><span class="other">[</span><span class="other">]</span> <span class="identifier">items</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">count</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">internal</span> <span class="keyword">class</span> <span class="identifier">ListEnumerator</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="other">:</span> <span class="identifier">Enumerator</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">ListEnumerator</span><span class="other">(</span><span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="identifier">list</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">list</span> <span class="other">=</span> <span class="identifier">list</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">index</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">AtEnd</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">index</span> <span class="other">&gt;</span><span class="other">=</span> <span class="identifier">list.Count</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">object</span> <span class="identifier">GetCurrent</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">list</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">MoveNext</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="other">+</span><span class="other">+</span><span class="identifier">index</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="identifier">list</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">index</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

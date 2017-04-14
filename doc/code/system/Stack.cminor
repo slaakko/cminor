@@ -1,0 +1,31 @@
+using System;
+
+namespace System.Collections.Generic
+{
+    public class Stack<T>
+    {
+        public Stack()
+        {
+            this.items = new List<T>();
+        }
+        public void Push(T item)
+        {
+            items.Add(item);
+        }
+        public T Pop()
+        {
+            T item = Top();
+            items.RemoveAt(items.Count - 1);
+            return item;
+        }
+        public T Top()
+        {
+            return items[items.Count - 1];
+        }
+        public int Count
+        {
+            get { return items.Count; }
+        }
+        private List<T> items;
+    }
+}

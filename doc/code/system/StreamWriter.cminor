@@ -1,0 +1,153 @@
+using System;
+using System.Unicode;
+
+namespace System.IO
+{
+    public class StreamWriter : Closable
+    {
+        public StreamWriter(Stream stream)
+        {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("provided stream is null");
+            }
+            this.stream = stream;
+            this.encoder = new Utf8Encoder(stream);
+        }
+        public void Close()
+        {
+            stream.Close();
+        }
+        public void Write(string s)
+        {
+            if (s == null)
+            {
+                throw new ArgumentNullException("provided string is null");
+            }
+            encoder.Encode(s);
+        }
+        public void WriteLine(string s)
+        {
+            Write(s);
+            WriteLine();
+        }
+        public void WriteLine()
+        {
+            Write("\n");
+        }
+        public void Write(sbyte x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(sbyte x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public void Write(byte x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(byte x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public void Write(short x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(short x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public void Write(ushort x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(ushort x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public void Write(int x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(int x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public void Write(uint x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(uint x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public void Write(long x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(long x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public void Write(ulong x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(ulong x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public void Write(float x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(float x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public void Write(double x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(double x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public void Write(bool x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(bool x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public void Write(char x)
+        {
+            Write(x.ToString());
+        }
+        public void WriteLine(char x)
+        {
+            Write(x);
+            WriteLine();
+        }
+        public Stream ContainedStream
+        {
+            get { return stream; }
+        }
+        private Stream stream;
+        private Utf8Encoder encoder;
+    }
+}

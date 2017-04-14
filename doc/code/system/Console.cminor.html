@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Console.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System.IO</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">Console</span>
+    <span class="other">{</span>
+        <span class="keyword">static</span> <span class="identifier">Console</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">bool</span> <span class="identifier">inWindows</span> <span class="other">=</span> <span class="identifier">System.GetPlatform</span><span class="other">(</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">System.Platform.windows</span><span class="other">;</span>
+            <span class="identifier">Stream</span> <span class="identifier">inBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">stdin</span><span class="other">,</span> <span class="identifier">FileAccess.read</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">inWindows</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">inBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">NarrowingStream</span><span class="other">(</span><span class="identifier">inBaseStream</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">inStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StreamReader</span><span class="other">(</span><span class="identifier">inBaseStream</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Stream</span> <span class="identifier">outBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">stdout</span><span class="other">,</span> <span class="identifier">FileAccess.write</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">inWindows</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">outBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">WideningStream</span><span class="other">(</span><span class="identifier">outBaseStream</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">outStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StreamWriter</span><span class="other">(</span><span class="identifier">outBaseStream</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Stream</span> <span class="identifier">errBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">stderr</span><span class="other">,</span> <span class="identifier">FileAccess.write</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">inWindows</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">errBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">WideningStream</span><span class="other">(</span><span class="identifier">errBaseStream</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">errStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StreamWriter</span><span class="other">(</span><span class="identifier">errBaseStream</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="identifier">Read</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">inStream.Read</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">ReadLine</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">inStream.ReadLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">sbyte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">sbyte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">short</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">short</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.Write</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outStream.WriteLine</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">StreamReader</span> <span class="identifier">In</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">inStream</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">inStream</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">StreamWriter</span> <span class="identifier">Out</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">outStream</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">outStream</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">StreamWriter</span> <span class="identifier">Error</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">errStream</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">errStream</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">static</span> <span class="identifier">StreamReader</span> <span class="identifier">inStream</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">static</span> <span class="identifier">StreamWriter</span> <span class="identifier">outStream</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">static</span> <span class="identifier">StreamWriter</span> <span class="identifier">errStream</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

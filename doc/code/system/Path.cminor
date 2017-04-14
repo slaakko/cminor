@@ -1,0 +1,355 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace System.IO
+{
+    public class InvalidPathException : Exception
+    {
+        public InvalidPathException(string message) : base(message)
+        {
+        }
+    }
+
+    [vmf=cwd]
+    public extern string InternalGetCurrentWorkingDirectory();
+
+    public string GetCurrentWorkingDirectory()
+    {
+        return Path.MakeCanonical(InternalGetCurrentWorkingDirectory());
+    }
+
+    public static class Path
+    {
+        public static string MakeCanonical(string path)
+        {
+            StringBuilder result = new StringBuilder();
+            char prev = ' ';
+            foreach (char c in path)
+            {
+                if (c == '\\')
+                {
+                    c = '/';
+                }
+                if (c == '/')
+                {
+                    if (prev != '/')
+                    {
+                        result.Append(c);
+                    }
+                }
+                else
+                {
+                    result.Append(c);
+                }
+                prev = c;
+            }
+            string res = result.ToString();
+            if (res.Length == 3 && char.IsCAlpha(res[0]) && res[1] == ':' && res[2] == '/')
+            {
+                return res;
+            }
+            if (res == "/")
+            {
+                return res;
+            }
+            if (!string.IsNullOrEmpty(res))
+            {
+                if (res[res.Length - 1] == '/')
+                {
+                    return res.Substring(0, res.Length - 1);
+                }
+            }
+            return res;
+        }
+        public static string ChangeExtension(string path, string extension)
+        {
+            int lastDotPos = path.LastIndexOf('.');
+            int lastSlashPos = path.LastIndexOf('/');
+            if (lastSlashPos != -1 && lastDotPos < lastSlashPos)
+            {
+                lastDotPos = -1;
+            }
+            if (string.IsNullOrEmpty(extension))
+            {
+                if (lastDotPos != -1)
+                {
+                    return path.Substring(0, lastDotPos);
+                }
+                else
+                {
+                    return path;
+                }
+            }
+            else
+            {
+                if (lastDotPos == -1)
+                {
+                    if (extension[0] == '.')
+                    {
+                        return path + extension;
+                    }
+                    else
+                    {
+                        return path + "." + extension;
+                    }
+                }
+                else 
+                {
+                    if (extension[0] == '.')
+                    {
+                        return path.Substring(0, lastDotPos) + extension;
+                    }
+                    else
+                    {
+                        return path.Substring(0, lastDotPos + 1) + extension;
+                    }
+                }
+            }
+        }
+        public static bool HasExtension(string path)
+        {
+            string p = MakeCanonical(path);
+            int lastDotPos = p.LastIndexOf('.');
+            if (lastDotPos != -1)
+            {
+                int lastColon = p.IndexOf(':', lastDotPos + 1);
+                int lastDirSep = p.IndexOf('/', lastDotPos + 1);
+                if (lastColon > lastDotPos || lastDirSep > lastDotPos)
+                {
+                    return false;
+                }
+                else if (lastDotPos < p.Length - 1)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+        public static string GetExtension(string path)
+        {
+            string p = MakeCanonical(path);
+            int lastDotPos = p.LastIndexOf('.');
+            if (lastDotPos != -1)
+            {
+                if (p.IndexOf('/', lastDotPos + 1) != -1)
+                {
+                    return string.Empty;
+                }
+                else
+                {
+                    return p.Substring(lastDotPos);
+                }
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+        public static string GetFileName(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return string.Empty;
+            }
+            else
+            {
+                string p = MakeCanonical(path);
+                char lastChar = p[p.Length - 1];
+                if (lastChar == '/' || lastChar == ':')
+                {
+                    return string.Empty;
+                }
+                else
+                {
+                    int lastDirSepPos = p.LastIndexOf('/');
+                    if (lastDirSepPos != -1)
+                    {
+                        return p.Substring(lastDirSepPos + 1);
+                    }
+                    else
+                    {
+                        return p;
+                    }
+                }
+            }
+        }
+        public static string GetFileNameWithoutExtension(string path)
+        {
+            string fileName = GetFileName(path);
+            int lastDotPos = fileName.LastIndexOf('.');
+            if (lastDotPos != -1)
+            {
+                return fileName.Substring(0, lastDotPos);
+            }
+            else
+            {
+                return fileName;
+            }
+        }
+        public static string GetDirectoryName(string path)
+        {
+            string p = MakeCanonical(path);
+            if (string.IsNullOrEmpty(p))
+            {
+                return string.Empty;
+            }
+            else if (p.Length == 3 && char.IsCAlpha(p[0]) && p[1] == ':' && p[2] == '/')
+            {
+                return string.Empty;
+            }
+            else
+            {
+                int lastDirSepPos = p.LastIndexOf('/');
+                if (lastDirSepPos != -1)
+                {
+                    return p.Substring(0, lastDirSepPos);
+                }
+                else
+                {
+                    return string.Empty;
+                }
+            }
+        }
+        public static string Combine(string path1, string path2)
+        {
+            string p1 = MakeCanonical(path1);
+            string p2 = MakeCanonical(path2);
+            if (string.IsNullOrEmpty(p1))
+            {
+                return p2;
+            }
+            else if (string.IsNullOrEmpty(p2))
+            {
+                return p1;
+            }
+            else
+            {
+                if (IsAbsolute(p2))
+                {
+                    return p2;
+                }
+                else 
+                {
+                    StringBuilder result = new StringBuilder();
+                    result.Append(p1);
+                    if (p1[p1.Length - 1] != '/')
+                    {
+                        result.Append('/');
+                    }
+                    result.Append(p2);
+                    return result.ToString();
+                }
+            }
+        }
+        public static bool IsAbsolute(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return false;
+            }
+            else
+            {
+                string p = MakeCanonical(path);
+                if (p[0] == '/')
+                {
+                    return true;
+                }
+                else if (char.IsCAlpha(p[0]) && p[1] == ':' && p[2] == '/')
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        public static bool IsRelative(string path)
+        {
+            return !IsAbsolute(path);
+        }
+        public static string GetParent(string path)
+        {
+            string fullPath = GetFullPath(path);
+            int lastSlashPos = fullPath.LastIndexOf('/');
+            if (lastSlashPos == -1)
+            {
+                return string.Empty;
+            }
+            else
+            {
+                return fullPath.Substring(0, lastSlashPos);
+            }
+        }
+    }
+
+    public string GetFullPath(string path)
+    {
+        string cp = Path.MakeCanonical(path);
+        StringBuilder p = new StringBuilder();
+        p.Append(cp);
+        if (Path.IsRelative(cp))
+        {
+            p.Clear();
+            p.Append(GetCurrentWorkingDirectory());
+            p.Append('/');
+            p.Append(cp);
+        }
+        List<string> components = p.ToString().Split('/');
+        int w = 0;
+        int n = components.Count;
+        for (int i = 0; i < n; ++i)
+        {
+            string c = components[i];
+            if (i == 0 || (!string.IsNullOrEmpty(c) && c != "."))
+            {
+                if (c == "..")
+                {
+                    --w;
+                    if (w < 0)
+                    {
+                        throw new InvalidPathException("path '" + path + "' is invalid");
+                    }
+                }
+                else
+                {
+                    if (w != i)
+                    {
+                        components[w] = components[i];
+                    }
+                    ++w;
+                }
+            }
+        }
+        if (w == 0)
+        {
+            return "/";
+        }
+        else if (w == 1)
+        {
+            string p = components[0];
+            if (p.Length == 2 && char.IsCAlpha(p[0]) && p[1] == ':')
+            {
+                return p + "/";
+            }
+        }
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < w; ++i)
+        {
+            if (i != 0)
+            {
+                result.Append('/');
+            }
+            result.Append(components[i]);
+        }
+        return result.ToString();
+    }
+}

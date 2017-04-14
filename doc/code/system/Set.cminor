@@ -1,0 +1,37 @@
+using System;
+
+namespace System.Collections.Generic
+{
+    public class Set<T> : Enumerable
+    {
+        public Set()
+        {
+            this.tree = new RedBlackTree<T, T, Identity<T>>();
+        }
+        public Enumerator GetEnumerator()
+        {
+            return tree.GetEnumerator();
+        }
+        public void Clear()
+        {
+            tree.Clear();
+        }
+        public int Count 
+        {
+            get { return tree.Count; }
+        }
+        public bool Add(T value)
+        {
+            return tree.Add(value);
+        }
+        public bool Remove(T value)
+        {
+            return tree.Remove(value);
+        }
+        public bool Contains(T value)
+        {
+            return tree.Contains(value);
+        }
+        private RedBlackTree<T, T, Identity<T>> tree;
+    }
+}

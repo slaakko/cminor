@@ -1,0 +1,164 @@
+using System.IO;
+
+namespace System
+{
+    public static class Console
+    {
+        static Console()
+        {
+            bool inWindows = System.GetPlatform() == System.Platform.windows;
+            Stream inBaseStream = new FileStream(stdin, FileAccess.read);
+            if (inWindows)
+            {
+                inBaseStream = new NarrowingStream(inBaseStream);
+            }
+            inStream = new StreamReader(inBaseStream);
+            Stream outBaseStream = new FileStream(stdout, FileAccess.write);
+            if (inWindows)
+            {
+                outBaseStream = new WideningStream(outBaseStream);
+            }
+            outStream = new StreamWriter(outBaseStream);
+            Stream errBaseStream = new FileStream(stderr, FileAccess.write);
+            if (inWindows)
+            {
+                errBaseStream = new WideningStream(errBaseStream);
+            }
+            errStream = new StreamWriter(errBaseStream);
+        }
+        public static int Read()
+        {
+            return inStream.Read();
+        }
+        public static string ReadLine()
+        {
+            return inStream.ReadLine();
+        }
+        public static void Write(string s)
+        {
+            outStream.Write(s);
+        }
+        public static void WriteLine(string s)
+        {
+            outStream.WriteLine(s);
+        }
+        public static void WriteLine()
+        {
+            outStream.WriteLine();
+        }
+        public static void Write(char c)
+        {
+            outStream.Write(c);
+        }
+        public static void WriteLine(char c)
+        {
+            outStream.WriteLine(c);
+        }
+        public static void Write(bool x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(bool x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(sbyte x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(sbyte x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(byte x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(byte x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(short x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(short x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(ushort x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(ushort x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(int x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(int x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(uint x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(uint x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(long x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(long x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(ulong x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(ulong x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(float x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(float x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static void Write(double x)
+        {
+            outStream.Write(x);
+        }
+        public static void WriteLine(double x)
+        {
+            outStream.WriteLine(x);
+        }
+        public static StreamReader In
+        {
+            get { return inStream; }
+            set { inStream = value; }
+        }
+        public static StreamWriter Out
+        {
+            get { return outStream; }
+            set { outStream = value; }
+        }
+        public static StreamWriter Error
+        {
+            get { return errStream; }
+            set { errStream = value; }
+        }
+        private static StreamReader inStream;
+        private static StreamWriter outStream;
+        private static StreamWriter errStream;
+    }
+}

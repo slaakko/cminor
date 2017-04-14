@@ -1,0 +1,179 @@
+using System;
+
+namespace System.Collections.Generic
+{
+    public class List<T> : Enumerable
+    {
+        public List()
+        {
+            this.items = null;
+            this.count = 0;
+        }
+        public List(int capacity)
+        {
+            if (capacity < 0)
+            {
+                throw new ArgumentOutOfRangeException("invalid capacity");
+            }
+            else 
+            {
+                this.items = new T[capacity];
+            }
+            this.count = 0;
+        }
+        public void Add(T item)
+        {
+            int n = 0;
+            if (items != null)
+            {
+                n = items.Length;
+            }
+            if (count >= n)
+            {
+                n = 2 * n;
+                if (n < 4)
+                {
+                    n = 4;
+                }
+                T[] newItems = new T[n];
+                for (int i = 0; i < count; ++i)
+                {
+                    newItems[i] = items[i];
+                }
+                items = newItems;
+            }
+            items[count] = item;
+            ++count;
+        }
+        public void AddRange(Enumerable range)
+        {
+            foreach (T item in range)
+            {
+                Add(item);
+            }
+        }
+        public int BinarySearch(T item)
+        {
+            int len = count;
+            int first = 0;
+            while (len > 0)
+            {
+                int half = len >> 1;
+                int middle = first + half;
+                T m = items[middle];
+                if (item > m)
+                {
+                    first = middle + 1;
+                    len = len - half - 1;
+                }
+                else
+                {
+                    len = half;
+                }
+            }
+            return first;
+        }
+        public bool Remove(T item)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                if (items[i] == item)
+                {
+                    RemoveAt(i);
+                    return true;
+                }
+            }
+            return false;
+        }
+        public void RemoveAt(int index)
+        {
+            int n = count - 1;
+            for (int i = index; i < n; ++i)
+            {
+                items[i] = items[i + 1];
+            }
+            items[n] = default(T);
+            --count;
+        }
+        public void Resize(int newCount)
+        {
+            T[] newItems = new T[newCount];
+            int n = Math.Min(count, newCount);
+            for (int i = 0; i < n; ++i)
+            {
+                newItems[i] = items[i];
+            }
+            items = newItems;
+            count = newCount;
+        }
+        public void Clear()
+        {
+            items = null;
+            count = 0;
+        }
+        public T[] ToArray()
+        {
+            T[] arr = new T[count];
+            for (int i = 0; i < count; ++i)
+            {
+                arr[i] = items[i];
+            }
+            return arr;
+        }
+        public void Reverse()
+        {
+            int i = 0;
+            int j = count - 1;
+            while (i < j)
+            {
+                T temp = items[i];
+                items[i] = items[j];
+                items[j] = temp;
+                ++i;
+                --j;
+            }
+        }
+        public Enumerator GetEnumerator()
+        {
+            return new ListEnumerator<T>(this);
+        }
+        public T this[int index]
+        {
+            get { return items[index]; }
+            set { items[index] = value; }
+        }
+        public int Count
+        {
+            get { return count; }
+        }
+        public int Capacity
+        {
+            get { if (items == null) return 0; else return items.Length; }
+        }
+        private T[] items;
+        private int count;
+    }
+
+    internal class ListEnumerator<T> : Enumerator
+    {
+        public ListEnumerator(List<T> list)
+        {
+            this.list = list;
+            this.index = 0;
+        }
+        public bool AtEnd()
+        {
+            return index >= list.Count;
+        }
+        public object GetCurrent()
+        {
+            return list[index];
+        }
+        public void MoveNext()
+        {
+            ++index;
+        }
+        private List<T> list;
+        private int index;
+    }
+}

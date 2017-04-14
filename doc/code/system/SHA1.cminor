@@ -1,0 +1,180 @@
+using System;
+using System.Text;
+using System.IO;
+using System.Unicode;
+
+namespace System.Security.Cryptography
+{
+    public uint LeftRotate(uint x, uint n)
+    {
+        return (x << n) ^ (x >> (32u - n));
+    }
+
+    public class SHA1
+    {
+        public SHA1()
+        {
+            this.digest = new uint[5];
+            this.block = new byte[64];
+            Reset();
+        }
+        public void Reset()
+        {
+            digest[0] = 0x67452301u;
+            digest[1] = 0xEFCDAB89u;
+            digest[2] = 0x98BADCFEu;
+            digest[3] = 0x10325476u;
+            digest[4] = 0xC3D2E1F0u;
+            byteIndex = 0u;
+            bitCount = 0u;
+        }
+        public void Process(byte x)
+        {
+            ProcessByte(x);
+            bitCount = bitCount + 8u;
+        }
+        public void Process(byte[] bytes)
+        {
+            if (bytes == null)
+            {
+                throw new ArgumentNullException("provided byte array is null");
+            }
+            foreach (byte x in bytes)
+            {
+                Process(x);
+            }
+        }
+        public string GetDigest()
+        {
+            ProcessByte(0x80u);
+            if (byteIndex > 56u)
+            {
+                while (byteIndex != 0u)
+                {
+                    ProcessByte(0u);
+                }
+                while (byteIndex < 56u)
+                {
+                    ProcessByte(0u);
+                }
+            }
+            else
+            {
+                while (byteIndex < 56u)
+                {
+                    ProcessByte(0u);
+                }
+            }
+            ProcessByte(cast<byte>((bitCount >> 56u) & 0xFFu));
+            ProcessByte(cast<byte>((bitCount >> 48u) & 0xFFu));
+            ProcessByte(cast<byte>((bitCount >> 40u) & 0xFFu));
+            ProcessByte(cast<byte>((bitCount >> 32u) & 0xFFu));
+            ProcessByte(cast<byte>((bitCount >> 24u) & 0xFFu));
+            ProcessByte(cast<byte>((bitCount >> 16u) & 0xFFu));
+            ProcessByte(cast<byte>((bitCount >> 8u) & 0xFFu));
+            ProcessByte(cast<byte>(bitCount & 0xFFu));
+            StringBuilder s = new StringBuilder();
+            s.Append(ToHexString(digest[0]));
+            s.Append(ToHexString(digest[1]));
+            s.Append(ToHexString(digest[2]));
+            s.Append(ToHexString(digest[3]));
+            s.Append(ToHexString(digest[4]));
+            return s.ToString();
+        }
+        private void ProcessByte(byte x)
+        {
+            block[byteIndex] = x;
+            ++byteIndex;
+            if (byteIndex == 64u)
+            {
+                byteIndex = 0u;
+                ProcessBlock();
+            }
+        }
+        private void ProcessBlock()
+        {
+            uint[] w = new uint[80];
+            for (int i = 0; i < 16; ++i)
+            {
+                w[i] = cast<uint>(block[4 * i]) << 24u;
+                w[i] = w[i] | cast<uint>(block[4 * i + 1]) << 16u;
+                w[i] = w[i] | cast<uint>(block[4 * i + 2]) << 8u;
+                w[i] = w[i] | cast<uint>(block[4 * i + 3]);
+            }
+            for (int i = 16; i < 80; ++i)
+            {
+                w[i] = LeftRotate(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1u);
+            }
+            uint a = digest[0];
+            uint b = digest[1];
+            uint c = digest[2];
+            uint d = digest[3];
+            uint e = digest[4];
+            for (int i = 0; i < 80; ++i)
+            {
+                uint f;
+                uint k;
+                if (i < 20)
+                {
+                    f = (b & c) | (~b & d);
+                    k = 0x5A827999u;
+                }
+                else if (i < 40)
+                {
+                    f = b ^ c ^ d;
+                    k = 0x6ED9EBA1u;
+                }
+                else if (i < 60)
+                {
+                    f = (b & c) | (b & d) | (c & d);
+                    k = 0x8F1BBCDCu;
+                }
+                else
+                {
+                    f = b ^ c ^ d;
+                    k = 0xCA62C1D6u;
+                }
+                uint temp = LeftRotate(a, 5u) + f + e + k + w[i];
+                e = d;
+                d = c;
+                c = LeftRotate(b, 30u);
+                b = a;
+                a = temp;
+            }
+            digest[0] = digest[0] + a;
+            digest[1] = digest[1] + b;
+            digest[2] = digest[2] + c;
+            digest[3] = digest[3] + d;
+            digest[4] = digest[4] + e;
+        }
+        private uint[] digest;
+        private byte[] block;
+        private byte byteIndex;
+        private ulong bitCount;
+    }
+
+    public string GetSHA1MessageDigest(string message)
+    {
+        SHA1 sha1 = new SHA1();
+        MemoryStream memoryStream = new MemoryStream();
+        Utf8Encoder encoder = new Utf8Encoder(memoryStream);
+        encoder.Encode(message);
+        sha1.Process(memoryStream.Bytes);
+        return sha1.GetDigest();
+    }
+    
+    public string GetSHA1FileDigest(string filePath)
+    {
+        SHA1 sha1 = new SHA1();
+        using (BinaryReader reader = File.OpenBinary(filePath))
+        {
+            int size = reader.StreamSize;
+            for (int i = 0; i < size; ++i)
+            {
+                byte b = reader.ReadByte();
+                sha1.Process(b);
+            }
+        }
+        return sha1.GetDigest();
+    }
+}

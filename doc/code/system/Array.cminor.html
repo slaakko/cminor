@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Array.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">namespace</span> <span class="identifier">System</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Array</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Array</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">length</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">length</span> <span class="other">=</span> <span class="identifier">length</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Length</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">length</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">length</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">ArrayEnumerator</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="other">:</span> <span class="identifier">Enumerator</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">ArrayEnumerator</span><span class="other">(</span><span class="identifier">T</span><span class="other">[</span><span class="other">]</span> <span class="identifier">items</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">items</span> <span class="other">=</span> <span class="identifier">items</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">index</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">AtEnd</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">items</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span> <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">index</span> <span class="other">&gt;</span><span class="other">=</span> <span class="identifier">items.Length</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">object</span> <span class="identifier">GetCurrent</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">items</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">MoveNext</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="other">+</span><span class="other">+</span><span class="identifier">index</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">T</span><span class="other">[</span><span class="other">]</span> <span class="identifier">items</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">index</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

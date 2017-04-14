@@ -1,0 +1,101 @@
+using System;
+
+namespace System.Collections.Generic
+{
+    public class KeyNotFoundException : Exception
+    {
+        public KeyNotFoundException(string message) : base(message)
+        {
+        }
+    }
+
+    public class KeyValuePair<KeyType, ValueType>
+    {
+        public KeyValuePair(KeyType key, ValueType val)
+        {
+            this.key = key;
+            this.val = val;
+        }
+        public KeyType Key
+        {
+            get { return key; }
+        }
+        public ValueType Value
+        {
+            get { return val; }
+            set { val = value; }
+        }
+        private KeyType key;
+        private ValueType val;
+    }
+
+    public class ExtractKey<KeyType, ValueType>
+    {
+        public KeyType operator()(KeyValuePair<KeyType, ValueType> keyValuePair)
+        {
+            return keyValuePair.Key;
+        }
+    }
+
+    public class HashMap<KeyType, ValueType> : Enumerable
+    {
+        public HashMap()
+        {
+            table = new Hashtable<KeyType, KeyValuePair<KeyType, ValueType>, ExtractKey<KeyType, ValueType>>();
+        }
+        public Enumerator GetEnumerator()
+        {
+            return table.GetEnumerator();
+        }
+        public void Clear()
+        {
+            table.Clear();
+        }
+        public int Count
+        {
+            get { return table.Count;}
+        }
+        public bool Add(KeyValuePair<KeyType, ValueType> keyValuePair)
+        {
+            return table.Add(keyValuePair);
+        }
+        public bool Remove(KeyType key)
+        {
+            return table.Remove(key);
+        }
+        public bool ContainsKey(KeyType key)
+        {
+            return table.Contains(key);
+        }
+        public ValueType this[KeyType key]
+        {
+            get 
+            { 
+                KeyValuePair<KeyType, ValueType> pair = table[key];
+                if (pair != null)
+                {
+                    return pair.Value;
+                }
+                else
+                {
+                    throw new KeyNotFoundException("key '" + key.ToString() + "' not found");
+                }
+            }
+            set 
+            { 
+                table.AddOrReplace(new KeyValuePair<KeyType, ValueType>(key, value));
+            }
+        }
+        public bool TryGetValue(KeyType key, ref ValueType value)
+        {
+            KeyValuePair<KeyType, ValueType> pair = table[key];
+            if (pair != null)
+            {
+                value = pair.Value;
+                return true;
+            }
+            return false;
+        }
+        private Hashtable<KeyType, KeyValuePair<KeyType, ValueType>, ExtractKey<KeyType, ValueType>> table;
+    }
+}

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Thread.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Threading</span>
+<span class="other">{</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">cores</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">int</span> <span class="identifier">HardwareConcurrency</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">ThreadingException</span> <span class="other">:</span> <span class="identifier">SystemException</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">ThreadingException</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">base</span><span class="other">(</span><span class="identifier">message</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">delegate</span> <span class="keyword">void</span> <span class="identifier">ThreadStartFunction</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="keyword">public</span> <span class="keyword">delegate</span> <span class="keyword">void</span> <span class="identifier">ParameterizedThreadStartFunction</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">param</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="keyword">delegate</span> <span class="keyword">void</span> <span class="identifier">ThreadStartMethod</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="keyword">delegate</span> <span class="keyword">void</span> <span class="identifier">ParameterizedThreadStartMethod</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">param</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Thread</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Thread</span> <span class="identifier">StartFunction</span><span class="other">(</span><span class="identifier">ThreadStartFunction</span> <span class="identifier">function</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">function</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">NullReferenceException</span><span class="other">(</span><span class="string">&quot;thread start function is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">System.Threading.StartThread</span><span class="other">(</span><span class="identifier">function</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Thread</span> <span class="identifier">StartFunction</span><span class="other">(</span><span class="identifier">ParameterizedThreadStartFunction</span> <span class="identifier">function</span><span class="other">,</span> <span class="keyword">object</span> <span class="identifier">param</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">function</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">NullReferenceException</span><span class="other">(</span><span class="string">&quot;parameterized thread start function is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">System.Threading.StartThread</span><span class="other">(</span><span class="identifier">function</span><span class="other">,</span> <span class="identifier">param</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Thread</span> <span class="identifier">StartMethod</span><span class="other">(</span><span class="identifier">ThreadStartMethod</span> <span class="identifier">method</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">method</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">NullReferenceException</span><span class="other">(</span><span class="string">&quot;thread start method is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">System.Threading.StartThread</span><span class="other">(</span><span class="identifier">method</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Thread</span> <span class="identifier">StartMethod</span><span class="other">(</span><span class="identifier">ParameterizedThreadStartMethod</span> <span class="identifier">method</span><span class="other">,</span> <span class="keyword">object</span> <span class="identifier">param</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">method</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">NullReferenceException</span><span class="other">(</span><span class="string">&quot;parameterized thread start method is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">System.Threading.StartThread</span><span class="other">(</span><span class="identifier">method</span><span class="other">,</span> <span class="identifier">param</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Join</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">System.Threading.JoinThread</span><span class="other">(</span><span class="keyword">this</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Id</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">id</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">Thread</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">id</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">tsf</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="identifier">Thread</span> <span class="identifier">StartThread</span><span class="other">(</span><span class="identifier">ThreadStartFunction</span> <span class="identifier">fun</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">tsm</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="identifier">Thread</span> <span class="identifier">StartThread</span><span class="other">(</span><span class="identifier">ThreadStartMethod</span> <span class="identifier">method</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">ptsf</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="identifier">Thread</span> <span class="identifier">StartThread</span><span class="other">(</span><span class="identifier">ParameterizedThreadStartFunction</span> <span class="identifier">fun</span><span class="other">,</span> <span class="keyword">object</span> <span class="identifier">param</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">ptsm</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="identifier">Thread</span> <span class="identifier">StartThread</span><span class="other">(</span><span class="identifier">ParameterizedThreadStartMethod</span> <span class="identifier">method</span><span class="other">,</span> <span class="keyword">object</span> <span class="identifier">param</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">join</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">void</span> <span class="identifier">JoinThread</span><span class="other">(</span><span class="identifier">Thread</span> <span class="identifier">thread</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

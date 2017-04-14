@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Stack.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Collections.Generic</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Stack</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Stack</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">items</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Push</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">item</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">items.Add</span><span class="other">(</span><span class="identifier">item</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="identifier">Pop</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">T</span> <span class="identifier">item</span> <span class="other">=</span> <span class="identifier">Top</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">items.RemoveAt</span><span class="other">(</span><span class="identifier">items.Count</span> <span class="other">-</span> <span class="number">1</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">item</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="identifier">Top</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">items</span><span class="other">[</span><span class="identifier">items.Count</span> <span class="other">-</span> <span class="number">1</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Count</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">items.Count</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="identifier">items</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

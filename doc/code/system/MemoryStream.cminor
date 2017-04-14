@@ -1,0 +1,72 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.IO
+{
+    public class MemoryStream : Stream, Closable
+    {
+        public MemoryStream()
+        {
+            bytes = new List<byte>();
+        }
+        public override void WriteByte(byte value)
+        {
+            bytes.Add(value);
+        }
+        public override void Write(byte[] buffer, int count)
+        {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("provided buffer is null");
+            }
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException("invalid count");
+            }
+            for (int i = 0; i < count; ++i)
+            {
+                WriteByte(buffer[i]);
+            }
+        }
+        public override int ReadByte()
+        {
+            if (readpos < bytes.Count)
+            {
+                byte b = bytes[readpos];
+                ++readpos;
+                return b;
+            }
+            return -1;
+        }
+        public override int Read(byte[] buffer)
+        {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("provided buffer is null");
+            }
+            int bytesRead = 0;
+            int bytesAvailable = bytes.Count - readpos;
+            int n = Math.Min(bytesAvailable, buffer.Length);
+            for (int i = 0; i < n; ++i)
+            {
+                buffer[i] = bytes[readpos];
+                ++readpos;
+                ++bytesRead;
+            }
+            return bytesRead;
+        }
+        public override void Close()
+        {
+        }
+        public int Length
+        {
+            get { return bytes.Count; }
+        }
+        public byte[] Bytes
+        {
+            get { return bytes.ToArray(); }
+        }
+        private List<byte> bytes;
+        private int readpos;
+    }
+}

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>BoxedTypes.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">namespace</span> <span class="identifier">System</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedInt8</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedInt8</span><span class="other">(</span><span class="keyword">sbyte</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">sbyte</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseSByte</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">sbyte</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseSByte</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">sbyte</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedUInt8</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedUInt8</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToHexString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">byte</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseByte</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">byte</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseByte</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">byte</span> <span class="identifier">ParseHex</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseHexByte</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParseHex</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">byte</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseHexByte</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">byte</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedInt16</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedInt16</span><span class="other">(</span><span class="keyword">short</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">short</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseShort</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">short</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseShort</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">short</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedUInt16</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedUInt16</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToHexString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">ushort</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseUShort</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">ushort</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseUShort</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">ushort</span> <span class="identifier">ParseHex</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseHexWord</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParseHex</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">ushort</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseHexWord</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">ushort</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedInt32</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedInt32</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseInt</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">int</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseInt</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedUInt32</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedUInt32</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToHexString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">uint</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseUInt</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">uint</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseUInt</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">uint</span> <span class="identifier">ParseHex</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseHexDWord</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParseHex</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">uint</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseHexDWord</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">uint</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedInt64</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedInt64</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseLong</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">long</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseLong</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">long</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedUInt64</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedUInt64</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToHexString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">ulong</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseULong</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">ulong</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseULong</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">ulong</span> <span class="identifier">ParseHex</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseHexQWord</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParseHex</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">ulong</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseHexQWord</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">ulong</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedFloat</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedFloat</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">float</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseFloat</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">float</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseFloat</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">float</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedDouble</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedDouble</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">double</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseDouble</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">double</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseDouble</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">double</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedChar</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedChar</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsSpace</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.IsCSpace</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsSeparator</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.Unicode.IsSeparator</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsLetter</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.Unicode.IsLetter</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsLower</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.Unicode.IsLower</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsUpper</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.Unicode.IsUpper</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsNumber</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.Unicode.IsNumber</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsPunctuation</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.Unicode.IsPunctuation</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">char</span> <span class="identifier">ToLower</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.Unicode.ToLower</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">char</span> <span class="identifier">ToUpper</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.Unicode.ToUpper</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Unicode.Category</span> <span class="identifier">GetUnicodeCategory</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.Unicode.GetCategory</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">UnicodeName</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.Unicode.GetCharacterName</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsCSpace</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.IsCSpace</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsCLower</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.IsCLower</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsCUpper</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.IsCUpper</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsCAlpha</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.IsCAlpha</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsCAlnum</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.IsCAlnum</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsCDigit</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.IsCDigit</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsCHexDigit</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.IsCHexDigit</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsCPunctuation</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.IsCPunctuation</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsCPrintable</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.IsCPrintable</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">char</span> <span class="identifier">ToCLower</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToCLower</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">char</span> <span class="identifier">ToCUpper</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToCUpper</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">char</span> <span class="identifier">NL</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="char">&apos;\n&apos;</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">char</span> <span class="identifier">CR</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="char">&apos;\r&apos;</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">char</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseChar</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">char</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseChar</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">char</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedBoolean</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BoxedBoolean</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ToString</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.ParseBool</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">TryParse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">bool</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">System.TryParseBool</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">value</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

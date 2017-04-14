@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Enumerator.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">namespace</span> <span class="identifier">System</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">interface</span> <span class="identifier">Enumerator</span>
+    <span class="other">{</span>
+        <span class="keyword">bool</span> <span class="identifier">AtEnd</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">object</span> <span class="identifier">GetCurrent</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">void</span> <span class="identifier">MoveNext</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">interface</span> <span class="identifier">Enumerable</span>
+    <span class="other">{</span>
+        <span class="identifier">Enumerator</span> <span class="identifier">GetEnumerator</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

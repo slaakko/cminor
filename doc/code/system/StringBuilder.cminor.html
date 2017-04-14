@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>StringBuilder.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Collections.Generic</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Text</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">StringBuilder</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">chars</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">capacity</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">chars</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">capacity</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">foreach</span> <span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span> <span class="keyword">in</span> <span class="identifier">s</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">chars.Add</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">this</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">chars.Add</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="keyword">this</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Append</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">sbyte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Append</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Append</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">short</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Append</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Append</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Append</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Append</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Append</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Append</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Append</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StringBuilder</span> <span class="identifier">Append</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Append</span><span class="other">(</span><span class="identifier">x.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Reverse</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">chars.Reverse</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span> 
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="keyword">string</span><span class="other">(</span><span class="identifier">chars.ToArray</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span> 
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Clear</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">chars.Clear</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Length</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">chars.Count</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Capacity</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">chars.Capacity</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span> <span class="identifier">chars</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

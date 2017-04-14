@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Time.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">namespace</span> <span class="identifier">System</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">TimePoint</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">TimePoint</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">nanosecs</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">TimePoint</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">nanosecs</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">nanosecs</span> <span class="other">=</span> <span class="identifier">nanosecs</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">long</span> <span class="identifier">Rep</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">nanosecs</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">long</span> <span class="identifier">nanosecs</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">=</span><span class="other">=</span><span class="other">(</span><span class="identifier">TimePoint</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">TimePoint</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">left.Rep</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">right.Rep</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">&lt;</span><span class="other">(</span><span class="identifier">TimePoint</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">TimePoint</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">left.Rep</span> <span class="other">&lt;</span> <span class="identifier">right.Rep</span><span class="other">;</span>
+    <span class="other">}</span>
+    
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Duration</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Duration</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">nanosecs</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Duration</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">nanosecs</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">nanosecs</span> <span class="other">=</span> <span class="identifier">nanosecs</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">long</span> <span class="identifier">Hours</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">nanosecs</span> <span class="other">/</span> <span class="other">(</span><span class="number">3600</span> <span class="other">*</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">(</span><span class="number">1000000000</span><span class="other">)</span><span class="other">)</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">long</span> <span class="identifier">Minutes</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">nanosecs</span> <span class="other">/</span> <span class="other">(</span><span class="number">60</span> <span class="other">*</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">(</span><span class="number">1000000000</span><span class="other">)</span><span class="other">)</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">long</span> <span class="identifier">Seconds</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">nanosecs</span> <span class="other">/</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">(</span><span class="number">1000000000</span><span class="other">)</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">long</span> <span class="identifier">Milliseconds</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">nanosecs</span> <span class="other">/</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">(</span><span class="number">1000000</span><span class="other">)</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">long</span> <span class="identifier">Microseconds</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">nanosecs</span> <span class="other">/</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">(</span><span class="number">1000</span><span class="other">)</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">long</span> <span class="identifier">Nanoseconds</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">nanosecs</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Duration</span> <span class="identifier">FromHours</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">hours</span><span class="other">)</span> 
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="number">3600</span> <span class="other">*</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">(</span><span class="number">1000000000</span><span class="other">)</span> <span class="other">*</span> <span class="identifier">hours</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Duration</span> <span class="identifier">FromMinutes</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">minutes</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="number">60</span> <span class="other">*</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">(</span><span class="number">1000000000</span><span class="other">)</span> <span class="other">*</span> <span class="identifier">minutes</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Duration</span> <span class="identifier">FromSeconds</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">seconds</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">(</span><span class="number">1000000000</span><span class="other">)</span> <span class="other">*</span> <span class="identifier">seconds</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Duration</span> <span class="identifier">FromMilliseconds</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">milliseconds</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">(</span><span class="number">1000000</span><span class="other">)</span> <span class="other">*</span> <span class="identifier">milliseconds</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Duration</span> <span class="identifier">FromMicroseconds</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">microseconds</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">(</span><span class="number">1000</span><span class="other">)</span> <span class="other">*</span> <span class="identifier">microseconds</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Duration</span> <span class="identifier">FromNanoseconds</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">nanoseconds</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="identifier">nanoseconds</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">long</span> <span class="identifier">Rep</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">nanosecs</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">long</span> <span class="identifier">nanosecs</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">=</span><span class="other">=</span><span class="other">(</span><span class="identifier">Duration</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">left.Rep</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">right.Rep</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">&lt;</span><span class="other">(</span><span class="identifier">Duration</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">left.Rep</span> <span class="other">&lt;</span> <span class="identifier">right.Rep</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="identifier">Duration</span> <span class="keyword">operator</span><span class="other">+</span><span class="other">(</span><span class="identifier">Duration</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="identifier">left.Rep</span> <span class="other">+</span> <span class="identifier">right.Rep</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="identifier">Duration</span> <span class="keyword">operator</span><span class="other">-</span><span class="other">(</span><span class="identifier">Duration</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="identifier">left.Rep</span> <span class="other">-</span> <span class="identifier">right.Rep</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="identifier">Duration</span> <span class="keyword">operator</span><span class="other">*</span><span class="other">(</span><span class="identifier">Duration</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="identifier">left.Rep</span> <span class="other">*</span> <span class="identifier">right.Rep</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="identifier">Duration</span> <span class="keyword">operator</span><span class="other">/</span><span class="other">(</span><span class="identifier">Duration</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="identifier">left.Rep</span> <span class="other">/</span> <span class="identifier">right.Rep</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="identifier">Duration</span> <span class="keyword">operator</span><span class="other">%</span><span class="other">(</span><span class="identifier">Duration</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="identifier">left.Rep</span> <span class="other">%</span> <span class="identifier">right.Rep</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="identifier">Duration</span> <span class="keyword">operator</span><span class="other">-</span><span class="other">(</span><span class="identifier">TimePoint</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">TimePoint</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Duration</span><span class="other">(</span><span class="identifier">left.Rep</span> <span class="other">-</span> <span class="identifier">right.Rep</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="identifier">TimePoint</span> <span class="keyword">operator</span><span class="other">+</span><span class="other">(</span><span class="identifier">TimePoint</span> <span class="identifier">tp</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">dur</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">TimePoint</span><span class="other">(</span><span class="identifier">tp.Rep</span> <span class="other">+</span> <span class="identifier">dur.Rep</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="identifier">TimePoint</span> <span class="keyword">operator</span><span class="other">+</span><span class="other">(</span><span class="identifier">Duration</span> <span class="identifier">dur</span><span class="other">,</span> <span class="identifier">TimePoint</span> <span class="identifier">tp</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">TimePoint</span><span class="other">(</span><span class="identifier">tp.Rep</span> <span class="other">+</span> <span class="identifier">dur.Rep</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="identifier">TimePoint</span> <span class="keyword">operator</span><span class="other">-</span><span class="other">(</span><span class="identifier">TimePoint</span> <span class="identifier">tp</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">dur</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">TimePoint</span><span class="other">(</span><span class="identifier">tp.Rep</span> <span class="other">-</span> <span class="identifier">dur.Rep</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">now</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="identifier">TimePoint</span> <span class="identifier">Now</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">sleep</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">void</span> <span class="identifier">SleepFor</span><span class="other">(</span><span class="identifier">Duration</span> <span class="identifier">dur</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">SleepUntil</span><span class="other">(</span><span class="identifier">TimePoint</span> <span class="identifier">tp</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">Duration</span> <span class="identifier">dur</span> <span class="other">=</span> <span class="identifier">tp</span> <span class="other">-</span> <span class="identifier">Now</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">SleepFor</span><span class="other">(</span><span class="identifier">dur</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+<span class="other">}</span>
+</pre>
+</body>
+</html>

@@ -1,0 +1,109 @@
+using System.Text;
+
+namespace System
+{
+    public class Exception
+    {
+        public Exception(string message)
+        {
+            this.message = message;
+        }
+        public void SetStackTrace(string stackTrace)
+        {
+            this.stackTrace = stackTrace;
+        }
+        public string Message
+        {
+            get { return message; }
+        }
+        public string StackTrace
+        {
+            get { return stackTrace; }
+        }
+        public override string ToString()
+        {
+            StringBuilder s = new StringBuilder();
+            s.Append(base.ToString()).Append(": ").Append(message);
+            if (stackTrace != "")
+            {
+                s.Append(":\n").Append(stackTrace);
+            }
+            return s.ToString();
+        }
+        private string message;
+        private string stackTrace;
+    }
+
+    public class SystemException : Exception
+    {
+        public SystemException(string message) : base(message)
+        {
+        }
+    }
+
+    public class NullReferenceException : SystemException
+    {
+        public NullReferenceException(string message) : base(message)
+        {
+        }
+    }
+
+    public class IndexOutOfRangeException : SystemException
+    {
+        public IndexOutOfRangeException(string message) : base(message)
+        {
+        }
+    }
+
+    public class ArgumentException : SystemException
+    {
+        public ArgumentException(string message) : base(message)
+        {
+        }
+    }
+
+    public class ArgumentOutOfRangeException : ArgumentException
+    {
+        public ArgumentOutOfRangeException(string message) : base(message)
+        {
+        }
+    }
+
+    public class ArgumentNullException : ArgumentException
+    {
+        public ArgumentNullException(string message) : base(message)
+        {
+        }
+    }
+
+    public class InvalidCastException : SystemException
+    {
+        public InvalidCastException(string message) : base(message)
+        {
+        }
+    }
+
+    public class FileSystemException : SystemException
+    {
+        public FileSystemException(string message) : base(message)
+        {
+        }
+    }
+
+    public class LogicException : Exception
+    {
+        public LogicException(string message) : base(message)
+        {
+        }
+    }
+
+    public class StackOverflowException : SystemException
+    {
+        public StackOverflowException(string message) : base(message)
+        {
+        }
+    }
+
+    [vmf=rethrow]
+    public extern void Rethrow(Exception exception);
+}

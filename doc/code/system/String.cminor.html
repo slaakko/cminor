@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>String.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System.Collections.Generic</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">String</span> <span class="other">:</span> <span class="identifier">Enumerable</span>
+    <span class="other">{</span>
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">ca2s</span><span class="other">]</span>
+        <span class="keyword">public</span> <span class="identifier">extern</span> <span class="identifier">String</span><span class="other">(</span><span class="keyword">char</span><span class="other">[</span><span class="other">]</span> <span class="identifier">chars</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">String</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">count</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">this</span><span class="other">(</span><span class="identifier">MakeCharArray</span><span class="other">(</span><span class="identifier">c</span><span class="other">,</span> <span class="identifier">count</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">this</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">Substring</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">start</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">start</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">length</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">Empty</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">StringBuilder</span> <span class="identifier">s</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="identifier">start</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">length</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">s.Append</span><span class="other">(</span><span class="keyword">this</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">s.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">Substring</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">start</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">len</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">StringBuilder</span> <span class="identifier">s</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">start</span> <span class="other">+</span> <span class="identifier">len</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="identifier">start</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">s.Append</span><span class="other">(</span><span class="keyword">this</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">s.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">Empty</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="string">&quot;&quot;</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">IndexOf</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">IndexOf</span><span class="other">(</span><span class="identifier">c</span><span class="other">,</span> <span class="number">0</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">IndexOf</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">start</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="identifier">start</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">length</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="keyword">this</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">c</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">i</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="other">-</span><span class="number">1</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">IndexOfAny</span><span class="other">(</span><span class="keyword">char</span><span class="other">[</span><span class="other">]</span> <span class="identifier">chars</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">IndexOfAny</span><span class="other">(</span><span class="identifier">chars</span><span class="other">,</span> <span class="number">0</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">IndexOfAny</span><span class="other">(</span><span class="keyword">char</span><span class="other">[</span><span class="other">]</span> <span class="identifier">chars</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">start</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="identifier">start</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">length</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">foreach</span> <span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span> <span class="keyword">in</span> <span class="identifier">chars</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="keyword">this</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">c</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="identifier">i</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="other">-</span><span class="number">1</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">LastIndexOf</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">LastIndexOf</span><span class="other">(</span><span class="identifier">c</span><span class="other">,</span> <span class="identifier">length</span> <span class="other">-</span> <span class="number">1</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">LastIndexOf</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">start</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="identifier">start</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&gt;</span><span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="other">-</span><span class="other">-</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="keyword">this</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">c</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">i</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="other">-</span><span class="number">1</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">LastIndexOfAny</span><span class="other">(</span><span class="keyword">char</span><span class="other">[</span><span class="other">]</span> <span class="identifier">chars</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">LastIndexOfAny</span><span class="other">(</span><span class="identifier">chars</span><span class="other">,</span> <span class="identifier">length</span> <span class="other">-</span> <span class="number">1</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">LastIndexOfAny</span><span class="other">(</span><span class="keyword">char</span><span class="other">[</span><span class="other">]</span> <span class="identifier">chars</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">start</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="identifier">start</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&gt;</span><span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="other">-</span><span class="other">-</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">foreach</span> <span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span> <span class="keyword">in</span> <span class="identifier">chars</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="keyword">this</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">c</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="identifier">i</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="other">-</span><span class="number">1</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">StartsWith</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">prefix</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">prefix.length</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">length</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="keyword">this</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">prefix</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">EndsWith</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">suffix</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">length</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">m</span> <span class="other">=</span> <span class="identifier">suffix.length</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">n</span> <span class="other">&lt;</span> <span class="identifier">m</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">m</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="keyword">this</span><span class="other">[</span><span class="identifier">i</span> <span class="other">+</span> <span class="identifier">n</span> <span class="other">-</span> <span class="identifier">m</span><span class="other">]</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">suffix</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">string</span><span class="other">&gt;</span> <span class="identifier">Split</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">string</span><span class="other">&gt;</span> <span class="identifier">result</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">string</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">start</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">length</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="keyword">this</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">c</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">result.Add</span><span class="other">(</span><span class="identifier">Substring</span><span class="other">(</span><span class="identifier">start</span><span class="other">,</span> <span class="identifier">i</span> <span class="other">-</span> <span class="identifier">start</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">start</span> <span class="other">=</span> <span class="identifier">i</span> <span class="other">+</span> <span class="number">1</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">start</span> <span class="other">&lt;</span> <span class="identifier">length</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">result.Add</span><span class="other">(</span><span class="identifier">Substring</span><span class="other">(</span><span class="identifier">start</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">result</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">Trim</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">b</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">b</span> <span class="other">&lt;</span> <span class="identifier">length</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="keyword">char</span><span class="other">.</span><span class="identifier">IsCSpace</span><span class="other">(</span><span class="keyword">this</span><span class="other">[</span><span class="identifier">b</span><span class="other">]</span><span class="other">)</span><span class="other">)</span> 
+            <span class="other">{</span>
+                <span class="other">+</span><span class="other">+</span><span class="identifier">b</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">int</span> <span class="identifier">e</span> <span class="other">=</span> <span class="identifier">length</span> <span class="other">-</span> <span class="number">1</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">e</span> <span class="other">&gt;</span><span class="other">=</span> <span class="identifier">b</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="keyword">char</span><span class="other">.</span><span class="identifier">IsCSpace</span><span class="other">(</span><span class="keyword">this</span><span class="other">[</span><span class="identifier">e</span><span class="other">]</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="other">-</span><span class="other">-</span><span class="identifier">e</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">Substring</span><span class="other">(</span><span class="identifier">b</span><span class="other">,</span> <span class="identifier">e</span> <span class="other">-</span> <span class="identifier">b</span> <span class="other">+</span> <span class="number">1</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">const</span> <span class="keyword">ulong</span> <span class="identifier">hashOffset</span> <span class="other">=</span> <span class="number">14695981039346656037u</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">const</span> <span class="keyword">ulong</span> <span class="identifier">hashPrime</span> <span class="other">=</span> <span class="number">1099511628211u</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">ulong</span> <span class="identifier">hashCode</span> <span class="other">=</span> <span class="identifier">hashOffset</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">length</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">char</span> <span class="identifier">c</span> <span class="other">=</span> <span class="keyword">this</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+                <span class="identifier">hashCode</span> <span class="other">=</span> <span class="identifier">hashCode</span> <span class="other">^</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">hashCode</span> <span class="other">=</span> <span class="identifier">hashCode</span> <span class="other">*</span> <span class="identifier">hashPrime</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">hashCode</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">String</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">s</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">s.Length</span> <span class="other">=</span><span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Enumerator</span> <span class="identifier">GetEnumerator</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">StringEnumerator</span><span class="other">(</span><span class="keyword">this</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Length</span>
+        <span class="other">{</span>   
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">length</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">length</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">=</span><span class="other">=</span><span class="other">(</span><span class="identifier">String</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">String</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">int</span> <span class="identifier">leftLength</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">left</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span> <span class="identifier">leftLength</span> <span class="other">=</span> <span class="identifier">left.Length</span><span class="other">;</span>
+        <span class="keyword">int</span> <span class="identifier">rightLength</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">right</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span> <span class="identifier">rightLength</span> <span class="other">=</span> <span class="identifier">right.Length</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">leftLength</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">rightLength</span><span class="other">)</span> <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">leftLength</span> <span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">left</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">right</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">)</span> <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">&lt;</span><span class="other">(</span><span class="identifier">String</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">String</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">left</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">right</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span> <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">left</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span> <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">right</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span> <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="keyword">int</span> <span class="identifier">leftLength</span> <span class="other">=</span> <span class="identifier">left.Length</span><span class="other">;</span>
+        <span class="keyword">int</span> <span class="identifier">rightLength</span> <span class="other">=</span> <span class="identifier">right.Length</span><span class="other">;</span>
+        <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">Math.Min</span><span class="other">(</span><span class="identifier">leftLength</span><span class="other">,</span> <span class="identifier">rightLength</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">left</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">&lt;</span> <span class="identifier">right</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">)</span> <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">left</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">&gt;</span> <span class="identifier">right</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">)</span> <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="identifier">leftLength</span> <span class="other">&lt;</span> <span class="identifier">rightLength</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">char</span><span class="other">[</span><span class="other">]</span> <span class="identifier">MakeCharArray</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">count</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">count</span> <span class="other">&gt;</span><span class="other">=</span> <span class="number">0</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">char</span><span class="other">[</span><span class="other">]</span> <span class="identifier">arr</span> <span class="other">=</span> <span class="keyword">new</span> <span class="keyword">char</span><span class="other">[</span><span class="identifier">count</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">count</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">arr</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">c</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">arr</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentOutOfRangeException</span><span class="other">(</span><span class="string">&quot;invalid array size&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">internal</span> <span class="keyword">class</span> <span class="identifier">StringEnumerator</span> <span class="other">:</span> <span class="identifier">Enumerator</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">StringEnumerator</span><span class="other">(</span><span class="identifier">String</span> <span class="identifier">s</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">s</span> <span class="other">=</span> <span class="identifier">s</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">index</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">AtEnd</span><span class="other">(</span><span class="other">)</span> 
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span> <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">index</span> <span class="other">&gt;</span><span class="other">=</span> <span class="identifier">s.Length</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">object</span> <span class="identifier">GetCurrent</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">s</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">MoveNext</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="other">+</span><span class="other">+</span><span class="identifier">index</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">string</span> <span class="identifier">s</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">index</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="keyword">operator</span><span class="other">+</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">right</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">StringBuilder</span> <span class="identifier">s</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">s.Append</span><span class="other">(</span><span class="identifier">left</span><span class="other">)</span><span class="other">.</span><span class="identifier">Append</span><span class="other">(</span><span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">return</span> <span class="identifier">s.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

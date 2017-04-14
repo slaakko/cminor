@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>StreamReader.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Unicode</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.IO</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">StreamReader</span> <span class="other">:</span> <span class="identifier">Closable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">StreamReader</span><span class="other">(</span><span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">stream</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided stream is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">stream</span> <span class="other">=</span> <span class="identifier">stream</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">decoder</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">Utf8Decoder</span><span class="other">(</span><span class="identifier">stream</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">buffered</span> <span class="other">=</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">buffer</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="other">-</span><span class="number">1</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Close</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">stream.Close</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Read</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">uint</span> <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">Get</span><span class="other">(</span><span class="keyword">false</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="other">-</span><span class="number">1</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="other">-</span><span class="number">1</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Peek</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">uint</span> <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">Get</span><span class="other">(</span><span class="keyword">true</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="other">-</span><span class="number">1</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="other">-</span><span class="number">1</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ReadLine</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">Read</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">=</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">StringBuilder</span> <span class="identifier">b</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">state</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">char</span> <span class="identifier">c</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">switch</span> <span class="other">(</span><span class="identifier">state</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">case</span> <span class="number">0</span><span class="other">:</span> 
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;\r&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">1</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;\n&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="keyword">return</span> <span class="identifier">b.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span>
+                        <span class="other">{</span>
+                            <span class="identifier">b.Append</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">break</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">case</span> <span class="number">1</span><span class="other">:</span>
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;\n&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="keyword">return</span> <span class="identifier">b.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;\r&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">PutBack</span><span class="other">(</span><span class="char">&apos;\r&apos;</span><span class="other">)</span><span class="other">;</span>
+                            <span class="keyword">return</span> <span class="identifier">b.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span>
+                        <span class="other">{</span>
+                            <span class="identifier">PutBack</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+                            <span class="keyword">return</span> <span class="identifier">b.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="identifier">state</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+                        <span class="keyword">break</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+                <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">Read</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">b.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ReadToEnd</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">StringBuilder</span> <span class="identifier">b</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">Read</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">b.Append</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">Read</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">b.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">PutBack</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">buffered</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="identifier">buffer</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Stream</span> <span class="identifier">ContainedStream</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">stream</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">uint</span> <span class="identifier">Get</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">peek</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">buffered</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="other">!</span><span class="identifier">peek</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">buffered</span> <span class="other">=</span> <span class="keyword">false</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">return</span> <span class="identifier">buffer</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">uint</span> <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">decoder.Decode</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">peek</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">buffer</span> <span class="other">=</span> <span class="identifier">x</span><span class="other">;</span>
+                    <span class="identifier">buffered</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">return</span> <span class="identifier">x</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">Utf8Decoder</span> <span class="identifier">decoder</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">bool</span> <span class="identifier">buffered</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">uint</span> <span class="identifier">buffer</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

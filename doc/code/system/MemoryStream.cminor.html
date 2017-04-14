@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>MemoryStream.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Collections.Generic</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.IO</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">MemoryStream</span> <span class="other">:</span> <span class="identifier">Stream</span><span class="other">,</span> <span class="identifier">Closable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">MemoryStream</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">bytes</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="identifier">WriteByte</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">bytes.Add</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">count</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">buffer</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided buffer is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">count</span> <span class="other">&lt;</span> <span class="number">0</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentOutOfRangeException</span><span class="other">(</span><span class="string">&quot;invalid count&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">count</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">WriteByte</span><span class="other">(</span><span class="identifier">buffer</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">int</span> <span class="identifier">ReadByte</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">readpos</span> <span class="other">&lt;</span> <span class="identifier">bytes.Count</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">byte</span> <span class="identifier">b</span> <span class="other">=</span> <span class="identifier">bytes</span><span class="other">[</span><span class="identifier">readpos</span><span class="other">]</span><span class="other">;</span>
+                <span class="other">+</span><span class="other">+</span><span class="identifier">readpos</span><span class="other">;</span>
+                <span class="keyword">return</span> <span class="identifier">b</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="other">-</span><span class="number">1</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">int</span> <span class="identifier">Read</span><span class="other">(</span><span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">buffer</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided buffer is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">int</span> <span class="identifier">bytesRead</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">bytesAvailable</span> <span class="other">=</span> <span class="identifier">bytes.Count</span> <span class="other">-</span> <span class="identifier">readpos</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">Math.Min</span><span class="other">(</span><span class="identifier">bytesAvailable</span><span class="other">,</span> <span class="identifier">buffer.Length</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">buffer</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">bytes</span><span class="other">[</span><span class="identifier">readpos</span><span class="other">]</span><span class="other">;</span>
+                <span class="other">+</span><span class="other">+</span><span class="identifier">readpos</span><span class="other">;</span>
+                <span class="other">+</span><span class="other">+</span><span class="identifier">bytesRead</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">bytesRead</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="identifier">Close</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Length</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">bytes.Count</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">Bytes</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">bytes.ToArray</span><span class="other">(</span><span class="other">)</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span> <span class="identifier">bytes</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">readpos</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

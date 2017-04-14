@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>BinaryWriter.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Unicode</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.IO</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BinaryWriter</span> <span class="other">:</span> <span class="identifier">Closable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">BinaryWriter</span><span class="other">(</span><span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">stream</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided stream is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">stream</span> <span class="other">=</span> <span class="identifier">stream</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">stringEncoder</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">Utf8Encoder</span><span class="other">(</span><span class="identifier">stream</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Close</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">stream.Close</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">stringEncoder.Encode</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="number">0u</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">sbyte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">stream.WriteByte</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">short</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ushort</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">byte</span> <span class="identifier">x0</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">8u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">byte</span> <span class="identifier">x1</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x0</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x1</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">byte</span> <span class="identifier">x0</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">24u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">byte</span> <span class="identifier">x1</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">16u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">byte</span> <span class="identifier">x2</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">8u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">byte</span> <span class="identifier">x3</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x0</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x1</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x2</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x3</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">byte</span> <span class="identifier">x0</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">56u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">byte</span> <span class="identifier">x1</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">48u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">byte</span> <span class="identifier">x2</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">40u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">byte</span> <span class="identifier">x3</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">32u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">byte</span> <span class="identifier">x4</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">24u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">byte</span> <span class="identifier">x5</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">16u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">byte</span> <span class="identifier">x6</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">8u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">byte</span> <span class="identifier">x7</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x0</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x1</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x2</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x3</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x4</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x5</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x6</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">x7</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Seek</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">pos</span><span class="other">,</span> <span class="identifier">Origin</span> <span class="identifier">origin</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">stream.Seek</span><span class="other">(</span><span class="identifier">pos</span><span class="other">,</span> <span class="identifier">origin</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Tell</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">stream.Tell</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Stream</span> <span class="identifier">ContainedStream</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">stream</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">Utf8Encoder</span> <span class="identifier">stringEncoder</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span></pre>
+</body>
+</html>

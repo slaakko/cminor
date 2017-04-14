@@ -1,0 +1,83 @@
+using System;
+
+namespace System.Threading
+{
+    [vmf=cores]
+    public extern int HardwareConcurrency();
+
+    public class ThreadingException : SystemException
+    {
+        public ThreadingException(string message) : base(message)
+        {
+        }
+    }
+
+    public delegate void ThreadStartFunction();
+    public delegate void ParameterizedThreadStartFunction(object param);
+
+    public class delegate void ThreadStartMethod();
+    public class delegate void ParameterizedThreadStartMethod(object param);
+
+    public class Thread
+    {
+        public static Thread StartFunction(ThreadStartFunction function)
+        {
+            if (function == null)
+            {
+                throw new NullReferenceException("thread start function is null");
+            }
+            return System.Threading.StartThread(function);
+        }
+        public static Thread StartFunction(ParameterizedThreadStartFunction function, object param)
+        {
+            if (function == null)
+            {
+                throw new NullReferenceException("parameterized thread start function is null");
+            }
+            return System.Threading.StartThread(function, param);
+        }
+        public static Thread StartMethod(ThreadStartMethod method)
+        {
+            if (method == null)
+            {
+                throw new NullReferenceException("thread start method is null");
+            }
+            return System.Threading.StartThread(method);
+        }
+        public static Thread StartMethod(ParameterizedThreadStartMethod method, object param)
+        {
+            if (method == null)
+            {
+                throw new NullReferenceException("parameterized thread start method is null");
+            }
+            return System.Threading.StartThread(method, param);
+        }
+        public void Join()
+        {
+            System.Threading.JoinThread(this);
+        }
+        public int Id
+        {
+            get { return id; }
+        }
+        private Thread()
+        {
+        }
+        private int id;
+    }
+
+    [vmf=tsf]
+    public extern Thread StartThread(ThreadStartFunction fun);
+
+    [vmf=tsm]
+    public extern Thread StartThread(ThreadStartMethod method);
+
+    [vmf=ptsf]
+    public extern Thread StartThread(ParameterizedThreadStartFunction fun, object param);
+
+    [vmf=ptsm]
+    public extern Thread StartThread(ParameterizedThreadStartMethod method, object param);
+
+    [vmf=join]
+    public extern void JoinThread(Thread thread);
+}

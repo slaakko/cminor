@@ -1,0 +1,16 @@
+namespace System
+{
+    public class Object
+    {
+        [vmf=o2s]
+        public extern virtual string ToString();
+        [vmf=ohash]
+        public extern virtual ulong GetHashCode();
+    }
+
+    [vmf=oeq]
+    public extern bool operator==(Object left, Object right);
+
+    [vmf=oless]
+    public extern bool operator<(Object left, Object right);
+}

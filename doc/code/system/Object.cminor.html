@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Object.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">namespace</span> <span class="identifier">System</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Object</span>
+    <span class="other">{</span>
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">o2s</span><span class="other">]</span>
+        <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">ohash</span><span class="other">]</span>
+        <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">virtual</span> <span class="keyword">ulong</span> <span class="identifier">GetHashCode</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">oeq</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">=</span><span class="other">=</span><span class="other">(</span><span class="identifier">Object</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">Object</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">oless</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">&lt;</span><span class="other">(</span><span class="identifier">Object</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">Object</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

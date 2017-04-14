@@ -1,0 +1,142 @@
+namespace System
+{
+    public static class Math
+    {
+        internal static class Minimum<T>
+        {
+            public static T Value(T left, T right)
+            {
+                if (left <= right) return left;
+                return right;
+            }
+        }
+
+        public static sbyte Min(sbyte left, sbyte right)
+        {
+            return Minimum<sbyte>.Value(left, right);
+        }
+        public static byte Min(byte left, byte right)
+        {
+            return Minimum<byte>.Value(left, right);
+        }
+        public static short Min(short left, short right)
+        {
+            return Minimum<short>.Value(left, right);
+        }
+        public static ushort Min(ushort left, ushort right)
+        {
+            return Minimum<ushort>.Value(left, right);
+        }
+        public static int Min(int left, int right)
+        {
+            return Minimum<int>.Value(left, right);
+        }
+        public static uint Min(uint left, uint right)
+        {
+            return Minimum<uint>.Value(left, right);
+        }
+        public static long Min(long left, long right)
+        {
+            return Minimum<long>.Value(left, right);
+        }
+        public static ulong Min(ulong left, ulong right)
+        {
+            return Minimum<ulong>.Value(left, right);
+        }
+        public static float Min(float left, float right)
+        {
+            return Minimum<float>.Value(left, right);
+        }
+        public static double Min(double left, double right)
+        {
+            return Minimum<double>.Value(left, right);
+        }
+
+        internal static class Maximum<T>
+        {
+            public static T Value(T left, T right)
+            {
+                if (right >= left) return right;
+                return left;
+            }
+        }
+
+        public static sbyte Max(sbyte left, sbyte right)
+        {
+            return Maximum<sbyte>.Value(left, right);
+        }
+        public static byte Max(byte left, byte right)
+        {
+            return Maximum<byte>.Value(left, right);
+        }
+        public static short Max(short left, short right)
+        {
+            return Maximum<short>.Value(left, right);
+        }
+        public static ushort Max(ushort left, ushort right)
+        {
+            return Maximum<ushort>.Value(left, right);
+        }
+        public static int Max(int left, int right)
+        {
+            return Maximum<int>.Value(left, right);
+        }
+        public static uint Max(uint left, uint right)
+        {
+            return Maximum<uint>.Value(left, right);
+        }
+        public static long Max(long left, long right)
+        {
+            return Maximum<long>.Value(left, right);
+        }
+        public static ulong Max(ulong left, ulong right)
+        {
+            return Maximum<ulong>.Value(left, right);
+        }
+        public static float Max(float left, float right)
+        {
+            return Maximum<float>.Value(left, right);
+        }
+        public static double Max(double left, double right)
+        {
+            return Maximum<double>.Value(left, right);
+        }
+
+        internal static class Absolute<T>
+        {
+            public static T Value(T x)
+            {
+                if (x < 0) return -x;
+                return x;
+            }
+        }
+
+        public static sbyte Abs(sbyte x)
+        {
+            return Absolute<sbyte>.Value(x);
+        }
+        public static short Abs(short x)
+        {
+            return Absolute<short>.Value(x);
+        }
+        public static int Abs(int x)
+        {
+            return Absolute<int>.Value(x);
+        }
+        public static long Abs(long x)
+        {
+            return Absolute<long>.Value(x);
+        }
+        public static float Abs(float x)
+        {
+            return Absolute<float>.Value(x);
+        }
+        public static double Abs(double x)
+        {
+            return Absolute<double>.Value(x);
+        }
+
+        [vmf=pow]
+        public static extern double Pow(double base_, int exponent);
+    }
+}

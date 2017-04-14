@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Math.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">namespace</span> <span class="identifier">System</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">Math</span>
+    <span class="other">{</span>
+        <span class="keyword">internal</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">Minimum</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+        <span class="other">{</span>
+            <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">T</span> <span class="identifier">Value</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">right</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">left</span> <span class="other">&lt;</span><span class="other">=</span> <span class="identifier">right</span><span class="other">)</span> <span class="keyword">return</span> <span class="identifier">left</span><span class="other">;</span>
+                <span class="keyword">return</span> <span class="identifier">right</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">sbyte</span> <span class="identifier">Min</span><span class="other">(</span><span class="keyword">sbyte</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">sbyte</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Minimum</span><span class="other">&lt;</span><span class="keyword">sbyte</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">byte</span> <span class="identifier">Min</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">byte</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Minimum</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">short</span> <span class="identifier">Min</span><span class="other">(</span><span class="keyword">short</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">short</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Minimum</span><span class="other">&lt;</span><span class="keyword">short</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">ushort</span> <span class="identifier">Min</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">ushort</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Minimum</span><span class="other">&lt;</span><span class="keyword">ushort</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="identifier">Min</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Minimum</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">uint</span> <span class="identifier">Min</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">uint</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Minimum</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="identifier">Min</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">long</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Minimum</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">ulong</span> <span class="identifier">Min</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">ulong</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Minimum</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">float</span> <span class="identifier">Min</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">float</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Minimum</span><span class="other">&lt;</span><span class="keyword">float</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">double</span> <span class="identifier">Min</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">double</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Minimum</span><span class="other">&lt;</span><span class="keyword">double</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+
+        <span class="keyword">internal</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">Maximum</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+        <span class="other">{</span>
+            <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">T</span> <span class="identifier">Value</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">left</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">right</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">right</span> <span class="other">&gt;</span><span class="other">=</span> <span class="identifier">left</span><span class="other">)</span> <span class="keyword">return</span> <span class="identifier">right</span><span class="other">;</span>
+                <span class="keyword">return</span> <span class="identifier">left</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">sbyte</span> <span class="identifier">Max</span><span class="other">(</span><span class="keyword">sbyte</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">sbyte</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Maximum</span><span class="other">&lt;</span><span class="keyword">sbyte</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">byte</span> <span class="identifier">Max</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">byte</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Maximum</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">short</span> <span class="identifier">Max</span><span class="other">(</span><span class="keyword">short</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">short</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Maximum</span><span class="other">&lt;</span><span class="keyword">short</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">ushort</span> <span class="identifier">Max</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">ushort</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Maximum</span><span class="other">&lt;</span><span class="keyword">ushort</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="identifier">Max</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Maximum</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">uint</span> <span class="identifier">Max</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">uint</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Maximum</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="identifier">Max</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">long</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Maximum</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">ulong</span> <span class="identifier">Max</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">ulong</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Maximum</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">float</span> <span class="identifier">Max</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">float</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Maximum</span><span class="other">&lt;</span><span class="keyword">float</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">double</span> <span class="identifier">Max</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">left</span><span class="other">,</span> <span class="keyword">double</span> <span class="identifier">right</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Maximum</span><span class="other">&lt;</span><span class="keyword">double</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">left</span><span class="other">,</span> <span class="identifier">right</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+
+        <span class="keyword">internal</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">Absolute</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+        <span class="other">{</span>
+            <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">T</span> <span class="identifier">Value</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">&lt;</span> <span class="number">0</span><span class="other">)</span> <span class="keyword">return</span> <span class="other">-</span><span class="identifier">x</span><span class="other">;</span>
+                <span class="keyword">return</span> <span class="identifier">x</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">sbyte</span> <span class="identifier">Abs</span><span class="other">(</span><span class="keyword">sbyte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Absolute</span><span class="other">&lt;</span><span class="keyword">sbyte</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">short</span> <span class="identifier">Abs</span><span class="other">(</span><span class="keyword">short</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Absolute</span><span class="other">&lt;</span><span class="keyword">short</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="identifier">Abs</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Absolute</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="identifier">Abs</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Absolute</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">float</span> <span class="identifier">Abs</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Absolute</span><span class="other">&lt;</span><span class="keyword">float</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">double</span> <span class="identifier">Abs</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Absolute</span><span class="other">&lt;</span><span class="keyword">double</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Value</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">pow</span><span class="other">]</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">extern</span> <span class="keyword">double</span> <span class="identifier">Pow</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">base_</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">exponent</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

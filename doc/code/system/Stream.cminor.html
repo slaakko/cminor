@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Stream.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.IO</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="identifier">Stream</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="identifier">WriteByte</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">count</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">int</span> <span class="identifier">ReadByte</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">int</span> <span class="identifier">Read</span><span class="other">(</span><span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="identifier">Flush</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="identifier">Seek</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">pos</span><span class="other">,</span> <span class="identifier">Origin</span> <span class="identifier">origin</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">FileSystemException</span><span class="other">(</span><span class="string">&quot;this stream does not support seek&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">int</span> <span class="identifier">Tell</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">FileSystemException</span><span class="other">(</span><span class="string">&quot;this stream does not support tell&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="identifier">Close</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

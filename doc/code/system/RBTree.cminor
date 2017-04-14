@@ -1,0 +1,686 @@
+using System;
+
+namespace System.Collections.Generic
+{
+    public class RedBlackTreeNodeBase
+    {
+        public enum Color { red, black }
+
+        public RedBlackTreeNodeBase(RedBlackTreeNodeBase parent)
+        {
+            this.color = Color.black;
+            this.parent = parent;
+            this.left = null;
+            this.right = null;
+        }
+        public Color NodeColor
+        {
+            get { return color; }
+            set { color = value; }
+        }
+        public RedBlackTreeNodeBase Parent
+        {
+            get { return parent; }
+            set { parent = value; }
+        }
+        public RedBlackTreeNodeBase Left
+        {
+            get { return left; }
+            set { left = value; }
+        }
+        public RedBlackTreeNodeBase Right
+        {
+            get { return right; }
+            set { right = value; }
+        }
+        public bool IsHeaderNode
+        {
+            get { return color == Color.red && parent != null && parent.parent == this; }
+        }
+        public static RedBlackTreeNodeBase Min(RedBlackTreeNodeBase n)
+        {
+            while (n.Left != null)
+            {
+                n = n.Left;
+            }
+            return n;
+        }
+        public static RedBlackTreeNodeBase Max(RedBlackTreeNodeBase n)
+        {
+            while (n.Right != null)
+            {
+                n = n.Right;
+            }
+            return n;
+        }
+        public static RedBlackTreeNodeBase Prev(RedBlackTreeNodeBase n)
+        {
+            if (n.IsHeaderNode)
+            {
+                return n.Right;
+            }
+            else if (n.Left != null)
+            {
+                return Max(n.Left);
+            }
+            else
+            {
+                RedBlackTreeNodeBase u = n.Parent;
+                while (n == u.Left)
+                {
+                    n = u;
+                    u = u.Parent;
+                }
+                return u;
+            }
+        }
+        public static RedBlackTreeNodeBase Next(RedBlackTreeNodeBase n)
+        {
+            if (n.Right != null)
+            {
+                return Min(n.Right);
+            }
+            else
+            {
+                RedBlackTreeNodeBase u = n.Parent;
+                while (n == u.Right)
+                {
+                    n = u;
+                    u = u.Parent;
+                }
+                if (n.Right != u)
+                {
+                    return u;
+                }
+                return n;
+            }
+        }
+        public static void RebalanceAfterInsert(RedBlackTreeNodeBase n, ref RedBlackTreeNodeBase root)
+        {
+            n.NodeColor = Color.red;
+            RedBlackTreeNodeBase r = root;
+            while (n != r && n.Parent.NodeColor == Color.red)
+            {   
+                if (n.Parent == n.Parent.Parent.Left)
+                {
+                    RedBlackTreeNodeBase u = n.Parent.Parent.Right;
+                    if (u != null && u.NodeColor == Color.red)
+                    {
+                        n.Parent.NodeColor = Color.black;
+                        u.NodeColor = Color.black;
+                        n.Parent.Parent.NodeColor = Color.red;
+                        n = n.Parent.Parent;
+                    }
+                    else
+                    {
+                        if (n == n.Parent.Right)
+                        {
+                            n = n.Parent;
+                            RotateLeft(n, ref root);
+                            r = root;
+                        }
+                        n.Parent.NodeColor = Color.black;
+                        n.Parent.Parent.NodeColor = Color.red;
+                        RotateRight(n.Parent.Parent, ref root);
+                        r = root;
+                    }
+                }
+                else
+                {
+                    RedBlackTreeNodeBase u = n.Parent.Parent.Left;
+                    if (u != null && u.NodeColor == Color.red)
+                    {
+                        n.Parent.NodeColor = Color.black;
+                        u.NodeColor = Color.black;
+                        n.Parent.Parent.NodeColor = Color.red;
+                        n = n.Parent.Parent;
+                    }
+                    else
+                    {
+                        if (n == n.Parent.Left)
+                        {
+                            n = n.Parent;
+                            RotateRight(n, ref root);
+                            r = root;
+                        }
+                        n.Parent.NodeColor = Color.black;
+                        n.Parent.Parent.NodeColor = Color.red;
+                        RotateLeft(n.Parent.Parent, ref root);
+                        r = root;
+                    }
+                }
+            }
+            r = root;
+            r.NodeColor = Color.black;
+        }
+        public static RedBlackTreeNodeBase RebalanceForRemove(RedBlackTreeNodeBase z, ref RedBlackTreeNodeBase root, ref RedBlackTreeNodeBase leftmost, ref RedBlackTreeNodeBase rightmost) 
+        {
+            RedBlackTreeNodeBase y = z;
+            RedBlackTreeNodeBase x = null;
+            RedBlackTreeNodeBase p = null;
+            if (y.Left == null)
+            {
+                x = y.Right;
+            }
+            else
+            {
+                if (y.Right == null)
+                {
+                    x = y.Left;
+                }
+                else
+                {
+                    y = y.Right;
+                    while (y.Left != null)
+                    {
+                        y = y.Left;
+                    }
+                    x = y.Right;
+                }
+            }
+            if (y != z)
+            {
+                z.Left.Parent = y;
+                y.Left = z.Left;
+                if (y != z.Right)
+                {
+                    p = y.Parent;
+                    if (x != null)
+                    {
+                        x.Parent = y.Parent;
+                    }
+                    y.Parent.Left = x;
+                    y.Right = z.Right;
+                    z.Right.Parent = y;
+                }
+                else
+                {
+                    p = y;
+                }
+                RedBlackTreeNodeBase r = root;
+                if (r == z)
+                {
+                    root = y;
+                    r = root;
+                }
+                else if (z.Parent.Left == z)
+                {
+                    z.Parent.Left = y;
+                }
+                else
+                {
+                    z.Parent.Right = y;
+                }
+                y.Parent = z.Parent;
+                Color c = y.NodeColor;
+                y.NodeColor = z.NodeColor;
+                z.NodeColor = c;
+                y = z;
+            }
+            else
+            {
+                p = y.Parent;
+                if (x != null)
+                {
+                    x.Parent = y.Parent;
+                }
+                RedBlackTreeNodeBase r = root;
+                if (r == z)
+                {
+                    root = x;
+                    r = root;
+                }
+                else
+                {
+                    if (z.Parent.Left == z)
+                    {
+                        z.Parent.Left = x;
+                    }
+                    else
+                    {
+                        z.Parent.Right = x;
+                    }
+                }
+                RedBlackTreeNodeBase lm = leftmost;
+                if (lm == z)
+                {
+                    if (z.Right == null)
+                    {
+                        leftmost = z.Parent;
+                        lm = leftmost;
+                    }
+                    else
+                    { 
+                        leftmost = Min(x);
+                        lm = leftmost;
+                    }
+                }
+                RedBlackTreeNodeBase rm = rightmost;
+                if (rm == z)
+                {
+                    if (z.Left == null)
+                    {
+                        rightmost = z.Parent;
+                        rm = rightmost;
+                    }
+                    else
+                    {
+                        rightmost = Max(x);
+                        rm = rightmost;
+                    }
+                }
+            }
+            if (y.NodeColor != Color.red)
+            {
+                RedBlackTreeNodeBase r = root;
+                while (x != r && (x == null || x.NodeColor == Color.black))
+                {
+                    if (x == p.Left)
+                    {
+                        RedBlackTreeNodeBase w = p.Right;
+                        if (w.NodeColor == Color.red)
+                        {
+                            w.NodeColor = Color.black;
+                            p.NodeColor = Color.red;
+                            RotateLeft(p, ref root);
+                            r = root;
+                            w = p.Right;
+                        }
+                        if ((w.Left == null || w.Left.NodeColor == Color.black) && 
+                            (w.Right == null || w.Right.NodeColor == Color.black))
+                        {
+                            w.NodeColor = Color.red;
+                            x = p;
+                            p = p.Parent;
+                        }
+                        else
+                        {
+                            if (w.Right == null || w.Right.NodeColor == Color.black)
+                            {
+                                if (w.Left != null)
+                                {
+                                    w.Left.NodeColor = Color.black;
+                                }
+                                w.NodeColor = Color.red;
+                                RotateRight(w, ref root);
+                                r = root;
+                                w = p.Right;
+                            }
+                            w.NodeColor = p.NodeColor;
+                            p.NodeColor = Color.black;
+                            if (w.Right != null)
+                            {
+                                w.Right.NodeColor = Color.black;
+                            }
+                            RotateLeft(p, ref root);
+                            r = root;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        RedBlackTreeNodeBase w = p.Left;
+                        if (w.NodeColor == Color.red)
+                        {
+                            w.NodeColor = Color.black;
+                            p.NodeColor = Color.red;
+                            RotateRight(p, ref root);
+                            r = root;
+                            w = p.Left;
+                        }
+                        if ((w.Right == null || w.Right.NodeColor == Color.black) && 
+                            (w.Left == null || w.Left.NodeColor == Color.black))
+                        {
+                            w.NodeColor = Color.red;
+                            x = p;
+                            p = p.Parent;
+                        }
+                        else
+                        {
+                            if (w.Left == null || w.Left.NodeColor == Color.black)
+                            {
+                                if (w.Right != null)
+                                {
+                                    w.Right.NodeColor = Color.black;
+                                }
+                                w.NodeColor = Color.red;
+                                RotateLeft(w, ref root);
+                                r = root;
+                                w = p.Left;
+                            }
+                            w.NodeColor = p.NodeColor;
+                            p.NodeColor = Color.black;
+                            if (w.Left != null)
+                            {
+                                w.Left.NodeColor = Color.black;
+                            }
+                            RotateRight(p, ref root);
+                            r = root;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (x != null)
+            {
+                x.NodeColor = Color.black;
+            }
+            return y;
+        }
+        private static void RotateLeft(RedBlackTreeNodeBase n, ref RedBlackTreeNodeBase root)
+        {
+            RedBlackTreeNodeBase u = n.Right;
+            n.Right = u.Left;
+            if (u.Left != null)
+            {
+                u.Left.Parent = n;
+            }
+            u.Parent = n.Parent;
+            RedBlackTreeNodeBase r = root;
+            if (n == r)
+            {
+                r = u;
+                root = r;
+            }
+            else if (n == n.Parent.Left)
+            {
+                n.Parent.Left = u;
+            }
+            else
+            {
+                n.Parent.Right = u;
+            }
+            u.Left = n;
+            n.Parent = u;
+        }
+        private static void RotateRight(RedBlackTreeNodeBase n, ref RedBlackTreeNodeBase root)
+        {
+            RedBlackTreeNodeBase u = n.Left;
+            n.Left = u.Right;
+            if (u.Right != null)
+            {
+                u.Right.Parent = n;
+            }
+            u.Parent = n.Parent;
+            RedBlackTreeNodeBase r = root;
+            if (n == r)
+            {
+                r = u;
+                root = r;
+            }
+            else if (n == n.Parent.Right)
+            {
+                n.Parent.Right = u;
+            }
+            else
+            {
+                n.Parent.Left = u;
+            }
+            u.Right = n;
+            n.Parent = u;
+        }
+        private Color color;
+        private RedBlackTreeNodeBase parent;
+        private RedBlackTreeNodeBase left;
+        private RedBlackTreeNodeBase right;
+    }
+
+    public class RedBlackTreeNode<T> : RedBlackTreeNodeBase
+    {
+        public RedBlackTreeNode() : base(null)
+        {
+            this.val = default(T);
+        }
+        public RedBlackTreeNode(T val, RedBlackTreeNodeBase parent) : base(parent)
+        {
+            this.val = val;
+        }
+        public T Value
+        {
+            get { return val; }
+            set { val = value; }
+        }
+        private T val;
+    }
+
+    public class RedBlackTree<KeyType, ValueType, KeyOfValue> : Enumerable
+    {
+        public RedBlackTree()
+        {
+            this.count = 0;
+            this.header = new RedBlackTreeNode<ValueType>();
+            this.header.NodeColor = RedBlackTreeNodeBase.Color.red;
+            this.header.Left = header;
+            this.header.Right = header;
+            this.keyOf = new KeyOfValue();
+        }
+        public void Clear()
+        {
+            header.Left = header;
+            header.Right = header;
+            count = 0;
+        }
+        public Enumerator GetEnumerator()
+        {
+            RedBlackTreeNode<ValueType> leftmost = cast<RedBlackTreeNode<ValueType>>(header.Left);
+            RedBlackTreeNode<ValueType> end = header;
+            return new RedBlackTreeEnumerator<ValueType>(leftmost, end);
+        }
+        public bool Add(ValueType value)
+        {
+            RedBlackTreeNode<ValueType> x = Root;
+            RedBlackTreeNode<ValueType> p = header;
+            bool less = true;
+            while (x != null)
+            {
+                p = x;
+                less = KeyOf(value) < KeyOf(x.Value);
+                if (less)
+                {
+                    x = cast<RedBlackTreeNode<ValueType>>(x.Left);
+                }
+                else
+                {
+                    x = cast<RedBlackTreeNode<ValueType>>(x.Right);
+                }
+            }
+            RedBlackTreeNode<ValueType> j = p;
+            if (less)
+            {
+                if (j == header.Left)
+                {
+                    Add(x, p, value);
+                    return true;
+                }
+                else
+                {
+                    j = cast<RedBlackTreeNode<ValueType>>(RedBlackTreeNodeBase.Prev(j));
+                }
+            }
+            if (KeyOf(j.Value) < KeyOf(value))
+            {
+                Add(x, p, value);
+                return true;
+            }
+            return false;
+        }
+        public bool Remove(KeyType key)
+        {
+            RedBlackTreeNode<ValueType> n = Root;
+            while (n != null)
+            {
+                if (key < KeyOf(n.Value))
+                {
+                    n = cast<RedBlackTreeNode<ValueType>>(n.Left);
+                }
+                else if (KeyOf(n.Value) < key)
+                {
+                    n = cast<RedBlackTreeNode<ValueType>>(n.Right);
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if (n != null)
+            {
+                if (count == 1)
+                {
+                    Clear();
+                }
+                else
+                {
+                    Remove(n);
+                }
+                return true;
+            }
+            return false;
+        }
+        public bool Contains(KeyType key)
+        {
+            RedBlackTreeNode<ValueType> n = Root;
+            while (n != null)
+            {
+                if (key < KeyOf(n.Value))
+                {
+                    n = cast<RedBlackTreeNode<ValueType>>(n.Left);
+                }
+                else if (KeyOf(n.Value) < key)
+                {
+                    n = cast<RedBlackTreeNode<ValueType>>(n.Right);
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public ValueType this[KeyType key]
+        {
+            get 
+            {
+                RedBlackTreeNode<ValueType> n = Root;
+                while (n != null)
+                {
+                    if (key < KeyOf(n.Value))
+                    {
+                        n = cast<RedBlackTreeNode<ValueType>>(n.Left);
+                    }
+                    else if (KeyOf(n.Value) < key)
+                    {
+                        n = cast<RedBlackTreeNode<ValueType>>(n.Right);
+                    }
+                    else
+                    {
+                        return n.Value;
+                    }
+                }
+                return default(ValueType);
+            }
+        }
+        public void AddOrReplace(ValueType value)
+        {
+            KeyType key = KeyOf(value);
+            RedBlackTreeNode<ValueType> n = Root;
+            while (n != null)
+            {
+                if (key < KeyOf(n.Value))
+                {
+                    n = cast<RedBlackTreeNode<ValueType>>(n.Left);
+                }
+                else if (KeyOf(n.Value) < key)
+                {
+                    n = cast<RedBlackTreeNode<ValueType>>(n.Right);
+                }
+                else
+                {
+                    n.Value = value;
+                    return;
+                }
+            }
+            Add(value);
+        }
+        public int Count
+        {
+            get { return count; }
+        }
+        private void Add(RedBlackTreeNode<ValueType> x, RedBlackTreeNode<ValueType> p, ValueType value)
+        {
+            RedBlackTreeNode<ValueType> n = new RedBlackTreeNode<ValueType>(value, p);
+            if (p == header || x != null || KeyOf(value) < KeyOf(p.Value))
+            {
+                p.Left = n;
+                if (p == header)
+                {
+                    header.Parent = n;
+                    header.Right = n;
+                }
+                else if (p == header.Left)
+                {
+                    header.Left = n;
+                }
+            }
+            else
+            {
+                p.Right = n;
+                if (p == header.Right)
+                {
+                    header.Right = n;
+                }
+            }
+            RedBlackTreeNodeBase root = Root;
+            RedBlackTreeNodeBase.RebalanceAfterInsert(n, ref root);
+            header.Parent = cast<RedBlackTreeNode<ValueType>>(root);
+            ++count;
+        }
+        private void Remove(RedBlackTreeNode<ValueType> node)
+        {
+            RedBlackTreeNodeBase root = Root;
+            RedBlackTreeNodeBase lm = header.Left;
+            RedBlackTreeNodeBase rm = header.Right;
+            RedBlackTreeNode<ValueType> toRemove = cast<RedBlackTreeNode<ValueType>>(RedBlackTreeNodeBase.RebalanceForRemove(node, ref root, ref lm, ref rm));
+            header.Parent = root;
+            header.Left = lm;
+            header.Right = rm;
+            toRemove.Left = null;
+            toRemove.Right = null;
+            toRemove.Parent = null;
+            --count;
+        }
+        private RedBlackTreeNode<ValueType> Root
+        {
+            get { return cast<RedBlackTreeNode<ValueType>>(header.Parent); }
+        }
+        private KeyType KeyOf(ValueType value)
+        {
+            return keyOf(value);
+        }
+        private int count;
+        private RedBlackTreeNode<ValueType> header;
+        private KeyOfValue keyOf;
+    }
+
+    public class RedBlackTreeEnumerator<T> : Enumerator
+    {
+        public RedBlackTreeEnumerator(RedBlackTreeNode<T> cur, RedBlackTreeNode<T> end)
+        {
+            this.cur = cur;
+            this.end = end;
+        }
+        public bool AtEnd()
+        {
+            return cur == end;
+        }
+        public object GetCurrent()
+        {
+            return cur.Value;
+        }
+        public void MoveNext()
+        {
+            cur = cast<RedBlackTreeNode<T>>(RedBlackTreeNodeBase.Next(cur));
+        }
+        private RedBlackTreeNode<T> cur;
+        private RedBlackTreeNode<T> end;
+    }
+}

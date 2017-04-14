@@ -1,0 +1,39 @@
+namespace System
+{
+    public class Array
+    {
+        public Array(int length)
+        {
+            this.length = length;
+        }
+        public int Length
+        {
+            get { return length; }
+        }
+        private int length;
+    }
+
+    public class ArrayEnumerator<T> : Enumerator
+    {
+        public ArrayEnumerator(T[] items)
+        {
+            this.items = items;
+            this.index = 0;
+        }
+        public bool AtEnd()
+        {
+            if (items == null) return true;
+            return index >= items.Length;
+        }
+        public object GetCurrent()
+        {
+            return items[index];
+        }
+        public void MoveNext()
+        {
+            ++index;
+        }
+        private T[] items;
+        private int index;
+    }
+}

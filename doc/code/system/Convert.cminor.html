@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Convert.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">ConversionException</span> <span class="other">:</span> <span class="identifier">Exception</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">base</span><span class="other">(</span><span class="identifier">message</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">internal</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">UnsignedConversion</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">static</span> <span class="identifier">UnsignedConversion</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">hexChars</span> <span class="other">=</span> <span class="string">&quot;0123456789ABCDEF&quot;</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">StringBuilder</span> <span class="identifier">s</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">do</span>
+            <span class="other">{</span>
+                <span class="identifier">s.Append</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span> <span class="other">+</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">%</span> <span class="number">10u</span><span class="other">)</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">x</span> <span class="other">/</span> <span class="number">10u</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="number">0u</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">s.Reverse</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">s.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">ToHexString</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">StringBuilder</span> <span class="identifier">s</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">do</span>
+            <span class="other">{</span>
+                <span class="keyword">byte</span> <span class="identifier">b</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span> <span class="other">&amp;</span> <span class="number">0xFFu</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">s.Append</span><span class="other">(</span><span class="identifier">HexChar</span><span class="other">(</span><span class="identifier">b</span> <span class="other">&amp;</span> <span class="number">0x0Fu</span><span class="other">)</span><span class="other">)</span><span class="other">.</span><span class="identifier">Append</span><span class="other">(</span><span class="identifier">HexChar</span><span class="other">(</span><span class="identifier">b</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">4u</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">8u</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="number">0u</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">s.Reverse</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">s.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">char</span> <span class="identifier">HexChar</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">nibble</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">hexChars</span><span class="other">[</span><span class="identifier">nibble</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">hexChars</span><span class="other">;</span> 
+    <span class="other">}</span>
+
+    <span class="keyword">internal</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">SignedConversion</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">,</span> <span class="identifier">U</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">U</span> <span class="identifier">u</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+            <span class="keyword">bool</span> <span class="identifier">neg</span> <span class="other">=</span> <span class="identifier">x</span> <span class="other">&lt;</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">neg</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">u</span> <span class="other">=</span> <span class="other">-</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">U</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="identifier">u</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">U</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">StringBuilder</span> <span class="identifier">s</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">do</span>
+            <span class="other">{</span>
+                <span class="identifier">s.Append</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span> <span class="other">+</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">u</span> <span class="other">%</span> <span class="number">10u</span><span class="other">)</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">u</span> <span class="other">=</span> <span class="identifier">u</span> <span class="other">/</span> <span class="number">10u</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">u</span> <span class="other">!</span><span class="other">=</span> <span class="number">0u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">neg</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">s.Append</span><span class="other">(</span><span class="char">&apos;-&apos;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">s.Reverse</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">s.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">sbyte</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">SignedConversion</span><span class="other">&lt;</span><span class="keyword">sbyte</span><span class="other">,</span> <span class="keyword">byte</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedConversion</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">short</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">SignedConversion</span><span class="other">&lt;</span><span class="keyword">short</span><span class="other">,</span> <span class="keyword">ushort</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedConversion</span><span class="other">&lt;</span><span class="keyword">ushort</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">SignedConversion</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">,</span> <span class="keyword">uint</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedConversion</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">long</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">SignedConversion</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">,</span> <span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedConversion</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">double</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">ToString</span><span class="other">(</span><span class="identifier">x</span><span class="other">,</span> <span class="number">15</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">maxNumDecimals</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">ToString</span><span class="other">(</span><span class="identifier">x</span><span class="other">,</span> <span class="number">0</span><span class="other">,</span> <span class="identifier">maxNumDecimals</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">minNumDecimals</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">maxNumDecimals</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">StringBuilder</span> <span class="identifier">s</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">&lt;</span> <span class="number">0</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">x</span> <span class="other">=</span> <span class="other">-</span><span class="identifier">x</span><span class="other">;</span>
+            <span class="identifier">s.Append</span><span class="other">(</span><span class="char">&apos;-&apos;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">int</span> <span class="identifier">w</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">s.Append</span><span class="other">(</span><span class="identifier">ToString</span><span class="other">(</span><span class="identifier">w</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">double</span> <span class="identifier">d</span> <span class="other">=</span> <span class="identifier">x</span> <span class="other">-</span> <span class="identifier">w</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">d</span> <span class="other">&gt;</span> <span class="number">0</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">minNumDecimals</span> <span class="other">&gt;</span> <span class="number">0</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">s.Append</span><span class="other">(</span><span class="char">&apos;.&apos;</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="other">(</span><span class="identifier">d</span> <span class="other">&gt;</span> <span class="number">0</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">minNumDecimals</span><span class="other">)</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">maxNumDecimals</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">d</span> <span class="other">=</span> <span class="number">10</span> <span class="other">*</span> <span class="identifier">d</span><span class="other">;</span>
+                <span class="keyword">int</span> <span class="identifier">digit</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">d</span><span class="other">)</span> <span class="other">%</span> <span class="number">10</span><span class="other">;</span>
+                <span class="identifier">s.Append</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span> <span class="other">+</span> <span class="identifier">digit</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">d</span> <span class="other">=</span> <span class="identifier">d</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">d</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="identifier">s.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="keyword">string</span><span class="other">(</span><span class="identifier">x</span><span class="other">,</span> <span class="number">1</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">x</span><span class="other">)</span> <span class="keyword">return</span> <span class="string">&quot;true&quot;</span><span class="other">;</span>
+        <span class="keyword">return</span> <span class="string">&quot;false&quot;</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedConversion</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">ushort</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedConversion</span><span class="other">&lt;</span><span class="keyword">ushort</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedConversion</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">x</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedConversion</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">sbyte</span> <span class="identifier">ParseSByte</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">sbyte</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseSByte</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;sbyte cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseSByte</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">sbyte</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">SignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">sbyte</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">byte</span> <span class="identifier">ParseByte</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">byte</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseByte</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;byte cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseByte</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">byte</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">byte</span> <span class="identifier">ParseHexByte</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">byte</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseHexByte</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;hex byte cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseHexByte</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">byte</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ParseHex</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">short</span> <span class="identifier">ParseShort</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">short</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseShort</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;short cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseShort</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">short</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">SignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">short</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">ushort</span> <span class="identifier">ParseUShort</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">ushort</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseUShort</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;ushort cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseUShort</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">ushort</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">ushort</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">ushort</span> <span class="identifier">ParseHexWord</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">ushort</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseHexWord</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;hex word cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseHexWord</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">ushort</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">ushort</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">ParseInt</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">int</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseInt</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;int cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseInt</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">int</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">SignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">uint</span> <span class="identifier">ParseUInt</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">uint</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseUInt</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;uint cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseUInt</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">uint</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">uint</span> <span class="identifier">ParseHexDWord</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">uint</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseHexDWord</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;hex dword cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseHexDWord</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">uint</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ParseHex</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">long</span> <span class="identifier">ParseLong</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">long</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseLong</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;long cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseLong</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">long</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">SignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">long</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">ulong</span> <span class="identifier">ParseULong</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">ulong</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseULong</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;ulong cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseULong</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">ulong</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">ulong</span> <span class="identifier">ParseHexQWord</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">ulong</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseHexQWord</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;hex qword cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseHexQWord</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">ulong</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">UnsignedIntegerParser</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">ParseHex</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">float</span> <span class="identifier">ParseFloat</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">float</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseFloat</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;float cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseFloat</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">float</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">FloatingParser</span><span class="other">&lt;</span><span class="keyword">float</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">double</span> <span class="identifier">ParseDouble</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">double</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseDouble</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;double cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseDouble</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">double</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">FloatingParser</span><span class="other">&lt;</span><span class="keyword">double</span><span class="other">&gt;</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">char</span> <span class="identifier">ParseChar</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">char</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseChar</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;char cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseChar</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">char</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;&quot;</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">s.Length</span> <span class="other">!</span><span class="other">=</span> <span class="number">1</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">s</span><span class="other">[</span><span class="number">0</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">ParseBool</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">bool</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">TryParseBool</span><span class="other">(</span><span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ConversionException</span><span class="other">(</span><span class="string">&quot;bool cannot be parsed from string \&quot;&quot;</span> <span class="other">+</span> <span class="identifier">s</span> <span class="other">+</span> <span class="string">&quot;\&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryParseBool</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">bool</span> <span class="identifier">value</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;&quot;</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;true&quot;</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">value</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;false&quot;</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">value</span> <span class="other">=</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">internal</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">SignedIntegerParser</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">T</span> <span class="identifier">value</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;&quot;</span><span class="other">)</span> 
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">bool</span> <span class="identifier">negative</span> <span class="other">=</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">state</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">foreach</span> <span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span> <span class="keyword">in</span> <span class="identifier">s</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">switch</span> <span class="other">(</span><span class="identifier">state</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">case</span> <span class="number">0</span><span class="other">:</span>
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;+&apos;</span><span class="other">)</span> 
+                        <span class="other">{</span>
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">1</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;-&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">negative</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">1</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&gt;</span><span class="other">=</span> <span class="char">&apos;0&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">&lt;</span><span class="other">=</span> <span class="char">&apos;9&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">value</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span><span class="other">;</span>
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">1</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span>
+                        <span class="other">{</span>
+                            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">break</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">case</span> <span class="number">1</span><span class="other">:</span>
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&gt;</span><span class="other">=</span> <span class="char">&apos;0&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">&lt;</span><span class="other">=</span> <span class="char">&apos;9&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">value</span> <span class="other">=</span> <span class="number">10</span> <span class="other">*</span> <span class="identifier">value</span> <span class="other">+</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span>
+                        <span class="other">{</span>
+                            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">break</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">state</span> <span class="other">!</span><span class="other">=</span> <span class="number">1</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">negative</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">value</span> <span class="other">=</span> <span class="other">-</span><span class="identifier">value</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">internal</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">UnsignedIntegerParser</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">T</span> <span class="identifier">value</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;&quot;</span><span class="other">)</span> 
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">int</span> <span class="identifier">state</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">foreach</span> <span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span> <span class="keyword">in</span> <span class="identifier">s</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">switch</span> <span class="other">(</span><span class="identifier">state</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">case</span> <span class="number">0</span><span class="other">:</span>
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;+&apos;</span><span class="other">)</span> 
+                        <span class="other">{</span>
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">1</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&gt;</span><span class="other">=</span> <span class="char">&apos;0&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">&lt;</span><span class="other">=</span> <span class="char">&apos;9&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">value</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span><span class="other">;</span>
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">1</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span>
+                        <span class="other">{</span>
+                            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">break</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">case</span> <span class="number">1</span><span class="other">:</span>
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&gt;</span><span class="other">=</span> <span class="char">&apos;0&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">&lt;</span><span class="other">=</span> <span class="char">&apos;9&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">value</span> <span class="other">=</span> <span class="number">10u</span> <span class="other">*</span> <span class="identifier">value</span> <span class="other">+</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span>
+                        <span class="other">{</span>
+                            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">break</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">state</span> <span class="other">!</span><span class="other">=</span> <span class="number">1</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">ParseHex</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">T</span> <span class="identifier">hex</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;&quot;</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">foreach</span> <span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span> <span class="keyword">in</span> <span class="identifier">s</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&gt;</span><span class="other">=</span> <span class="char">&apos;0&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">&lt;</span><span class="other">=</span> <span class="char">&apos;9&apos;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">hex</span> <span class="other">=</span> <span class="number">16u</span> <span class="other">*</span> <span class="identifier">hex</span> <span class="other">+</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&gt;</span><span class="other">=</span> <span class="char">&apos;A&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">&lt;</span><span class="other">=</span> <span class="char">&apos;F&apos;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">hex</span> <span class="other">=</span> <span class="number">16u</span> <span class="other">*</span> <span class="identifier">hex</span> <span class="other">+</span> <span class="number">10u</span> <span class="other">+</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;A&apos;</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&gt;</span><span class="other">=</span> <span class="char">&apos;a&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">&lt;</span><span class="other">=</span> <span class="char">&apos;f&apos;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">hex</span> <span class="other">=</span> <span class="number">16u</span> <span class="other">*</span> <span class="identifier">hex</span> <span class="other">+</span> <span class="number">10u</span> <span class="other">+</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;a&apos;</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">hex</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">internal</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">FloatingParser</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">Parse</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">s</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">T</span> <span class="identifier">value</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="number">0.0</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">s</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">bool</span> <span class="identifier">negative</span> <span class="other">=</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">start</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span><span class="other">[</span><span class="number">0</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;+&apos;</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="other">+</span><span class="other">+</span><span class="identifier">start</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">s</span><span class="other">[</span><span class="number">0</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;-&apos;</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">negative</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+                <span class="other">+</span><span class="other">+</span><span class="identifier">start</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">int</span> <span class="identifier">state</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="identifier">T</span> <span class="identifier">d</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="number">10.0</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">exponent</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">bool</span> <span class="identifier">negativeExponent</span> <span class="other">=</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">s.Length</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="identifier">start</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">char</span> <span class="identifier">c</span> <span class="other">=</span> <span class="identifier">s</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+                <span class="keyword">switch</span> <span class="other">(</span><span class="identifier">state</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">case</span> <span class="number">0</span><span class="other">:</span> 
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&gt;</span><span class="other">=</span> <span class="char">&apos;0&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">&lt;</span><span class="other">=</span> <span class="char">&apos;9&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">value</span> <span class="other">=</span> <span class="number">10</span> <span class="other">*</span> <span class="identifier">value</span> <span class="other">+</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;.&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">1</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;e&apos;</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;E&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>   
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">2</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">break</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">case</span> <span class="number">1</span><span class="other">:</span>
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&gt;</span><span class="other">=</span> <span class="char">&apos;0&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">&lt;</span><span class="other">=</span> <span class="char">&apos;9&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span> <span class="other">+</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span><span class="other">)</span> <span class="other">/</span> <span class="identifier">d</span><span class="other">;</span>
+                            <span class="identifier">d</span> <span class="other">=</span> <span class="number">10</span> <span class="other">*</span> <span class="identifier">d</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;e&apos;</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;E&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">2</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span> 
+                        <span class="other">{</span>
+                            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">break</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">case</span> <span class="number">2</span><span class="other">:</span>
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;+&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">3</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;-&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">negativeExponent</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">3</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&gt;</span><span class="other">=</span> <span class="char">&apos;0&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">&lt;</span><span class="other">=</span> <span class="char">&apos;9&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">exponent</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span><span class="other">;</span>
+                            <span class="identifier">state</span> <span class="other">=</span> <span class="number">3</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">break</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">case</span> <span class="number">3</span><span class="other">:</span>
+                    <span class="other">{</span>
+                        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&gt;</span><span class="other">=</span> <span class="char">&apos;0&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">&lt;</span><span class="other">=</span> <span class="char">&apos;9&apos;</span><span class="other">)</span>
+                        <span class="other">{</span>
+                            <span class="identifier">exponent</span> <span class="other">=</span> <span class="number">10</span> <span class="other">*</span> <span class="identifier">exponent</span> <span class="other">+</span> <span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">-</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="char">&apos;0&apos;</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">else</span>
+                        <span class="other">{</span>
+                            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                        <span class="other">}</span>
+                        <span class="keyword">break</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">negative</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">value</span> <span class="other">=</span> <span class="other">-</span><span class="identifier">value</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">exponent</span> <span class="other">!</span><span class="other">=</span> <span class="number">0</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">negativeExponent</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">exponent</span> <span class="other">=</span> <span class="other">-</span><span class="identifier">exponent</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">value</span> <span class="other">*</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">Math.Pow</span><span class="other">(</span><span class="number">10.0</span><span class="other">,</span> <span class="identifier">exponent</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

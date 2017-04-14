@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Set.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Collections.Generic</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Set</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="other">:</span> <span class="identifier">Enumerable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Set</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">tree</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">RedBlackTree</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">,</span> <span class="identifier">T</span><span class="other">,</span> <span class="identifier">Identity</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Enumerator</span> <span class="identifier">GetEnumerator</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">tree.GetEnumerator</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Clear</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">tree.Clear</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Count</span> 
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">tree.Count</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Add</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">tree.Add</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Remove</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">tree.Remove</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Contains</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">tree.Contains</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">RedBlackTree</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">,</span> <span class="identifier">T</span><span class="other">,</span> <span class="identifier">Identity</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span><span class="other">&gt;</span> <span class="identifier">tree</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

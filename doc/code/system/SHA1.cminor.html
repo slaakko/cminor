@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>SHA1.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.IO</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Unicode</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Security.Cryptography</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">uint</span> <span class="identifier">LeftRotate</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">x</span><span class="other">,</span> <span class="keyword">uint</span> <span class="identifier">n</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">n</span><span class="other">)</span> <span class="other">^</span> <span class="other">(</span><span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="other">(</span><span class="number">32u</span> <span class="other">-</span> <span class="identifier">n</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">SHA1</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">SHA1</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">digest</span> <span class="other">=</span> <span class="keyword">new</span> <span class="keyword">uint</span><span class="other">[</span><span class="number">5</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">block</span> <span class="other">=</span> <span class="keyword">new</span> <span class="keyword">byte</span><span class="other">[</span><span class="number">64</span><span class="other">]</span><span class="other">;</span>
+            <span class="identifier">Reset</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Reset</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">digest</span><span class="other">[</span><span class="number">0</span><span class="other">]</span> <span class="other">=</span> <span class="number">0x67452301u</span><span class="other">;</span>
+            <span class="identifier">digest</span><span class="other">[</span><span class="number">1</span><span class="other">]</span> <span class="other">=</span> <span class="number">0xEFCDAB89u</span><span class="other">;</span>
+            <span class="identifier">digest</span><span class="other">[</span><span class="number">2</span><span class="other">]</span> <span class="other">=</span> <span class="number">0x98BADCFEu</span><span class="other">;</span>
+            <span class="identifier">digest</span><span class="other">[</span><span class="number">3</span><span class="other">]</span> <span class="other">=</span> <span class="number">0x10325476u</span><span class="other">;</span>
+            <span class="identifier">digest</span><span class="other">[</span><span class="number">4</span><span class="other">]</span> <span class="other">=</span> <span class="number">0xC3D2E1F0u</span><span class="other">;</span>
+            <span class="identifier">byteIndex</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+            <span class="identifier">bitCount</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Process</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">ProcessByte</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">bitCount</span> <span class="other">=</span> <span class="identifier">bitCount</span> <span class="other">+</span> <span class="number">8u</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Process</span><span class="other">(</span><span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">bytes</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">bytes</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided byte array is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">foreach</span> <span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span> <span class="keyword">in</span> <span class="identifier">bytes</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Process</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">GetDigest</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">ProcessByte</span><span class="other">(</span><span class="number">0x80u</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">byteIndex</span> <span class="other">&gt;</span> <span class="number">56u</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">while</span> <span class="other">(</span><span class="identifier">byteIndex</span> <span class="other">!</span><span class="other">=</span> <span class="number">0u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">ProcessByte</span><span class="other">(</span><span class="number">0u</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">while</span> <span class="other">(</span><span class="identifier">byteIndex</span> <span class="other">&lt;</span> <span class="number">56u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">ProcessByte</span><span class="other">(</span><span class="number">0u</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">while</span> <span class="other">(</span><span class="identifier">byteIndex</span> <span class="other">&lt;</span> <span class="number">56u</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">ProcessByte</span><span class="other">(</span><span class="number">0u</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="identifier">ProcessByte</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="other">(</span><span class="identifier">bitCount</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">56u</span><span class="other">)</span> <span class="other">&amp;</span> <span class="number">0xFFu</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">ProcessByte</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="other">(</span><span class="identifier">bitCount</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">48u</span><span class="other">)</span> <span class="other">&amp;</span> <span class="number">0xFFu</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">ProcessByte</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="other">(</span><span class="identifier">bitCount</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">40u</span><span class="other">)</span> <span class="other">&amp;</span> <span class="number">0xFFu</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">ProcessByte</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="other">(</span><span class="identifier">bitCount</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">32u</span><span class="other">)</span> <span class="other">&amp;</span> <span class="number">0xFFu</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">ProcessByte</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="other">(</span><span class="identifier">bitCount</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">24u</span><span class="other">)</span> <span class="other">&amp;</span> <span class="number">0xFFu</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">ProcessByte</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="other">(</span><span class="identifier">bitCount</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">16u</span><span class="other">)</span> <span class="other">&amp;</span> <span class="number">0xFFu</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">ProcessByte</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="other">(</span><span class="identifier">bitCount</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">8u</span><span class="other">)</span> <span class="other">&amp;</span> <span class="number">0xFFu</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">ProcessByte</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bitCount</span> <span class="other">&amp;</span> <span class="number">0xFFu</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">StringBuilder</span> <span class="identifier">s</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">s.Append</span><span class="other">(</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="identifier">digest</span><span class="other">[</span><span class="number">0</span><span class="other">]</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">s.Append</span><span class="other">(</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="identifier">digest</span><span class="other">[</span><span class="number">1</span><span class="other">]</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">s.Append</span><span class="other">(</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="identifier">digest</span><span class="other">[</span><span class="number">2</span><span class="other">]</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">s.Append</span><span class="other">(</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="identifier">digest</span><span class="other">[</span><span class="number">3</span><span class="other">]</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">s.Append</span><span class="other">(</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="identifier">digest</span><span class="other">[</span><span class="number">4</span><span class="other">]</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">s.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">ProcessByte</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">block</span><span class="other">[</span><span class="identifier">byteIndex</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">x</span><span class="other">;</span>
+            <span class="other">+</span><span class="other">+</span><span class="identifier">byteIndex</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">byteIndex</span> <span class="other">=</span><span class="other">=</span> <span class="number">64u</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">byteIndex</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+                <span class="identifier">ProcessBlock</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">ProcessBlock</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">uint</span><span class="other">[</span><span class="other">]</span> <span class="identifier">w</span> <span class="other">=</span> <span class="keyword">new</span> <span class="keyword">uint</span><span class="other">[</span><span class="number">80</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">16</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">block</span><span class="other">[</span><span class="number">4</span> <span class="other">*</span> <span class="identifier">i</span><span class="other">]</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">24u</span><span class="other">;</span>
+                <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">block</span><span class="other">[</span><span class="number">4</span> <span class="other">*</span> <span class="identifier">i</span> <span class="other">+</span> <span class="number">1</span><span class="other">]</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">16u</span><span class="other">;</span>
+                <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">block</span><span class="other">[</span><span class="number">4</span> <span class="other">*</span> <span class="identifier">i</span> <span class="other">+</span> <span class="number">2</span><span class="other">]</span><span class="other">)</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="number">8u</span><span class="other">;</span>
+                <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">|</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">block</span><span class="other">[</span><span class="number">4</span> <span class="other">*</span> <span class="identifier">i</span> <span class="other">+</span> <span class="number">3</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">16</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">80</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">LeftRotate</span><span class="other">(</span><span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span> <span class="other">-</span> <span class="number">3</span><span class="other">]</span> <span class="other">^</span> <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span> <span class="other">-</span> <span class="number">8</span><span class="other">]</span> <span class="other">^</span> <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span> <span class="other">-</span> <span class="number">14</span><span class="other">]</span> <span class="other">^</span> <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span> <span class="other">-</span> <span class="number">16</span><span class="other">]</span><span class="other">,</span> <span class="number">1u</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">uint</span> <span class="identifier">a</span> <span class="other">=</span> <span class="identifier">digest</span><span class="other">[</span><span class="number">0</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">b</span> <span class="other">=</span> <span class="identifier">digest</span><span class="other">[</span><span class="number">1</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">c</span> <span class="other">=</span> <span class="identifier">digest</span><span class="other">[</span><span class="number">2</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">d</span> <span class="other">=</span> <span class="identifier">digest</span><span class="other">[</span><span class="number">3</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">uint</span> <span class="identifier">e</span> <span class="other">=</span> <span class="identifier">digest</span><span class="other">[</span><span class="number">4</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">80</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">uint</span> <span class="identifier">f</span><span class="other">;</span>
+                <span class="keyword">uint</span> <span class="identifier">k</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">20</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">f</span> <span class="other">=</span> <span class="other">(</span><span class="identifier">b</span> <span class="other">&amp;</span> <span class="identifier">c</span><span class="other">)</span> <span class="other">|</span> <span class="other">(</span><span class="other">~</span><span class="identifier">b</span> <span class="other">&amp;</span> <span class="identifier">d</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">k</span> <span class="other">=</span> <span class="number">0x5A827999u</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">40</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">f</span> <span class="other">=</span> <span class="identifier">b</span> <span class="other">^</span> <span class="identifier">c</span> <span class="other">^</span> <span class="identifier">d</span><span class="other">;</span>
+                    <span class="identifier">k</span> <span class="other">=</span> <span class="number">0x6ED9EBA1u</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">60</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">f</span> <span class="other">=</span> <span class="other">(</span><span class="identifier">b</span> <span class="other">&amp;</span> <span class="identifier">c</span><span class="other">)</span> <span class="other">|</span> <span class="other">(</span><span class="identifier">b</span> <span class="other">&amp;</span> <span class="identifier">d</span><span class="other">)</span> <span class="other">|</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">&amp;</span> <span class="identifier">d</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">k</span> <span class="other">=</span> <span class="number">0x8F1BBCDCu</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">f</span> <span class="other">=</span> <span class="identifier">b</span> <span class="other">^</span> <span class="identifier">c</span> <span class="other">^</span> <span class="identifier">d</span><span class="other">;</span>
+                    <span class="identifier">k</span> <span class="other">=</span> <span class="number">0xCA62C1D6u</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">uint</span> <span class="identifier">temp</span> <span class="other">=</span> <span class="identifier">LeftRotate</span><span class="other">(</span><span class="identifier">a</span><span class="other">,</span> <span class="number">5u</span><span class="other">)</span> <span class="other">+</span> <span class="identifier">f</span> <span class="other">+</span> <span class="identifier">e</span> <span class="other">+</span> <span class="identifier">k</span> <span class="other">+</span> <span class="identifier">w</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+                <span class="identifier">e</span> <span class="other">=</span> <span class="identifier">d</span><span class="other">;</span>
+                <span class="identifier">d</span> <span class="other">=</span> <span class="identifier">c</span><span class="other">;</span>
+                <span class="identifier">c</span> <span class="other">=</span> <span class="identifier">LeftRotate</span><span class="other">(</span><span class="identifier">b</span><span class="other">,</span> <span class="number">30u</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">b</span> <span class="other">=</span> <span class="identifier">a</span><span class="other">;</span>
+                <span class="identifier">a</span> <span class="other">=</span> <span class="identifier">temp</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">digest</span><span class="other">[</span><span class="number">0</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">digest</span><span class="other">[</span><span class="number">0</span><span class="other">]</span> <span class="other">+</span> <span class="identifier">a</span><span class="other">;</span>
+            <span class="identifier">digest</span><span class="other">[</span><span class="number">1</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">digest</span><span class="other">[</span><span class="number">1</span><span class="other">]</span> <span class="other">+</span> <span class="identifier">b</span><span class="other">;</span>
+            <span class="identifier">digest</span><span class="other">[</span><span class="number">2</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">digest</span><span class="other">[</span><span class="number">2</span><span class="other">]</span> <span class="other">+</span> <span class="identifier">c</span><span class="other">;</span>
+            <span class="identifier">digest</span><span class="other">[</span><span class="number">3</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">digest</span><span class="other">[</span><span class="number">3</span><span class="other">]</span> <span class="other">+</span> <span class="identifier">d</span><span class="other">;</span>
+            <span class="identifier">digest</span><span class="other">[</span><span class="number">4</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">digest</span><span class="other">[</span><span class="number">4</span><span class="other">]</span> <span class="other">+</span> <span class="identifier">e</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">uint</span><span class="other">[</span><span class="other">]</span> <span class="identifier">digest</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">block</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">byte</span> <span class="identifier">byteIndex</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">ulong</span> <span class="identifier">bitCount</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">GetSHA1MessageDigest</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">SHA1</span> <span class="identifier">sha1</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">SHA1</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">MemoryStream</span> <span class="identifier">memoryStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">MemoryStream</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">Utf8Encoder</span> <span class="identifier">encoder</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">Utf8Encoder</span><span class="other">(</span><span class="identifier">memoryStream</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">encoder.Encode</span><span class="other">(</span><span class="identifier">message</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">sha1.Process</span><span class="other">(</span><span class="identifier">memoryStream.Bytes</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">return</span> <span class="identifier">sha1.GetDigest</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+    
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">GetSHA1FileDigest</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">filePath</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">SHA1</span> <span class="identifier">sha1</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">SHA1</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">using</span> <span class="other">(</span><span class="identifier">BinaryReader</span> <span class="identifier">reader</span> <span class="other">=</span> <span class="identifier">File.OpenBinary</span><span class="other">(</span><span class="identifier">filePath</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">size</span> <span class="other">=</span> <span class="identifier">reader.StreamSize</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">size</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">byte</span> <span class="identifier">b</span> <span class="other">=</span> <span class="identifier">reader.ReadByte</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">sha1.Process</span><span class="other">(</span><span class="identifier">b</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="identifier">sha1.GetDigest</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

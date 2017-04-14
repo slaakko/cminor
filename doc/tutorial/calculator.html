@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -127,7 +127,7 @@
         The reverse operation of <em>unboxing</em> converts an object of boxed value type back to an instance of basic value type. 
         Unboxing must be performed explicitly by using a <em>cast</em>. For example, <span class="code"><strong>sbyte</strong> y = <strong>cast</strong>&lt;sbyte&gt;(x);</span>.
         If the type of <span class="code">x</span> is not <span class="code">BoxedInt8</span>, an exception of class <span class="code">System.InvalidCastException</span> is thrown.
-        The Cminor system library source file <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/BoxedTypes.cminor">BoxedTypes.cminor</a> contains the boxed types and 
+        The Cminor system library source file <a href="../code/system/BoxedTypes.cminor.html">BoxedTypes.cminor</a> contains the boxed types and 
         their operations. Explicit type conversion, <em>casting</em> is performed using syntax <span class="code"><strong>cast</strong>&lt;sbyte&gt;(x)</span>, not using the 
         C# syntax <span class="code">(<strong>sbyte</strong>)x</span>, because this way casts can be found from source code with search tools using regular expressions.
     </p>
@@ -139,7 +139,7 @@
     <p>
         Cminor contains minimal support for Unicode, not perfect, but usable at least in western Europe countries where the author is from.
         The support is implemented as static member functions of the <span class="code">System.BoxedChar</span> class
-        (see <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/BoxedTypes.cminor">BoxedTypes.cminor</a>).
+        (see <a href="../code/system/BoxedTypes.cminor.html">BoxedTypes.cminor</a> and <a href="../code/system/Unicode.cminor.html">Unicode.cminor</a>).
         For example, <span class="code"><strong>char</strong>.IsLetter(x)</span> returns true if character <span class="code">x</span>
         has Unicode letter character category. The following <span class="code">Scanner</span> class illustrates using character classification functions
         <span class="code"><strong>char</strong>.IsLetter(<strong>char</strong>)</span> and <span class="code"><strong>char</strong>.IsNumber(<strong>char</strong>)</span>
@@ -160,18 +160,23 @@
             <li>
                 <span class="code">System.Collections.Generic.List&lt;T&gt;</span> is a class template for storing a sequence of values that can be accessed
                 with subscripting operator <span class="code"><strong>[]</strong></span> in constant time.
-                (See <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/List.cminor">List.cminor</a> for the implementation).
+                (See <a href="../code/system/List.cminor.html">List.cminor</a> for the implementation).
             </li>
             <li>
                 <span class="code">System.Collections.Generic.Set&lt;T&gt;</span> is a class template for storing unique elements in a red-black tree.
                 The elements must form a set ordered by the less than operator.
-                (See <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/Set.cminor">Set.cminor</a> for the implementation).
+                (See <a href="../code/system/Set.cminor.html">Set.cminor</a> for the implementation).
             </li>
             <li>
                 <span class="code">System.Collections.Generic.Map&lt;KeyType, ValueType&gt;</span> is an associative collection 
                 for storing unique key-value pairs in a red-black tree.
                 The keys must form a set ordered by the less than operator.
-                (See <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/Map.cminor">Map.cminor</a> for the implementation).
+                (See <a href="../code/system/Map.cminor.html">Map.cminor</a> for the implementation).
+            </li>
+            <li>
+                <span class="code">System.Collections.Generic.Set&lt;T&gt;</span> and <span class="code">System.Collections.Generic.Map&lt;KeyType, ValueType&gt;</span> 
+                are implemented in terms of a <span class="code">System.Collections.Generic.RedBlackTree&lt;KeyType, ValueType, KeyOfValue&gt;</span>.
+                (See <a href="../code/system/RBTree.cminor.html">RBTree.cminor</a> for the implementation).
             </li>
             <li>
                 <span class="code">System.Collections.Generic.HashSet&lt;T&gt;</span> is a class template for storing unique elements in a hash table.
@@ -180,14 +185,23 @@
                 The default implementation in the <span class="code">System.Object</span> class generates an artificial random hash code for the object in the object creation time.
                 The hash code stays the same during the lifetime of the object though the object may be moved by the garbage collector.
                 For this reason the memory address of the object is not used as a hash code, as is the case for pointer types in C++ for example.
-                (See <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/HashSet.cminor">HashSet.cminor</a> for the implementation).
+                (See <a href="../code/system/HashSet.cminor.html">HashSet.cminor</a> for the implementation).
             </li>
             <li>
                 <span class="code">System.Collections.Generic.HashMap&lt;KeyType, ValueType&gt;</span> is an associative collection 
                 for storing unique key-value pairs in a hash table.
                 The keys must implement virtual <span class="code">GetHashCode</span> member function. This condition is satisfied for all class types and boxed value types, 
                 but the default implementation for class types can be overridden if needed.
-                (See <a href="http://github.com/slaakko/cminor/blob/master/system/System.Base/HashMap.cminor">HashMap.cminor</a> for the implementation).
+                (See <a href="../code/system/HashMap.cminor.html">HashMap.cminor</a> for the implementation).
+            </li>
+            <li>
+                <span class="code">System.Collections.Generic.HashSet&lt;T&gt;</span> and <span class="code">System.Collections.Generic.HashMap&lt;KeyType, ValueType&gt;</span>
+                are implemented in terms of a <span class="code">System.Collections.Generic.Hashtable&lt;KeyType, ValueType, KeyOfValue&gt;</span>.
+                (See <a href="../code/system/Hashtable.cminor.html">Hashtable.cminor</a> for the implementation).
+            </li>
+            <li>
+                <span class="code">System.Collections.Generic.Stack&lt;T&gt;</span> is a stack adapter class template implemented in terms of <span class="code">System.Collections.Generic.List&lt;T&gt;</span>.
+                (See <a href="../code/system/Stack.cminor.html">Stack.cminor</a> for the implementation).
             </li>
         </ul>
     </p>
@@ -205,7 +219,7 @@
 
     <p>
         Each collection class implements an interface called <span class="code">Enumerable</span>. 
-        (See <a href="https://github.com/slaakko/cminor/blob/master/system/System.Base/Enumerator.cminor">Enumerator.cminor</a> for the implementation).
+        (See <a href="../code/system/Enumerator.cminor">Enumerator.cminor</a> for the implementation).
         An <span class="code">Enumerable</span> class has a member function called <span class="code">GetEnumerator()</span> that returns an 
         object that in turn implements an interface called <span class="code">Enumerator</span>.
         The <span class="code">Enumerator</span> interface differs from the C# language interface of the same name by providing a simplified functionality.
@@ -228,7 +242,7 @@
         The <span class="code">Print()</span> member function of the <span class="code">SymbolTable</span> class above uses enumerator interface implicitly to enumerate
         all the variables in the map, because the <strong>foreach</strong> statement is implemented in terms of <span class="code">Enumerable</span> and 
         <span class="code">Enumerator</span> interfaces: statement <span class="code"><strong>foreach</strong> (Type x <strong>in</strong> collection) { statement; }</span> 
-        is rougly equivalent to the following pseudo-code:
+        is roughly equivalent to the following pseudo-code:
         <div class="program">
             <iframe src="../code/dc/foreach.cminor.html" height="140px" width="600px" style="border:none;"></iframe>
         </div>

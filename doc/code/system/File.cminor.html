@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>File.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.IO</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">File</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">StreamWriter</span> <span class="identifier">CreateText</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">filePath</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">System.GetPlatform</span><span class="other">(</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">System.Platform.windows</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">StreamWriter</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">WideningStream</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">BufferedStream</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">filePath</span><span class="other">,</span> <span class="identifier">FileMode.create</span><span class="other">,</span> <span class="identifier">FileAccess.write</span><span class="other">)</span><span class="other">)</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">StreamWriter</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">BufferedStream</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">filePath</span><span class="other">,</span> <span class="identifier">FileMode.create</span><span class="other">,</span> <span class="identifier">FileAccess.write</span><span class="other">)</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">BinaryWriter</span> <span class="identifier">CreateBinary</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">filePath</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">BinaryWriter</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">BufferedStream</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">filePath</span><span class="other">,</span> <span class="identifier">FileMode.create</span><span class="other">,</span> <span class="identifier">FileAccess.write</span><span class="other">)</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">StreamReader</span> <span class="identifier">OpenRead</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">filePath</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">System.GetPlatform</span><span class="other">(</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">System.Platform.windows</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">StreamReader</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">NarrowingStream</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">BufferedStream</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">filePath</span><span class="other">,</span> <span class="identifier">FileMode.open</span><span class="other">,</span> <span class="identifier">FileAccess.read</span><span class="other">)</span><span class="other">)</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">StreamReader</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">BufferedStream</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">filePath</span><span class="other">,</span> <span class="identifier">FileMode.open</span><span class="other">,</span> <span class="identifier">FileAccess.read</span><span class="other">)</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">BinaryReader</span> <span class="identifier">OpenBinary</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">filePath</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">BinaryReader</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">BufferedStream</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">filePath</span><span class="other">,</span> <span class="identifier">FileMode.open</span><span class="other">,</span> <span class="identifier">FileAccess.read</span><span class="other">)</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">ReadAllText</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">filePath</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">using</span> <span class="other">(</span><span class="identifier">StreamReader</span> <span class="identifier">reader</span> <span class="other">=</span> <span class="identifier">OpenRead</span><span class="other">(</span><span class="identifier">filePath</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">reader.ReadToEnd</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">string</span><span class="other">.</span><span class="identifier">Empty</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">fexists</span><span class="other">]</span>
+        <span class="identifier">extern</span> <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">Exists</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">filePath</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">writetimeless</span><span class="other">]</span>
+        <span class="identifier">extern</span> <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">LastWriteTimeLess</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">filePath1</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">filePath2</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

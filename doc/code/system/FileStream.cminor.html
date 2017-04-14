@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>FileStream.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.IO</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">int</span> <span class="identifier">stdin</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">int</span> <span class="identifier">stdout</span> <span class="other">=</span> <span class="number">1</span><span class="other">;</span>
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">int</span> <span class="identifier">stderr</span> <span class="other">=</span> <span class="number">2</span><span class="other">;</span>
+
+    <span class="keyword">public</span> <span class="keyword">enum</span> <span class="identifier">FileMode</span> <span class="other">:</span> <span class="keyword">byte</span>
+    <span class="other">{</span>
+        <span class="identifier">append</span><span class="other">,</span> <span class="identifier">create</span><span class="other">,</span> <span class="identifier">open</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">enum</span> <span class="identifier">FileAccess</span> <span class="other">:</span> <span class="keyword">byte</span>
+    <span class="other">{</span>
+        <span class="identifier">read</span><span class="other">,</span> <span class="identifier">readWrite</span><span class="other">,</span> <span class="identifier">write</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">enum</span> <span class="identifier">Origin</span> <span class="other">:</span> <span class="keyword">byte</span>
+    <span class="other">{</span>
+        <span class="identifier">seekSet</span><span class="other">,</span> <span class="identifier">seekCur</span><span class="other">,</span> <span class="identifier">seekEnd</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">FileStream</span> <span class="other">:</span> <span class="identifier">Stream</span><span class="other">,</span> <span class="identifier">Closable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">fileHandle</span><span class="other">,</span> <span class="identifier">FileAccess</span> <span class="identifier">access</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">mode</span> <span class="other">=</span> <span class="identifier">DefaultMode</span><span class="other">(</span><span class="identifier">access</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">access</span> <span class="other">=</span> <span class="identifier">access</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">fileHandle</span> <span class="other">=</span> <span class="identifier">fileHandle</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">String</span> <span class="identifier">filePath</span><span class="other">,</span> <span class="identifier">FileMode</span> <span class="identifier">mode</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">this</span><span class="other">(</span><span class="identifier">filePath</span><span class="other">,</span> <span class="identifier">mode</span><span class="other">,</span> <span class="identifier">DefaultAccess</span><span class="other">(</span><span class="identifier">mode</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">String</span> <span class="identifier">filePath</span><span class="other">,</span> <span class="identifier">FileMode</span> <span class="identifier">mode</span><span class="other">,</span> <span class="identifier">FileAccess</span> <span class="identifier">access</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">filePath</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided file path is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">filePath</span> <span class="other">=</span> <span class="identifier">filePath</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">mode</span> <span class="other">=</span> <span class="identifier">mode</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">access</span> <span class="other">=</span> <span class="identifier">access</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">fileHandle</span> <span class="other">=</span> <span class="identifier">OpenFile</span><span class="other">(</span><span class="identifier">filePath</span><span class="other">,</span> <span class="identifier">mode</span><span class="other">,</span> <span class="identifier">access</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">IsOpen</span><span class="other">(</span><span class="other">)</span> 
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">fileHandle</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="identifier">Close</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">fileHandle</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">fileHandle</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">stdin</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">fileHandle</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">stdout</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">fileHandle</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">stderr</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">CloseFile</span><span class="other">(</span><span class="identifier">fileHandle</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">fileHandle</span> <span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="identifier">WriteByte</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">WriteByteToFile</span><span class="other">(</span><span class="identifier">fileHandle</span><span class="other">,</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">count</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">buffer</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided buffer is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">count</span> <span class="other">&lt;</span> <span class="number">0</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentOutOfRangeException</span><span class="other">(</span><span class="string">&quot;invalid count&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">WriteFile</span><span class="other">(</span><span class="identifier">fileHandle</span><span class="other">,</span> <span class="identifier">buffer</span><span class="other">,</span> <span class="identifier">count</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">int</span> <span class="identifier">ReadByte</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">ReadByteFromFile</span><span class="other">(</span><span class="identifier">fileHandle</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">int</span> <span class="identifier">Read</span><span class="other">(</span><span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">buffer</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">ArgumentNullException</span><span class="other">(</span><span class="string">&quot;provided buffer is null&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">ReadFile</span><span class="other">(</span><span class="identifier">fileHandle</span><span class="other">,</span> <span class="identifier">buffer</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="identifier">Seek</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">pos</span><span class="other">,</span> <span class="identifier">Origin</span> <span class="identifier">origin</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">SeekFile</span><span class="other">(</span><span class="identifier">fileHandle</span><span class="other">,</span> <span class="identifier">pos</span><span class="other">,</span> <span class="identifier">origin</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">int</span> <span class="identifier">Tell</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">TellFile</span><span class="other">(</span><span class="identifier">fileHandle</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">FileAccess</span> <span class="identifier">DefaultAccess</span><span class="other">(</span><span class="identifier">FileMode</span> <span class="identifier">mode</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">mode</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">FileMode.append</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">mode</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">FileMode.create</span><span class="other">)</span> <span class="keyword">return</span> <span class="identifier">FileAccess.write</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">FileAccess.read</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">FileMode</span> <span class="identifier">DefaultMode</span><span class="other">(</span><span class="identifier">FileAccess</span> <span class="identifier">access</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">access</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">FileAccess.read</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">access</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">FileAccess.readWrite</span><span class="other">)</span> <span class="keyword">return</span> <span class="identifier">FileMode.open</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">FileMode.create</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">String</span> <span class="identifier">filePath</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">FileMode</span> <span class="identifier">mode</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">FileAccess</span> <span class="identifier">access</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">fileHandle</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">fopen</span><span class="other">]</span>
+    <span class="keyword">internal</span> <span class="identifier">extern</span> <span class="keyword">int</span> <span class="identifier">OpenFile</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">filePath</span><span class="other">,</span> <span class="identifier">FileMode</span> <span class="identifier">mode</span><span class="other">,</span> <span class="identifier">FileAccess</span> <span class="identifier">access</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">fclose</span><span class="other">]</span>
+    <span class="keyword">internal</span> <span class="identifier">extern</span> <span class="keyword">void</span> <span class="identifier">CloseFile</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">fileHandle</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">fputb</span><span class="other">]</span>
+    <span class="keyword">internal</span> <span class="identifier">extern</span> <span class="keyword">void</span> <span class="identifier">WriteByteToFile</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">fileHandle</span><span class="other">,</span> <span class="keyword">byte</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">fwrite</span><span class="other">]</span>
+    <span class="keyword">internal</span> <span class="identifier">extern</span> <span class="keyword">void</span> <span class="identifier">WriteFile</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">fileHandle</span><span class="other">,</span> <span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">count</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">fgetb</span><span class="other">]</span>
+    <span class="keyword">internal</span> <span class="identifier">extern</span> <span class="keyword">int</span> <span class="identifier">ReadByteFromFile</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">fileHandle</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">fread</span><span class="other">]</span>
+    <span class="keyword">internal</span> <span class="identifier">extern</span> <span class="keyword">int</span> <span class="identifier">ReadFile</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">fileHandle</span><span class="other">,</span> <span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">fseek</span><span class="other">]</span>
+    <span class="keyword">internal</span> <span class="identifier">extern</span> <span class="keyword">void</span> <span class="identifier">SeekFile</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">fileHandle</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">pos</span><span class="other">,</span> <span class="identifier">Origin</span> <span class="identifier">origin</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">ftell</span><span class="other">]</span>
+    <span class="keyword">internal</span> <span class="identifier">extern</span> <span class="keyword">int</span> <span class="identifier">TellFile</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">fileHandle</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

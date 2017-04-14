@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Hashtable.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Collections.Generic</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">HashtablePrimes</span>
+    <span class="other">{</span>
+        <span class="keyword">static</span> <span class="identifier">HashtablePrimes</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">primes</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="number">26</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">53</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">97</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">193</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">389</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">769</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">1543</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">3079</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">6151</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">12289</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">24593</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">49157</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">98317</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">196613</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">393241</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">786433</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">1572869</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">3145739</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">6291469</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">12582917</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">25165843</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">50331653</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">100663319</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">201326611</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">402653189</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">805306457</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">primes.Add</span><span class="other">(</span><span class="number">1610612741</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="identifier">GetNextPrime</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">n</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="identifier">primes.BinarySearch</span><span class="other">(</span><span class="identifier">n</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">primes.Count</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">primes</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">primes</span><span class="other">[</span><span class="identifier">primes.Count</span> <span class="other">-</span> <span class="number">1</span><span class="other">]</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">static</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span> <span class="identifier">primes</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">internal</span> <span class="keyword">class</span> <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Bucket</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">val</span><span class="other">,</span> <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="identifier">next</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">val</span> <span class="other">=</span> <span class="identifier">val</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">next</span> <span class="other">=</span> <span class="identifier">next</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="identifier">Value</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">val</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">val</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="identifier">Next</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">next</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">next</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">T</span> <span class="identifier">val</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span> <span class="identifier">next</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Hashtable</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">,</span> <span class="identifier">KeyOfValue</span><span class="other">&gt;</span> <span class="other">:</span> <span class="identifier">Enumerable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Hashtable</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">buckets</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">count</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">loadFactor</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">maxLoadFactor</span> <span class="other">=</span> <span class="number">0.8</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">keyOf</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">KeyOfValue</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Count</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">count</span><span class="other">;</span><span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">double</span> <span class="identifier">LoadFactor</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">loadFactor</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">double</span> <span class="identifier">MaxLoadFactor</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">maxLoadFactor</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">maxLoadFactor</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Clear</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">buckets</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">count</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">loadFactor</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Add</span><span class="other">(</span><span class="identifier">ValueType</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">InitBuckets</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">KeyType</span> <span class="identifier">key</span> <span class="other">=</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">index</span> <span class="other">=</span> <span class="identifier">Hash</span><span class="other">(</span><span class="identifier">key</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">bucket</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">bucket.Value</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">key</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">bucket.Next</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">bucket</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span><span class="other">,</span> <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">bucket</span><span class="other">;</span>
+            <span class="other">+</span><span class="other">+</span><span class="identifier">count</span><span class="other">;</span>
+            <span class="identifier">SetLoadFactor</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">CheckForRehash</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Remove</span><span class="other">(</span><span class="identifier">KeyType</span> <span class="identifier">key</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">InitBuckets</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">index</span> <span class="other">=</span> <span class="identifier">Hash</span><span class="other">(</span><span class="identifier">key</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span>
+            <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">prev</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">bucket</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">bucket.Value</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">key</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">prev</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">bucket.Next</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="identifier">prev.Next</span> <span class="other">=</span> <span class="identifier">bucket.Next</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="other">-</span><span class="other">-</span><span class="identifier">count</span><span class="other">;</span>
+                    <span class="identifier">SetLoadFactor</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">prev</span> <span class="other">=</span> <span class="identifier">bucket</span><span class="other">;</span>
+                <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">bucket.Next</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Contains</span><span class="other">(</span><span class="identifier">KeyType</span> <span class="identifier">key</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">InitBuckets</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">index</span> <span class="other">=</span> <span class="identifier">Hash</span><span class="other">(</span><span class="identifier">key</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">bucket</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">bucket.Value</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">key</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">bucket.Next</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">ValueType</span> <span class="keyword">this</span><span class="other">[</span><span class="identifier">KeyType</span> <span class="identifier">key</span><span class="other">]</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> 
+            <span class="other">{</span> 
+                <span class="identifier">InitBuckets</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">int</span> <span class="identifier">index</span> <span class="other">=</span> <span class="identifier">Hash</span><span class="other">(</span><span class="identifier">key</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span>
+                <span class="keyword">while</span> <span class="other">(</span><span class="identifier">bucket</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">bucket.Value</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">key</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="identifier">bucket.Value</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">bucket.Next</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">return</span> <span class="keyword">default</span><span class="other">(</span><span class="identifier">ValueType</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">AddOrReplace</span><span class="other">(</span><span class="identifier">ValueType</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">InitBuckets</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">KeyType</span> <span class="identifier">key</span> <span class="other">=</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">index</span> <span class="other">=</span> <span class="identifier">Hash</span><span class="other">(</span><span class="identifier">key</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="identifier">bucket</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">bucket.Value</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">key</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">bucket.Value</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span>
+                    <span class="keyword">return</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">bucket.Next</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">newBucket</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">value</span><span class="other">,</span> <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">newBucket</span><span class="other">;</span>
+            <span class="other">+</span><span class="other">+</span><span class="identifier">count</span><span class="other">;</span>
+            <span class="identifier">SetLoadFactor</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">CheckForRehash</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Enumerator</span> <span class="identifier">GetEnumerator</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">HashtableEnumerator</span><span class="other">&lt;</span><span class="identifier">Hashtable</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">,</span> <span class="identifier">KeyOfValue</span><span class="other">&gt;</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">(</span><span class="keyword">this</span><span class="other">,</span> <span class="identifier">buckets</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">GetBucketIndex</span><span class="other">(</span><span class="identifier">ValueType</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">Hash</span><span class="other">(</span><span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">SetLoadFactor</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">bc</span> <span class="other">=</span> <span class="identifier">buckets.Count</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">bc</span> <span class="other">=</span><span class="other">=</span> <span class="number">0</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">loadFactor</span> <span class="other">=</span> <span class="number">1.0</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">double</span> <span class="identifier">c</span> <span class="other">=</span> <span class="identifier">count</span><span class="other">;</span>
+                <span class="identifier">loadFactor</span> <span class="other">=</span> <span class="identifier">c</span> <span class="other">/</span> <span class="identifier">bc</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">CheckForRehash</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">loadFactor</span> <span class="other">&gt;</span> <span class="identifier">maxLoadFactor</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Rehash</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">Rehash</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span> <span class="identifier">b</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span> <span class="identifier">temp</span> <span class="other">=</span> <span class="identifier">buckets</span><span class="other">;</span>
+            <span class="identifier">buckets</span> <span class="other">=</span> <span class="identifier">b</span><span class="other">;</span>
+            <span class="identifier">b</span> <span class="other">=</span> <span class="identifier">temp</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">b.Count</span><span class="other">;</span>
+            <span class="identifier">buckets.Resize</span><span class="other">(</span><span class="identifier">HashtablePrimes.GetNextPrime</span><span class="other">(</span><span class="identifier">n</span> <span class="other">+</span> <span class="number">1</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">b</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+                <span class="keyword">while</span> <span class="other">(</span><span class="identifier">bucket</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">KeyType</span> <span class="identifier">key</span> <span class="other">=</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">bucket.Value</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">int</span> <span class="identifier">index</span> <span class="other">=</span> <span class="identifier">Hash</span><span class="other">(</span><span class="identifier">key</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">next</span> <span class="other">=</span> <span class="identifier">bucket.Next</span><span class="other">;</span>
+                    <span class="identifier">bucket.Next</span> <span class="other">=</span> <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span>
+                    <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">bucket</span><span class="other">;</span>
+                    <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">next</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="identifier">InitBuckets</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">buckets</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">buckets</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="number">0</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">buckets.Count</span> <span class="other">=</span><span class="other">=</span> <span class="number">0</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">buckets.Resize</span><span class="other">(</span><span class="identifier">HashtablePrimes.GetNextPrime</span><span class="other">(</span><span class="number">0</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">KeyType</span> <span class="identifier">KeyOf</span><span class="other">(</span><span class="identifier">ValueType</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">keyOf</span><span class="other">(</span><span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">Hash</span><span class="other">(</span><span class="identifier">KeyType</span> <span class="identifier">key</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">buckets</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">buckets.Count</span> <span class="other">=</span><span class="other">=</span> <span class="number">0</span><span class="other">)</span> 
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">LogicException</span><span class="other">(</span><span class="string">&quot;cannot hash into empty hash table&quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">key.GetHashCode</span><span class="other">(</span><span class="other">)</span> <span class="other">%</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">buckets.Count</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span> <span class="identifier">buckets</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">count</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">double</span> <span class="identifier">loadFactor</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">double</span> <span class="identifier">maxLoadFactor</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">KeyOfValue</span> <span class="identifier">keyOf</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">internal</span> <span class="keyword">class</span> <span class="identifier">HashtableEnumerator</span><span class="other">&lt;</span><span class="identifier">TableType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="other">:</span> <span class="identifier">Enumerator</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">HashtableEnumerator</span><span class="other">(</span><span class="identifier">TableType</span> <span class="identifier">table</span><span class="other">,</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span> <span class="identifier">buckets</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">table</span> <span class="other">=</span> <span class="identifier">table</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">buckets</span> <span class="other">=</span> <span class="identifier">buckets</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">bucket</span> <span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">buckets</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">buckets.Count</span> <span class="other">!</span><span class="other">=</span> <span class="number">0</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">buckets.Count</span><span class="other">;</span>
+                <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+                <span class="other">{</span>
+                   <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+                   <span class="keyword">if</span> <span class="other">(</span><span class="identifier">bucket</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                   <span class="other">{</span>
+                        <span class="keyword">break</span><span class="other">;</span>
+                   <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">AtEnd</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">bucket</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">object</span> <span class="identifier">GetCurrent</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">bucket.Value</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">MoveNext</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">prev</span> <span class="other">=</span> <span class="identifier">bucket</span><span class="other">;</span>
+            <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">bucket.Next</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">bucket</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">int</span> <span class="identifier">index</span> <span class="other">=</span> <span class="identifier">table.GetBucketIndex</span><span class="other">(</span><span class="identifier">prev.Value</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">+</span><span class="other">+</span><span class="identifier">index</span><span class="other">;</span>
+                <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">buckets.Count</span><span class="other">;</span>
+                <span class="keyword">while</span> <span class="other">(</span><span class="identifier">bucket</span> <span class="other">=</span><span class="other">=</span> <span class="keyword">null</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">index</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">bucket</span> <span class="other">=</span> <span class="identifier">buckets</span><span class="other">[</span><span class="identifier">index</span><span class="other">]</span><span class="other">;</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">index</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">TableType</span> <span class="identifier">table</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span> <span class="identifier">buckets</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="identifier">Bucket</span><span class="other">&lt;</span><span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">bucket</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

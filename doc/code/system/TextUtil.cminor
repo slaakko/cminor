@@ -1,0 +1,74 @@
+using System;
+
+namespace System.Text
+{
+    public string HexEscape(char c)
+    {
+        return "\\x" + uint.ToHexString(cast<uint>(c));
+    }
+
+    public string CharStr(char c)
+    {
+        switch (c)
+        {
+            case '\\': return "\\\\";
+            case '"': return "\\\"";
+            case '\'': return "\\'";
+            case '\a': return "\\a";
+            case '\b': return "\\b";
+            case '\f': return "\\f";
+            case '\n': return "\\n";
+            case '\r': return "\\r";
+            case '\t': return "\\t";
+            case '\v': return "\\v";
+            case '\0': return "\\0";
+            default:
+            {
+                if (char.IsCPrintable(c))
+                {
+                    return new string(c, 1);
+                }
+                else
+                {
+                    return HexEscape(c);
+                }
+            }
+        }
+        return HexEscape(c);
+    }
+
+    public string MakeCharLiteral(char c)
+    {
+        if (c == '"')
+        {
+            return "'\"'";
+        }
+        return "'" + CharStr(c) + "'";
+    }
+
+    public string StringStr(string s)
+    {
+        StringBuilder result = new StringBuilder();
+        foreach (char c in s)
+        {
+            if (c == '\'')
+            {
+                result.Append(c);
+            }
+            else
+            {
+                result.Append(CharStr(c));
+            }
+        }
+        return result.ToString();
+    }
+
+    public string MakeStringLiteral(string s)
+    {
+        StringBuilder result = new StringBuilder();
+        result.Append("\"");
+        result.Append(StringStr(s));
+        result.Append("\"");
+        return result.ToString();
+    }
+}

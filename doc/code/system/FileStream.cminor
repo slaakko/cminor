@@ -1,0 +1,133 @@
+using System;
+
+namespace System.IO
+{
+    public const int stdin = 0;
+    public const int stdout = 1;
+    public const int stderr = 2;
+
+    public enum FileMode : byte
+    {
+        append, create, open
+    }
+
+    public enum FileAccess : byte
+    {
+        read, readWrite, write
+    }
+
+    public enum Origin : byte
+    {
+        seekSet, seekCur, seekEnd
+    }
+
+    public class FileStream : Stream, Closable
+    {
+        public FileStream(int fileHandle, FileAccess access)
+        {
+            this.mode = DefaultMode(access);
+            this.access = access;
+            this.fileHandle = fileHandle;
+        }
+        public FileStream(String filePath, FileMode mode) : this(filePath, mode, DefaultAccess(mode))
+        {
+        }
+        public FileStream(String filePath, FileMode mode, FileAccess access)
+        {
+            if (filePath == null)
+            {
+                throw new ArgumentNullException("provided file path is null");
+            }
+            this.filePath = filePath;
+            this.mode = mode;
+            this.access = access;
+            this.fileHandle = OpenFile(filePath, mode, access);
+        }
+        public bool IsOpen() 
+        {
+            return fileHandle != -1;
+        }
+        public override void Close()
+        {
+            if (fileHandle != -1 && fileHandle != stdin && fileHandle != stdout && fileHandle != stderr)
+            {
+                CloseFile(fileHandle);
+                fileHandle = -1;
+            }
+        }
+        public override void WriteByte(byte value)
+        {
+            WriteByteToFile(fileHandle, value);
+        }
+        public override void Write(byte[] buffer, int count)
+        {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("provided buffer is null");
+            }
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException("invalid count");
+            }
+            WriteFile(fileHandle, buffer, count);
+        }
+        public override int ReadByte()
+        {
+            return ReadByteFromFile(fileHandle);
+        }
+        public override int Read(byte[] buffer)
+        {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("provided buffer is null");
+            }
+            return ReadFile(fileHandle, buffer);
+        }
+        public override void Seek(int pos, Origin origin)
+        {
+            SeekFile(fileHandle, pos, origin);
+        }
+        public override int Tell()
+        {
+            return TellFile(fileHandle);
+        }
+        private FileAccess DefaultAccess(FileMode mode)
+        {
+            if (mode == FileMode.append || mode == FileMode.create) return FileAccess.write;
+            return FileAccess.read;
+        }
+        private FileMode DefaultMode(FileAccess access)
+        {
+            if (access == FileAccess.read || access == FileAccess.readWrite) return FileMode.open;
+            return FileMode.create;
+        }
+        private String filePath;
+        private FileMode mode;
+        private FileAccess access;
+        private int fileHandle;
+    }
+
+    [vmf=fopen]
+    internal extern int OpenFile(string filePath, FileMode mode, FileAccess access);
+
+    [vmf=fclose]
+    internal extern void CloseFile(int fileHandle);
+
+    [vmf=fputb]
+    internal extern void WriteByteToFile(int fileHandle, byte value);
+
+    [vmf=fwrite]
+    internal extern void WriteFile(int fileHandle, byte[] buffer, int count);
+
+    [vmf=fgetb]
+    internal extern int ReadByteFromFile(int fileHandle);
+
+    [vmf=fread]
+    internal extern int ReadFile(int fileHandle, byte[] buffer);
+
+    [vmf=fseek]
+    internal extern void SeekFile(int fileHandle, int pos, Origin origin);
+
+    [vmf=ftell]
+    internal extern int TellFile(int fileHandle);
+}

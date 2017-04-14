@@ -1,0 +1,95 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Text
+{
+    public class StringBuilder
+    {
+        public StringBuilder()
+        {
+            this.chars = new List<char>();
+        }
+        public StringBuilder(int capacity)
+        {
+            this.chars = new List<char>(capacity);
+        }
+        public StringBuilder Append(string s)
+        {
+            foreach (char c in s)
+            {
+                chars.Add(c);
+            }
+            return this;
+        }
+        public StringBuilder Append(char c)
+        {
+            chars.Add(c);
+            return this;
+        }
+        public StringBuilder Append(bool x)
+        {
+            return Append(x.ToString());
+        }
+        public StringBuilder Append(sbyte x)
+        {
+            return Append(x.ToString());
+        }
+        public StringBuilder Append(byte x)
+        {
+            return Append(x.ToString());
+        }
+        public StringBuilder Append(short x)
+        {
+            return Append(x.ToString());
+        }
+        public StringBuilder Append(ushort x)
+        {
+            return Append(x.ToString());
+        }
+        public StringBuilder Append(int x)
+        {
+            return Append(x.ToString());
+        }
+        public StringBuilder Append(uint x)
+        {
+            return Append(x.ToString());
+        }
+        public StringBuilder Append(long x)
+        {
+            return Append(x.ToString());
+        }
+        public StringBuilder Append(ulong x)
+        {
+            return Append(x.ToString());
+        }
+        public StringBuilder Append(float x)
+        {
+            return Append(x.ToString());
+        }
+        public StringBuilder Append(double x)
+        {
+            return Append(x.ToString());
+        }
+        public void Reverse()
+        {
+            chars.Reverse();
+        }
+        public override string ToString() 
+        {
+            return new string(chars.ToArray());
+        } 
+        public void Clear()
+        {
+            chars.Clear();
+        }
+        public int Length
+        {
+            get { return chars.Count; }
+        }
+        public int Capacity
+        {
+            get { return chars.Capacity; }
+        }
+        private List<char> chars;
+    }
+}

@@ -1,0 +1,14 @@
+namespace System
+{
+//  If InitRand(uint) function is not called, the random number generator is initialized with a random seed obtained from the system.
+//  Random number generator is thread safe (each application thread has its own generator instance).
+
+    [vmf=initrand]
+    public extern void InitRand(uint seed); 
+
+    [vmf=random]
+    public extern uint Random();
+
+    [vmf=rand64]
+    public extern ulong Random64();
+}

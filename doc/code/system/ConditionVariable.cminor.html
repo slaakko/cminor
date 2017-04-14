@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>ConditionVariable.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Threading</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">delegate</span> <span class="keyword">bool</span> <span class="identifier">Predicate</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">arg</span><span class="other">)</span><span class="other">;</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="keyword">delegate</span> <span class="keyword">bool</span> <span class="identifier">PredicateMethod</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">arg</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="keyword">public</span> <span class="keyword">enum</span> <span class="identifier">CondVarStatus</span> <span class="other">:</span> <span class="keyword">byte</span>
+    <span class="other">{</span>
+        <span class="identifier">timeout</span><span class="other">,</span> <span class="identifier">no_timeout</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">ConditionVariable</span>
+    <span class="other">{</span>
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">initcv</span><span class="other">]</span>
+        <span class="keyword">public</span> <span class="identifier">extern</span> <span class="identifier">ConditionVariable</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">notifyone</span><span class="other">]</span>
+        <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">void</span> <span class="identifier">NotifyOne</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">notifyall</span><span class="other">]</span>
+        <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">void</span> <span class="identifier">NotifyAll</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">waitcv</span><span class="other">]</span>
+        <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">void</span> <span class="identifier">Wait</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">)</span><span class="other">;</span>
+
+        <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">waitcvfor</span><span class="other">]</span>
+        <span class="keyword">public</span> <span class="identifier">extern</span> <span class="identifier">CondVarStatus</span> <span class="identifier">WaitFor</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">dur</span><span class="other">)</span><span class="other">;</span>
+
+        <span class="keyword">public</span> <span class="identifier">CondVarStatus</span> <span class="identifier">WaitUntil</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">,</span> <span class="identifier">TimePoint</span> <span class="identifier">tp</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Duration</span> <span class="identifier">dur</span> <span class="other">=</span> <span class="identifier">tp</span> <span class="other">-</span> <span class="identifier">Now</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">WaitFor</span><span class="other">(</span><span class="identifier">lck</span><span class="other">,</span> <span class="identifier">dur</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Wait</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">,</span> <span class="identifier">Predicate</span> <span class="identifier">predicate</span><span class="other">,</span> <span class="keyword">object</span> <span class="identifier">arg</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="other">!</span><span class="identifier">predicate</span><span class="other">(</span><span class="identifier">arg</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Wait</span><span class="other">(</span><span class="identifier">lck</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">WaitFor</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">,</span> <span class="identifier">Predicate</span> <span class="identifier">predicate</span><span class="other">,</span> <span class="keyword">object</span> <span class="identifier">arg</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">dur</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="other">!</span><span class="identifier">predicate</span><span class="other">(</span><span class="identifier">arg</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">WaitFor</span><span class="other">(</span><span class="identifier">lck</span><span class="other">,</span> <span class="identifier">dur</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">CondVarStatus.timeout</span><span class="other">)</span> 
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">predicate</span><span class="other">(</span><span class="identifier">arg</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">WaitUntil</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">,</span> <span class="identifier">Predicate</span> <span class="identifier">predicate</span><span class="other">,</span> <span class="keyword">object</span> <span class="identifier">arg</span><span class="other">,</span> <span class="identifier">TimePoint</span> <span class="identifier">tp</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Duration</span> <span class="identifier">dur</span> <span class="other">=</span> <span class="identifier">tp</span> <span class="other">-</span> <span class="identifier">Now</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">WaitFor</span><span class="other">(</span><span class="identifier">lck</span><span class="other">,</span> <span class="identifier">predicate</span><span class="other">,</span> <span class="identifier">arg</span><span class="other">,</span> <span class="identifier">dur</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Wait</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">,</span> <span class="identifier">PredicateMethod</span> <span class="identifier">predicateMethod</span><span class="other">,</span> <span class="keyword">object</span> <span class="identifier">arg</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="other">!</span><span class="identifier">predicateMethod</span><span class="other">(</span><span class="identifier">arg</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Wait</span><span class="other">(</span><span class="identifier">lck</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">WaitFor</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">,</span> <span class="identifier">PredicateMethod</span> <span class="identifier">predicateMethod</span><span class="other">,</span> <span class="keyword">object</span> <span class="identifier">arg</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">dur</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="other">!</span><span class="identifier">predicateMethod</span><span class="other">(</span><span class="identifier">arg</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">WaitFor</span><span class="other">(</span><span class="identifier">lck</span><span class="other">,</span> <span class="identifier">dur</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">CondVarStatus.timeout</span><span class="other">)</span> 
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">predicateMethod</span><span class="other">(</span><span class="identifier">arg</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">WaitUntil</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">,</span> <span class="identifier">PredicateMethod</span> <span class="identifier">predicateMethod</span><span class="other">,</span> <span class="keyword">object</span> <span class="identifier">arg</span><span class="other">,</span> <span class="identifier">TimePoint</span> <span class="identifier">tp</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Duration</span> <span class="identifier">dur</span> <span class="other">=</span> <span class="identifier">tp</span> <span class="other">-</span> <span class="identifier">Now</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">WaitFor</span><span class="other">(</span><span class="identifier">lck</span><span class="other">,</span> <span class="identifier">predicateMethod</span><span class="other">,</span> <span class="identifier">arg</span><span class="other">,</span> <span class="identifier">dur</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Wait</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">bool</span> <span class="identifier">condition</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">bool</span> <span class="identifier">cond</span> <span class="other">=</span> <span class="identifier">condition</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="other">!</span><span class="identifier">cond</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">Wait</span><span class="other">(</span><span class="identifier">lck</span><span class="other">)</span><span class="other">;</span>
+                <span class="identifier">cond</span> <span class="other">=</span> <span class="identifier">condition</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">WaitFor</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">bool</span> <span class="identifier">condition</span><span class="other">,</span> <span class="identifier">Duration</span> <span class="identifier">dur</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">bool</span> <span class="identifier">cond</span> <span class="other">=</span> <span class="identifier">condition</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="other">!</span><span class="identifier">cond</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">WaitFor</span><span class="other">(</span><span class="identifier">lck</span><span class="other">,</span> <span class="identifier">dur</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">CondVarStatus.timeout</span><span class="other">)</span> 
+                <span class="other">{</span>
+                    <span class="identifier">cond</span> <span class="other">=</span> <span class="identifier">condition</span><span class="other">;</span>
+                    <span class="keyword">return</span> <span class="identifier">cond</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">cond</span> <span class="other">=</span> <span class="identifier">condition</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">WaitUntil</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">lck</span><span class="other">,</span> <span class="keyword">ref</span> <span class="keyword">bool</span> <span class="identifier">condition</span><span class="other">,</span> <span class="identifier">TimePoint</span> <span class="identifier">tp</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Duration</span> <span class="identifier">dur</span> <span class="other">=</span> <span class="identifier">tp</span> <span class="other">-</span> <span class="identifier">Now</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">WaitFor</span><span class="other">(</span><span class="identifier">lck</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">condition</span><span class="other">,</span> <span class="identifier">dur</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Id</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">id</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">id</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

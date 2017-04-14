@@ -1,0 +1,93 @@
+using System;
+
+namespace System.IO
+{
+    public class NarrowingStream : Stream, Closable
+    {
+        public NarrowingStream(Stream stream)
+        {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("provided stream is null");
+            }
+            this.baseStream = stream;
+            this.getbuf = -1;
+        }
+        public override void WriteByte(byte value)
+        {
+            baseStream.WriteByte(value);
+        }
+        public override void Write(byte[] buffer, int count)
+        {
+            baseStream.Write(buffer, count);
+        }
+        public override int ReadByte()
+        {
+            int b = Get();
+            if (b == cast<int>('\r'))
+            {
+                b = Get();
+                if (b == cast<int>('\n'))
+                {
+                    return b;
+                }
+                else
+                {
+                    PutBack(cast<byte>(b));
+                    return cast<int>('\r');
+                }
+            }
+            return b;
+        }
+        public override int Read(byte[] buffer)
+        {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("provided buffer is null");
+            }
+            int bytesLeft = buffer.Length;
+            if (bytesLeft == 0)
+            {
+                return 0;
+            }
+            int bytesRead = 0;
+            int x = ReadByte();
+            while (x != -1 && bytesLeft > 0)
+            {
+                buffer[bytesRead] = cast<byte>(x);
+                ++bytesRead;
+                --bytesLeft;
+                x = ReadByte();
+            }
+            return bytesRead;
+        }
+        public override void Flush()
+        {
+            baseStream.Flush();
+        }
+        public override void Close()
+        {
+            baseStream.Close();
+        }
+        public Stream BaseStream
+        {
+            get { return baseStream; }
+        }
+        private int Get()
+        {
+            if (getbuf != -1)
+            {
+                int x = getbuf;
+                getbuf = -1;
+                return x;
+            }
+            return baseStream.ReadByte();
+        }
+        private void PutBack(byte b)
+        {
+            getbuf = b;
+        }
+        private Stream baseStream;
+        private int getbuf;
+    }
+}

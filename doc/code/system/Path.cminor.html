@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Path.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Collections.Generic</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.IO</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">InvalidPathException</span> <span class="other">:</span> <span class="identifier">Exception</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">InvalidPathException</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">base</span><span class="other">(</span><span class="identifier">message</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">cwd</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">string</span> <span class="identifier">InternalGetCurrentWorkingDirectory</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">GetCurrentWorkingDirectory</span><span class="other">(</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">Path.MakeCanonical</span><span class="other">(</span><span class="identifier">InternalGetCurrentWorkingDirectory</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">Path</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">MakeCanonical</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">StringBuilder</span> <span class="identifier">result</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">char</span> <span class="identifier">prev</span> <span class="other">=</span> <span class="char">&apos; &apos;</span><span class="other">;</span>
+            <span class="keyword">foreach</span> <span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span> <span class="keyword">in</span> <span class="identifier">path</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;\\&apos;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">c</span> <span class="other">=</span> <span class="char">&apos;/&apos;</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;/&apos;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">prev</span> <span class="other">!</span><span class="other">=</span> <span class="char">&apos;/&apos;</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">result.Append</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="identifier">result.Append</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">prev</span> <span class="other">=</span> <span class="identifier">c</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">string</span> <span class="identifier">res</span> <span class="other">=</span> <span class="identifier">result.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">res.Length</span> <span class="other">=</span><span class="other">=</span> <span class="number">3</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="keyword">char</span><span class="other">.</span><span class="identifier">IsCAlpha</span><span class="other">(</span><span class="identifier">res</span><span class="other">[</span><span class="number">0</span><span class="other">]</span><span class="other">)</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">res</span><span class="other">[</span><span class="number">1</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;:&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">res</span><span class="other">[</span><span class="number">2</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;/&apos;</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">res</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">res</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;/&quot;</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">res</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="other">!</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">res</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">res</span><span class="other">[</span><span class="identifier">res.Length</span> <span class="other">-</span> <span class="number">1</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;/&apos;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">res.Substring</span><span class="other">(</span><span class="number">0</span><span class="other">,</span> <span class="identifier">res.Length</span> <span class="other">-</span> <span class="number">1</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="identifier">res</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">ChangeExtension</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">extension</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">lastDotPos</span> <span class="other">=</span> <span class="identifier">path.LastIndexOf</span><span class="other">(</span><span class="char">&apos;.&apos;</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">lastSlashPos</span> <span class="other">=</span> <span class="identifier">path.LastIndexOf</span><span class="other">(</span><span class="char">&apos;/&apos;</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastSlashPos</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">lastDotPos</span> <span class="other">&lt;</span> <span class="identifier">lastSlashPos</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">lastDotPos</span> <span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">extension</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastDotPos</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">path.Substring</span><span class="other">(</span><span class="number">0</span><span class="other">,</span> <span class="identifier">lastDotPos</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">path</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastDotPos</span> <span class="other">=</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">extension</span><span class="other">[</span><span class="number">0</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;.&apos;</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="identifier">path</span> <span class="other">+</span> <span class="identifier">extension</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="identifier">path</span> <span class="other">+</span> <span class="string">&quot;.&quot;</span> <span class="other">+</span> <span class="identifier">extension</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> 
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">extension</span><span class="other">[</span><span class="number">0</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;.&apos;</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="identifier">path.Substring</span><span class="other">(</span><span class="number">0</span><span class="other">,</span> <span class="identifier">lastDotPos</span><span class="other">)</span> <span class="other">+</span> <span class="identifier">extension</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="identifier">path.Substring</span><span class="other">(</span><span class="number">0</span><span class="other">,</span> <span class="identifier">lastDotPos</span> <span class="other">+</span> <span class="number">1</span><span class="other">)</span> <span class="other">+</span> <span class="identifier">extension</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">HasExtension</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">string</span> <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">MakeCanonical</span><span class="other">(</span><span class="identifier">path</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">lastDotPos</span> <span class="other">=</span> <span class="identifier">p.LastIndexOf</span><span class="other">(</span><span class="char">&apos;.&apos;</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastDotPos</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">int</span> <span class="identifier">lastColon</span> <span class="other">=</span> <span class="identifier">p.IndexOf</span><span class="other">(</span><span class="char">&apos;:&apos;</span><span class="other">,</span> <span class="identifier">lastDotPos</span> <span class="other">+</span> <span class="number">1</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">int</span> <span class="identifier">lastDirSep</span> <span class="other">=</span> <span class="identifier">p.IndexOf</span><span class="other">(</span><span class="char">&apos;/&apos;</span><span class="other">,</span> <span class="identifier">lastDotPos</span> <span class="other">+</span> <span class="number">1</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastColon</span> <span class="other">&gt;</span> <span class="identifier">lastDotPos</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">lastDirSep</span> <span class="other">&gt;</span> <span class="identifier">lastDotPos</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastDotPos</span> <span class="other">&lt;</span> <span class="identifier">p.Length</span> <span class="other">-</span> <span class="number">1</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">GetExtension</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">string</span> <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">MakeCanonical</span><span class="other">(</span><span class="identifier">path</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">lastDotPos</span> <span class="other">=</span> <span class="identifier">p.LastIndexOf</span><span class="other">(</span><span class="char">&apos;.&apos;</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastDotPos</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">p.IndexOf</span><span class="other">(</span><span class="char">&apos;/&apos;</span><span class="other">,</span> <span class="identifier">lastDotPos</span> <span class="other">+</span> <span class="number">1</span><span class="other">)</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">string</span><span class="other">.</span><span class="identifier">Empty</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">p.Substring</span><span class="other">(</span><span class="identifier">lastDotPos</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">string</span><span class="other">.</span><span class="identifier">Empty</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">GetFileName</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">path</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">string</span><span class="other">.</span><span class="identifier">Empty</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">string</span> <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">MakeCanonical</span><span class="other">(</span><span class="identifier">path</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">char</span> <span class="identifier">lastChar</span> <span class="other">=</span> <span class="identifier">p</span><span class="other">[</span><span class="identifier">p.Length</span> <span class="other">-</span> <span class="number">1</span><span class="other">]</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastChar</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;/&apos;</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">lastChar</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;:&apos;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">string</span><span class="other">.</span><span class="identifier">Empty</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">int</span> <span class="identifier">lastDirSepPos</span> <span class="other">=</span> <span class="identifier">p.LastIndexOf</span><span class="other">(</span><span class="char">&apos;/&apos;</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastDirSepPos</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="identifier">p.Substring</span><span class="other">(</span><span class="identifier">lastDirSepPos</span> <span class="other">+</span> <span class="number">1</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="keyword">else</span>
+                    <span class="other">{</span>
+                        <span class="keyword">return</span> <span class="identifier">p</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">GetFileNameWithoutExtension</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">string</span> <span class="identifier">fileName</span> <span class="other">=</span> <span class="identifier">GetFileName</span><span class="other">(</span><span class="identifier">path</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">lastDotPos</span> <span class="other">=</span> <span class="identifier">fileName.LastIndexOf</span><span class="other">(</span><span class="char">&apos;.&apos;</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastDotPos</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">fileName.Substring</span><span class="other">(</span><span class="number">0</span><span class="other">,</span> <span class="identifier">lastDotPos</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">fileName</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">GetDirectoryName</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">string</span> <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">MakeCanonical</span><span class="other">(</span><span class="identifier">path</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">p</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">string</span><span class="other">.</span><span class="identifier">Empty</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">p.Length</span> <span class="other">=</span><span class="other">=</span> <span class="number">3</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="keyword">char</span><span class="other">.</span><span class="identifier">IsCAlpha</span><span class="other">(</span><span class="identifier">p</span><span class="other">[</span><span class="number">0</span><span class="other">]</span><span class="other">)</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">p</span><span class="other">[</span><span class="number">1</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;:&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">p</span><span class="other">[</span><span class="number">2</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;/&apos;</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">string</span><span class="other">.</span><span class="identifier">Empty</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">int</span> <span class="identifier">lastDirSepPos</span> <span class="other">=</span> <span class="identifier">p.LastIndexOf</span><span class="other">(</span><span class="char">&apos;/&apos;</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastDirSepPos</span> <span class="other">!</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">p.Substring</span><span class="other">(</span><span class="number">0</span><span class="other">,</span> <span class="identifier">lastDirSepPos</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">string</span><span class="other">.</span><span class="identifier">Empty</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">Combine</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path1</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">path2</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">string</span> <span class="identifier">p1</span> <span class="other">=</span> <span class="identifier">MakeCanonical</span><span class="other">(</span><span class="identifier">path1</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">string</span> <span class="identifier">p2</span> <span class="other">=</span> <span class="identifier">MakeCanonical</span><span class="other">(</span><span class="identifier">path2</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">p1</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">p2</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">p2</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">p1</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">IsAbsolute</span><span class="other">(</span><span class="identifier">p2</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">p2</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> 
+                <span class="other">{</span>
+                    <span class="identifier">StringBuilder</span> <span class="identifier">result</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">result.Append</span><span class="other">(</span><span class="identifier">p1</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">p1</span><span class="other">[</span><span class="identifier">p1.Length</span> <span class="other">-</span> <span class="number">1</span><span class="other">]</span> <span class="other">!</span><span class="other">=</span> <span class="char">&apos;/&apos;</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">result.Append</span><span class="other">(</span><span class="char">&apos;/&apos;</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="identifier">result.Append</span><span class="other">(</span><span class="identifier">p2</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">return</span> <span class="identifier">result.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsAbsolute</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">path</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">string</span> <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">MakeCanonical</span><span class="other">(</span><span class="identifier">path</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">p</span><span class="other">[</span><span class="number">0</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;/&apos;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="keyword">char</span><span class="other">.</span><span class="identifier">IsCAlpha</span><span class="other">(</span><span class="identifier">p</span><span class="other">[</span><span class="number">0</span><span class="other">]</span><span class="other">)</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">p</span><span class="other">[</span><span class="number">1</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;:&apos;</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">p</span><span class="other">[</span><span class="number">2</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;/&apos;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="identifier">IsRelative</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="other">!</span><span class="identifier">IsAbsolute</span><span class="other">(</span><span class="identifier">path</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> <span class="identifier">GetParent</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">string</span> <span class="identifier">fullPath</span> <span class="other">=</span> <span class="identifier">GetFullPath</span><span class="other">(</span><span class="identifier">path</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">int</span> <span class="identifier">lastSlashPos</span> <span class="other">=</span> <span class="identifier">fullPath.LastIndexOf</span><span class="other">(</span><span class="char">&apos;/&apos;</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">lastSlashPos</span> <span class="other">=</span><span class="other">=</span> <span class="other">-</span><span class="number">1</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="keyword">string</span><span class="other">.</span><span class="identifier">Empty</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">fullPath.Substring</span><span class="other">(</span><span class="number">0</span><span class="other">,</span> <span class="identifier">lastSlashPos</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">GetFullPath</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">path</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">string</span> <span class="identifier">cp</span> <span class="other">=</span> <span class="identifier">Path.MakeCanonical</span><span class="other">(</span><span class="identifier">path</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">StringBuilder</span> <span class="identifier">p</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">p.Append</span><span class="other">(</span><span class="identifier">cp</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">Path.IsRelative</span><span class="other">(</span><span class="identifier">cp</span><span class="other">)</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">p.Clear</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">p.Append</span><span class="other">(</span><span class="identifier">GetCurrentWorkingDirectory</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">p.Append</span><span class="other">(</span><span class="char">&apos;/&apos;</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">p.Append</span><span class="other">(</span><span class="identifier">cp</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">string</span><span class="other">&gt;</span> <span class="identifier">components</span> <span class="other">=</span> <span class="identifier">p.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">.</span><span class="identifier">Split</span><span class="other">(</span><span class="char">&apos;/&apos;</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">int</span> <span class="identifier">w</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+        <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">components.Count</span><span class="other">;</span>
+        <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">string</span> <span class="identifier">c</span> <span class="other">=</span> <span class="identifier">components</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">i</span> <span class="other">=</span><span class="other">=</span> <span class="number">0</span> <span class="other">|</span><span class="other">|</span> <span class="other">(</span><span class="other">!</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">c</span> <span class="other">!</span><span class="other">=</span> <span class="string">&quot;.&quot;</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">c</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;..&quot;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="other">-</span><span class="other">-</span><span class="identifier">w</span><span class="other">;</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w</span> <span class="other">&lt;</span> <span class="number">0</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">InvalidPathException</span><span class="other">(</span><span class="string">&quot;path &apos;&quot;</span> <span class="other">+</span> <span class="identifier">path</span> <span class="other">+</span> <span class="string">&quot;&apos; is invalid&quot;</span><span class="other">)</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">i</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="identifier">components</span><span class="other">[</span><span class="identifier">w</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">components</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+                    <span class="other">}</span>
+                    <span class="other">+</span><span class="other">+</span><span class="identifier">w</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w</span> <span class="other">=</span><span class="other">=</span> <span class="number">0</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="string">&quot;/&quot;</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">w</span> <span class="other">=</span><span class="other">=</span> <span class="number">1</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">string</span> <span class="identifier">p</span> <span class="other">=</span> <span class="identifier">components</span><span class="other">[</span><span class="number">0</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">p.Length</span> <span class="other">=</span><span class="other">=</span> <span class="number">2</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="keyword">char</span><span class="other">.</span><span class="identifier">IsCAlpha</span><span class="other">(</span><span class="identifier">p</span><span class="other">[</span><span class="number">0</span><span class="other">]</span><span class="other">)</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">p</span><span class="other">[</span><span class="number">1</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="char">&apos;:&apos;</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">return</span> <span class="identifier">p</span> <span class="other">+</span> <span class="string">&quot;/&quot;</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="identifier">StringBuilder</span> <span class="identifier">result</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">w</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">i</span> <span class="other">!</span><span class="other">=</span> <span class="number">0</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">result.Append</span><span class="other">(</span><span class="char">&apos;/&apos;</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">result.Append</span><span class="other">(</span><span class="identifier">components</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">return</span> <span class="identifier">result.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

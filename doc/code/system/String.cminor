@@ -1,0 +1,280 @@
+using System.Collections.Generic;
+using System.Text;
+
+namespace System
+{
+    public class String : Enumerable
+    {
+        [vmf=ca2s]
+        public extern String(char[] chars);
+        public String(char c, int count) : this(MakeCharArray(c, count))
+        {
+        }
+        public override string ToString()
+        {
+            return this;
+        }
+        public string Substring(int start)
+        {
+            if (start == length)
+            {
+                return Empty;
+            }
+            StringBuilder s = new StringBuilder();
+            for (int i = start; i < length; ++i)
+            {
+                s.Append(this[i]);
+            }
+            return s.ToString();
+        }
+        public string Substring(int start, int len)
+        {
+            StringBuilder s = new StringBuilder();
+            int n = start + len;
+            for (int i = start; i < n; ++i)
+            {
+                s.Append(this[i]);
+            }
+            return s.ToString();
+        }
+        public static string Empty
+        {
+            get { return ""; }
+        }
+        public int IndexOf(char c)
+        {
+            return IndexOf(c, 0);
+        }
+        public int IndexOf(char c, int start)
+        {
+            for (int i = start; i < length; ++i)
+            {
+                if (this[i] == c)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        public int IndexOfAny(char[] chars)
+        {
+            return IndexOfAny(chars, 0);
+        }
+        public int IndexOfAny(char[] chars, int start)
+        {
+            for (int i = start; i < length; ++i)
+            {
+                foreach (char c in chars)
+                {
+                    if (this[i] == c)
+                    {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+        public int LastIndexOf(char c)
+        {
+            return LastIndexOf(c, length - 1);
+        }
+        public int LastIndexOf(char c, int start)
+        {
+            for (int i = start; i >= 0; --i)
+            {
+                if (this[i] == c)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        public int LastIndexOfAny(char[] chars)
+        {
+            return LastIndexOfAny(chars, length - 1);
+        }
+        public int LastIndexOfAny(char[] chars, int start)
+        {
+            for (int i = start; i >= 0; --i)
+            {
+                foreach (char c in chars)
+                {
+                    if (this[i] == c)
+                    {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+        public bool StartsWith(string prefix)
+        {
+            int n = prefix.length;
+            if (length < n)
+            {
+                return false;
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                if (this[i] != prefix[i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public bool EndsWith(string suffix)
+        {
+            int n = length;
+            int m = suffix.length;
+            if (n < m)
+            {
+                return false;
+            }
+            for (int i = 0; i < m; ++i)
+            {
+                if (this[i + n - m] != suffix[i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public List<string> Split(char c)
+        {
+            List<string> result = new List<string>();
+            int start = 0;
+            for (int i = 0; i < length; ++i)
+            {
+                if (this[i] == c)
+                {
+                    result.Add(Substring(start, i - start));
+                    start = i + 1;
+                }
+            }
+            if (start < length)
+            {
+                result.Add(Substring(start));
+            }
+            return result;
+        }
+        public string Trim()
+        {
+            int b = 0;
+            while (b < length && char.IsCSpace(this[b])) 
+            {
+                ++b;
+            }
+            int e = length - 1;
+            while (e >= b && char.IsCSpace(this[e]))
+            {
+                --e;
+            }
+            return Substring(b, e - b + 1);
+        }
+        private const ulong hashOffset = 14695981039346656037u;
+        private const ulong hashPrime = 1099511628211u;
+        public override ulong GetHashCode()
+        {
+            ulong hashCode = hashOffset;
+            for (int i = 0; i < length; ++i)
+            {
+                char c = this[i];
+                hashCode = hashCode ^ cast<ulong>(c);
+                hashCode = hashCode * hashPrime;
+            }
+            return hashCode;
+        }
+        public static bool IsNullOrEmpty(String s)
+        {
+            return s == null || s.Length == 0;
+        }
+        public Enumerator GetEnumerator()
+        {
+            return new StringEnumerator(this);
+        }
+        public int Length
+        {   
+            get { return length; }
+        }
+        private int length;
+    }
+
+    public bool operator==(String left, String right)
+    {
+        int leftLength = 0;
+        if (left != null) leftLength = left.Length;
+        int rightLength = 0;
+        if (right != null) rightLength = right.Length;
+        if (leftLength != rightLength) return false;
+        for (int i = 0; i < leftLength ; ++i)
+        {
+            if (left[i] != right[i]) return false;
+        }
+        return true;
+    }
+
+    public bool operator<(String left, String right)
+    {
+        if (left == null && right == null) return false;
+        if (left == null) return true;
+        if (right == null) return false;
+        int leftLength = left.Length;
+        int rightLength = right.Length;
+        int n = Math.Min(leftLength, rightLength);
+        for (int i = 0; i < n; ++i)
+        {
+            if (left[i] < right[i]) return true;
+            if (left[i] > right[i]) return false;
+        }
+        return leftLength < rightLength;
+    }
+
+    public char[] MakeCharArray(char c, int count)
+    {
+        if (count >= 0)
+        {
+            char[] arr = new char[count];
+            for (int i = 0; i < count; ++i)
+            {
+                arr[i] = c;
+            }
+            return arr;
+        }
+        else
+        {
+            throw new ArgumentOutOfRangeException("invalid array size");
+        }
+    }
+
+    internal class StringEnumerator : Enumerator
+    {
+        public StringEnumerator(String s)
+        {
+            this.s = s;
+            this.index = 0;
+        }
+        public bool AtEnd() 
+        {
+            if (s == null) return true;
+            return index >= s.Length;
+        }
+        public object GetCurrent()
+        {
+            return s[index];
+        }
+        public void MoveNext()
+        {
+            ++index;
+        }
+        private string s;
+        private int index;
+    }
+
+    public string operator+(string left, string right)
+    {
+        StringBuilder s = new StringBuilder();
+        s.Append(left).Append(right);
+        return s.ToString();
+    }
+}

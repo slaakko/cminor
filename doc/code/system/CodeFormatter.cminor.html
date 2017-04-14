@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>CodeFormatter.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.IO</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Text</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">CodeFormatter</span> <span class="other">:</span> <span class="identifier">Closable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">CodeFormatter</span><span class="other">(</span><span class="identifier">StreamWriter</span> <span class="identifier">writer</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">writer</span> <span class="other">=</span> <span class="identifier">writer</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">indent</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">indentSize</span> <span class="other">=</span> <span class="number">4</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">atBeginningOfLine</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="keyword">this</span><span class="other">.</span><span class="identifier">line</span> <span class="other">=</span> <span class="number">1</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Close</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">writer.Close</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">text</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">atBeginningOfLine</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">indent</span> <span class="other">!</span><span class="other">=</span> <span class="number">0</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">writer.Write</span><span class="other">(</span><span class="keyword">new</span> <span class="keyword">string</span><span class="other">(</span><span class="char">&apos; &apos;</span><span class="other">,</span> <span class="identifier">CurrentIndent</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+                    <span class="identifier">atBeginningOfLine</span> <span class="other">=</span> <span class="keyword">false</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="identifier">writer.Write</span><span class="other">(</span><span class="identifier">text</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">text</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">text</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">writer.WriteLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">atBeginningOfLine</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="other">+</span><span class="other">+</span><span class="identifier">line</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">IncIndent</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="other">+</span><span class="other">+</span><span class="identifier">indent</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">DecIndent</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="other">-</span><span class="other">-</span><span class="identifier">indent</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">StreamWriter</span> <span class="identifier">Writer</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">writer</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Indent</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">indent</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">IndentSize</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">indentSize</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">indentSize</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">CurrentIndent</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">indentSize</span> <span class="other">*</span> <span class="identifier">indent</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">AtBeginningOfLine</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">atBeginningOfLine</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Line</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">line</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">line</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Start</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">start</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">start</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">StartText</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">startText</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">startText</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">StreamWriter</span> <span class="identifier">writer</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">indent</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">indentSize</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">bool</span> <span class="identifier">atBeginningOfLine</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">line</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">bool</span> <span class="identifier">start</span><span class="other">;</span>
+        <span class="keyword">private</span> <span class="keyword">string</span> <span class="identifier">startText</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

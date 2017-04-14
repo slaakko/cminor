@@ -1,0 +1,126 @@
+using System;
+
+namespace System.Threading
+{
+    public delegate bool Predicate(object arg);
+    public class delegate bool PredicateMethod(object arg);
+
+    public enum CondVarStatus : byte
+    {
+        timeout, no_timeout
+    }
+
+    public class ConditionVariable
+    {
+        [vmf=initcv]
+        public extern ConditionVariable();
+        
+        [vmf=notifyone]
+        public extern void NotifyOne();
+
+        [vmf=notifyall]
+        public extern void NotifyAll();
+
+        [vmf=waitcv]
+        public extern void Wait(object lck);
+
+        [vmf=waitcvfor]
+        public extern CondVarStatus WaitFor(object lck, Duration dur);
+
+        public CondVarStatus WaitUntil(object lck, TimePoint tp)
+        {
+            Duration dur = tp - Now();
+            return WaitFor(lck, dur);
+        }
+
+        public void Wait(object lck, Predicate predicate, object arg)
+        {
+            while (!predicate(arg))
+            {
+                Wait(lck);
+            }
+        }
+
+        public bool WaitFor(object lck, Predicate predicate, object arg, Duration dur)
+        {
+            while (!predicate(arg))
+            {
+                if (WaitFor(lck, dur) == CondVarStatus.timeout) 
+                {
+                    return predicate(arg);
+                }
+            }
+            return true;
+        }
+
+        public bool WaitUntil(object lck, Predicate predicate, object arg, TimePoint tp)
+        {
+            Duration dur = tp - Now();
+            return WaitFor(lck, predicate, arg, dur);
+        }
+
+        public void Wait(object lck, PredicateMethod predicateMethod, object arg)
+        {
+            while (!predicateMethod(arg))
+            {
+                Wait(lck);
+            }
+        }
+
+        public bool WaitFor(object lck, PredicateMethod predicateMethod, object arg, Duration dur)
+        {
+            while (!predicateMethod(arg))
+            {
+                if (WaitFor(lck, dur) == CondVarStatus.timeout) 
+                {
+                    return predicateMethod(arg);
+                }
+            }
+            return true;
+        }
+
+        public bool WaitUntil(object lck, PredicateMethod predicateMethod, object arg, TimePoint tp)
+        {
+            Duration dur = tp - Now();
+            return WaitFor(lck, predicateMethod, arg, dur);
+        }
+
+        public void Wait(object lck, ref bool condition)
+        {
+            bool cond = condition;
+            while (!cond)
+            {
+                Wait(lck);
+                cond = condition;
+            }
+        }
+
+        public bool WaitFor(object lck, ref bool condition, Duration dur)
+        {
+            bool cond = condition;
+            while (!cond)
+            {
+                if (WaitFor(lck, dur) == CondVarStatus.timeout) 
+                {
+                    cond = condition;
+                    return cond;
+                }
+                cond = condition;
+            }
+            return true;
+        }
+
+        public bool WaitUntil(object lck, ref bool condition, TimePoint tp)
+        {
+            Duration dur = tp - Now();
+            return WaitFor(lck, ref condition, dur);
+        }
+
+        public int Id
+        {
+            get { return id; }
+        }
+
+        private int id;
+    }
+}

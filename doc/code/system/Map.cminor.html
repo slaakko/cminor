@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Map.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System.Collections.Generic</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Map</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="other">:</span> <span class="identifier">Enumerable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Map</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">tree</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">RedBlackTree</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">KeyValuePair</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">,</span> <span class="identifier">ExtractKey</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">Enumerator</span> <span class="identifier">GetEnumerator</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">tree.GetEnumerator</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Clear</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">tree.Clear</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Count</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">tree.Count</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Add</span><span class="other">(</span><span class="identifier">KeyValuePair</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">keyValuePair</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">tree.Add</span><span class="other">(</span><span class="identifier">keyValuePair</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Remove</span><span class="other">(</span><span class="identifier">KeyType</span> <span class="identifier">key</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">tree.Remove</span><span class="other">(</span><span class="identifier">key</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">ContainsKey</span><span class="other">(</span><span class="identifier">KeyType</span> <span class="identifier">key</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">tree.Contains</span><span class="other">(</span><span class="identifier">key</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="identifier">ValueType</span> <span class="keyword">this</span><span class="other">[</span><span class="identifier">KeyType</span> <span class="identifier">key</span><span class="other">]</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span>
+            <span class="other">{</span>
+                <span class="identifier">KeyValuePair</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">pair</span> <span class="other">=</span> <span class="identifier">tree</span><span class="other">[</span><span class="identifier">key</span><span class="other">]</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">pair</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="identifier">pair.Value</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">KeyNotFoundException</span><span class="other">(</span><span class="string">&quot;key &apos;&quot;</span> <span class="other">+</span> <span class="identifier">key.ToString</span><span class="other">(</span><span class="other">)</span> <span class="other">+</span> <span class="string">&quot;&apos; not found&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="identifier">set</span>
+            <span class="other">{</span>
+                <span class="identifier">tree.AddOrReplace</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">KeyValuePair</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">key</span><span class="other">,</span> <span class="identifier">value</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">TryGetValue</span><span class="other">(</span><span class="identifier">KeyType</span> <span class="identifier">key</span><span class="other">,</span> <span class="keyword">ref</span> <span class="identifier">ValueType</span> <span class="identifier">value</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">KeyValuePair</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">&gt;</span> <span class="identifier">pair</span> <span class="other">=</span> <span class="identifier">tree</span><span class="other">[</span><span class="identifier">key</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">pair</span> <span class="other">!</span><span class="other">=</span> <span class="keyword">null</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">value</span> <span class="other">=</span> <span class="identifier">pair.Value</span><span class="other">;</span>
+                <span class="keyword">return</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">return</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="identifier">RedBlackTree</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">KeyValuePair</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">,</span> <span class="identifier">ExtractKey</span><span class="other">&lt;</span><span class="identifier">KeyType</span><span class="other">,</span> <span class="identifier">ValueType</span><span class="other">&gt;</span><span class="other">&gt;</span> <span class="identifier">tree</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>
