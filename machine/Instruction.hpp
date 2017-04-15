@@ -39,24 +39,6 @@ void SetManagedMemoryPool(ManagedMemoryPool* managedMemoryPool_);
 
 class MachineFunctionVisitor;
 
-template<typename T>
-struct ToIntegral
-{
-    typedef uint64_t type;
-};
-
-template<>
-struct ToIntegral<double>
-{
-    typedef double type;
-};
-
-template<>
-struct ToIntegral<float>
-{
-    typedef double type;
-};
-
 class MACHINE_API Instruction
 {
 public:
@@ -172,7 +154,7 @@ public:
     ValueType GetValueType() const override { return type; }
     void Execute(Frame& frame) override
     {
-        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(0), type));
+        frame.OpStack().Push(MakeIntegralValue<uint64_t>(0, type));
     }
     void Dump(CodeFormatter& formatter) override
     {
@@ -203,7 +185,7 @@ public:
         IntegralValue operand = frame.OpStack().Pop();
         Assert(operand.GetType() == type, ValueTypeStr(type) + " operand expected");
         OperandT value = *static_cast<const OperandT*>(operand.ValuePtr());
-        frame.OpStack().Push(IntegralValue(static_cast<ToIntegral<OperandT>::type>(UnaryOpT()(value)), type));
+        frame.OpStack().Push(MakeIntegralValue<OperandT>(UnaryOpT()(value), type));
     }
 };
 
@@ -230,7 +212,7 @@ public:
         Assert(leftOperand.GetType() == type, ValueTypeStr(type) + " operand expected");
         OperandT left = *static_cast<const OperandT*>(leftOperand.ValuePtr());
         OperandT right = *static_cast<const OperandT*>(rightOperand.ValuePtr());
-        frame.OpStack().Push(IntegralValue(static_cast<ToIntegral<OperandT>::type>(BinaryOpT()(left, right)), type));
+        frame.OpStack().Push(MakeIntegralValue<OperandT>(BinaryOpT()(left, right), type));
     }
 };
 
@@ -276,7 +258,7 @@ public:
         OperandT left = *static_cast<const OperandT*>(leftOperand.ValuePtr());
         OperandT right = *static_cast<const OperandT*>(rightOperand.ValuePtr());
         bool result = RelationT()(left, right);
-        frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(result), ValueType::boolType));
+        frame.OpStack().Push(MakeIntegralValue<bool>(result, ValueType::boolType));
     }
 };
 
@@ -744,7 +726,7 @@ public:
         IntegralValue value = frame.OpStack().Pop();
         SourceT source = *static_cast<const SourceT*>(value.ValuePtr());
         TargetT target = static_cast<TargetT>(source);
-        frame.OpStack().Push(IntegralValue(static_cast<ToIntegral<TargetT>::type>(target), type));
+        frame.OpStack().Push(MakeIntegralValue<TargetT>(target, type));
     }
 };
 

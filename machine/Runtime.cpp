@@ -417,7 +417,7 @@ extern "C" MACHINE_API void RtStoreFieldSb(uint64_t objectReference, int8_t fiel
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<uint64_t>(fieldValue), ValueType::sbyteType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<int8_t>(fieldValue, ValueType::sbyteType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -430,7 +430,7 @@ extern "C" MACHINE_API void RtStoreFieldBy(uint64_t objectReference, uint8_t fie
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<uint64_t>(fieldValue), ValueType::byteType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<uint8_t>(fieldValue, ValueType::byteType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -443,7 +443,7 @@ extern "C" MACHINE_API void RtStoreFieldSh(uint64_t objectReference, int16_t fie
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<uint64_t>(fieldValue), ValueType::shortType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<int16_t>(fieldValue, ValueType::shortType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -456,7 +456,7 @@ extern "C" MACHINE_API void RtStoreFieldUs(uint64_t objectReference, uint16_t fi
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<uint64_t>(fieldValue), ValueType::ushortType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<uint16_t>(fieldValue, ValueType::ushortType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -469,7 +469,7 @@ extern "C" MACHINE_API void RtStoreFieldIn(uint64_t objectReference, int32_t fie
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<uint64_t>(fieldValue), ValueType::intType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<int32_t>(fieldValue, ValueType::intType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -482,7 +482,7 @@ extern "C" MACHINE_API void RtStoreFieldUi(uint64_t objectReference, uint32_t fi
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<uint64_t>(fieldValue), ValueType::uintType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<uint32_t>(fieldValue, ValueType::uintType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -495,7 +495,7 @@ extern "C" MACHINE_API void RtStoreFieldLo(uint64_t objectReference, int64_t fie
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<uint64_t>(fieldValue), ValueType::longType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<int64_t>(fieldValue, ValueType::longType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -508,7 +508,7 @@ extern "C" MACHINE_API void RtStoreFieldUl(uint64_t objectReference, uint64_t fi
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<uint64_t>(fieldValue), ValueType::ulongType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<uint64_t>(fieldValue, ValueType::ulongType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -521,7 +521,7 @@ extern "C" MACHINE_API void RtStoreFieldFl(uint64_t objectReference, float field
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<float>(fieldValue), ValueType::floatType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<float>(fieldValue, ValueType::floatType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -534,7 +534,7 @@ extern "C" MACHINE_API void RtStoreFieldDo(uint64_t objectReference, double fiel
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<double>(fieldValue), ValueType::doubleType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<double>(fieldValue, ValueType::doubleType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -547,7 +547,7 @@ extern "C" MACHINE_API void RtStoreFieldCh(uint64_t objectReference, uint32_t fi
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<uint64_t>(fieldValue), ValueType::charType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<char32_t>(fieldValue, ValueType::charType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -560,7 +560,7 @@ extern "C" MACHINE_API void RtStoreFieldBo(uint64_t objectReference, bool fieldV
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<uint64_t>(fieldValue), ValueType::boolType));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<bool>(fieldValue, ValueType::boolType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -573,7 +573,7 @@ extern "C" MACHINE_API void RtStoreFieldOb(uint64_t objectReference, uint64_t fi
     try
     {
         ObjectReference reference(objectReference);
-        GetManagedMemoryPool().SetField(reference, fieldIndex, IntegralValue(static_cast<uint64_t>(fieldValue), ValueType::objectReference));
+        GetManagedMemoryPool().SetField(reference, fieldIndex, MakeIntegralValue<uint64_t>(fieldValue, ValueType::objectReference));
     }
     catch (const NullReferenceException& ex)
     {
@@ -833,8 +833,7 @@ extern "C" MACHINE_API void RtStoreElemSb(uint64_t arrayReference, int8_t elemen
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(static_cast<uint64_t>(elementValue), ValueType::sbyteType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<int8_t>(elementValue, ValueType::sbyteType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -851,8 +850,7 @@ extern "C" MACHINE_API void RtStoreElemBy(uint64_t arrayReference, uint8_t eleme
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(static_cast<uint64_t>(elementValue), ValueType::byteType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<uint8_t>(elementValue, ValueType::byteType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -869,8 +867,7 @@ extern "C" MACHINE_API void RtStoreElemSh(uint64_t arrayReference, int16_t eleme
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(static_cast<uint64_t>(elementValue), ValueType::shortType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<int16_t>(elementValue, ValueType::shortType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -887,8 +884,7 @@ extern "C" MACHINE_API void RtStoreElemUs(uint64_t arrayReference, uint16_t elem
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(static_cast<uint64_t>(elementValue), ValueType::ushortType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<uint16_t>(elementValue, ValueType::ushortType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -905,8 +901,7 @@ extern "C" MACHINE_API void RtStoreElemIn(uint64_t arrayReference, int32_t eleme
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(static_cast<uint64_t>(elementValue), ValueType::intType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<int32_t>(elementValue, ValueType::intType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -923,8 +918,7 @@ extern "C" MACHINE_API void RtStoreElemUi(uint64_t arrayReference, uint32_t elem
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(static_cast<uint64_t>(elementValue), ValueType::uintType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<uint32_t>(elementValue, ValueType::uintType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -941,8 +935,7 @@ extern "C" MACHINE_API void RtStoreElemLo(uint64_t arrayReference, int64_t eleme
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(static_cast<uint64_t>(elementValue), ValueType::longType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<int64_t>(elementValue, ValueType::longType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -959,8 +952,7 @@ extern "C" MACHINE_API void RtStoreElemUl(uint64_t arrayReference, uint64_t elem
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(elementValue, ValueType::ulongType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<uint64_t>(elementValue, ValueType::ulongType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -977,8 +969,7 @@ extern "C" MACHINE_API void RtStoreElemFl(uint64_t arrayReference, float element
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(elementValue, ValueType::floatType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<float>(elementValue, ValueType::floatType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -995,8 +986,7 @@ extern "C" MACHINE_API void RtStoreElemDo(uint64_t arrayReference, double elemen
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(elementValue, ValueType::doubleType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<double>(elementValue, ValueType::doubleType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -1013,8 +1003,7 @@ extern "C" MACHINE_API void RtStoreElemCh(uint64_t arrayReference, uint32_t elem
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(static_cast<uint64_t>(elementValue), ValueType::charType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<char32_t>(elementValue, ValueType::charType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -1031,8 +1020,7 @@ extern "C" MACHINE_API void RtStoreElemBo(uint64_t arrayReference, bool elementV
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(static_cast<uint64_t>(elementValue), ValueType::boolType);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<bool>(elementValue, ValueType::boolType));
     }
     catch (const NullReferenceException& ex)
     {
@@ -1049,8 +1037,7 @@ extern "C" MACHINE_API void RtStoreElemOb(uint64_t arrayReference, uint64_t elem
     try
     {
         ObjectReference reference(arrayReference);
-        IntegralValue value(elementValue, ValueType::objectReference);
-        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, value);
+        GetManagedMemoryPool().SetArrayElement(reference, elementIndex, MakeIntegralValue<uint64_t>(elementValue, ValueType::objectReference));
     }
     catch (const NullReferenceException& ex)
     {
@@ -1165,8 +1152,7 @@ extern "C" MACHINE_API void RtVmCall(void* function, void* constantPool, uint32_
         Frame* frame = new (frameMem.get()) Frame(frameSize, thread, *fun);
         for (int i = 0; i < numLocals; ++i)
         {
-            IntegralValue value(vmCallContext->locals[i], ValueType(vmCallContext->localTypes[i]));
-            frame->Local(i).SetValue(value);
+            frame->Local(i).SetValue(MakeIntegralValue<uint64_t>(vmCallContext->locals[i], ValueType(vmCallContext->localTypes[i])));
         }
         ConstantPool* cpool = static_cast<ConstantPool*>(constantPool);
         ConstantId vmFunctionNameConstantId(vmFunctionNameId);
@@ -1347,7 +1333,7 @@ extern "C" MACHINE_API uint64_t RtStrLitToString(const char32_t* strLitValue)
         ObjectReference objectReference = memoryPool.CreateObject(thread, classData->Type(), lock);
         AllocationHandle charsHandle = memoryPool.CreateStringCharsFromLiteral(thread, strLitValue, len, lock);
 		memoryPool.SetField(objectReference, 0, IntegralValue(classData), lock);
-		memoryPool.SetField(objectReference, 1, IntegralValue(static_cast<uint64_t>(static_cast<int32_t>(len)), ValueType::intType), lock);
+		memoryPool.SetField(objectReference, 1, MakeIntegralValue<int32_t>(len, ValueType::intType), lock);
 		memoryPool.SetField(objectReference, 2, charsHandle, lock);
         return objectReference.Value();
     }
@@ -1810,8 +1796,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldSb(void* classDataPtr, int8_t fiel
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(static_cast<uint64_t>(fieldValue), ValueType::sbyteType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<int8_t>(fieldValue, ValueType::sbyteType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -1833,8 +1818,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldBy(void* classDataPtr, uint8_t fie
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(static_cast<uint64_t>(fieldValue), ValueType::byteType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<uint8_t>(fieldValue, ValueType::byteType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -1856,8 +1840,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldSh(void* classDataPtr, int16_t fie
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(static_cast<uint64_t>(fieldValue), ValueType::shortType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<int16_t>(fieldValue, ValueType::shortType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -1879,8 +1862,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldUs(void* classDataPtr, uint16_t fi
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(static_cast<uint64_t>(fieldValue), ValueType::ushortType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<uint16_t>(fieldValue, ValueType::ushortType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -1902,8 +1884,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldIn(void* classDataPtr, int32_t fie
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(static_cast<uint64_t>(fieldValue), ValueType::intType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<int32_t>(fieldValue, ValueType::intType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -1925,8 +1906,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldUI(void* classDataPtr, uint32_t fi
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(static_cast<uint64_t>(fieldValue), ValueType::uintType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<uint32_t>(fieldValue, ValueType::uintType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -1948,8 +1928,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldLo(void* classDataPtr, int64_t fie
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(static_cast<uint64_t>(fieldValue), ValueType::longType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<int64_t>(fieldValue, ValueType::longType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -1971,8 +1950,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldUl(void* classDataPtr, uint64_t fi
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(fieldValue, ValueType::ulongType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<uint64_t>(fieldValue, ValueType::ulongType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -1994,8 +1972,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldFl(void* classDataPtr, float field
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(fieldValue, ValueType::floatType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<float>(fieldValue, ValueType::floatType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -2017,8 +1994,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldDo(void* classDataPtr, double fiel
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(fieldValue, ValueType::doubleType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<double>(fieldValue, ValueType::doubleType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -2040,8 +2016,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldCh(void* classDataPtr, uint32_t fi
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(static_cast<uint64_t>(fieldValue), ValueType::charType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<char32_t>(fieldValue, ValueType::charType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -2063,8 +2038,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldBo(void* classDataPtr, bool fieldV
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(static_cast<uint64_t>(fieldValue), ValueType::boolType);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<bool>(fieldValue, ValueType::boolType), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -2086,8 +2060,7 @@ extern "C" MACHINE_API void RtStoreStaticFieldOb(void* classDataPtr, uint64_t fi
         {
             throw SystemException("static data pointer not set");
         }
-        IntegralValue value(fieldValue, ValueType::objectReference);
-        staticClassData->SetStaticField(value, fieldIndex);
+        staticClassData->SetStaticField(MakeIntegralValue<uint64_t>(fieldValue, ValueType::objectReference), fieldIndex);
     }
     catch (const SystemException& ex)
     {
@@ -2106,8 +2079,7 @@ extern "C" MACHINE_API uint64_t RtBoxSb(int8_t value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::sbyteType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(static_cast<uint64_t>(value), ValueType::sbyteType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<int8_t>(value, ValueType::sbyteType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)
@@ -2132,8 +2104,7 @@ extern "C" MACHINE_API uint64_t RtBoxBy(uint8_t value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::byteType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(static_cast<uint64_t>(value), ValueType::byteType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<uint8_t>(value, ValueType::byteType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)
@@ -2158,8 +2129,7 @@ extern "C" MACHINE_API uint64_t RtBoxSh(int16_t value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::shortType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(static_cast<uint64_t>(value), ValueType::shortType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<int16_t>(value, ValueType::shortType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)
@@ -2184,8 +2154,7 @@ extern "C" MACHINE_API uint64_t RtBoxUs(uint16_t value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::ushortType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(static_cast<uint64_t>(value), ValueType::ushortType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<uint16_t>(value, ValueType::ushortType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)
@@ -2210,8 +2179,7 @@ extern "C" MACHINE_API uint64_t RtBoxIn(int32_t value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::intType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(static_cast<uint64_t>(value), ValueType::intType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<int32_t>(value, ValueType::intType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)
@@ -2236,8 +2204,7 @@ extern "C" MACHINE_API uint64_t RtBoxUi(uint32_t value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::uintType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(static_cast<uint64_t>(value), ValueType::uintType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<uint32_t>(value, ValueType::uintType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)
@@ -2262,8 +2229,7 @@ extern "C" MACHINE_API uint64_t RtBoxLo(int64_t value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::longType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(static_cast<uint64_t>(value), ValueType::longType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<int64_t>(value, ValueType::longType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)
@@ -2288,8 +2254,7 @@ extern "C" MACHINE_API uint64_t RtBoxUl(uint64_t value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::ulongType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(value, ValueType::ulongType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<uint64_t>(value, ValueType::ulongType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)
@@ -2314,8 +2279,7 @@ extern "C" MACHINE_API uint64_t RtBoxFl(float value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::floatType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(value, ValueType::floatType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<float>(value, ValueType::floatType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)
@@ -2340,8 +2304,7 @@ extern "C" MACHINE_API uint64_t RtBoxDo(double value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::doubleType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(value, ValueType::doubleType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<double>(value, ValueType::doubleType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)
@@ -2366,8 +2329,7 @@ extern "C" MACHINE_API uint64_t RtBoxCh(uint32_t value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::charType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(static_cast<uint64_t>(value), ValueType::charType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<char32_t>(value, ValueType::charType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)
@@ -2392,8 +2354,7 @@ extern "C" MACHINE_API uint64_t RtBoxBo(bool value)
         ClassData* classData = GetClassDataForBoxedType(ValueType::boolType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
-        IntegralValue val(static_cast<uint64_t>(value), ValueType::boolType);
-        memoryPool.SetField(objectReference, 1, val, lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<bool>(value, ValueType::boolType), lock);
         return objectReference.Value();
     }
     catch (const NullReferenceException& ex)

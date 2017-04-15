@@ -210,7 +210,7 @@ void ExpressionBinder::Visit(ObjectNode& objectNode)
 void ExpressionBinder::Visit(BooleanLiteralNode& booleanLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Boolean");
-    Constant value(IntegralValue(static_cast<uint64_t>(booleanLiteralNode.Value()), ValueType::boolType));
+    Constant value(MakeIntegralValue<bool>(booleanLiteralNode.Value(), ValueType::boolType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -220,7 +220,7 @@ void ExpressionBinder::Visit(BooleanLiteralNode& booleanLiteralNode)
 void ExpressionBinder::Visit(SByteLiteralNode& sbyteLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int8");
-    Constant value(IntegralValue(static_cast<uint64_t>(sbyteLiteralNode.Value()), ValueType::sbyteType));
+    Constant value(MakeIntegralValue<int8_t>(sbyteLiteralNode.Value(), ValueType::sbyteType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -230,7 +230,7 @@ void ExpressionBinder::Visit(SByteLiteralNode& sbyteLiteralNode)
 void ExpressionBinder::Visit(ByteLiteralNode& byteLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt8");
-    Constant value(IntegralValue(static_cast<uint64_t>(byteLiteralNode.Value()), ValueType::byteType));
+    Constant value(MakeIntegralValue<uint8_t>(byteLiteralNode.Value(), ValueType::byteType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -240,7 +240,7 @@ void ExpressionBinder::Visit(ByteLiteralNode& byteLiteralNode)
 void ExpressionBinder::Visit(ShortLiteralNode& shortLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int16");
-    Constant value(IntegralValue(static_cast<uint64_t>(shortLiteralNode.Value()), ValueType::shortType));
+    Constant value(MakeIntegralValue<int16_t>(shortLiteralNode.Value(), ValueType::shortType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -250,7 +250,7 @@ void ExpressionBinder::Visit(ShortLiteralNode& shortLiteralNode)
 void ExpressionBinder::Visit(UShortLiteralNode& ushortLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt16");
-    Constant value(IntegralValue(static_cast<uint64_t>(ushortLiteralNode.Value()), ValueType::ushortType));
+    Constant value(MakeIntegralValue<uint16_t>(ushortLiteralNode.Value(), ValueType::ushortType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -260,7 +260,7 @@ void ExpressionBinder::Visit(UShortLiteralNode& ushortLiteralNode)
 void ExpressionBinder::Visit(IntLiteralNode& intLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int32");
-    Constant value(IntegralValue(static_cast<uint64_t>(intLiteralNode.Value()), ValueType::intType));
+    Constant value(MakeIntegralValue<int32_t>(intLiteralNode.Value(), ValueType::intType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -270,7 +270,7 @@ void ExpressionBinder::Visit(IntLiteralNode& intLiteralNode)
 void ExpressionBinder::Visit(UIntLiteralNode& uintLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt32");
-    Constant value(IntegralValue(static_cast<uint64_t>(uintLiteralNode.Value()), ValueType::uintType));
+    Constant value(MakeIntegralValue<uint32_t>(uintLiteralNode.Value(), ValueType::uintType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -280,7 +280,7 @@ void ExpressionBinder::Visit(UIntLiteralNode& uintLiteralNode)
 void ExpressionBinder::Visit(LongLiteralNode& longLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Int64");
-    Constant value(IntegralValue(static_cast<uint64_t>(longLiteralNode.Value()), ValueType::longType));
+    Constant value(MakeIntegralValue<int64_t>(longLiteralNode.Value(), ValueType::longType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -290,7 +290,7 @@ void ExpressionBinder::Visit(LongLiteralNode& longLiteralNode)
 void ExpressionBinder::Visit(ULongLiteralNode& ulongLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.UInt64");
-    Constant value(IntegralValue(ulongLiteralNode.Value(), ValueType::ulongType));
+    Constant value(MakeIntegralValue<uint64_t>(ulongLiteralNode.Value(), ValueType::ulongType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -300,9 +300,7 @@ void ExpressionBinder::Visit(ULongLiteralNode& ulongLiteralNode)
 void ExpressionBinder::Visit(FloatLiteralNode& floatLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Float");
-#pragma warning(disable : 4244)
-    Constant value(IntegralValue(floatLiteralNode.Value(), ValueType::floatType));
-#pragma warning(default : 4244)
+    Constant value(MakeIntegralValue<float>(floatLiteralNode.Value(), ValueType::floatType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -312,9 +310,7 @@ void ExpressionBinder::Visit(FloatLiteralNode& floatLiteralNode)
 void ExpressionBinder::Visit(DoubleLiteralNode& doubleLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Double");
-#pragma warning(disable : 4244)
-    Constant value(IntegralValue(doubleLiteralNode.Value(), ValueType::doubleType));
-#pragma warning(default : 4244)
+    Constant value(MakeIntegralValue<double>(doubleLiteralNode.Value(), ValueType::doubleType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -324,7 +320,7 @@ void ExpressionBinder::Visit(DoubleLiteralNode& doubleLiteralNode)
 void ExpressionBinder::Visit(CharLiteralNode& charLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Char");
-    Constant value(IntegralValue(static_cast<uint64_t>(charLiteralNode.Value()), ValueType::charType));
+    Constant value(MakeIntegralValue<char32_t>(charLiteralNode.Value(), ValueType::charType));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));
@@ -347,7 +343,7 @@ void ExpressionBinder::Visit(NullLiteralNode& nullLiteralNode)
 {
     TypeSymbol* type = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.@nullref");
     AllocationHandle nullReference;
-    Constant value(IntegralValue(nullReference.Value(), ValueType::objectReference));
+    Constant value(MakeIntegralValue<uint64_t>(nullReference.Value(), ValueType::objectReference));
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     ConstantId id = constantPool.Install(value);
     BoundLiteral* boundLiteral = new BoundLiteral(boundCompileUnit.GetAssembly(), type, constantPool.GetConstant(id));

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>hexdump.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.IO</span><span class="other">;</span>
+
+<span class="keyword">const</span> <span class="keyword">int</span> <span class="identifier">bytesInLine</span> <span class="other">=</span> <span class="number">16</span><span class="other">;</span>
+
+<span class="keyword">void</span> <span class="identifier">HexDump</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">fileName</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">bytes</span> <span class="other">=</span> <span class="keyword">new</span> <span class="keyword">byte</span><span class="other">[</span><span class="identifier">bytesInLine</span><span class="other">]</span><span class="other">;</span>
+    <span class="keyword">uint</span> <span class="identifier">addr</span> <span class="other">=</span> <span class="number">0u</span><span class="other">;</span>
+    <span class="keyword">using</span> <span class="other">(</span><span class="identifier">BinaryReader</span> <span class="identifier">reader</span> <span class="other">=</span> <span class="identifier">File.OpenBinary</span><span class="other">(</span><span class="identifier">fileName</span><span class="other">)</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">int</span> <span class="identifier">size</span> <span class="other">=</span> <span class="identifier">reader.StreamSize</span><span class="other">;</span>
+        <span class="keyword">int</span> <span class="identifier">numRows</span> <span class="other">=</span> <span class="identifier">size</span> <span class="other">/</span> <span class="identifier">bytesInLine</span><span class="other">;</span>
+        <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">numRows</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">j</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">j</span> <span class="other">&lt;</span> <span class="identifier">bytesInLine</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">j</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">bytes</span><span class="other">[</span><span class="identifier">j</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">reader.ReadByte</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="identifier">HexDumpLine</span><span class="other">(</span><span class="identifier">addr</span><span class="other">,</span> <span class="identifier">bytes</span><span class="other">,</span> <span class="identifier">bytesInLine</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">addr</span> <span class="other">=</span> <span class="identifier">addr</span> <span class="other">+</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bytesInLine</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">int</span> <span class="identifier">rest</span> <span class="other">=</span> <span class="identifier">size</span> <span class="other">%</span> <span class="identifier">bytesInLine</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">rest</span> <span class="other">!</span><span class="other">=</span> <span class="number">0</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">j</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">j</span> <span class="other">&lt;</span> <span class="identifier">rest</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">j</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">bytes</span><span class="other">[</span><span class="identifier">j</span><span class="other">]</span> <span class="other">=</span> <span class="identifier">reader.ReadByte</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="identifier">HexDumpLine</span><span class="other">(</span><span class="identifier">addr</span><span class="other">,</span> <span class="identifier">bytes</span><span class="other">,</span> <span class="identifier">rest</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+
+<span class="keyword">string</span> <span class="identifier">HexDumpLine</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">addr</span><span class="other">,</span> <span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">bytes</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">numBytes</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="identifier">StringBuilder</span> <span class="identifier">lineBuilder</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="identifier">lineBuilder.Append</span><span class="other">(</span><span class="identifier">HexAddr</span><span class="other">(</span><span class="identifier">addr</span><span class="other">)</span><span class="other">)</span><span class="other">.</span><span class="identifier">Append</span><span class="other">(</span><span class="string">&quot;: &quot;</span><span class="other">)</span><span class="other">;</span>
+    <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">bytesInLine</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">i</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">bytesInLine</span> <span class="other">/</span> <span class="number">2</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">lineBuilder.Append</span><span class="other">(</span><span class="string">&quot;- &quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">numBytes</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">lineBuilder.Append</span><span class="other">(</span><span class="keyword">byte</span><span class="other">.</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="identifier">bytes</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="identifier">lineBuilder.Append</span><span class="other">(</span><span class="string">&quot;  &quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="identifier">lineBuilder.Append</span><span class="other">(</span><span class="char">&apos; &apos;</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="identifier">lineBuilder.Append</span><span class="other">(</span><span class="char">&apos;|&apos;</span><span class="other">)</span><span class="other">;</span>
+    <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">bytesInLine</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">char</span> <span class="identifier">c</span> <span class="other">=</span> <span class="char">&apos; &apos;</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">numBytes</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">char</span> <span class="identifier">b</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">char</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">bytes</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="keyword">char</span><span class="other">.</span><span class="identifier">IsCPrintable</span><span class="other">(</span><span class="identifier">b</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">c</span> <span class="other">=</span> <span class="identifier">b</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="identifier">lineBuilder.Append</span><span class="other">(</span><span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="identifier">lineBuilder.Append</span><span class="other">(</span><span class="char">&apos;|&apos;</span><span class="other">)</span><span class="other">;</span>
+    <span class="keyword">return</span> <span class="identifier">lineBuilder.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+
+<span class="keyword">string</span> <span class="identifier">HexAddr</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">addr</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="keyword">return</span> <span class="keyword">byte</span><span class="other">.</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">addr</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">24u</span><span class="other">)</span><span class="other">)</span> <span class="other">+</span>
+        <span class="keyword">byte</span><span class="other">.</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">addr</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">16u</span><span class="other">)</span><span class="other">)</span> <span class="other">+</span>
+        <span class="keyword">byte</span><span class="other">.</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">addr</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="number">8u</span><span class="other">)</span><span class="other">)</span> <span class="other">+</span>
+        <span class="keyword">byte</span><span class="other">.</span><span class="identifier">ToHexString</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">byte</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">addr</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+
+<span class="keyword">int</span> <span class="identifier">main</span><span class="other">(</span><span class="keyword">string</span><span class="other">[</span><span class="other">]</span> <span class="identifier">args</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="keyword">try</span>
+    <span class="other">{</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">args.Length</span> <span class="other">!</span><span class="other">=</span> <span class="number">1</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">args</span><span class="other">[</span><span class="number">0</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;-h&quot;</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">args</span><span class="other">[</span><span class="number">0</span><span class="other">]</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;--help&quot;</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;usage: hexdump &lt;filename&gt;&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">else</span>
+        <span class="other">{</span>
+            <span class="keyword">string</span> <span class="identifier">fileName</span> <span class="other">=</span> <span class="identifier">args</span><span class="other">[</span><span class="number">0</span><span class="other">]</span><span class="other">;</span>
+            <span class="identifier">HexDump</span><span class="other">(</span><span class="identifier">fileName</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+    <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">Exception</span> <span class="identifier">ex</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">Console.Error.WriteLine</span><span class="other">(</span><span class="identifier">ex.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">return</span> <span class="number">1</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">return</span> <span class="number">0</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

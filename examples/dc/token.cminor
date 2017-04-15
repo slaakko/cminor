@@ -1,0 +1,63 @@
+using System;
+
+namespace Calculator
+{
+    public abstract class Token
+    {
+    }
+
+    public class PrintToken : Token
+    {
+    }
+
+    public class NumberToken : Token
+    {
+        public NumberToken(double value)
+        {
+            this.value = value;
+        }
+        public double Value
+        {
+            get { return this.value; }
+        }
+        private double value;
+    }
+
+    public class VariableNameToken : Token
+    {
+        public VariableNameToken(string variableName)
+        {
+            this.variableName = variableName;
+        }
+        public string VariableName
+        {
+            get { return variableName; }
+        }
+        private string variableName;
+    }
+
+    public class OperatorToken : Token
+    {
+        public OperatorToken(char operatorChar)
+        {
+            this.operatorChar = operatorChar;
+        }
+        public char Char
+        {
+            get { return operatorChar; }
+        }
+        public bool IsAdditiveOperator
+        {
+            get { return operatorChar == '+' || operatorChar == '-'; }
+        }
+        public bool IsMultiplicativeOperator
+        {
+            get { return operatorChar == '*' || operatorChar == '/'; }
+        }
+        private char operatorChar;
+    }
+
+    public class EndToken : Token
+    {
+    }
+}

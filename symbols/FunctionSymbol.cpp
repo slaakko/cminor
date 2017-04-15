@@ -1202,7 +1202,7 @@ void ClassToInterfaceConversion::GenerateCall(Machine& machine, Assembly& assemb
     std::unique_ptr<Instruction> dupInst;
     dupInst = machine.CreateInst("dup");
     function.AddInst(std::move(dupInst));
-    Constant itabIndexConstant(IntegralValue(static_cast<uint64_t>(itabIndex), ValueType::intType));
+    Constant itabIndexConstant(MakeIntegralValue<int32_t>(itabIndex, ValueType::intType));
     ConstantId itabIndexId = constantPool.Install(itabIndexConstant);
     std::unique_ptr<Instruction> loadConstant;
     if (itabIndexId.Value() < 256)

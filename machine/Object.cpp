@@ -74,20 +74,18 @@ void IntegralValue::Read(Reader& reader)
     type = static_cast<ValueType>(reader.GetByte());
     switch (type)
     {
-        case ValueType::boolType: value = reader.GetBool(); break;
-        case ValueType::sbyteType: value = reader.GetSByte(); break;
-        case ValueType::byteType: value = reader.GetByte(); break;
-        case ValueType::shortType: value = reader.GetShort(); break;
-        case ValueType::ushortType: value = reader.GetUShort(); break;
-        case ValueType::intType: value = reader.GetInt(); break;
-        case ValueType::uintType: value = reader.GetUInt(); break;
-        case ValueType::longType: value = reader.GetLong(); break;
-        case ValueType::ulongType: value = reader.GetULong(); break;
-#pragma warning(disable : 4244)
-        case ValueType::floatType: dblValue = reader.GetFloat(); break;
-        case ValueType::doubleType: dblValue = reader.GetDouble(); break;
-#pragma warning(default : 4244)
-        case ValueType::charType: value = reader.GetChar(); break;
+        case ValueType::boolType: *static_cast<bool*>(ValuePtr()) = reader.GetBool(); break;
+        case ValueType::sbyteType: *static_cast<int8_t*>(ValuePtr()) = reader.GetSByte(); break;
+        case ValueType::byteType: *static_cast<uint8_t*>(ValuePtr()) = reader.GetByte(); break;
+        case ValueType::shortType: *static_cast<int16_t*>(ValuePtr()) = reader.GetShort(); break;
+        case ValueType::ushortType: *static_cast<uint16_t*>(ValuePtr()) = reader.GetUShort(); break;
+        case ValueType::intType: *static_cast<int32_t*>(ValuePtr()) = reader.GetInt(); break;
+        case ValueType::uintType: *static_cast<uint32_t*>(ValuePtr()) = reader.GetUInt(); break;
+        case ValueType::longType: *static_cast<int64_t*>(ValuePtr()) = reader.GetLong(); break;
+        case ValueType::ulongType: *static_cast<uint64_t*>(ValuePtr()) = reader.GetULong(); break;
+        case ValueType::floatType: *static_cast<float*>(ValuePtr()) = reader.GetFloat(); break;
+        case ValueType::doubleType: *static_cast<double*>(ValuePtr()) = reader.GetDouble(); break;
+        case ValueType::charType: *static_cast<char32_t*>(ValuePtr()) = reader.GetChar(); break;
         case ValueType::stringLiteral: /* do not read yet */ break;
         case ValueType::allocationHandle: throw SystemException("read allocation handle");  break;
         case ValueType::objectReference: value = reader.GetULong(); if (value != 0) throw SystemException("read nonull object reference"); break;
@@ -113,10 +111,8 @@ std::string IntegralValue::ValueStr()
         case ValueType::uintType: return std::to_string(AsUInt());
         case ValueType::longType: return std::to_string(AsLong());
         case ValueType::ulongType: return std::to_string(AsULong());
-    #pragma warning(disable : 4244)
         case ValueType::floatType: return std::to_string(AsFloat());
         case ValueType::doubleType: return std::to_string(AsDouble());
-    #pragma warning(default : 4244)
         case ValueType::charType: return "'" + UCharStr(AsChar()) + "'";
         case ValueType::memPtr: return ToHexString(AsULong());
         case ValueType::stringLiteral: return "\"" + StringStr(ToUtf8(AsStringLiteral())) + "\"";
@@ -163,26 +159,26 @@ IntegralValue GetObjectField(void* object, int index)
     void* fieldPtr = static_cast<uint8_t*>(object) + field.Offset().Value();
     switch (field.GetType())
     {
-        case ValueType::boolType: return IntegralValue(static_cast<uint64_t>(*static_cast<bool*>(fieldPtr)), field.GetType());
-        case ValueType::sbyteType: return IntegralValue(static_cast<uint64_t>(*static_cast<int8_t*>(fieldPtr)), field.GetType());
-        case ValueType::byteType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint8_t*>(fieldPtr)), field.GetType());
-        case ValueType::shortType: return IntegralValue(static_cast<uint64_t>(*static_cast<int16_t*>(fieldPtr)), field.GetType());
-        case ValueType::ushortType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint16_t*>(fieldPtr)), field.GetType());
-        case ValueType::intType: return IntegralValue(static_cast<uint64_t>(*static_cast<int32_t*>(fieldPtr)), field.GetType());
-        case ValueType::uintType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint32_t*>(fieldPtr)), field.GetType());
-        case ValueType::longType: return IntegralValue(static_cast<uint64_t>(*static_cast<int64_t*>(fieldPtr)), field.GetType());
-        case ValueType::ulongType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint64_t*>(fieldPtr)), field.GetType());
-        case ValueType::floatType: return IntegralValue(static_cast<double>(*static_cast<float*>(fieldPtr)), field.GetType());
-        case ValueType::doubleType: return IntegralValue(static_cast<double>(*static_cast<double*>(fieldPtr)), field.GetType());
-        case ValueType::charType: return IntegralValue(static_cast<uint64_t>(*static_cast<char32_t*>(fieldPtr)), field.GetType());
+        case ValueType::boolType: return MakeIntegralValue<bool>(*static_cast<bool*>(fieldPtr), field.GetType());
+        case ValueType::sbyteType: return MakeIntegralValue<int8_t>(*static_cast<int8_t*>(fieldPtr), field.GetType());
+        case ValueType::byteType: return MakeIntegralValue<uint8_t>(*static_cast<uint8_t*>(fieldPtr), field.GetType());
+        case ValueType::shortType: return MakeIntegralValue<int16_t>(*static_cast<int16_t*>(fieldPtr), field.GetType());
+        case ValueType::ushortType: return MakeIntegralValue<uint16_t>(*static_cast<uint16_t*>(fieldPtr), field.GetType());
+        case ValueType::intType: return MakeIntegralValue<int32_t>(*static_cast<int32_t*>(fieldPtr), field.GetType());
+        case ValueType::uintType: return MakeIntegralValue<uint32_t>(*static_cast<uint32_t*>(fieldPtr), field.GetType());
+        case ValueType::longType: return MakeIntegralValue<int64_t>(*static_cast<int64_t*>(fieldPtr), field.GetType());
+        case ValueType::ulongType: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(fieldPtr), field.GetType());
+        case ValueType::floatType: return MakeIntegralValue<float>(*static_cast<float*>(fieldPtr), field.GetType());
+        case ValueType::doubleType: return MakeIntegralValue<double>(*static_cast<double*>(fieldPtr), field.GetType());
+        case ValueType::charType: return MakeIntegralValue<char32_t>(*static_cast<char32_t*>(fieldPtr), field.GetType());
         case ValueType::memPtr: return IntegralValue(static_cast<uint8_t*>(fieldPtr));
         case ValueType::classDataPtr: return IntegralValue(*static_cast<ClassData**>(fieldPtr));
         case ValueType::typePtr: return IntegralValue(*static_cast<ObjectType**>(fieldPtr));
         case ValueType::stringLiteral: return IntegralValue(static_cast<const char32_t*>(fieldPtr));
-        case ValueType::allocationHandle: return IntegralValue(*static_cast<uint64_t*>(fieldPtr), field.GetType());
-        case ValueType::objectReference: return IntegralValue(*static_cast<uint64_t*>(fieldPtr), field.GetType());
+        case ValueType::allocationHandle: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(fieldPtr), field.GetType());
+        case ValueType::objectReference: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(fieldPtr), field.GetType());
         case ValueType::functionPtr: return IntegralValue(*static_cast<Function**>(fieldPtr));
-        default: return IntegralValue(*static_cast<uint64_t*>(fieldPtr), field.GetType());
+        default: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(fieldPtr), field.GetType());
     }
 }
 
@@ -286,25 +282,25 @@ MACHINE_API IntegralValue GetElement(void* arrayElements, int32_t index)
     void* elementPtr = static_cast<uint8_t*>(arrayElements) + ValueSize(valueType) * index;
     switch (valueType)
     {
-        case ValueType::boolType: return IntegralValue(static_cast<uint64_t>(*static_cast<bool*>(elementPtr)), valueType);
-        case ValueType::sbyteType: return IntegralValue(static_cast<uint64_t>(*static_cast<int8_t*>(elementPtr)), valueType);
-        case ValueType::byteType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint8_t*>(elementPtr)), valueType);
-        case ValueType::shortType: return IntegralValue(static_cast<uint64_t>(*static_cast<int16_t*>(elementPtr)), valueType);
-        case ValueType::ushortType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint16_t*>(elementPtr)), valueType);
-        case ValueType::intType: return IntegralValue(static_cast<uint64_t>(*static_cast<int32_t*>(elementPtr)), valueType);
-        case ValueType::uintType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint32_t*>(elementPtr)), valueType);
-        case ValueType::longType: return IntegralValue(static_cast<uint64_t>(*static_cast<int64_t*>(elementPtr)), valueType);
-        case ValueType::ulongType: return IntegralValue(static_cast<uint64_t>(*static_cast<uint64_t*>(elementPtr)), valueType);
-        case ValueType::floatType: return IntegralValue(static_cast<double>(*static_cast<float*>(elementPtr)), valueType);
-        case ValueType::doubleType: return IntegralValue(static_cast<double>(*static_cast<double*>(elementPtr)), valueType);
-        case ValueType::charType: return IntegralValue(static_cast<uint64_t>(*static_cast<char32_t*>(elementPtr)), valueType);
+        case ValueType::boolType: return MakeIntegralValue<bool>(*static_cast<bool*>(elementPtr), valueType);
+        case ValueType::sbyteType: return MakeIntegralValue<int8_t>(*static_cast<int8_t*>(elementPtr), valueType);
+        case ValueType::byteType: return MakeIntegralValue<uint8_t>(*static_cast<uint8_t*>(elementPtr), valueType);
+        case ValueType::shortType: return MakeIntegralValue<int16_t>(*static_cast<int16_t*>(elementPtr), valueType);
+        case ValueType::ushortType: return MakeIntegralValue<uint16_t>(*static_cast<uint16_t*>(elementPtr), valueType);
+        case ValueType::intType: return MakeIntegralValue<int32_t>(*static_cast<int32_t*>(elementPtr), valueType);
+        case ValueType::uintType: return MakeIntegralValue<uint32_t>(*static_cast<uint32_t*>(elementPtr), valueType);
+        case ValueType::longType: return MakeIntegralValue<int64_t>(*static_cast<int64_t*>(elementPtr), valueType);
+        case ValueType::ulongType: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(elementPtr), valueType);
+        case ValueType::floatType: return MakeIntegralValue<float>(*static_cast<float*>(elementPtr), valueType);
+        case ValueType::doubleType: return MakeIntegralValue<double>(*static_cast<double*>(elementPtr), valueType);
+        case ValueType::charType: return MakeIntegralValue<char32_t>(*static_cast<char32_t*>(elementPtr), valueType);
         case ValueType::memPtr: return IntegralValue(static_cast<uint8_t*>(elementPtr));
         case ValueType::classDataPtr: return IntegralValue(*static_cast<ClassData**>(elementPtr));
         case ValueType::typePtr: return IntegralValue(*static_cast<ObjectType**>(elementPtr));
         case ValueType::stringLiteral: return IntegralValue(static_cast<const char32_t*>(elementPtr));
-        case ValueType::allocationHandle: return IntegralValue(*static_cast<uint64_t*>(elementPtr), valueType);
-        case ValueType::objectReference: return IntegralValue(*static_cast<uint64_t*>(elementPtr), valueType);
-        default: return IntegralValue(*static_cast<uint64_t*>(elementPtr), valueType);
+        case ValueType::allocationHandle: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(elementPtr), valueType);
+        case ValueType::objectReference: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(elementPtr), valueType);
+        default: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(elementPtr), valueType);
     }
 }
 
@@ -384,7 +380,7 @@ IntegralValue GetChar(void* stringCharacters, int32_t index)
     {
         throw IndexOutOfRangeException("string index out of range");
     }
-    return IntegralValue(static_cast<uint64_t>(header->Str()[index]), ValueType::charType);
+    return MakeIntegralValue<char32_t>(header->Str()[index], ValueType::charType);
 }
 
 uint64_t poolThreshold = defaultPoolThreshold;
@@ -794,7 +790,7 @@ ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_stri
     ObjectReference str = CreateObject(thread, classData->Type(), lock);
     void* strObject = GetObject(str, lock);
     SetObjectField(strObject, IntegralValue(classDataPtr), 0);
-    SetObjectField(strObject, IntegralValue(static_cast<uint64_t>(numChars), ValueType::intType), 1);
+    SetObjectField(strObject, MakeIntegralValue<int32_t>(numChars, ValueType::intType), 1);
     SetObjectField(strObject, handle, 2);
     return str;
 }
@@ -880,7 +876,7 @@ void ManagedMemoryPool::SetBytes(ObjectReference arr, const std::vector<uint8_t>
     Assert(arrayElementsHeader->GetElementType() == TypeTable::GetType(StringPtr(U"System.UInt8")), "byte array expected");
     for (int32_t i = 0; i < count; ++i)
     {
-        SetElement(arrayElements, IntegralValue(static_cast<uint64_t>(bytes[i]), ValueType::byteType), i);
+        SetElement(arrayElements, MakeIntegralValue<uint8_t>(bytes[i], ValueType::byteType), i);
     }
 }
 
@@ -970,7 +966,7 @@ ObjectReference ManagedMemoryPool::CreateStringArray(Thread& thread, const std::
     ClassData* classData = ClassDataTable::GetClassData(StringPtr(U"System.String[]"));
     SetObjectField(object, IntegralValue(classData), 0);
     int32_t length = int32_t(strings.size());
-    SetObjectField(object, IntegralValue(static_cast<uint64_t>(length), ValueType::intType), 1);
+    SetObjectField(object, MakeIntegralValue<int32_t>(length, ValueType::intType), 1);
     AllocateArrayElements(thread, arrayReference, classData->Type(), length, lock);
     for (int32_t i = 0; i < length; ++i)
     {

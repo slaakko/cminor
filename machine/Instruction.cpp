@@ -265,7 +265,7 @@ void LogicalNotInst::Execute(Frame& frame)
     IntegralValue value = frame.OpStack().Pop();
     Assert(value.GetType() == ValueType::boolType, "bool operand expected");
     bool operand = value.AsBool();
-    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(!operand), ValueType::boolType));
+    frame.OpStack().Push(MakeIntegralValue<bool>(!operand, ValueType::boolType));
 }
 
 void LogicalNotInst::Accept(MachineFunctionVisitor& visitor)
@@ -2395,7 +2395,7 @@ void StrLitToStringInst::Execute(Frame& frame)
         ObjectReference objectReference = memoryPool.CreateObject(frame.GetThread(), classData->Type(), lock);
         AllocationHandle charsHandle = memoryPool.CreateStringCharsFromLiteral(frame.GetThread(), strLit, len, lock);
         memoryPool.SetField(objectReference, 0, IntegralValue(classData), lock);
-        memoryPool.SetField(objectReference, 1, IntegralValue(static_cast<uint64_t>(static_cast<int32_t>(len)), ValueType::intType), lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<int32_t>(static_cast<int32_t>(len), ValueType::intType), lock);
         memoryPool.SetField(objectReference, 2, charsHandle, lock);
         frame.OpStack().Push(objectReference);
     }
@@ -2944,7 +2944,7 @@ void EqualObjectNullInst::Execute(Frame& frame)
     Assert(leftValue.GetType() == ValueType::objectReference, "object reference expected");
     ObjectReference left(leftValue.Value());
     bool result = left.IsNull();
-    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(result), ValueType::boolType));
+    frame.OpStack().Push(MakeIntegralValue<bool>(result, ValueType::boolType));
 }
 
 void EqualObjectNullInst::Accept(MachineFunctionVisitor& visitor)
@@ -2963,7 +2963,7 @@ void EqualNullObjectInst::Execute(Frame& frame)
     Assert(rightValue.GetType() == ValueType::objectReference, "object reference expected");
     ObjectReference right(rightValue.Value());
     bool result = right.IsNull();
-    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(result), ValueType::boolType));
+    frame.OpStack().Push(MakeIntegralValue<bool>(result, ValueType::boolType));
 }
 
 void EqualNullObjectInst::Accept(MachineFunctionVisitor& visitor)
@@ -2981,7 +2981,7 @@ void EqualDlgNullInst::Execute(Frame& frame)
     IntegralValue leftValue = frame.OpStack().Pop();
     Assert(leftValue.GetType() == ValueType::functionPtr, "function pointer expected");
     bool result = leftValue.AsFunctionPtr() == nullptr;
-    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(result), ValueType::boolType));
+    frame.OpStack().Push(MakeIntegralValue<bool>(result, ValueType::boolType));
 }
 
 void EqualDlgNullInst::Accept(MachineFunctionVisitor& visitor)
@@ -2999,7 +2999,7 @@ void EqualNullDlgInst::Execute(Frame& frame)
     IntegralValue leftValue = frame.OpStack().Pop();
     Assert(rightValue.GetType() == ValueType::functionPtr, "function pointer expected");
     bool result = rightValue.AsFunctionPtr() == nullptr;
-    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(result), ValueType::boolType));
+    frame.OpStack().Push(MakeIntegralValue<bool>(result, ValueType::boolType));
 }
 
 void EqualNullDlgInst::Accept(MachineFunctionVisitor& visitor)
@@ -3073,7 +3073,7 @@ void IsInst::Execute(Frame& frame)
         ObjectReference ob(value.Value());
         if (ob.IsNull())
         {
-            frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(false), ValueType::boolType));
+            frame.OpStack().Push(MakeIntegralValue<bool>(false, ValueType::boolType));
         }
         else
         {
@@ -3086,7 +3086,7 @@ void IsInst::Execute(Frame& frame)
             Assert(objectType, "object type expected");
             uint64_t targetId = objectType->Id();
             bool result = sourceTypeId % targetId == 0;
-            frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(result), ValueType::boolType));
+            frame.OpStack().Push(MakeIntegralValue<bool>(result, ValueType::boolType));
         }
     }
     catch (const NullReferenceException& ex)
@@ -3367,7 +3367,7 @@ void CreateLocalVariableReferenceInst::Execute(Frame& frame)
 {
     int32_t variableReferenceId = frame.GetThread().GetNextVariableReferenceId();
     frame.AddVariableReference(new LocalVariableReference(variableReferenceId, frame.Id(), localIndex));
-    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(variableReferenceId), ValueType::variableReference));
+    frame.OpStack().Push(MakeIntegralValue<uint64_t>(variableReferenceId, ValueType::variableReference));
 }
 
 void CreateLocalVariableReferenceInst::Dump(CodeFormatter& formatter)
@@ -3410,7 +3410,7 @@ void CreateMemberVariableReferenceInst::Execute(Frame& frame)
     ObjectReference objectReference(objectValue.Value());
     int32_t variableReferenceId = frame.GetThread().GetNextVariableReferenceId();
     frame.AddVariableReference(new MemberVariableReference(variableReferenceId, objectReference, memberVarIndex));
-    frame.OpStack().Push(IntegralValue(static_cast<uint64_t>(variableReferenceId), ValueType::variableReference));
+    frame.OpStack().Push(MakeIntegralValue<uint64_t>(variableReferenceId, ValueType::variableReference));
 }
 
 void CreateMemberVariableReferenceInst::Dump(CodeFormatter& formatter)

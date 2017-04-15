@@ -52,7 +52,7 @@
 
     <p>
         Here are the exception classes for various error conditions. In Cminor as in C# all exception classes must be derived from the
-        <span class="code">System.Exception</span> class. By catching <span class="code">System.Exception</span> class all exceptions can be handled.
+        <span class="code"><a href="../code/system/Exception.cminor.html">System.Exception</a></span> class. By catching <span class="code">System.Exception</span> class all exceptions can be handled.
     </p>
 
     <div class="program">
@@ -121,8 +121,8 @@
     </h3>
     
     <p>
-        Like in C#, values of <a href="../langref/basic_type.html">basic types</a> are automatically <em>boxed</em> when needed, 
-        meaning an object containing a value of a basic type is created. For example, statement <span class="code"><strong>object</strong> x = 1;</span> creates
+        Like in C#, values of <a href="../langref/basic_type.html">basic value types</a> are automatically <em>boxed</em> when needed, 
+        meaning an object containing a value of a basic value type is created. For example, statement <span class="code"><strong>object</strong> x = 1;</span> creates
         an object of <span class="code">BoxedInt8</span> class and places an <span class="code"><strong>sbyte</strong></span> value 1 into that object.
         The reverse operation of <em>unboxing</em> converts an object of boxed value type back to an instance of basic value type. 
         Unboxing must be performed explicitly by using a <em>cast</em>. For example, <span class="code"><strong>sbyte</strong> y = <strong>cast</strong>&lt;sbyte&gt;(x);</span>.
@@ -138,8 +138,7 @@
 
     <p>
         Cminor contains minimal support for Unicode, not perfect, but usable at least in western Europe countries where the author is from.
-        The support is implemented as static member functions of the <span class="code">System.BoxedChar</span> class
-        (see <a href="../code/system/BoxedTypes.cminor.html">BoxedTypes.cminor</a> and <a href="../code/system/Unicode.cminor.html">Unicode.cminor</a>).
+        The support is implemented as static member functions of the <span class="code"><a href="../code/system/BoxedTypes.cminor.html">System.BoxedChar</a></span> class.
         For example, <span class="code"><strong>char</strong>.IsLetter(x)</span> returns true if character <span class="code">x</span>
         has Unicode letter character category. The following <span class="code">Scanner</span> class illustrates using character classification functions
         <span class="code"><strong>char</strong>.IsLetter(<strong>char</strong>)</span> and <span class="code"><strong>char</strong>.IsNumber(<strong>char</strong>)</span>
@@ -158,50 +157,35 @@
         Cminor system library has the following generic collections implemented as templates:
         <ul>
             <li>
-                <span class="code">System.Collections.Generic.List&lt;T&gt;</span> is a class template for storing a sequence of values that can be accessed
-                with subscripting operator <span class="code"><strong>[]</strong></span> in constant time.
-                (See <a href="../code/system/List.cminor.html">List.cminor</a> for the implementation).
+                <span class="code"><a href="../code/system/List.cminor.html">System.Collections.Generic.List&lt;T&gt;</a></span> is a class template 
+                for storing a sequence of values that can be accessed with subscripting operator <span class="code"><strong>[]</strong></span> in constant time.
             </li>
             <li>
-                <span class="code">System.Collections.Generic.Set&lt;T&gt;</span> is a class template for storing unique elements in a red-black tree.
-                The elements must form a set ordered by the less than operator.
-                (See <a href="../code/system/Set.cminor.html">Set.cminor</a> for the implementation).
+                <span class="code"><a href="../code/system/Set.cminor.html">System.Collections.Generic.Set&lt;T&gt;</a></span> is a class template for storing unique elements in a 
+                <a href="../code/system/RBTree.cminor.html">red-black tree</a>. The elements must form a set ordered by the less than operator.
             </li>
             <li>
-                <span class="code">System.Collections.Generic.Map&lt;KeyType, ValueType&gt;</span> is an associative collection 
-                for storing unique key-value pairs in a red-black tree.
-                The keys must form a set ordered by the less than operator.
-                (See <a href="../code/system/Map.cminor.html">Map.cminor</a> for the implementation).
+                <span class="code"><a href="../code/system/Map.cminor.html">System.Collections.Generic.Map&lt;KeyType, ValueType&gt;</a></span> is an associative collection 
+                for storing unique key-value pairs in a <a href="../code/system/RBTree.cminor.html">red-black tree</a>. The keys must form a set ordered by the less than operator.
             </li>
             <li>
-                <span class="code">System.Collections.Generic.Set&lt;T&gt;</span> and <span class="code">System.Collections.Generic.Map&lt;KeyType, ValueType&gt;</span> 
-                are implemented in terms of a <span class="code">System.Collections.Generic.RedBlackTree&lt;KeyType, ValueType, KeyOfValue&gt;</span>.
-                (See <a href="../code/system/RBTree.cminor.html">RBTree.cminor</a> for the implementation).
-            </li>
-            <li>
-                <span class="code">System.Collections.Generic.HashSet&lt;T&gt;</span> is a class template for storing unique elements in a hash table.
-                The elements must implement virtual <span class="code">GetHashCode</span> member function. 
+                <span class="code"><a href="../code/system/HashSet.cminor.html">System.Collections.Generic.HashSet&lt;T&gt;</a></span> 
+                is a class template for storing unique elements in a <a href="../code/system/Hashtable.cminor.html">hash table</a>.
+                The elements must implement virtual <span class="code">GetHashCode</span> member function.
                 This condition is satisfied for all class types and boxed value types, but the default implementation for class types can be overridden if needed.
-                The default implementation in the <span class="code">System.Object</span> class generates an artificial random hash code for the object in the object creation time.
+                The default implementation in the <span class="code"><a href="../code/system/Object.cminor.html">System.Object</a></span> class generates an artificial random hash code for the object in the object creation time.
                 The hash code stays the same during the lifetime of the object though the object may be moved by the garbage collector.
                 For this reason the memory address of the object is not used as a hash code, as is the case for pointer types in C++ for example.
-                (See <a href="../code/system/HashSet.cminor.html">HashSet.cminor</a> for the implementation).
             </li>
             <li>
-                <span class="code">System.Collections.Generic.HashMap&lt;KeyType, ValueType&gt;</span> is an associative collection 
-                for storing unique key-value pairs in a hash table.
+                <span class="code"><a href="../code/system/HashMap.cminor.html">System.Collections.Generic.HashMap&lt;KeyType, ValueType&gt;</a></span> is an associative collection 
+                for storing unique key-value pairs in a <a href="../code/system/Hashtable.cminor.html">hash table</a>.
                 The keys must implement virtual <span class="code">GetHashCode</span> member function. This condition is satisfied for all class types and boxed value types, 
                 but the default implementation for class types can be overridden if needed.
-                (See <a href="../code/system/HashMap.cminor.html">HashMap.cminor</a> for the implementation).
             </li>
             <li>
-                <span class="code">System.Collections.Generic.HashSet&lt;T&gt;</span> and <span class="code">System.Collections.Generic.HashMap&lt;KeyType, ValueType&gt;</span>
-                are implemented in terms of a <span class="code">System.Collections.Generic.Hashtable&lt;KeyType, ValueType, KeyOfValue&gt;</span>.
-                (See <a href="../code/system/Hashtable.cminor.html">Hashtable.cminor</a> for the implementation).
-            </li>
-            <li>
-                <span class="code">System.Collections.Generic.Stack&lt;T&gt;</span> is a stack adapter class template implemented in terms of <span class="code">System.Collections.Generic.List&lt;T&gt;</span>.
-                (See <a href="../code/system/Stack.cminor.html">Stack.cminor</a> for the implementation).
+                <span class="code"><a href="../code/system/Stack.cminor.html">System.Collections.Generic.Stack&lt;T&gt;</a></span> 
+                is a stack adapter class template implemented in terms of <span class="code">System.Collections.Generic.List&lt;T&gt;</span>.
             </li>
         </ul>
     </p>
@@ -210,7 +194,7 @@
         The calculator stores the values of variables in a <span class="code">System.Collections.Generic.Map&lt;string, double&gt;</span>
         by mapping the name of the variable to the value of the variable.
         If the key of an element is not already found in the map, the subscripting operator of the map inserts the element to the map.
-        Otherwise, if the key is already found in the map, a new value replaces the old value in the map.
+        Otherwise, if the key is already found in the map, the new value replaces the old value.
     </p>
 
     <div class="program">
@@ -218,10 +202,9 @@
     </div>
 
     <p>
-        Each collection class implements an interface called <span class="code">Enumerable</span>. 
-        (See <a href="../code/system/Enumerator.cminor">Enumerator.cminor</a> for the implementation).
+        Each collection class implements an interface called <span class="code"><a href="../code/system/Enumerator.cminor">Enumerable</a></span>. 
         An <span class="code">Enumerable</span> class has a member function called <span class="code">GetEnumerator()</span> that returns an 
-        object that in turn implements an interface called <span class="code">Enumerator</span>.
+        object of a class that in turn implements an interface called <span class="code"><a href="../code/system/Enumerator.cminor">Enumerator</a></span>.
         The <span class="code">Enumerator</span> interface differs from the C# language interface of the same name by providing a simplified functionality.
         The Cminor <span class="code">Enumerator</span> interface has three functions instead of two: 
         <ol>
@@ -242,7 +225,7 @@
         The <span class="code">Print()</span> member function of the <span class="code">SymbolTable</span> class above uses enumerator interface implicitly to enumerate
         all the variables in the map, because the <strong>foreach</strong> statement is implemented in terms of <span class="code">Enumerable</span> and 
         <span class="code">Enumerator</span> interfaces: statement <span class="code"><strong>foreach</strong> (Type x <strong>in</strong> collection) { statement; }</span> 
-        is roughly equivalent to the following pseudo-code:
+        is lowered by the compiler to the following code:
         <div class="program">
             <iframe src="../code/dc/foreach.cminor.html" height="140px" width="600px" style="border:none;"></iframe>
         </div>
@@ -253,8 +236,9 @@
     </h3>
 
     <p>
-        A parser can be implemented by hand using so called recursive-descent functions, or functions that call each other
-        possibly recursively. The syntax we are trying parse is as follows:
+        A parser can be implemented by hand as functions that call each other possibly recursively. 
+        This kind of parser is called a <a href="https://en.wikipedia.org/wiki/Recursive_descent_parser">recursive-descent</a> parser.
+        The syntax of arithmetic expressions we are parsing is as follows:
     </p>
 
     <div class="program">
@@ -262,7 +246,8 @@
     </div>
 
     <p>
-        The <span class="code">&lt;expr&gt; production is implemented by the following <span class="code">Expr()</span> function:
+        We will write each production as a nonmember function that returns the value of the parsed subexpression.
+        Here's the <span class="code">Expr()</span> function that corresponds to the <span class="code">&lt;expr&gt;</span> production:
     </p>
 
     <div class="program">
@@ -279,7 +264,7 @@
     </p>
 
     <p>
-        The <span class="code">&lt;term&gt; production is implemented by the following <span class="code">Term()</span> function:
+        Here's the <span class="code">Term()</span> function that corresponds to the  <span class="code">&lt;term&gt;</span> production:
     </p>
 
     <div class="program">
@@ -287,7 +272,7 @@
     </div>
 
     <p>
-        The <span class="code">&lt;factor&gt; production is implemented by the following <span class="code">Factor()</span> function:
+        The <span class="code">&lt;factor&gt;</span> production is implemented by the following <span class="code">Factor()</span> function:
     </p>
 
     <div class="program">

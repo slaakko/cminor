@@ -679,7 +679,7 @@ void NativeCompilerImpl::CreateCatchPadWindows()
 {
     ArgVector catchPadArgs;
     catchPadArgs.push_back(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
-    catchPadArgs.push_back(GetConstantInt(ValueType::intType, IntegralValue(static_cast<uint64_t>(64), ValueType::intType)));
+    catchPadArgs.push_back(GetConstantInt(ValueType::intType, MakeIntegralValue<int32_t>(64, ValueType::intType)));
     catchPadArgs.push_back(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
     llvm::CatchPadInst* catchPad = builder.CreateCatchPad(currentPad, catchPadArgs);
     padStack.push_back(currentPad);
@@ -2327,8 +2327,7 @@ void NativeCompilerImpl::VisitContinuousSwitchInst(ContinuousSwitchInst& instruc
         {
             BasicBlock* targetBlock = BasicBlock::Create(context, "caseTarget" + std::to_string(target), fun);
             basicBlocks[target] = targetBlock;
-            IntegralValue caseValue(begin.Value() + i, begin.GetType());
-            switchInst->addCase(GetConstantInt(condType, caseValue), targetBlock);
+            switchInst->addCase(GetConstantInt(condType, MakeIntegralValue<uint64_t>(begin.Value() + i, begin.GetType())), targetBlock);
         }
     }
     if (defaultTarget == endOfFunction)

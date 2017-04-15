@@ -1,0 +1,102 @@
+using System;
+using System.Text;
+using System.IO;
+
+const int bytesInLine = 16;
+
+void HexDump(string fileName)
+{
+    byte[] bytes = new byte[bytesInLine];
+    uint addr = 0u;
+    using (BinaryReader reader = File.OpenBinary(fileName))
+    {
+        int size = reader.StreamSize;
+        int numRows = size / bytesInLine;
+        for (int i = 0; i < numRows; ++i)
+        {
+            for (int j = 0; j < bytesInLine; ++j)
+            {
+                bytes[j] = reader.ReadByte();
+            }
+            Console.WriteLine(HexDumpLine(addr, bytes, bytesInLine));
+            addr = addr + cast<uint>(bytesInLine);
+        }
+        int rest = size % bytesInLine;
+        if (rest != 0)
+        {
+            for (int j = 0; j < rest; ++j)
+            {
+                bytes[j] = reader.ReadByte();
+            }
+            Console.WriteLine(HexDumpLine(addr, bytes, rest));
+        }
+    }
+}
+
+string HexDumpLine(uint addr, byte[] bytes, int numBytes)
+{
+    StringBuilder lineBuilder = new StringBuilder();
+    lineBuilder.Append(HexAddr(addr)).Append(": ");
+    for (int i = 0; i < bytesInLine; ++i)
+    {
+        if (i == bytesInLine / 2)
+        {
+            lineBuilder.Append("- ");
+        }
+        if (i < numBytes)
+        {
+            lineBuilder.Append(byte.ToHexString(bytes[i]));
+        }
+        else
+        {
+            lineBuilder.Append("  ");
+        }
+        lineBuilder.Append(' ');
+    }
+    lineBuilder.Append('|');
+    for (int i = 0; i < bytesInLine; ++i)
+    {
+        char c = ' ';
+        if (i < numBytes)
+        {
+            char b = cast<char>(bytes[i]);
+            if (char.IsCPrintable(b))
+            {
+                c = b;
+            }
+        }
+        lineBuilder.Append(c);
+    }
+    lineBuilder.Append('|');
+    return lineBuilder.ToString();
+}
+
+string HexAddr(uint addr)
+{
+    return byte.ToHexString(cast<byte>(addr >> 24u)) +
+        byte.ToHexString(cast<byte>(addr >> 16u)) +
+        byte.ToHexString(cast<byte>(addr >> 8u)) +
+        byte.ToHexString(cast<byte>(addr));
+}
+
+int main(string[] args)
+{
+    try
+    {
+        if (args.Length != 1 || args[0] == "-h" || args[0] == "--help")
+        {
+            Console.WriteLine("usage: hexdump <filename>");
+        }
+        else
+        {
+            string fileName = args[0];
+            HexDump(fileName);
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+        return 1;
+    }
+    return 0;
+}

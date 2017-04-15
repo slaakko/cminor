@@ -1208,7 +1208,7 @@ void EmitterVisitor::Visit(BoundConjunction& boundConjunction)
         trueSet = prevTrueSet;
         falseSet = prevFalseSet;
         ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
-        Constant trueConstant(IntegralValue(uint64_t(true), ValueType::boolType));
+        Constant trueConstant(MakeIntegralValue<bool>(true, ValueType::boolType));
         constantPool.Install(trueConstant);
         TypeSymbol* boolType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Boolean");
         BoundLiteral trueLit(boundCompileUnit.GetAssembly(), boolType, trueConstant);
@@ -1222,7 +1222,7 @@ void EmitterVisitor::Visit(BoundConjunction& boundConjunction)
         Assert(conDisSet, "ConDis set not set");
         conDisSet->push_back(inst.get());
         function->AddInst(std::move(inst));
-        Constant falseConstant(IntegralValue(uint64_t(false), ValueType::boolType));
+        Constant falseConstant(MakeIntegralValue<bool>(false, ValueType::boolType));
         constantPool.Install(falseConstant);
         BoundLiteral falseLit(boundCompileUnit.GetAssembly(), boolType, falseConstant);
         genJumpingBoolCode = false;
@@ -1298,7 +1298,7 @@ void EmitterVisitor::Visit(BoundDisjunction& boundDisjunction)
         trueSet = prevTrueSet;
         falseSet = prevFalseSet;
         ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
-        Constant trueConstant(IntegralValue(uint64_t(true), ValueType::boolType));
+        Constant trueConstant(MakeIntegralValue<bool>(true, ValueType::boolType));
         constantPool.Install(trueConstant);
         TypeSymbol* boolType = boundCompileUnit.GetAssembly().GetSymbolTable().GetType(U"System.Boolean");
         BoundLiteral trueLit(boundCompileUnit.GetAssembly(), boolType, trueConstant);
@@ -1313,7 +1313,7 @@ void EmitterVisitor::Visit(BoundDisjunction& boundDisjunction)
         Assert(conDisSet, "ConDis set not set");
         conDisSet->push_back(inst.get());
         function->AddInst(std::move(inst));
-        Constant falseConstant(IntegralValue(uint64_t(false), ValueType::boolType));
+        Constant falseConstant(MakeIntegralValue<bool>(false, ValueType::boolType));
         constantPool.Install(falseConstant);
         BoundLiteral falseLit(boundCompileUnit.GetAssembly(), boolType, falseConstant);
         genJumpingBoolCode = false;

@@ -1,0 +1,10 @@
+BinaryReader reader = File.OpenBinary(fileName);
+try
+{
+    // using block content..
+}
+finally
+{
+    System.Closable @closable = reader;
+    @closable.Close();
+}

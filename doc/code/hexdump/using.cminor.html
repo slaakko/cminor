@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>using.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="identifier">BinaryReader</span> <span class="identifier">reader</span> <span class="other">=</span> <span class="identifier">File.OpenBinary</span><span class="other">(</span><span class="identifier">fileName</span><span class="other">)</span><span class="other">;</span>
+<span class="keyword">try</span>
+<span class="other">{</span>
+    <span class="comment">// using block content..</span>
+<span class="other">}</span>
+<span class="keyword">finally</span>
+<span class="other">{</span>
+    <span class="identifier">System.Closable</span> <span class="other">@</span><span class="identifier">closable</span> <span class="other">=</span> <span class="identifier">reader</span><span class="other">;</span>
+    <span class="other">@</span><span class="identifier">closable.Close</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

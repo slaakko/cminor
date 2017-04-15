@@ -1,0 +1,180 @@
+using System;
+
+namespace Calculator
+{
+    public void Parse(string input, SymbolTable symbolTable)
+    {
+        Scanner scanner = new Scanner(input);
+        scanner.NextToken();
+        if (scanner.CurrentToken is PrintToken)
+        {
+            symbolTable.Print();
+            return;
+        }
+        else if (scanner.CurrentToken is VariableNameToken)
+        {
+            VariableNameToken token = cast<VariableNameToken>(scanner.CurrentToken);
+            string variableName = token.VariableName;
+            scanner.NextToken();
+            if (scanner.CurrentToken is OperatorToken)
+            {
+                OperatorToken token = cast<OperatorToken>(scanner.CurrentToken);
+                if (token.Char == '=')
+                {
+                    scanner.NextToken();
+                    double value = Expr(scanner, symbolTable);
+                    Token token = scanner.CurrentToken;
+                    if (token is EndToken)
+                    {
+                        symbolTable.SetVariable(variableName, value);
+                        Console.WriteLine(variableName + " = " + value.ToString());
+                        return;
+                    }
+                    else
+                    {
+                        throw new ParsingException("invalid input");
+                    }
+                }
+            }
+        }
+        scanner.Rewind();
+        scanner.NextToken();
+        double value = Expr(scanner, symbolTable);
+        Token token = scanner.CurrentToken;
+        if (token is EndToken)
+        {
+            Console.WriteLine("= " + value.ToString());
+        }
+        else
+        {
+            throw new ParsingException("invalid input");
+        }
+    }
+
+    public double Expr(Scanner scanner, SymbolTable symbolTable)
+    {
+        double value = Term(scanner, symbolTable);
+        Token token = scanner.CurrentToken;
+        OperatorToken op = token as OperatorToken;
+        while (op != null && op.IsAdditiveOperator)
+        {
+            char opChar = op.Char;
+            scanner.NextToken();
+            double right = Term(scanner, symbolTable);
+            if (opChar == '+')
+            {
+                value = value + right;
+            }
+            else if (opChar == '-')
+            {
+                value = value - right;
+            }
+            else
+            {
+                throw new LogicErrorException("logic error");
+            }
+            token = scanner.CurrentToken;
+            op = token as OperatorToken;
+        }
+        return value;
+    }
+
+    public double Term(Scanner scanner, SymbolTable symbolTable)
+    {
+        double value = Factor(scanner, symbolTable);
+        Token token = scanner.CurrentToken;
+        OperatorToken op = token as OperatorToken;
+        while (op != null && op.IsMultiplicativeOperator)
+        {
+            char opChar = op.Char;
+            scanner.NextToken();
+            double right = Factor(scanner, symbolTable);
+            if (opChar == '*')
+            {
+                value = value * right;
+            }
+            else if (opChar == '/')
+            {
+                if (right == 0)
+                {
+                    throw new DivisionByZeroException("division by zero");
+                }
+                value = value / right;
+            }
+            else
+            {
+                throw new LogicErrorException("logic error");
+            }
+            token = scanner.CurrentToken;
+            op = token as OperatorToken;
+        }
+        return value;
+    }
+
+    public double Factor(Scanner scanner, SymbolTable symbolTable)
+    {
+        Token token = scanner.CurrentToken;
+        OperatorToken op = token as OperatorToken;
+        bool neg = false;
+        if (op != null && op.IsAdditiveOperator)
+        {
+            if (op.Char == '-')
+            {
+                neg = true;
+            }
+            scanner.NextToken();
+        }
+        double value = Primary(scanner, symbolTable);
+        if (neg)
+        {
+            return -value;
+        }
+        return value;
+    }
+
+    public double Primary(Scanner scanner, SymbolTable symbolTable)
+    {
+        Token token = scanner.CurrentToken;
+        NumberToken number = token as NumberToken;
+        if (number != null)
+        {
+            double value = number.Value;
+            scanner.NextToken();
+            return value;
+        }
+        else
+        {
+            VariableNameToken variableNameToken = token as VariableNameToken;
+            if (variableNameToken != null)
+            {
+                double value = symbolTable.GetVariableValue(variableNameToken.VariableName);
+                scanner.NextToken();
+                return value;
+            }
+            else
+            {
+                OperatorToken op = token as OperatorToken;
+                if (op != null && op.Char == '(')
+                {
+                    scanner.NextToken();
+                    double value = Expr(scanner, symbolTable);
+                    token = scanner.CurrentToken;
+                    op = token as OperatorToken;
+                    if (op != null && op.Char == ')')
+                    {
+                        scanner.NextToken();
+                        return value;
+                    }
+                    else
+                    {
+                        throw new ParsingException("')' expected");
+                    }
+                }
+                else
+                {
+                    throw new ParsingException("number, variable name or subexpression expected");
+                }
+            }
+        }
+    }
+}

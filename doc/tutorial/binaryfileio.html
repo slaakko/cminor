@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Binary File I/O</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+
+<body>
+    <h2>8 Binary File I/O</h2>
+
+    <p>
+        Binary file I/O is illustrated by the following program that dumps the contents of a file in hex.
+    </p>
+
+    <h3 id="binaryreader">
+        8.1 BinaryReader
+    </h3>
+
+    <p>
+        The following <span class="code">HexDump</span> function uses a <span class="code">BinaryReader</span>
+        class to read a file in binary mode and dump its bytes:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/hexdump/hexdump.cminor.html" height="1560px" width="600px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="using">
+        8.2 Using Statement
+    </h3>
+
+    <p>
+        Opening and reading the file occurs in a <span class="code"><strong>using</strong></span> statement that
+        takes care automatically closing the file at the end of the <span class="code"><strong>using</strong></span> block.
+    </p>
+
+    <p>
+        The <span class="code"><strong>using</strong></span> statement is lowered by the compiler roughly to the following code:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/hexdump/using.cminor.html" height="180px" width="600px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        The finally statement gets executed regardless whether the try block is exited with normal control flow,
+        due to <span class="code"><strong>return</strong></span>, <span class="code"><strong>break</strong></span>,
+        <span class="code"><strong>continue</strong></span> or <span class="code"><strong>goto</strong></span> statement,
+        or due to thrown exception.
+    </p>
+
+    <p>
+        A <span class="code"><strong>using</strong></span> statement can be used with all classes that implement the
+        <span class="code"><a href="../code/system/Closable.cminor.html">Closable</a></span> interface such as
+        <span class="code">StreamReader</span>, <span class="code">StreamWriter</span>, <span class="code">FileStream</span>,
+        <span class="code">MemoryStream</span>, <span class="code">BinaryReader</span> and <span class="code">BinaryWriter</span>.
+    </p>
+
+</body>
