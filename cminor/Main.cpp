@@ -137,7 +137,7 @@ void PrintHelp(HelpTopics helpTopics)
             "run-options:\n\n" <<
             "   --debug (-d)\n" <<
             "       Run debug version of the virtual machine.\n" <<
-            "   --native (-n)" <<
+            "   --native (-n)\n" <<
             "       Run program built with --native option.\n" <<
             "   --trace (-r)\n" <<
             "       Trace execution of native program to stderr (used with --native).\n" <<

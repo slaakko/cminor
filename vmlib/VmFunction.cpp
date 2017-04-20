@@ -236,7 +236,7 @@ public:
 
 VmSystemIsCLowerChar::VmSystemIsCLowerChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"islower"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"isclower"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -258,7 +258,7 @@ public:
 
 VmSystemIsCUpperChar::VmSystemIsCUpperChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"isupper"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"iscupper"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -280,7 +280,7 @@ public:
 
 VmSystemToCLowerChar::VmSystemToCLowerChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"tolower"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"toclower"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -302,7 +302,7 @@ public:
 
 VmSystemToCUpperChar::VmSystemToCUpperChar(ConstantPool& constantPool)
 {
-    Constant name = constantPool.GetConstant(constantPool.Install(U"toupper"));
+    Constant name = constantPool.GetConstant(constantPool.Install(U"tocupper"));
     SetName(name);
     VmFunctionTable::RegisterVmFunction(this);
 }
@@ -1949,6 +1949,94 @@ void VmSystemRand64::Execute(Frame& frame)
     frame.OpStack().Push(MakeIntegralValue<uint64_t>(r, ValueType::ulongType));
 }
 
+class VmSystemUIntAsFloat : public VmFunction
+{
+public:
+    VmSystemUIntAsFloat(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemUIntAsFloat::VmSystemUIntAsFloat(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"uintasfloat"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemUIntAsFloat::Execute(Frame& frame)
+{
+    IntegralValue uintValue = frame.Local(0).GetValue();
+    Assert(uintValue.GetType() == ValueType::uintType, "uint expected");
+    IntegralValue floatValue = MakeIntegralValue<float>(*static_cast<float*>(uintValue.ValuePtr()), ValueType::floatType);
+    frame.OpStack().Push(floatValue);
+}
+
+class VmSystemFloatAsUInt : public VmFunction
+{
+public:
+    VmSystemFloatAsUInt(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemFloatAsUInt::VmSystemFloatAsUInt(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"floatasuint"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemFloatAsUInt::Execute(Frame& frame)
+{
+    IntegralValue floatValue = frame.Local(0).GetValue();
+    Assert(floatValue.GetType() == ValueType::floatType, "float expected");
+    IntegralValue uintValue = MakeIntegralValue<uint32_t>(*static_cast<uint32_t*>(floatValue.ValuePtr()), ValueType::uintType);
+    frame.OpStack().Push(uintValue);
+}
+
+class VmSystemULongAsDouble : public VmFunction
+{
+public:
+    VmSystemULongAsDouble(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemULongAsDouble::VmSystemULongAsDouble(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"ulongasdouble"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemULongAsDouble::Execute(Frame& frame)
+{
+    IntegralValue ulongValue = frame.Local(0).GetValue();
+    Assert(ulongValue.GetType() == ValueType::ulongType , "ulong expected");
+    IntegralValue doubleValue = MakeIntegralValue<double>(*static_cast<double*>(ulongValue.ValuePtr()), ValueType::doubleType);
+    frame.OpStack().Push(doubleValue);
+}
+
+class VmSystemDoubleAsULong : public VmFunction
+{
+public:
+    VmSystemDoubleAsULong(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemDoubleAsULong::VmSystemDoubleAsULong(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"doubleasulong"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemDoubleAsULong::Execute(Frame& frame)
+{
+    IntegralValue doubleValue = frame.Local(0).GetValue();
+    Assert(doubleValue.GetType() == ValueType::doubleType, "double expected");
+    IntegralValue ulongValue = MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(doubleValue.ValuePtr()), ValueType::ulongType);
+    frame.OpStack().Push(ulongValue);
+}
+
 class VmFunctionPool
 {
 public:
@@ -2029,6 +2117,10 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemInitRand(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemRandom(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemRand64(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemUIntAsFloat(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemULongAsDouble(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemFloatAsUInt(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemDoubleAsULong(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool)

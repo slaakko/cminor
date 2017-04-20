@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Running Programs</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2 id="run">
+        4 Running Programs
+    </h2>
+    
+    <h3 id="syntax">
+        4.1 Run Command Syntax
+    </h3>
+
+    <div class="commands">
+        cminor run [run-options] PROGRAM.cminora [program-arguments]
+    </div>
+
+    <p>
+        Runs program in virtual machine with given program-arguments.
+    </p>
+
+    <h3 id="intermediate">
+        4.2 Running Programs by Interpreting the Intermediate Code
+    </h3>
+
+    <p>
+        For example, to run program <span class="code">hello.cminora</span> by interpreting the intermediate code, use the following command:
+    </p>
+
+    <div class="commands">
+        > cminor run assembly\debug\hello.cminora</br>
+        Hello, world!
+    </div>
+
+    <h3 id="native">
+        4.3 Running Programs Compiled to Native Code
+    </h3>
+
+    <p>
+        For example, to run program <span class="code">args.cminora</span> compiled to native code, and give it arguments foo and bar, use the following command:
+    </p>
+
+    <div class="commands">
+        > cminor run --native assembly\debug\args.cminora foo bar</br>
+        foo</br>
+        bar</br>
+    </div>
+
+    <h3 id="stats">
+        4.4 Printing Execution Statistics
+    </h3>
+
+    <p>
+        For example, to run program <span class="code">hello.cminora</span> compiled to native code and print the execution statistics for it, use the following command:
+    </p>
+
+    <div class="commands">
+        > cminor run --native --stats assembly\debug\hello.cminora</br>
+        Hello, world!</br>
+        </br>
+        STATISTICS</br>
+        </br>
+        load time :   343 ms ( 93.2 % of startup time)</br>
+        link time :     8 ms (  2.1 % of startup time)</br>
+        prepare time :    17 ms (  4.6 % of startup time)</br>
+        startup time :   368 ms ( 84.7 % of total vm time)</br>
+        -------------------------------------------------------------------------------</br>
+        gen1 gc time :     0 ms (  0.0 % of total gc time) [  0 gc pauses]</br>
+        full gc time :     0 ms (  0.0 % of total gc time) [  0 gc pauses]</br>
+        total gc time :     0 ms (  0.0 % of run time) [  0 gc pauses]</br>
+        run time :     2 ms (  0.4 % of total vm time)</br>
+        -------------------------------------------------------------------------------</br>
+        total vm time :   434 ms (100.0 % of startup time + run time + extra time)</br>
+    </div>
+
+    <h3 id="vm">
+        4.5 Setting Virtual Machine Parameters
+    </h3>
+
+    <h4>
+        Size of Garbage Collected Memory Segment
+    </h4>
+
+    <p>
+        The default size of the garbage collected memory segment is 16 MB.
+    </p>
+
+    <p>
+        To use different garbage collected memory segment size, use the following command:
+    </p>
+
+    <div class="commands">
+        > cminor run --segment-size=32 assembly\debug\hello.cminora
+    </div>
+
+    <p>
+        Sets the size of the garbage collected memory segment to 32 megabytes.
+    </p>
+
+    <h4>
+        Number of Thread-Specific Memory Allocation Pages.
+    </h4>
+
+    <p>
+        The memory allocator of the virtual machine allocates extra memory for a thread making an allocation.
+        That thread can consume this extra memory without any locking.
+    </p>
+
+    <p>
+        The default number of thread-specific memory allocation context pages is 2.
+        For typical virtual memory page size of 4K, this means that each thread can allocate additional 8K without locking
+        for each allocation that requires locking.
+    </p>
+
+    <p>
+        To use different number of thread-specific memory allocation context pages, use the following command:
+    </p>
+
+    <div class="commands">
+        > cminor run --thread-pages=4 assembly\debug\hello.cminora
+    </div>
+
+    <h3 id="debug">
+        4.6 Virtual Machine Debugging Options
+    </h3>
+
+    <p>
+        To print garbage collection actions to stderr, use the following command:
+    </p>
+
+    <div class="commands">
+        > cminor run --gcactions assembly\debug\hello.cminora
+    </div>
+
+    <p>
+        This prints "[G]" each time that garbage collection occurs, and additional "[F]" when the garbage collector is performing full collection.
+    </p>
+
+    <p>
+        To run a program in the debug version of the virtual machine, use the following command:
+    </p>
+
+    <div class="commands">
+        > cminor run --debug assembly\debug\hello.cminora
+    </div>
+
+    <p>
+        To trace execution of a program compiled to native code to stderr, use the following command:
+    </p>
+
+    <div class="commands">
+        > cminor run --native --trace assembly\debug\hello.cminora
+    </div>
+</body>
+</html>

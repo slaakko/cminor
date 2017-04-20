@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Debugging Programs</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2 id="debug">
+        5 Debugging Programs
+    </h2>
+
+    <h3 id="syntax">
+        5.1 Debug Command Syntax
+    </h3>
+
+    <div class="commands">
+        cminor debug [debug-options] PROGRAM.cminora [program-arguments]
+    </div>
+
+    <p>
+        Debugs program in virtual machine with given program-arguments.
+        Currently programs can be debugged only by interpreting the intermediate instructions in virtual machine,
+        not in native mode.
+    </p>
+
+    <p>
+        When the debugger starts, the debugger shell is run. The shell prints the intermediate instructions, and also corresponding source code lines in green.
+    </p>
+
+    <p>
+        For example, the following command starts debugging of the <span class="code">dc.cminora</span> program:
+    </p>
+
+    <div class="commands">
+        > cminor debug assembly/debug/dc.cminora</br>
+    </div>
+
+    <h3 id="shell">
+        5.2 Debugger Shell Commands
+    </h3>
+
+    <p>
+        To obtain help, use the help command, or just give 'h' ENTER:
+    </p>
+
+    <div class="commands">
+        h(elp)
+    </div>
+
+    <p>
+        Debugging is automatically started when the debugger shell is run, but to start the debugging again after program is exited for example, use the following command:
+    </p>
+
+    <div class="commands">
+        start
+    </div>
+
+    <p>
+        To end the debugging session, give the exit command:
+    </p>
+
+    <div class="commands">
+        e(xit)
+    </div>
+       
+    <p>
+        To run the program to the next breakpoint or to the end if no breakpoints have been set, use the run commmand:
+    </p>
+
+    <div class="commands">
+        r(un)
+    </div>
+
+    <p>
+        To single-step the program by executing the next intermediate instruction, use the step command:
+    </p>
+
+    <div class="commands">
+        s(tep)
+    </div>
+
+    <p>
+        The single-stepping goes into the called functions. To step over called functions, use the next command:
+    </p>
+
+    <div class="commands">
+        n(ext)
+    </div>
+
+    <p>
+        To print a stack trace, use the stack command:
+    </p>
+
+    <div class="commands">
+        (stac)k
+    </div>
+    
+    <p>
+        To print the value of a variable that is in the current scope, use the print command:
+    </p>
+
+    <div class="commands">
+        p(rint) &lt;name of the variable&gt;
+    </div>
+
+    <p>
+        To print the value of a n'th local variable or parameter, use the local command:
+    </p>
+
+    <div class="commands">
+        l(ocal) &lt;n&gt;
+    </div>
+
+    <p>
+        The first parameter is local number 0, second parmeter local number 1, etc.. Local variables have the next indeces after the parameters.
+    </p>
+
+    <p>
+        To print the value of n'th value in the operand stack, use the operand command:
+    </p>
+
+    <div class="commands">
+        o(perand) &lt;n&gt; 
+    </div>
+
+    <p>
+        The value on top of the stack is number 0, the next operand below it is number 1, etc.
+    </p>
+
+    <p>
+        To print value of allocation number &lt;n&gt;, use the allocation command:
+    </p>
+
+    <div class="commands">
+        a(llocation) &lt;n&gt;
+    </div>
+
+    <p>
+        To print value of field number &lt;n&gt; of an object number &lt;m&gt;, or element &lt;n&gt; of array number &lt;m&gt;, use the field command: 
+    </p>
+
+    <div class="commands">
+        f(ield) &lt;n&gt; &lt;m&gt;
+    </div>
+
+    <p>
+        To list next 10 source code lines of source file &lt;f&gt; starting from line &lt;n&gt;, use the list command:
+    </p>
+
+    <div class="commands">
+        (lis)t [&lt;f&gt;]:&lt;n&gt;
+    </div>
+
+    <p>
+        To set a breakpoint at line &lt;n&gt; of source file &lt;f&gt;, use the break command:
+    </p>
+
+    <div class="commands">
+        b(reak) [&lt;f&gt;]:&lt;n&gt;
+    </div>
+
+    <p>
+        To clear a breakpoint number &lt;n&gt;, use the clear command:
+    </p>
+
+    <div class="commands">
+        c(lear) &lt;n&gt;
+    </div>
+
+    <p>
+        To show the breakpoints, use the show breakpoints command:
+    </p>
+
+    <div class="commands">
+        show breakpoints
+    </div>
+
+    <p>
+        To repeat latest command, just press ENTER.
+    </p>
+</body>
+</html>

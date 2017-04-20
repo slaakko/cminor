@@ -1,3 +1,18 @@
+//  ========================================================
+//  The string class stores a sequence of UTF-32 characters.
+//  Once constructed a string becomes immutable, so that
+//  it can be accessed from multiple threads without any
+//  locking. Strings can be compared for equality and less
+//  than relationship. The comparison functions compare
+//  the contents of the strings, not the memory addresses
+//  of the string objects. Other relational operations are 
+//  derived from these two relationships and logical not 
+//  operation, so that any two string instances can be 
+//  compared using ==, !=, <, >, <= and >= operators. 
+//  The characters of a string can be enumerated using the 
+//  foreach statement.
+//  ========================================================
+
 using System.Collections.Generic;
 using System.Text;
 

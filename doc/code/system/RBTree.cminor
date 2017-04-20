@@ -1,3 +1,20 @@
+//  =================================================
+//  Implementation of red-black tree data structure.
+//  The red-black tree is a binary search tree that 
+//  keeps the tree approximately balanced by applying
+//  rotations to it. The maximum path from the root 
+//  of the tree to the leaf is at maximum twice as 
+//  long as the shortest path from the root to the 
+//  leaf.
+//
+//  The keys of the nodes must form an ordered set.
+//  The ordering used is the less than relationship.
+//  Equality comparison of the keys is also performed
+//  using the less than operator: 
+//  when !(x < y) && !(y < x), it is inferred that 
+//  x == y.
+//  =================================================
+
 using System;
 
 namespace System.Collections.Generic

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>CChar.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="comment">//  ===========================================</span>
+<span class="comment">//  Here are character classification functions</span>
+<span class="comment">//  that are compatible with the C library</span>
+<span class="comment">//  implementations and operate with the ASCII</span>
+<span class="comment">//  codes of characters.</span>
+<span class="comment">//  ===========================================</span>
+
+<span class="keyword">namespace</span> <span class="identifier">System</span>
+<span class="other">{</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">iscspace</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">bool</span> <span class="identifier">IsCSpace</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">iscalpha</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">bool</span> <span class="identifier">IsCAlpha</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">iscalnum</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">bool</span> <span class="identifier">IsCAlnum</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">iscdigit</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">bool</span> <span class="identifier">IsCDigit</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">iscxdigit</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">bool</span> <span class="identifier">IsCHexDigit</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">iscpunct</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">bool</span> <span class="identifier">IsCPunctuation</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">iscprint</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">bool</span> <span class="identifier">IsCPrintable</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">isclower</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">bool</span> <span class="identifier">IsCLower</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">iscupper</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">bool</span> <span class="identifier">IsCUpper</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">toclower</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">char</span> <span class="identifier">ToCLower</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">tocupper</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">char</span> <span class="identifier">ToCUpper</span><span class="other">(</span><span class="keyword">char</span> <span class="identifier">c</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

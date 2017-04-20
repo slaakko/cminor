@@ -1,3 +1,30 @@
+//  ============================================================
+//  Boxed types complete compiler support for boxing operations.
+//  Instance of a basic value type is converted to an object of 
+//  the corresponding boxed type, so that member functions of 
+//  the boxed type can be called for the value. For example, the
+//  following statements:
+//  
+//  sbyte x = 123;
+//  string s = x.ToString();
+//
+//  are converted by the compiler to the following:
+//
+//  sbyte x = 123;
+//  BoxedInt8 @x = new BoxedInt8(x);
+//  string s = @x.ToString();
+//
+//  Boxed types also contain static member functions, that 
+//  enable expressions of the form type.staticMemFun(instance)
+//  For example, the following statement:
+//
+//  bool isLetter = char.IsLetter('a');
+//
+//  is converted by the compiler to the following:
+//  
+//  bool isLetter = BoxedChar.IsLetter('a');
+//  ===========================================================
+
 namespace System
 {
     public class BoxedInt8

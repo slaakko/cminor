@@ -7,6 +7,25 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ==============================================================</span>
+<span class="comment">//  A condition variable is a thread synchronization primitive,</span>
+<span class="comment">//  that allows a thread or threads to wait for some condition,</span>
+<span class="comment">//  and some thread to change the condition and wake up the thread</span>
+<span class="comment">//  or threads waiting for it.</span>
+<span class="comment">//</span>
+<span class="comment">//  The Wait(), WaitFor() and WaitUntil() member functions allow</span>
+<span class="comment">//  a thread to wait for some condition to happen.</span>
+<span class="comment">//  The NotifyOne() member function wakes up one waiting thread.</span>
+<span class="comment">//  The NotifyAll() member function wakes up all waiting threads.</span>
+<span class="comment">//</span>
+<span class="comment">//  On some platforms a thread waiting may also be waken up</span>
+<span class="comment">//  spuriously, although the condition has not changed, so a</span>
+<span class="comment">//  condition variable should be associated with a predicate that</span>
+<span class="comment">//  contains the actual state of the condition. The condition</span>
+<span class="comment">//  variable should be waited in a while loop that tests the</span>
+<span class="comment">//  predicate.</span>
+<span class="comment">//  ==============================================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
 
 <span class="keyword">namespace</span> <span class="identifier">System.Threading</span>

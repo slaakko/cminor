@@ -7,6 +7,15 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ============================================================</span>
+<span class="comment">//  The binary reader class reads values of basic value types</span>
+<span class="comment">//  and strings stored to the underlying stream in binary</span>
+<span class="comment">//  format. Values of basic value types are expected to be in</span>
+<span class="comment">//  big endian format, and strings encoded using UTF-8 encoding</span>
+<span class="comment">//  and zero byte terminated. This is the case when the values</span>
+<span class="comment">//  have been stored to the stream using the BinaryWriter class.</span>
+<span class="comment">//  ============================================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
 <span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
 <span class="keyword">using</span> <span class="identifier">System.Unicode</span><span class="other">;</span>
@@ -123,12 +132,12 @@
         <span class="keyword">public</span> <span class="keyword">float</span> <span class="identifier">ReadFloat</span><span class="other">(</span><span class="other">)</span>
         <span class="other">{</span>
             <span class="keyword">uint</span> <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">ReadUInt</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
-            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">float</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">UIntAsFloat</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
         <span class="other">}</span>
         <span class="keyword">public</span> <span class="keyword">double</span> <span class="identifier">ReadDouble</span><span class="other">(</span><span class="other">)</span>
         <span class="other">{</span>
             <span class="keyword">ulong</span> <span class="identifier">x</span> <span class="other">=</span> <span class="identifier">ReadULong</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
-            <span class="keyword">return</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">double</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">return</span> <span class="identifier">ULongAsDouble</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
         <span class="other">}</span>
         <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Seek</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">pos</span><span class="other">,</span> <span class="identifier">Origin</span> <span class="identifier">origin</span><span class="other">)</span>
         <span class="other">{</span>
@@ -156,6 +165,11 @@
         <span class="keyword">private</span> <span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">;</span>
         <span class="keyword">private</span> <span class="identifier">Utf8Decoder</span> <span class="identifier">stringDecoder</span><span class="other">;</span>
     <span class="other">}</span>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">uintasfloat</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">float</span> <span class="identifier">UIntAsFloat</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">ulongasdouble</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">double</span> <span class="identifier">ULongAsDouble</span><span class="other">(</span><span class="keyword">ulong</span> <span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
 <span class="other">}</span>
 </pre>
 </body>

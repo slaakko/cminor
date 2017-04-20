@@ -7,6 +7,14 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  =====================================================</span>
+<span class="comment">//  The binary writer class stores values of basic value</span>
+<span class="comment">//  types and strings to the underlying stream in binary</span>
+<span class="comment">//  format. Values of basic value types are stored in big</span>
+<span class="comment">//  endian format and strings using UTF-8 encoding and</span>
+<span class="comment">//  zero byte terminated.</span>
+<span class="comment">//  =====================================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
 <span class="keyword">using</span> <span class="identifier">System.Unicode</span><span class="other">;</span>
 
@@ -102,11 +110,11 @@
         <span class="other">}</span>
         <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">x</span><span class="other">)</span>
         <span class="other">{</span>
-            <span class="identifier">Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">uint</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">FloatAsUInt</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
         <span class="other">}</span>
         <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">)</span>
         <span class="other">{</span>
-            <span class="identifier">Write</span><span class="other">(</span><span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">ulong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">Write</span><span class="other">(</span><span class="identifier">DoubleAsULong</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">x</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
         <span class="other">}</span>
         <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Seek</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">pos</span><span class="other">,</span> <span class="identifier">Origin</span> <span class="identifier">origin</span><span class="other">)</span>
         <span class="other">{</span>
@@ -123,6 +131,12 @@
         <span class="keyword">private</span> <span class="identifier">Stream</span> <span class="identifier">stream</span><span class="other">;</span>
         <span class="keyword">private</span> <span class="identifier">Utf8Encoder</span> <span class="identifier">stringEncoder</span><span class="other">;</span>
     <span class="other">}</span>
-<span class="other">}</span></pre>
+
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">floatasuint</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">uint</span> <span class="identifier">FloatAsUInt</span><span class="other">(</span><span class="keyword">float</span> <span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">doubleasulong</span><span class="other">]</span>
+    <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">ulong</span> <span class="identifier">DoubleAsULong</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">x</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
 </body>
 </html>

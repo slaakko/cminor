@@ -1,3 +1,8 @@
+//  ======================================================
+//  The console class allows text I/O with standard input, 
+//  output and error streams.
+//  ======================================================
+
 using System.IO;
 
 namespace System
@@ -6,21 +11,21 @@ namespace System
     {
         static Console()
         {
-            bool inWindows = System.GetPlatform() == System.Platform.windows;
+            bool onWindows = System.GetPlatform() == System.Platform.windows;
             Stream inBaseStream = new FileStream(stdin, FileAccess.read);
-            if (inWindows)
+            if (onWindows)
             {
                 inBaseStream = new NarrowingStream(inBaseStream);
             }
             inStream = new StreamReader(inBaseStream);
             Stream outBaseStream = new FileStream(stdout, FileAccess.write);
-            if (inWindows)
+            if (onWindows)
             {
                 outBaseStream = new WideningStream(outBaseStream);
             }
             outStream = new StreamWriter(outBaseStream);
             Stream errBaseStream = new FileStream(stderr, FileAccess.write);
-            if (inWindows)
+            if (onWindows)
             {
                 errBaseStream = new WideningStream(errBaseStream);
             }

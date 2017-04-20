@@ -1,3 +1,8 @@
+//  ============================================
+//  Stack is a last in, first out data structure
+//  implemented in terms of the List class.
+//  ============================================
+
 using System;
 
 namespace System.Collections.Generic

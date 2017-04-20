@@ -1,3 +1,30 @@
+//  =====================================================
+//  The compiler implements foreach statement in terms of
+//  enumerable and enumerator interfaces.
+//
+//  For example, the following statements:
+//
+//  List<int> list = GetListSomewhere();
+//  foreach (int x in list)
+//  {
+//      Console.WriteLine(x);
+//  }
+//
+//  are lowered by the compiler to the following:
+//
+//  List<int> list = GetListSomewhere();
+//  Enumerable @enumerable = list;
+//  Enumerator @enumerator = @enumerable.GetEnumerator();
+//  for ( ; @enumerator.AtEnd(); @enumerator.MoveNext())
+//  {
+//      int x = cast<int>(@enumerator.GetCurrent());
+//      Console.WriteLine(x);
+//  }
+//  
+//  Generic collections in System Base Library implement 
+//  these interfaces.
+=========================================================
+
 namespace System
 {
     public interface Enumerator

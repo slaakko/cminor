@@ -1,3 +1,24 @@
+//  =================================================
+//  The stream reader class reads characters from the
+//  underlying stream.
+//
+//  The Read() member function reads a character from
+//  the stream and returns it as an int. 
+//  If end of stream is encountered it returns -1.
+//
+//  The Peek() member function returns the next 
+//  available character but does not consume it.
+//  If end of stream is encountered it returns -1.
+//
+//  The ReadLine() member function reads a line of 
+//  characters and returns it as a string.
+//  If end of stream is encountered it returns null.
+//
+//  The ReadToEnd() member function reads characters
+//  from the current position to the end of the 
+//  stream and returns them as a string.
+//  =================================================
+
 using System;
 using System.Text;
 using System.Unicode;

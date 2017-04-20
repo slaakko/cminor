@@ -1,3 +1,12 @@
+//  ============================================================
+//  The binary reader class reads values of basic value types
+//  and strings stored to the underlying stream in binary 
+//  format. Values of basic value types are expected to be in 
+//  big endian format, and strings encoded using UTF-8 encoding 
+//  and zero byte terminated. This is the case when the values 
+//  have been stored to the stream using the BinaryWriter class.
+//  ============================================================
+
 using System;
 using System.Text;
 using System.Unicode;
@@ -114,12 +123,12 @@ namespace System.IO
         public float ReadFloat()
         {
             uint x = ReadUInt();
-            return cast<float>(x);
+            return UIntAsFloat(x);
         }
         public double ReadDouble()
         {
             ulong x = ReadULong();
-            return cast<double>(x);
+            return ULongAsDouble(x);
         }
         public void Seek(int pos, Origin origin)
         {
@@ -147,4 +156,9 @@ namespace System.IO
         private Stream stream;
         private Utf8Decoder stringDecoder;
     }
+
+    [vmf=uintasfloat]
+    public extern float UIntAsFloat(uint x);
+    [vmf=ulongasdouble]
+    public extern double ULongAsDouble(ulong x);
 }

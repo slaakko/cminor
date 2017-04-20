@@ -1,3 +1,9 @@
+//  =======================================================
+//  The string builder constructs a string incrementally.
+//  The overridden StringBuilder.ToString() member function
+//  returns the constructed string.
+//  ========================================================
+
 using System;
 using System.Collections.Generic;
 

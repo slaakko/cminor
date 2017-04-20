@@ -247,7 +247,8 @@
 
     <p>
         We will write each production as a nonmember function that returns the value of the parsed subexpression.
-        Here's the <span class="code">Expr()</span> function that corresponds to the <span class="code">&lt;expr&gt;</span> production:
+        Here's the <span class="code">Expr()</span> function that corresponds to the <span class="code">&lt;expr&gt;</span> production.
+        It parses <span class="code">&lt;term&gt;</span>s separated by '+' and '-' characters:
     </p>
 
     <div class="program">
@@ -264,7 +265,8 @@
     </p>
 
     <p>
-        Here's the <span class="code">Term()</span> function that corresponds to the  <span class="code">&lt;term&gt;</span> production:
+        Here's the <span class="code">Term()</span> function that corresponds to the  <span class="code">&lt;term&gt;</span> production.
+        It parses <span class="code">&lt;factors&gt;</span>s separated by '*' and '/' characters:
     </p>
 
     <div class="program">
@@ -272,7 +274,8 @@
     </div>
 
     <p>
-        The <span class="code">&lt;factor&gt;</span> production is implemented by the following <span class="code">Factor()</span> function:
+        The <span class="code">&lt;factor&gt;</span> production is implemented by the following <span class="code">Factor()</span> function.
+        It parses <span class="code">&lt;primaries&gt;</span> prefixed by '+' and '-' signs:
     </p>
 
     <div class="program">
@@ -280,7 +283,8 @@
     </div>
 
     <p>
-        Here comes finally the implementation of the <span class="code">&lt;primary&gt;</span> production:
+        Here comes finally the implementation of the <span class="code">&lt;primary&gt;</span> production.
+        It parses numbers, variable names and subexpressions:
     </p>
 
     <div class="program">
@@ -300,3 +304,4 @@
         <iframe src="../code/dc/parser.cminor.html" height="2740px" width="720px" style="border:none;"></iframe>
     </div>
 </body>
+</html>

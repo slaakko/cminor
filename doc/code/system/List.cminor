@@ -1,3 +1,10 @@
+//  =================================================
+//  List is a generic collection that keeps contained
+//  elements in an array. List can grow as needed.
+//  It supports constant time element access by 
+//  implementing an indexer.
+//  =================================================
+
 using System;
 
 namespace System.Collections.Generic

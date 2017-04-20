@@ -1,3 +1,13 @@
+//  ==========================================================
+//  The widening stream class acts as an output stream layer 
+//  that expands each line feed character to a carriage return
+//  line feed combination. It is ment to be used on Windows.
+//  It simplifies and standardizes text output for an upper
+//  stream layer because line endings can be represented as a
+//  bare line feed character on all platforms supported by the
+//  Cminor.
+//  ==========================================================
+
 using System;
 
 namespace System.IO

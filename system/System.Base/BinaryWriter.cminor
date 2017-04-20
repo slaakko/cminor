@@ -1,3 +1,11 @@
+//  =====================================================
+//  The binary writer class stores values of basic value
+//  types and strings to the underlying stream in binary
+//  format. Values of basic value types are stored in big
+//  endian format and strings using UTF-8 encoding and 
+//  zero byte terminated.
+//  =====================================================
+
 using System;
 using System.Unicode;
 
@@ -93,11 +101,11 @@ namespace System.IO
         }
         public void Write(float x)
         {
-            Write(cast<uint>(x));
+            Write(FloatAsUInt(x));
         }
         public void Write(double x)
         {
-            Write(cast<ulong>(x));
+            Write(DoubleAsULong>(x));
         }
         public void Seek(int pos, Origin origin)
         {
@@ -114,4 +122,9 @@ namespace System.IO
         private Stream stream;
         private Utf8Encoder stringEncoder;
     }
+
+    [vmf=floatasuint]
+    public extern uint FloatAsUInt(float x);
+    [vmf=doubleasulong]
+    public extern ulong DoubleAsULong(double x);
 }

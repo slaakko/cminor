@@ -7,6 +7,25 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ===============================================================</span>
+<span class="comment">//  System.Object class is the ultimate base class of all classes</span>
+<span class="comment">//  in Cminor. The object class has two virtual methods: ToString()</span>
+<span class="comment">//  and GetHashCode(). The default implementation of ToString()</span>
+<span class="comment">//  method returns the name of the class as a string, and the</span>
+<span class="comment">//  default implementation of GetHashCode() method returns an</span>
+<span class="comment">//  artificial random hash code associated with the object when</span>
+<span class="comment">//  the object is created, allowing all objects to be stored to a</span>
+<span class="comment">//  hash table. These two methods can be overridden by the derived</span>
+<span class="comment">//  classes as needed.</span>
+<span class="comment">//</span>
+<span class="comment">//  Object instances can be compared for equality and less than</span>
+<span class="comment">//  relationship. They compare the memory addresses of the objects.</span>
+<span class="comment">//  Other relational operations are derived from these two</span>
+<span class="comment">//  relationships and logical not operation, so that any two object</span>
+<span class="comment">//  instances can be compared using ==, !=, &lt;, &gt;, &lt;= and &gt;=</span>
+<span class="comment">//  operators.</span>
+<span class="comment">//  ===============================================================</span>
+
 <span class="keyword">namespace</span> <span class="identifier">System</span>
 <span class="other">{</span>
     <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Object</span>

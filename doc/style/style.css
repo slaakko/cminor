@@ -1,6 +1,17 @@
-﻿body
+body
 {
     max-width: 800px;
+}
+
+body.index
+{
+    background-image: url("../image/wintertree.png");
+    background-repeat: no-repeat;
+}
+
+h1.index
+{
+    color: black
 }
 
 p
@@ -33,7 +44,7 @@ table.grammar
     max-width: 800px;
 }
 
-table.type 
+table.type
 {
     background-color: ghostwhite;
     margin: 20px;
@@ -51,12 +62,12 @@ td.type
     border-right: 1px solid black
 }
 
-td.bottom 
+td.bottom
 {
     border-bottom: 1px solid black
 }
 
-td.bottommiddle 
+td.bottommiddle
 {
     border-right: 1px solid black;
     border-bottom: 1px solid black
@@ -65,6 +76,16 @@ td.bottommiddle
 .commands
 {
     background-color: aliceblue;
+    margin: 20px;
+    padding: 20px;
+    max-width: 800px;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+.options 
+{
+    background-color: FloralWhite;
     margin: 20px;
     padding: 20px;
     max-width: 800px;
@@ -99,7 +120,7 @@ td.rulename
 
 .grammarop
 {
-    padding-left: 4pt; 
+    padding-left: 4pt;
     padding-right: 4pt;
 }
 

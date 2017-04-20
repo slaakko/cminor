@@ -7,6 +7,20 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ===============================================</span>
+<span class="comment">//  This file contains minimal support for Unicode.</span>
+<span class="comment">//  It is implemented as an interface to a binary</span>
+<span class="comment">//  file named unicode.bin that contains the</span>
+<span class="comment">//  Unicode character information. The unicode.bin</span>
+<span class="comment">//  is not read entirely when character information</span>
+<span class="comment">//  is first needed, but it is divided into pages</span>
+<span class="comment">//  for faster access. One character information</span>
+<span class="comment">//  page (CharInfoPage class) contains information</span>
+<span class="comment">//  for 4096 characters (64 kilobytes). Similarly</span>
+<span class="comment">//  one character name page (CharNamePage class)</span>
+<span class="comment">//  contains Unicode names for 4096 characters.</span>
+<span class="comment">//  ===============================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
 <span class="keyword">using</span> <span class="identifier">System.IO</span><span class="other">;</span>
 <span class="keyword">using</span> <span class="identifier">System.Collections.Generic</span><span class="other">;</span>

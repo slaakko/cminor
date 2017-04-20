@@ -1,3 +1,8 @@
+//  ==================================================
+//  The code formatter class is used to write indented
+//  text to a stream.
+//  ==================================================
+
 using System;
 using System.IO;
 

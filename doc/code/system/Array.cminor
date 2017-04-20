@@ -1,3 +1,12 @@
+//  =========================================================================
+//  The System.Array class acts as a common base class for all arrays.
+//  If arr is some array created using Type[] arr = new Type[size] statement,
+//  the length of it can be queried using arr.Length syntax.
+//
+//  The System.ArrayEnumerator<T> implements the System.Enumerator interface
+//  for arrays so that they can be enumerated using the foreach clause.
+//  =========================================================================
+
 namespace System
 {
     public class Array

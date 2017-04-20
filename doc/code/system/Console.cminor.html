@@ -7,6 +7,11 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ======================================================</span>
+<span class="comment">//  The console class allows text I/O with standard input,</span>
+<span class="comment">//  output and error streams.</span>
+<span class="comment">//  ======================================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System.IO</span><span class="other">;</span>
 
 <span class="keyword">namespace</span> <span class="identifier">System</span>
@@ -15,21 +20,21 @@
     <span class="other">{</span>
         <span class="keyword">static</span> <span class="identifier">Console</span><span class="other">(</span><span class="other">)</span>
         <span class="other">{</span>
-            <span class="keyword">bool</span> <span class="identifier">inWindows</span> <span class="other">=</span> <span class="identifier">System.GetPlatform</span><span class="other">(</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">System.Platform.windows</span><span class="other">;</span>
+            <span class="keyword">bool</span> <span class="identifier">onWindows</span> <span class="other">=</span> <span class="identifier">System.GetPlatform</span><span class="other">(</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">System.Platform.windows</span><span class="other">;</span>
             <span class="identifier">Stream</span> <span class="identifier">inBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">stdin</span><span class="other">,</span> <span class="identifier">FileAccess.read</span><span class="other">)</span><span class="other">;</span>
-            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">inWindows</span><span class="other">)</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">onWindows</span><span class="other">)</span>
             <span class="other">{</span>
                 <span class="identifier">inBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">NarrowingStream</span><span class="other">(</span><span class="identifier">inBaseStream</span><span class="other">)</span><span class="other">;</span>
             <span class="other">}</span>
             <span class="identifier">inStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StreamReader</span><span class="other">(</span><span class="identifier">inBaseStream</span><span class="other">)</span><span class="other">;</span>
             <span class="identifier">Stream</span> <span class="identifier">outBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">stdout</span><span class="other">,</span> <span class="identifier">FileAccess.write</span><span class="other">)</span><span class="other">;</span>
-            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">inWindows</span><span class="other">)</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">onWindows</span><span class="other">)</span>
             <span class="other">{</span>
                 <span class="identifier">outBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">WideningStream</span><span class="other">(</span><span class="identifier">outBaseStream</span><span class="other">)</span><span class="other">;</span>
             <span class="other">}</span>
             <span class="identifier">outStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StreamWriter</span><span class="other">(</span><span class="identifier">outBaseStream</span><span class="other">)</span><span class="other">;</span>
             <span class="identifier">Stream</span> <span class="identifier">errBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">FileStream</span><span class="other">(</span><span class="identifier">stderr</span><span class="other">,</span> <span class="identifier">FileAccess.write</span><span class="other">)</span><span class="other">;</span>
-            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">inWindows</span><span class="other">)</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">onWindows</span><span class="other">)</span>
             <span class="other">{</span>
                 <span class="identifier">errBaseStream</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">WideningStream</span><span class="other">(</span><span class="identifier">errBaseStream</span><span class="other">)</span><span class="other">;</span>
             <span class="other">}</span>

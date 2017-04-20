@@ -1,3 +1,8 @@
+//  ======================================================
+//  Set is a collection of unique elements stored in a
+//  red-black tree. The elements must form an ordered set.
+//  ======================================================
+
 using System;
 
 namespace System.Collections.Generic

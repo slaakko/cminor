@@ -1,3 +1,9 @@
+//  ===================================================================
+//  Functions and classes in this file implement conversions from basic 
+//  value types to strings and parsing values of basic value types from 
+//  strings.
+//  ===================================================================
+
 using System.Text;
 
 namespace System

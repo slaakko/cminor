@@ -1,3 +1,24 @@
+//  ===========================================================
+//  The hashtable class implements a collection of elements 
+//  stored based on their hash code obtained by the virtual
+//  GetHashCode() member function of the key type. Possible 
+//  collisions that may occur are handled by chaining the 
+//  elements that hash to the same table index.
+//
+//  System.Object class implements GetHashCode() by associating
+//  an artificial random hash code with each object at object
+//  creation time. The hash code stays the same during the 
+//  lifetime of the object although the object may be moved by
+//  the garbage collector. The boxed types and the string type
+//  override this default implementation.
+//
+//  The key type must support equality comparison. That is the 
+//  case for all objects by default. The default equality 
+//  comparison operator compares the memory addresses of the 
+//  objects. The equality comparison for strings compares the 
+//  characters of the strings.
+//  ===========================================================
+
 using System;
 
 namespace System.Collections.Generic

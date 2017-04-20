@@ -1,3 +1,9 @@
+//  ===========================================================
+//  Map is an associative collection of (key, value) pairs.
+//  Pairs are organized in a red-black tree based on ordering
+//  relation of the keys. 
+//  ===========================================================
+
 using System;
 
 namespace System.Collections.Generic

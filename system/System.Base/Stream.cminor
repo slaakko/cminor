@@ -1,3 +1,9 @@
+//  ===========================================================
+//  The stream class is an abstract base class for classes that 
+//  support reading and writing stream of bytes. Some streams 
+//  also support getting and setting current stream position.
+//  ===========================================================
+
 using System;
 
 namespace System.IO

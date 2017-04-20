@@ -7,6 +7,13 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ===========================================================================================</span>
+<span class="comment">//  The file stream class implements one-to-one binary byte stream I/O to an underlying file.</span>
+<span class="comment">//  On Windows this means text mode line endings (CR LF) must be handled on top of this stream,</span>
+<span class="comment">//  for example using WideningStream/NarrowingStream layers. Actual I/O is delegated to external</span>
+<span class="comment">//  functions implemented by the Cminor virtual machine.</span>
+<span class="comment">//  ============================================================================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
 
 <span class="keyword">namespace</span> <span class="identifier">System.IO</span>

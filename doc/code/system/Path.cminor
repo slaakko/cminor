@@ -1,3 +1,10 @@
+//  =====================================================
+//  The path class is a static class for file system path
+//  manipulation. The directory separator char is '/' 
+//  also on Windows because it is supported and makes
+//  the implementation simpler.
+//  =====================================================
+
 using System;
 using System.Collections.Generic;
 using System.Text;

@@ -1,3 +1,11 @@
+//  ====================================================
+//  The thread class represents a thread of execution.
+//  It contains static member functions for executing
+//  a nonmember or member function in a separate thread.
+//  Join() member function waits the execution of a 
+//  thread to end.
+//  ====================================================
+
 using System;
 
 namespace System.Threading

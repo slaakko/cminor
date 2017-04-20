@@ -1,3 +1,15 @@
+//  =========================================================================
+//  Platform and environment specific functions:
+//  GetEnvironmentVariable() returns the value of given environment variable.
+//  GetPathSeparatorChar() returns ';' on Windows and ':' on Unix-based os.
+//  It represents the character that is used to separate paths in PATH 
+//  environment variable.
+//  GetPlatform() returns Platform.windows on Windows and Platform.unix on
+//  Unix-based operating systems.
+//  EnvironmentNewLine() returns carriage return line feed combination on 
+//  Windows and sole line feed on Unix-based operating systems.
+//  =========================================================================
+
 namespace System
 {
     [vmf=getenv]

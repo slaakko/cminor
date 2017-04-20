@@ -1,3 +1,11 @@
+//  =====================================================
+//  The memory stream class implements stream of bytes
+//  abstraction whose contents is stored in memory. 
+//  Memory stream acts as a byte sink that can first be 
+//  written to and then read from. Alternative the written
+//  bytes may be retrieved as an array.
+//  ======================================================
+
 using System;
 using System.Collections.Generic;
 

@@ -1,3 +1,8 @@
+//  ==========================================================
+//  File is a static class that contains convenience functions
+//  for creating and opening text and binary streams.
+//  ==========================================================
+
 using System;
 
 namespace System.IO

@@ -7,6 +7,27 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ===========================================================</span>
+<span class="comment">//  The hashtable class implements a collection of elements</span>
+<span class="comment">//  stored based on their hash code obtained by the virtual</span>
+<span class="comment">//  GetHashCode() member function of the key type. Possible</span>
+<span class="comment">//  collisions that may occur are handled by chaining the</span>
+<span class="comment">//  elements that hash to the same table index.</span>
+<span class="comment">//</span>
+<span class="comment">//  System.Object class implements GetHashCode() by associating</span>
+<span class="comment">//  an artificial random hash code with each object at object</span>
+<span class="comment">//  creation time. The hash code stays the same during the</span>
+<span class="comment">//  lifetime of the object although the object may be moved by</span>
+<span class="comment">//  the garbage collector. The boxed types and the string type</span>
+<span class="comment">//  override this default implementation.</span>
+<span class="comment">//</span>
+<span class="comment">//  The key type must support equality comparison. That is the</span>
+<span class="comment">//  case for all objects by default. The default equality</span>
+<span class="comment">//  comparison operator compares the memory addresses of the</span>
+<span class="comment">//  objects. The equality comparison for strings compares the</span>
+<span class="comment">//  characters of the strings.</span>
+<span class="comment">//  ===========================================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
 
 <span class="keyword">namespace</span> <span class="identifier">System.Collections.Generic</span>

@@ -1,3 +1,8 @@
+//  ================================================================
+//  Math is a static class that currently contains just the minimum,
+//  maximum, absolute value and power functions.
+//  ================================================================
+
 namespace System
 {
     public static class Math

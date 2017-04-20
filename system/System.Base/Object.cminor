@@ -1,3 +1,22 @@
+//  ===============================================================
+//  System.Object class is the ultimate base class of all classes 
+//  in Cminor. The object class has two virtual methods: ToString()
+//  and GetHashCode(). The default implementation of ToString() 
+//  method returns the name of the class as a string, and the 
+//  default implementation of GetHashCode() method returns an
+//  artificial random hash code associated with the object when 
+//  the object is created, allowing all objects to be stored to a
+//  hash table. These two methods can be overridden by the derived
+//  classes as needed.
+//
+//  Object instances can be compared for equality and less than 
+//  relationship. They compare the memory addresses of the objects.
+//  Other relational operations are derived from these two 
+//  relationships and logical not operation, so that any two object
+//  instances can be compared using ==, !=, <, >, <= and >= 
+//  operators.
+//  ===============================================================
+
 namespace System
 {
     public class Object

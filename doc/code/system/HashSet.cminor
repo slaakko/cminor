@@ -1,3 +1,10 @@
+//  ===========================================================
+//  Hashset is a set of unique elements stored in a hash table
+//  based on the hash code of the elements. The hash code is 
+//  obtained by calling the virtual GetHashCode() member 
+//  function of the element type.
+//  ===========================================================
+
 using System;
 
 namespace System.Collections.Generic

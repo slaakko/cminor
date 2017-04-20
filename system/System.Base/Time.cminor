@@ -1,3 +1,9 @@
+//  ========================================================
+//  The time point class represents time elapsed since epoch
+//  in nanoseconds. The duration class represents the 
+//  duration between two time points in nanoseconds.
+//  ========================================================
+
 namespace System
 {
     public class TimePoint

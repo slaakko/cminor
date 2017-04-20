@@ -1,3 +1,7 @@
+//  ========================================================
+//  Function objects for arithmetic and relational operators
+//  ========================================================
+
 namespace System
 {
     public class Identity<T>
@@ -5,6 +9,182 @@ namespace System
         public T operator()(T x)
         {
             return x;
+        }
+    }
+
+    public class UnaryPlus<T>
+    {
+        public T operator()(T x)
+        {
+            return +x;
+        }
+    }
+
+    public class UnaryMinus<T>
+    {
+        public T operator()(T x)
+        {
+            return -x;
+        }
+    }
+
+    public class Plus<T>
+    {
+        public T operator()(T x, T y)
+        {
+            return x + y;
+        }
+    }
+
+    public class Minus<T>
+    {
+        public T operator()(T x, T y)
+        {
+            return x - y;
+        }
+    }
+
+    public class Multiplies<T>
+    {
+        public T operator()(T x, T y)
+        {
+            return x * y;
+        }
+    }
+
+    public class Divides<T>
+    {
+        public T operator()(T x, T y)
+        {
+            return x / y;
+        }
+    }
+
+    public class Remainder<T>
+    {
+        public T operator()(T x, T y)
+        {
+            return x % y;
+        }
+    }
+
+    public class BitwiseAnd<T>
+    {
+        public T operator()(T x, T y)
+        {
+            return x & y;
+        }
+    }
+
+    public class BitwiseOr<T>
+    {
+        public T operator()(T x, T y)
+        {
+            return x | y;
+        }
+    }
+
+    public class BitwiseXor<T>
+    {
+        public T operator()(T x, T y)
+        {
+            return x ^ y;
+        }
+    }
+
+    public class BitwiseComplement<T>
+    {
+        public T operator()(T x)
+        {
+            return ~x;
+        }
+    }
+
+    public class ShiftLeft<T>
+    {
+        public T operator()(T x, T y)
+        {
+            return x << y;
+        }
+    }
+
+    public class ShiftRight<T>
+    {
+        public T operator()(T x, T y)
+        {
+            return x >> y;
+        }
+    }
+
+    public class LogicalAnd<T>
+    {
+        public bool operator()(bool x, bool y)
+        {
+            return x && y;
+        }
+    }
+
+    public class LogicalOr<T>
+    {
+        public bool operator()(bool x, bool y)
+        {
+            return x || y;
+        }
+    }
+
+    public class LogicalNot<T>
+    {
+        public bool operator()(bool x)
+        {
+            return !x;
+        }
+    }
+
+    public class Equal<T>
+    {
+        public bool operator()(T x, T y)
+        {
+            return x == y;
+        }
+    }
+
+    public class NotEqual<T>
+    {
+        public bool operator()(T x, T y)
+        {
+            return x != y;
+        }
+    }
+
+    public class Less<T>
+    {
+        public bool operator()(T x, T y)
+        {
+            return x < y;
+        }
+    }
+
+    public class Greater<T>
+    {
+        public bool operator()(T x, T y)
+        {
+            return x > y;
+        }
+    }
+
+    public class LessOrEqual<T>
+    {
+        public bool operator()(T x, T y)
+        {
+            return x <= y;
+        }
+    }
+
+    public class GreaterOrEqual<T>
+    {
+        public bool operator()(T x, T y)
+        {
+            return x >= y;
         }
     }
 }

@@ -7,6 +7,22 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ============================================================</span>
+<span class="comment">//  System.Exception is the base class of all Cminor exceptions.</span>
+<span class="comment">//  System.Exception.ToString() method returns a string that</span>
+<span class="comment">//  contains the class name of the exception, a stack trace, and</span>
+<span class="comment">//  the error message while System.Exception.Message contains</span>
+<span class="comment">//  just the error message.</span>
+<span class="comment">//</span>
+<span class="comment">//  System.SystemException is the base class of Cminor system</span>
+<span class="comment">//  exceptions just as System.NullReferenceException,</span>
+<span class="comment">//  System.IndexOutOfRangeException and</span>
+<span class="comment">//  System.InvalidCastException, that are throw by the virtual</span>
+<span class="comment">//  machine when member of null tried to be accessed, an array</span>
+<span class="comment">//  index is out of range, or type of object or value does not</span>
+<span class="comment">//  allow it to be casted to the type it is tried to cast to.</span>
+<span class="comment">//  ============================================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
 
 <span class="keyword">namespace</span> <span class="identifier">System</span>

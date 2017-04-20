@@ -7,6 +7,18 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  =========================================================================</span>
+<span class="comment">//  Platform and environment specific functions:</span>
+<span class="comment">//  GetEnvironmentVariable() returns the value of given environment variable.</span>
+<span class="comment">//  GetPathSeparatorChar() returns &apos;;&apos; on Windows and &apos;:&apos; on Unix-based os.</span>
+<span class="comment">//  It represents the character that is used to separate paths in PATH</span>
+<span class="comment">//  environment variable.</span>
+<span class="comment">//  GetPlatform() returns Platform.windows on Windows and Platform.unix on</span>
+<span class="comment">//  Unix-based operating systems.</span>
+<span class="comment">//  EnvironmentNewLine() returns carriage return line feed combination on</span>
+<span class="comment">//  Windows and sole line feed on Unix-based operating systems.</span>
+<span class="comment">//  =========================================================================</span>
+
 <span class="keyword">namespace</span> <span class="identifier">System</span>
 <span class="other">{</span>
     <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">getenv</span><span class="other">]</span>

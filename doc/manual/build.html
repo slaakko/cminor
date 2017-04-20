@@ -1,0 +1,396 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Building Projects and Solutions</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2 id="projectsolution">
+        2 Building Projects and Solutions
+    </h2>
+
+    <h3 id="syntax">
+        2.1 Build Command Syntax
+    </h3>
+
+    <div class="commands">
+        cminor build [build-options] { SOLUTION.cminors | PROJECT.cminorp } | system
+    </div>
+
+    <p>
+        Builds each given solution and project, or builds system libraries.
+    </p>
+
+    <h3 id="configuration">
+        2.2 Setting the Configuration
+    </h3>
+
+    <p>
+        To use the debug configuration (default) give the following option:
+    </p>
+
+    <div class="options">
+        --config=debug
+    </div>
+
+    <p>
+        To use the release configuration give the following option:
+    </p>
+
+    <div class="options">
+        --config=release
+    </div>
+
+    <p>
+        For example, to build project <span class="code">examples/dc/dc.cminorp</span> using the release configuration, give the following command:
+    </p>
+
+    <div class="commands">
+        > cminor build --config=release examples/dc/dc.cminorp
+    </div>
+
+    <h3 id="native">
+        2.3 Compiling to Native Object Code
+    </h3>
+
+    <p>
+        To compile a project to native object code give the following option:
+    </p>
+
+    <div class="options">
+        --native
+    </div>
+
+    <p>
+        When compiling to native code, the compiler first compiles the given project to intermediate code and then converts the intermediate instructions to native code using
+        <a href="http://llvm.org/">LLVM</a> libraries. Compiling to native code generates DLL's on Windows and shared objects on Linux.
+    </p>
+
+    <p>
+        For example, to compile system libraries to native code using debug configuration, give the following command:
+    </p>
+
+    <div class="commands">
+        > cminor build --native system
+    </div>
+
+    <h4>
+        2.3.1 Native Code Options
+    </h4>
+
+    <p>
+        To set the optimization level use the following option:
+    </p>
+
+    <div class="options">
+        --optimization-level=LEVEL
+    </div>
+
+    <p>
+        where LEVEL can be 0-3. Defaults are: 0 for debug configuration, 2 for release configuration.
+    </p>
+
+    <p>
+        To set the inline limit use the following option:
+    </p>
+
+    <div class="options">
+        --inline-limit=LIMIT
+    </div>
+
+    <p>
+        where LIMIT is the number of intermediate instructions for a function to have to select it as an inline candidate.
+        Defaults are: 0 (no inlining) for optimization levels 0 and 1, 16 instructions for optimization level 2, and 32 instructions for optimization level 3.
+        Eventually LLVM will decide which functions to inline.
+    </p>
+
+    <p>
+        To set maximum number of locals an inline function will have, use the following option:
+    </p>
+
+    <div class="options">
+        --inline-locals=NUMLOCALS
+    </div>
+
+    <p>
+        where NUMLOCALS is the number of locals. Defaults are: 0 (no inlining) for optimization levels 0 and 1, 4 locals for optimization level 2, and 8 locals for optimization level 3.
+    </p>
+
+    <h4>
+        2.3.2 Native Code Debugging Options
+    </h4>
+
+    <p>
+        To generate debug listing containing intermediate code functions and corresponding LLVM intermediate code functions, use the following option:
+    </p>
+
+    <div class="options">
+        --list
+    </div>
+
+    <p>
+        For example, to compile project <span class="code">hello.cminorp</span> to native code using debug configuration, and generate a listing give the following command:
+    </p>
+
+    <div class="commands">
+        > cminor build --native --list hello.cminorp
+    </div>
+
+    <p>
+        The following listing file will be generated to the assembly/debug directory:
+    </p>
+
+    <div class="commands">
+        MODULE hello : C:/Users/Seppo/cminor/examples/hello/assembly/debug/hello.cminora</br>
+        target triple: x86_64-pc-windows-msvc
+        </br>
+        optimization level: 0
+        </br>
+        inline limit: 0 or fewer intermediate instructions (0 = no inlining)
+        </br>
+        inline locals: 0
+        </br>
+
+        </br>
+        before removing unreachable instructions:
+        </br>
+        FUNCTION #0
+        </br>
+        call name: main()
+        </br>
+        group name: main
+        </br>
+        full name: internal export System.Void main()
+        </br>
+        mangled name: main_entry_point
+        </br>
+        flags: exported canThrow
+        </br>
+        source file path: C:/Users/Seppo/cminor/examples/hello/hello.cminor
+        </br>
+        0 parameters:
+        </br>
+        0 locals:
+        </br>
+        returns: System.Void
+        </br>
+        code:
+        </br>
+        {
+        </br>
+        0    BC    receive
+        </br>
+        1    F2    gcpoll
+        </br>
+        2    C3    enterblock
+        </br>
+        3    BA    loadconstant.s 643
+        </br>
+        4    E3    slit2s
+        </br>
+        5    C0    call System.Console.WriteLine(System.String)
+        </br>
+        6    C4    exitblock
+        </br>
+        }
+        </br>
+
+        </br>
+        after removing unreachable instructions:
+        </br>
+        FUNCTION #0
+        </br>
+        call name: main()
+        </br>
+        group name: main
+        </br>
+        full name: internal export System.Void main()
+        </br>
+        mangled name: main_entry_point
+        </br>
+        flags: exported canThrow
+        </br>
+        source file path: C:/Users/Seppo/cminor/examples/hello/hello.cminor
+        </br>
+        0 parameters:
+        </br>
+        0 locals:
+        </br>
+        returns: System.Void
+        </br>
+        code:
+        </br>
+        {
+        </br>
+        0    BC    receive
+        </br>
+        1    F2    gcpoll
+        </br>
+        2    C3    enterblock
+        </br>
+        3    BA    loadconstant.s 643
+        </br>
+        4    E3    slit2s
+        </br>
+        5    C0    call System.Console.WriteLine(System.String)
+        </br>
+        6    C4    exitblock
+        </br>
+        }
+        </br>
+
+        </br>
+
+        </br>
+        ; Function Attrs: norecurse uwtable
+        </br>
+        define dllexport void @main_entry_point() #0 {
+        </br>
+        entry:
+        </br>
+        %0 = alloca i64
+        </br>
+        %1 = alloca { i64* }
+        </br>
+        %2 = alloca { i8*, i8*, i32, i32, i64** }
+        </br>
+        store i64 0, i64* %0
+        </br>
+        %3 = getelementptr { i64* }, { i64* }* %1, i32 0, i32 0
+        </br>
+        store i64* %0, i64** %3
+        </br>
+        %4 = getelementptr { i8*, i8*, i32, i32, i64** }, { i8*, i8*, i32, i32, i64** }* %2, i32 0, i32 1
+        </br>
+        %5 = load i8*, i8** @__F0
+        </br>
+        store i8* %5, i8** %4
+        </br>
+        %6 = getelementptr { i8*, i8*, i32, i32, i64** }, { i8*, i8*, i32, i32, i64** }* %2, i32 0, i32 2
+        </br>
+        store i32 4, i32* %6
+        </br>
+        %7 = getelementptr { i8*, i8*, i32, i32, i64** }, { i8*, i8*, i32, i32, i64** }* %2, i32 0, i32 3
+        </br>
+        store i32 1, i32* %7
+        </br>
+        %8 = getelementptr { i8*, i8*, i32, i32, i64** }, { i8*, i8*, i32, i32, i64** }* %2, i32 0, i32 4
+        </br>
+        %9 = bitcast { i64* }* %1 to i64**
+        </br>
+        store i64** %9, i64*** %8
+        </br>
+        %10 = bitcast { i8*, i8*, i32, i32, i64** }* %2 to i8*
+        </br>
+        call void @RtEnterFunction(i8* %10)
+        </br>
+        call void @RtPollGc()
+        </br>
+        %11 = load i8*, i8** @__constant_pool
+        </br>
+        %12 = call i32* @RtLoadStringLiteral(i8* %11, i32 643)
+        </br>
+        %13 = call i64 @RtStrLitToString(i32* %12)
+        </br>
+        store i64 %13, i64* %0
+        </br>
+        %14 = getelementptr { i8*, i8*, i32, i32, i64** }, { i8*, i8*, i32, i32, i64** }* %2, i32 0, i32 2
+        </br>
+        store i32 5, i32* %14
+        </br>
+        call void @WriteLine_Console_BE58CCFEB8D919E3373B8B3AE9D44E04755263CE(i64 %13)
+        </br>
+        %15 = bitcast { i8*, i8*, i32, i32, i64** }* %2 to i8*
+        </br>
+        call void @RtLeaveFunction(i8* %15)
+        </br>
+        ret void
+        </br>
+        }
+        </br>
+
+        </br>
+        ; Function Attrs: nounwind uwtable
+        </br>
+        define dllexport x86_64_win64cc i32 @DllMain(i8*, i64, i8*) #1 {
+        </br>
+        entry:
+        </br>
+        ret i32 1
+        </br>
+        }
+        </br>
+    </div>
+
+    <p>
+        To generate LLVM intermediate code to an .ll file, use the following option:
+    </p>
+
+    <div class="options">
+        --emit-llvm
+    </div>
+
+    <p>
+        To generate optimized LLVM intermediate code to an .opt.ll file, use the following option:
+    </p>
+
+    <div class="options">
+        --emit-opt-llvm
+    </div>
+
+    <p>
+        For example, to emit LLVM intermediate code and optimized LLVM intermediate code for project <span class="code">dc.cminorp</span> for release configuration, use the following command:
+    </p>
+
+    <div class="commands">
+        > cminor build --native --config=release --emit-llvm --emit-opt-llvm dc.cminorp</br>
+    </div>
+
+    <p>
+        The .ll files will be generated to the assembly/release directory.
+    </p>
+
+    <p>
+        To generate debug output for LLVM passes to stderr, use the following option:
+    </p>
+
+    <div class="options">
+        --debug-pass=VALUE
+    </div>
+
+    <p>
+        where VALUE can be Arguments, Structure, Executions, or Details.
+        Arguments prints pass arguments, Structure prints pass structure before run(), Executions prints pass name before it is executed, and Details prints pass details when it is executed.
+    </p>
+
+    <p>
+        To generate LLVM debug output to stderr, use the following option:
+    </p>
+
+    <div class="options">
+        --debug-llvm
+    </div>
+
+    <h3 id="debugging">
+        2.4 Compiler Debugging Options
+    </h3>
+
+    <p>
+        To run debug version of the compiler, give the following option:
+    </p>
+
+    <div class="options">
+        --debug
+    </div>
+
+    <p>
+        To generate debugging output for parsing to stdout, give the following option:
+    </p>
+
+    <div class="options">
+        --debug-parse
+    </div>
+</body>
+</html>

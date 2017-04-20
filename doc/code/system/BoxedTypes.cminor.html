@@ -7,6 +7,33 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ============================================================</span>
+<span class="comment">//  Boxed types complete compiler support for boxing operations.</span>
+<span class="comment">//  Instance of a basic value type is converted to an object of</span>
+<span class="comment">//  the corresponding boxed type, so that member functions of</span>
+<span class="comment">//  the boxed type can be called for the value. For example, the</span>
+<span class="comment">//  following statements:</span>
+<span class="comment">//</span>
+<span class="comment">//  sbyte x = 123;</span>
+<span class="comment">//  string s = x.ToString();</span>
+<span class="comment">//</span>
+<span class="comment">//  are converted by the compiler to the following:</span>
+<span class="comment">//</span>
+<span class="comment">//  sbyte x = 123;</span>
+<span class="comment">//  BoxedInt8 @x = new BoxedInt8(x);</span>
+<span class="comment">//  string s = @x.ToString();</span>
+<span class="comment">//</span>
+<span class="comment">//  Boxed types also contain static member functions, that</span>
+<span class="comment">//  enable expressions of the form type.staticMemFun(instance)</span>
+<span class="comment">//  For example, the following statement:</span>
+<span class="comment">//</span>
+<span class="comment">//  bool isLetter = char.IsLetter(&apos;a&apos;);</span>
+<span class="comment">//</span>
+<span class="comment">//  is converted by the compiler to the following:</span>
+<span class="comment">//</span>
+<span class="comment">//  bool isLetter = BoxedChar.IsLetter(&apos;a&apos;);</span>
+<span class="comment">//  ===========================================================</span>
+
 <span class="keyword">namespace</span> <span class="identifier">System</span>
 <span class="other">{</span>
     <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BoxedInt8</span>

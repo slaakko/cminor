@@ -7,6 +7,13 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  =======================================================</span>
+<span class="comment">//  The compiler implements support for the using statement</span>
+<span class="comment">//  with the help of the closable interface. Classes that</span>
+<span class="comment">//  need to be closed after operating with them, such as</span>
+<span class="comment">//  streams, should implement this interface.</span>
+<span class="comment">//  =======================================================</span>
+
 <span class="keyword">namespace</span> <span class="identifier">System</span>
 <span class="other">{</span>
     <span class="keyword">public</span> <span class="keyword">interface</span> <span class="identifier">Closable</span>

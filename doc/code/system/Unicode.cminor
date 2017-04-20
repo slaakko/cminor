@@ -1,3 +1,17 @@
+//  ===============================================
+//  This file contains minimal support for Unicode.
+//  It is implemented as an interface to a binary 
+//  file named unicode.bin that contains the 
+//  Unicode character information. The unicode.bin 
+//  is not read entirely when character information 
+//  is first needed, but it is divided into pages 
+//  for faster access. One character information 
+//  page (CharInfoPage class) contains information
+//  for 4096 characters (64 kilobytes). Similarly 
+//  one character name page (CharNamePage class) 
+//  contains Unicode names for 4096 characters.
+//  ===============================================
+
 using System;
 using System.IO;
 using System.Collections.Generic;

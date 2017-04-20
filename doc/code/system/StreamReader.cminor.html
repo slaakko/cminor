@@ -7,6 +7,27 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  =================================================</span>
+<span class="comment">//  The stream reader class reads characters from the</span>
+<span class="comment">//  underlying stream.</span>
+<span class="comment">//</span>
+<span class="comment">//  The Read() member function reads a character from</span>
+<span class="comment">//  the stream and returns it as an int.</span>
+<span class="comment">//  If end of stream is encountered it returns -1.</span>
+<span class="comment">//</span>
+<span class="comment">//  The Peek() member function returns the next</span>
+<span class="comment">//  available character but does not consume it.</span>
+<span class="comment">//  If end of stream is encountered it returns -1.</span>
+<span class="comment">//</span>
+<span class="comment">//  The ReadLine() member function reads a line of</span>
+<span class="comment">//  characters and returns it as a string.</span>
+<span class="comment">//  If end of stream is encountered it returns null.</span>
+<span class="comment">//</span>
+<span class="comment">//  The ReadToEnd() member function reads characters</span>
+<span class="comment">//  from the current position to the end of the</span>
+<span class="comment">//  stream and returns them as a string.</span>
+<span class="comment">//  =================================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
 <span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
 <span class="keyword">using</span> <span class="identifier">System.Unicode</span><span class="other">;</span>

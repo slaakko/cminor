@@ -7,6 +7,10 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ========================================================</span>
+<span class="comment">//  Function objects for arithmetic and relational operators</span>
+<span class="comment">//  ========================================================</span>
+
 <span class="keyword">namespace</span> <span class="identifier">System</span>
 <span class="other">{</span>
     <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Identity</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
@@ -14,6 +18,182 @@
         <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
         <span class="other">{</span>
             <span class="keyword">return</span> <span class="identifier">x</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">UnaryPlus</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="other">+</span><span class="identifier">x</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">UnaryMinus</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="other">-</span><span class="identifier">x</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Plus</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">+</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Minus</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">-</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Multiplies</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">*</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Divides</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">/</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Remainder</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">%</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BitwiseAnd</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">&amp;</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BitwiseOr</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">|</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BitwiseXor</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">^</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">BitwiseComplement</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="other">~</span><span class="identifier">x</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">ShiftLeft</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">&lt;</span><span class="other">&lt;</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">ShiftRight</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">T</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">&gt;</span><span class="other">&gt;</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">LogicalAnd</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">x</span><span class="other">,</span> <span class="keyword">bool</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">&amp;</span><span class="other">&amp;</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">LogicalOr</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">x</span><span class="other">,</span> <span class="keyword">bool</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">LogicalNot</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">x</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="other">!</span><span class="identifier">x</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Equal</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">NotEqual</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">!</span><span class="other">=</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Less</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">&lt;</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Greater</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">&gt;</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">LessOrEqual</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">&lt;</span><span class="other">=</span> <span class="identifier">y</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">GreaterOrEqual</span><span class="other">&lt;</span><span class="identifier">T</span><span class="other">&gt;</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="keyword">operator</span><span class="other">(</span><span class="other">)</span><span class="other">(</span><span class="identifier">T</span> <span class="identifier">x</span><span class="other">,</span> <span class="identifier">T</span> <span class="identifier">y</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">x</span> <span class="other">&gt;</span><span class="other">=</span> <span class="identifier">y</span><span class="other">;</span>
         <span class="other">}</span>
     <span class="other">}</span>
 <span class="other">}</span>

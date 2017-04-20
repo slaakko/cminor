@@ -1,3 +1,10 @@
+//  ===========================================================
+//  Hashmap is an associative collection of (key, value) pairs.
+//  Pairs are organized in a hash table based on the hash code 
+//  of the keys. The hash code is obtained by calling the 
+//  virtual GetHashCode() member function of the key type.
+//  ===========================================================
+
 using System;
 
 namespace System.Collections.Generic

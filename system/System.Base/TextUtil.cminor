@@ -1,3 +1,8 @@
+//  =================================================
+//  Conversions from characters and strings to Cminor
+//  source code representation.
+//  =================================================
+
 using System;
 
 namespace System.Text

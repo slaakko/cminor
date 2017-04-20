@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Dumping Contents of an Assembly</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2 id="dump">
+        6 Dumping Contents of an Assembly
+    </h2>
+
+    <h3 id="syntax">
+        6.1 Dump Command Syntax
+    </h3>
+
+    <div class="commands">
+        cminor dump [dump-options] ASSEMBLY.cminora [output-file]
+    </div>
+
+    <p>
+        Dumps information in ASSEMBLY.cminor to standard output, or to the given file.
+    </p>
+
+    <h3 id="all">
+        6.2 Dumping All
+    </h3>
+
+    <p>
+        To dump the whole contents of assembly <span class="code">hello.cminora</span>, give the dump command without options, or give the following command:
+    </p>
+
+    <div class="commands">
+        cminor dump --all assembly/debug/hello.cminora
+    </div>
+
+    <h3 id="header">
+        6.3 Dumping the Assembly Header
+    </h3>
+
+    <p>
+        To dump just the header of assembly <span class="code">hello.cminora</span>, give the following command:
+    </p>
+
+    <div class="commands">
+        cminor dump --header assembly/debug/hello.cminora
+    </div>
+
+    <h3 id="constants">
+        6.4 Dumping the Constant Pool
+    </h3>
+
+    <p>
+        To dump just the constant pool of assembly <span class="code">hello.cminora</span>, give the following command:
+    </p>
+
+    <div class="commands">
+        cminor dump --constants assembly/debug/hello.cminora
+    </div>
+
+    <h3 id="functions">
+        6.5 Dumping the Function Table
+    </h3>
+
+    <p>
+        To dump just the function table of assembly <span class="code">hello.cminora</span>, give the following command:
+    </p>
+
+    <div class="commands">
+        cminor dump --functions assembly/debug/hello.cminora
+    </div>
+
+    <h3 id="symbols">
+        6.6 Dumping the Symbol Table
+    </h3>
+
+    <p>
+        To dump just the hierarchical symbol table of assembly <span class="code">hello.cminora</span>, give the following command:
+    </p>
+
+    <div class="commands">
+        cminor dump --symbols assembly/debug/hello.cminora
+    </div>
+
+    <h3 id="mappings">
+        6.7 Dumping the Assembly Mappings
+    </h3>
+
+    <p>
+        To dump just the mappings of assembly <span class="code">hello.cminora</span>, give the following command:
+    </p>
+
+    <div class="commands">
+        cminor dump --mappings assembly/debug/hello.cminora
+    </div>
+</body>
+</html>

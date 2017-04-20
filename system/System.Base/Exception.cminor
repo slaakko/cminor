@@ -1,3 +1,19 @@
+//  ============================================================
+//  System.Exception is the base class of all Cminor exceptions.
+//  System.Exception.ToString() method returns a string that 
+//  contains the class name of the exception, a stack trace, and 
+//  the error message while System.Exception.Message contains 
+//  just the error message.
+//
+//  System.SystemException is the base class of Cminor system
+//  exceptions just as System.NullReferenceException, 
+//  System.IndexOutOfRangeException and 
+//  System.InvalidCastException, that are throw by the virtual 
+//  machine when member of null tried to be accessed, an array
+//  index is out of range, or type of object or value does not 
+//  allow it to be casted to the type it is tried to cast to.
+//  ============================================================
+
 using System.Text;
 
 namespace System

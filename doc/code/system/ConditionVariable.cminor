@@ -1,3 +1,22 @@
+//  ==============================================================
+//  A condition variable is a thread synchronization primitive,
+//  that allows a thread or threads to wait for some condition, 
+//  and some thread to change the condition and wake up the thread
+//  or threads waiting for it.
+//
+//  The Wait(), WaitFor() and WaitUntil() member functions allow
+//  a thread to wait for some condition to happen.
+//  The NotifyOne() member function wakes up one waiting thread.
+//  The NotifyAll() member function wakes up all waiting threads.
+//  
+//  On some platforms a thread waiting may also be waken up 
+//  spuriously, although the condition has not changed, so a 
+//  condition variable should be associated with a predicate that
+//  contains the actual state of the condition. The condition
+//  variable should be waited in a while loop that tests the 
+//  predicate.
+//  ==============================================================
+
 using System;
 
 namespace System.Threading

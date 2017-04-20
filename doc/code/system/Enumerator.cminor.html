@@ -7,6 +7,33 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  =====================================================</span>
+<span class="comment">//  The compiler implements foreach statement in terms of</span>
+<span class="comment">//  enumerable and enumerator interfaces.</span>
+<span class="comment">//</span>
+<span class="comment">//  For example, the following statements:</span>
+<span class="comment">//</span>
+<span class="comment">//  List&lt;int&gt; list = GetListSomewhere();</span>
+<span class="comment">//  foreach (int x in list)</span>
+<span class="comment">//  {</span>
+<span class="comment">//      Console.WriteLine(x);</span>
+<span class="comment">//  }</span>
+<span class="comment">//</span>
+<span class="comment">//  are lowered by the compiler to the following:</span>
+<span class="comment">//</span>
+<span class="comment">//  List&lt;int&gt; list = GetListSomewhere();</span>
+<span class="comment">//  Enumerable @enumerable = list;</span>
+<span class="comment">//  Enumerator @enumerator = @enumerable.GetEnumerator();</span>
+<span class="comment">//  for ( ; @enumerator.AtEnd(); @enumerator.MoveNext())</span>
+<span class="comment">//  {</span>
+<span class="comment">//      int x = cast&lt;int&gt;(@enumerator.GetCurrent());</span>
+<span class="comment">//      Console.WriteLine(x);</span>
+<span class="comment">//  }</span>
+<span class="comment">//</span>
+<span class="comment">//  Generic collections in System Base Library implement</span>
+<span class="comment">//  these interfaces.</span>
+<span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span><span class="other">=</span>
+
 <span class="keyword">namespace</span> <span class="identifier">System</span>
 <span class="other">{</span>
     <span class="keyword">public</span> <span class="keyword">interface</span> <span class="identifier">Enumerator</span>

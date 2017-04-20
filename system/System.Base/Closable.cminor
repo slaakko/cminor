@@ -1,3 +1,10 @@
+//  =======================================================
+//  The compiler implements support for the using statement
+//  with the help of the closable interface. Classes that 
+//  need to be closed after operating with them, such as 
+//  streams, should implement this interface.
+//  =======================================================
+
 namespace System
 {
     public interface Closable

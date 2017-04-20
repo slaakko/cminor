@@ -7,6 +7,21 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ========================================================</span>
+<span class="comment">//  The string class stores a sequence of UTF-32 characters.</span>
+<span class="comment">//  Once constructed a string becomes immutable, so that</span>
+<span class="comment">//  it can be accessed from multiple threads without any</span>
+<span class="comment">//  locking. Strings can be compared for equality and less</span>
+<span class="comment">//  than relationship. The comparison functions compare</span>
+<span class="comment">//  the contents of the strings, not the memory addresses</span>
+<span class="comment">//  of the string objects. Other relational operations are</span>
+<span class="comment">//  derived from these two relationships and logical not</span>
+<span class="comment">//  operation, so that any two string instances can be</span>
+<span class="comment">//  compared using ==, !=, &lt;, &gt;, &lt;= and &gt;= operators.</span>
+<span class="comment">//  The characters of a string can be enumerated using the</span>
+<span class="comment">//  foreach statement.</span>
+<span class="comment">//  ========================================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System.Collections.Generic</span><span class="other">;</span>
 <span class="keyword">using</span> <span class="identifier">System.Text</span><span class="other">;</span>
 

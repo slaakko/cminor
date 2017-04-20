@@ -7,11 +7,17 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ===========================================================</span>
+<span class="comment">//  Mersenne Twister based pseudorandom number engine.</span>
+<span class="comment">//  The InitRand() function does not need to be called unless a</span>
+<span class="comment">//  reproducible sequence of pseudorandom numbers are needed.</span>
+<span class="comment">//  If InitRand() is not called, the random number generator is</span>
+<span class="comment">//  initialized with a random seed obtained from the system.</span>
+<span class="comment">//  Each application thread has its own generator instance.</span>
+<span class="comment">//  ===========================================================</span>
+
 <span class="keyword">namespace</span> <span class="identifier">System</span>
 <span class="other">{</span>
-<span class="comment">//  If InitRand(uint) function is not called, the random number generator is initialized with a random seed obtained from the system.</span>
-<span class="comment">//  Random number generator is thread safe (each application thread has its own generator instance).</span>
-
     <span class="other">[</span><span class="identifier">vmf</span><span class="other">=</span><span class="identifier">initrand</span><span class="other">]</span>
     <span class="keyword">public</span> <span class="identifier">extern</span> <span class="keyword">void</span> <span class="identifier">InitRand</span><span class="other">(</span><span class="keyword">uint</span> <span class="identifier">seed</span><span class="other">)</span><span class="other">;</span> 
 

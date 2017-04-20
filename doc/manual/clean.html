@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Cleaning Projects and Solutions</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+<body>
+    <h2 id="clean">
+        3 Cleaning Projects and Solutions
+    </h2>
+
+    <h3 id="syntax">
+        3.1 Clean Command Syntax
+    </h3>
+
+    <div class="commands">
+        cminor clean [clean-options] { SOLUTION.cminors | PROJECT.cminorp } | system
+    </div>
+
+    <p>
+        The command cleans the assembly directory for the specified configuration for given projects and solutions, or cleans the assembly directories for the specified configuration 
+        for the system libraries.
+    </p>
+
+    <h3 id="cleandebug">
+        3.2 Cleaning Debug Configuration
+    </h3>
+
+    <p>
+        To clean the debug configuration output for the <span class="code">dc.cminorp</span> project, use the following command:
+    </p>
+
+    <div class="commands">
+        cminor clean dc.cminorp
+    </div>
+
+    <p>
+        This clean command deletes the assembly/debug directory.
+    </p>
+
+    <h3 id="cleanrelease">
+        3.3 Cleaning Release Configuration
+    </h3>
+
+    <p>
+        To clean the release configuration output for the <span class="code">dc.cminorp</span> project, use the following command:
+    </p>
+
+    <div class="commands">
+        cminor clean --config=release dc.cminorp
+    </div>
+
+    <p>
+        This clean command deletes the assembly/release directory.
+    </p>
+</body>
+</html>

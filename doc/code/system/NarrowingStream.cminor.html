@@ -7,6 +7,15 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ================================================================</span>
+<span class="comment">//  The narrowing stream acts as a text stream processing layer</span>
+<span class="comment">//  that replaces carriage return line feed character pairs read</span>
+<span class="comment">//  with bare line feed character. It is ment to be used on Windows.</span>
+<span class="comment">//  It simplifies and standardizes text processing for upper stream</span>
+<span class="comment">//  layer because all line endings can be treated the same way on</span>
+<span class="comment">//  all platforms supported by the Cminor.</span>
+<span class="comment">//  ================================================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
 
 <span class="keyword">namespace</span> <span class="identifier">System.IO</span>

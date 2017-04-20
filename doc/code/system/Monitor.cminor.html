@@ -7,6 +7,31 @@
 </head>
 <body>
 <pre>
+<span class="comment">//  ===========================================================</span>
+<span class="comment">//  A monitor is a thread synchronization primitive that allows</span>
+<span class="comment">//  one thread at a time to be inside the monitor. A thread</span>
+<span class="comment">//  that has entered the monitor may enter it multiple times</span>
+<span class="comment">//  without being blocked. The monitor is implemented using a</span>
+<span class="comment">//  recursive mutex associated with an object.</span>
+<span class="comment">//</span>
+<span class="comment">//  The Cminor lock statement is implemented in terms of the</span>
+<span class="comment">//  monitor class:</span>
+<span class="comment">//</span>
+<span class="comment">//  lock (lck) { statement; }</span>
+<span class="comment">//</span>
+<span class="comment">//  is lowered by the compiler to the following:</span>
+<span class="comment">//</span>
+<span class="comment">//  Monitor.Enter(lck);</span>
+<span class="comment">//  try</span>
+<span class="comment">//  {</span>
+<span class="comment">//      statement;</span>
+<span class="comment">//  }</span>
+<span class="comment">//  finally</span>
+<span class="comment">//  {</span>
+<span class="comment">//      Monitor.Exit(lck);</span>
+<span class="comment">//  }</span>
+<span class="comment">//  ===========================================================</span>
+
 <span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
 
 <span class="keyword">namespace</span> <span class="identifier">System.Threading</span>
