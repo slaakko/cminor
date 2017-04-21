@@ -1,0 +1,113 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+
+class OutputCollector
+{
+    static OutputCollector()
+    {
+        instance = new OutputCollector();
+    }
+    private OutputCollector()
+    {
+        this.outputLines = new List<string>();
+        this.outputLock = new object();
+        this.outputAvailableOrExiting = new ConditionVariable();
+    }
+    public static OutputCollector Instance
+    {
+        get { return instance; }
+    }
+    public void WriteLine(string line)
+    {
+        lock (outputLock)
+        {
+            outputLines.Add(line);
+        }
+        outputAvailableOrExiting.NotifyOne();
+    }
+    public void Run()
+    {
+        try
+        {
+            int lineNumber = 1;
+            while (!exiting)
+            {
+                lock (outputLock)
+                {
+                    outputAvailableOrExiting.Wait(outputLock, OutputLinesAvailableOrExiting, null);
+                    while (outputLines.Count > 0)
+                    {
+                        string outputLine = outputLines[0];
+                        outputLines.RemoveAt(0);
+                        Console.WriteLine(lineNumber.ToString() + ": " + outputLine);
+                        ++lineNumber;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.ToString());
+        }
+    }
+    public void Exit()
+    {
+        lock (outputLock)
+        {
+            exiting = true;
+            outputAvailableOrExiting.NotifyOne();
+        }
+    }
+    private bool OutputLinesAvailableOrExiting(object arg)
+    {
+        return outputLines.Count > 0 || exiting;
+    }
+    private static OutputCollector instance;
+    private List<string> outputLines;
+    private object outputLock;
+    private bool exiting;
+    private ConditionVariable outputAvailableOrExiting;
+}
+
+void OutputThreadMain(object arg)
+{
+    try
+    {
+        int threadId = cast<int>(arg);
+        for (int i = 0; i < 10; ++i)
+        {
+            OutputCollector.Instance.WriteLine("hello " + i.ToString() + 
+                " from thread " + threadId.ToString());
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+    }
+}
+
+void main()
+{
+    try
+    {
+        List<Thread> threads = new List<Thread>();
+        Thread outputCollectorThread = Thread.StartMethod(OutputCollector.Instance.Run);
+        int n = 2 * HardwareConcurrency();
+        for (int i = 0; i < n; ++i)
+        {
+            Thread outputThread = Thread.StartFunction(OutputThreadMain, i);
+            threads.Add(outputThread);
+        }
+        foreach (Thread thread in threads)
+        {
+            thread.Join();
+        }
+        OutputCollector.Instance.Exit();
+        outputCollectorThread.Join();
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+    }
+}

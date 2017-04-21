@@ -14,9 +14,12 @@
 <span class="comment">//  or threads waiting for it.</span>
 <span class="comment">//</span>
 <span class="comment">//  The Wait(), WaitFor() and WaitUntil() member functions allow</span>
-<span class="comment">//  a thread to wait for some condition to happen.</span>
+<span class="comment">//  a thread to wait for some condition to happen. The waiting</span>
+<span class="comment">//  must occur inside a lock statement.</span>
 <span class="comment">//  The NotifyOne() member function wakes up one waiting thread.</span>
 <span class="comment">//  The NotifyAll() member function wakes up all waiting threads.</span>
+<span class="comment">//  Notification does not need to occur inside a lock statement,</span>
+<span class="comment">//  but that is allowed.</span>
 <span class="comment">//</span>
 <span class="comment">//  On some platforms a thread waiting may also be waken up</span>
 <span class="comment">//  spuriously, although the condition has not changed, so a</span>

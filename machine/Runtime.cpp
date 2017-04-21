@@ -1140,6 +1140,51 @@ extern "C" MACHINE_API void* RtResolveInterfaceCallAddress(uint64_t objectRefere
     return nullptr;
 }
 
+IntegralValue ToIntegralValue(ValueType type, void* ptr)
+{
+    switch (type)
+    {
+        case ValueType::boolType: return MakeIntegralValue<bool>(*static_cast<bool*>(ptr), type);
+        case ValueType::charType: return MakeIntegralValue<char32_t>(*static_cast<char32_t*>(ptr), type);
+        case ValueType::sbyteType: return MakeIntegralValue<int8_t>(*static_cast<int8_t*>(ptr), type);
+        case ValueType::byteType: return MakeIntegralValue<uint8_t>(*static_cast<uint8_t*>(ptr), type);
+        case ValueType::shortType: return MakeIntegralValue<int16_t>(*static_cast<int16_t*>(ptr), type);
+        case ValueType::ushortType: return MakeIntegralValue<uint16_t>(*static_cast<uint16_t*>(ptr), type);
+        case ValueType::intType: return MakeIntegralValue<int32_t>(*static_cast<int32_t*>(ptr), type);
+        case ValueType::uintType: return MakeIntegralValue<uint32_t>(*static_cast<uint32_t*>(ptr), type);
+        case ValueType::longType: return MakeIntegralValue<int64_t>(*static_cast<int64_t*>(ptr), type);
+        case ValueType::ulongType: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(ptr), type);
+        case ValueType::floatType: return MakeIntegralValue<float>(*static_cast<float*>(ptr), type);
+        case ValueType::doubleType: return MakeIntegralValue<double>(*static_cast<double*>(ptr), type);
+        case ValueType::objectReference: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(ptr), type);
+        case ValueType::allocationHandle: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(ptr), type);
+        case ValueType::variableReference: return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(ptr), type);
+    }
+    return MakeIntegralValue<uint64_t>(*static_cast<uint64_t*>(ptr), type);
+}
+
+void FromIntegralValue(ValueType type, void* ptr, IntegralValue value)
+{
+    switch (type)
+    {
+        case ValueType::boolType: *static_cast<bool*>(ptr) = value.AsBool(); break;
+        case ValueType::charType: *static_cast<char32_t*>(ptr) = value.AsChar(); break;
+        case ValueType::sbyteType: *static_cast<int8_t*>(ptr) = value.AsSByte(); break;
+        case ValueType::byteType: *static_cast<uint8_t*>(ptr) = value.AsByte(); break;
+        case ValueType::shortType: *static_cast<int16_t*>(ptr) = value.AsShort(); break;
+        case ValueType::ushortType: *static_cast<uint16_t*>(ptr) = value.AsUShort(); break;
+        case ValueType::intType: *static_cast<int32_t*>(ptr) = value.AsInt(); break;
+        case ValueType::uintType: *static_cast<uint32_t*>(ptr) = value.AsUInt(); break;
+        case ValueType::longType: *static_cast<int64_t*>(ptr) = value.AsLong(); break;
+        case ValueType::ulongType: *static_cast<uint64_t*>(ptr) = value.AsULong(); break;
+        case ValueType::floatType: *static_cast<float*>(ptr) = value.AsFloat(); break;
+        case ValueType::doubleType: *static_cast<double*>(ptr) = value.AsDouble(); break;
+        case ValueType::objectReference: *static_cast<uint64_t*>(ptr) = value.AsULong(); break;
+        case ValueType::allocationHandle: *static_cast<uint64_t*>(ptr) = value.AsULong(); break;
+        case ValueType::variableReference: *static_cast<uint64_t*>(ptr) = value.AsULong(); break;
+    }
+}
+
 extern "C" MACHINE_API void RtVmCall(void* function, void* constantPool, uint32_t vmFunctionNameId, VmCallContext* vmCallContext)
 {
     try
@@ -1152,7 +1197,7 @@ extern "C" MACHINE_API void RtVmCall(void* function, void* constantPool, uint32_
         Frame* frame = new (frameMem.get()) Frame(frameSize, thread, *fun);
         for (int i = 0; i < numLocals; ++i)
         {
-            frame->Local(i).SetValue(MakeIntegralValue<uint64_t>(vmCallContext->locals[i], ValueType(vmCallContext->localTypes[i])));
+            frame->Local(i).SetValue(ToIntegralValue(ValueType(vmCallContext->localTypes[i]), &vmCallContext->locals[i]));
         }
         ConstantPool* cpool = static_cast<ConstantPool*>(constantPool);
         ConstantId vmFunctionNameConstantId(vmFunctionNameId);
@@ -1162,7 +1207,7 @@ extern "C" MACHINE_API void RtVmCall(void* function, void* constantPool, uint32_
         if (vmCallContext->retValType != uint8_t(ValueType::none))
         {
             IntegralValue returnValue = frame->OpStack().Pop();
-            vmCallContext->retVal = returnValue.Value();
+            FromIntegralValue(ValueType(vmCallContext->retValType), &vmCallContext->retVal, returnValue);
         }
     }
     catch (const NullReferenceException& ex)

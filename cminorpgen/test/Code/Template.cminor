@@ -141,16 +141,16 @@ namespace Code
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new Code.TypeExprGrammar(parsingDomain);
+                grammar0 = new Code.IdentifierGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
+            Grammar grammar1 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
             if (grammar1 == null)
             {
-                grammar1 = new Code.IdentifierGrammar(parsingDomain);
+                grammar1 = new Code.TypeExprGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
         }

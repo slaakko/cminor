@@ -135,11 +135,8 @@ void EmitterVisitor::ExitBlocks(BoundCompoundStatement* targetBlock)
         {
             block->FinallyBlock()->Accept(*this);
         }
-        if (!GetGlobalFlag(GlobalFlags::release))
-        {
-            std::unique_ptr<Instruction> exitBlockInst = machine.CreateInst("exitblock");
-            function->AddInst(std::move(exitBlockInst));
-        }
+        std::unique_ptr<Instruction> exitBlockInst = machine.CreateInst("exitblock");
+        function->AddInst(std::move(exitBlockInst));
         --n;
         if (n > 0)
         {
@@ -260,20 +257,12 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
     currentContainerScopeId = boundCompoundStatement.GetContainerScope()->NonDefaultId();
     SetCurrentSourceLine(boundCompoundStatement.GetSpan().LineNumber());
     blockStack.push_back(&boundCompoundStatement);
-    bool setFirstInstIndex = false;
-    if (!GetGlobalFlag(GlobalFlags::release))
-    {
-        std::unique_ptr<Instruction> enterBlockInst = machine.CreateInst("enterblock");
-        InstIndexRequest enterBlock;
-        AddIndexRequest(&enterBlock);
-        function->AddInst(std::move(enterBlockInst));
-        boundCompoundStatement.SetFirstInstIndex(enterBlock.Index());
-        function->MapPCToSourceLine(enterBlock.Index(), boundCompoundStatement.BeginBraceSpan().LineNumber());
-    }
-    else
-    {
-        setFirstInstIndex = true;
-    }
+    std::unique_ptr<Instruction> enterBlockInst = machine.CreateInst("enterblock");
+    InstIndexRequest enterBlock;
+    AddIndexRequest(&enterBlock);
+    function->AddInst(std::move(enterBlockInst));
+    boundCompoundStatement.SetFirstInstIndex(enterBlock.Index());
+    function->MapPCToSourceLine(enterBlock.Index(), boundCompoundStatement.BeginBraceSpan().LineNumber());
     int n = int(boundCompoundStatement.Statements().size());
     std::vector<Instruction*> prevNext;
     for (int i = 0; i < n; ++i)
@@ -286,12 +275,6 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
         AddIndexRequest(&startStatement);
         boundStatement->Accept(*this);
         function->MapPCToSourceLine(startStatement.Index(), boundStatement->GetSpan().LineNumber());
-        if (setFirstInstIndex)
-        {
-            setFirstInstIndex = false;
-            boundCompoundStatement.SetFirstInstIndex(startStatement.Index());
-            function->MapPCToSourceLine(startStatement.Index(), boundCompoundStatement.BeginBraceSpan().LineNumber());
-        }
         int32_t statementTarget = startStatement.Index();
         boundStatement->SetFirstInstIndex(statementTarget);
         if (statementTarget != endOfFunction)
@@ -305,23 +288,13 @@ void EmitterVisitor::Visit(BoundCompoundStatement& boundCompoundStatement)
         }
         nextSet = prevNextSet;
     }
-    if (!GetGlobalFlag(GlobalFlags::release))
-    {
-        InstIndexRequest exitBlock;
-        AddIndexRequest(&exitBlock);
-        std::unique_ptr<Instruction> exitBlockInst = machine.CreateInst("exitblock");
-        function->AddInst(std::move(exitBlockInst));
-        function->MapPCToSourceLine(exitBlock.Index(), boundCompoundStatement.EndBraceSpan().LineNumber());
-        int32_t exitBlockTarget = exitBlock.Index();
-        Backpatch(prevNext, exitBlockTarget);
-    }
-    else
-    {
-        if (nextSet)
-        {
-            nextSet->insert(nextSet->end(), prevNext.cbegin(), prevNext.cend());
-        }
-    }
+    InstIndexRequest exitBlock;
+    AddIndexRequest(&exitBlock);
+    std::unique_ptr<Instruction> exitBlockInst = machine.CreateInst("exitblock");
+    function->AddInst(std::move(exitBlockInst));
+    function->MapPCToSourceLine(exitBlock.Index(), boundCompoundStatement.EndBraceSpan().LineNumber());
+    int32_t exitBlockTarget = exitBlock.Index();
+    Backpatch(prevNext, exitBlockTarget);
     blockStack.pop_back();
     currentContainerScopeId = prevContainerScopeId;
 }

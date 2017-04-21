@@ -23,7 +23,7 @@
 //  
 //  Generic collections in System Base Library implement 
 //  these interfaces.
-=========================================================
+//  =====================================================
 
 namespace System
 {

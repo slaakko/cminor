@@ -1,0 +1,230 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Threads</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+
+<body>
+    <h2 id="threading">9 Threading</h2>
+
+    <p>
+        This chapter is devoted to <a href="../code/system/Thread.cminor.html">threads</a>, <a href="../code/system/Monitor.cminor.html">locks</a> and 
+        <a href="../code/system/ConditionVariable.cminor.html">condition variables</a>.
+</p>
+
+    <h3 id="program">
+        9.1 The Program
+    </h3>
+
+    <p>
+        The following program creates twice as many output threads as there are cores in the machine. 
+        Each output thread generates ten times a hello message in its main function <span class="code">OutputThreadMain()</span>. 
+        The program has also an output collector class whose <span class="code">Run()</span> method is also run in a thread.
+        The output threads insert their output lines to the end of the collector's <span class="code">outputLines</span> list 
+        by calling the output collector's <span class="code">WriteLine()</span> method.
+    </p>
+
+    <p>
+        The collector's <span class="code">outputLines</span> member variable is an ordinary <span class="code">List&lt;string&gt;</span>,
+        that is not synchronized by default. Therefore we need a lock object, <span class="code">outputLock</span>, that 
+        synchronizes access to the <span class="code">outputLines</span> list by using lock statements.
+    </p>
+
+    <p>
+        After an output thread has added its message to the end of the <span class="code">outputLines</span> list it also notifies a
+        condition variable <span class="code">outputAvailableOrExiting</span>, that wakes up the output collector. 
+        The output collector removes messages from the head of the <span class="code">outputLines</span> list, prints them to the console, 
+        and goes back to sleep waiting for more lines to output or <span class="code">exiting</span> variable to become true.
+</p>
+
+    <p>
+        It may happen that many output threads manage to insert their output to the output lines before the collector wakes up,
+        so that there may be more output lines than collector wake ups, so the collector empties the list each time it wakes up.
+    </p>
+
+    <div class="program">
+        <iframe src="../code/threads/threads.cminor.html" height="1740px" width="720px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        The main function of the program consists of starting the output collector thread and the output threads,
+        then waiting that the output threads end, and finally signaling the exiting condition to the collector and 
+        waiting that the collector thread ends.
+    </p>
+
+    <h3 id="output">
+        9.2 Output
+    </h3>
+
+    <p>
+        Here's the output of the program when run on my machine, that has four cores:
+    </p>
+
+    <div class="commands">
+> cminor run assembly/debug/threads.cminora</br>
+        1: hello 0 from thread 1
+</br>
+        2: hello 0 from thread 0
+</br>
+        3: hello 0 from thread 2
+</br>
+        4: hello 0 from thread 5
+</br>
+        5: hello 0 from thread 3
+</br>
+        6: hello 0 from thread 4
+</br>
+        7: hello 1 from thread 1
+</br>
+        8: hello 1 from thread 2
+</br>
+        9: hello 1 from thread 4
+</br>
+        10: hello 1 from thread 3
+</br>
+        11: hello 1 from thread 5
+</br>
+        12: hello 2 from thread 3
+</br>
+        13: hello 2 from thread 4
+</br>
+        14: hello 2 from thread 2
+</br>
+        15: hello 2 from thread 5
+</br>
+        16: hello 3 from thread 3
+</br>
+        17: hello 3 from thread 5
+</br>
+        18: hello 3 from thread 2
+</br>
+        19: hello 2 from thread 1
+</br>
+        20: hello 4 from thread 5
+</br>
+        21: hello 3 from thread 4
+</br>
+        22: hello 1 from thread 0
+</br>
+        23: hello 4 from thread 3
+</br>
+        24: hello 5 from thread 5
+</br>
+        25: hello 4 from thread 4
+</br>
+        26: hello 2 from thread 0
+</br>
+        27: hello 5 from thread 4
+</br>
+        28: hello 4 from thread 2
+</br>
+        29: hello 3 from thread 0
+</br>
+        30: hello 0 from thread 6
+</br>
+        31: hello 5 from thread 3
+</br>
+        32: hello 3 from thread 1
+</br>
+        33: hello 6 from thread 4
+</br>
+        34: hello 1 from thread 6
+</br>
+        35: hello 6 from thread 3
+</br>
+        36: hello 4 from thread 1
+</br>
+        37: hello 6 from thread 5
+</br>
+        38: hello 7 from thread 4
+</br>
+        39: hello 4 from thread 0
+</br>
+        40: hello 5 from thread 1
+</br>
+        41: hello 0 from thread 7
+</br>
+        42: hello 5 from thread 2
+</br>
+        43: hello 2 from thread 6
+</br>
+        44: hello 8 from thread 4
+</br>
+        45: hello 1 from thread 7
+</br>
+        46: hello 7 from thread 5
+</br>
+        47: hello 3 from thread 6
+</br>
+        48: hello 2 from thread 7
+</br>
+        49: hello 6 from thread 2
+</br>
+        50: hello 9 from thread 4
+</br>
+        51: hello 8 from thread 5
+</br>
+        52: hello 6 from thread 1
+</br>
+        53: hello 3 from thread 7
+</br>
+        54: hello 4 from thread 6
+</br>
+        55: hello 7 from thread 1
+</br>
+        56: hello 9 from thread 5
+</br>
+        57: hello 7 from thread 3
+</br>
+        58: hello 7 from thread 2
+</br>
+        59: hello 4 from thread 7
+</br>
+        60: hello 8 from thread 1
+</br>
+        61: hello 8 from thread 2
+</br>
+        62: hello 8 from thread 3
+</br>
+        63: hello 5 from thread 7
+</br>
+        64: hello 9 from thread 1
+</br>
+        65: hello 9 from thread 3
+</br>
+        66: hello 5 from thread 0
+</br>
+        67: hello 6 from thread 7
+</br>
+        68: hello 9 from thread 2
+</br>
+        69: hello 5 from thread 6
+</br>
+        70: hello 6 from thread 6
+</br>
+        71: hello 7 from thread 7
+</br>
+        72: hello 6 from thread 0
+</br>
+        73: hello 7 from thread 0
+</br>
+        74: hello 8 from thread 7
+</br>
+        75: hello 7 from thread 6
+</br>
+        76: hello 8 from thread 0
+</br>
+        77: hello 8 from thread 6
+</br>
+        78: hello 9 from thread 7
+</br>
+        79: hello 9 from thread 0
+</br>
+        80: hello 9 from thread 6    
+</br>
+    </div>
+</body>
+</html>

@@ -105,7 +105,7 @@ namespace System.IO
         }
         public void Write(double x)
         {
-            Write(DoubleAsULong>(x));
+            Write(DoubleAsULong(x));
         }
         public void Seek(int pos, Origin origin)
         {

@@ -2548,10 +2548,9 @@ void NativeCompilerImpl::VisitVmCallInst(VmCallInst& instruction)
     {
         ArgVector la;
         la.push_back(builder.getInt32(i));
-        llvm::Value* localPtr = builder.CreateGEP(nullptr, localsAlloca, la);
+        llvm::Value* localPtr = builder.CreateBitCast(builder.CreateGEP(nullptr, localsAlloca, la), llvm::PointerType::get(GetType(function->LocalTypes()[i]), 0));
         LoadInst* loaded = builder.CreateLoad(locals[i]);
-        llvm::Value* convertedToULong = CreateConversionToUlong(loaded, function->LocalTypes()[i]);
-        builder.CreateStore(convertedToULong, localPtr);
+        builder.CreateStore(loaded, localPtr);
     }
     ArgVector cc2;
     cc2.push_back(builder.getInt32(0));
@@ -2585,10 +2584,8 @@ void NativeCompilerImpl::VisitVmCallInst(VmCallInst& instruction)
         ArgVector cc4;
         cc4.push_back(builder.getInt32(0));
         cc4.push_back(builder.getInt32(4));
-        llvm::Value* retValPtr = builder.CreateGEP(nullptr, vmCallContext, cc4);
-        llvm::Value* retValAsULong = builder.CreateLoad(retValPtr);
-        llvm::Value* retVal = CreateConversionFromULong(retValAsULong, retValType);
-        valueStack.Push(retVal);
+        llvm::Value* retValPtr = builder.CreateBitCast(builder.CreateGEP(nullptr, vmCallContext, cc4), llvm::PointerType::get(GetType(retValType), 0));
+        valueStack.Push(builder.CreateLoad(retValPtr));
         StoreTemporaryGcRoot(instruction);
     }
 }

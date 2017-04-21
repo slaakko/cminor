@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>threads.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Collections.Generic</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.Threading</span><span class="other">;</span>
+
+<span class="keyword">class</span> <span class="identifier">OutputCollector</span>
+<span class="other">{</span>
+    <span class="keyword">static</span> <span class="identifier">OutputCollector</span><span class="other">(</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">instance</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">OutputCollector</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">private</span> <span class="identifier">OutputCollector</span><span class="other">(</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">this</span><span class="other">.</span><span class="identifier">outputLines</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">string</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">this</span><span class="other">.</span><span class="identifier">outputLock</span> <span class="other">=</span> <span class="keyword">new</span> <span class="keyword">object</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">this</span><span class="other">.</span><span class="identifier">outputAvailableOrExiting</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">ConditionVariable</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">OutputCollector</span> <span class="identifier">Instance</span>
+    <span class="other">{</span>
+        <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">instance</span><span class="other">;</span> <span class="other">}</span>
+    <span class="other">}</span>
+    <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">WriteLine</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">line</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">lock</span> <span class="other">(</span><span class="identifier">outputLock</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">outputLines.Add</span><span class="other">(</span><span class="identifier">line</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="identifier">outputAvailableOrExiting.NotifyOne</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Run</span><span class="other">(</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">try</span>
+        <span class="other">{</span>
+            <span class="keyword">int</span> <span class="identifier">lineNumber</span> <span class="other">=</span> <span class="number">1</span><span class="other">;</span>
+            <span class="keyword">while</span> <span class="other">(</span><span class="other">!</span><span class="identifier">exiting</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">lock</span> <span class="other">(</span><span class="identifier">outputLock</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">outputAvailableOrExiting.Wait</span><span class="other">(</span><span class="identifier">outputLock</span><span class="other">,</span> <span class="identifier">OutputLinesAvailableOrExiting</span><span class="other">,</span> <span class="keyword">null</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">while</span> <span class="other">(</span><span class="identifier">outputLines.Count</span> <span class="other">&gt;</span> <span class="number">0</span><span class="other">)</span>
+                    <span class="other">{</span>
+                        <span class="keyword">string</span> <span class="identifier">outputLine</span> <span class="other">=</span> <span class="identifier">outputLines</span><span class="other">[</span><span class="number">0</span><span class="other">]</span><span class="other">;</span>
+                        <span class="identifier">outputLines.RemoveAt</span><span class="other">(</span><span class="number">0</span><span class="other">)</span><span class="other">;</span>
+                        <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="identifier">lineNumber.ToString</span><span class="other">(</span><span class="other">)</span> <span class="other">+</span> <span class="string">&quot;: &quot;</span> <span class="other">+</span> <span class="identifier">outputLine</span><span class="other">)</span><span class="other">;</span>
+                        <span class="other">+</span><span class="other">+</span><span class="identifier">lineNumber</span><span class="other">;</span>
+                    <span class="other">}</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">Exception</span> <span class="identifier">ex</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Console.Error.WriteLine</span><span class="other">(</span><span class="identifier">ex.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+    <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Exit</span><span class="other">(</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">lock</span> <span class="other">(</span><span class="identifier">outputLock</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">exiting</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+            <span class="identifier">outputAvailableOrExiting.NotifyOne</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+    <span class="keyword">private</span> <span class="keyword">bool</span> <span class="identifier">OutputLinesAvailableOrExiting</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">arg</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="keyword">return</span> <span class="identifier">outputLines.Count</span> <span class="other">&gt;</span> <span class="number">0</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">exiting</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">private</span> <span class="keyword">static</span> <span class="identifier">OutputCollector</span> <span class="identifier">instance</span><span class="other">;</span>
+    <span class="keyword">private</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="keyword">string</span><span class="other">&gt;</span> <span class="identifier">outputLines</span><span class="other">;</span>
+    <span class="keyword">private</span> <span class="keyword">object</span> <span class="identifier">outputLock</span><span class="other">;</span>
+    <span class="keyword">private</span> <span class="keyword">bool</span> <span class="identifier">exiting</span><span class="other">;</span>
+    <span class="keyword">private</span> <span class="identifier">ConditionVariable</span> <span class="identifier">outputAvailableOrExiting</span><span class="other">;</span>
+<span class="other">}</span>
+
+<span class="keyword">void</span> <span class="identifier">OutputThreadMain</span><span class="other">(</span><span class="keyword">object</span> <span class="identifier">arg</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="keyword">try</span>
+    <span class="other">{</span>
+        <span class="keyword">int</span> <span class="identifier">threadId</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="keyword">int</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">arg</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="number">10</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">OutputCollector.Instance.WriteLine</span><span class="other">(</span><span class="string">&quot;hello &quot;</span> <span class="other">+</span> <span class="identifier">i.ToString</span><span class="other">(</span><span class="other">)</span> <span class="other">+</span> 
+                <span class="string">&quot; from thread &quot;</span> <span class="other">+</span> <span class="identifier">threadId.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+    <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">Exception</span> <span class="identifier">ex</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">Console.Error.WriteLine</span><span class="other">(</span><span class="identifier">ex.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+
+<span class="keyword">void</span> <span class="identifier">main</span><span class="other">(</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="keyword">try</span>
+    <span class="other">{</span>
+        <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">Thread</span><span class="other">&gt;</span> <span class="identifier">threads</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">Thread</span><span class="other">&gt;</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">Thread</span> <span class="identifier">outputCollectorThread</span> <span class="other">=</span> <span class="identifier">Thread.StartMethod</span><span class="other">(</span><span class="identifier">OutputCollector.Instance.Run</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="number">2</span> <span class="other">*</span> <span class="identifier">HardwareConcurrency</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">Thread</span> <span class="identifier">outputThread</span> <span class="other">=</span> <span class="identifier">Thread.StartFunction</span><span class="other">(</span><span class="identifier">OutputThreadMain</span><span class="other">,</span> <span class="identifier">i</span><span class="other">)</span><span class="other">;</span>
+            <span class="identifier">threads.Add</span><span class="other">(</span><span class="identifier">outputThread</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">foreach</span> <span class="other">(</span><span class="identifier">Thread</span> <span class="identifier">thread</span> <span class="keyword">in</span> <span class="identifier">threads</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">thread.Join</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="identifier">OutputCollector.Instance.Exit</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">outputCollectorThread.Join</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">Exception</span> <span class="identifier">ex</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">Console.Error.WriteLine</span><span class="other">(</span><span class="identifier">ex.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

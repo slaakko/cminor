@@ -12,7 +12,7 @@ namespace System
         }
     }
 
-    public class UnaryPlus<T>
+    public class UnaryPlusOp<T>
     {
         public T operator()(T x)
         {
@@ -20,7 +20,7 @@ namespace System
         }
     }
 
-    public class UnaryMinus<T>
+    public class UnaryMinusOp<T>
     {
         public T operator()(T x)
         {
@@ -100,7 +100,7 @@ namespace System
         }
     }
 
-    public class ShiftLeft<T>
+    public class ShiftLeftOp<T>
     {
         public T operator()(T x, T y)
         {
@@ -108,7 +108,7 @@ namespace System
         }
     }
 
-    public class ShiftRight<T>
+    public class ShiftRightOp<T>
     {
         public T operator()(T x, T y)
         {
@@ -140,7 +140,7 @@ namespace System
         }
     }
 
-    public class Equal<T>
+    public class EqualTo<T>
     {
         public bool operator()(T x, T y)
         {
@@ -148,7 +148,7 @@ namespace System
         }
     }
 
-    public class NotEqual<T>
+    public class NotEqualTo<T>
     {
         public bool operator()(T x, T y)
         {
@@ -156,7 +156,7 @@ namespace System
         }
     }
 
-    public class Less<T>
+    public class LessThan<T>
     {
         public bool operator()(T x, T y)
         {
@@ -164,7 +164,7 @@ namespace System
         }
     }
 
-    public class Greater<T>
+    public class GreaterThan<T>
     {
         public bool operator()(T x, T y)
         {
@@ -172,7 +172,7 @@ namespace System
         }
     }
 
-    public class LessOrEqual<T>
+    public class LessThanOrEqualTo<T>
     {
         public bool operator()(T x, T y)
         {
@@ -180,7 +180,7 @@ namespace System
         }
     }
 
-    public class GreaterOrEqual<T>
+    public class GreaterThanOrEqualTo<T>
     {
         public bool operator()(T x, T y)
         {
