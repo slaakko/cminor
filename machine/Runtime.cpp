@@ -7,6 +7,7 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Instruction.hpp>
 #include <cminor/machine/Function.hpp>
+#include <cminor/machine/Class.hpp>
 #include <cminor/util/Util.hpp>
 #include <iostream>
 

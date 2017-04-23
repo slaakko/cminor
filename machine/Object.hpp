@@ -233,7 +233,7 @@ struct MACHINE_API ManagedAllocationHeader
 
     uint32_t allocationSize;
     int32_t segmentId;
-    std::atomic_int32_t lockId;
+    std::atomic<int32_t> lockId;
     AllocationFlags flags;
 
     union
@@ -317,7 +317,7 @@ public:
 private:
     Machine& machine;
     std::vector<void*> allocations;
-    std::atomic_uint64_t nextAllocationHandleValue;
+    std::atomic<uint64_t> nextAllocationHandleValue;
     std::recursive_mutex allocationsMutex;
 };
 

@@ -18,6 +18,7 @@
 #include <cminor/symbols/ObjectFun.hpp>
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/symbols/Warning.hpp>
+#include <cminor/machine/Class.hpp>
 #include <iostream>
 
 namespace cminor { namespace binder {

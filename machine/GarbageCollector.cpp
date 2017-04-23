@@ -8,6 +8,7 @@
 #include <cminor/machine/Log.hpp>
 #include <cminor/machine/Runtime.hpp>
 #include <cminor/machine/Stats.hpp>
+#include <cminor/machine/Class.hpp>
 #include <iostream>
 
 namespace cminor { namespace machine {

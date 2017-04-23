@@ -5,6 +5,7 @@
 
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Type.hpp>
+#include <cstring>
 
 namespace cminor { namespace machine {
 

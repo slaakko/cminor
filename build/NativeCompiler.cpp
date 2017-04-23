@@ -6,6 +6,7 @@
 #include <cminor/build/NativeCompiler.hpp>
 #include <cminor/machine/MachineFunctionVisitor.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/machine/Class.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/util/Path.hpp>

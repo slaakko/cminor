@@ -10,6 +10,7 @@
 #include <cminor/machine/Arena.hpp>
 #include <cminor/machine/GarbageCollector.hpp>
 #include <cminor/machine/Thread.hpp>
+#include <thread>
 
 namespace cminor { namespace machine {
 

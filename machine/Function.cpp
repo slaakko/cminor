@@ -5,6 +5,7 @@
 
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/machine/Class.hpp>
 #include <cminor/util/Unicode.hpp>
 #include <cminor/util/Util.hpp>
 #include <cminor/util/TextUtils.hpp>

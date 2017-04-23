@@ -7,6 +7,7 @@
 #define CMINOR_DB_SHELL_INCLUDED
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/machine/Function.hpp>
 #include <cminor/db/Command.hpp>
 #include <set>
 

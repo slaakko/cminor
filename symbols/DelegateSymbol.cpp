@@ -8,6 +8,7 @@
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/machine/Class.hpp>
 
 namespace cminor { namespace symbols {
 

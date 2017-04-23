@@ -13,7 +13,6 @@
 #include <cminor/machine/Frame.hpp>
 #include <cminor/machine/Constant.hpp>
 #include <cminor/machine/Type.hpp>
-#include <cminor/machine/Class.hpp>
 #include <unordered_map>
 #include <string>
 #include <memory>
@@ -1330,6 +1329,8 @@ public:
     bool CreatesTemporaryObject(Function* function) const override { return true; }
     void Accept(MachineFunctionVisitor& visitor) override;
 };
+
+MACHINE_API ClassData* GetClassDataForBoxedType(ValueType valueType);
 
 template<ValueType valueType>
 class MACHINE_API BoxInst : public BoxBaseInst

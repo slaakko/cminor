@@ -9,6 +9,7 @@
 #include <cminor/machine/OsInterface.hpp>
 #include <cminor/machine/Log.hpp>
 #include <cminor/machine/Runtime.hpp>
+#include <cstring>
 
 namespace cminor { namespace machine {
 
