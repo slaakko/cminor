@@ -12,6 +12,7 @@
 #include <memory>
 #include <mutex>
 #include <atomic>
+#include <cstring>
 
 namespace cminor { namespace vmlib {
 

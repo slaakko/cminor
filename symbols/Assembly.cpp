@@ -479,7 +479,7 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
             if (mainFun->ReturnType()->IsVoidType())
             {
                 typedef void(*MainFunctionType)(uint64_t);
-                MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                MainFunctionType main = reinterpret_cast<MainFunctionType>(mainEntryPointAddress);
                 GetCurrentThread().SetState(ThreadState::running);
                 auto startRun = std::chrono::system_clock::now();
                 {
@@ -500,7 +500,7 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                 if (mainFun->ReturnType() == symbolTable.GetType(U"System.Int32"))
                 {
                     typedef int32_t(*MainFunctionType)(uint64_t);
-                    MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                    MainFunctionType main = reinterpret_cast<MainFunctionType>(mainEntryPointAddress);
                     GetCurrentThread().SetState(ThreadState::running);
                     auto startRun = std::chrono::system_clock::now();
                     {
@@ -531,7 +531,7 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
             if (mainFun->ReturnType()->IsVoidType())
             {
                 typedef void(*MainFunctionType)(void);
-                MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                MainFunctionType main = reinterpret_cast<MainFunctionType>(mainEntryPointAddress);
                 GetCurrentThread().SetState(ThreadState::running);
                 auto startRun = std::chrono::system_clock::now();
                 {
@@ -552,7 +552,7 @@ int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
                 if (mainFun->ReturnType() == symbolTable.GetType(U"System.Int32"))
                 {
                     typedef int32_t(*MainFunctionType)(void);
-                    MainFunctionType main = static_cast<MainFunctionType>(mainEntryPointAddress);
+                    MainFunctionType main = reinterpret_cast<MainFunctionType>(mainEntryPointAddress);
                     GetCurrentThread().SetState(ThreadState::running);
                     auto startRun = std::chrono::system_clock::now();
                     {

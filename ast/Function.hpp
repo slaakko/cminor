@@ -9,6 +9,7 @@
 #include <cminor/ast/Parameter.hpp>
 #include <cminor/ast/Identifier.hpp>
 #include <cminor/ast/NodeList.hpp>
+#include <cminor/ast/Statement.hpp>
 #include <unordered_map>
 
 namespace cminor { namespace ast {

@@ -128,7 +128,7 @@ void StaticClassData::AllocateStaticData()
 
 void StaticClassData::SetStaticField(IntegralValue fieldValue, int32_t index)
 {
-    Field& field = staticLayout.GetField(index);
+    const Field& field = staticLayout.GetField(index);
     void* fieldPtr = static_cast<uint8_t*>(staticData) + field.Offset().Value();
     switch (field.GetType())
     {
@@ -156,7 +156,7 @@ void StaticClassData::SetStaticField(IntegralValue fieldValue, int32_t index)
 
 IntegralValue StaticClassData::GetStaticField(int32_t index) const
 {
-    Field& field = staticLayout.GetField(index);
+    const Field& field = staticLayout.GetField(index);
     void* fieldPtr = static_cast<uint8_t*>(staticData) + field.Offset().Value();
     switch (field.GetType())
     {

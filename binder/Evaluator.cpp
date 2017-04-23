@@ -14,9 +14,12 @@
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/symbols/ConstantSymbol.hpp>
 #include <cminor/symbols/EnumSymbol.hpp>
+#include <cminor/machine/Machine.hpp>
 #include <functional>
 
 namespace cminor { namespace binder {
+
+using namespace cminor::machine;
 
 class ScopedValue : public Value
 {
@@ -1219,7 +1222,7 @@ void Evaluator::Visit(UnaryMinusNode& unaryMinusNode)
 template<typename ValueT>
 Value* Complement(Value* subject, const Span& span, bool dontThrow)
 {
-    return UnaryEvaluate<ValueT>(subject, std::bit_not<typename ValueT::OperandType>());
+    return UnaryEvaluate<ValueT>(subject, BitNot<typename ValueT::OperandType>());
 }
 
 UnaryOperatorFun complement[uint8_t(ValueKind::max)] =

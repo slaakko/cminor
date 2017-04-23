@@ -654,7 +654,7 @@ void RunUserThread(Thread* thread, Function* fun, RunThreadKind runThreadKind)
                 case RunThreadKind::function:
                 {
                     typedef void(*ThreadFunctionType)(void);
-                    ThreadFunctionType threadFun = static_cast<ThreadFunctionType>(functionAddress);
+                    ThreadFunctionType threadFun = reinterpret_cast<ThreadFunctionType>(functionAddress);
                     thread->SetState(ThreadState::running);
                     ThreadExitSetter exitSetter(*thread);
                     threadFun();
@@ -666,7 +666,7 @@ void RunUserThread(Thread* thread, Function* fun, RunThreadKind runThreadKind)
                     Assert(receiverValue.GetType() == ValueType::objectReference, "object reference expected");
                     ObjectReference receiver(receiverValue.Value());
                     typedef void(*ThreadMethodType)(uint64_t);
-                    ThreadMethodType threadMethod = static_cast<ThreadMethodType>(functionAddress);
+                    ThreadMethodType threadMethod = reinterpret_cast<ThreadMethodType>(functionAddress);
                     thread->SetState(ThreadState::running);
                     ThreadExitSetter exitSetter(*thread);
                     threadMethod(receiver.AsULong());
@@ -678,7 +678,7 @@ void RunUserThread(Thread* thread, Function* fun, RunThreadKind runThreadKind)
                     Assert(argValue.GetType() == ValueType::objectReference, "object reference expected");
                     ObjectReference arg(argValue.Value());
                     typedef void(*ThreadFunctionType)(uint64_t);
-                    ThreadFunctionType threadFun = static_cast<ThreadFunctionType>(functionAddress);
+                    ThreadFunctionType threadFun = reinterpret_cast<ThreadFunctionType>(functionAddress);
                     thread->SetState(ThreadState::running);
                     ThreadExitSetter exitSetter(*thread);
                     threadFun(arg.AsULong());
@@ -693,7 +693,7 @@ void RunUserThread(Thread* thread, Function* fun, RunThreadKind runThreadKind)
                     Assert(receiverValue.GetType() == ValueType::objectReference, "object reference expected");
                     ObjectReference receiver(receiverValue.Value());
                     typedef void(*ThreadMethodType)(uint64_t, uint64_t);
-                    ThreadMethodType threadMethod = static_cast<ThreadMethodType>(functionAddress);
+                    ThreadMethodType threadMethod = reinterpret_cast<ThreadMethodType>(functionAddress);
                     thread->SetState(ThreadState::running);
                     ThreadExitSetter exitSetter(*thread);
                     threadMethod(receiver.AsULong(), arg.AsULong());
