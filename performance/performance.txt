@@ -1,2 +1,0 @@
-o	before stack optimization: bootstrap 200 secs
-o	after stack optimization: bootstrap 143 secs
