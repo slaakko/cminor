@@ -4,6 +4,7 @@
 // =================================
 
 #include <cminor/machine/Writer.hpp>
+#include <cstring>
 
 namespace cminor { namespace machine {
 

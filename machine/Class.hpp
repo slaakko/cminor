@@ -50,8 +50,8 @@ public:
     void SetStaticField(IntegralValue fieldValue, int32_t index);
     IntegralValue GetStaticField(int32_t index) const;
 private:
-    std::atomic_bool initialized;
-    std::atomic_bool initializing;
+    std::atomic<bool> initialized;
+    std::atomic<bool> initializing;
     std::recursive_mutex initMtx;
     Constant staticConstructorName;
     Layout staticLayout;

@@ -6,6 +6,7 @@
 #include <cminor/machine/Constant.hpp>
 #include <cminor/machine/Writer.hpp>
 #include <cminor/machine/Reader.hpp>
+#include <list>
 
 namespace cminor { namespace machine {
 

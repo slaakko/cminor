@@ -12,6 +12,7 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/util/Random.hpp>
 #include <cminor/machine/Log.hpp>
+#include <cstring>
 #include <iostream>
 
 namespace cminor { namespace machine {

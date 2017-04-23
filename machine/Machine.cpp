@@ -54,16 +54,16 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     //  ---------------------------
 
     //  unary plus:
-    rootInst.SetInst(0x0D, new UnaryOpInst<int8_t, std::identity<int8_t>, ValueType::sbyteType>("uplussb", "uplus", "System.Int8"));
-    rootInst.SetInst(0x0E, new UnaryOpInst<uint8_t, std::identity<uint8_t>, ValueType::byteType>("uplusby", "uplus", "System.UInt8"));
-    rootInst.SetInst(0x0F, new UnaryOpInst<int16_t, std::identity<int16_t>, ValueType::shortType>("uplussh", "uplus", "System.Int16"));
-    rootInst.SetInst(0x10, new UnaryOpInst<uint16_t, std::identity<uint16_t>, ValueType::ushortType>("uplusus", "uplus", "System.UInt16"));
-    rootInst.SetInst(0x11, new UnaryOpInst<int32_t, std::identity<int32_t>, ValueType::intType>("uplusin", "uplus", "System.Int32"));
-    rootInst.SetInst(0x12, new UnaryOpInst<uint32_t, std::identity<uint32_t>, ValueType::uintType>("uplusui", "uplus", "System.UInt32"));
-    rootInst.SetInst(0x13, new UnaryOpInst<int64_t, std::identity<int64_t>, ValueType::longType>("upluslo", "uplus", "System.Int64"));
-    rootInst.SetInst(0x14, new UnaryOpInst<uint64_t, std::identity<uint64_t>, ValueType::ulongType>("uplusul", "uplus", "System.UInt64"));
-    rootInst.SetInst(0x15, new UnaryOpInst<float, std::identity<float>, ValueType::floatType>("uplusfl", "uplus", "System.Float"));
-    rootInst.SetInst(0x16, new UnaryOpInst<double, std::identity<double>, ValueType::doubleType>("uplusdo", "uplus", "System.Double"));
+    rootInst.SetInst(0x0D, new UnaryOpInst<int8_t, Identity<int8_t>, ValueType::sbyteType>("uplussb", "uplus", "System.Int8"));
+    rootInst.SetInst(0x0E, new UnaryOpInst<uint8_t, Identity<uint8_t>, ValueType::byteType>("uplusby", "uplus", "System.UInt8"));
+    rootInst.SetInst(0x0F, new UnaryOpInst<int16_t, Identity<int16_t>, ValueType::shortType>("uplussh", "uplus", "System.Int16"));
+    rootInst.SetInst(0x10, new UnaryOpInst<uint16_t, Identity<uint16_t>, ValueType::ushortType>("uplusus", "uplus", "System.UInt16"));
+    rootInst.SetInst(0x11, new UnaryOpInst<int32_t, Identity<int32_t>, ValueType::intType>("uplusin", "uplus", "System.Int32"));
+    rootInst.SetInst(0x12, new UnaryOpInst<uint32_t, Identity<uint32_t>, ValueType::uintType>("uplusui", "uplus", "System.UInt32"));
+    rootInst.SetInst(0x13, new UnaryOpInst<int64_t, Identity<int64_t>, ValueType::longType>("upluslo", "uplus", "System.Int64"));
+    rootInst.SetInst(0x14, new UnaryOpInst<uint64_t, Identity<uint64_t>, ValueType::ulongType>("uplusul", "uplus", "System.UInt64"));
+    rootInst.SetInst(0x15, new UnaryOpInst<float, Identity<float>, ValueType::floatType>("uplusfl", "uplus", "System.Float"));
+    rootInst.SetInst(0x16, new UnaryOpInst<double, Identity<double>, ValueType::doubleType>("uplusdo", "uplus", "System.Double"));
 
     //  unary minus:
     rootInst.SetInst(0x17, new UnaryOpInst<int8_t, std::negate<int8_t>, ValueType::sbyteType>("negsb", "neg", "System.Int8"));
@@ -78,14 +78,14 @@ Machine::Machine() : rootInst(*this, "<root_instruction>", true), managedMemoryP
     rootInst.SetInst(0x20, new UnaryOpInst<double, std::negate<double>, ValueType::doubleType>("negdo", "neg", "System.Double"));
 
     //  bitwise complement:
-    rootInst.SetInst(0x21, new UnaryOpInst<int8_t, std::bit_not<int8_t>, ValueType::sbyteType>("cplsb", "cpl", "System.Int8"));
-    rootInst.SetInst(0x22, new UnaryOpInst<uint8_t, std::bit_not<uint8_t>, ValueType::byteType>("cplby", "cpl", "System.UInt8"));
-    rootInst.SetInst(0x23, new UnaryOpInst<int16_t, std::bit_not<int16_t>, ValueType::shortType>("cplsh", "cpl", "System.Int16"));
-    rootInst.SetInst(0x24, new UnaryOpInst<uint16_t, std::bit_not<uint16_t>, ValueType::ushortType>("cplus", "cpl", "System.UInt16"));
-    rootInst.SetInst(0x25, new UnaryOpInst<int32_t, std::bit_not<int32_t>, ValueType::intType>("cplin", "cpl", "System.Int32"));
-    rootInst.SetInst(0x26, new UnaryOpInst<uint32_t, std::bit_not<uint32_t>, ValueType::uintType>("cplui", "cpl", "System.UInt32"));
-    rootInst.SetInst(0x27, new UnaryOpInst<int64_t, std::bit_not<int64_t>, ValueType::longType>("cpllo", "cpl", "System.Int64"));
-    rootInst.SetInst(0x28, new UnaryOpInst<uint64_t, std::bit_not<uint64_t>, ValueType::ulongType>("cplul", "cpl", "System.UInt64"));
+    rootInst.SetInst(0x21, new UnaryOpInst<int8_t, BitNot<int8_t>, ValueType::sbyteType>("cplsb", "cpl", "System.Int8"));
+    rootInst.SetInst(0x22, new UnaryOpInst<uint8_t, BitNot<uint8_t>, ValueType::byteType>("cplby", "cpl", "System.UInt8"));
+    rootInst.SetInst(0x23, new UnaryOpInst<int16_t, BitNot<int16_t>, ValueType::shortType>("cplsh", "cpl", "System.Int16"));
+    rootInst.SetInst(0x24, new UnaryOpInst<uint16_t, BitNot<uint16_t>, ValueType::ushortType>("cplus", "cpl", "System.UInt16"));
+    rootInst.SetInst(0x25, new UnaryOpInst<int32_t, BitNot<int32_t>, ValueType::intType>("cplin", "cpl", "System.Int32"));
+    rootInst.SetInst(0x26, new UnaryOpInst<uint32_t, BitNot<uint32_t>, ValueType::uintType>("cplui", "cpl", "System.UInt32"));
+    rootInst.SetInst(0x27, new UnaryOpInst<int64_t, BitNot<int64_t>, ValueType::longType>("cpllo", "cpl", "System.Int64"));
+    rootInst.SetInst(0x28, new UnaryOpInst<uint64_t, BitNot<uint64_t>, ValueType::ulongType>("cplul", "cpl", "System.UInt64"));
 
     // arithmetic binary operators:
     // ----------------------------

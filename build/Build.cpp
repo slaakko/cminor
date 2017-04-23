@@ -91,7 +91,7 @@ struct ParserData
     const std::vector<int>& fileIndeces;
     std::list<int> indexQueue;
     std::mutex indexQueueMutex;
-    std::atomic_bool stop;
+    std::atomic<bool> stop;
     std::vector<std::exception_ptr>& exceptions;
 };
 

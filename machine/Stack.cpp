@@ -8,6 +8,7 @@
 #include <cminor/machine/Thread.hpp>
 #include <cminor/util/Util.hpp>
 #include <cminor/machine/OsInterface.hpp>
+#include <cstring>
 
 namespace cminor { namespace machine {
 

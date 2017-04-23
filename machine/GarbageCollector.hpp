@@ -27,7 +27,7 @@ enum class GarbageCollectorState
     idle, requested, collecting, collected
 };
 
-extern std::atomic_bool wantToCollectGarbage;
+extern std::atomic<bool> wantToCollectGarbage;
 
 class MACHINE_API GarbageCollector
 {
@@ -49,12 +49,12 @@ public:
 private:
     Machine& machine;
     std::atomic<GarbageCollectorState> state;
-    std::atomic_bool collectionRequested;
+    std::atomic<bool> collectionRequested;
     std::condition_variable collectionRequestedCond;
     std::condition_variable wantToCollectGarbageCond;
-    std::atomic_bool idle;
+    std::atomic<bool> idle;
     std::condition_variable idleCond;
-    std::atomic_bool collected;
+    std::atomic<bool> collected;
     std::condition_variable collectedCond;
     bool started;
     bool error;

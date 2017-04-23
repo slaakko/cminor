@@ -24,7 +24,7 @@ class ExceptionBlock;
 class Thread;
 struct FunctionStackEntry;
 
-extern std::atomic_bool wantToCollectGarbage;
+extern std::atomic<bool> wantToCollectGarbage;
 
 MACHINE_API Thread& GetCurrentThread();
 MACHINE_API void SetCurrentThread(Thread* currentThread_);
@@ -136,9 +136,9 @@ private:
     ExceptionBlock* currentExceptionBlock;
     ObjectType* exceptionObjectType;
     std::atomic<ThreadState> state;
-    std::atomic_bool paused;
+    std::atomic<bool> paused;
     std::condition_variable pausedCond;
-    std::atomic_bool running;
+    std::atomic<bool> running;
     std::condition_variable runningCond;
     int32_t nextVariableReferenceId;
     std::vector<std::unique_ptr<DebugContext>> debugContexts;

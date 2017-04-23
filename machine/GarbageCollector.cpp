@@ -15,7 +15,7 @@ namespace cminor { namespace machine {
 
 MutexOwner gc('G');
 
-std::atomic_bool wantToCollectGarbage = false;
+std::atomic<bool> wantToCollectGarbage;
 
 Mutex garbageCollectorMutex('G');
 

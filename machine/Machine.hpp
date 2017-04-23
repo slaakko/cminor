@@ -22,6 +22,18 @@ enum class RunThreadKind
     function, method, functionWithParam, methodWithParam
 };
 
+template <typename T>
+struct Identity
+{
+    const T& operator()(const T& x) const { return x; }
+};
+
+template <typename T>
+struct BitNot
+{
+    T operator()(const T& x) const { return ~x; }
+};
+
 class MACHINE_API Machine
 {
 public:
@@ -62,13 +74,13 @@ private:
     GarbageCollector garbageCollector;
     std::unique_ptr<GenArena1> gen1Arena;
     std::unique_ptr<GenArena2> gen2Arena;
-    std::atomic_bool exiting;
-    std::atomic_bool exited;
+    std::atomic<bool> exiting;
+    std::atomic<bool> exited;
     std::thread garbageCollectorThread;
     Mutex threadMutex;
     MutexOwner owner;
-    std::atomic_int32_t nextFrameId;
-    std::atomic_int32_t nextSegmentId;
+    std::atomic<int32_t> nextFrameId;
+    std::atomic<int32_t> nextSegmentId;
     std::unordered_map<int32_t, Segment*> segmentMap;
 };
 

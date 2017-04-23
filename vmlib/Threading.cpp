@@ -23,7 +23,7 @@ public:
 private:
     const int32_t maxNoLockingMtxSize = 256;
     static std::unique_ptr<LockTable> instance;
-    std::atomic_int32_t nextLockId;
+    std::atomic<int32_t> nextLockId;
     std::mutex mtx;
     std::vector<std::unique_ptr<std::recursive_mutex>> mutexes;
     std::unordered_map<uint32_t, std::unique_ptr<std::recursive_mutex>> mutexMap;
@@ -237,7 +237,7 @@ public:
 private:
     const int32_t maxNoLockConditionVariables = 256;
     static std::unique_ptr<ConditionVariableTable> instance;
-    std::atomic_int32_t nextConditionVariableId;
+    std::atomic<int32_t> nextConditionVariableId;
     std::vector<std::unique_ptr<std::condition_variable_any>> conditionVariables;
     std::unordered_map<int32_t, std::unique_ptr<std::condition_variable_any>> conditionVariableMap;
     std::mutex mtx;
