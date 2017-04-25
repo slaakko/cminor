@@ -1,6 +1,8 @@
-all: bld
+.PHONY : all build install clean
 
-bld:
+all: build
+
+build:
 	$(MAKE) -C ast
 	$(MAKE) -C binder
 	$(MAKE) -C build
@@ -26,9 +28,18 @@ bld:
 
 prefix := /usr
 
+ifeq ($(config),debug)
+    machinesoname=libcminomachined
+else
+    machinesoname=libcminomachine
+endif
+
 install:
 	mkdir -p $(prefix)/bin
 	cp bin/* $(prefix)/bin
+	cp lib/$(machinesoname).so.0.1.0 $(prefix)/lib
+	ln $(prefix)/lib/$(machinesoname).so.0.1.0 $(prefix)/lib/$(machinesoname).so.0
+	ln $(prefix)/lib/$(machinesoname).so.0.1.0 $(prefix)/lib/$(machinesoname).so
 
 clean:
 	$(MAKE) -C ast clean

@@ -1,6 +1,6 @@
 ifeq ($(config),debug)
-    CXXFLAGS += -pthread -std=c++11 -I../.. -I../../.. -L../lib -L../../lib -L$(shell llvm-config --libdir) -g -O0
+    CXXFLAGS += -pthread -fPIC -std=c++11 -I../.. -I../../.. -L../lib -L../../lib -L$(shell llvm-config --libdir) -g -O0
 else
-    CXXFLAGS += -pthread -std=c++11 -I../.. -I../../.. -L../lib -L../../lib -L$(shell llvm-config --libdir) -DNDEBUG -O3
+    CXXFLAGS += -pthread -fPIC -std=c++11 -I../.. -I../../.. -L../lib -L../../lib -L$(shell llvm-config --libdir) -DNDEBUG -O3
 endif
 

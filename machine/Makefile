@@ -7,10 +7,16 @@ Object.o OsInterface.o Reader.o Runtime.o Stack.o Stats.o Thread.o Type.o Variab
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
-../lib/libcminormachine.a: $(OBJECTS)
-	$(AR) $(ARFLAGS) $@ $(OBJECTS)
+ifeq ($(config),debug)
+    soname=libcminomachined.so.0.1.0
+else
+    soname=libcminomachine.so.0.1.0
+endif
+
+../lib/$(soname): $(OBJECTS)
+	$(CXX) -shared -o $@ $(OBJECTS)
 
 clean:
 	rm -f *.o
-	rm -f ../lib/libcminormachine.a
+	rm -f ../lib/$(soname)
 
