@@ -364,7 +364,7 @@ inline char HexNibble(uint8_t n)
     return h[n];
 }
 
-inline std::string ToHexString(uint8_t x)
+std::string ToHexString(uint8_t x)
 {
     std::string s;
     s.append(1, HexNibble(x >> 4)).append(1, HexNibble(x & 0x0F));

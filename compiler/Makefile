@@ -11,14 +11,14 @@ LLVMLIBS = $(shell llvm-config --libs)
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 ifeq ($(config),debug)
-    exename=cminorbuildsysd
+    exename=cminorcd
 else
-    exename=cminorbuildsys
+    exename=cminorc
 endif
 
 ../bin/$(exename): $(OBJECTS) $(LIBRARIES)
 	$(CXX) $(CXXFLAGS) -o ../bin/$(exename) $(OBJECTS) \
--lcminorbuild -lcminoremitter -lcminorbinder -lcminorparser -lcminorsymbols -lcminorast -lcminormachine -lcminorpl -lcminorpom -lcminorutil \
+-lcminorbuild -lcminoremitter -lcminorbinder -lcminorparser -lcminorsymbols -lcminorast -lcminormachine -lcminorast -lcminorpl -lcminorpom -lcminorutil \
 -lboost_filesystem -lboost_iostreams -lboost_system \
 $(LLVMLIBS) -ldl -ltinfo -lz
 

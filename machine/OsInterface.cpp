@@ -233,6 +233,15 @@ void WriteInGreenToConsole(const std::string& line)
     }
 }
 
+uint64_t GetCurrentThreadHandle()
+{
+    return 0;
+}
+
+void CloseThreadHandle(uint64_t threadHandle)
+{
+}
+
 void* LoadSharedLibrary(const std::string& sharedLibraryFilePath)
 {
     void* libraryHandle = dlopen(sharedLibraryFilePath.c_str(), RTLD_LAZY);
