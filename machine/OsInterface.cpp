@@ -16,6 +16,7 @@
 #else
     #include <unistd.h>
     #include <sys/mman.h>
+    #include <dlfcn.h>
 #endif
 
 namespace cminor { namespace machine {
@@ -232,11 +233,39 @@ void WriteInGreenToConsole(const std::string& line)
     }
 }
 
-MACHINE_API void SetHandleToBinaryMode(int handle)
+void* LoadSharedLibrary(const std::string& sharedLibraryFilePath)
+{
+    void* libraryHandle = dlopen(sharedLibraryFilePath.c_str(), RTLD_LAZY);
+    if (libraryHandle == nullptr)
+    {
+        throw std::runtime_error("error loading library '" + sharedLibraryFilePath + "': " + std::string(dlerror()));
+    }
+    return libraryHandle;
+}
+
+void FreeSharedLibrary(void* sharedLibraryHandle)
+{
+    int result = dlclose(sharedLibraryHandle);
+    if (result != 0)
+    {
+        throw std::runtime_error("error closing library: " + std::string(dlerror()));
+    }
+}
+
+void* ResolveSymbolAddress(void* sharedLibraryHandle, const std::string& sharedLibraryFilePath, const std::string& symbolName)
+{
+    void* address = dlsym(sharedLibraryHandle, symbolName.c_str());
+    if (address == nullptr)
+    {
+        throw std::runtime_error("error resolving address of symbol '" + symbolName + "' in library '" + sharedLibraryFilePath + "': " + std::string(dlerror()));
+    }
+}
+
+void SetHandleToBinaryMode(int handle)
 {
 }
 
-MACHINE_API void SetHandleToTextMode(int handle)
+void SetHandleToTextMode(int handle)
 {
 }
 
