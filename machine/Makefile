@@ -8,13 +8,17 @@ Object.o OsInterface.o Reader.o Runtime.o Stack.o Stats.o Thread.o Type.o Variab
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 ifeq ($(config),debug)
-    soname=libcminomachined.so.0.1.0
+    soname=libcminormachined.so.0.1.0
+    sobasename=libcminormachined
 else
-    soname=libcminomachine.so.0.1.0
+    soname=libcminormachine.so.0.1.0
+    sobasename=libcminormachine
 endif
 
 ../lib/$(soname): $(OBJECTS)
 	$(CXX) -shared -o $@ $(OBJECTS)
+	ln -f ../lib/$(soname) ../lib/$(sobasename).so.0
+	ln -f ../lib/$(soname) ../lib/$(sobasename).so
 
 clean:
 	rm -f *.o

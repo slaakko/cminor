@@ -1,4 +1,4 @@
-.PHONY : all build install clean
+.PHONY : build install clean
 
 all: build
 
@@ -29,17 +29,17 @@ build:
 prefix := /usr
 
 ifeq ($(config),debug)
-    machinesoname=libcminomachined
+    machinesoname=libcminormachined
 else
-    machinesoname=libcminomachine
+    machinesoname=libcminormachine
 endif
 
 install:
 	mkdir -p $(prefix)/bin
 	cp bin/* $(prefix)/bin
 	cp lib/$(machinesoname).so.0.1.0 $(prefix)/lib
-	ln $(prefix)/lib/$(machinesoname).so.0.1.0 $(prefix)/lib/$(machinesoname).so.0
-	ln $(prefix)/lib/$(machinesoname).so.0.1.0 $(prefix)/lib/$(machinesoname).so
+	ln -f $(prefix)/lib/$(machinesoname).so.0.1.0 $(prefix)/lib/$(machinesoname).so.0
+	ln -f $(prefix)/lib/$(machinesoname).so.0.1.0 $(prefix)/lib/$(machinesoname).so
 
 clean:
 	$(MAKE) -C ast clean
