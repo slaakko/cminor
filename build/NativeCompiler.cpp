@@ -266,6 +266,7 @@ private:
     void GenerateObjectFile(const std::string& assemblyObjectFilePath);
     void Link(const std::string& assemblyObjectFilePath);
     void LinkWindows(const std::string& assemblyObjectFilePath);
+    void LinkLinux(const std::string& assemblyObjectFilePath);
     void CreateLocalVariables();
     void CreateVariablesForTemporaryGcRoots();
     void StoreTemporaryGcRoot(Instruction& instruction);
@@ -275,9 +276,9 @@ private:
     void CreateCall(llvm::Value* callee, const ArgVector& args, bool callReturnsValue);
     void CreateReturnFromFunctionOrFunclet();
     void CreateCatchPad();
-    void CreateCatchPadWindows();
     void GenerateRethrow();
     void GenerateRethrowWindows();
+    void GenerateRethrowLinux();
     void ExportGlobalVariable(llvm::Constant* globalVariable);
     void ExportFunction(llvm::Function* function);
     void ImportFunction(llvm::Function* function);
@@ -459,6 +460,11 @@ void NativeCompilerImpl::SetPersonalityFunction()
 #ifdef _WIN32
     llvm::FunctionType* personalityFunctionType = llvm::FunctionType::get(GetType(ValueType::intType), true);
     llvm::Function* personalityFunction = cast<llvm::Function>(module->getOrInsertFunction("__CxxFrameHandler3", personalityFunctionType));
+    ImportFunction(personalityFunction);
+    fun->setPersonalityFn(llvm::ConstantExpr::getBitCast(personalityFunction, PointerType::get(GetType(ValueType::byteType), 0)));
+#else
+    llvm::FunctionType* personalityFunctionType = llvm::FunctionType::get(GetType(ValueType::intType), true);
+    llvm::Function* personalityFunction = cast<llvm::Function>(module->getOrInsertFunction("__gxx_personality_v0", personalityFunctionType));
     ImportFunction(personalityFunction);
     fun->setPersonalityFn(llvm::ConstantExpr::getBitCast(personalityFunction, PointerType::get(GetType(ValueType::byteType), 0)));
 #endif
@@ -671,13 +677,6 @@ void NativeCompilerImpl::CreateReturnFromFunctionOrFunclet()
 
 void NativeCompilerImpl::CreateCatchPad()
 {
-#ifdef _WIN32
-    CreateCatchPadWindows();
-#endif
-}
-
-void NativeCompilerImpl::CreateCatchPadWindows()
-{
     ArgVector catchPadArgs;
     catchPadArgs.push_back(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
     catchPadArgs.push_back(GetConstantInt(ValueType::intType, MakeIntegralValue<int32_t>(64, ValueType::intType)));
@@ -693,6 +692,8 @@ void NativeCompilerImpl::GenerateRethrow()
 {
 #ifdef _WIN32
     GenerateRethrowWindows();
+#else
+    GenerateRethrowLinux();
 #endif
 }
 
@@ -721,6 +722,29 @@ void NativeCompilerImpl::GenerateRethrowWindows()
     else
     {
         builder.CreateCall(cxxThrowFunction, args);
+    }
+}
+
+void NativeCompilerImpl::GenerateRethrowLinux()
+{
+    llvm::Function* cxxRethrowFunction = cast<llvm::Function>(module->getOrInsertFunction("__cxa_rethrow", GetType(ValueType::none), nullptr));
+    ImportFunction(cxxRethrowFunction);
+    ArgVector args;
+    if (currentPad != nullptr)
+    {
+        std::vector<OperandBundleDef> bundles;
+        std::vector<llvm::Value*> inputs;
+        inputs.push_back(currentPad);
+        bundles.push_back(OperandBundleDef("funclet", inputs));
+        if (!currentBasicBlock)
+        {
+            throw std::runtime_error("current basic block not set");
+        }
+        llvm::CallInst::Create(cxxRethrowFunction, args, bundles, "", currentBasicBlock);
+    }
+    else
+    {
+        builder.CreateCall(cxxRethrowFunction, args);
     }
 }
 
@@ -1026,6 +1050,8 @@ void NativeCompilerImpl::Link(const std::string& assemblyObjectFilePath)
     }
 #ifdef _WIN32
     LinkWindows(assemblyObjectFilePath);
+#else
+    LinkLinux(assemblyObjectFilePath);
 #endif
 }
 
@@ -1132,6 +1158,11 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
         }
         throw std::runtime_error("NativeCompiler: linking '" + assemblyObjectFilePath + "' failed: " + ex.what() + ":\nerrors:\n" + errors);
     }
+}
+
+void NativeCompilerImpl::LinkLinux(const std::string& assemblyObjectFilePath)
+{
+    // todo
 }
 
 void NativeCompilerImpl::GenerateInlineDefinitionFor(Function& function)

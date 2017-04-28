@@ -3,7 +3,7 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <title>Program Arguments</title>
+    <title>Installation</title>
     <link rel="stylesheet" type="text/css" href="../style/style.css" />
 </head>
 <body>
@@ -32,17 +32,149 @@
             <a href="http://gcc.gnu.org/">gcc</a> recent enough to compile C++11 code.
         </li>
         <li>
+            <a href="http://zlib.net/">zlib</a> version 1.2.8 or newer.
+        </li>
+        <li>
             <a href="http://www.boost.org/">boost</a> version 1.60.0 or newer.
         </li>
         <li>
             <a href="http://cmake.org/">cmake</a> version 3.4.3 or newer.
         </li>
         <li>
-            <a href="http://zlib.net/">zlib</a> version 1.2.8 or newer.
-        </li>
-        <li>
-            <a href="http://llvm.org/">llvm and clang</a> version 4.0.0 or newer.
+            <a href="http://llvm.org/">LLVM and Clang</a> version 4.0.0 or newer.
         </li>
     </ul>
+
+    <h5>
+        GCC version
+    </h5>
+
+    <p>
+        My gcc version is rather old, but it compiles C++11 code, so it sufficies:
+    </p>
+
+    <div class="commands">
+        > g++ --version<br />
+        g++ version 4.8.4<br />
+    </div>
+
+    <h5>
+        Installing zlib
+    </h5>
+
+    <p>
+        To install zlib from sources download <a href="http://prdownloads.sourceforge.net/libpng/zlib-1.2.11.tar.gz?download">zlib-1.2.11.tar.gz</a> (or newer), 
+        extract it to some directory here called zlib-1.2.11 and change to zlib-1.2.11 directory.
+        Then run make and then [sudo] make install:
+    </p>
+
+    <div class="commands">
+        > cd zlib-1.2.11<br />
+        > make<br />
+        > sudo make install
+    </div>
+
+    <h5>
+        Installing boost
+    </h5>
+
+    <p>
+        To install boost from sources download <a href="http://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2">boost_1_64_0.tar.bz2</a> (or newer),
+        extract it to some directory here called boost_1_64_0 and change to boost_1_64_0 directory. At minimum you will need to install filesystem, iostreams and system libraries:
+    </p>
+
+    <div class="commands">
+        > cd boost_1_64_0<br />
+        > ./bootstrap.sh <br />
+        > ./b2 --with-filesystem --with-iostreams --with-system<br />
+        > sudo ./b2 --with-filesystem --with-iostreams --with-system install
+    </div>
+
+    <h5>
+        Installing cmake
+    </h5>
+
+    <p>
+        To install cmake you can either build it from sources or download a binary distribution on Linux x86_64: <a href="http://cmake.org/files/v3.8/cmake-3.8.0-Linux-x86_64.tar.gz">cmake-3.8.0-Linux-x86_64.tar.gz</a>.
+        To install the binary distribution, extract it to some directory here called cmake-3.8.0 and insert the cmake-3.8.0/bin directory to the PATH environment variable.
+        Then run cmake --version to ensure it is of the right version.
+    </p>
+
+    <div class="commands">
+        > cmake --version<br />
+        cmake version 3.8.0
+    </div>
+
+    <h5>
+        Installing LLVM and Clang
+    </h5>
+
+    <p>
+        LLVM and Clang must be built from sources because by default exceptions and RTTI needed by Cminor are not enabled in binary distributions as far as I know.
+        Download LLVM: <a href="http://releases.llvm.org/4.0.0/llvm-4.0.0.src.tar.xz">llvm-4.0.0.src.tar.xz</a> (or newer),
+        extract it to some directory here called llvm-4.0.0.src. Then download Clang: <a href="http://releases.llvm.org/4.0.0/cfe-4.0.0.src.tar.xz">cfe-4.0.0.src.tar.xz</a> (or newer),
+        extract it to some directory here called cfe-4.0.0.src. Then move cfe-4.0.0.src directory under the llvm-4.0.0.src/tools directory under the name "clang".
+        Change to directory llvm-4.0.0.src and create a build directory under it. Then change to the build directory and run cmake command from there by giving it path to the 
+        llvm-4.0.0.src directory. Cminor uses exceptions and RTTI so we need to enable them by setting LLVM_ENABLE_EH and LLVM_ENABLE_RTTI variables to ON.
+        By entering commands <span class="code">llc -version</span> and <span class="code">clang --version</span> we can ensure that the LLVM and Clang found are of the right versions.
+
+    </p>
+
+    <div class="commands">
+        > mv cfe-4.0.0.src llvm-4.0.0.src/tools/clang<br />
+        > cd llvm-4.0.0.src<br />
+        > mkdir build<br />
+        > cd build<br />
+        > cmake -DCMAKE_BUILD_TYPE="Release" -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON ../<br />
+        > make<br />
+        > sudo make install<br />
+        > llc -version<br />
+        LLVM version 4.0.0<br />
+        ...<br />
+        > clang --version<br />
+        clang version 4.0.0 ...<br />
+        ...<br />
+    </div>
+
+    <h4>
+        Installing Cminor
+    </h4>
+
+    <p>
+        To install Cminor from sources download <a href="http://sourceforge.net/projects/cminor/files/0.1.0/cminor-0.1.0.tar.bz2">cminor-0.1.0.tar.bz2</a> or 
+        <a href="http://sourceforge.net/projects/cminor/files/0.1.0/cminor-0.1.0.tar.gz">cminor-0.1.0.tar.gz</a>, and extract it to some directory here called cminor-0.1.0.
+        Change the name of the directory to "cminor", change to the cminor directory, run make and then [sudo] make install from there. 
+        Make a new environment variable named CMINOR_ROOT and set its value to path to the cminor directory. (You need to insert it to your shell script (.bashrc or equivalent) to make it permanent.)
+        Then give command "cminor" to ensure that found cminor program is of the right version.
+        
+    </p>
+
+    <div class="commands">
+        > mv cminor-0.1.0 cminor<br />
+        > cd cminor<br />
+        > make<br />
+        > sudo make install<br />
+        > export CMINOR_ROOT=~/cminor<br />
+        > cminor<br />
+        cminor programming language commander version 0.1.0<br />
+        ...<br />
+    </div>
+
+    <h5>
+        Building the system library
+    </h5>
+
+    <p>
+        Now that Cminor commander is working, you need to build the system library for the debug and release configurations:
+    </p>
+
+    <div class="commands">
+        > cminor build --native system<br />
+        > cminor build --native --config=release system<br />
+    </div>
+
+    <p>
+        Now Cminor is ready for compiling your projects.
+    </p>
 </body>
 </html>
