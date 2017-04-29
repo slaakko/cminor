@@ -3380,7 +3380,7 @@ void NativeCompilerImpl::VisitEndFinallyInst(EndFinallyInst& instruction)
 #ifdef _WIN32
     VisitEndFinallyInstWindows(instruction);
 #else
-    VisitEndFinallyInstLinux(instruction)
+    VisitEndFinallyInstLinux(instruction);
 #endif
 }
 
@@ -3412,9 +3412,13 @@ void NativeCompilerImpl::VisitEndFinallyInstWindows(EndFinallyInst& instruction)
 
 void NativeCompilerImpl::VisitEndFinallyInstLinux(EndFinallyInst& instruction)
 {
+    std::vector<llvm::Type*> lpTypes;
+    lpTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
+    lpTypes.push_back(GetType(ValueType::intType));
+    llvm::StructType* lpType = llvm::StructType::get(context, lpTypes);
     llvm::Value* exception = builder.CreateExtractValue(currentLandingPad, 0);
     llvm::Value* typeInfo = builder.CreateExtractValue(currentLandingPad, 1);
-    llvm::Value* aggregate = builder.CreateInsertValue(llvm::UndefValue::get(llvm::PointerType::get(GetType(ValueType::byteType), 0)), exception, 0);
+    llvm::Value* aggregate = builder.CreateInsertValue(llvm::UndefValue::get(lpType), exception, 0);
     llvm::Value* exStruct = builder.CreateInsertValue(aggregate, typeInfo, 1);
     builder.CreateResume(exStruct);
     currentLandingPad = landingPadStack.back();
