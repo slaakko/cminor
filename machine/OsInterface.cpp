@@ -245,7 +245,7 @@ void CloseThreadHandle(uint64_t threadHandle)
 
 void* LoadSharedLibrary(const std::string& sharedLibraryFilePath)
 {
-    void* libraryHandle = dlopen(sharedLibraryFilePath.c_str(), RTLD_LAZY);
+    void* libraryHandle = dlopen(sharedLibraryFilePath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     if (libraryHandle == nullptr)
     {
         throw std::runtime_error("error loading library '" + sharedLibraryFilePath + "': " + std::string(dlerror()));
