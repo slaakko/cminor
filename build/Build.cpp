@@ -563,7 +563,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
                 {
                     boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
 #ifndef _WIN32
-                    sfp = sfp + ".1.0";
+                    sfp = sfp.generic_string() + ".1.0";
 #endif
                     boost::filesystem::path psfp = projectAssemblyDir;
                     psfp /= sfp.filename();
@@ -600,7 +600,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
                 {
                     boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
 #ifndef _WIN32
-                    sfp = sfp + ".1.0";
+                    sfp = sfp.generic_string() + ".1.0";
 #endif
                     boost::filesystem::path psfp = projectAssemblyDir;
                     psfp /= sfp.filename();
@@ -764,7 +764,7 @@ void BuildSolution(const std::string& solutionFilePath)
             {
                 boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
 #ifndef _WIN32
-                sfp = sfp + ".1.0";
+                sfp = sfp.generic_string() + ".1.0";
 #endif
                 boost::filesystem::path ssfp = solutionAssemblyDir;
                 ssfp /= sfp.filename();
@@ -803,7 +803,7 @@ void BuildSolution(const std::string& solutionFilePath)
                 {
                     boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
 #ifndef _WIN32
-                    sfp = sfp + ".1.0";
+                    sfp = sfp.generic_string() + ".1.0";
 #endif
                     boost::filesystem::path ssfp = solutionAssemblyDir;
                     ssfp /= sfp.filename();
@@ -839,7 +839,7 @@ void BuildSolution(const std::string& solutionFilePath)
         {
             boost::filesystem::path sfp = project->NativeSharedLibraryFilePath();
 #ifndef _WIN32
-            sfp = sfp + ".1.0";
+            sfp = sfp.generic_string() + ".1.0";
 #endif
             boost::filesystem::path ssfp = solutionAssemblyDir;
             ssfp /= sfp.filename();
