@@ -26,6 +26,8 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/util/Path.hpp>
+#include <cminor/util/System.hpp>
+#include <cminor/util/TextUtils.hpp>
 #include <iostream>
 #include <stdexcept>
 
@@ -219,7 +221,7 @@ void BindStatements(BoundCompileUnit& boundCompileUnit)
     boundCompileUnit.GetCompileUnitNode()->Accept(statementBinderVisitor);
 }
 
-void CopyFile(const std::string& from, const std::string& to, std::unordered_set<std::string>& copied)
+void CopyFile(const std::string& from, const std::string& to, std::unordered_set<std::string>& copied, bool createLinks)
 {
     if (copied.find(from) == copied.cend())
     {
@@ -231,8 +233,46 @@ void CopyFile(const std::string& from, const std::string& to, std::unordered_set
                 boost::filesystem::remove(to);
             }
             boost::filesystem::copy(from, to);
+            if (createLinks)
+            {
+                std::string::size_type lastDotPos = to.find_last_of('.');
+                std::string so1to = to.substr(0, lastDotPos);
+                std::string ln1CommandLine = "ln -f " + to + " " + so1to;
+                std::string ln1ErrorFilePath = Path::Combine(Path::GetDirectoryName(to), "ln1.error");
+                try
+                {
+                    int redirectHandle = 2; // stderr
+                    System(ln1CommandLine, redirectHandle, ln1ErrorFilePath);
+                    boost::filesystem::remove(boost::filesystem::path(ln1ErrorFilePath));
+                }
+                catch (const std::exception& ex)
+                {
+                    std::string errors = ReadFile(ln1ErrorFilePath);
+                    throw std::runtime_error("CopyFile: creating hard link for '" + to + "' failed: " + ex.what() + ":\nerrors:\n" + errors);
+                }
+                lastDotPos = so1to.find_last_of('.');
+                std::string soto = so1to.substr(0, lastDotPos);
+                std::string ln2CommandLine = "ln -f " + to + " " + soto;
+                std::string ln2ErrorFilePath = Path::Combine(Path::GetDirectoryName(to), "ln2.error");
+                try
+                {
+                    int redirectHandle = 2; // stderr
+                    System(ln2CommandLine, redirectHandle, ln2ErrorFilePath);
+                    boost::filesystem::remove(boost::filesystem::path(ln2ErrorFilePath));
+                }
+                catch (const std::exception& ex)
+                {
+                    std::string errors = ReadFile(ln2ErrorFilePath);
+                    throw std::runtime_error("CopyFile: creating hard link for '" + to + "' failed: " + ex.what() + ":\nerrors:\n" + errors);
+                }
+            }
         }
     }
+}
+
+void CopyFile(const std::string& from, const std::string& to, std::unordered_set<std::string>& copied)
+{
+    CopyFile(from, to, copied, false);
 }
 
 BoundCompoundStatement* CreateBodyForArrayGetEnumeratorMemberFunctionSymbol(BoundCompileUnit& boundCompileUnit, BoundFunction* boundFunction, ArrayTypeSymbol* arrayType,
@@ -522,11 +562,18 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
                 if (!assemblyReferenceInfo.nativeSharedLibraryFilePath.empty())
                 {
                     boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
+#ifndef _WIN32
+                    sfp = sfp + ".1.0";
+#endif
                     boost::filesystem::path psfp = projectAssemblyDir;
                     psfp /= sfp.filename();
                     std::string from = GetFullPath(sfp.generic_string());
                     std::string to = GetFullPath(psfp.generic_string());
-                    CopyFile(from, to, copied);
+#ifndef _WIN32
+                    CopyFile(from, to, copied, true); 
+#else
+                    CopyFile(from, to, copied, false);
+#endif
                 }
             }
         }
@@ -552,11 +599,18 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
                 if (!assemblyReferenceInfo.nativeSharedLibraryFilePath.empty())
                 {
                     boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
+#ifndef _WIN32
+                    sfp = sfp + ".1.0";
+#endif
                     boost::filesystem::path psfp = projectAssemblyDir;
                     psfp /= sfp.filename();
                     std::string from = GetFullPath(sfp.generic_string());
                     std::string to = GetFullPath(psfp.generic_string());
-                    CopyFile(from, to, copied);
+#ifndef _WIN32
+                    CopyFile(from, to, copied, true);
+#else
+                    CopyFile(from, to, copied, false);
+#endif
                 }
             }
         }
@@ -709,11 +763,18 @@ void BuildSolution(const std::string& solutionFilePath)
             if (!assemblyReferenceInfo.nativeSharedLibraryFilePath.empty())
             {
                 boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
+#ifndef _WIN32
+                sfp = sfp + ".1.0";
+#endif
                 boost::filesystem::path ssfp = solutionAssemblyDir;
                 ssfp /= sfp.filename();
                 std::string from = GetFullPath(sfp.generic_string());
                 std::string to = GetFullPath(ssfp.generic_string());
-                CopyFile(from, to, copied);
+#ifndef _WIN32
+                CopyFile(from, to, copied, true);
+#else
+                CopyFile(from, to, copied, false);
+#endif
             }
         }
     }
@@ -741,11 +802,18 @@ void BuildSolution(const std::string& solutionFilePath)
                 if (!assemblyReferenceInfo.nativeSharedLibraryFilePath.empty())
                 {
                     boost::filesystem::path sfp = assemblyReferenceInfo.nativeSharedLibraryFilePath;
+#ifndef _WIN32
+                    sfp = sfp + ".1.0";
+#endif
                     boost::filesystem::path ssfp = solutionAssemblyDir;
                     ssfp /= sfp.filename();
                     std::string from = GetFullPath(sfp.generic_string());
                     std::string to = GetFullPath(ssfp.generic_string());
-                    CopyFile(from, to, copied);
+#ifndef _WIN32
+                    CopyFile(from, to, copied, true);
+#else
+                    CopyFile(from, to, copied, false);
+#endif
                 }
             }
         }
@@ -770,11 +838,18 @@ void BuildSolution(const std::string& solutionFilePath)
         if (!project->NativeSharedLibraryFilePath().empty())
         {
             boost::filesystem::path sfp = project->NativeSharedLibraryFilePath();
+#ifndef _WIN32
+            sfp = sfp + ".1.0";
+#endif
             boost::filesystem::path ssfp = solutionAssemblyDir;
             ssfp /= sfp.filename();
             std::string from = GetFullPath(sfp.generic_string());
             std::string to = GetFullPath(ssfp.generic_string());
-            CopyFile(from, to, copied);
+#ifndef _WIN32
+            CopyFile(from, to, copied, true);
+#else
+            CopyFile(from, to, copied, false);
+#endif
         }
     }
     if (GetGlobalFlag(GlobalFlags::verbose))
