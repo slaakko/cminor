@@ -921,6 +921,9 @@ void NativeCompilerImpl::BeginModule(Assembly& assembly)
     }
     llvm::TargetOptions targetOptions = GetTargetOptions();
     llvm::Optional<Reloc::Model> relocModel;
+#ifndef _WIN32
+    relocModel = llvm::Reloc::Model::PIC_;
+#endif
     llvm::CodeModel::Model codeModel = CodeModel::Default;
     llvm::CodeGenOpt::Level codeGenLevel = CodeGenOpt::None;
     optimizationLevel = GetOptimizationLevel();
@@ -1203,7 +1206,77 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
 
 void NativeCompilerImpl::LinkLinux(const std::string& assemblyObjectFilePath)
 {
-    // todo
+    std::string so10FilePath = Path::ChangeExtension(assemblyObjectFilePath, ".so.1.0");
+    std::string soFileName = Path::GetFileName(Path::ChangeExtension(assemblyObjectFilePath, ".so"));
+    std::string linkCommandLine = "clang++ -shared " + assemblyObjectFilePath + " -o " + so10FilePath;
+    std::string linkErrorFilePath = Path::Combine(Path::GetDirectoryName(assemblyObjectFilePath), "clang++.error");
+    try
+    {
+        int redirectHandle = 2; // stderr
+        System(linkCommandLine, redirectHandle, linkErrorFilePath);
+        boost::filesystem::remove(boost::filesystem::path(linkErrorFilePath));
+        if (GetGlobalFlag(GlobalFlags::verbose))
+        {
+            std::cout << "Linking " << assemblyObjectFilePath << " succeeded." << std::endl;
+            std::cout << "=> " << so10FilePath << std::endl;
+        }
+    }
+    catch (const std::exception& ex)
+    {
+        std::string errors = ReadFile(linkErrorFilePath);
+        if (listStream)
+        {
+            *listStream << "linking '" + assemblyObjectFilePath + "' failed:\n" << linkCommandLine << "\n:" << errors << std::endl;
+        }
+        throw std::runtime_error("NativeCompiler: linking '" + assemblyObjectFilePath + "' failed: " + ex.what() + ":\nerrors:\n" + errors);
+    }
+    std::string so1FilePath = Path::ChangeExtension(assemblyObjectFilePath, ".so.1");
+    std::string ln1CommandLine = "ln -f " + so10FilePath + " " + so1FilePath;
+    std::string ln1ErrorFilePath = Path::Combine(Path::GetDirectoryName(assemblyObjectFilePath), "ln1.error");
+    try
+    {
+        int redirectHandle = 2; // stderr
+        System(ln1CommandLine, redirectHandle, ln1ErrorFilePath);
+        boost::filesystem::remove(boost::filesystem::path(ln1ErrorFilePath));
+        if (GetGlobalFlag(GlobalFlags::verbose))
+        {
+            std::cout << "Creating hard link for " << so10FilePath << " succeeded." << std::endl;
+            std::cout << "=> " << so1FilePath << std::endl;
+        }
+    }
+    catch (const std::exception& ex)
+    {
+        std::string errors = ReadFile(ln1ErrorFilePath);
+        if (listStream)
+        {
+            *listStream << "creating hard link for '" + so10FilePath + "' failed:\n" << ln1CommandLine << "\n:" << errors << std::endl;
+        }
+        throw std::runtime_error("NativeCompiler: creating hard link for '" + so10FilePath + "' failed: " + ex.what() + ":\nerrors:\n" + errors);
+    }
+    std::string soFilePath = Path::ChangeExtension(assemblyObjectFilePath, ".so");
+    std::string ln2CommandLine = "ln -f " + so10FilePath + " " + soFilePath;
+    std::string ln2ErrorFilePath = Path::Combine(Path::GetDirectoryName(assemblyObjectFilePath), "ln2.error");
+    try
+    {
+        int redirectHandle = 2; // stderr
+        System(ln2CommandLine, redirectHandle, ln2ErrorFilePath);
+        boost::filesystem::remove(boost::filesystem::path(ln2ErrorFilePath));
+        assembly->SetNativeSharedLibraryFileName(soFileName);
+        if (GetGlobalFlag(GlobalFlags::verbose))
+        {
+            std::cout << "Creating hard link for " << so10FilePath << " succeeded." << std::endl;
+            std::cout << "=> " << soFilePath << std::endl;
+        }
+    }
+    catch (const std::exception& ex)
+    {
+        std::string errors = ReadFile(ln2ErrorFilePath);
+        if (listStream)
+        {
+            *listStream << "creating hard link for '" + so10FilePath + "' failed:\n" << ln2CommandLine << "\n:" << errors << std::endl;
+        }
+        throw std::runtime_error("NativeCompiler: creating hard link for '" + so10FilePath + "' failed: " + ex.what() + ":\nerrors:\n" + errors);
+    }
 }
 
 void NativeCompilerImpl::GenerateInlineDefinitionFor(Function& function)
@@ -2984,6 +3057,10 @@ void NativeCompilerImpl::VisitBeginCatchSectionInstLinux(BeginCatchSectionInst& 
         ArgVector beginCatchArgs;
         beginCatchArgs.push_back(exception);
         llvm::Value* beginCatchValue = builder.CreateCall(beginCatchFunction, beginCatchArgs);
+        int firstCatchId = exceptionBlock->CatchBlocks().front()->Id();
+        llvm::BasicBlock* catchTarget = llvm::BasicBlock::Create(context, "catch" + std::to_string(currentCatchSectionExceptionBlockId) + std::to_string(firstCatchId), fun);
+        nextHandler[currentCatchSectionExceptionBlockId] = catchTarget;
+        builder.CreateBr(catchTarget);
     }
     else
     {
