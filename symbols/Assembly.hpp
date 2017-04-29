@@ -150,6 +150,7 @@ public:
     int RunNative(const std::vector<utf32_string>& programArguments);
     void SetId(uint32_t id_) { id = id_; }
     uint32_t Id() const { return id; }
+    const std::string& Hash() const { return hash; }
     Machine& GetMachine() { return machine; }
     bool IsCore() const { return GetFlag(AssemblyFlags::core); }
     void SetCore() { SetFlag(AssemblyFlags::core); }
@@ -244,6 +245,7 @@ private:
     std::string nativeTargetTriple;
     std::string nativeSharedLibraryFileName;
     std::string nativeImportLibraryFileName;
+    std::string hash;
     std::vector<std::string> referenceFilePaths;
     std::vector<std::unique_ptr<Assembly>> referencedAssemblies;
     AssemblyDependency assemblyDependency;

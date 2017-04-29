@@ -18,6 +18,7 @@
 #include <cminor/util/Path.hpp>
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/util/Prime.hpp>
+#include <cminor/util/Sha1.hpp>
 #include <iostream>
 
 namespace cminor { namespace symbols {
@@ -264,6 +265,7 @@ Assembly::Assembly(Machine& machine_, const utf32_string& name_, const std::stri
     {
         SetRelease();
     }
+    hash = GetSha1MessageDigest(ToUtf8(name.Value().AsStringLiteral()));
 }
 
 Assembly::~Assembly()
@@ -655,6 +657,7 @@ void Assembly::DumpHeader(CodeFormatter& formatter)
     formatter.WriteLine("ASSEMBLY HEADER");
     formatter.WriteLine();
     formatter.WriteLine("assembly name: " + ToUtf8(Name().Value()));
+    formatter.WriteLine("assembly hash: " + hash);
     formatter.WriteLine("assembly format: " + CharStr(char(assemblyFormat)));
     formatter.WriteLine("assembly flags: " + AssemblyFlagsStr(flags));
     formatter.WriteLine("original file path: " + originalFilePath);
@@ -742,6 +745,7 @@ void Assembly::Write(SymbolWriter& writer)
     writer.AsMachineWriter().Put(nativeTargetTriple);
     writer.AsMachineWriter().Put(nativeSharedLibraryFileName);
     writer.AsMachineWriter().Put(nativeImportLibraryFileName);
+    writer.AsMachineWriter().Put(hash);
     uint32_t n = uint32_t(referencedAssemblies.size());
     writer.AsMachineWriter().PutEncodedUInt(n);
     for (uint32_t i = 0; i < n; ++i)
@@ -810,6 +814,7 @@ void Assembly::BeginRead(SymbolReader& reader, LoadType loadType, const Assembly
     nativeTargetTriple = reader.GetUtf8String();
     nativeSharedLibraryFileName = reader.GetUtf8String();
     nativeImportLibraryFileName = reader.GetUtf8String();
+    hash = reader.GetUtf8String();
     uint32_t n = reader.GetEncodedUInt();
     for (uint32_t i = 0; i < n; ++i)
     {
@@ -919,6 +924,7 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
     nativeTargetTriple = reader.GetUtf8String();
     nativeSharedLibraryFileName = reader.GetUtf8String();
     nativeImportLibraryFileName = reader.GetUtf8String();
+    hash = reader.GetUtf8String();
     uint32_t n = reader.GetEncodedUInt();
     for (uint32_t i = 0; i < n; ++i)
     {
@@ -1556,7 +1562,7 @@ void SetExportedSharedLibraryVariables(Assembly* assembly)
     {
         throw std::runtime_error("shared library handle of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") is not set");
     }
-    std::string constantPoolVarName = "__constant_pool";
+    std::string constantPoolVarName = "__constant_pool_" + assembly->Hash();
     try
     {
         void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), constantPoolVarName);
@@ -1566,7 +1572,7 @@ void SetExportedSharedLibraryVariables(Assembly* assembly)
     }
     catch (const std::runtime_error& ex)
     {
-        throw std::runtime_error("resolving address of '__constant_pool' variable of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " + ex.what());
+        throw std::runtime_error("resolving address of '__constant_pool_" + assembly->Hash() + "' variable of assembly '" + ToUtf8(assembly->Name().Value()) + "' (" + assembly->FilePathReadFrom() + ") failed: " + ex.what());
     }
 }
 

@@ -263,7 +263,6 @@ private:
     std::unordered_map<ClassData*, llvm::Constant*> classDataMap;
     std::unordered_map<Type*, llvm::Constant*> typeMap;
     std::unordered_map<Function*, llvm::Constant*> functionPtrMap;
-    std::unordered_map<std::string, llvm::Value*> globalStringPtrMap;
     std::vector<int> exceptionBlockIdStack;
     int currentExceptionBlockId;
     std::vector<int> catchSectionExceptionBlockIdStack;
@@ -820,7 +819,7 @@ llvm::Constant* NativeCompilerImpl::GetClassDataPtrVar(ClassData* classData)
     {
         return it->second;
     }
-    std::string classDataPtrVarName = "__CD" + std::to_string(nextClassDataVarNumber++);
+    std::string classDataPtrVarName = "__CD" + std::to_string(nextClassDataVarNumber++) + "_" + assembly->Hash();
     utf32_string classDataPtrVarNameUtf32 = ToUtf32(classDataPtrVarName);
     Constant classDataPtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(classDataPtrVarNameUtf32.c_str())));
     Constant classDataNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(classData->Type()->Name()));
@@ -840,7 +839,7 @@ llvm::Constant* NativeCompilerImpl::GetTypePtrVar(Type* type)
     {
         return it->second;
     }
-    std::string typePtrVarName = "__T" + std::to_string(nextTypePtrVarNumber++);
+    std::string typePtrVarName = "__T" + std::to_string(nextTypePtrVarNumber++) + "_" + assembly->Hash();
     utf32_string typePtrVarNameUtf32 = ToUtf32(typePtrVarName);
     Constant typePtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(typePtrVarNameUtf32.c_str())));
     Constant typeNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(type->Name()));
@@ -860,7 +859,7 @@ llvm::Constant* NativeCompilerImpl::GetFunctionPtrVar(Function* function)
     {
         return it->second;
     }
-    std::string functionPtrVarName = "__F" + std::to_string(nextFunctionVarNumber++);
+    std::string functionPtrVarName = "__F" + std::to_string(nextFunctionVarNumber++) + "_" + assembly->Hash();
     utf32_string functionPtrVarNameUtf32 = ToUtf32(functionPtrVarName);
     Constant functionPtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(functionPtrVarNameUtf32.c_str())));
     Constant functionNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(function->CallName()));
@@ -948,13 +947,14 @@ void NativeCompilerImpl::BeginModule(Assembly& assembly)
         }
         listStream.reset(new std::ofstream(listFilePath));
         *listStream << "MODULE " << assemblyName << " : " << assembly.FilePathReadFrom() << std::endl;
+        *listStream << "hash: " << assembly.Hash() << std::endl;
         *listStream << "target triple: " << targetTriple << std::endl;
         *listStream << "optimization level: " << optimizationLevel << std::endl;
         *listStream << "inline limit: " << inlineLimit << " or fewer intermediate instructions (0 = no inlining)" << std::endl;
         *listStream << "inline locals: " << inlineLocals << std::endl;
     }
-    constantPoolVariable = module->getOrInsertGlobal("__constant_pool", PointerType::get(GetType(ValueType::byteType), 0));
-    ExportGlobalVariable(constantPoolVariable);;
+    constantPoolVariable = module->getOrInsertGlobal("__constant_pool_" + assembly.Hash(), PointerType::get(GetType(ValueType::byteType), 0));
+    ExportGlobalVariable(constantPoolVariable);
     llvm::GlobalVariable* constantPoolVar = cast<llvm::GlobalVariable>(constantPoolVariable);
     constantPoolVar->setInitializer(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
     nextFunctionVarNumber = 0;
