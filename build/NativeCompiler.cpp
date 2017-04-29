@@ -171,11 +171,23 @@ public:
     void VisitBeginTryInst(BeginTryInst& instruction) override;
     void VisitEndTryInst(EndTryInst& instruction) override;
     void VisitBeginCatchSectionInst(BeginCatchSectionInst& instruction) override;
+    void VisitBeginCatchSectionInstWindows(BeginCatchSectionInst& instruction);
+    void VisitBeginCatchSectionInstLinux(BeginCatchSectionInst& instruction);
     void VisitEndCatchSectionInst(EndCatchSectionInst& instruction) override;
+    void VisitEndCatchSectionInstWindows(EndCatchSectionInst& instruction);
+    void VisitEndCatchSectionInstLinux(EndCatchSectionInst& instruction);
     void VisitBeginCatchInst(BeginCatchInst& instruction) override;
+    void VisitBeginCatchInstWindows(BeginCatchInst& instruction);
+    void VisitBeginCatchInstLinux(BeginCatchInst& instruction);
     void VisitEndCatchInst(EndCatchInst& instruction) override;
+    void VisitEndCatchInstWindows(EndCatchInst& instruction);
+    void VisitEndCatchInstLinux(EndCatchInst& instruction) ;
     void VisitBeginFinallyInst(BeginFinallyInst& instruction) override;
+    void VisitBeginFinallyInstWindows(BeginFinallyInst& instruction);
+    void VisitBeginFinallyInstLinux(BeginFinallyInst& instruction) ;
     void VisitEndFinallyInst(EndFinallyInst& instruction) override;
+    void VisitEndFinallyInstWindows(EndFinallyInst& instruction);
+    void VisitEndFinallyInstLinux(EndFinallyInst& instruction) ;
     void VisitStaticInitInst(StaticInitInst& instruction) override;
     void VisitDoneStaticInitInst(DoneStaticInitInst& instruction) override;
     void VisitLoadStaticFieldInst(LoadStaticFieldInst& instruction) override;
@@ -240,6 +252,8 @@ private:
     std::vector<llvm::Value*> padStack;
     LlvmPadKind currentPadKind;
     std::vector<LlvmPadKind> padKindStack;
+    std::vector<llvm::LandingPadInst*> landingPadStack;
+    llvm::LandingPadInst* currentLandingPad;
     std::unordered_map<int, llvm::Value*> exceptionObjectVariables;
     llvm::Value* exceptionPtr;
     std::unordered_map<int, llvm::BasicBlock*> nextHandler;
@@ -275,6 +289,8 @@ private:
     void InsertAllocaIntoEntryBlock(llvm::AllocaInst* allocaInst);
     void CreateCall(llvm::Value* callee, const ArgVector& args, bool callReturnsValue);
     void CreateReturnFromFunctionOrFunclet();
+    void CreateReturnFromFunctionOrFuncletWindows();
+    void CreateReturnFromFunctionOrFuncletLinux();
     void CreateCatchPad();
     void GenerateRethrow();
     void GenerateRethrowWindows();
@@ -306,7 +322,7 @@ private:
 NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), module(), targetMachine(), fun(nullptr), function(nullptr), assemblyConstantPool(nullptr), 
     functionConstantPool(nullptr), constantPoolVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), 
     nextTypePtrVarNumber(0), functionStackEntry(nullptr), currentBasicBlock(nullptr), entryBasicBlock(nullptr), lastAlloca(nullptr), currentExceptionBlockId(-1),  
-    currentCatchSectionExceptionBlockId(-1), currentPad(nullptr), currentPadKind(LlvmPadKind::none), exceptionPtr(nullptr), isGCFun(false), optimizationLevel(0),
+    currentCatchSectionExceptionBlockId(-1), currentPad(nullptr), currentPadKind(LlvmPadKind::none), currentLandingPad(nullptr), exceptionPtr(nullptr), isGCFun(false), optimizationLevel(0),
     inlineLimit(0), inlineLocals(0), mode(Mode::normalMode)
 {
     InitializeAllTargetInfos();
@@ -594,6 +610,15 @@ void NativeCompilerImpl::CreateCall(llvm::Value* callee, const ArgVector& args, 
 
 void NativeCompilerImpl::CreateReturnFromFunctionOrFunclet()
 {
+#ifdef _WIN32
+    CreateReturnFromFunctionOrFuncletWindows();
+#else
+    CreateReturnFromFunctionOrFuncletLinux();
+#endif
+}
+
+void NativeCompilerImpl::CreateReturnFromFunctionOrFuncletWindows()
+{
     switch (currentPadKind)
     {
         case LlvmPadKind::none:
@@ -673,6 +698,22 @@ void NativeCompilerImpl::CreateReturnFromFunctionOrFunclet()
             break;
         }
     }
+}
+
+void NativeCompilerImpl::CreateReturnFromFunctionOrFuncletLinux()
+{
+    LeaveFunction();
+    Assert(currentPad == nullptr, "currentPadKind and currentPad not in sync");
+    if (function->ReturnsValue())
+    {
+        llvm::Value* retValue = valueStack.Pop();
+        builder.CreateRet(retValue);
+    }
+    else
+    {
+        builder.CreateRetVoid();
+    }
+    currentBasicBlock = nullptr;
 }
 
 void NativeCompilerImpl::CreateCatchPad()
@@ -2844,6 +2885,15 @@ void NativeCompilerImpl::VisitEndTryInst(EndTryInst& instruction)
 
 void NativeCompilerImpl::VisitBeginCatchSectionInst(BeginCatchSectionInst& instruction)
 {
+#ifdef _WIN32
+    VisitBeginCatchSectionInstWindows(instruction);
+#else
+    VisitBeginCatchSectionInstLinux(instruction);
+#endif
+}
+
+void NativeCompilerImpl::VisitBeginCatchSectionInstWindows(BeginCatchSectionInst& instruction)
+{
     catchSectionExceptionBlockIdStack.push_back(currentCatchSectionExceptionBlockId);
     currentCatchSectionExceptionBlockId = instruction.Index();
     ExceptionBlock* exceptionBlock = function->GetExceptionBlock(currentCatchSectionExceptionBlockId);
@@ -2901,7 +2951,56 @@ void NativeCompilerImpl::VisitBeginCatchSectionInst(BeginCatchSectionInst& instr
     }
 }
 
+void NativeCompilerImpl::VisitBeginCatchSectionInstLinux(BeginCatchSectionInst& instruction)
+{
+    catchSectionExceptionBlockIdStack.push_back(currentCatchSectionExceptionBlockId);
+    currentCatchSectionExceptionBlockId = instruction.Index();
+    ExceptionBlock* exceptionBlock = function->GetExceptionBlock(currentCatchSectionExceptionBlockId);
+    if (!exceptionBlock)
+    {
+        throw std::runtime_error("exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not found");
+    }
+    auto it = unwindTargets.find(currentCatchSectionExceptionBlockId);
+    if (it != unwindTargets.cend())
+    {
+        llvm::BasicBlock* unwindTarget = it->second;
+        currentBasicBlock = unwindTarget;
+        builder.SetInsertPoint(currentBasicBlock);
+        
+        std::vector<llvm::Type*> lpTypes;
+        lpTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
+        lpTypes.push_back(GetType(ValueType::intType));
+        llvm::StructType* lpType = llvm::StructType::get(context, lpTypes);
+
+        llvm::LandingPadInst* landingPadInst = builder.CreateLandingPad(lpType, 1);
+        landingPadInst->addClause(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
+        llvm::Value* exception = builder.CreateExtractValue(landingPadInst, 0);
+        llvm::Value* typeInfo = builder.CreateExtractValue(landingPadInst, 1);
+        llvm::Function* beginCatchFunction = cast<llvm::Function>(module->getOrInsertFunction("__cxa_begin_catch",
+            llvm::PointerType::get(GetType(ValueType::byteType), 0),
+            llvm::PointerType::get(GetType(ValueType::byteType), 0),
+            nullptr));
+        ImportFunction(beginCatchFunction);
+        ArgVector beginCatchArgs;
+        beginCatchArgs.push_back(exception);
+        llvm::Value* beginCatchValue = builder.CreateCall(beginCatchFunction, beginCatchArgs);
+    }
+    else
+    {
+        throw std::runtime_error("unwind target for exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not found");
+    }
+}
+
 void NativeCompilerImpl::VisitEndCatchSectionInst(EndCatchSectionInst& instruction)
+{
+#ifdef _WIN32
+    VisitEndCatchSectionInstWindows(instruction);
+#else
+    VisitEndCatchSectionInstLinux(instruction);
+#endif
+}
+
+void NativeCompilerImpl::VisitEndCatchSectionInstWindows(EndCatchSectionInst& instruction)
 {
     ExceptionBlock* exceptionBlock = function->GetExceptionBlock(currentCatchSectionExceptionBlockId);
     if (!exceptionBlock)
@@ -2938,7 +3037,45 @@ void NativeCompilerImpl::VisitEndCatchSectionInst(EndCatchSectionInst& instructi
     }
 }
 
+void NativeCompilerImpl::VisitEndCatchSectionInstLinux(EndCatchSectionInst& instruction)
+{
+    ExceptionBlock* exceptionBlock = function->GetExceptionBlock(currentCatchSectionExceptionBlockId);
+    if (!exceptionBlock)
+    {
+        throw std::runtime_error("exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not found");
+    }
+    auto it = nextHandler.find(currentCatchSectionExceptionBlockId);
+    if (it != nextHandler.cend())
+    {
+        currentBasicBlock = it->second;
+        builder.SetInsertPoint(currentBasicBlock);
+        nextHandler.erase(currentCatchSectionExceptionBlockId);
+        GenerateRethrow();
+        if (function->ReturnsValue())
+        {
+            PushDefaultValue(function->ReturnType());
+        }
+        CreateReturnFromFunctionOrFunclet();
+        currentCatchSectionExceptionBlockId = catchSectionExceptionBlockIdStack.back();
+        catchSectionExceptionBlockIdStack.pop_back();
+        currentBasicBlock = nullptr;
+    }
+    else
+    {
+        throw std::runtime_error("next handler target not set for catch section " + std::to_string(currentCatchSectionExceptionBlockId));
+    }
+}
+
 void NativeCompilerImpl::VisitBeginCatchInst(BeginCatchInst& instruction)
+{
+#ifdef _WIN32
+    VisitBeginCatchInstWindows(instruction);
+#else
+    VisitBeginCatchInstLinux(instruction);
+#endif
+}
+
+void NativeCompilerImpl::VisitBeginCatchInstWindows(BeginCatchInst& instruction)
 {
     auto it = nextHandler.find(currentCatchSectionExceptionBlockId);
     if (it != nextHandler.cend())
@@ -2996,7 +3133,74 @@ void NativeCompilerImpl::VisitBeginCatchInst(BeginCatchInst& instruction)
     CreateCall(rtUnwindFunctionStack, unwindFunctionStackArgs, false);
 }
 
+void NativeCompilerImpl::VisitBeginCatchInstLinux(BeginCatchInst& instruction)
+{
+    auto it = nextHandler.find(currentCatchSectionExceptionBlockId);
+    if (it != nextHandler.cend())
+    {
+        currentBasicBlock = it->second;
+        builder.SetInsertPoint(currentBasicBlock);
+        nextHandler.erase(currentCatchSectionExceptionBlockId);
+    }
+    else
+    {
+        throw std::runtime_error("next handler target not set");
+    }
+    ExceptionBlock* exceptionBlock = function->GetExceptionBlock(currentCatchSectionExceptionBlockId);
+    if (!exceptionBlock)
+    {
+        throw std::runtime_error("exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not found");
+    }
+    int catchBlockId = instruction.Index();
+    CatchBlock* catchBlock = exceptionBlock->GetCatchBlock(catchBlockId);
+    ClassData* classData = ClassDataTable::GetClassData(catchBlock->GetExceptionVarClassTypeFullName());
+    llvm::Value* classDataPtrVar = GetClassDataPtrVar(classData);
+    llvm::Function* rtHandleException = cast<llvm::Function>(module->getOrInsertFunction("RtHandleException", GetType(ValueType::boolType),
+        llvm::PointerType::get(GetType(ValueType::byteType), 0),
+        nullptr));
+    ImportFunction(rtHandleException);
+    ArgVector handleExceptionArgs;
+    handleExceptionArgs.push_back(builder.CreateLoad(classDataPtrVar));
+    CreateCall(rtHandleException, handleExceptionArgs, true);
+    llvm::Value* handleResult = valueStack.Pop();
+    llvm::BasicBlock* handlerTarget = llvm::BasicBlock::Create(context, "handler" + std::to_string(currentCatchSectionExceptionBlockId) + std::to_string(catchBlockId), fun);
+    llvm::BasicBlock* nextTarget = nullptr;
+    if (catchBlockId == int(exceptionBlock->CatchBlocks().size()) - 1) // this is last catch block in current catch section
+    {
+        nextTarget = llvm::BasicBlock::Create(context, "nohandler" + std::to_string(currentCatchSectionExceptionBlockId), fun);
+    }
+    else
+    {
+        nextTarget = llvm::BasicBlock::Create(context, "catch" + std::to_string(currentCatchSectionExceptionBlockId) + std::to_string(catchBlockId + 1), fun);
+    }
+    nextHandler[currentCatchSectionExceptionBlockId] = nextTarget;
+    builder.CreateCondBr(handleResult, handlerTarget, nextTarget);
+    currentBasicBlock = handlerTarget;
+    builder.SetInsertPoint(currentBasicBlock);
+    llvm::Function* rtGetException = cast<llvm::Function>(module->getOrInsertFunction("RtGetException", GetType(ValueType::objectReference), nullptr));
+    ImportFunction(rtGetException);
+    ArgVector getExceptionArgs;
+    int exceptionVarIndex = catchBlock->GetExceptionVarIndex();
+    CreateCall(rtGetException, getExceptionArgs, true);
+    builder.CreateStore(valueStack.Pop(), locals[exceptionVarIndex]);
+    llvm::Function* rtUnwindFunctionStack = cast<llvm::Function>(module->getOrInsertFunction("RtUnwindFunctionStack", GetType(ValueType::none),
+        PointerType::get(GetType(ValueType::byteType), 0), nullptr));
+    ImportFunction(rtUnwindFunctionStack);
+    ArgVector unwindFunctionStackArgs;
+    unwindFunctionStackArgs.push_back(builder.CreateBitCast(functionStackEntry, llvm::PointerType::get(GetType(ValueType::byteType), 0)));
+    CreateCall(rtUnwindFunctionStack, unwindFunctionStackArgs, false);
+}
+
 void NativeCompilerImpl::VisitEndCatchInst(EndCatchInst& instruction)
+{
+#ifdef _WIN32
+    VisitEndCatchInstWindows(instruction);
+#else
+    VisitEndCatchInstLinux(instruction);
+#endif
+}
+
+void NativeCompilerImpl::VisitEndCatchInstWindows(EndCatchInst& instruction)
 {
     ExceptionBlock* exceptionBlock = function->GetExceptionBlock(currentCatchSectionExceptionBlockId);
     if (!exceptionBlock)
@@ -3052,7 +3256,72 @@ void NativeCompilerImpl::VisitEndCatchInst(EndCatchInst& instruction)
     currentBasicBlock = nullptr;
 }
 
+void NativeCompilerImpl::VisitEndCatchInstLinux(EndCatchInst& instruction)
+{
+    ExceptionBlock* exceptionBlock = function->GetExceptionBlock(currentCatchSectionExceptionBlockId);
+    if (!exceptionBlock)
+    {
+        throw std::runtime_error("exception block " + std::to_string(currentCatchSectionExceptionBlockId) + " not found");
+    }
+    int32_t next = exceptionBlock->NextTarget();
+    llvm::BasicBlock* nextTarget = nullptr;
+    if (next != -1)
+    {
+        auto it = basicBlocks.find(next);
+        if (it != basicBlocks.cend())
+        {
+            nextTarget = basicBlocks[next];
+        }
+        else
+        {
+            nextTarget = llvm::BasicBlock::Create(context, "target" + std::to_string(next), fun);
+            basicBlocks[next] = nextTarget;
+        }
+    }
+    llvm::Function* rtDisposeException = cast<llvm::Function>(module->getOrInsertFunction("RtDisposeException", GetType(ValueType::none), nullptr));
+    ImportFunction(rtDisposeException);
+    ArgVector rtDisposeExceptionArgs;
+    CreateCall(rtDisposeException, rtDisposeExceptionArgs, false);
+    llvm::Function* endCatch = cast<llvm::Function>(module->getOrInsertFunction("__cxa_end_catch", GetType(ValueType::none), nullptr));
+    ImportFunction(endCatch);
+    ArgVector endCatchArgs;
+    CreateCall(endCatch, endCatchArgs, false);
+    bool returnTargetCreated = false;
+    if (!nextTarget)
+    {
+        nextTarget = llvm::BasicBlock::Create(context, "return" + std::to_string(currentCatchSectionExceptionBlockId), fun);
+        returnTargetCreated = true;
+    }
+    if (returnTargetCreated)
+    {
+        builder.SetInsertPoint(nextTarget);
+        if (function->ReturnsValue())
+        {
+            PushDefaultValue(function->ReturnType());
+            builder.CreateRet(valueStack.Pop());
+        }
+        else
+        {
+            builder.CreateRetVoid();
+        }
+    }
+    else
+    {
+        builder.CreateBr(nextTarget);
+    }
+    currentBasicBlock = nullptr;
+}
+
 void NativeCompilerImpl::VisitBeginFinallyInst(BeginFinallyInst& instruction)
+{
+#ifdef _WIN32
+    VisitBeginFinallyInstWindows(instruction);
+#else
+    VisitBeginFinallyInstLinux(instruction);
+#endif
+}
+
+void NativeCompilerImpl::VisitBeginFinallyInstWindows(BeginFinallyInst& instruction)
 {
     int finallyExceptionBlockId = instruction.Index();
     auto it = unwindTargets.find(finallyExceptionBlockId);
@@ -3079,7 +3348,43 @@ void NativeCompilerImpl::VisitBeginFinallyInst(BeginFinallyInst& instruction)
     }
 }
 
+void NativeCompilerImpl::VisitBeginFinallyInstLinux(BeginFinallyInst& instruction)
+{
+    int finallyExceptionBlockId = instruction.Index();
+    auto it = unwindTargets.find(finallyExceptionBlockId);
+    if (it != unwindTargets.cend())
+    {
+        llvm::BasicBlock* unwindTarget = it->second;
+        currentBasicBlock = unwindTarget;
+        builder.SetInsertPoint(currentBasicBlock);
+
+        std::vector<llvm::Type*> lpTypes;
+        lpTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
+        lpTypes.push_back(GetType(ValueType::intType));
+        llvm::StructType* lpType = llvm::StructType::get(context, lpTypes);
+
+        llvm::LandingPadInst* landingPadInst = builder.CreateLandingPad(lpType, 1);
+        landingPadStack.push_back(currentLandingPad);
+        currentLandingPad = landingPadInst;
+        landingPadInst->addClause(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
+        landingPadInst->setCleanup(true);
+    }
+    else
+    {
+        throw std::runtime_error("unwind target for exception block " + std::to_string(finallyExceptionBlockId) + " not found");
+    }
+}
+
 void NativeCompilerImpl::VisitEndFinallyInst(EndFinallyInst& instruction)
+{
+#ifdef _WIN32
+    VisitEndFinallyInstWindows(instruction);
+#else
+    VisitEndFinallyInstLinux(instruction)
+#endif
+}
+
+void NativeCompilerImpl::VisitEndFinallyInstWindows(EndFinallyInst& instruction)
 {
     if (currentPadKind == LlvmPadKind::cleanupPad)
     {
@@ -3102,6 +3407,18 @@ void NativeCompilerImpl::VisitEndFinallyInst(EndFinallyInst& instruction)
     {
         throw std::runtime_error("cleanuppad expected");
     }
+    currentBasicBlock = nullptr;
+}
+
+void NativeCompilerImpl::VisitEndFinallyInstLinux(EndFinallyInst& instruction)
+{
+    llvm::Value* exception = builder.CreateExtractValue(currentLandingPad, 0);
+    llvm::Value* typeInfo = builder.CreateExtractValue(currentLandingPad, 1);
+    llvm::Value* aggregate = builder.CreateInsertValue(llvm::UndefValue::get(llvm::PointerType::get(GetType(ValueType::byteType), 0)), exception, 0);
+    llvm::Value* exStruct = builder.CreateInsertValue(aggregate, typeInfo, 1);
+    builder.CreateResume(exStruct);
+    currentLandingPad = landingPadStack.back();
+    landingPadStack.pop_back();
     currentBasicBlock = nullptr;
 }
 

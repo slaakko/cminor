@@ -1,0 +1,8 @@
+using System;
+using System.Security.Cryptography;
+
+void main()
+{
+    string d0 = GetSHA1MessageDigest("the quick brown fox jumps over the lazy dog");
+    Console.WriteLine(d0);
+}

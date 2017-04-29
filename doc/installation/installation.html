@@ -12,8 +12,33 @@
     </h2>
 
     <h3>
-        Installation on Windows
+        Installation on Windows x64
     </h3>
+
+    <p>
+        <ul>
+            <li>
+                Download <a href="http://sourceforge.net/projects/cminor/files/0.1.0/cminor-0.1.0-win-x64-setup.exe">cminor-0.1.0-win-x64-setup.exe</a>.
+            </li>
+            <li>
+                Run cminor-0.1.0-win-x64-setup.exe.
+            </li>
+            <li>
+                By default cminor is installed to C:\cminor directory. Write access is needed to the installation directory and subdirectories of the installation directory, 
+                so C:\Program Files is not a good place to install because it is read-only.
+            </li>
+            <li>
+                The installation program creates an environment variable named CMINOR_ROOT that contains path to the installation directory.
+            </li>
+            <li>
+                The installation program inserts the [installation directory]\bin directory to the end of the system PATH environment variable.
+            </li>
+        </ul>
+    </p>
+
+    <p>
+        Now Cminor is ready for compiling your projects.
+    </p>
 
     <h3>
         Installation on Linux x86-64
@@ -114,6 +139,9 @@
         Download LLVM: <a href="http://releases.llvm.org/4.0.0/llvm-4.0.0.src.tar.xz">llvm-4.0.0.src.tar.xz</a> (or newer),
         extract it to some directory here called llvm-4.0.0.src. Then download Clang: <a href="http://releases.llvm.org/4.0.0/cfe-4.0.0.src.tar.xz">cfe-4.0.0.src.tar.xz</a> (or newer),
         extract it to some directory here called cfe-4.0.0.src. Then move cfe-4.0.0.src directory under the llvm-4.0.0.src/tools directory under the name "clang".
+    </p>
+
+    <p>
         Change to directory llvm-4.0.0.src and create a build directory under it. Then change to the build directory and run cmake command from there by giving it path to the 
         llvm-4.0.0.src directory. Cminor uses exceptions and RTTI so we need to enable them by setting LLVM_ENABLE_EH and LLVM_ENABLE_RTTI variables to ON.
         By entering commands <span class="code">llc -version</span> and <span class="code">clang --version</span> we can ensure that the LLVM and Clang found are of the right versions.
@@ -125,7 +153,8 @@
         > cd llvm-4.0.0.src<br />
         > mkdir build<br />
         > cd build<br />
-        > cmake -DCMAKE_BUILD_TYPE="Release" -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON ../<br />
+        > cmake -DCMAKE_BUILD_TYPE="Release" -DLLVM_TARGETS_TO_BUILD="X86"<br />
+        -DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON ../<br />
         > make<br />
         > sudo make install<br />
         > llc -version<br />
@@ -141,20 +170,24 @@
     </h4>
 
     <p>
-        To install Cminor from sources download <a href="http://sourceforge.net/projects/cminor/files/0.1.0/cminor-0.1.0.tar.bz2">cminor-0.1.0.tar.bz2</a> or 
+        To build Cminor from sources download <a href="http://sourceforge.net/projects/cminor/files/0.1.0/cminor-0.1.0.tar.bz2">cminor-0.1.0.tar.bz2</a> or
         <a href="http://sourceforge.net/projects/cminor/files/0.1.0/cminor-0.1.0.tar.gz">cminor-0.1.0.tar.gz</a>, and extract it to some directory here called cminor-0.1.0.
-        Change the name of the directory to "cminor", change to the cminor directory, run make and then [sudo] make install from there. 
+        Change to the cminor-0.1.0/cminor directory, run make and then [sudo] make install from there.
+        By default executables are installed to /usr/bin and the virtual machine library to /usr/lib. You can install them to different location by setting the prefix in the install command:
+        [sudo] make prefix=/where/to/install install.
+    </p>
+    <p>
         Make a new environment variable named CMINOR_ROOT and set its value to path to the cminor directory. (You need to insert it to your shell script (.bashrc or equivalent) to make it permanent.)
+        Insert /usr/lib (or your prefix/lib) directory to your LD_LIBRARY_PATH environment variable, so that the dynamic virtual machine library cminormachine.so.0.1.0 is found.
         Then give command "cminor" to ensure that found cminor program is of the right version.
-        
     </p>
 
     <div class="commands">
-        > mv cminor-0.1.0 cminor<br />
-        > cd cminor<br />
+        > cd cminor-0.1.0/cminor<br />
         > make<br />
         > sudo make install<br />
         > export CMINOR_ROOT=~/cminor<br />
+        > export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH<br />
         > cminor<br />
         cminor programming language commander version 0.1.0<br />
         ...<br />
