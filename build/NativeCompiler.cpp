@@ -3078,6 +3078,8 @@ void NativeCompilerImpl::VisitBeginCatchSectionInstLinux(BeginCatchSectionInst& 
 
         llvm::LandingPadInst* landingPadInst = builder.CreateLandingPad(lpType, 1);
         landingPadInst->addClause(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
+        landingPadStack.push_back(currentLandingPad);
+        currentLandingPad = landingPadInst;
         padKindStack.push_back(currentPadKind);
         currentPadKind = LlvmPadKind::catchPad;
 
