@@ -30,7 +30,12 @@ int main()
     try
     {
         Console.WriteLine("desk calculator");
-        Console.WriteLine("enter command, or CTRL-Z to end:");
+        string eof = "CTRL-D";
+        if (GetPlatform() == Platform.windows)
+        {
+            eof = "CTRL-Z";
+        }
+        Console.WriteLine("enter command, or " + eof + " to end:");
         SymbolTable symbolTable = new SymbolTable();
         Console.Write("> ");
         string line = Console.ReadLine();
