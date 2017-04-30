@@ -3451,9 +3451,9 @@ void NativeCompilerImpl::VisitBeginFinallyInstWindows(BeginFinallyInst& instruct
             parentPad = llvm::ConstantTokenNone::get(context);
         }
         ArgVector args;
-        llvm::CleanupPadInst* cleanUpPad = builder.CreateCleanupPad(parentPad, args);
+        llvm::CleanupPadInst* cleanupPad = builder.CreateCleanupPad(parentPad, args);
         padStack.push_back(currentPad);
-        currentPad = cleanUpPad;
+        currentPad = cleanupPad;
         padKindStack.push_back(currentPadKind);
         currentPadKind = LlvmPadKind::cleanupPad;
     }
@@ -3541,6 +3541,8 @@ void NativeCompilerImpl::VisitEndFinallyInstLinux(EndFinallyInst& instruction)
         builder.CreateResume(exStruct);
         currentLandingPad = landingPadStack.back();
         landingPadStack.pop_back();
+        currentPadKind = padKindStack.back();
+        padKindStack.pop_back();
     }
     else
     {
