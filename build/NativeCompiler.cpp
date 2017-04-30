@@ -701,8 +701,37 @@ void NativeCompilerImpl::CreateReturnFromFunctionOrFuncletWindows()
 
 void NativeCompilerImpl::CreateReturnFromFunctionOrFuncletLinux()
 {
+    switch (currentPadKind)
+    {
+        case LlvmPadKind::catchPad:
+        {
+            Assert(currentLandingPad != nullptr, "currentLandingPad not set");
+            llvm::Function* rtDisposeException = cast<llvm::Function>(module->getOrInsertFunction("RtDisposeException", GetType(ValueType::none), nullptr));
+            ImportFunction(rtDisposeException);
+            ArgVector rtDisposeExceptionArgs;
+            CreateCall(rtDisposeException, rtDisposeExceptionArgs, false);
+            llvm::Function* endCatch = cast<llvm::Function>(module->getOrInsertFunction("__cxa_end_catch", GetType(ValueType::none), nullptr));
+            ImportFunction(endCatch);
+            ArgVector endCatchArgs;
+            CreateCall(endCatch, endCatchArgs, false);
+            break;
+        }
+        case LlvmPadKind::cleanupPad:
+        {
+            Assert(currentLandingPad != nullptr, "currentLandingPad not set");
+            std::vector<llvm::Type*> lpTypes;
+            lpTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
+            lpTypes.push_back(GetType(ValueType::intType));
+            llvm::StructType* lpType = llvm::StructType::get(context, lpTypes);
+            llvm::Value* exception = builder.CreateExtractValue(currentLandingPad, 0);
+            llvm::Value* typeInfo = builder.CreateExtractValue(currentLandingPad, 1);
+            llvm::Value* aggregate = builder.CreateInsertValue(llvm::UndefValue::get(lpType), exception, 0);
+            llvm::Value* exStruct = builder.CreateInsertValue(aggregate, typeInfo, 1);
+            builder.CreateResume(exStruct);
+            break;
+        }
+    }
     LeaveFunction();
-    Assert(currentPad == nullptr, "currentPadKind and currentPad not in sync");
     if (function->ReturnsValue())
     {
         llvm::Value* retValue = valueStack.Pop();
@@ -1344,6 +1373,8 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     padStack.clear();
     currentPadKind = LlvmPadKind::none;
     padKindStack.clear();
+    landingPadStack.clear();
+    currentLandingPad = nullptr;
     exceptionPtr = nullptr;
     exceptionObjectVariables.clear();
     std::string mangledFunctionName = MangleFunctionName(function);
@@ -3047,6 +3078,9 @@ void NativeCompilerImpl::VisitBeginCatchSectionInstLinux(BeginCatchSectionInst& 
 
         llvm::LandingPadInst* landingPadInst = builder.CreateLandingPad(lpType, 1);
         landingPadInst->addClause(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
+        padKindStack.push_back(currentPadKind);
+        currentPadKind = LlvmPadKind::catchPad;
+
         llvm::Value* exception = builder.CreateExtractValue(landingPadInst, 0);
         llvm::Value* typeInfo = builder.CreateExtractValue(landingPadInst, 1);
         llvm::Function* beginCatchFunction = cast<llvm::Function>(module->getOrInsertFunction("__cxa_begin_catch",
@@ -3133,6 +3167,10 @@ void NativeCompilerImpl::VisitEndCatchSectionInstLinux(EndCatchSectionInst& inst
             PushDefaultValue(function->ReturnType());
         }
         CreateReturnFromFunctionOrFunclet();
+        currentLandingPad = landingPadStack.back();
+        landingPadStack.pop_back();
+        currentPadKind = padKindStack.back();
+        padKindStack.pop_back();
         currentCatchSectionExceptionBlockId = catchSectionExceptionBlockIdStack.back();
         catchSectionExceptionBlockIdStack.pop_back();
         currentBasicBlock = nullptr;
@@ -3359,32 +3397,32 @@ void NativeCompilerImpl::VisitEndCatchInstLinux(EndCatchInst& instruction)
     ImportFunction(rtDisposeException);
     ArgVector rtDisposeExceptionArgs;
     CreateCall(rtDisposeException, rtDisposeExceptionArgs, false);
-    llvm::Function* endCatch = cast<llvm::Function>(module->getOrInsertFunction("__cxa_end_catch", GetType(ValueType::none), nullptr));
-    ImportFunction(endCatch);
-    ArgVector endCatchArgs;
-    CreateCall(endCatch, endCatchArgs, false);
-    bool returnTargetCreated = false;
-    if (!nextTarget)
+    if (currentPadKind == LlvmPadKind::catchPad)
     {
-        nextTarget = llvm::BasicBlock::Create(context, "return" + std::to_string(currentCatchSectionExceptionBlockId), fun);
-        returnTargetCreated = true;
-    }
-    if (returnTargetCreated)
-    {
-        builder.SetInsertPoint(nextTarget);
-        if (function->ReturnsValue())
+        llvm::Function* endCatch = cast<llvm::Function>(module->getOrInsertFunction("__cxa_end_catch", GetType(ValueType::none), nullptr));
+        ImportFunction(endCatch);
+        ArgVector endCatchArgs;
+        CreateCall(endCatch, endCatchArgs, false);
+        if (!nextTarget)
         {
-            PushDefaultValue(function->ReturnType());
-            builder.CreateRet(valueStack.Pop());
+            if (function->ReturnsValue())
+            {
+                PushDefaultValue(function->ReturnType());
+                builder.CreateRet(valueStack.Pop());
+            }
+            else
+            {
+                builder.CreateRetVoid();
+            }
         }
         else
         {
-            builder.CreateRetVoid();
+            builder.CreateBr(nextTarget);
         }
     }
     else
     {
-        builder.CreateBr(nextTarget);
+        throw std::runtime_error("catchpad expected");
     }
     currentBasicBlock = nullptr;
 }
@@ -3443,8 +3481,9 @@ void NativeCompilerImpl::VisitBeginFinallyInstLinux(BeginFinallyInst& instructio
         llvm::LandingPadInst* landingPadInst = builder.CreateLandingPad(lpType, 1);
         landingPadStack.push_back(currentLandingPad);
         currentLandingPad = landingPadInst;
-        landingPadInst->addClause(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
         landingPadInst->setCleanup(true);
+        padKindStack.push_back(currentPadKind);
+        currentPadKind = LlvmPadKind::cleanupPad;
     }
     else
     {
@@ -3489,17 +3528,24 @@ void NativeCompilerImpl::VisitEndFinallyInstWindows(EndFinallyInst& instruction)
 
 void NativeCompilerImpl::VisitEndFinallyInstLinux(EndFinallyInst& instruction)
 {
-    std::vector<llvm::Type*> lpTypes;
-    lpTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
-    lpTypes.push_back(GetType(ValueType::intType));
-    llvm::StructType* lpType = llvm::StructType::get(context, lpTypes);
-    llvm::Value* exception = builder.CreateExtractValue(currentLandingPad, 0);
-    llvm::Value* typeInfo = builder.CreateExtractValue(currentLandingPad, 1);
-    llvm::Value* aggregate = builder.CreateInsertValue(llvm::UndefValue::get(lpType), exception, 0);
-    llvm::Value* exStruct = builder.CreateInsertValue(aggregate, typeInfo, 1);
-    builder.CreateResume(exStruct);
-    currentLandingPad = landingPadStack.back();
-    landingPadStack.pop_back();
+    if (currentPadKind == LlvmPadKind::cleanupPad)
+    {
+        std::vector<llvm::Type*> lpTypes;
+        lpTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
+        lpTypes.push_back(GetType(ValueType::intType));
+        llvm::StructType* lpType = llvm::StructType::get(context, lpTypes);
+        llvm::Value* exception = builder.CreateExtractValue(currentLandingPad, 0);
+        llvm::Value* typeInfo = builder.CreateExtractValue(currentLandingPad, 1);
+        llvm::Value* aggregate = builder.CreateInsertValue(llvm::UndefValue::get(lpType), exception, 0);
+        llvm::Value* exStruct = builder.CreateInsertValue(aggregate, typeInfo, 1);
+        builder.CreateResume(exStruct);
+        currentLandingPad = landingPadStack.back();
+        landingPadStack.pop_back();
+    }
+    else
+    {
+        throw std::runtime_error("cleanuppad expected");
+    }
     currentBasicBlock = nullptr;
 }
 
