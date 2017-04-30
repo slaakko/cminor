@@ -1467,7 +1467,7 @@ void ResolveFunctionPtrVarMappings(Assembly* assembly)
         {
             void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), ptrVarName);
             void* functionAddress = static_cast<void*>(function);
-            void** functionVariablePtr = static_cast<void**>(symbolAddress);
+            volatile void** functionVariablePtr = reinterpret_cast<volatile void**>(symbolAddress);
             *functionVariablePtr = functionAddress;
         }
         catch (const std::runtime_error& ex)
@@ -1502,7 +1502,7 @@ void ResolveClassDataPtrVarMappings(Assembly* assembly)
         {
             void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), ptrVarName);
             void* classDataAddress = static_cast<void*>(classData);
-            void** classDataVariablePtr = static_cast<void**>(symbolAddress);
+            volatile void** classDataVariablePtr = reinterpret_cast<volatile void**>(symbolAddress);
             *classDataVariablePtr = classDataAddress;
         }
         catch (const std::runtime_error& ex)
@@ -1537,7 +1537,7 @@ void ResolveTypePtrVarMappings(Assembly* assembly)
         {
             void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), ptrVarName);
             void* typeAddress = static_cast<void*>(type);
-            void** typeVariablePtr = static_cast<void**>(symbolAddress);
+            volatile void** typeVariablePtr = reinterpret_cast<volatile void**>(symbolAddress);
             *typeVariablePtr = typeAddress;
         }
         catch (const std::runtime_error& ex)
@@ -1567,7 +1567,7 @@ void SetExportedSharedLibraryVariables(Assembly* assembly)
     {
         void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), constantPoolVarName);
         void* constantPoolAddress = static_cast<void*>(&assembly->GetConstantPool());
-        void** constantPoolVariablePtr = static_cast<void**>(symbolAddress);
+        volatile void** constantPoolVariablePtr = reinterpret_cast<volatile void**>(symbolAddress);
         *constantPoolVariablePtr = constantPoolAddress;
     }
     catch (const std::runtime_error& ex)

@@ -269,6 +269,7 @@ void* ResolveSymbolAddress(void* sharedLibraryHandle, const std::string& sharedL
     {
         throw std::runtime_error("error resolving address of symbol '" + symbolName + "' in library '" + sharedLibraryFilePath + "': " + std::string(dlerror()));
     }
+    return address;
 }
 
 void SetHandleToBinaryMode(int handle)
