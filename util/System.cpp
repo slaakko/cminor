@@ -123,7 +123,25 @@ void System(const std::string& command, bool ignoreReturnValue)
     {
         if (retVal != 0)
         {
+#ifdef _WIN32
+
             throw std::runtime_error("'" + command + "' returned exit code " + std::to_string(retVal));
+
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+
+            if (WIFEXITED(retVal))
+            {
+                throw std::runtime_error("'" + command + "' returned exit code " + std::to_string(WEXITSTATUS(retVal)));
+            }
+            else
+            {
+                throw std::runtime_error("'" + command + "' terminated abnormally, status = " + std::to_string(retVal));
+            }
+#else
+
+#error unknown platform
+
+#endif
         }
     }
 }
