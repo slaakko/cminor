@@ -422,12 +422,12 @@ AllocationHandle ManagedMemoryPool::AddAllocation(Thread& thread, ManagedAllocat
     }
     else
     {
-		void* allocationPtr = GetAllocationPtr(header);
+        void* allocationPtr = GetAllocationPtr(header);
         while (allocationHandle.Value() >= uint64_t(allocations.size()))
         {
             allocations.push_back(nullptr);
         }
-		allocations[allocationHandle.Value()] = allocationPtr;
+        allocations[allocationHandle.Value()] = allocationPtr;
     }
     return allocationHandle;
 }

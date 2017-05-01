@@ -62,7 +62,7 @@ ThreadExitSetter::~ThreadExitSetter()
 Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
     stack(*this), id(id_), machine(machine_), fun(fun_), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), 
     exceptionObjectType(nullptr), nextVariableReferenceId(1), threadHandle(0), functionStack(nullptr), nativeId(-1), owner('0' + id), mtx('0' + id), 
-	allocationContext(nullptr)
+    allocationContext(nullptr)
 {
     if (GetNumAllocationContextPages() > 0)
     {

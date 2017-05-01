@@ -21,32 +21,32 @@ namespace cminor { namespace vmlib {
 
 enum class Platform : uint8_t
 {
-	unknown = 0, windows = 1, unix = 2
+    unknown = 0, windows = 1, unix = 2
 };
 
 class VmSystemPlatform : public VmFunction
 {
 public:
-	VmSystemPlatform(ConstantPool& constantPool);
-	void Execute(Frame& frame) override;
+    VmSystemPlatform(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
 };
 
 VmSystemPlatform::VmSystemPlatform(ConstantPool& constantPool)
 {
-	Constant name = constantPool.GetConstant(constantPool.Install(U"platform"));
-	SetName(name);
-	VmFunctionTable::RegisterVmFunction(this);
+    Constant name = constantPool.GetConstant(constantPool.Install(U"platform"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemPlatform::Execute(Frame& frame)
 {
-	Platform platform = Platform::unknown;
+    Platform platform = Platform::unknown;
 #if defined(_WIN32) || defined(WIN32)
-	platform = Platform::windows;
+    platform = Platform::windows;
 #elif defined(__unix__) || defined(__unix) || defined(__posix) || defined(__linux)
-	platform = Platform::unix;
+    platform = Platform::unix;
 #endif
-	frame.OpStack().Push(MakeIntegralValue<uint8_t>(uint8_t(platform), ValueType::byteType));
+    frame.OpStack().Push(MakeIntegralValue<uint8_t>(uint8_t(platform), ValueType::byteType));
 }
 
 class VmSystemPowDoubleInt : public VmFunction
@@ -98,45 +98,45 @@ void VmSystemIsCSpaceChar::Execute(Frame& frame)
 class VmSystemIsCAlphaChar : public VmFunction
 {
 public:
-	VmSystemIsCAlphaChar(ConstantPool& constantPool);
-	void Execute(Frame& frame) override;
+    VmSystemIsCAlphaChar(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
 };
 
 VmSystemIsCAlphaChar::VmSystemIsCAlphaChar(ConstantPool& constantPool)
 {
-	Constant name = constantPool.GetConstant(constantPool.Install(U"iscalpha"));
-	SetName(name);
-	VmFunctionTable::RegisterVmFunction(this);
+    Constant name = constantPool.GetConstant(constantPool.Install(U"iscalpha"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIsCAlphaChar::Execute(Frame& frame)
 {
-	IntegralValue value = frame.Local(0).GetValue();
-	char32_t c = value.AsChar();
-	bool isAlpha = std::isalpha(char(c));
-	frame.OpStack().Push(MakeIntegralValue<bool>(isAlpha, ValueType::boolType));
+    IntegralValue value = frame.Local(0).GetValue();
+    char32_t c = value.AsChar();
+    bool isAlpha = std::isalpha(char(c));
+    frame.OpStack().Push(MakeIntegralValue<bool>(isAlpha, ValueType::boolType));
 }
 
 class VmSystemIsCAlnumChar : public VmFunction
 {
 public:
-	VmSystemIsCAlnumChar(ConstantPool& constantPool);
-	void Execute(Frame& frame) override;
+    VmSystemIsCAlnumChar(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
 };
 
 VmSystemIsCAlnumChar::VmSystemIsCAlnumChar(ConstantPool& constantPool)
 {
-	Constant name = constantPool.GetConstant(constantPool.Install(U"iscalnum"));
-	SetName(name);
-	VmFunctionTable::RegisterVmFunction(this);
+    Constant name = constantPool.GetConstant(constantPool.Install(U"iscalnum"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIsCAlnumChar::Execute(Frame& frame)
 {
-	IntegralValue value = frame.Local(0).GetValue();
-	char32_t c = value.AsChar();
-	bool isalnum = std::isalnum(char(c));
-	frame.OpStack().Push(MakeIntegralValue<bool>(isalnum, ValueType::boolType));
+    IntegralValue value = frame.Local(0).GetValue();
+    char32_t c = value.AsChar();
+    bool isalnum = std::isalnum(char(c));
+    frame.OpStack().Push(MakeIntegralValue<bool>(isalnum, ValueType::boolType));
 }
 
 class VmSystemIsCDigitChar : public VmFunction
@@ -186,23 +186,23 @@ void VmSystemIsCHexDigitChar::Execute(Frame& frame)
 class VmSystemIsCPunctuationChar : public VmFunction
 {
 public:
-	VmSystemIsCPunctuationChar(ConstantPool& constantPool);
-	void Execute(Frame& frame) override;
+    VmSystemIsCPunctuationChar(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
 };
 
 VmSystemIsCPunctuationChar::VmSystemIsCPunctuationChar(ConstantPool& constantPool)
 {
-	Constant name = constantPool.GetConstant(constantPool.Install(U"iscpunct"));
-	SetName(name);
-	VmFunctionTable::RegisterVmFunction(this);
+    Constant name = constantPool.GetConstant(constantPool.Install(U"iscpunct"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
 }
 
 void VmSystemIsCPunctuationChar::Execute(Frame& frame)
 {
-	IntegralValue value = frame.Local(0).GetValue();
-	char32_t c = value.AsChar();
-	bool isPunctuation = std::ispunct(char(c));
-	frame.OpStack().Push(MakeIntegralValue<bool>(isPunctuation, ValueType::boolType));
+    IntegralValue value = frame.Local(0).GetValue();
+    char32_t c = value.AsChar();
+    bool isPunctuation = std::ispunct(char(c));
+    frame.OpStack().Push(MakeIntegralValue<bool>(isPunctuation, ValueType::boolType));
 }
 
 class VmSystemIsCPrintableChar : public VmFunction
@@ -2068,14 +2068,14 @@ void VmFunctionPool::Done()
 
 void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
 {
-	vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemPlatform(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemPlatform(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemPowDoubleInt(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCSpaceChar(constantPool)));
-	vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCAlphaChar(constantPool)));
-	vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCAlnumChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCAlphaChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCAlnumChar(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCDigitChar(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCHexDigitChar(constantPool)));
-	vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCPunctuationChar(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCPunctuationChar(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCPrintableChar(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCLowerChar(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIsCUpperChar(constantPool)));

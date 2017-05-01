@@ -22,6 +22,7 @@
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/util/Util.hpp>
+#include <cminor/util/System.hpp>
 #include <cminor/pl/InitDone.hpp>
 #include <cminor/util/Path.hpp>
 #include <boost/filesystem.hpp>
@@ -47,6 +48,7 @@ using namespace cminor::emitter;
 using namespace cminor::binder;
 using namespace cminor::symbols;
 using namespace cminor::machine;
+using namespace cminor::util;
 using namespace llvm;
 
 struct InitDone
@@ -63,11 +65,11 @@ struct InitDone
         InitAssembly();
         InitWarning();
         cminor::parsing::Init();
-		cminor::util::unicode::Init();
+        cminor::util::unicode::Init();
     }
     ~InitDone()
     {
-		cminor::util::unicode::Done();
+        cminor::util::unicode::Done();
         cminor::parsing::Done();
         DoneWarning();
         DoneAssembly();
@@ -93,6 +95,8 @@ void PrintHelp()
         "       Print this help message.\n" <<
         "   --verbose (-v)\n" <<
         "       Verbose output.\n" <<
+        "   --quiet (-q)\n" <<
+        "       Generate no error output, just return exit code.\n" <<
         "   --config=CONFIG (-c=CONFIG)\n" <<
         "       Use CONFIG configuration. CONFIG can be debug or release. Default is debug.\n" <<
         "   --clean (-e)\n" <<
@@ -162,6 +166,10 @@ int main(int argc, const char** argv)
                 else if (arg == "-v" || arg == "--verbose")
                 {
                     SetGlobalFlag(GlobalFlags::verbose);
+                }
+                else if (arg == "-q" || arg == "--quiet")
+                {
+                    SetGlobalFlag(GlobalFlags::quiet);
                 }
                 else if (arg == "-e" || arg == "--clean")
                 {
@@ -345,12 +353,26 @@ int main(int argc, const char** argv)
     }
     catch (const Exception& ex)
     {
-        std::cerr << ex.What() << std::endl;
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.What() << std::endl;
+        }
         return 1;
+    }
+    catch (const ProcessFailure& ex)
+    {
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.what() << std::endl;
+        }
+        return ex.ExitCode();
     }
     catch (const std::exception& ex)
     {
-        std::cerr << ex.what() << std::endl;
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.what() << std::endl;
+        }
         return 1;
     }
     return 0;

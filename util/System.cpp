@@ -6,7 +6,6 @@
 #include <cminor/util/System.hpp>
 #include <cminor/util/Handle.hpp>
 #include <cminor/util/TextUtils.hpp>
-#include <stdexcept>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
@@ -23,6 +22,10 @@
 #endif
 
 namespace cminor { namespace util {
+
+ProcessFailure::ProcessFailure(const std::string& errorMessage_, int exitCode_) : std::runtime_error(errorMessage_), exitCode(exitCode_)
+{
+}
 
 #ifdef _WIN32
 
@@ -125,17 +128,17 @@ void System(const std::string& command, bool ignoreReturnValue)
         {
 #ifdef _WIN32
 
-            throw std::runtime_error("'" + command + "' returned exit code " + std::to_string(retVal));
+            throw ProcessFailure("'" + command + "' returned exit code " + std::to_string(retVal), retVal);
 
 #elif defined(__linux) || defined(__unix) || defined(__posix)
 
             if (WIFEXITED(retVal))
             {
-                throw std::runtime_error("'" + command + "' returned exit code " + std::to_string(WEXITSTATUS(retVal)));
+                throw ProcessFailure("'" + command + "' returned exit code " + std::to_string(WEXITSTATUS(retVal), WEXITSTATUS(retVal)));
             }
             else
             {
-                throw std::runtime_error("'" + command + "' terminated abnormally, status = " + std::to_string(retVal));
+                throw ProcessFailure("'" + command + "' terminated abnormally, status = " + std::to_string(retVal), retVal);
             }
 #else
 

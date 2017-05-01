@@ -15,6 +15,7 @@
         Cminor is quite a small language whose core statements and expressions are identical with statements and expressions in C#.
         Cminor does not contain all the features of current C#. 
         For example, value types other than <a href="../langref/basic_type.html">basic value types</a> (a.k.a "structs") are missing.
+        So are lambda expressions, closures and many other features of current C#.
         However it is not a proper subset of C# either because Cminor has non-member functions and C# does not, for example.
         One can say that Cminor and C# are siblings and C# is the big brother or sister of Cminor.
     </p>
@@ -23,6 +24,7 @@
 
     <p>
         Currently Cminor programs can be compiled either to Cminor virtual machine instructions (intermediate code), or to native object code.
+        Support for JIT compilation (just-in-time compilation) is planned.
         Programs compiled just to intermediate code are run in virtual machine by interpreting the intermediate instructions.
         Programs compiled to native object code are also run in virtual machine with the help of runtime support functions built into the virtual machine.
         Cminor programs are garbage-collected so there's no need for manual memory management.

@@ -8,8 +8,18 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <stdexcept>
 
 namespace cminor { namespace util {
+
+class ProcessFailure : public std::runtime_error
+{
+public:
+    ProcessFailure(const std::string& errorMessage_, int exitCode_);
+    int ExitCode() const { return exitCode; }
+private:
+    int exitCode;
+};
 
 void System(const std::string& command);
 void System(const std::string& command, bool ignoreReturnValue);

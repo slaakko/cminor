@@ -14,6 +14,7 @@
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/Value.hpp>
 #include <cminor/util/Path.hpp>
+#include <cminor/util/System.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
 
@@ -21,6 +22,7 @@ using namespace cminor::machine;
 using namespace cminor::symbols;
 using namespace cminor::ast;
 using namespace cminor::machine;
+using namespace cminor::util;
 
 struct InitDone
 {
@@ -57,6 +59,7 @@ void PrintHelp()
         "Options:\n" <<
         "-h | --help      : print this help message" <<
         "-v | --verbose   : verbose output\n" <<
+        "-q | --quiet     : no error output, just return exit code\n"
         "-a | --all       : dump all (default)\n" <<
         "-e | --header    : dump assembly header\n" <<
         "-c | --constants : dump constant pool\n" <<
@@ -93,6 +96,10 @@ int main(int argc, const char** argv)
                 else if (arg == "-v" || arg == "--verbose")
                 {
                     verbose = true;
+                }
+                else if (arg == "-q" || arg == "--quiet")
+                {
+                    SetGlobalFlag(GlobalFlags::quiet);
                 }
                 else if (arg == "-a" || arg == "--all")
                 {
@@ -217,12 +224,26 @@ int main(int argc, const char** argv)
     }
     catch (const Exception& ex)
     {
-        std::cerr << ex.What() << std::endl;
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.What() << std::endl;
+        }
         return 1;
+    }
+    catch (const ProcessFailure& ex)
+    {
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.what() << std::endl;
+        }
+        return ex.ExitCode();
     }
     catch (const std::exception& ex)
     {
-        std::cerr << ex.what() << std::endl;
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.what() << std::endl;
+        }
         return 1;
     }
     return 0;

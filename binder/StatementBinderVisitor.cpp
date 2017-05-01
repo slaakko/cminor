@@ -923,7 +923,7 @@ void StatementBinderVisitor::Visit(AssignmentStatementNode& assignmentStatementN
 void StatementBinderVisitor::Visit(ExpressionStatementNode& expressionStatementNode)
 {
     std::unique_ptr<BoundExpression> expression = BindExpression(boundCompileUnit, function, containerScope, expressionStatementNode.Expression());
-	BoundExpressionStatement* boundExpressionStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::move(expression));
+    BoundExpressionStatement* boundExpressionStatement = new BoundExpressionStatement(boundCompileUnit.GetAssembly(), std::move(expression));
     statement.reset(boundExpressionStatement);
     statement->SetContainerScope(containerScope);
 }
@@ -996,12 +996,12 @@ void StatementBinderVisitor::Visit(ForEachStatementNode& forEachStatementNode)
     loopBody->AddStatement(constructLoopVar);
     loopBody->AddStatement(static_cast<StatementNode*>(forEachStatementNode.Action()->Clone(cloneContext)));
     ExpressionStatementNode* moveNext = new ExpressionStatementNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "MoveNext"))));
-	ForStatementNode* forStatement = new ForStatementNode(span, 
-		new EmptyStatementNode(span), 
-		new NotNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "AtEnd")))),
-		moveNext, 
-		loopBody);
-	forEachBlock.AddStatement(forStatement);
+    ForStatementNode* forStatement = new ForStatementNode(span, 
+        new EmptyStatementNode(span), 
+        new NotNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "AtEnd")))),
+        moveNext, 
+        loopBody);
+    forEachBlock.AddStatement(forStatement);
     int declarationBlockId = function->GetFunctionSymbol()->DeclarationBlockId();
     boundCompileUnit.GetAssembly().GetSymbolTable().SetDeclarationBlockId(declarationBlockId);
     boundCompileUnit.GetAssembly().GetSymbolTable().BeginContainer(containerScope->Container());

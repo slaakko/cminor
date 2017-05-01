@@ -1616,8 +1616,8 @@ struct PriorityGreater
 {
     bool operator()(ClassTypeSymbol* left, ClassTypeSymbol* right) const
     {
-		if (left->Level() < right->Level()) return true;
-		return false;
+        if (left->Level() < right->Level()) return true;
+        return false;
     }
 };
 
@@ -1626,14 +1626,14 @@ void AssignKeys(std::vector<ClassTypeSymbol*>& classesByPriority)
     uint64_t key = 2;
     for (ClassTypeSymbol* cls : classesByPriority)
     {
-		cls->SetKey(key);
-		key = cminor::util::NextPrime(key + 1);
-	}
+        cls->SetKey(key);
+        key = cminor::util::NextPrime(key + 1);
+    }
 }
 
 uint64_t ComputeCid(ClassTypeSymbol* classType)
 {
-	uint64_t cid = classType->Key();
+    uint64_t cid = classType->Key();
     ClassTypeSymbol* base = classType->BaseClass();
     while (base)
     {
@@ -1653,30 +1653,30 @@ void AssignCids(std::vector<ClassTypeSymbol*>& classesByPriority)
 
 void AssignClassTypeIds(const std::vector<ClassTypeSymbol*>& classTypes)
 {
-	for (ClassTypeSymbol* classType : classTypes)
+    for (ClassTypeSymbol* classType : classTypes)
     {
-		if (classType->IsClassDelegateType()) continue;
+        if (classType->IsClassDelegateType()) continue;
         classType->SetLevel(NumberOfAncestors(classType));
     }
     std::vector<ClassTypeSymbol*> classesByPriority;
     for (ClassTypeSymbol* classType : classTypes)
     {
-		if (classType->IsClassDelegateType()) continue;
+        if (classType->IsClassDelegateType()) continue;
         classesByPriority.push_back(classType);
     }
     std::sort(classesByPriority.begin(), classesByPriority.end(), PriorityGreater());
     AssignKeys(classesByPriority);
     AssignCids(classesByPriority);
 #ifdef DEBUG_CLASS_IDS
-	std::ofstream cls("C:\\Temp\\cls.txt");
-	for (ClassTypeSymbol* classType : classesByPriority)
-	{
-		cls << ToUtf8(classType->FullName()) <<
-			" : level = " << classType->Level() <<
-			" : key = " << classType->Key() <<
-			" : cid = " << classType->Cid() << 
-			std::endl;
-	}
+    std::ofstream cls("C:\\Temp\\cls.txt");
+    for (ClassTypeSymbol* classType : classesByPriority)
+    {
+        cls << ToUtf8(classType->FullName()) <<
+            " : level = " << classType->Level() <<
+            " : key = " << classType->Key() <<
+            " : cid = " << classType->Cid() << 
+            std::endl;
+    }
 #endif
 }
 

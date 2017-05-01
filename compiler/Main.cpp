@@ -15,6 +15,7 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/pl/InitDone.hpp>
 #include <cminor/util/Path.hpp>
+#include <cminor/util/System.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
@@ -39,6 +40,7 @@
 using namespace cminor::build;
 using namespace cminor::symbols;
 using namespace cminor::machine;
+using namespace cminor::util;
 using namespace llvm;
 
 struct InitDone
@@ -55,11 +57,11 @@ struct InitDone
         InitWarning();
         InitAssembly();
         cminor::parsing::Init();
-		cminor::util::unicode::Init();
+        cminor::util::unicode::Init();
     }
     ~InitDone()
     {
-		cminor::util::unicode::Done();
+        cminor::util::unicode::Done();
         cminor::parsing::Done();
         DoneAssembly();
         DoneWarning();
@@ -85,6 +87,8 @@ void PrintHelp()
         "       Print this help message.\n" <<
         "   --verbose (-v)\n" <<
         "       Verbose output.\n" <<
+        "   --quiet (-q)\n" <<
+        "       Generate no error output, just return exit code.\n" <<
         "   --config=CONFIG (-c=CONFIG)\n" <<
         "       Use CONFIG configuration. CONFIG can be debug or release. Default is debug.\n" <<
         "   --clean (-e)\n" <<
@@ -150,6 +154,10 @@ int main(int argc, const char** argv)
                 if (arg == "-v" || arg == "--verbose")
                 {
                     SetGlobalFlag(GlobalFlags::verbose);
+                }
+                else if (arg == "-q" || arg == "--quiet")
+                {
+                    SetGlobalFlag(GlobalFlags::quiet);
                 }
                 else if (arg == "-h" || arg == "--help")
                 {
@@ -365,12 +373,26 @@ int main(int argc, const char** argv)
     }
     catch (const Exception& ex)
     {
-        std::cerr << ex.What() << std::endl;
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.What() << std::endl;
+        }
         return 1;
+    }
+    catch (const ProcessFailure& ex)
+    {
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.what() << std::endl;
+        }
+        return ex.ExitCode();
     }
     catch (const std::exception& ex)
     {
-        std::cerr << ex.what() << std::endl;
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.what() << std::endl;
+        }
         return 1;
     }
     return 0;

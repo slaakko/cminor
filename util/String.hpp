@@ -82,7 +82,7 @@ struct StringPtrHash
         const char32_t* p = s.Value();
         Assert(p, "null string ptr");
         while (*p)
-        {	
+        {    
             value ^= (size_t)*p;
             value *= prime;
             ++p;

@@ -683,15 +683,15 @@ void NativeCompilerImpl::CreateReturnFromFunctionOrFuncletWindows()
             {
                 throw std::runtime_error("current pad not set");
             }
-			llvm::BasicBlock* unwindBB = nullptr;
-			if (currentExceptionBlockId != -1)
-			{
-				auto it = unwindTargets.find(currentExceptionBlockId);
-				if (it != unwindTargets.cend())
-				{
-					unwindBB = it->second;
-				}
-			}
+            llvm::BasicBlock* unwindBB = nullptr;
+            if (currentExceptionBlockId != -1)
+            {
+                auto it = unwindTargets.find(currentExceptionBlockId);
+                if (it != unwindTargets.cend())
+                {
+                    unwindBB = it->second;
+                }
+            }
             builder.CreateCleanupRet(cast<llvm::CleanupPadInst>(currentPad), unwindBB);
             currentBasicBlock = nullptr;
             break;
@@ -1174,7 +1174,7 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
     std::string dllFilePath = Path::ChangeExtension(assemblyObjectFilePath, ".dll");
     std::string dllFileName = Path::GetFileName(dllFilePath);
     args.push_back("/out:" + QuotedPath(dllFilePath));
-	args.push_back("/stack:16777216");
+    args.push_back("/stack:16777216");
     args.push_back(QuotedPath(assemblyObjectFilePath));
     std::string cminorLibDir = CminorLibDir();
     args.push_back("/libpath:" + QuotedPath(cminorLibDir));
@@ -1877,9 +1877,9 @@ void NativeCompilerImpl::VisitStoreFieldInst(int32_t fieldIndex, ValueType field
     llvm::Value* objectReference = valueStack.Pop();
     llvm::Value* fieldValue = valueStack.Pop();
     ArgVector args;
-	args.push_back(objectReference);
-	args.push_back(fieldValue);
-	llvm::Value* index = builder.getInt32(fieldIndex);
+    args.push_back(objectReference);
+    args.push_back(fieldValue);
+    llvm::Value* index = builder.getInt32(fieldIndex);
     args.push_back(index);
     llvm::Function* callee = nullptr;
     switch (fieldType)
@@ -3506,16 +3506,16 @@ void NativeCompilerImpl::VisitEndFinallyInstWindows(EndFinallyInst& instruction)
 {
     if (currentPadKind == LlvmPadKind::cleanupPad)
     {
-		llvm::BasicBlock* unwindBB = nullptr;
-		if (currentExceptionBlockId != -1)
-		{
-			auto it = unwindTargets.find(currentExceptionBlockId);
-			if (it != unwindTargets.cend())
-			{
-				unwindBB = it->second;
-			}
-		}
-		builder.CreateCleanupRet(cast<CleanupPadInst>(currentPad), unwindBB);
+        llvm::BasicBlock* unwindBB = nullptr;
+        if (currentExceptionBlockId != -1)
+        {
+            auto it = unwindTargets.find(currentExceptionBlockId);
+            if (it != unwindTargets.cend())
+            {
+                unwindBB = it->second;
+            }
+        }
+        builder.CreateCleanupRet(cast<CleanupPadInst>(currentPad), unwindBB);
         currentPad = padStack.back();
         padStack.pop_back();
         currentPadKind = padKindStack.back();

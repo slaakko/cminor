@@ -1251,10 +1251,10 @@ void ExpressionBinder::Visit(InvokeNode& invokeNode)
             {
                 arguments.erase(arguments.begin());
             }
-			if (!arguments.empty())
-			{
-				arguments.erase(arguments.begin());
-			}
+            if (!arguments.empty())
+            {
+                arguments.erase(arguments.begin());
+            }
             functionCall = std::move(ResolveOverload(boundCompileUnit, functionGroupSymbol->Name(), functionScopeLookups, arguments, invokeNode.GetSpan(),
                 OverloadResolutionFlags::dontThrow, nsEx));
         }

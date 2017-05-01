@@ -364,21 +364,21 @@ void GenArena2::Allocate(Thread& thread, uint64_t blockSize, void*& ptr, int32_t
         Segment* segment = Segments().back().get();
         if (!segment->Allocate(thread, blockSize, ptr, true, allocationLock))
         {
-			Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), SegmentSize());
-			std::unique_ptr<Segment> segment(seg);
-			{
-				LockGuard lock(SegmentsMutex(), gc);
-				GetMachine().AddSegment(seg);
-				Segments().push_back(std::move(segment));
-			}
-			if (seg->Allocate(blockSize, ptr))
-			{
-				segmentId = seg->Id();
-			}
-			else
-			{
-				throw std::runtime_error("could not allocate " + std::to_string(blockSize) + " bytes memory from arena " + std::to_string(int(Id())));
-			}
+            Segment* seg = new Segment(GetMachine().GetNextSegmentId(), ArenaId::gen2Arena, PageSize(), SegmentSize());
+            std::unique_ptr<Segment> segment(seg);
+            {
+                LockGuard lock(SegmentsMutex(), gc);
+                GetMachine().AddSegment(seg);
+                Segments().push_back(std::move(segment));
+            }
+            if (seg->Allocate(blockSize, ptr))
+            {
+                segmentId = seg->Id();
+            }
+            else
+            {
+                throw std::runtime_error("could not allocate " + std::to_string(blockSize) + " bytes memory from arena " + std::to_string(int(Id())));
+            }
         }
         segmentId = segment->Id();
     }

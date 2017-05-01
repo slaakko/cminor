@@ -215,10 +215,10 @@ void GarbageCollector::Run()
 
 void GarbageCollector::CollectGarbage()
 {
-	if (printActions)
-	{
-		std::cerr << "[G]";
-	}
+    if (printActions)
+    {
+        std::cerr << "[G]";
+    }
     auto start = std::chrono::system_clock::now();
     ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
     memoryPool.ResetLiveFlags();
@@ -227,11 +227,11 @@ void GarbageCollector::CollectGarbage()
     machine.Gen1Arena().Clear();
     if (fullCollectionRequested)
     {
-		if (printActions)
-		{
-			std::cerr << "[F]";
-		}
-		memoryPool.MoveLiveAllocationsToNewSegments(machine.Gen2Arena());
+        if (printActions)
+        {
+            std::cerr << "[F]";
+        }
+        memoryPool.MoveLiveAllocationsToNewSegments(machine.Gen2Arena());
     }
     machine.Compact();
     for (const std::unique_ptr<Thread>& thread : machine.Threads())

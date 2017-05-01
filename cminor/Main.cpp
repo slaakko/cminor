@@ -55,6 +55,8 @@ void PrintHelp(HelpTopics helpTopics)
             "global-options:\n\n" <<
             "   --verbose (-v)\n" <<
             "       Verbose output.\n" <<
+            "   --quiet: (-q)\n" <<
+            "       Generate no error output, just return exit code.\n" <<
             "   --help (-h) [abstract | build | clean | run | debug | dump]\n" <<
             "       Print help about specified topic(s).\n" <<
             "---------------------------------------------------------------------\n" <<
@@ -143,10 +145,10 @@ void PrintHelp(HelpTopics helpTopics)
             "       Trace execution of native program to stderr (used with --native).\n" <<
             "   --stats (-a)\n" <<
             "       Print statistics.\n" <<
-			"   --gcactions (-g)\n" <<
-			"       Print garbage collections actions to stderr.\n" <<
-			"       [G]=collecting garbage, [F]=performing full collection.\n" <<
-			"   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
+            "   --gcactions (-g)\n" <<
+            "       Print garbage collections actions to stderr.\n" <<
+            "       [G]=collecting garbage, [F]=performing full collection.\n" <<
+            "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
             "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
             "       Default is 16 MB.\n" <<
             "   --thread-pages=N (-t=N)\n" <<
@@ -164,10 +166,10 @@ void PrintHelp(HelpTopics helpTopics)
             "cminor debug [debug-options] PROGRAM.cminora [program-arguments]\n\n" <<
             "Debug PROGRAM.cminora with given program-arguments.\n\n"
             "debug-options:\n\n" <<
-			"   --gcactions (-g)\n" <<
-			"       Print garbage collections actions to stderr.\n" <<
-			"       G=collecting garbage, F=performing full collection, P=managed memory pool threshold exceeded.\n" <<
-			"   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
+            "   --gcactions (-g)\n" <<
+            "       Print garbage collections actions to stderr.\n" <<
+            "       G=collecting garbage, F=performing full collection, P=managed memory pool threshold exceeded.\n" <<
+            "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
             "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
             "       Default is 16 MB.\n" <<
             "   --thread-pages=N (-t=N)\n" <<
@@ -216,6 +218,7 @@ using namespace cminor::util;
 
 int main(int argc, const char** argv)
 {
+    bool quiet = false;
     try
     {
         if (argc < 2)
@@ -251,6 +254,11 @@ int main(int argc, const char** argv)
                         if (arg == "-v" || arg == "--verbose")
                         {
                             globalOptions.push_back(arg);
+                        }
+                        else if (arg == "-q" || arg == "--quiet")
+                        {
+                            globalOptions.push_back(arg);
+                            quiet = true;
                         }
                         else if (arg == "-h" || arg == "--help")
                         {
@@ -334,6 +342,11 @@ int main(int argc, const char** argv)
                         {
                             globalOptions.push_back(arg);
                         }
+                        else if (arg == "-q" || arg == "--quiet")
+                        {
+                            globalOptions.push_back(arg);
+                            quiet = true;
+                        }
                         else if (arg == "-d" || arg == "--debug")
                         {
                             debug = true;
@@ -350,10 +363,10 @@ int main(int argc, const char** argv)
                         {
                             runOptions.push_back(arg);
                         }
-						else if (arg == "-g" || arg == "--gcactions")
-						{
-							runOptions.push_back(arg);
-						}
+                        else if (arg == "-g" || arg == "--gcactions")
+                        {
+                            runOptions.push_back(arg);
+                        }
                         else if (arg.find('=', 0) != std::string::npos)
                         {
                             std::vector<std::string> components = Split(arg, '=');
@@ -395,11 +408,16 @@ int main(int argc, const char** argv)
                     {
                         globalOptions.push_back(arg);
                     }
-					else if (arg == "-g" || arg == "--gcactions")
-					{
-						debugOptions.push_back(arg);
-					}
-					else if (!arg.empty() && arg[0] == '-')
+                    else if (arg == "-q" || arg == "--quiet")
+                    {
+                        globalOptions.push_back(arg);
+                        quiet = true;
+                    }
+                    else if (arg == "-g" || arg == "--gcactions")
+                    {
+                        debugOptions.push_back(arg);
+                    }
+                    else if (!arg.empty() && arg[0] == '-')
                     {
                         if (arg.find('=', 0) != std::string::npos)
                         {
@@ -450,6 +468,11 @@ int main(int argc, const char** argv)
                             if (arg == "-v" || arg == "--verbose")
                             {
                                 globalOptions.push_back(arg);
+                            }
+                            else if (arg == "-q" || arg == "--quiet")
+                            {
+                                globalOptions.push_back(arg);
+                                quiet = true;
                             }
                             else if (arg == "-a" || arg == "--all")
                             {
@@ -508,6 +531,11 @@ int main(int argc, const char** argv)
                         if (arg == "-v" || arg == "--verbose")
                         {
                             globalOptions.push_back(arg);
+                        }
+                        else if (arg == "-q" || arg == "--quiet")
+                        {
+                            globalOptions.push_back(arg);
+                            quiet = true;
                         }
                         else if (arg == "-e" || arg == "--clean")
                         {
@@ -637,6 +665,11 @@ int main(int argc, const char** argv)
                         if (arg == "-v" || arg == "--verbose")
                         {
                             globalOptions.push_back(arg);
+                        }
+                        else if (arg == "-q" || arg == "--quiet")
+                        {
+                            globalOptions.push_back(arg);
+                            quiet = true;
                         }
                         else if (arg.find('=', 0) != std::string::npos)
                         {
@@ -804,9 +837,20 @@ int main(int argc, const char** argv)
         }
         System(commandLine);
     }
+    catch (const ProcessFailure& ex)
+    {
+        if (!quiet)
+        {
+            std::cerr << ex.what() << std::endl;
+        }
+        return ex.ExitCode();
+    }
     catch (const std::exception& ex)
     {
-        std::cerr << ex.what() << std::endl;
+        if (!quiet)
+        {
+            std::cerr << ex.what() << std::endl;
+        }
         return 1;
     }
     return 0;

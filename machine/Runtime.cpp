@@ -1378,9 +1378,9 @@ extern "C" MACHINE_API uint64_t RtStrLitToString(const char32_t* strLitValue)
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
         ObjectReference objectReference = memoryPool.CreateObject(thread, classData->Type(), lock);
         AllocationHandle charsHandle = memoryPool.CreateStringCharsFromLiteral(thread, strLitValue, len, lock);
-		memoryPool.SetField(objectReference, 0, IntegralValue(classData), lock);
-		memoryPool.SetField(objectReference, 1, MakeIntegralValue<int32_t>(len, ValueType::intType), lock);
-		memoryPool.SetField(objectReference, 2, charsHandle, lock);
+        memoryPool.SetField(objectReference, 0, IntegralValue(classData), lock);
+        memoryPool.SetField(objectReference, 1, MakeIntegralValue<int32_t>(len, ValueType::intType), lock);
+        memoryPool.SetField(objectReference, 2, charsHandle, lock);
         return objectReference.Value();
     }
     catch (const SystemException& ex)

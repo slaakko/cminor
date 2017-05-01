@@ -24,6 +24,7 @@
 #include <cminor/util/Path.hpp>
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/util/Unicode.hpp>
+#include <cminor/util/System.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <stdexcept>
@@ -36,6 +37,7 @@ using namespace cminor::machine;
 using namespace cminor::symbols;
 using namespace cminor::ast;
 using namespace cminor::vmlib;
+using namespace cminor::util;
 
 struct InitDone
 {
@@ -53,7 +55,7 @@ struct InitDone
         InitVmFunctions(vmFunctionNamePool);
         FileInit();
         ThreadingInit();
-		cminor::util::unicode::Init();
+        cminor::util::unicode::Init();
 #ifdef GC_LOGGING
         OpenLog();
 #endif
@@ -63,7 +65,7 @@ struct InitDone
 #ifdef GC_LOGGING
         CloseLog();
 #endif
-		cminor::util::unicode::Done();
+        cminor::util::unicode::Done();
         ThreadingDone();
         FileDone();
         DoneVmFunctions();
@@ -90,6 +92,8 @@ void PrintHelp()
         "options:\n\n" <<
         "   --verbose (-v)" <<
         "       Verbose output." <<
+        "   --quiet (-q)\n" <<
+        "       Generate no error output, just return exit code.\n" <<
         "   --help (-h)\n" <<
         "       Print this help message.\n" <<
         "   --native (-n)\n" <<
@@ -98,10 +102,10 @@ void PrintHelp()
         "       Trace execution of native program to stderr (used with --native).\n" <<
         "   --stats (-a)\n" <<
         "       Print statistics.\n" <<
-		"   --gcactions (-g)\n" <<
-		"       Print garbage collections actions to stderr.\n" <<
-		"       [G]=collecting garbage, [F]=performing full collection.\n" <<
-		"   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
+        "   --gcactions (-g)\n" <<
+        "       Print garbage collections actions to stderr.\n" <<
+        "       [G]=collecting garbage, [F]=performing full collection.\n" <<
+        "   --segment-size=SEGMENT-SIZE (-s=SEGMENT-SIZE)\n" <<
         "       SEGMENT-SIZE is the size of the garbage collected memory segment in megabytes.\n" <<
         "       Default is 16 MB.\n" << 
         "   --thread-pages=N (-t=N)\n" <<
@@ -123,7 +127,7 @@ int main(int argc, const char** argv)
     auto startVm = std::chrono::system_clock::now();
     int programReturnValue = 0;
     bool printStats = false;
-	bool printGcActions = false;
+    bool printGcActions = false;
     try
     {
         if (argc < 2)
@@ -158,6 +162,10 @@ int main(int argc, const char** argv)
                         {
                             SetGlobalFlag(GlobalFlags::verbose);
                         }
+                        else if (arg == "-q" || arg == "--quiet")
+                        {
+                            SetGlobalFlag(GlobalFlags::quiet);
+                        }
                         else if (arg == "-n" || arg == "--native")
                         {
                             native = true;
@@ -170,11 +178,11 @@ int main(int argc, const char** argv)
                         {
                             printStats = true;
                         }
-						else if (arg == "-g" || arg == "--gcactions")
-						{
-							printGcActions = true;
-						}
-						else if (arg.find('=', 0) != std::string::npos)
+                        else if (arg == "-g" || arg == "--gcactions")
+                        {
+                            printGcActions = true;
+                        }
+                        else if (arg.find('=', 0) != std::string::npos)
                         {
                             std::vector<std::string> components = Split(arg, '=');
                             if (components.size() != 2)
@@ -249,10 +257,10 @@ int main(int argc, const char** argv)
                 std::cout << "tracing enabled" << std::endl;
             }
         }
-		if (printGcActions)
-		{
-			machine.GetGarbageCollector().SetPrintActions();
-		}
+        if (printGcActions)
+        {
+            machine.GetGarbageCollector().SetPrintActions();
+        }
         if (!native)
         {
             programReturnValue = assembly.RunIntermediateCode(programArguments);
@@ -264,12 +272,26 @@ int main(int argc, const char** argv)
     }
     catch (const Exception& ex)
     {
-        std::cerr << ex.What() << std::endl;
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.What() << std::endl;
+        }
         return 1;
+    }
+    catch (const ProcessFailure& ex)
+    {
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.what() << std::endl;
+        }
+        return ex.ExitCode();
     }
     catch (const std::exception& ex)
     {
-        std::cerr << ex.what() << std::endl;
+        if (!GetGlobalFlag(GlobalFlags::quiet))
+        {
+            std::cerr << ex.what() << std::endl;
+        }
         return 1;
     }
     auto endVm = std::chrono::system_clock::now();

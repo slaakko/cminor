@@ -14,16 +14,17 @@ enum class GlobalFlags : uint16_t
 {
     none = 0,
     verbose = 1 << 0,
-    release = 1 << 1,
-    debugParsing = 1 << 2,
-    clean = 1 << 3,
-    list = 1 << 4,
-    native = 1 << 5,
-    emitLlvm = 1 << 6,
-    emitOptLlvm = 1 << 7,
-    linkWithDebugMachine = 1 << 8,
-    useMsLink = 1 << 9,
-    readClassNodes = 1 << 10
+    quiet = 1 << 1,
+    release = 1 << 2,
+    debugParsing = 1 << 3,
+    clean = 1 << 4,
+    list = 1 << 5,
+    native = 1 << 6,
+    emitLlvm = 1 << 7,
+    emitOptLlvm = 1 << 8,
+    linkWithDebugMachine = 1 << 9,
+    useMsLink = 1 << 10,
+    readClassNodes = 1 << 11
 };
 
 void SetGlobalFlag(GlobalFlags flag);
