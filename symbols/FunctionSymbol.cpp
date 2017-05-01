@@ -620,7 +620,7 @@ utf32_string ConstructorSymbol::FullNameWithSpecifiers() const
     {
         if (!fullName.empty())
         {
-            fullName.append(1, U' ');
+        fullName.append(1, U' ');
         }
         fullName.append(ToUtf32(functionSymbolFlagStr));
     }
@@ -718,7 +718,10 @@ void ConstructorSymbol::CreateMachineFunction()
     MachineFunction()->AddInst(std::move(inst));
     if (!BaseConstructorCallGenerated() && containingClass->BaseClass())
     {
-        Assert(containingClass->BaseClass()->DefaultConstructorSymbol(), "base class has no default constructor");
+        if (!containingClass->BaseClass()->DefaultConstructorSymbol())
+        {
+            throw Exception("cannot generate default constructor for the class because its base class has no default constructor", containingClass->GetSpan(), containingClass->BaseClass()->GetSpan());
+        }
         std::unique_ptr<Instruction> loadLocal = GetAssembly()->GetMachine().CreateInst("loadlocal.0");
         MachineFunction()->AddInst(std::move(loadLocal));
         std::vector<GenObject*> objects;

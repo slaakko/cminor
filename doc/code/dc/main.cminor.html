@@ -39,7 +39,12 @@
     <span class="keyword">try</span>
     <span class="other">{</span>
         <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;desk calculator&quot;</span><span class="other">)</span><span class="other">;</span>
-        <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;enter command, or CTRL-Z to end:&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">string</span> <span class="identifier">eof</span> <span class="other">=</span> <span class="string">&quot;CTRL-D&quot;</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">GetPlatform</span><span class="other">(</span><span class="other">)</span> <span class="other">=</span><span class="other">=</span> <span class="identifier">Platform.windows</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">eof</span> <span class="other">=</span> <span class="string">&quot;CTRL-Z&quot;</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;enter command, or &quot;</span> <span class="other">+</span> <span class="identifier">eof</span> <span class="other">+</span> <span class="string">&quot; to end:&quot;</span><span class="other">)</span><span class="other">;</span>
         <span class="identifier">SymbolTable</span> <span class="identifier">symbolTable</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">SymbolTable</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
         <span class="identifier">Console.Write</span><span class="other">(</span><span class="string">&quot;&gt; &quot;</span><span class="other">)</span><span class="other">;</span>
         <span class="keyword">string</span> <span class="identifier">line</span> <span class="other">=</span> <span class="identifier">Console.ReadLine</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
