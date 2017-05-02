@@ -1,6 +1,6 @@
 project Syntax;
 reference <StdLib.pl>;
-reference <../code/Code.pl>;
+reference <../Code/Code.pl>;
 source <Composite.parser>;
 source <Element.parser>;
 source <Grammar.parser>;

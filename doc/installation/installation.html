@@ -177,7 +177,8 @@
         [sudo] make prefix=/where/to/install install.
     </p>
     <p>
-        Make a new environment variable named CMINOR_ROOT and set its value to path to the cminor directory. (You need to insert it to your shell script (.bashrc or equivalent) to make it permanent.)
+        Make a new environment variable named CMINOR_ROOT and set its value to path to the cminor-0.1.0/cminor directory. 
+        (You need to insert it to your shell script (.bashrc or equivalent) to make it permanent.)
         Insert /usr/lib (or your prefix/lib) directory to your LD_LIBRARY_PATH environment variable, so that the dynamic virtual machine library cminormachine.so.0.1.0 is found.
         Then give command "cminor" to ensure that found cminor program is of the right version.
     </p>
@@ -186,7 +187,7 @@
         > cd cminor-0.1.0/cminor<br />
         > make<br />
         > sudo make install<br />
-        > export CMINOR_ROOT=~/cminor<br />
+        > export CMINOR_ROOT=~/cminor-0.1.0/cminor<br />
         > export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH<br />
         > cminor<br />
         cminor programming language commander version 0.1.0<br />

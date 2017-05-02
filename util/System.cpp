@@ -134,7 +134,7 @@ void System(const std::string& command, bool ignoreReturnValue)
 
             if (WIFEXITED(retVal))
             {
-                throw ProcessFailure("'" + command + "' returned exit code " + std::to_string(WEXITSTATUS(retVal), WEXITSTATUS(retVal)));
+                throw ProcessFailure("'" + command + "' returned exit code " + std::to_string(WEXITSTATUS(retVal)), WEXITSTATUS(retVal));
             }
             else
             {
