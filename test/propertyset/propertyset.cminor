@@ -1,0 +1,26 @@
+class Foo
+{
+	private int x;
+	private int y;
+}
+
+class Beta : Foo
+{
+}
+
+class Alpha : Foo
+{
+    public Beta Bta
+    {
+        get { return beta; }
+        set { beta = value; }
+    }
+    private Beta beta;
+}
+
+void main()
+{
+    Alpha alpha = new Alpha();
+    Beta beta = new Beta();
+    alpha.Bta = beta;
+}

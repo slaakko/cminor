@@ -1,9 +1,0 @@
-using System;
-using System.IO;
-
-void main()
-{
-    FileStream file = new FileStream("C:\\Temp\\bs.txt", FileMode.open, FileAccess.read);
-    byte[] buf = new byte[1024];
-    int bytesRead = file.Read(buf);
-}

@@ -1,0 +1,102 @@
+using System;
+using System.Collections.Generic;
+
+void main()
+{
+    Map<int, string> m = new Map<int, string>();
+    foreach (KeyValuePair<int, string> p in m)
+    {
+        Console.WriteLine("error: map not empty");
+    }
+    if (m.Count != 0)
+    {
+        Console.WriteLine("error");
+    }
+    Console.WriteLine("---");
+    m[1] = "foo";
+    if (m.Count != 1)
+    {
+        Console.WriteLine("error");
+    }
+    foreach (KeyValuePair<int, string> p in m)
+    {
+        Console.WriteLine(p.Key.ToString() + " = " + p.Value.ToString());
+    }
+    Console.WriteLine("---");
+    Console.WriteLine("---");
+    m[0] = "bar";
+    if (m.Count != 2)
+    {
+        Console.WriteLine("error");
+    }
+    foreach (KeyValuePair<int, string> p in m)
+    {
+        Console.WriteLine(p.Key.ToString() + " = " + p.Value.ToString());
+    }
+    Console.WriteLine("---");
+    Console.WriteLine("---");
+    m[0] = "fuzzy";
+    if (m.Count != 2)
+    {
+        Console.WriteLine("error");
+    }
+    foreach (KeyValuePair<int, string> p in m)
+    {
+        Console.WriteLine(p.Key.ToString() + " = " + p.Value.ToString());
+    }
+    Console.WriteLine("---");
+    Console.WriteLine("---");
+    bool added = m.Add(new KeyValuePair<int, string>(2, "baz"));
+    if (m.Count != 3)
+    {
+        Console.WriteLine("error");
+    }
+    if (!added)
+    {
+        Console.WriteLine("error");
+    }
+    foreach (KeyValuePair<int, string> p in m)
+    {
+        Console.WriteLine(p.Key.ToString() + " = " + p.Value.ToString());
+    }
+    Console.WriteLine("---");
+    if (!m.ContainsKey(0))
+    {
+        Console.WriteLine("error");
+    }
+    if (!m.ContainsKey(1))
+    {
+        Console.WriteLine("error");
+    }
+    if (!m.ContainsKey(2))
+    {
+        Console.WriteLine("error");
+    }
+    bool removed = m.Remove(1);
+    if (!removed)
+    {
+        Console.WriteLine("error");
+    }
+    if (m.Count != 2)
+    {
+        Console.WriteLine("error");
+    }
+    removed = m.Remove(0);
+    if (!removed)
+    {
+        Console.WriteLine("error");
+    }
+    if (m.Count != 1)
+    {
+        Console.WriteLine("error");
+    }
+    removed = m.Remove(2);
+    if (!removed)
+    {
+        Console.WriteLine("error");
+    }
+    if (m.Count != 0)
+    {
+        Console.WriteLine("error");
+    }
+}

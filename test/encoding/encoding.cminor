@@ -1,0 +1,15 @@
+﻿using System;
+
+int main()
+{
+    try
+    {
+        Console.WriteLine("Hello, 世界!");
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+        return 1;
+    }
+    return 0;
+}
