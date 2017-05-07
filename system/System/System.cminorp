@@ -3,3 +3,5 @@ target=library;
 reference <../System.Base/System.Base.cminorp>;
 reference <../System.Text.Parsing/System.Text.Parsing.cminorp>;
 reference <../System.Text.Parsing.CodeDom/System.Text.Parsing.CodeDom.cminorp>;
+reference <../System.Json/System.Json.cminorp>;
+reference <../System.Net.Sockets/System.Net.Sockets.cminorp>;

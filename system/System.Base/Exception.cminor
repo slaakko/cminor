@@ -39,8 +39,12 @@ namespace System
         public override string ToString()
         {
             StringBuilder s = new StringBuilder();
-            s.Append(base.ToString()).Append(": ").Append(message);
-            if (stackTrace != "")
+            s.Append(base.ToString()).Append(": ");
+            if (!string.IsNullOrEmpty(message))
+            {
+                s.Append(message);
+            }
+            if (!string.IsNullOrEmpty(stackTrace))
             {
                 s.Append(":\n").Append(stackTrace);
             }
@@ -104,6 +108,19 @@ namespace System
         public FileSystemException(string message) : base(message)
         {
         }
+    }
+
+    public class SocketException : SystemException
+    {
+        public SocketException(string message) : base(message)
+        {
+        }
+        public int ErrorCode
+        {
+            get { return errorCode; }
+            set { errorCode = value; }
+        }
+        private int errorCode;
     }
 
     public class LogicException : Exception

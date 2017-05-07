@@ -1,0 +1,7 @@
+project System.Net.Sockets;
+target=library;
+reference <../System.Base/System.Base.cminorp>;
+source <NetworkStream.cminor>;
+source <TcpClient.cminor>;
+source <TcpListener.cminor>;
+source <TcpSocket.cminor>;

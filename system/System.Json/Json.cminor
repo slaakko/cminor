@@ -1,0 +1,323 @@
+using System;
+using System.Text;
+using System.IO;
+using System.Collections.Generic;
+
+namespace System.Json
+{
+    public Value ParseJsonText(string jsonText)
+    {
+        return JsonGrammarHolder.GetJsonGrammar().Parse(jsonText, 0, "");
+    }
+    
+    public Value ParseJsonFile(string jsonFilePath)
+    {
+        return JsonGrammarHolder.GetJsonGrammar().Parse(File.ReadAllText(jsonFilePath), 0, jsonFilePath);
+    }
+
+    public abstract class Value
+    {
+    }
+
+    public class String : Value
+    {
+        public String(string value) 
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return MakeJsonStringLiteral(value);
+        }
+        public string Val
+        {
+            get { return this.value; }
+            set { this.value = value; }
+        }
+        private string value;
+    }
+
+    public class Number : Value
+    {
+        public Number(double value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return double.ToString(value);
+        }
+        public double Val
+        {
+            get { return this.value; }
+            set { this.value = value; }
+        }
+        private double value;
+    }
+
+    public class Object : Value
+    {
+        public Object()
+        {
+            this.fields = new Map<string, Value>();
+        }
+        public override string ToString()
+        {
+            StringBuilder s = new StringBuilder();
+            s.Append("{");
+            bool first = true;
+            foreach (KeyValuePair<string, Value> p in fields)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    s.Append(",");
+                }
+                if (p.Value == null)
+                {
+                    s.Append(MakeJsonStringLiteral(p.Key)).Append(":").Append("null");
+                }
+                else
+                {
+                    s.Append(MakeJsonStringLiteral(p.Key)).Append(":").Append(p.Value.ToString());
+                }
+            }
+            s.Append("}");
+            return s.ToString();
+        }
+        public Value this[string fieldName]
+        {
+            get 
+            {
+                Value value;
+                if (fields.TryGetValue(fieldName, ref value))
+                {
+                    return value;
+                }
+                return null;
+            }
+            set 
+            {
+                fields[fieldName] = value; 
+            }
+        }
+        public bool ContainsField(string fieldName)
+        {
+            return fields.ContainsKey(fieldName);
+        }
+        public Map<string, Value> Fields
+        {
+            get { return fields; }
+        }
+        private Map<string, Value> fields;
+    }
+
+    public class Array : Value, Enumerable
+    {
+        public Array()
+        {
+            elements = new List<Value>();
+        }
+        public Enumerator GetEnumerator()
+        {
+            return elements.GetEnumerator();
+        }
+        public override string ToString()
+        {
+            StringBuilder s = new StringBuilder();
+            s.Append("[");
+            bool first = true;
+            foreach (Value element in elements)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    s.Append(",");
+                }
+                if (element == null)
+                {
+                    s.Append("null");
+                }
+                else
+                {
+                    s.Append(element.ToString());
+                }
+            }
+            s.Append("]");
+            return s.ToString();
+        }
+        public Value this[int index]
+        {
+            get { return elements[index]; }
+            set { elements[index] = value; }
+        }
+        public void Add(Value value)
+        {
+            elements.Add(value);
+        }
+        public List<Value> Elements
+        {
+            get { return elements; }
+        }
+        private List<Value> elements;
+    }
+
+    public class Bool : Value
+    {
+        public Bool(bool value)
+        {
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return value.ToString();
+        }
+        public bool Val
+        {
+            get { return this.value; }
+            set { this.value = value; }
+        }
+        private bool value;
+    }
+
+    internal string MakeJsonStringLiteral(string value)
+    {
+        StringBuilder s = new StringBuilder();
+        s.Append('"');
+        if (!string.IsNullOrEmpty(value))
+        {
+            foreach (char c in value)
+            {
+                switch (c)
+                {
+                    case '"': s.Append("\\\""); break;
+                    case '\\': s.Append("\\\\"); break;
+                    case '/': s.Append("\\/"); break;
+                    case '\b': s.Append("\\b"); break;
+                    case '\f': s.Append("\\f"); break;
+                    case '\n': s.Append("\\n"); break;
+                    case '\r': s.Append("\\r"); break;
+                    case '\t': s.Append("\\t"); break;
+                    default:
+                    {
+                        if (char.IsCPrintable(c))
+                        {
+                            s.Append(c);
+                        }
+                        else
+                        {
+                            s.Append(Utf16CharStr(c));
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        s.Append('"');
+        return s.ToString();
+    }
+
+    internal string Utf16CharStr(char c)
+    {
+        uint u = cast<uint>(c);
+        if (u > 0x10FFFFu)
+        {
+            throw new System.Unicode.EncodingException("invalid UTF-32 code point");
+        }
+        if (u < 0x10000u)
+        {
+            if (u >= 0xD800u && u <= 0xDFFFu)
+            {
+                throw new System.Unicode.EncodingException("invalid UTF-32 code point (reserved for UTF-16)");
+            }
+            ushort x = cast<ushort>(u);
+            return "\\u" + HexUShort(x);
+        }
+        else
+        {
+            uint uprime = u - 0x10000u;
+            ushort x1 = 0xD800u;
+            ushort x2 = 0xDC00u;
+            for (ushort i = 0u; i < 10u; ++i)
+            {
+                ushort bit = cast<ushort>(uprime & (cast<uint>(0x1u) << i));
+                x2 = x2 | bit;
+            }
+            for (ushort i = 10u; i < 20u; ++i)
+            {
+                ushort bit = cast<ushort>((uprime & (cast<uint>(0x1u) << i)) >> 10u);
+                x1 = x1 | bit;
+            }
+            return "\\u" + HexUShort(x1) + "\\u" + HexUShort(x2);
+        }
+    }
+
+    internal string HexUShort(ushort x)
+    {
+        return byte.ToHexString(cast<byte>(x >> 8u)) + byte.ToHexString(cast<byte>(x));
+    }
+
+    internal string Utf16ToUtf32String(string utf16Str)
+    {
+        StringBuilder s = new StringBuilder();
+        int remaining = utf16Str.Length;
+        int index = 0;
+        while (remaining > 0)
+        {
+            ushort x1 = cast<ushort>(utf16Str[index]);
+            ++index;
+            --remaining;
+            if (x1 < 0xD800u || x1 > 0xDFFFu)
+            {
+                s.Append(cast<char>(x1));
+            }
+            else
+            {
+                if (x1 < 0xD800u || x1 > 0xDBFFu)
+                {
+                    throw new System.Unicode.EncodingException("invalid UTF-16 sequence");
+                }
+                if (remaining > 0)
+                {
+                    ushort x2 = cast<ushort>(utf16Str[index]);
+                    ++index;
+                    --remaining;
+                    if (x2 < 0xDC00u || x2 > 0xDFFFu)
+                    {
+                        throw new System.Unicode.EncodingException("invalid UTF-16 sequence");
+                    }
+                    else
+                    {
+                        uint uprime = cast<uint>(((0x03FFu & cast<uint>(x1)) << 10u) | (0x03FFu & cast<uint>(x2)));
+                        uint u = uprime + 0x10000u;
+                        s.Append(cast<char>(u));
+                    }
+                }
+                else
+                {
+                    throw new System.Unicode.EncodingException("invalid UTF-16 sequence");
+                }
+            }
+        }
+        return s.ToString();
+    }
+
+    internal class JsonGrammarHolder
+    {
+        static JsonGrammarHolder()
+        {
+            jsonGrammar = new JsonGrammar();
+        }
+        public static JsonGrammar GetJsonGrammar()
+        {
+            return jsonGrammar;
+        }
+        private static JsonGrammar jsonGrammar;
+    }
+}

@@ -20,6 +20,7 @@
 #include <cminor/ast/Project.hpp>
 #include <cminor/vmlib/VmFunction.hpp>
 #include <cminor/vmlib/File.hpp>
+#include <cminor/vmlib/Socket.hpp>
 #include <cminor/vmlib/Threading.hpp>
 #include <cminor/util/Path.hpp>
 #include <cminor/util/TextUtils.hpp>
@@ -54,6 +55,7 @@ struct InitDone
         InitAssembly();
         InitVmFunctions(vmFunctionNamePool);
         FileInit();
+        SocketInit();
         ThreadingInit();
         cminor::util::unicode::Init();
 #ifdef GC_LOGGING
@@ -67,6 +69,7 @@ struct InitDone
 #endif
         cminor::util::unicode::Done();
         ThreadingDone();
+        SocketDone();
         FileDone();
         DoneVmFunctions();
         DoneAssembly();
@@ -81,7 +84,7 @@ struct InitDone
     ConstantPool vmFunctionNamePool;
 };
 
-const char* version = "0.1.0";
+const char* version = "0.2.0";
 
 void PrintHelp()
 {

@@ -1,0 +1,93 @@
+using System;
+using System.Json;
+
+int main()
+{
+    try
+    {
+        Bool t = new Bool(true);
+        string ts = t.ToString();
+        Value tv = ParseJsonText(ts);
+        if (tv is Bool)
+        {
+            Console.WriteLine(tv.ToString());
+        }
+        else
+        {
+            throw new Exception("Bool expected");
+        }
+
+        Bool f = new Bool(false);
+        string fs = f.ToString();
+        Value fv = ParseJsonText(fs);
+        if (fv is Bool)
+        {
+            Console.WriteLine(fv.ToString());
+        }
+        else
+        {
+            throw new Exception("Bool expected");
+        }
+
+        System.Json.String s = new System.Json.String("abradakabra");
+        string ss = s.ToString();
+        Value sv = ParseJsonText(ss);
+        if (sv is System.Json.String)
+        {
+            Console.WriteLine(sv.ToString());
+        }
+        else
+        {
+            throw new Exception("String expected");
+        }
+
+        Number z = new Number(0);
+        string zs = z.ToString();
+        Value zv = ParseJsonText(zs);
+        if (zv is Number)
+        {
+            Console.WriteLine(zv.ToString());
+        }
+        else
+        {
+            throw new Exception("Number expected");
+        }
+
+        System.Json.Object o = new System.Json.Object();
+        o["b"] = new Bool(true);
+        o["s"] = new System.Json.Object();
+        cast<System.Json.Object>(o["s"])["a"] = new Number(-1.5);
+        o["n"] = null;
+        string os = o.ToString();
+        Value ov = ParseJsonText(os);
+        if (ov is System.Json.Object)
+        {
+            Console.WriteLine(ov.ToString());
+        }
+        else
+        {
+            throw new Exception("Object expected");
+        }
+
+        System.Json.Array a = new System.Json.Array();
+        a.Add(new Number(1));
+        a.Add(new Number(2));
+        a.Add(new Number(3));
+        string aas = a.ToString();
+        Value av = ParseJsonText(aas);
+        if (av is System.Json.Array)
+        {
+            Console.WriteLine(av.ToString());
+        }
+        else
+        {
+            throw new Exception("Array expected");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+        return 1;
+    }
+    return 0;
+}

@@ -209,6 +209,9 @@ public:
     void VisitStoreVariableReferenceInst(StoreVariableReferenceInst& instruction) override;
     void VisitGcPollInst(GcPollInst& instruction) override;
     void VisitRequestGcInst(RequestGcInst& instruction) override;
+    void VisitEnterBlockInst(EnterBlockInst& instruction) override;
+    void VisitExitBlockInst(ExitBlockInst& instruction) override;
+    void VisitNopInst(NopInst& nopInst) override;
 private:
     Assembly* assembly;
     LLVMContext context;
@@ -316,6 +319,7 @@ private:
     llvm::Value* CreateConversionToUlong(llvm::Value* from, ValueType fromType);
     LlvmConv GetConversionFromULong(ValueType type) const;
     llvm::Value* CreateConversionFromULong(llvm::Value* from, ValueType toType);
+    void CallDoNothing();
 };    
 
 NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), module(), targetMachine(), fun(nullptr), function(nullptr), assemblyConstantPool(nullptr), 
@@ -1505,15 +1509,24 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
 void NativeCompilerImpl::EndVisitFunction(Function& function)
 {
     bool lastIsJumpOrThrow = false;
+    Instruction* lastInst = nullptr;
     if (function.NumInsts() > 0)
     {
-        Instruction* lastInst = function.GetInst(function.NumInsts() - 1);
+        lastInst = function.GetInst(function.NumInsts() - 1);
         lastIsJumpOrThrow = lastInst->IsJump() || lastInst->IsThrow();
     }
     if (!lastIsJumpOrThrow && !function.ReturnsValue())
     {
         LeaveFunction();
         builder.CreateRetVoid();
+    }
+    else if (lastInst && lastInst->IsNoOpInst())
+    {
+        if (function.ReturnsValue())
+        {
+            PushDefaultValue(function.ReturnType());
+        }
+        CreateReturnFromFunctionOrFunclet();
     }
     std::unique_ptr<llvm::raw_os_ostream> os;
     if (listStream)
@@ -4435,6 +4448,29 @@ void NativeCompilerImpl::VisitRequestGcInst(RequestGcInst& instruction)
     ImportFunction(rtRequestGc);
     ArgVector args;
     builder.CreateCall(rtRequestGc, args);
+}
+
+void NativeCompilerImpl::VisitEnterBlockInst(EnterBlockInst& instruction)
+{
+    CallDoNothing();
+}
+
+void NativeCompilerImpl::VisitExitBlockInst(ExitBlockInst& instruction)
+{
+    CallDoNothing();
+}
+
+void NativeCompilerImpl::VisitNopInst(NopInst& nopInst)
+{
+    CallDoNothing();
+}
+
+void NativeCompilerImpl::CallDoNothing()
+{
+    llvm::Function* doNothing = cast<llvm::Function>(module->getOrInsertFunction("llvm.donothing", GetType(ValueType::none), nullptr));
+    ImportFunction(doNothing);
+    ArgVector args;
+    builder.CreateCall(doNothing, args);
 }
 
 llvm::Type* NativeCompilerImpl::GetType(ValueType type)

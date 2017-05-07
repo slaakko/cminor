@@ -18,10 +18,10 @@
     <p>
         <ul>
             <li>
-                Download <a href="http://sourceforge.net/projects/cminor/files/0.1.0/cminor-0.1.0-win-x64-setup.exe">cminor-0.1.0-win-x64-setup.exe</a>.
+                Download <a href="http://sourceforge.net/projects/cminor/files/0.2.0/cminor-0.2.0-win-x64-setup.exe">cminor-0.2.0-win-x64-setup.exe</a>.
             </li>
             <li>
-                Run cminor-0.1.0-win-x64-setup.exe.
+                Run cminor-0.2.0-win-x64-setup.exe.
             </li>
             <li>
                 By default cminor is installed to C:\cminor directory. Write access is needed to the installation directory and subdirectories of the installation directory, 
@@ -170,27 +170,27 @@
     </h4>
 
     <p>
-        To build Cminor from sources download <a href="http://sourceforge.net/projects/cminor/files/0.1.0/cminor-0.1.0.tar.bz2">cminor-0.1.0.tar.bz2</a> or
-        <a href="http://sourceforge.net/projects/cminor/files/0.1.0/cminor-0.1.0.tar.gz">cminor-0.1.0.tar.gz</a>, and extract it to some directory here called cminor-0.1.0.
-        Change to the cminor-0.1.0/cminor directory, run make and then [sudo] make install from there.
+        To build Cminor from sources download <a href="http://sourceforge.net/projects/cminor/files/0.2.0/cminor-0.2.0.tar.bz2">cminor-0.2.0.tar.bz2</a> or
+        <a href="http://sourceforge.net/projects/cminor/files/0.2.0/cminor-0.2.0.tar.gz">cminor-0.2.0.tar.gz</a>, and extract it to some directory here called cminor-0.2.0.
+        Change to the cminor-0.2.0/cminor directory, run make and then [sudo] make install from there.
         By default executables are installed to /usr/bin and the virtual machine library to /usr/lib. You can install them to different location by setting the prefix in the install command:
         [sudo] make prefix=/where/to/install install.
     </p>
     <p>
-        Make a new environment variable named CMINOR_ROOT and set its value to path to the cminor-0.1.0/cminor directory. 
+        Make a new environment variable named CMINOR_ROOT and set its value to path to the cminor-0.2.0/cminor directory. 
         (You need to insert it to your shell script (.bashrc or equivalent) to make it permanent.)
-        Insert /usr/lib (or your prefix/lib) directory to your LD_LIBRARY_PATH environment variable, so that the dynamic virtual machine library cminormachine.so.0.1.0 is found.
+        Insert /usr/lib (or your prefix/lib) directory to your LD_LIBRARY_PATH environment variable, so that the dynamic virtual machine library cminormachine.so.0.2.0 is found.
         Then give command "cminor" to ensure that found cminor program is of the right version.
     </p>
 
     <div class="commands">
-        > cd cminor-0.1.0/cminor<br />
+        > cd cminor-0.2.0/cminor<br />
         > make<br />
         > sudo make install<br />
-        > export CMINOR_ROOT=~/cminor-0.1.0/cminor<br />
+        > export CMINOR_ROOT=~/cminor-0.2.0/cminor<br />
         > export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH<br />
         > cminor<br />
-        cminor programming language commander version 0.1.0<br />
+        cminor programming language commander version 0.2.0<br />
         ...<br />
     </div>
 

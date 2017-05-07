@@ -9,7 +9,7 @@
 #include <cminor/util/System.hpp>
 #include <cminor/util/TextUtils.hpp>
 
-const char* version = "0.1.0";
+const char* version = "0.2.0";
 
 enum class HelpTopics : uint8_t
 {

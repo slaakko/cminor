@@ -1,0 +1,103 @@
+//  =======================================
+//  TcpSocket class represents a TCP socket
+//  =======================================
+
+using System;
+
+namespace System.Net.Sockets
+{
+    public enum ShutdownMode : byte
+    {
+        receive = 0u, send = 1u, both = 2u
+    }
+
+    public class TcpSocket : Closable
+    {
+        public TcpSocket()
+        {
+            this.handle = CreateSocket();
+            this.connected = false;
+        }
+        public TcpSocket(string node, string service)
+        {
+            this.handle = ConnectSocket(node, service);
+            this.connected = true;
+        }
+        public TcpSocket(int handle)
+        {
+            this.handle = handle;
+            this.connected = true;
+        }
+        public void Connect(string node, string service)
+        {
+            Close();
+            this.handle = ConnectSocket(node, service);
+            this.connected = true;
+        }
+        public void Close()
+        {
+            if (handle != -1)
+            {
+                CloseSocket(handle);
+                handle = -1;
+            }
+        }
+        public void Bind(int port)
+        {
+            BindSocket(handle, port);
+        }
+        public void Listen(int backlog)
+        {
+            ListenSocket(handle, backlog);
+        }
+        public TcpSocket Accept()
+        {
+            return new TcpSocket(AcceptSocket(handle));
+        }
+        public void Shutdown(ShutdownMode mode)
+        {
+            ShutdownSocket(handle, mode);
+        }
+        public int Send(byte[] buffer, int count)
+        {
+            return SendSocket(handle, buffer, count);
+        }
+        public int Receive(byte[] buffer)
+        {
+            return ReceiveSocket(handle, buffer);
+        }
+        public bool Connected
+        {
+            get { return connected; }
+        }
+        private int handle;
+        private bool connected;
+    }
+
+    [vmf=socket]
+    public extern int CreateSocket();
+
+    [vmf=connect]
+    public extern int ConnectSocket(string node, string service);
+
+    [vmf=closesocket]
+    public extern void CloseSocket(int socketHandle);
+
+    [vmf=bind]
+    public extern void BindSocket(int socketHandle, int port);
+
+    [vmf=listen]
+    public extern void ListenSocket(int socketHandle, int backlog);
+
+    [vmf=accept]
+    public extern int AcceptSocket(int socketHandle);
+
+    [vmf=shutdown]
+    public extern void ShutdownSocket(int socketHandle, ShutdownMode mode);
+
+    [vmf=send]
+    public extern int SendSocket(int socketHandle, byte[] buffer, int count);
+
+    [vmf=recv]
+    public extern int ReceiveSocket(int socketHandle, byte[] buffer);
+}

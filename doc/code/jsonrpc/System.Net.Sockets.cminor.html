@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>System.Net.Sockets.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">namespace</span> <span class="identifier">System.Net.Sockets</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">TcpSocket</span> <span class="other">:</span> <span class="identifier">Closable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">TcpSocket</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">TcpSocket</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">node</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">service</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">TcpSocket</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">handle</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Connect</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">node</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">service</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Close</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Bind</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">port</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Listen</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">backlog</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">TcpSocket</span> <span class="identifier">Accept</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Shutdown</span><span class="other">(</span><span class="identifier">ShutdownMode</span> <span class="identifier">mode</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Send</span><span class="other">(</span><span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">count</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">Receive</span><span class="other">(</span><span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Connected</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">TcpListener</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">TcpListener</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">port</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Start</span><span class="other">(</span><span class="other">)</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Start</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">backlog</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Stop</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">TcpSocket</span> <span class="identifier">AcceptSocket</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">TcpClient</span> <span class="identifier">AcceptTcpClient</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">TcpSocket</span> <span class="identifier">Server</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">TcpClient</span> <span class="other">:</span> <span class="identifier">Closable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">TcpClient</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">TcpClient</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">node</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">service</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">TcpClient</span><span class="other">(</span><span class="identifier">TcpSocket</span> <span class="identifier">socket</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Close</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Connect</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">node</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">service</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">NetworkStream</span> <span class="identifier">GetStream</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">TcpSocket</span> <span class="identifier">Client</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Connected</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">NetworkStream</span> <span class="other">:</span> <span class="identifier">Stream</span><span class="other">,</span> <span class="identifier">Closable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">NetworkStream</span><span class="other">(</span><span class="identifier">TcpSocket</span> <span class="identifier">socket</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="identifier">Close</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="identifier">WriteByte</span><span class="other">(</span><span class="keyword">byte</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="identifier">Write</span><span class="other">(</span><span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">count</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">int</span> <span class="identifier">ReadByte</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">int</span> <span class="identifier">Read</span><span class="other">(</span><span class="keyword">byte</span><span class="other">[</span><span class="other">]</span> <span class="identifier">buffer</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">TcpSocket</span> <span class="identifier">Socket</span><span class="other">;</span>
+    <span class="other">}</span>
+
+<span class="other">}</span></pre>
+</body>
+</html>

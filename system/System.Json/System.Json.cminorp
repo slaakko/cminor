@@ -1,0 +1,9 @@
+project System.Json;
+target=library;
+reference <../System.Text.Parsing/System.Text.Parsing.cminorp>;
+reference <../System.Net.Sockets/System.Net.Sockets.cminorp>;
+source <Json.cminor>;
+source <JsonRpc.cminor>;
+source <JsonGrammar.cminor>;
+source <TcpClient.cminor>;
+source <TcpServer.cminor>;

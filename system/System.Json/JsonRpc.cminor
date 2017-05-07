@@ -1,0 +1,260 @@
+using System;
+
+namespace System.JsonRpc
+{
+    public class Exception : System.Exception
+    {
+        public Exception(string message, System.Json.Value requestId) : base(message)
+        {
+            this.requestId = requestId;
+        }
+        public System.Json.Value RequestId
+        {
+            get { return requestId; }
+        }
+        private System.Json.Value requestId;
+    }
+
+    public class InvalidRequest : System.JsonRpc.Exception
+    {
+        public InvalidRequest(string message, System.Json.Value requestId) : base(message, requestId)
+        {
+        }
+    }
+
+    public class MethodNotFound : System.JsonRpc.Exception
+    {
+        public MethodNotFound(string message, System.Json.Value requestId) : base(message, requestId)
+        {
+        }
+    }
+
+    public class InvalidParams : System.JsonRpc.Exception
+    {
+        public InvalidParams(string message, System.Json.Value requestId) : base(message, requestId)
+        {
+        }
+    }
+
+    public class Request : System.Json.Object
+    {
+        public Request(string method) : this(method, null, null)
+        {
+        }
+        public Request(string method, System.Json.Value params) : this(method, params, null)
+        {
+        }
+        public Request(string method, System.Json.Value params, System.Json.Value id)
+        {
+            base["jsonrpc"] = new System.Json.String("2.0");
+            base["method"] = new System.Json.String(method);
+            if (params != null)
+            {
+                if (params is System.Json.Object || params is System.Json.Array)
+                {
+                    base["params"] = params;
+                }
+                else
+                {
+                    throw new System.JsonRpc.Exception("request params must be an object or an array", null);
+                }
+            }
+            if (id != null)
+            {
+                if (id is System.Json.Number || id is System.Json.String)
+                {
+                    base["id"] = id;
+                }
+                else
+                {
+                    throw new System.JsonRpc.Exception("request id must be a number or a string", null);
+                }
+            }
+        }
+        public System.Json.Value Id
+        {
+            get { return base["id"]; }
+        }
+        public System.Json.Value Version
+        {
+            get { return base["jsonrpc"]; }
+        }
+        public System.Json.Value Method
+        {
+            get { return base["method"]; }
+        }
+        public System.Json.Value Params
+        {
+            get { return base["params"]; }
+        }
+    }
+
+    public const int parseError = -32700;
+    public const int invalidRequest = -32600;
+    public const int methodNotFound = -32601;
+    public const int invalidParams = -32602;
+    public const int internalError = -32603;
+    public const int serverErrorBegin = -32000;
+    public const int serverErrorEnd = -32099;
+
+    public class Response : System.Json.Object
+    {
+        public Response(System.Json.Value result, System.Json.Value id)
+        {
+            base["jsonrpc"] = new System.Json.String("2.0");
+            base["result"] = result;
+            if (id != null)
+            {
+                if (id is System.Json.Number || id is System.Json.String)
+                {
+                    base["id"] = id;
+                }
+                else
+                {
+                    throw new System.JsonRpc.Exception("response id must be a number or a string", id);
+                }
+            }
+        }
+        public Response(int errorCode, string errorMessage, System.Json.Value errorData, System.Json.Value id)
+        {
+            base["jsonrpc"] = new System.Json.String("2.0");
+            System.Json.Object error = new System.Json.Object();
+            error["code"] = new System.Json.Number(errorCode);
+            error["message"] = new System.Json.String(errorMessage);
+            error["data"] = errorData;
+            base["error"] = error;
+            if (id != null)
+            {
+                if (id is System.Json.Number || id is System.Json.String)
+                {
+                    base["id"] = id;
+                }
+                else
+                {
+                    throw new System.JsonRpc.Exception("response id must be a number or a string", id);
+                }
+            }
+        }
+        public System.Json.Value Result
+        {
+            get { return base["result"]; }
+        }
+        public System.Json.Value Error
+        {
+            get { return base["error"]; }
+        }
+        public System.Json.Value Id
+        {
+            get { return base["id"]; }
+        }
+        public System.Json.Value Version
+        {
+            get { return base["jsonrpc"]; }
+        }
+    }
+
+    public abstract class Servant
+    {
+        public Servant(string method)
+        {
+            this.method = method;
+        }
+        public abstract Response ProcessRequest(System.Json.Object request);
+        public string Method
+        {
+            get { return method; }
+        }
+        private string method;
+    }
+
+    public abstract class Client
+    {
+        public abstract Request GetRequest(int id);
+        public abstract void ProcessResult(System.Json.Value result, int id);
+        public abstract void ProcessError(int errorCode, string errorMessage, System.Json.Value errorData, int id);
+        public virtual void ProcessResponseArray(System.Json.Array responseArray) 
+        {
+            foreach (System.Json.Value responseValue in responseArray)
+            {
+                if (responseValue is System.Json.Object)
+                {
+                    System.Json.Object response = cast<System.Json.Object>(responseValue);
+                    if (response.ContainsField("result"))
+                    {
+                        System.Json.Value result = response["result"];
+                        int responseId = -1;
+                        if (response.ContainsField("id"))
+                        {
+                            System.Json.Value responseIdValue = response["id"];
+                            if (responseIdValue is System.Json.Number)
+                            {
+                                System.Json.Number responseNumber = cast<System.Json.Number>(responseIdValue);
+                                responseId = cast<int>(responseNumber.Val);
+                            }
+                        }
+                        ProcessResult(result, responseId);
+                    }
+                    else if (response.ContainsField("error"))
+                    {
+                        int errorCode = 0;
+                        string message = string.Empty;
+                        System.Json.Value errorValue = response["error"];
+                        if (errorValue is System.Json.Object)
+                        {
+                            System.Json.Object error = cast<System.Json.Object>(errorValue);
+                            if (error.ContainsField("code"))
+                            {
+                                System.Json.Value errorCodeValue = error["code"];
+                                if (errorCodeValue is System.Json.Number)
+                                {
+                                    System.Json.Number errorNumber = cast<System.Json.Number>(errorCodeValue);
+                                    errorCode = cast<int>(errorNumber.Val);
+                                }
+                                else
+                                {
+                                    throw new System.JsonRpc.Exception("invalid JSON-RPC error response: error code not a JSON number", response["id"]);
+                                }
+                            }
+                            if (error.ContainsField("message"))
+                            {
+                                System.Json.Value errorMessageValue = error["message"];
+                                if (errorMessageValue is System.Json.String)
+                                {
+                                    System.Json.String errorString = cast<System.Json.String>(errorMessageValue);
+                                    message = errorString.Val;
+                                }
+                                else
+                                {
+                                    throw new System.JsonRpc.Exception("invalid JSON-RPC error response: error message not a JSON string", response["id"]);
+                                }
+                            }
+                            int responseId = -1;
+                            if (response.ContainsField("id"))
+                            {
+                                System.Json.Value responseIdValue = response["id"];
+                                if (responseIdValue is System.Json.Number)
+                                {
+                                    System.Json.Number responseNumber = cast<System.Json.Number>(responseIdValue);
+                                    responseId = cast<int>(responseNumber.Val);
+                                }
+                            }
+                            ProcessError(errorCode, message, error["data"], responseId);
+                        }
+                        else
+                        {
+                            throw new System.JsonRpc.Exception("invalid JSON-RPC error response: error not a JSON object", response["id"]);
+                        }
+                    }
+                    else
+                    {
+                        throw new System.JsonRpc.Exception("invalid JSON-RPC response: contains no result and no error field", response["id"]);
+                    }
+                }
+                else
+                {
+                    throw new System.JsonRpc.Exception("response not a JSON object", null);
+                }
+            }
+        }
+    }
+}

@@ -3592,7 +3592,7 @@ void RequestGcInst::Accept(MachineFunctionVisitor& visitor)
     visitor.VisitRequestGcInst(*this);
 }
 
-void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName)
+void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName, int errorCode)
 {
     Type* type = TypeTable::GetType(StringPtr(exceptionTypeName.c_str()));
     ObjectType* objectType = dynamic_cast<ObjectType*>(type);
@@ -3608,9 +3608,18 @@ void ThrowException(const std::string& message, Frame& frame, const utf32_string
     memoryPool.SetField(objectReference, 0, classDataValue, lock);
     ObjectReference messageStr = memoryPool.CreateString(frame.GetThread(), ToUtf32(message), lock);
     memoryPool.SetField(objectReference, 1, messageStr, lock);
+    if (errorCode != 0)
+    {
+        memoryPool.SetField(objectReference, 3, MakeIntegralValue<int32_t>(errorCode, ValueType::intType), lock);
+    }
     frame.OpStack().Push(objectReference);
     ThrowInst throwInst;
     throwInst.Execute(frame);
+}
+
+void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName)
+{
+    ThrowException(message, frame, exceptionTypeName, 0);
 }
 
 MACHINE_API void ThrowSystemException(const SystemException& ex, Frame& frame)
@@ -3641,6 +3650,11 @@ MACHINE_API void ThrowInvalidCastException(const InvalidCastException& ex, Frame
 MACHINE_API void ThrowFileSystemException(const FileSystemError& ex, Frame& frame)
 {
     ThrowException(ex.Message(), frame, U"System.FileSystemException");
+}
+
+MACHINE_API void ThrowSocketException(const SocketError& ex, Frame& frame)
+{
+    ThrowException(ex.Message(), frame, U"System.SocketException", ex.ErrorCode());
 }
 
 MACHINE_API void ThrowStackOverflowException(const StackOverflowException& ex, Frame& frame)

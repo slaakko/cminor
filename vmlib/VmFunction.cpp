@@ -5,6 +5,7 @@
 
 #include <cminor/vmlib/VmFunction.hpp>
 #include <cminor/vmlib/File.hpp>
+#include <cminor/vmlib/Socket.hpp>
 #include <cminor/vmlib/Threading.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Class.hpp>
@@ -1042,6 +1043,482 @@ void VmSystemIOLastWriteTimeLess::Execute(Frame& frame)
             throw;
         }
         ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSystemException(ex, frame);
+    }
+}
+
+class VmSystemNetSocketsCreateSocket : public VmFunction
+{
+public:
+    VmSystemNetSocketsCreateSocket(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemNetSocketsCreateSocket::VmSystemNetSocketsCreateSocket(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"socket"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemNetSocketsCreateSocket::Execute(Frame& frame)
+{
+    try
+    {
+        int32_t socketHandle = CreateSocket();
+        frame.OpStack().Push(MakeIntegralValue<int32_t>(socketHandle, ValueType::intType));
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SocketError& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSocketException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSystemException(ex, frame);
+    }
+}
+
+class VmSystemNetSocketsConnectSocket : public VmFunction
+{
+public:
+    VmSystemNetSocketsConnectSocket(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemNetSocketsConnectSocket::VmSystemNetSocketsConnectSocket(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"connect"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemNetSocketsConnectSocket::Execute(Frame& frame)
+{
+    try
+    {
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        IntegralValue nodeValue = frame.Local(0).GetValue();
+        Assert(nodeValue.GetType() == ValueType::objectReference, "object reference expected");
+        std::string node = memoryPool.GetUtf8String(nodeValue.Value());
+        IntegralValue serviceValue = frame.Local(1).GetValue();
+        Assert(serviceValue.GetType() == ValueType::objectReference, "object reference expected");
+        std::string service = memoryPool.GetUtf8String(serviceValue.Value());
+        int32_t socketHandle = ConnectSocket(node, service);
+        frame.OpStack().Push(MakeIntegralValue<int32_t>(socketHandle, ValueType::intType));
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SocketError& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSocketException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSystemException(ex, frame);
+    }
+}
+
+class VmSystemNetSocketsCloseSocket : public VmFunction
+{
+public:
+    VmSystemNetSocketsCloseSocket(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemNetSocketsCloseSocket::VmSystemNetSocketsCloseSocket(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"closesocket"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemNetSocketsCloseSocket::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue socketValue = frame.Local(0).GetValue();
+        Assert(socketValue.GetType() == ValueType::intType, "int expected");
+        int32_t socketHandle = socketValue.AsInt();
+        CloseSocket(socketHandle);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SocketError& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSocketException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSystemException(ex, frame);
+    }
+}
+
+class VmSystemNetSocketsBindSocket : public VmFunction
+{
+public:
+    VmSystemNetSocketsBindSocket(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemNetSocketsBindSocket::VmSystemNetSocketsBindSocket(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"bind"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemNetSocketsBindSocket::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue socketValue = frame.Local(0).GetValue();
+        Assert(socketValue.GetType() == ValueType::intType, "int expected");
+        int32_t socketHandle = socketValue.AsInt();
+        IntegralValue portValue = frame.Local(1).GetValue();
+        Assert(portValue.GetType() == ValueType::intType, "int expected");
+        int port = portValue.AsInt();
+        BindSocket(socketHandle, port);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SocketError& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSocketException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSystemException(ex, frame);
+    }
+}
+
+class VmSystemNetSocketsListenSocket : public VmFunction
+{
+public:
+    VmSystemNetSocketsListenSocket(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemNetSocketsListenSocket::VmSystemNetSocketsListenSocket(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"listen"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemNetSocketsListenSocket::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue socketValue = frame.Local(0).GetValue();
+        Assert(socketValue.GetType() == ValueType::intType, "int expected");
+        int32_t socketHandle = socketValue.AsInt();
+        IntegralValue backlogValue = frame.Local(1).GetValue();
+        Assert(backlogValue.GetType() == ValueType::intType, "int expected");
+        int backlog = backlogValue.AsInt();
+        ListenSocket(socketHandle, backlog);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SocketError& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSocketException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSystemException(ex, frame);
+    }
+}
+
+class VmSystemNetSocketsAcceptSocket : public VmFunction
+{
+public:
+    VmSystemNetSocketsAcceptSocket(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemNetSocketsAcceptSocket::VmSystemNetSocketsAcceptSocket(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"accept"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemNetSocketsAcceptSocket::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue socketValue = frame.Local(0).GetValue();
+        Assert(socketValue.GetType() == ValueType::intType, "int expected");
+        int32_t socketHandle = socketValue.AsInt();
+        int32_t acceptedSocketHandle = AcceptSocket(socketHandle);
+        frame.OpStack().Push(MakeIntegralValue<int32_t>(acceptedSocketHandle, ValueType::intType));
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SocketError& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSocketException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSystemException(ex, frame);
+    }
+}
+
+class VmSystemNetSocketsShutdownSocket : public VmFunction
+{
+public:
+    VmSystemNetSocketsShutdownSocket(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemNetSocketsShutdownSocket::VmSystemNetSocketsShutdownSocket(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"shutdown"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemNetSocketsShutdownSocket::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue socketValue = frame.Local(0).GetValue();
+        Assert(socketValue.GetType() == ValueType::intType, "int expected");
+        int32_t socketHandle = socketValue.AsInt();
+        IntegralValue modeValue = frame.Local(1).GetValue();
+        Assert(modeValue.GetType() == ValueType::byteType, "byte expected");
+        ShutdownMode mode = static_cast<ShutdownMode>(modeValue.AsByte());
+        ShutdownSocket(socketHandle, mode);
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SocketError& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSocketException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSystemException(ex, frame);
+    }
+}
+
+class VmSystemNetSocketsSendSocket : public VmFunction
+{
+public:
+    VmSystemNetSocketsSendSocket(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemNetSocketsSendSocket::VmSystemNetSocketsSendSocket(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"send"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemNetSocketsSendSocket::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue socketValue = frame.Local(0).GetValue();
+        Assert(socketValue.GetType() == ValueType::intType, "int expected");
+        int32_t socketHandle = socketValue.AsInt();
+        IntegralValue bufferValue = frame.Local(1).GetValue();
+        Assert(bufferValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference buffer(bufferValue.Value());
+        std::vector<uint8_t> bytes = GetManagedMemoryPool().GetBytes(buffer);
+        IntegralValue countValue = frame.Local(2).GetValue();
+        Assert(countValue.GetType() == ValueType::intType, "int expected");
+        int len = countValue.AsInt();
+        const char* buf = reinterpret_cast<const char*>(&bytes[0]);
+        int bytesSent = SendSocket(socketHandle, buf, len, 0);
+        frame.OpStack().Push(MakeIntegralValue<int32_t>(bytesSent, ValueType::intType));
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SocketError& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSocketException(ex, frame);
+    }
+    catch (const SystemException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSystemException(ex, frame);
+    }
+}
+
+class VmSystemNetSocketsReceiveSocket : public VmFunction
+{
+public:
+    VmSystemNetSocketsReceiveSocket(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemNetSocketsReceiveSocket::VmSystemNetSocketsReceiveSocket(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"recv"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemNetSocketsReceiveSocket::Execute(Frame& frame)
+{
+    try
+    {
+        IntegralValue socketValue = frame.Local(0).GetValue();
+        Assert(socketValue.GetType() == ValueType::intType, "int expected");
+        int32_t socketHandle = socketValue.AsInt();
+        IntegralValue bufferValue = frame.Local(1).GetValue();
+        Assert(bufferValue.GetType() == ValueType::objectReference, "object reference expected");
+        ObjectReference buffer(bufferValue.Value());
+        std::vector<uint8_t> bytes;
+        ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+        bytes.resize(memoryPool.GetNumArrayElements(buffer));
+        char* buf = reinterpret_cast<char*>(&bytes[0]);
+        int len = int(bytes.size());
+        int32_t bytesReceived = ReceiveSocket(socketHandle, buf, len, 0); 
+        if (bytesReceived > 0)
+        {
+            memoryPool.SetBytes(buffer, bytes, bytesReceived);
+        }
+        frame.OpStack().Push(MakeIntegralValue<int32_t>(bytesReceived, ValueType::intType));
+    }
+    catch (const NullReferenceException& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowNullReferenceException(ex, frame);
+    }
+    catch (const SocketError& ex)
+    {
+        if (RunningNativeCode())
+        {
+            throw;
+        }
+        ThrowSocketException(ex, frame);
     }
     catch (const SystemException& ex)
     {
@@ -2095,6 +2572,15 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOTellFile(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOFileExists(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOLastWriteTimeLess(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemNetSocketsCreateSocket(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemNetSocketsConnectSocket(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemNetSocketsCloseSocket(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemNetSocketsBindSocket(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemNetSocketsListenSocket(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemNetSocketsAcceptSocket(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemNetSocketsShutdownSocket(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemNetSocketsSendSocket(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemNetSocketsReceiveSocket(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemGetEnvironmentVariable(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemGetPathSeparatorChar(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemIOInternalGetCurrentWorkingDirectory(constantPool)));

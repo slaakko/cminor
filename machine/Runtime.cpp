@@ -69,7 +69,7 @@ utf32_string GetStackTrace()
     return stackTrace;
 }
 
-void RtThrowCminorException(const std::string& message, const utf32_string& exceptionTypeName)
+void RtThrowCminorException(const std::string& message, const utf32_string& exceptionTypeName, int errorCode)
 {
     Type* type = TypeTable::GetType(StringPtr(exceptionTypeName.c_str()));
     ObjectType* objectType = dynamic_cast<ObjectType*>(type);
@@ -90,7 +90,16 @@ void RtThrowCminorException(const std::string& message, const utf32_string& exce
     utf32_string stackTrace = GetStackTrace();
     ObjectReference stackTraceStr = memoryPool.CreateString(thread, stackTrace, lock);
     SetObjectField(object, stackTraceStr, 2);
+    if (errorCode != 0)
+    {
+        SetObjectField(object, MakeIntegralValue<int32_t>(errorCode, ValueType::intType), 3);
+    }
     throw CminorException(objectReference.Value());
+}
+
+void RtThrowCminorException(const std::string& message, const utf32_string& exceptionTypeName)
+{
+    RtThrowCminorException(message, exceptionTypeName, 0);
 }
 
 void RtThrowSystemException(const SystemException& ex)
@@ -121,6 +130,11 @@ void RtThrowInvalidCastException(const InvalidCastException& ex)
 void RtThrowFileSystemException(const FileSystemError& ex)
 {
     RtThrowCminorException(ex.Message(), U"System.FileSystemException");
+}
+
+void RtThrowSocketException(const SocketError& ex)
+{
+    RtThrowCminorException(ex.Message(), U"System.SocketException", ex.ErrorCode());
 }
 
 void RtThrowStackOverflowException(const StackOverflowException& ex)
@@ -1226,6 +1240,10 @@ extern "C" MACHINE_API void RtVmCall(void* function, void* constantPool, uint32_
     catch (const FileSystemError& ex)
     {
         RtThrowFileSystemException(ex);
+    }
+    catch (const SocketError& ex)
+    {
+        RtThrowSocketException(ex);
     }
     catch (const ThreadingException& ex)
     {

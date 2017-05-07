@@ -114,6 +114,16 @@ public:
     FileSystemError(const std::string& errorMessage);
 };
 
+class MACHINE_API SocketError : public SystemException
+{
+public:
+    SocketError(const std::string& errorMessage);
+    int ErrorCode() const { return errorCode; }
+    void SetErrorCode(int errorCode_) { errorCode = errorCode_; }
+private:
+    int errorCode;
+};
+
 class MACHINE_API StackOverflowException : public SystemException
 {
 public:

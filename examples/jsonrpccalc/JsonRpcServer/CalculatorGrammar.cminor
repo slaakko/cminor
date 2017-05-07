@@ -1,0 +1,445 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Parsing;
+
+namespace JsonRpcServer
+{
+    public class CalculatorGrammar : System.Text.Parsing.Grammar
+    {
+        public CalculatorGrammar() : this(new ParsingDomain())
+        {
+        }
+        public CalculatorGrammar(ParsingDomain parsingDomain) : base("CalculatorGrammar", parsingDomain.GetNamespaceScope("JsonRpcServer"), parsingDomain)
+        {
+            Owner = 0;
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public double Parse(string content, int fileIndex, string fileName)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                Match match = Parse(scanner, stack, parsingData);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+            double result = cast<double>(stack.Pop());
+            return result;
+        }
+        public class exprRule : System.Text.Parsing.RuleParser
+        {
+            public exprRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "double";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                ActionParser a2ActionParser = GetAction("A2");
+                a2ActionParser.Action = A2Action;
+                NonterminalParser leftNonterminalParser = GetNonterminal("left");
+                leftNonterminalParser.Post = Postleft;
+                NonterminalParser plusrightNonterminalParser = GetNonterminal("plusright");
+                plusrightNonterminalParser.Post = Postplusright;
+                NonterminalParser minusrightNonterminalParser = GetNonterminal("minusright");
+                minusrightNonterminalParser.Post = Postminusright;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromleft;
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.value + context.fromplusright;
+            }
+            public void A2Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.value - context.fromminusright;
+            }
+            public void Postleft(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromleft = cast<double>(stack.Pop());
+                }
+            }
+            public void Postplusright(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromplusright = cast<double>(stack.Pop());
+                }
+            }
+            public void Postminusright(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromminusright = cast<double>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public double value;
+                public double fromleft;
+                public double fromplusright;
+                public double fromminusright;
+            }
+        }
+        public class termRule : System.Text.Parsing.RuleParser
+        {
+            public termRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "double";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                ActionParser a2ActionParser = GetAction("A2");
+                a2ActionParser.Action = A2Action;
+                NonterminalParser leftNonterminalParser = GetNonterminal("left");
+                leftNonterminalParser.Post = Postleft;
+                NonterminalParser mulrightNonterminalParser = GetNonterminal("mulright");
+                mulrightNonterminalParser.Post = Postmulright;
+                NonterminalParser divrightNonterminalParser = GetNonterminal("divright");
+                divrightNonterminalParser.Post = Postdivright;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromleft;
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.value * context.frommulright;
+            }
+            public void A2Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (context.fromdivright == 0) throw new Exception("division by zero");
+                 else context.value = context.value / context.fromdivright;
+            }
+            public void Postleft(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromleft = cast<double>(stack.Pop());
+                }
+            }
+            public void Postmulright(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.frommulright = cast<double>(stack.Pop());
+                }
+            }
+            public void Postdivright(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromdivright = cast<double>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public double value;
+                public double fromleft;
+                public double frommulright;
+                public double fromdivright;
+            }
+        }
+        public class factorRule : System.Text.Parsing.RuleParser
+        {
+            public factorRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "double";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                ActionParser a2ActionParser = GetAction("A2");
+                a2ActionParser.Action = A2Action;
+                NonterminalParser posprimaryNonterminalParser = GetNonterminal("posprimary");
+                posprimaryNonterminalParser.Post = Postposprimary;
+                NonterminalParser negprimaryNonterminalParser = GetNonterminal("negprimary");
+                negprimaryNonterminalParser.Post = Postnegprimary;
+                NonterminalParser primaryNonterminalParser = GetNonterminal("primary");
+                primaryNonterminalParser.Post = Postprimary;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromposprimary;
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = -context.fromnegprimary;
+            }
+            public void A2Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromprimary;
+            }
+            public void Postposprimary(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromposprimary = cast<double>(stack.Pop());
+                }
+            }
+            public void Postnegprimary(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromnegprimary = cast<double>(stack.Pop());
+                }
+            }
+            public void Postprimary(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromprimary = cast<double>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public double value;
+                public double fromposprimary;
+                public double fromnegprimary;
+                public double fromprimary;
+            }
+        }
+        public class primaryRule : System.Text.Parsing.RuleParser
+        {
+            public primaryRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "double";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser exprNonterminalParser = GetNonterminal("expr");
+                exprNonterminalParser.Post = Postexpr;
+                NonterminalParser numberNonterminalParser = GetNonterminal("number");
+                numberNonterminalParser.Post = Postnumber;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromexpr;
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromnumber;
+            }
+            public void Postexpr(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromexpr = cast<double>(stack.Pop());
+                }
+            }
+            public void Postnumber(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromnumber = cast<double>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public double value;
+                public double fromexpr;
+                public double fromnumber;
+            }
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("number", this, "System.Text.Parsing.stdlib.number"));
+            AddRuleLink(new RuleLink("spaces", this, "System.Text.Parsing.stdlib.spaces"));
+            AddRule(new exprRule("expr", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("left", "term", 0)),
+                    new KleeneStarParser(
+                        new AlternativeParser(
+                            new SequenceParser(
+                                new CharParser('+'),
+                                new ActionParser("A1",
+                                    new NonterminalParser("plusright", "term", 0))),
+                            new SequenceParser(
+                                new CharParser('-'),
+                                new ActionParser("A2",
+                                    new NonterminalParser("minusright", "term", 0))))))));
+            AddRule(new termRule("term", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("left", "factor", 0)),
+                    new KleeneStarParser(
+                        new AlternativeParser(
+                            new SequenceParser(
+                                new CharParser('*'),
+                                new ActionParser("A1",
+                                    new NonterminalParser("mulright", "factor", 0))),
+                            new SequenceParser(
+                                new CharParser('/'),
+                                new ActionParser("A2",
+                                    new NonterminalParser("divright", "factor", 0))))))));
+            AddRule(new factorRule("factor", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new SequenceParser(
+                            new CharParser('+'),
+                            new ActionParser("A0",
+                                new NonterminalParser("posprimary", "primary", 0))),
+                        new SequenceParser(
+                            new CharParser('-'),
+                            new ActionParser("A1",
+                                new NonterminalParser("negprimary", "primary", 0)))),
+                    new ActionParser("A2",
+                        new NonterminalParser("primary", "primary", 0)))));
+            AddRule(new primaryRule("primary", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new CharParser('('),
+                            new ActionParser("A0",
+                                new NonterminalParser("expr", "expr", 0))),
+                        new CharParser(')')),
+                    new ActionParser("A1",
+                        new NonterminalParser("number", "number", 0)))));
+            SkipRuleName = "spaces";
+        }
+    }
+}

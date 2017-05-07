@@ -1,0 +1,53 @@
+namespace System.Net.Sockets
+{
+    public class TcpSocket : Closable
+    {
+        public TcpSocket();
+        public TcpSocket(string node, string service);
+        public TcpSocket(int handle);
+        public void Connect(string node, string service);
+        public void Close();
+        public void Bind(int port);
+        public void Listen(int backlog);
+        public TcpSocket Accept();
+        public void Shutdown(ShutdownMode mode);
+        public int Send(byte[] buffer, int count);
+        public int Receive(byte[] buffer);
+        public bool Connected;
+    }
+
+    public class TcpListener
+    {
+        public TcpListener(int port);
+        public void Start()
+        public void Start(int backlog);
+        public void Stop();
+        public TcpSocket AcceptSocket();
+        public TcpClient AcceptTcpClient();
+        public TcpSocket Server;
+    }
+
+    public class TcpClient : Closable
+    {
+        public TcpClient();
+        public TcpClient(string node, string service);
+        public TcpClient(TcpSocket socket);
+        public void Close();
+        public void Connect(string node, string service);
+        public NetworkStream GetStream();
+        public TcpSocket Client;
+        public bool Connected;
+    }
+
+    public class NetworkStream : Stream, Closable
+    {
+        public NetworkStream(TcpSocket socket);
+        public override void Close();
+        public override void WriteByte(byte value);
+        public override void Write(byte[] buffer, int count);
+        public override int ReadByte();
+        public override int Read(byte[] buffer);
+        public TcpSocket Socket;
+    }
+
+}

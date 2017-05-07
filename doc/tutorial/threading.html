@@ -3,7 +3,7 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <title>Threads</title>
+    <title>Threading</title>
     <link rel="stylesheet" type="text/css" href="../style/style.css" />
 </head>
 
@@ -38,7 +38,7 @@
         condition variable <span class="code">outputAvailableOrExiting</span>, that wakes up the output collector. 
         The output collector removes messages from the head of the <span class="code">outputLines</span> list, prints them to the console, 
         and goes back to sleep waiting for more lines to output or <span class="code">exiting</span> variable to become true.
-</p>
+    </p>
 
     <p>
         It may happen that many output threads manage to insert their output to the output lines before the collector wakes up,

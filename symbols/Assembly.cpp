@@ -61,6 +61,8 @@ CminorSystemAssemblyNameCollection::CminorSystemAssemblyNameCollection()
     systemAssemblyNames.push_back(U"System.Base");
     systemAssemblyNames.push_back(U"System.Text.Parsing");
     systemAssemblyNames.push_back(U"System.Text.Parsing.CodeDom");
+    systemAssemblyNames.push_back(U"System.Json");
+    systemAssemblyNames.push_back(U"System.Net.Sockets");
     for (const utf32_string& systemAssemblyName : systemAssemblyNames)
     {
         systemAssemblyNameMap.insert(StringPtr(systemAssemblyName.c_str()));

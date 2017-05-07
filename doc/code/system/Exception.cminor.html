@@ -48,8 +48,12 @@
         <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span>
         <span class="other">{</span>
             <span class="identifier">StringBuilder</span> <span class="identifier">s</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">StringBuilder</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
-            <span class="identifier">s.Append</span><span class="other">(</span><span class="keyword">base</span><span class="other">.</span><span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">.</span><span class="identifier">Append</span><span class="other">(</span><span class="string">&quot;: &quot;</span><span class="other">)</span><span class="other">.</span><span class="identifier">Append</span><span class="other">(</span><span class="identifier">message</span><span class="other">)</span><span class="other">;</span>
-            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">stackTrace</span> <span class="other">!</span><span class="other">=</span> <span class="string">&quot;&quot;</span><span class="other">)</span>
+            <span class="identifier">s.Append</span><span class="other">(</span><span class="keyword">base</span><span class="other">.</span><span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">.</span><span class="identifier">Append</span><span class="other">(</span><span class="string">&quot;: &quot;</span><span class="other">)</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="other">!</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">message</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">s.Append</span><span class="other">(</span><span class="identifier">message</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="other">!</span><span class="keyword">string</span><span class="other">.</span><span class="identifier">IsNullOrEmpty</span><span class="other">(</span><span class="identifier">stackTrace</span><span class="other">)</span><span class="other">)</span>
             <span class="other">{</span>
                 <span class="identifier">s.Append</span><span class="other">(</span><span class="string">&quot;:\n&quot;</span><span class="other">)</span><span class="other">.</span><span class="identifier">Append</span><span class="other">(</span><span class="identifier">stackTrace</span><span class="other">)</span><span class="other">;</span>
             <span class="other">}</span>
@@ -113,6 +117,19 @@
         <span class="keyword">public</span> <span class="identifier">FileSystemException</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">base</span><span class="other">(</span><span class="identifier">message</span><span class="other">)</span>
         <span class="other">{</span>
         <span class="other">}</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">SocketException</span> <span class="other">:</span> <span class="identifier">SystemException</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">SocketException</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">base</span><span class="other">(</span><span class="identifier">message</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">int</span> <span class="identifier">ErrorCode</span>
+        <span class="other">{</span>
+            <span class="identifier">get</span> <span class="other">{</span> <span class="keyword">return</span> <span class="identifier">errorCode</span><span class="other">;</span> <span class="other">}</span>
+            <span class="identifier">set</span> <span class="other">{</span> <span class="identifier">errorCode</span> <span class="other">=</span> <span class="identifier">value</span><span class="other">;</span> <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">int</span> <span class="identifier">errorCode</span><span class="other">;</span>
     <span class="other">}</span>
 
     <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">LogicException</span> <span class="other">:</span> <span class="identifier">Exception</span>

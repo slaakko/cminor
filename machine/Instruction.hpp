@@ -28,6 +28,7 @@ MACHINE_API void ThrowIndexOutOfRangeException(const IndexOutOfRangeException& e
 MACHINE_API void ThrowArgumentOutOfRangeException(const ArgumentOutOfRangeException& ex, Frame& frame);
 MACHINE_API void ThrowInvalidCastException(const InvalidCastException& ex, Frame& frame);
 MACHINE_API void ThrowFileSystemException(const FileSystemError& ex, Frame& frame);
+MACHINE_API void ThrowSocketException(const SocketError& ex, Frame& frame);
 MACHINE_API void ThrowStackOverflowException(const StackOverflowException& ex, Frame& frame);
 MACHINE_API void ThrowThreadingException(const ThreadingException& ex, Frame& frame);
 
@@ -74,9 +75,11 @@ public:
     virtual bool IsBinarySearchSwitchInst() const { return false; }
     virtual bool IsCall() const { return false; }
     virtual bool DontRemove() const { return false; }
+    virtual bool IsNoOpInst() const { return false; }
     virtual bool CreatesTemporaryObject(Function* function) const { return false; }
     virtual void DispatchTo(InstAdder& adder);
     virtual void Accept(MachineFunctionVisitor& visitor);
+    
 private:
     uint8_t opCode;
     std::string name;
@@ -102,6 +105,7 @@ public:
     NopInst();
     Instruction* Clone() const override { return new NopInst(*this); }
     void Accept(MachineFunctionVisitor& visitor) override;
+    bool IsNoOpInst() const override { return true; }
 };
 
 class MACHINE_API ContainerInst : public Instruction
@@ -776,6 +780,7 @@ public:
     Instruction* Clone() const override { return new EnterBlockInst(*this); };
     void Execute(Frame& frame) override;
     void Accept(MachineFunctionVisitor& visitor) override;
+    bool IsNoOpInst() const override { return true; }
 };
 
 class MACHINE_API ExitBlockInst : public Instruction
@@ -785,6 +790,7 @@ public:
     Instruction* Clone() const override { return new ExitBlockInst(*this); };
     void Execute(Frame& frame) override;
     void Accept(MachineFunctionVisitor& visitor) override;
+    bool IsNoOpInst() const override { return true; }
 };
 
 class MACHINE_API ContinuousSwitchInst : public Instruction

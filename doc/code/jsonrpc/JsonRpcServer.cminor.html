@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>JsonRpcServer.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">using</span> <span class="identifier">System</span><span class="other">;</span>
+<span class="keyword">using</span> <span class="identifier">System.JsonRpc</span><span class="other">;</span>
+
+<span class="keyword">namespace</span> <span class="identifier">JsonRpcServer</span>
+<span class="other">{</span>
+    <span class="keyword">class</span> <span class="identifier">CalculatorGrammarHolder</span>
+    <span class="other">{</span>
+        <span class="keyword">static</span> <span class="identifier">CalculatorGrammarHolder</span><span class="other">(</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">calculatorGrammar</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">CalculatorGrammar</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">CalculatorGrammar</span> <span class="identifier">GetCalculatorGrammar</span><span class="other">(</span><span class="other">)</span> 
+        <span class="other">{</span>
+            <span class="keyword">return</span> <span class="identifier">calculatorGrammar</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="keyword">private</span> <span class="keyword">static</span> <span class="identifier">CalculatorGrammar</span> <span class="identifier">calculatorGrammar</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">class</span> <span class="identifier">EvaluatorServant</span> <span class="other">:</span> <span class="identifier">Servant</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">EvaluatorServant</span><span class="other">(</span><span class="other">)</span> <span class="other">:</span> <span class="keyword">base</span><span class="other">(</span><span class="string">&quot;evaluate&quot;</span><span class="other">)</span>
+        <span class="other">{</span>
+        <span class="other">}</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="identifier">Response</span> <span class="identifier">ProcessRequest</span><span class="other">(</span><span class="identifier">System.Json.Object</span> <span class="identifier">request</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="other">!</span><span class="identifier">request.ContainsField</span><span class="other">(</span><span class="string">&quot;params&quot;</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">InvalidParams</span><span class="other">(</span><span class="string">&quot;params not specified&quot;</span><span class="other">,</span> <span class="identifier">request</span><span class="other">[</span><span class="string">&quot;id&quot;</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+            <span class="identifier">System.Json.Value</span> <span class="identifier">paramsValue</span> <span class="other">=</span> <span class="identifier">request</span><span class="other">[</span><span class="string">&quot;params&quot;</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">paramsValue</span> <span class="keyword">is</span> <span class="identifier">System.Json.Object</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="identifier">System.Json.Object</span> <span class="identifier">params</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">System.Json.Object</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">paramsValue</span><span class="other">)</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="other">!</span><span class="identifier">params.ContainsField</span><span class="other">(</span><span class="string">&quot;expression&quot;</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">InvalidParams</span><span class="other">(</span><span class="string">&quot;params does not contain \&quot;expression\&quot;&quot;</span><span class="other">,</span> <span class="identifier">request</span><span class="other">[</span><span class="string">&quot;id&quot;</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="identifier">System.Json.Value</span> <span class="identifier">expressionValue</span> <span class="other">=</span> <span class="identifier">params</span><span class="other">[</span><span class="string">&quot;expression&quot;</span><span class="other">]</span><span class="other">;</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="other">!</span><span class="other">(</span><span class="identifier">expressionValue</span> <span class="keyword">is</span> <span class="identifier">System.Json.String</span><span class="other">)</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">InvalidParams</span><span class="other">(</span><span class="string">&quot;\&quot;expression\&quot; field not a JSON string&quot;</span><span class="other">,</span> <span class="identifier">request</span><span class="other">[</span><span class="string">&quot;id&quot;</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">string</span> <span class="identifier">expression</span> <span class="other">=</span> <span class="keyword">cast</span><span class="other">&lt;</span><span class="identifier">System.Json.String</span><span class="other">&gt;</span><span class="other">(</span><span class="identifier">expressionValue</span><span class="other">)</span><span class="other">.</span><span class="identifier">Val</span><span class="other">;</span>
+                <span class="keyword">try</span>
+                <span class="other">{</span>
+                    <span class="keyword">double</span> <span class="identifier">result</span> <span class="other">=</span> <span class="identifier">CalculatorGrammarHolder.GetCalculatorGrammar</span><span class="other">(</span><span class="other">)</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">expression</span><span class="other">,</span> <span class="number">0</span><span class="other">,</span> <span class="string">&quot;&quot;</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Response</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">System.Json.Number</span><span class="other">(</span><span class="identifier">result</span><span class="other">)</span><span class="other">,</span> <span class="identifier">request</span><span class="other">[</span><span class="string">&quot;id&quot;</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">System.Exception</span> <span class="identifier">ex</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="keyword">return</span> <span class="keyword">new</span> <span class="identifier">Response</span><span class="other">(</span><span class="number">1</span><span class="other">,</span> <span class="string">&quot;error evaluating expression&quot;</span><span class="other">,</span> <span class="keyword">new</span> <span class="identifier">System.Json.String</span><span class="other">(</span><span class="identifier">ex.Message</span><span class="other">)</span><span class="other">,</span> <span class="identifier">request</span><span class="other">[</span><span class="string">&quot;id&quot;</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>   
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">InvalidParams</span><span class="other">(</span><span class="string">&quot;params not a JSON object&quot;</span><span class="other">,</span> <span class="identifier">request</span><span class="other">[</span><span class="string">&quot;id&quot;</span><span class="other">]</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+
+<span class="keyword">void</span> <span class="identifier">PrintHelp</span><span class="other">(</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;Usage: cminor run [--native] JsonRpcServer.cminora [options] [&lt;port&gt;]&quot;</span><span class="other">)</span><span class="other">;</span>
+    <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;JSON-RPC calculator server. Default &lt;port&gt; = 8080.&quot;</span><span class="other">)</span><span class="other">;</span>
+    <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;options:&quot;</span><span class="other">)</span><span class="other">;</span>
+    <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;--help (-h) : print help&quot;</span><span class="other">)</span><span class="other">;</span>
+    <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;--log (-l)  : log communication to stderr&quot;</span><span class="other">)</span><span class="other">;</span>
+<span class="other">}</span>
+
+<span class="keyword">int</span> <span class="identifier">main</span><span class="other">(</span><span class="keyword">string</span><span class="other">[</span><span class="other">]</span> <span class="identifier">args</span><span class="other">)</span>
+<span class="other">{</span>
+    <span class="keyword">try</span>
+    <span class="other">{</span>
+        <span class="keyword">int</span> <span class="identifier">n</span> <span class="other">=</span> <span class="identifier">args.Length</span><span class="other">;</span>
+        <span class="keyword">bool</span> <span class="identifier">logging</span> <span class="other">=</span> <span class="keyword">false</span><span class="other">;</span>
+        <span class="keyword">int</span> <span class="identifier">port</span> <span class="other">=</span> <span class="number">8080</span><span class="other">;</span>
+        <span class="keyword">for</span> <span class="other">(</span><span class="keyword">int</span> <span class="identifier">i</span> <span class="other">=</span> <span class="number">0</span><span class="other">;</span> <span class="identifier">i</span> <span class="other">&lt;</span> <span class="identifier">n</span><span class="other">;</span> <span class="other">+</span><span class="other">+</span><span class="identifier">i</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="keyword">string</span> <span class="identifier">arg</span> <span class="other">=</span> <span class="identifier">args</span><span class="other">[</span><span class="identifier">i</span><span class="other">]</span><span class="other">;</span>
+            <span class="keyword">if</span> <span class="other">(</span><span class="identifier">arg.StartsWith</span><span class="other">(</span><span class="string">&quot;-&quot;</span><span class="other">)</span><span class="other">)</span>
+            <span class="other">{</span>
+                <span class="keyword">if</span> <span class="other">(</span><span class="identifier">arg</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;--log&quot;</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">arg</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;-l&quot;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">logging</span> <span class="other">=</span> <span class="keyword">true</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span> <span class="keyword">if</span> <span class="other">(</span><span class="identifier">arg</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;--help&quot;</span> <span class="other">|</span><span class="other">|</span> <span class="identifier">arg</span> <span class="other">=</span><span class="other">=</span> <span class="string">&quot;-h&quot;</span><span class="other">)</span>
+                <span class="other">{</span>
+                    <span class="identifier">PrintHelp</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+                    <span class="keyword">return</span> <span class="number">0</span><span class="other">;</span>
+                <span class="other">}</span>
+                <span class="keyword">else</span>
+                <span class="other">{</span>
+                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="identifier">System.Exception</span><span class="other">(</span><span class="string">&quot;unknown option &apos;&quot;</span> <span class="other">+</span> <span class="identifier">arg</span> <span class="other">+</span> <span class="string">&quot;&apos;&quot;</span><span class="other">)</span><span class="other">;</span>
+                <span class="other">}</span>
+            <span class="other">}</span>
+            <span class="keyword">else</span>
+            <span class="other">{</span>
+                <span class="identifier">port</span> <span class="other">=</span> <span class="keyword">int</span><span class="other">.</span><span class="identifier">Parse</span><span class="other">(</span><span class="identifier">arg</span><span class="other">)</span><span class="other">;</span>
+            <span class="other">}</span>
+        <span class="other">}</span>
+        <span class="identifier">TcpServer</span> <span class="identifier">server</span> <span class="other">=</span> <span class="keyword">new</span> <span class="identifier">TcpServer</span><span class="other">(</span><span class="identifier">port</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">Console.WriteLine</span><span class="other">(</span><span class="string">&quot;press CTRL-C to end...&quot;</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">if</span> <span class="other">(</span><span class="identifier">logging</span><span class="other">)</span>
+        <span class="other">{</span>
+            <span class="identifier">server.Log</span> <span class="other">=</span> <span class="identifier">Console.Error</span><span class="other">;</span>
+        <span class="other">}</span>
+        <span class="identifier">server.AddServant</span><span class="other">(</span><span class="keyword">new</span> <span class="identifier">JsonRpcServer.EvaluatorServant</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="identifier">server.Run</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">catch</span> <span class="other">(</span><span class="identifier">System.Exception</span> <span class="identifier">ex</span><span class="other">)</span>
+    <span class="other">{</span>
+        <span class="identifier">Console.Error.WriteLine</span><span class="other">(</span><span class="identifier">ex.ToString</span><span class="other">(</span><span class="other">)</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">return</span> <span class="number">1</span><span class="other">;</span>
+    <span class="other">}</span>
+    <span class="keyword">return</span> <span class="number">0</span><span class="other">;</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

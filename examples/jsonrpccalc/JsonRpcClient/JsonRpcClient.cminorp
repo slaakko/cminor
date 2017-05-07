@@ -1,0 +1,2 @@
+project JsonRpcClient;
+source <JsonRpcClient.cminor>;

@@ -1,0 +1,34 @@
+namespace JsonRpcServer
+{
+    grammar CalculatorGrammar
+    {
+        using stdlib.number;
+        using stdlib.spaces;
+        skip spaces;
+
+        expr : double
+            ::= term:left{ value = left; } 
+            (   '+' term:plusright{ value = value + plusright; } 
+            |   '-' term:minusright{ value = value - minusright; }
+            )*
+            ;
+
+        term : double
+            ::= factor:left{ value = left; } 
+            (   '*' factor:mulright{ value = value * mulright; } 
+            |   '/' factor:divright{ if (divright == 0) throw new Exception("division by zero"); else value = value / divright; }
+            )*
+            ;
+
+        factor : double
+            ::= '+' primary:posprimary{ value = posprimary; } 
+            |   '-' primary:negprimary{ value = -negprimary; } 
+            |   primary{ value = primary; }
+            ;
+
+        primary : double
+            ::= '(' expr{ value = expr; } ')' 
+            |   number{ value = number; }
+            ;
+    }
+}

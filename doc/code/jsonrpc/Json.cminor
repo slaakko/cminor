@@ -1,0 +1,49 @@
+namespace System.Json
+{
+    public Value ParseJsonText(string jsonText)
+    public Value ParseJsonFile(string jsonFilePath)
+
+    public abstract class Value
+    {
+    }
+
+    public class String : Value
+    {
+        public String(string value);
+        public override string ToString();
+        public string Val;
+    }
+
+    public class Number : Value
+    {
+        public Number(double value);
+        public override string ToString();
+        public double Val;
+    }
+
+    public class Object : Value
+    {
+        public Object();
+        public override string ToString();
+        public Value this[string fieldName];
+        public bool ContainsField(string fieldName);
+        public Map<string, Value> Fields;
+    }
+
+    public class Array : Value, Enumerable
+    {
+        public Array();
+        public Enumerator GetEnumerator();
+        public override string ToString();
+        public Value this[int index];
+        public void Add(Value value);
+        public List<Value> Elements;
+    }
+
+    public class Bool : Value
+    {
+        public Bool(bool value);
+        public override string ToString();
+        public bool Val;
+    }
+}

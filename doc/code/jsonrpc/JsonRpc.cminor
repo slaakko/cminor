@@ -1,0 +1,50 @@
+namespace System.JsonRpc
+{
+    public class Exception : System.Exception
+    {
+        public Exception(string message, System.Json.Value requestId);
+        public System.Json.Value RequestId;
+    }
+
+    public class InvalidRequest : System.JsonRpc.Exception
+    {
+        public InvalidRequest(string message, System.Json.Value requestId);
+    }
+
+    public class MethodNotFound : System.JsonRpc.Exception
+    {
+        public MethodNotFound(string message, System.Json.Value requestId);
+    }
+
+    public class InvalidParams : System.JsonRpc.Exception
+    {
+        public InvalidParams(string message, System.Json.Value requestId);
+    }
+
+    public class Request : System.Json.Object
+    {
+        public Request(string method);
+        public Request(string method, System.Json.Value params);
+        public Request(string method, System.Json.Value params, System.Json.Value id);
+    }
+
+    public class Response : System.Json.Object
+    {
+        public Response(System.Json.Value result, System.Json.Value id);
+        public Response(int errorCode, string errorMessage, System.Json.Value errorData, System.Json.Value id);
+    }
+
+    public abstract class Servant
+    {
+        public Servant(string method);
+        public abstract Response ProcessRequest(System.Json.Object request);
+        public string Method;
+    }
+
+    public abstract class Client
+    {
+        public abstract Request GetRequest(int id);
+        public abstract void ProcessResult(System.Json.Value result, int id);
+        public abstract void ProcessError(int errorCode, string errorMessage, System.Json.Value errorData, int id);
+        public virtual void ProcessResponseArray(System.Json.Array responseArray);
+    }

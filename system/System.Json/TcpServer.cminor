@@ -1,0 +1,233 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Json;
+using System.JsonRpc;
+using System.Net.Sockets;
+using System.Threading;
+using System.Text.Parsing;
+
+namespace System.JsonRpc
+{
+    public class TcpServer
+    {
+        public TcpServer(int port)
+        {
+            this.port = port;
+            listener = new TcpListener(port);
+            servantMap = new HashMap<string, Servant>();
+            logLock = new object();
+        }
+        public void AddServant(Servant servant)
+        {
+            servantMap[servant.Method] = servant;
+            if (log != null)
+            {
+                lock (logLock)
+                {
+                    log.WriteLine("servant for method '" + servant.Method + "' registered");
+                }
+            }
+        }
+        public void Run()
+        {
+            listener.Start();
+            if (log != null)
+            {
+                lock (logLock)
+                {
+                    log.WriteLine("listening port " + port.ToString());
+                }
+            }
+            while (true)
+            {
+                System.Net.Sockets.TcpClient client = listener.AcceptTcpClient();
+                if (log != null)
+                {
+                    lock (logLock)
+                    {
+                        log.WriteLine("connection accepted");
+                    }
+                }
+                Thread.StartMethod(Serve, client);
+            }
+        }
+        public StreamWriter Log
+        {
+            get { return log; }
+            set { log = value; }
+        }
+        private void Serve(object clientParam)
+        {
+            try
+            {
+                using (System.Net.Sockets.TcpClient client = cast<System.Net.Sockets.TcpClient>(clientParam))
+                {
+                    NetworkStream networkStream = client.GetStream();
+                    using (StreamReader reader = new StreamReader(new BufferedStream(networkStream)))
+                    {
+                        using (StreamWriter writer = new StreamWriter(new BufferedStream(networkStream)))
+                        {
+                            string requestString = reader.ReadLine();
+                            while (requestString != null)
+                            {
+                                try
+                                {
+                                    System.Json.Value requestValue = ParseJsonText(requestString);
+                                    System.Json.Value response = ProcessRequest(requestValue);
+                                    writer.WriteLine(response.ToString());
+                                    writer.ContainedStream.Flush();
+                                    if (log != null)
+                                    {
+                                        lock (logLock)
+                                        {
+                                            log.WriteLine("sent response: " + response.ToString());
+                                        }
+                                    }
+                                }
+                                catch (ExpectationFailure ex)
+                                {
+                                    Response response = new Response(parseError, "Parse error", new System.Json.String(ex.Message), null);
+                                    writer.WriteLine(response.ToString());
+                                    if (log != null)
+                                    {
+                                        lock (logLock)
+                                        {
+                                            log.WriteLine("parse error: " + response.ToString());
+                                        }
+                                    }
+                                    return;
+                                }
+                                catch (InvalidRequest ex)
+                                {
+                                    Response response = new Response(invalidRequest, "Invalid request", new System.Json.String(ex.Message), ex.RequestId);
+                                    writer.WriteLine(response.ToString());
+                                    if (log != null)
+                                    {
+                                        lock (logLock)
+                                        {
+                                            log.WriteLine("invalid request: " + response.ToString());
+                                        }
+                                    }
+                                    return;
+                                }
+                                catch (MethodNotFound ex)
+                                {
+                                    Response response = new Response(methodNotFound, "Method not found", new System.Json.String(ex.Message), ex.RequestId);
+                                    writer.WriteLine(response.ToString());
+                                    if (log != null)
+                                    {
+                                        lock (logLock)
+                                        {
+                                            log.WriteLine("method not found: " + response.ToString());
+                                        }
+                                    }
+                                    return;
+                                }
+                                catch (InvalidParams ex)
+                                {
+                                    Response response = new Response(invalidParams, "Invalid params", new System.Json.String(ex.Message), ex.RequestId);
+                                    writer.WriteLine(response.ToString());
+                                    if (log != null)
+                                    {
+                                        lock (logLock)
+                                        {
+                                            log.WriteLine("invalid params: " + response.ToString());
+                                        }
+                                    }
+                                    return;
+                                }
+                                requestString = reader.ReadLine();
+                            }
+                            client.Client.Shutdown(ShutdownMode.both);
+                        }
+                    }
+                }
+                if (log != null)
+                {
+                    lock (logLock)
+                    {
+                        log.WriteLine("connection ended");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.ToString());
+            }
+        }
+        private System.Json.Value ProcessRequest(System.Json.Value requestValue)
+        {
+            if (requestValue is System.Json.Object)
+            {
+                System.Json.Object request = cast<System.Json.Object>(requestValue);
+                if (log != null)
+                {
+                    lock (logLock)
+                    {
+                        log.WriteLine("received request: " + request.ToString());
+                    }
+                }
+                if (!request.ContainsField("jsonrpc"))
+                {
+                    throw new InvalidRequest("request not an JSON-RPC 2.0 request", request["id"]);
+                }
+                System.Json.Value versionValue = request["jsonrpc"];
+                if (!(versionValue is System.Json.String))
+                {
+                    throw new InvalidRequest("jsonrpc field not a JSON string", request["id"]);
+                }
+                System.Json.String version = cast<System.Json.String>(versionValue);
+                if (version.Val != "2.0")
+                {
+                    throw new InvalidRequest("wrong request version (version 2.0 expected, " + version.Val + " read)", request["id"]);
+                }
+                if (!request.ContainsField("method"))
+                {
+                    throw new InvalidRequest("method not specified", request["id"]);
+                }
+                System.Json.Value methodValue = request["method"];
+                if (!(methodValue is System.Json.String))
+                {
+                    throw new InvalidRequest("method not a JSON string", request["id"]);
+                }
+                System.Json.String method = cast<System.Json.String>(methodValue);
+                Servant servant;
+                if (servantMap.TryGetValue(method.Val, ref servant))
+                {
+                    return servant.ProcessRequest(request);
+                }
+                else
+                {
+                    throw new MethodNotFound(method.Val, request["id"]);
+                }
+            }
+            else if (requestValue is System.Json.Array)
+            {
+                System.Json.Array batch = cast<System.Json.Array>(requestValue);
+                if (batch.Elements.Count > 0)
+                {
+                    System.Json.Array responseArray = new System.Json.Array();
+                    foreach (System.Json.Value request in batch)
+                    {
+                        responseArray.Add(ProcessRequest(request));
+                    }
+                    return responseArray;
+                }
+                else
+                {
+                    throw new InvalidRequest("batch is empty", null);
+                }
+            }
+            else
+            {
+                throw new InvalidRequest("request not a JSON object", null);
+            }
+        }
+        private TcpListener listener;
+        private int port;
+        private HashMap<string, Servant> servantMap;
+        private StreamWriter log;
+        private object logLock;
+    }
+}

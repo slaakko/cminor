@@ -1,0 +1,184 @@
+using System;
+using System.IO;
+using System.Json;
+using System.Net.Sockets;
+
+namespace System.JsonRpc
+{
+    public class TcpClient
+    {
+        public TcpClient(string node, string service) 
+        {
+            this.node = node;
+            this.service = service;
+            tcpClient = new System.Net.Sockets.TcpClient(node, service);
+        }
+        public void SetClient(Client client)
+        {
+            this.client = client;
+        }
+        public StreamWriter Log
+        {
+            get { return log; }
+            set { log = value; }
+        }
+        public void Run()
+        {
+            if (log != null)
+            {
+                log.WriteLine("connected to: " + node + ":" + service);
+            }
+            int id = 0;
+            NetworkStream networkStream = tcpClient.GetStream();
+            using (StreamWriter writer = new StreamWriter(new BufferedStream(networkStream)))
+            {
+                using (StreamReader reader = new StreamReader(new BufferedStream(networkStream)))
+                {
+                    Request request = client.GetRequest(id);
+                    while (request != null)
+                    {
+                        if (log != null)
+                        {
+                            log.WriteLine("sending request: " + request.ToString());
+                        }
+                        writer.WriteLine(request.ToString());
+                        writer.ContainedStream.Flush();
+                        string responseString = reader.ReadLine();
+                        if (log != null)
+                        {
+                            log.WriteLine("response string received: " + responseString);
+                        }
+                        System.Json.Value responseValue = ParseJsonText(responseString);
+                        if (responseValue is System.Json.Object)
+                        {
+                            System.Json.Object response = cast<System.Json.Object>(responseValue);
+                            if (log != null)
+                            {
+                                log.WriteLine("response received: " + response.ToString());
+                            }
+                            if (response.ContainsField("result"))
+                            {
+                                System.Json.Value result = response["result"];
+                                int responseId = -1;
+                                if (response.ContainsField("id"))
+                                {
+                                    System.Json.Value responseIdValue = response["id"];
+                                    if (responseIdValue is System.Json.Number)
+                                    {
+                                        System.Json.Number responseNumber = cast<System.Json.Number>(responseIdValue);
+                                        responseId = cast<int>(responseNumber.Val);
+                                    }
+                                }
+                                ProcessResult(result, responseId);
+                            }
+                            else if (response.ContainsField("error"))
+                            {
+                                int errorCode = 0;
+                                string message = string.Empty;
+                                System.Json.Value errorValue = response["error"];
+                                if (errorValue is System.Json.Object)
+                                {
+                                    System.Json.Object error = cast<System.Json.Object>(errorValue);
+                                    if (error.ContainsField("code"))
+                                    {
+                                        System.Json.Value errorCodeValue = error["code"];
+                                        if (errorCodeValue is System.Json.Number)
+                                        {
+                                            System.Json.Number errorNumber = cast<System.Json.Number>(errorCodeValue);
+                                            errorCode = cast<int>(errorNumber.Val);
+                                        }
+                                        else
+                                        {
+                                            throw new System.JsonRpc.Exception("invalid JSON-RPC error response: error code not a JSON number", response["id"]);
+                                        }
+                                    }
+                                    if (error.ContainsField("message"))
+                                    {
+                                        System.Json.Value errorMessageValue = error["message"];
+                                        if (errorMessageValue is System.Json.String)
+                                        {
+                                            System.Json.String errorString = cast<System.Json.String>(errorMessageValue);
+                                            message = errorString.Val;
+                                        }
+                                        else
+                                        {
+                                            throw new System.JsonRpc.Exception("invalid JSON-RPC error response: error message not a JSON string", response["id"]);
+                                        }
+                                    }
+                                    int responseId = -1;
+                                    if (response.ContainsField("id"))
+                                    {
+                                        System.Json.Value responseIdValue = response["id"];
+                                        if (responseIdValue is System.Json.Number)
+                                        {
+                                            System.Json.Number responseNumber = cast<System.Json.Number>(responseIdValue);
+                                            responseId = cast<int>(responseNumber.Val);
+                                        }
+                                    }
+                                    ProcessError(errorCode, message, error["data"], responseId);
+                                }
+                                else
+                                {
+                                    throw new System.JsonRpc.Exception("invalid JSON-RPC error response: error not a JSON object", response["id"]);
+                                }
+                            }
+                            else
+                            {
+                                throw new System.JsonRpc.Exception("invalid JSON-RPC response: contains no result and no error field", response["id"]);
+                            }
+                        }
+                        else if (responseValue is System.Json.Array)
+                        {
+                            ProcessResponseArray(cast<System.Json.Array>(responseValue));
+                        }
+                        else
+                        {
+                            throw new System.JsonRpc.Exception("response not a JSON-RPC response", null);
+                        }
+                        ++id;
+                        request = client.GetRequest(id);
+                    }
+                    tcpClient.Client.Shutdown(ShutdownMode.both);
+                }
+            }
+        }
+        private void ProcessResult(System.Json.Value result, int id)
+        {
+            if (client != null)
+            {
+                client.ProcessResult(result, id);
+            }
+            else
+            {
+                throw new Exception("client is null");
+            }
+        }
+        private void ProcessError(int errorCode, string errorMessage, System.Json.Value data, int id)
+        {
+            if (client != null)
+            {
+                client.ProcessError(errorCode, errorMessage, data, id);
+            }
+            else
+            {
+                throw new Exception("client is null");
+            }
+        }
+        private void ProcessResponseArray(System.Json.Array responseArray)
+        {
+            if (client != null)
+            {
+                client.ProcessResponseArray(responseArray);
+            }
+            else
+            {
+                throw new Exception("client is null");
+            }
+        }
+        private System.Net.Sockets.TcpClient tcpClient;
+        private Client client;
+        private string node;
+        private string service;
+        private StreamWriter log;
+    }
+}

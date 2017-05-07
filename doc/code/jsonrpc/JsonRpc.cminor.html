@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>JsonRpc.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">namespace</span> <span class="identifier">System.JsonRpc</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Exception</span> <span class="other">:</span> <span class="identifier">System.Exception</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Exception</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">,</span> <span class="identifier">System.Json.Value</span> <span class="identifier">requestId</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">System.Json.Value</span> <span class="identifier">RequestId</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">InvalidRequest</span> <span class="other">:</span> <span class="identifier">System.JsonRpc.Exception</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">InvalidRequest</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">,</span> <span class="identifier">System.Json.Value</span> <span class="identifier">requestId</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">MethodNotFound</span> <span class="other">:</span> <span class="identifier">System.JsonRpc.Exception</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">MethodNotFound</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">,</span> <span class="identifier">System.Json.Value</span> <span class="identifier">requestId</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">InvalidParams</span> <span class="other">:</span> <span class="identifier">System.JsonRpc.Exception</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">InvalidParams</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">message</span><span class="other">,</span> <span class="identifier">System.Json.Value</span> <span class="identifier">requestId</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Request</span> <span class="other">:</span> <span class="identifier">System.Json.Object</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Request</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">method</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">Request</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">method</span><span class="other">,</span> <span class="identifier">System.Json.Value</span> <span class="identifier">params</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">Request</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">method</span><span class="other">,</span> <span class="identifier">System.Json.Value</span> <span class="identifier">params</span><span class="other">,</span> <span class="identifier">System.Json.Value</span> <span class="identifier">id</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Response</span> <span class="other">:</span> <span class="identifier">System.Json.Object</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Response</span><span class="other">(</span><span class="identifier">System.Json.Value</span> <span class="identifier">result</span><span class="other">,</span> <span class="identifier">System.Json.Value</span> <span class="identifier">id</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">Response</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">errorCode</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">errorMessage</span><span class="other">,</span> <span class="identifier">System.Json.Value</span> <span class="identifier">errorData</span><span class="other">,</span> <span class="identifier">System.Json.Value</span> <span class="identifier">id</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="identifier">Servant</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Servant</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">method</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="identifier">Response</span> <span class="identifier">ProcessRequest</span><span class="other">(</span><span class="identifier">System.Json.Object</span> <span class="identifier">request</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">Method</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="identifier">Client</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="identifier">Request</span> <span class="identifier">GetRequest</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">id</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="identifier">ProcessResult</span><span class="other">(</span><span class="identifier">System.Json.Value</span> <span class="identifier">result</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">id</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="identifier">ProcessError</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">errorCode</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">errorMessage</span><span class="other">,</span> <span class="identifier">System.Json.Value</span> <span class="identifier">errorData</span><span class="other">,</span> <span class="keyword">int</span> <span class="identifier">id</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="identifier">ProcessResponseArray</span><span class="other">(</span><span class="identifier">System.Json.Array</span> <span class="identifier">responseArray</span><span class="other">)</span><span class="other">;</span>
+    <span class="other">}</span>
+</pre>
+</body>
+</html>

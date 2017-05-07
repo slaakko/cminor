@@ -1,0 +1,241 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>JSON-RPC over TCP</title>
+    <link rel="stylesheet" type="text/css" href="../style/style.css" />
+</head>
+
+<body>
+    <h2 id="jsonrpcovertcp">10 JSON-RPC over TCP</h2>
+
+    <p>
+        The program in this example is built on top of two Cminor system libraries:
+        the <span class="code">System.Net.Sockets</span> library and
+        the <span class="code">System.Json</span> library.
+    </p>
+
+    <h3 id="sockets">
+        10.1 System.Net.Sockects Library
+    </h3>
+
+    <p>
+        The sockets library contains minimal functionality contained by the following classes
+        most of which are found also in the .NET Framework:
+    </p>
+
+    <ul>
+        <li>
+            <span class="code">TcpSocket</span> class represents a TCP socket.
+        </li> 
+        <li>
+            <span class="code">TcpListener</span> class is for listening and accepting connections to a TCP port.
+        </li>
+        <li>
+            <span class="code">TcpClient</span> represents an endpoint of a TCP connection.
+        </li>
+        <li>
+            <span class="code">NetworkStream</span> is used to send and receive data over a TCP connection.
+        </li>
+    </ul>
+
+    <p>
+        Here's the interface of the <span class="code">System.Net.Sockets</span> library:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/jsonrpc/System.Net.Sockets.cminor.html" height="840px" width="600px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="json">
+        10.2 System.Json Library
+    </h3>
+
+    <p>
+        This library contains classes for representing JSON data, a JSON parser, and classes for implementing the JSON-RPC 2.0 protocol over a TCP connection.
+    </p>
+
+    <p>
+        The following classes are for representing JSON data:
+    </p>
+
+    <ul>
+        <li>
+            <span class="code">System.Json.Value</span> class acts as an abstract base class of concrete JSON value classes.
+        </li>
+        <li>
+            <span class="code">System.Json.String</span> class contains a JSON string.
+        </li>
+        <li>
+            <span class="code">System.Json.Number</span> class contains a JSON number.
+        </li>
+        <li>
+            <span class="code">System.Json.Object</span> class holds a map of JSON strings mapped to JSON values.
+        </li>
+        <li>
+            <span class="code">System.Json.Array</span> class holds an array of JSON values.
+        </li>
+        <li>
+            <span class="code">System.Json.Bool</span> represents a JSON truth value.
+        </li>
+        <li>
+            JSON null value is represented by null.
+        </li>
+    </ul>
+
+    <p>
+        Here's the interface of the JSON data classes:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/jsonrpc/Json.cminor.html" height="780px" width="600px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        The <span class="code">ParseJsonText</span> parses a JSON string and returns the corrensponding JSON value derived from the System.Json.Value class.
+        Each JSON value class override the ToString() member function that serialize the value as a string.
+    </p>
+
+    <p>
+        The following classes are for implementing the JSON-RPC 2.0 protocol:
+    </p>
+
+    <ul>
+        <li>
+            <span class="code">System.JsonRpc.Exception</span> is the base class of protocol error exception classes.
+        </li>
+        <li>
+            <span class="code">System.JsonRpc.InvalidRequest</span> exception is thrown on invalid request.
+        </li>
+        <li>
+            <span class="code">System.JsonRpc.MethodNotFound</span> exception is thrown when no method of given name is registered with TcpServer.
+        </li>
+        <li>
+            <span class="code">System.JsonRpc.InvalidParams</span> exception is thrown by the application class when there is error with request parameters.
+        </li>
+        <li>
+            <span class="code">System.JsonRpc.Request</span> class is for constructing a JSON-RPC request.
+        </li>
+        <li>
+            <span class="code">System.JsonRpc.Response</span> class is for constructing a JSON-RPC response.
+        </li>
+        <li>
+            <span class="code">System.JsonRpc.Servant</span> class is an abstract base class for JSON-RPC method implementation classes.
+        </li>
+        <li>
+            <span class="code">System.JsonRpc.Client</span> class is an abstract base class for JSON-RPC client implementation classes.
+        </li>
+    </ul>
+
+    <p>
+        Here's the interface of the JSON-RPC classes:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/jsonrpc/JsonRpc.cminor.html" height="800px" width="700px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        The following classes implement the JSON-RPC 2.0 protocol over a TCP connection:
+    </p>
+
+    <ul>
+        <li>
+            <span class="code">System.JsonRpc.TcpClient</span> class implements the client side of the JSON-RPC 2.0 protocol with the help of a class derived from the 
+            <span class="code">System.JsonRpc.Client</span> class.
+        </li>
+        <li>
+            <span class="code">System.JsonRpc.TcpServer</span> class implements the server side of the JSON-RPC 2.0 protocol with the help registered servant classes derived from 
+            the <span class="code">System.JsonRpc.Servant</span> class. The server starts a thread for serving each client connection so it's not suitable as a real TCP service 
+            implementation.
+        </li>
+    </ul>
+
+    <p>
+        Here's the interface of the JSON-RPC TCP classes:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/jsonrpc/TcpClientServer.cminor.html" height="320px" width="700px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="jsonrpcserver">
+        10.3 Server Program
+    </h3>
+
+    <p>
+        Here's an example implementation of a JSON-RPC 2.0 server that evaluates arithmetic expressions:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/jsonrpc/JsonRpcServer.cminor.html" height="1800px" width="700px" style="border:none;"></iframe>
+    </div>
+
+    <p>
+        The server listens by default port 8080 and serves requests to <span class="code">evaluate</span> method.
+    </p>
+
+    <h3 id="jsonrpcclient">
+        10.4 Client Program
+    </h3>
+
+    <p>
+        Here's an example implementation of a JSON-RPC 2.0 client that gets arithmetic expressions from user, converts them to JSON-RPC requests and shows retrieved results:
+    </p>
+
+    <div class="program">
+        <iframe src="../code/jsonrpc/JsonRpcClient.cminor.html" height="2340px" width="700px" style="border:none;"></iframe>
+    </div>
+
+    <h3 id="example">
+        10.5 Example Communication
+    </h3>
+
+    <p>
+        Here's an example of compiling the solution and running the server program:
+    </p>
+
+    <div class="commands">
+        > cminor build --native JsonRpcCalc.cminors<br/>
+        > cminor run --native assembly/debug/JsonRpcServer.cminora --log<br/>
+        press CTRL-C to end...<br />
+        servant for method 'evaluate' registered<br />
+        listening port 8080<br />
+        connection accepted<br />
+        received request: {"id":0,"jsonrpc":"2.0","method":"evaluate","params":{"expression":"1 + 2"}}<br />
+        sent response: {"id":0,"jsonrpc":"2.0","result":3}<br />
+        received request: {"id":1,"jsonrpc":"2.0","method":"evaluate","params":{"expression":"1.0.0 + 2"}}<br />
+        sent response: {"error":{"code":1,"data":"Parsing file '' failed at line 1:\n&lt;expr&gt;<br />
+            expected:\n1.0.0 + 2\n   ^","message":"error evaluating expression"},"id":1,"jsonrpc":"2.0"}<br />
+            connection ended<br />
+    </div>
+
+    Here's an example of running the client program:
+
+    <div class="commands">
+        cminor run assembly/debug/JsonRpcClient.cminora --log<br />
+        connected to: localhost:8080<br />
+        enter expression, or CTRL-Z to end<br />
+        > 1 + 2<br />
+        sending request: {"id":0,"jsonrpc":"2.0","method":"evaluate","params":{"expression":"1 + 2"}}<br />
+        response string received: {"id":0,"jsonrpc":"2.0","result":3}<br />
+        response received: {"id":0,"jsonrpc":"2.0","result":3}<br />
+        1 + 2 = 3<br />
+        enter expression, or CTRL-Z to end<br />
+        > 1.0.0 + 2<br />
+        sending request: {"id":1,"jsonrpc":"2.0","method":"evaluate","params":{"expression":"1.0.0 + 2"}}<br />
+        response string received: {"error":{"code":1,"data":"Parsing file '' failed at line 1:\n&lt;expr&gt;<br />
+            expected:\n1.0.0 + 2\n   ^","message":"error evaluating expression"},"id":1,"jsonrpc":"2.0"}<br />
+            response received: {"error":{"code":1,"data":"Parsing file '' failed at line 1:\n&lt;expr&gt;<br />
+                expected:\n1.0.0 + 2\n   ^","message":"error evaluating expression"},"id":1,"jsonrpc":"2.0"}<br />
+                error 1 processing request 1: error evaluating expression:<br />
+                Parsing file '' failed at line 1:<br />
+                &lt;expr&gt; expected:<br />
+                    1.0.0 + 2<br />
+                    ^<br />
+                    enter expression, or CTRL-Z to end<br />
+                    ><br />
+    </div>
+</body>
+</html>

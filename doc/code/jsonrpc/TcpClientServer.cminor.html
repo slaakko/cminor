@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>TcpClientServer.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">namespace</span> <span class="identifier">System.JsonRpc</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">TcpClient</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">TcpClient</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">node</span><span class="other">,</span> <span class="keyword">string</span> <span class="identifier">service</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">SetClient</span><span class="other">(</span><span class="identifier">Client</span> <span class="identifier">client</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Run</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">StreamWriter</span> <span class="identifier">Log</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">TcpServer</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">TcpServer</span><span class="other">(</span><span class="keyword">int</span> <span class="identifier">port</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">AddServant</span><span class="other">(</span><span class="identifier">Servant</span> <span class="identifier">servant</span><span class="other">)</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Run</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">StreamWriter</span> <span class="identifier">Log</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+
+</pre>
+</body>
+</html>

@@ -1,0 +1,117 @@
+using System;
+using System.JsonRpc;
+
+namespace JsonRpcServer
+{
+    class CalculatorGrammarHolder
+    {
+        static CalculatorGrammarHolder()
+        {
+            calculatorGrammar = new CalculatorGrammar();
+        }
+        public static CalculatorGrammar GetCalculatorGrammar() 
+        {
+            return calculatorGrammar;
+        }
+        private static CalculatorGrammar calculatorGrammar;
+    }
+
+    class EvaluatorServant : Servant
+    {
+        public EvaluatorServant() : base("evaluate")
+        {
+        }
+        public override Response ProcessRequest(System.Json.Object request)
+        {
+            if (!request.ContainsField("params"))
+            {
+                throw new InvalidParams("params not specified", request["id"]);
+            }
+            System.Json.Value paramsValue = request["params"];
+            if (paramsValue is System.Json.Object)
+            {
+                System.Json.Object params = cast<System.Json.Object>(paramsValue);
+                if (!params.ContainsField("expression"))
+                {
+                    throw new InvalidParams("params does not contain \"expression\"", request["id"]);
+                }
+                System.Json.Value expressionValue = params["expression"];
+                if (!(expressionValue is System.Json.String))
+                {
+                    throw new InvalidParams("\"expression\" field not a JSON string", request["id"]);
+                }
+                string expression = cast<System.Json.String>(expressionValue).Val;
+                try
+                {
+                    double result = CalculatorGrammarHolder.GetCalculatorGrammar().Parse(expression, 0, "");
+                    return new Response(new System.Json.Number(result), request["id"]);
+                }
+                catch (System.Exception ex)
+                {
+                    return new Response(1, "error evaluating expression", new System.Json.String(ex.Message), request["id"]);   
+                }
+            }
+            else
+            {
+                throw new InvalidParams("params not a JSON object", request["id"]);
+            }
+        }
+    }
+}
+
+void PrintHelp()
+{
+    Console.WriteLine("Usage: cminor run [--native] JsonRpcServer.cminora [options] [<port>]");
+    Console.WriteLine("JSON-RPC calculator server. Default <port> = 8080.");
+    Console.WriteLine("options:");
+    Console.WriteLine("--help (-h) : print help");
+    Console.WriteLine("--log (-l)  : log communication to stderr");
+}
+
+int main(string[] args)
+{
+    try
+    {
+        int n = args.Length;
+        bool logging = false;
+        int port = 8080;
+        for (int i = 0; i < n; ++i)
+        {
+            string arg = args[i];
+            if (arg.StartsWith("-"))
+            {
+                if (arg == "--log" || arg == "-l")
+                {
+                    logging = true;
+                }
+                else if (arg == "--help" || arg == "-h")
+                {
+                    PrintHelp();
+                    return 0;
+                }
+                else
+                {
+                    throw new System.Exception("unknown option '" + arg + "'");
+                }
+            }
+            else
+            {
+                port = int.Parse(arg);
+            }
+        }
+        TcpServer server = new TcpServer(port);
+        Console.WriteLine("press CTRL-C to end...");
+        if (logging)
+        {
+            server.Log = Console.Error;
+        }
+        server.AddServant(new JsonRpcServer.EvaluatorServant());
+        server.Run();
+    }
+    catch (System.Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+        return 1;
+    }
+    return 0;
+}

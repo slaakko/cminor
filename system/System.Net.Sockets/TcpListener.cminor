@@ -1,0 +1,46 @@
+//  ===============================================================
+//  TcpListener class listens and accepts connections to a TCP port 
+//  ===============================================================
+
+using System;
+
+namespace System.Net.Sockets
+{
+    public class TcpListener
+    {
+        public TcpListener(int port)
+        {
+            socket = new TcpSocket();
+            this.port = port;
+            socket.Bind(port);
+        }
+        public void Start()
+        {
+            Start(256);
+        }
+        public void Start(int backlog)
+        {
+            socket.Listen(backlog);
+        }
+        public void Stop()
+        {
+            socket.Close();
+            socket = new TcpSocket();
+            socket.Bind(port);
+        }
+        public TcpSocket AcceptSocket()
+        {
+            return socket.Accept();
+        }
+        public TcpClient AcceptTcpClient()
+        {
+            return new TcpClient(AcceptSocket());
+        }
+        public TcpSocket Server
+        {
+            get { return socket; }
+        }
+        private TcpSocket socket;
+        private int port;
+    }
+}

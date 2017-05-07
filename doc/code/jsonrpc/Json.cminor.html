@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Json.cminor</title>
+    <link rel="stylesheet" type="text/css" href="../../style/code.css"/>
+</head>
+<body>
+<pre>
+<span class="keyword">namespace</span> <span class="identifier">System.Json</span>
+<span class="other">{</span>
+    <span class="keyword">public</span> <span class="identifier">Value</span> <span class="identifier">ParseJsonText</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">jsonText</span><span class="other">)</span>
+    <span class="keyword">public</span> <span class="identifier">Value</span> <span class="identifier">ParseJsonFile</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">jsonFilePath</span><span class="other">)</span>
+
+    <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="identifier">Value</span>
+    <span class="other">{</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">String</span> <span class="other">:</span> <span class="identifier">Value</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">String</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">string</span> <span class="identifier">Val</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Number</span> <span class="other">:</span> <span class="identifier">Value</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Number</span><span class="other">(</span><span class="keyword">double</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">double</span> <span class="identifier">Val</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Object</span> <span class="other">:</span> <span class="identifier">Value</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Object</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">Value</span> <span class="keyword">this</span><span class="other">[</span><span class="keyword">string</span> <span class="identifier">fieldName</span><span class="other">]</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">ContainsField</span><span class="other">(</span><span class="keyword">string</span> <span class="identifier">fieldName</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">Map</span><span class="other">&lt;</span><span class="keyword">string</span><span class="other">,</span> <span class="identifier">Value</span><span class="other">&gt;</span> <span class="identifier">Fields</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Array</span> <span class="other">:</span> <span class="identifier">Value</span><span class="other">,</span> <span class="identifier">Enumerable</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Array</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">Enumerator</span> <span class="identifier">GetEnumerator</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">Value</span> <span class="keyword">this</span><span class="other">[</span><span class="keyword">int</span> <span class="identifier">index</span><span class="other">]</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">void</span> <span class="identifier">Add</span><span class="other">(</span><span class="identifier">Value</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="identifier">List</span><span class="other">&lt;</span><span class="identifier">Value</span><span class="other">&gt;</span> <span class="identifier">Elements</span><span class="other">;</span>
+    <span class="other">}</span>
+
+    <span class="keyword">public</span> <span class="keyword">class</span> <span class="identifier">Bool</span> <span class="other">:</span> <span class="identifier">Value</span>
+    <span class="other">{</span>
+        <span class="keyword">public</span> <span class="identifier">Bool</span><span class="other">(</span><span class="keyword">bool</span> <span class="identifier">value</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="identifier">ToString</span><span class="other">(</span><span class="other">)</span><span class="other">;</span>
+        <span class="keyword">public</span> <span class="keyword">bool</span> <span class="identifier">Val</span><span class="other">;</span>
+    <span class="other">}</span>
+<span class="other">}</span>
+</pre>
+</body>
+</html>

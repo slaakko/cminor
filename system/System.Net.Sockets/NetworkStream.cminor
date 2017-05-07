@@ -1,0 +1,65 @@
+//  ========================================================================
+//  NetworkStream can be used to send and receive data over a TCP connection
+//  ========================================================================
+
+using System;
+using System.IO;
+
+namespace System.Net.Sockets
+{
+    public class NetworkStream : Stream, Closable
+    {
+        public NetworkStream(TcpSocket socket)
+        {
+            this.socket = socket;
+        }
+        public override void Close()
+        {
+            socket.Close();
+        }
+        public override void WriteByte(byte value)
+        {
+            byte[] buffer = new byte[1];
+            buffer[0] = value;
+            Write(buffer, 1);
+        }
+        public override void Write(byte[] buffer, int count)
+        {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("provided buffer is null");
+            }
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException("invalid count");
+            }
+            socket.Send(buffer, count);
+        }
+        public override int ReadByte()
+        {
+            byte[] buffer = new byte[1];
+            int bytesRead = Read(buffer);
+            if (bytesRead == 0)
+            {
+                return -1;
+            }
+            else
+            {
+                return buffer[0];
+            }
+        }
+        public override int Read(byte[] buffer)
+        {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("provided buffer is null");
+            }
+            return socket.Receive(buffer);
+        }
+        public TcpSocket Socket
+        {
+            get { return socket; }
+        }
+        private TcpSocket socket;
+    }
+}

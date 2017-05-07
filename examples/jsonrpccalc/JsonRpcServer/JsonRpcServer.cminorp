@@ -1,0 +1,3 @@
+project JsonRpcServer;
+source <CalculatorGrammar.cminor>;
+source <JsonRpcServer.cminor>;

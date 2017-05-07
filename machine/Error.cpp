@@ -151,6 +151,10 @@ FileSystemError::FileSystemError(const std::string& errorMessage) : SystemExcept
 {
 }
 
+SocketError::SocketError(const std::string& errorMessage) : SystemException(errorMessage), errorCode(-1)
+{
+}
+
 StackOverflowException::StackOverflowException() : SystemException("stack overflow")
 {
 }

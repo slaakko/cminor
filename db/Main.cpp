@@ -14,6 +14,7 @@
 #include <cminor/ast/Project.hpp>
 #include <cminor/vmlib/VmFunction.hpp>
 #include <cminor/vmlib/File.hpp>
+#include <cminor/vmlib/Socket.hpp>
 #include <cminor/vmlib/Threading.hpp>
 #include <cminor/db/Shell.hpp>
 #include <cminor/pl/InitDone.hpp>
@@ -44,6 +45,7 @@ struct InitDone
         InitAssembly();
         InitVmFunctions(vmFunctionNamePool);
         FileInit();
+        SocketInit();
         ThreadingInit();
         cminor::parsing::Init();
         cminor::util::unicode::Init();
@@ -53,6 +55,7 @@ struct InitDone
         cminor::util::unicode::Done();
         cminor::parsing::Done();
         ThreadingDone();
+        SocketDone();
         FileDone();
         DoneVmFunctions();
         DoneAssembly();
@@ -68,7 +71,7 @@ struct InitDone
     ConstantPool vmFunctionNamePool;
 };
 
-const char* version = "0.1.0";
+const char* version = "0.2.0";
 
 void PrintHelp()
 {

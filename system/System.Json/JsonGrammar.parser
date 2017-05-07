@@ -1,0 +1,53 @@
+namespace System.Json
+{
+    grammar JsonGrammar
+    {
+        using stdlib.spaces;
+        skip spaces;
+
+        Value : System.Json.Value
+            ::= String:s{ value = s; }
+            |   Number:n{ value = n; }
+            |   Object:o{ value = o; }
+            |   Array:a{ value = a; }
+            |   keyword("true"){ value = new System.Json.Bool(true); }
+            |   keyword("false"){ value = new System.Json.Bool(false); }
+            |   keyword("null"){ value = null; }
+            ;
+
+        Object : System.Json.Object
+            ::= '{'{ value = new System.Json.Object(); } (Field(value) % ',')* '}'
+            ;
+
+        Field(System.Json.Object o)
+            ::= (String:n ':' Value:v){ o[n.Val] = v; }
+            ;
+
+        Array : System.Json.Array
+            ::= '['{ value = new System.Json.Array(); } (Value:v{ value.Add(v); } % ',') ']'
+            ;
+
+        String(var System.Text.StringBuilder s) : System.Json.String
+            ::= token('"'{ s = new System.Text.StringBuilder(); } ([^"\\]{ s.Append(match[0]); } | Escape{ s.Append(Escape); })* '"'){ value = new System.Json.String(Utf16ToUtf32String(s.ToString())); }
+            ;
+
+        Escape : char
+            ::= token('\\' 
+                (   '"'{ value = '"'; }
+                |   '\\'{ value = '\\'; }
+                |   '/'{ value = '/'; }
+                |   'b'{ value = '\b'; }
+                |   'f'{ value = '\f'; }
+                |   'n'{ value = '\n'; }
+                |   'r'{ value = '\r'; }
+                |   't'{ value = '\t'; }
+                |   'u' (hexdigit hexdigit hexdigit hexdigit){ value = cast<char>(ushort.ParseHex(match)); }
+                )
+            )
+            ;
+
+        Number : System.Json.Number
+            ::= token('-'? digit+ ('.' digit+)? ([eE] [+-]? digit+)?){ value = new System.Json.Number(double.Parse(match)); }
+            ;
+    }
+}

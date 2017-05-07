@@ -1,0 +1,19 @@
+namespace System.JsonRpc
+{
+    public class TcpClient
+    {
+        public TcpClient(string node, string service);
+        public void SetClient(Client client);
+        public void Run();
+        public StreamWriter Log;
+    }
+
+    public class TcpServer
+    {
+        public TcpServer(int port);
+        public void AddServant(Servant servant)
+        public void Run();
+        public StreamWriter Log;
+    }
+}
+

@@ -1,0 +1,153 @@
+using System;
+using System.Collections.Generic;
+using System.JsonRpc;
+
+namespace JsonRpcClient
+{
+    public class CalculatorClient : Client
+    {
+        public CalculatorClient()
+        {
+            expressionMap = new HashMap<int, string>();
+        }
+        public override Request GetRequest(int id)
+        {
+            string eof = "CTRL-D";
+            if (GetPlatform() == Platform.windows)
+            {
+                eof = "CTRL-Z";
+            }
+            Console.WriteLine("enter expression, or " + eof + " to end");
+            Console.Write("> ");
+            string expression = Console.ReadLine();
+            if (expression != null)
+            {
+                expressionMap[id] = expression;
+                System.Json.Object params = new System.Json.Object();
+                params["expression"] = new System.Json.String(expression);
+                return new Request("evaluate", params, new System.Json.Number(id));
+            }
+            else
+            {
+                return null;
+            }
+        }
+        public override void ProcessResult(System.Json.Value result, int id)
+        {
+            if (result is System.Json.Number)
+            {
+                System.Json.Number number = cast<System.Json.Number>(result);
+                string expression;
+                if (expressionMap.TryGetValue(id, ref expression))
+                {
+                    Console.WriteLine(expression + " = " + number.Val.ToString());
+                }
+                else
+                {
+                    throw new System.Exception("request " + id.ToString() + " not found");
+                }
+            }
+            else
+            {
+                throw new System.Exception("number expected");
+            }
+        }
+        public override void ProcessError(int errorCode, string errorMessage, System.Json.Value errorData, int id)
+        {
+            if (errorData is System.Json.String)
+            {
+                System.Json.String dataValue = cast<System.Json.String>(errorData);
+                string data = dataValue.Val;
+                Console.Error.WriteLine("error " + errorCode.ToString() + " processing request " +
+                   id.ToString() + ": " + errorMessage + ":\n" + data);
+            }
+            else
+            {
+                throw new System.Exception("string expected");
+            }
+        }
+        private HashMap<int, string> expressionMap;
+    }
+}
+
+void PrintHelp()
+{
+    Console.WriteLine("Usage: cminor run [--native] JsonRpcClient.cminora [options]");
+    Console.WriteLine("JSON-RPC calculator client. Default <node> = localhost. Default <port> = 8080.");
+    Console.WriteLine("options:");
+    Console.WriteLine("--help (-h)               : print help");
+    Console.WriteLine("--log (-l)                : log communication to stderr");
+    Console.WriteLine("--node=<node> (-n=<node>) : connect to node <node>");
+    Console.WriteLine("--port=<port> (-p=<port>) : connect to port <port>");
+}
+
+int main(string[] args)
+{
+    try
+    {
+        int n = args.Length;
+        string node = "localhost";
+        string port = "8080";
+        bool logging = false;
+        for (int i = 0; i < n; ++i)
+        {
+            string arg = args[i];
+            if (arg.StartsWith("-"))
+            {
+                if (arg == "--help" || arg == "-h")
+                {
+                    PrintHelp();
+                    return 0;
+                }
+                else if (arg == "--log" || arg == "-l")
+                {
+                    logging = true;
+                }
+                else if (arg.IndexOf('=') != -1)
+                {
+                    List<string> components = arg.Split('=');
+                    if (components.Count == 2)
+                    {
+                        if (components[0] == "--node" || components[0] == "-n")
+                        {
+                            node = components[1];
+                        }
+                        else if (components[0] == "--port" || components[0] == "-p")
+                        {
+                            port = components[1];
+                        }
+                        else
+                        {
+                            throw new System.Exception("unknown option '" + arg + "'");
+                        }
+                    }
+                    else
+                    {
+                        throw new System.Exception("unknown option '" + arg + "'");
+                    }
+                }
+                else
+                {
+                    throw new System.Exception("unknown option '" + arg + "'");
+                }
+            }
+            else
+            {
+                throw new System.Exception("unknown option '" + arg + "'");
+            }
+        }
+        TcpClient tcpClient = new TcpClient(node, port);
+        if (logging)
+        {
+            tcpClient.Log = Console.Error;
+        }
+        tcpClient.SetClient(new JsonRpcClient.CalculatorClient());
+        tcpClient.Run();
+    }
+    catch (System.Exception ex)
+    {
+        Console.Error.WriteLine(ex.ToString());
+        return 1;
+    }
+    return 0;
+}

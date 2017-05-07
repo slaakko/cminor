@@ -1,0 +1,54 @@
+//  ====================================================
+//  TcpClient represents an endpoint of a TCP connection
+//  ====================================================
+
+using System;
+
+namespace System.Net.Sockets
+{
+    public class TcpClient : Closable
+    {
+        public TcpClient()
+        {
+            this.socket = new TcpSocket();
+        }
+        public TcpClient(string node, string service) 
+        {
+            this.socket = new TcpSocket(node, service);
+        }
+        public TcpClient(TcpSocket socket)
+        {
+            this.socket = socket;
+        }
+        public void Close()
+        {
+            socket.Close();
+        }
+        public void Connect(string node, string service)
+        {
+            Close();
+            socket.Connect(node, service);
+        }
+        public NetworkStream GetStream()
+        {
+            return new NetworkStream(socket);
+        }
+        public TcpSocket Client
+        {
+            get 
+            { 
+                return socket; 
+            }
+            set 
+            {
+                Close();
+                socket = value;
+            }
+        }
+        public bool Connected
+        {
+            get { return socket.Connected; }
+        }
+        private TcpSocket socket;
+    }
+}
