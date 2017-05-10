@@ -320,6 +320,42 @@ namespace System.Text.Parsing
         }
     }
 
+    public class RangeParser : Parser
+    {
+        public RangeParser(uint rangeStart, uint rangeEnd) : base("range", "<range>")
+        {
+            this.rangeStart = rangeStart;
+            this.rangeEnd = rangeEnd;
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                uint codePoint = cast<uint>(scanner.Char);
+                if (codePoint >= rangeStart && codePoint <= rangeEnd)
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+        public uint RangeStart
+        {
+            get { return rangeStart; }
+        }
+        public uint RangeEnd
+        {
+            get { return rangeEnd; }
+        }
+        private uint rangeStart;
+        private uint rangeEnd;
+    }
+
     public class AnyCharParser : Parser
     {
         public AnyCharParser() : base("anyChar", "<anyChar>")

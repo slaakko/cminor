@@ -8,6 +8,8 @@ namespace Syntax
         using stdlib.char;
         using stdlib.string;
         using stdlib.escape;
+        using stdlib.hexdword;
+        using stdlib.uint;
         using ElementGrammar.QualifiedId;
         using ElementGrammar.StringArray;
 
@@ -24,6 +26,7 @@ namespace Syntax
                         |   Digit{ value = Digit; }
                         |   HexDigit{ value = HexDigit; }
                         |   Punctuation{ value = Punctuation; }
+                        |   Range{ value = Range; }
                         ;
 
         Char : Parser   ::= char:chr{ value = new CharParser(chr); }
@@ -102,6 +105,12 @@ namespace Syntax
 
         Punctuation : Parser
                             ::= keyword("punctuation"){ value = new PunctuationParser(); }
+                            ;
+
+        Range : Parser      ::= (keyword("range") '('! CodePoint:s! ','! CodePoint:e! ')'!){ value = new RangeParser(s, e); }
+                            ;
+
+        CodePoint : uint    ::= token('x' hexdword:x{ value = x; }) | uint:d{ value = d; }
                             ;
     }
 }

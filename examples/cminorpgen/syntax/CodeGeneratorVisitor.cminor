@@ -400,7 +400,7 @@ namespace Syntax
         }
         public override void Visit(CharSetParser parser)
         {
-            formatter.Write("new CharSetParser(" + MakeStringLiteral(parser.Set) + "");
+            formatter.Write("new CharSetParser(" + MakeStringLiteral(parser.Set));
             if (parser.Inverse)
             {
                 formatter.Write(", true)");
@@ -448,6 +448,10 @@ namespace Syntax
         public override void Visit(PunctuationParser parser)
         {
             formatter.Write("new PunctuationParser()");
+        }
+        public override void Visit(RangeParser parser)
+        {
+            formatter.Write("new RangeParser(" + parser.RangeStart.ToString() + "u, " + parser.RangeEnd.ToString() + "u)");
         }
         public override void Visit(AnyCharParser parser)
         {

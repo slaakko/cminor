@@ -676,10 +676,10 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.ExpressionGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("Syntax.CompositeGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new Code.ExpressionGrammar(parsingDomain);
+                grammar0 = new Syntax.CompositeGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
             Grammar grammar1 = parsingDomain.GetGrammar("Syntax.ElementGrammar");
@@ -694,10 +694,10 @@ namespace Syntax
                 grammar2 = new Code.StatementGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar2);
-            Grammar grammar3 = parsingDomain.GetGrammar("Syntax.CompositeGrammar");
+            Grammar grammar3 = parsingDomain.GetGrammar("Code.ExpressionGrammar");
             if (grammar3 == null)
             {
-                grammar3 = new Syntax.CompositeGrammar(parsingDomain);
+                grammar3 = new Code.ExpressionGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar3);
             Grammar grammar4 = parsingDomain.GetGrammar("Syntax.PrimitiveGrammar");

@@ -136,7 +136,8 @@ inline TransientAssemblyFlags operator&(TransientAssemblyFlags left, TransientAs
 }
 
 const uint8_t assemblyFormat_1 = uint8_t('1');
-const uint8_t currentAssemblyFormat = assemblyFormat_1;
+const uint8_t assemblyFormat_2 = uint8_t('2');
+const uint8_t currentAssemblyFormat = assemblyFormat_2;
 
 class Assembly
 {
@@ -206,8 +207,6 @@ public:
         std::unordered_map<std::string, Assembly*>& readMap);
     void ImportSymbolTables();
     const std::vector<std::unique_ptr<Assembly>>& ReferencedAssemblies() const { return referencedAssemblies; }
-    void AddSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId, uint32_t mySymbolId);
-    uint32_t GetSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId) const;
     AssemblyDependency* GetAssemblyDependency() { return &assemblyDependency; }
     Constant RegisterSourceFilePath(const std::string& sourceFilePath);
     void AddExportedFunction(Constant exportedFunction);
@@ -255,7 +254,6 @@ private:
     MachineFunctionTable machineFunctionTable;
     uint32_t finishReadPos;
     SymbolTable symbolTable;
-    std::unordered_map<std::pair<std::string, uint32_t>, uint32_t, SymbolIdHash> symbolIdMapping;
     std::vector<Constant> exportedFunctions;
     std::vector<FunctionPtrVarFunctionName> functionPtrVarMappings;
     std::vector<ClassDataPtrVarClassDataName> classDatatPtrVarMappings;
@@ -268,8 +266,6 @@ private:
         std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
         std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
         std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap);
-    void WriteSymbolIdMapping(SymbolWriter& writer);
-    void ReadSymbolIdMapping(SymbolReader& reader);
     void WriteExportedFunctions(Writer& writer);
     void ReadExportedFunctions(Reader& reader);
     void WriteFunctionVarMappings(Writer& writer);

@@ -13,6 +13,7 @@ namespace System.Text.Parsing
         public virtual void Visit(DigitParser parser) {}
         public virtual void Visit(HexDigitParser parser) {}
         public virtual void Visit(PunctuationParser parser) {}
+        public virtual void Visit(RangeParser parser) {}
         public virtual void Visit(AnyCharParser parser) {}
         public virtual void BeginVisit(OptionalParser parser) {}
         public virtual void EndVisit(OptionalParser parser) {}

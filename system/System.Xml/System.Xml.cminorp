@@ -1,0 +1,8 @@
+project System.Xml;
+target=library;
+reference <../System.Text.Parsing/System.Text.Parsing.cminorp>;
+source <ContentHandler.cminor>;
+source <DefaultXmlProcessor.cminor>;
+source <XmlGrammar.cminor>;
+source <XmlProcessor.cminor>;
+source <XmlReader.cminor>;

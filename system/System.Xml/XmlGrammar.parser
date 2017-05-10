@@ -1,0 +1,364 @@
+using System;
+using System.Text;
+
+namespace System.Xml
+{
+    grammar XmlDocumentGrammar
+    {
+        using stdlib.uint;
+        using stdlib.hexdword;
+
+        Document(XmlProcessor processor)
+            ::= empty{ processor.StartDocument(); } (Prolog(processor) Element(processor) Misc(processor)*){ processor.EndDocument(); }
+            ;
+
+        Char
+            ::= [\x9\xA\xD] | range(x20, xD7FF) | range(xE000, xFFFD) | range(x10000, x10FFFF)
+            ;
+
+        S
+            ::= [\x20\x9\xD\xA]+
+            ;
+
+        NameStartChar
+            ::= ':' | [A-Z_a-z] | range(xC0, xD6) | range(xD8, xF6) | range(xF8, x2FF) | range(x370, x37D) | range(x37F, x1FFF) | range(x200C, x200D) | range(x2070, x218F) |
+                range(x2C00, x2FEF) | range(x3001, xD7FF) | range(xF900, xFDCF) | range(xFDF0, xFFFD) | range(x10000, xEFFFF)
+            ;
+
+        NameChar
+            ::= NameStartChar | [-.0-9\xB7] | range(x0300, x036F) | range(x203F, x2040)
+            ;
+
+        Name : string
+            ::= (NameStartChar NameChar*){ value = match; }
+            ;
+
+        Names
+            ::= Name:f ('\x20' Name:n)*
+            ;
+
+        Nmtoken
+            ::= NameChar+
+            ;
+
+        Nmtokens
+            ::= Nmtoken ('\x20' Nmtoken)*
+            ;
+
+        EntityValue(XmlProcessor processor, var StringBuilder entityValueBuilder) : string
+            ::= '"'{ entityValueBuilder = new StringBuilder(); processor.BeginEntityValue(); } 
+                (   [^%&"]{ entityValueBuilder.Append(match); } 
+                |   PEReference(processor):pr1{ entityValueBuilder.Append(match); } 
+                |   Reference(processor):ref1{ entityValueBuilder.Append(match); }
+                )* '"'{ processor.EndEntityValue(); value = entityValueBuilder.ToString(); }
+            |   '\''{ entityValueBuilder = new StringBuilder(); processor.BeginEntityValue(); } 
+                (   [^%&']{ entityValueBuilder.Append(match); } 
+                |   PEReference(processor):pr2{ entityValueBuilder.Append(match); } 
+                |   Reference(processor):ref2{ entityValueBuilder.Append(match); }
+                )* '\''{ processor.EndEntityValue(); value = entityValueBuilder.ToString(); }
+            ;
+
+        AttValue(XmlProcessor processor, var StringBuilder attValueBuilder) : string
+            ::= '"'{ attValueBuilder = new StringBuilder(); processor.BeginAttributeValue(attValueBuilder); } 
+                (   [^<&"]{ attValueBuilder.Append(match); } 
+                |   Reference(processor):ref1
+                )* '"'{ value = processor.EndAttributeValue(); }
+            |   '\''{ attValueBuilder = new StringBuilder(); processor.BeginAttributeValue(attValueBuilder); } 
+                (   [^<&']{ attValueBuilder.Append(match); } 
+                |   Reference(processor):ref2
+                )* '\''{ value = processor.EndAttributeValue(); }
+            ;
+
+        SystemLiteral(XmlProcessor processor)
+            ::= ('"' ([^"]*){ processor.SystemLiteral(match); } '"') | ('\'' ([^']*){ processor.SystemLiteral(match); } '\'')
+            ;
+
+        PubidLiteral(XmlProcessor processor)
+            ::= '"' (PubidChar*){ processor.PublicLiteral(match); } '"' | '\'' ((PubidChar - '\'')*){ processor.PublicLiteral(match); } '\''
+            ;
+
+        PubidChar
+            ::= [\x20\xD\xA] | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
+            ;
+
+        CharData(XmlProcessor processor)
+            ::= ([^<&]* - ([^<&]* "]]>" [^<&]*)){ processor.Text(match); }
+            ;
+
+        Comment(XmlProcessor processor)
+            ::= "<!--" (((Char - '-') | ('-' (Char - '-')))*){ processor.Comment(match); } "-->"
+            ;
+
+        PI(XmlProcessor processor)
+            ::= "<?" PITarget:target ((S (Char* - (Char* "?>" Char*)))?){ processor.PI(target, match); } "?>"
+            ;
+
+        PITarget : string
+            ::= (Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))){ value = Name; }
+            ;
+
+        CDSect(XmlProcessor processor)
+            ::= CDStart CData{ processor.Text(CData); } CDEnd
+            ;
+
+        CDStart
+            ::= "<![CDATA["
+            ;
+
+        CData : string
+            ::= (Char* - (Char* "]]>" Char*)){ value = match; }
+            ;
+
+        CDEnd
+            ::= "]]>"
+            ;
+
+        Prolog(XmlProcessor processor)
+            ::= XMLDecl(processor)? Misc(processor):m1* (DocTypeDecl(processor) Misc(processor):m2*)?
+            ;
+
+        XMLDecl(XmlProcessor processor)
+            ::= "<?xml" VersionInfo(processor) EncodingDecl(processor)? SDDecl? S? "?>"
+            ;
+
+        VersionInfo(XmlProcessor processor)
+            ::= S "version" Eq ('\'' VersionNum{ processor.Version(match); } '\'' | '"' VersionNum{ processor.Version(match); } '"')
+            ;
+
+        Eq
+            ::= S? '=' S?
+            ;
+
+        VersionNum
+            ::= "1." [0-9]+
+            ;
+
+        Misc(XmlProcessor processor)
+            ::= Comment(processor) | PI(processor) | S
+            ;
+
+        DocTypeDecl(XmlProcessor processor)
+            ::= "<!DOCTYPE" S Name (S ExternalID(processor))? S? ('[' IntSubset(processor) ']' S?)? '>'
+            ;
+
+        DeclSep(XmlProcessor processor)
+            ::= PEReference(processor) | S
+            ;
+
+        IntSubset(XmlProcessor processor)
+            ::= (MarkupDecl(processor) | DeclSep(processor))*
+            ;
+
+        MarkupDecl(XmlProcessor processor)
+            ::= ElementDecl | AttlistDecl(processor) | EntityDecl(processor) | NotationDecl(processor) | PI(processor) | Comment(processor)
+            ;
+
+        ExtSubset(XmlProcessor processor)
+            ::= TextDecl(processor)? ExtSubsetDecl(processor)
+            ;
+
+        ExtSubsetDecl(XmlProcessor processor)
+            ::= (MarkupDecl(processor) | ConditionalSect(processor) | DeclSep(processor))*
+            ;
+
+        SDDecl
+            ::= S "standalone" Eq (('\'' ("yes" | "no") '\'') | ('"' ("yes" | "no") '"'))
+            ;
+
+        Element(XmlProcessor processor)
+            ::= EmptyElemTag(processor)
+            |   STag(processor) Content(processor) ETag(processor)
+            ;
+
+        STag(XmlProcessor processor)
+            ::= '<' Name{ processor.BeginStartTag(Name); } (S Attribute(processor))* S? '>'{ processor.EndStartTag(span, fileName); }
+            ;
+
+        Attribute(XmlProcessor processor)
+            ::= Name:attName Eq AttValue(processor):attValue{ processor.AddAttribute(attName, attValue, span, fileName); }
+            ;
+
+        ETag(XmlProcessor processor)
+            ::= "</" Name{ processor.EndTag(Name, span, fileName); } S? '>'
+            ;
+
+        Content(XmlProcessor processor)
+            ::= CharData(processor):cd1? ((Element(processor) | Reference(processor) | CDSect(processor) | PI(processor) | Comment(processor)) CharData(processor):cd2?)*
+            ;
+
+        EmptyElemTag(XmlProcessor processor, var string tagName)
+            ::= '<' Name{ tagName = Name; processor.BeginStartTag(tagName); }  (S Attribute(processor))* S? "/>"{ processor.EndStartTag(span, fileName); processor.EndTag(tagName, span, fileName); }
+            ;
+
+        ElementDecl
+            ::= "<!ELEMENT" S Name S ContentSpec S? '>'
+            ;
+
+        ContentSpec
+            ::= "EMPTY" | "ANY" | Mixed | Children
+            ;
+
+        Children
+            ::= (Choice | Seq) ('?' | '*' | '+')?
+            ;
+
+        CP
+            ::= (Name | Choice | Seq) ('?' | '*' | '+')?
+            ;
+
+        Choice
+            ::= '(' S? CP (S? '|' S? CP)+ S? ')'
+            ;
+
+        Seq
+            ::= '(' S? CP (S? ',' S? CP)* S? ')'
+            ;
+
+        Mixed
+            ::= '(' S? "#PCDATA" (S? '|' S? Name)* S? ")*"
+            |   '(' S? "#PCDATA" S? ')'
+            ;
+
+        AttlistDecl(XmlProcessor processor)
+            ::= "<!ATTLIST" S Name AttDef(processor)* S? '>'
+            ;
+
+        AttDef(XmlProcessor processor)
+            ::= S Name S AttType S DefaultDecl(processor)
+            ;
+
+        AttType
+            ::= StringType | TokenizedType | EnumeratedType
+            ;
+
+        StringType
+            ::= "CDATA"
+            ;
+
+        TokenizedType
+            ::= "ID"
+            |   "IDREF"
+            |   "IDREFS"
+            |   "ENTITY"
+            |   "ENTITIES"
+            |   "NMTOKEN"
+            |   "NMTOKENS"
+            ;
+
+        EnumeratedType
+            ::= NotationType | Enumeration
+            ;
+
+        NotationType
+            ::= "NOTATION" S '(' S? Name:f (S? '|' S? Name:n)* S? ')'
+            ;
+
+        Enumeration
+            ::= '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')'
+            ;
+
+        DefaultDecl(XmlProcessor processor)
+            ::= "#REQUIRED" | "#IMPLIED" | (("#FIXED" S)? AttValue(processor))
+            ;
+
+        ConditionalSect(XmlProcessor processor)
+            ::= IncludeSect(processor) | IgnoreSect
+            ;
+
+        IncludeSect(XmlProcessor processor)
+            ::= "<!" S? "INCLUDE" S? '[' ExtSubsetDecl(processor) "]]>"
+            ;
+
+        IgnoreSect
+            ::= "<!" S? "IGNORE" S? '[' IgnoreSectContents* "]]>"
+            ;
+
+        IgnoreSectContents
+            ::= Ignore ("<![" IgnoreSectContents "]]>" Ignore)*
+            ;
+
+        Ignore
+            ::= Char* - (Char* ("<![" | "]]>") Char*)
+            ;
+
+        CharRef : char
+            ::= "&#" uint:dcr{ value = cast<char>(dcr); } ';'
+            |   "&#x" hexdword:hcr{ value = cast<char>(hcr); } ';'
+            ;
+
+        Reference(XmlProcessor processor)
+            ::=  EntityRef(processor) | CharRef{ processor.Text(new string(CharRef, 1)); }
+            ;
+
+        EntityRef(XmlProcessor processor)
+            ::= '&' Name{ processor.EntityRef(Name, span, fileName); } ';'
+            ;
+
+        PEReference(XmlProcessor processor)
+            ::= '%' Name{ processor.ParamEntityRef(Name); } ';'
+            ;
+
+        EntityDecl(XmlProcessor processor)
+            ::= GEDecl(processor) | PEDecl(processor)
+            ;
+
+        GEDecl(XmlProcessor processor)
+            ::= ("<!ENTITY" S Name:entityName S EntityDef(processor):entityValue S? '>'){ processor.GeneralEntity(entityName, entityValue); }
+            ;
+
+        PEDecl(XmlProcessor processor)
+            ::= "<!ENTITY" S '%' S Name S PEDef(processor) S? '>'
+            ;
+
+        EntityDef(XmlProcessor processor) : string 
+            ::= EntityValue(processor){ value = EntityValue; } | (ExternalID(processor) NDataDecl?)
+            ;
+
+        PEDef(XmlProcessor processor)
+            ::= EntityValue(processor) | ExternalID(processor)
+            ;
+
+        ExternalID(XmlProcessor processor)
+            ::= "SYSTEM" S SystemLiteral(processor):s1
+            |   "PUBLIC" S PubidLiteral(processor) S SystemLiteral(processor):s2
+            ;
+
+        NDataDecl
+            ::= S "NDATA" S Name
+            ;
+
+        TextDecl(XmlProcessor processor)
+            ::= "<?xml" VersionInfo(processor)? EncodingDecl(processor) S? "?>"
+            ;
+
+        ExtParsedEnt(XmlProcessor processor)
+            ::= TextDecl(processor)? Content(processor)
+            ;
+
+        EncodingDecl(XmlProcessor processor)
+            ::= S "encoding" Eq ('"' EncName:en1{ processor.Encoding(en1); } '"' | '\'' EncName:en2{ processor.Encoding(en2); } '\'')
+            ;
+
+        EncName : string
+            ::= ([A-Za-z] [A-Za-z0-9._-]*){ value = match; }
+            ;
+
+        NotationDecl(XmlProcessor processor)
+            ::= "<!NOTATION" S Name S (ExternalID(processor) | PublicID(processor)) S? '>'
+            ;
+
+        PublicID(XmlProcessor processor)
+            ::= "PUBLIC" S PubidLiteral(processor)
+            ;
+
+    }
+
+    grammar XmlContentGrammar
+    {
+        using XmlDocumentGrammar.Content;
+
+        XmlContent(XmlProcessor processor)
+            ::= Content(processor)
+            ;
+    }
+}

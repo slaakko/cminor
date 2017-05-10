@@ -887,11 +887,6 @@ void SymbolTable::MapNode(Node& node, Symbol* symbol)
     uint32_t symbolId = nextSymbolId++;
     idSymbolMap[symbolId] = symbol;
     symbol->SetId(symbolId);
-    if (node.SymbolId() != noSymbolId && symbol->GetAssembly() != assembly)
-    {
-        std::string assemblyName = ToUtf8(symbol->GetAssembly()->Name().Value());
-        assembly->AddSymbolIdMapping(assemblyName, node.SymbolId(), symbolId);
-    }
     node.SetSymbolId(symbolId);
 }
 

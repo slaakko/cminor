@@ -26,6 +26,7 @@ namespace Syntax
             keywords0.Add("hexdigit");
             keywords0.Add("digit");
             keywords0.Add("empty");
+            keywords0.Add("range");
             keywords0.Add("keyword_list");
             keywords0.Add("anychar");
             keywords0.Add("using");
@@ -571,10 +572,10 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new Code.IdentifierGrammar(parsingDomain);
+                grammar0 = new Code.TypeExprGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
             Grammar grammar1 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
@@ -583,10 +584,10 @@ namespace Syntax
                 grammar1 = new System.Text.Parsing.stdlib(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
-            Grammar grammar2 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
+            Grammar grammar2 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
             if (grammar2 == null)
             {
-                grammar2 = new Code.TypeExprGrammar(parsingDomain);
+                grammar2 = new Code.IdentifierGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar2);
         }

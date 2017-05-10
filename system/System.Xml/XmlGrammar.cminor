@@ -1,0 +1,3511 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Parsing;
+using System.Text;
+
+namespace System.Xml
+{
+    public class XmlContentGrammar : System.Text.Parsing.Grammar
+    {
+        public XmlContentGrammar() : this(new ParsingDomain())
+        {
+        }
+        public XmlContentGrammar(ParsingDomain parsingDomain) : base("XmlContentGrammar", parsingDomain.GetNamespaceScope("System.Xml"), parsingDomain)
+        {
+            Owner = 0;
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public void Parse(string content, int fileIndex, string fileName, XmlProcessor processor)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                stack.Push(processor);
+                Match match = Parse(scanner, stack, parsingData);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+        }
+        public class XmlContentRule : System.Text.Parsing.RuleParser
+        {
+            public XmlContentRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser contentNonterminalParser = GetNonterminal("Content");
+                contentNonterminalParser.Pre = PreContent;
+            }
+            public void PreContent(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Xml.XmlDocumentGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = new System.Xml.XmlDocumentGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("Content", this, "XmlDocumentGrammar.Content"));
+            AddRule(new XmlContentRule("XmlContent", GetScope(), Domain.GetNextRuleId(),
+                new NonterminalParser("Content", "Content", 1)));
+        }
+    }
+    public class XmlDocumentGrammar : System.Text.Parsing.Grammar
+    {
+        public XmlDocumentGrammar() : this(new ParsingDomain())
+        {
+        }
+        public XmlDocumentGrammar(ParsingDomain parsingDomain) : base("XmlDocumentGrammar", parsingDomain.GetNamespaceScope("System.Xml"), parsingDomain)
+        {
+            Owner = 0;
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public void Parse(string content, int fileIndex, string fileName, XmlProcessor processor)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                stack.Push(processor);
+                Match match = Parse(scanner, stack, parsingData);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+        }
+        public class DocumentRule : System.Text.Parsing.RuleParser
+        {
+            public DocumentRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser prologNonterminalParser = GetNonterminal("Prolog");
+                prologNonterminalParser.Pre = PreProlog;
+                NonterminalParser elementNonterminalParser = GetNonterminal("Element");
+                elementNonterminalParser.Pre = PreElement;
+                NonterminalParser miscNonterminalParser = GetNonterminal("Misc");
+                miscNonterminalParser.Pre = PreMisc;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.StartDocument();
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.EndDocument();
+            }
+            public void PreProlog(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreElement(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreMisc(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class NameRule : System.Text.Parsing.RuleParser
+        {
+            public NameRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "string";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public string value;
+            }
+        }
+        public class EntityValueRule : System.Text.Parsing.RuleParser
+        {
+            public EntityValueRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+                ValueTypeName = "string";
+                LocalVariables.Add(new AttrOrVar("StringBuilder", "entityValueBuilder"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                ActionParser a2ActionParser = GetAction("A2");
+                a2ActionParser.Action = A2Action;
+                ActionParser a3ActionParser = GetAction("A3");
+                a3ActionParser.Action = A3Action;
+                ActionParser a4ActionParser = GetAction("A4");
+                a4ActionParser.Action = A4Action;
+                ActionParser a5ActionParser = GetAction("A5");
+                a5ActionParser.Action = A5Action;
+                ActionParser a6ActionParser = GetAction("A6");
+                a6ActionParser.Action = A6Action;
+                ActionParser a7ActionParser = GetAction("A7");
+                a7ActionParser.Action = A7Action;
+                ActionParser a8ActionParser = GetAction("A8");
+                a8ActionParser.Action = A8Action;
+                ActionParser a9ActionParser = GetAction("A9");
+                a9ActionParser.Action = A9Action;
+                NonterminalParser pr1NonterminalParser = GetNonterminal("pr1");
+                pr1NonterminalParser.Pre = Prepr1;
+                NonterminalParser ref1NonterminalParser = GetNonterminal("ref1");
+                ref1NonterminalParser.Pre = Preref1;
+                NonterminalParser pr2NonterminalParser = GetNonterminal("pr2");
+                pr2NonterminalParser.Pre = Prepr2;
+                NonterminalParser ref2NonterminalParser = GetNonterminal("ref2");
+                ref2NonterminalParser.Pre = Preref2;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.entityValueBuilder = new StringBuilder();
+                context.processor.BeginEntityValue();
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.entityValueBuilder.Append(match);
+            }
+            public void A2Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.entityValueBuilder.Append(match);
+            }
+            public void A3Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.entityValueBuilder.Append(match);
+            }
+            public void A4Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.EndEntityValue();
+                context.value = context.entityValueBuilder.ToString();
+            }
+            public void A5Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.entityValueBuilder = new StringBuilder();
+                context.processor.BeginEntityValue();
+            }
+            public void A6Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.entityValueBuilder.Append(match);
+            }
+            public void A7Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.entityValueBuilder.Append(match);
+            }
+            public void A8Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.entityValueBuilder.Append(match);
+            }
+            public void A9Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.EndEntityValue();
+                context.value = context.entityValueBuilder.ToString();
+            }
+            public void Prepr1(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void Preref1(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void Prepr2(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void Preref2(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string value;
+                public StringBuilder entityValueBuilder;
+            }
+        }
+        public class AttValueRule : System.Text.Parsing.RuleParser
+        {
+            public AttValueRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+                ValueTypeName = "string";
+                LocalVariables.Add(new AttrOrVar("StringBuilder", "attValueBuilder"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                ActionParser a2ActionParser = GetAction("A2");
+                a2ActionParser.Action = A2Action;
+                ActionParser a3ActionParser = GetAction("A3");
+                a3ActionParser.Action = A3Action;
+                ActionParser a4ActionParser = GetAction("A4");
+                a4ActionParser.Action = A4Action;
+                ActionParser a5ActionParser = GetAction("A5");
+                a5ActionParser.Action = A5Action;
+                NonterminalParser ref1NonterminalParser = GetNonterminal("ref1");
+                ref1NonterminalParser.Pre = Preref1;
+                NonterminalParser ref2NonterminalParser = GetNonterminal("ref2");
+                ref2NonterminalParser.Pre = Preref2;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.attValueBuilder = new StringBuilder();
+                context.processor.BeginAttributeValue(context.attValueBuilder);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.attValueBuilder.Append(match);
+            }
+            public void A2Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.processor.EndAttributeValue();
+            }
+            public void A3Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.attValueBuilder = new StringBuilder();
+                context.processor.BeginAttributeValue(context.attValueBuilder);
+            }
+            public void A4Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.attValueBuilder.Append(match);
+            }
+            public void A5Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.processor.EndAttributeValue();
+            }
+            public void Preref1(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void Preref2(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string value;
+                public StringBuilder attValueBuilder;
+            }
+        }
+        public class SystemLiteralRule : System.Text.Parsing.RuleParser
+        {
+            public SystemLiteralRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.SystemLiteral(match);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.SystemLiteral(match);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class PubidLiteralRule : System.Text.Parsing.RuleParser
+        {
+            public PubidLiteralRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.PublicLiteral(match);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.PublicLiteral(match);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class CharDataRule : System.Text.Parsing.RuleParser
+        {
+            public CharDataRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.Text(match);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class CommentRule : System.Text.Parsing.RuleParser
+        {
+            public CommentRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.Comment(match);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class PIRule : System.Text.Parsing.RuleParser
+        {
+            public PIRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser targetNonterminalParser = GetNonterminal("target");
+                targetNonterminalParser.Post = Posttarget;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.PI(context.fromtarget, match);
+            }
+            public void Posttarget(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromtarget = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromtarget;
+            }
+        }
+        public class PITargetRule : System.Text.Parsing.RuleParser
+        {
+            public PITargetRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "string";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser nameNonterminalParser = GetNonterminal("Name");
+                nameNonterminalParser.Post = PostName;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromName;
+            }
+            public void PostName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromName = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public string value;
+                public string fromName;
+            }
+        }
+        public class CDSectRule : System.Text.Parsing.RuleParser
+        {
+            public CDSectRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser cDataNonterminalParser = GetNonterminal("CData");
+                cDataNonterminalParser.Post = PostCData;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.Text(context.fromCData);
+            }
+            public void PostCData(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromCData = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromCData;
+            }
+        }
+        public class CDataRule : System.Text.Parsing.RuleParser
+        {
+            public CDataRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "string";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public string value;
+            }
+        }
+        public class PrologRule : System.Text.Parsing.RuleParser
+        {
+            public PrologRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser xMLDeclNonterminalParser = GetNonterminal("XMLDecl");
+                xMLDeclNonterminalParser.Pre = PreXMLDecl;
+                NonterminalParser m1NonterminalParser = GetNonterminal("m1");
+                m1NonterminalParser.Pre = Prem1;
+                NonterminalParser docTypeDeclNonterminalParser = GetNonterminal("DocTypeDecl");
+                docTypeDeclNonterminalParser.Pre = PreDocTypeDecl;
+                NonterminalParser m2NonterminalParser = GetNonterminal("m2");
+                m2NonterminalParser.Pre = Prem2;
+            }
+            public void PreXMLDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void Prem1(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreDocTypeDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void Prem2(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class XMLDeclRule : System.Text.Parsing.RuleParser
+        {
+            public XMLDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser versionInfoNonterminalParser = GetNonterminal("VersionInfo");
+                versionInfoNonterminalParser.Pre = PreVersionInfo;
+                NonterminalParser encodingDeclNonterminalParser = GetNonterminal("EncodingDecl");
+                encodingDeclNonterminalParser.Pre = PreEncodingDecl;
+            }
+            public void PreVersionInfo(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreEncodingDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class VersionInfoRule : System.Text.Parsing.RuleParser
+        {
+            public VersionInfoRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.Version(match);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.Version(match);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class MiscRule : System.Text.Parsing.RuleParser
+        {
+            public MiscRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser commentNonterminalParser = GetNonterminal("Comment");
+                commentNonterminalParser.Pre = PreComment;
+                NonterminalParser pINonterminalParser = GetNonterminal("PI");
+                pINonterminalParser.Pre = PrePI;
+            }
+            public void PreComment(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PrePI(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class DocTypeDeclRule : System.Text.Parsing.RuleParser
+        {
+            public DocTypeDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser nameNonterminalParser = GetNonterminal("Name");
+                nameNonterminalParser.Post = PostName;
+                NonterminalParser externalIDNonterminalParser = GetNonterminal("ExternalID");
+                externalIDNonterminalParser.Pre = PreExternalID;
+                NonterminalParser intSubsetNonterminalParser = GetNonterminal("IntSubset");
+                intSubsetNonterminalParser.Pre = PreIntSubset;
+            }
+            public void PostName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromName = cast<string>(stack.Pop());
+                }
+            }
+            public void PreExternalID(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreIntSubset(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromName;
+            }
+        }
+        public class DeclSepRule : System.Text.Parsing.RuleParser
+        {
+            public DeclSepRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser pEReferenceNonterminalParser = GetNonterminal("PEReference");
+                pEReferenceNonterminalParser.Pre = PrePEReference;
+            }
+            public void PrePEReference(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class IntSubsetRule : System.Text.Parsing.RuleParser
+        {
+            public IntSubsetRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser markupDeclNonterminalParser = GetNonterminal("MarkupDecl");
+                markupDeclNonterminalParser.Pre = PreMarkupDecl;
+                NonterminalParser declSepNonterminalParser = GetNonterminal("DeclSep");
+                declSepNonterminalParser.Pre = PreDeclSep;
+            }
+            public void PreMarkupDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreDeclSep(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class MarkupDeclRule : System.Text.Parsing.RuleParser
+        {
+            public MarkupDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser attlistDeclNonterminalParser = GetNonterminal("AttlistDecl");
+                attlistDeclNonterminalParser.Pre = PreAttlistDecl;
+                NonterminalParser entityDeclNonterminalParser = GetNonterminal("EntityDecl");
+                entityDeclNonterminalParser.Pre = PreEntityDecl;
+                NonterminalParser notationDeclNonterminalParser = GetNonterminal("NotationDecl");
+                notationDeclNonterminalParser.Pre = PreNotationDecl;
+                NonterminalParser pINonterminalParser = GetNonterminal("PI");
+                pINonterminalParser.Pre = PrePI;
+                NonterminalParser commentNonterminalParser = GetNonterminal("Comment");
+                commentNonterminalParser.Pre = PreComment;
+            }
+            public void PreAttlistDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreEntityDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreNotationDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PrePI(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreComment(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class ExtSubsetRule : System.Text.Parsing.RuleParser
+        {
+            public ExtSubsetRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser textDeclNonterminalParser = GetNonterminal("TextDecl");
+                textDeclNonterminalParser.Pre = PreTextDecl;
+                NonterminalParser extSubsetDeclNonterminalParser = GetNonterminal("ExtSubsetDecl");
+                extSubsetDeclNonterminalParser.Pre = PreExtSubsetDecl;
+            }
+            public void PreTextDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreExtSubsetDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class ExtSubsetDeclRule : System.Text.Parsing.RuleParser
+        {
+            public ExtSubsetDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser markupDeclNonterminalParser = GetNonterminal("MarkupDecl");
+                markupDeclNonterminalParser.Pre = PreMarkupDecl;
+                NonterminalParser conditionalSectNonterminalParser = GetNonterminal("ConditionalSect");
+                conditionalSectNonterminalParser.Pre = PreConditionalSect;
+                NonterminalParser declSepNonterminalParser = GetNonterminal("DeclSep");
+                declSepNonterminalParser.Pre = PreDeclSep;
+            }
+            public void PreMarkupDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreConditionalSect(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreDeclSep(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class ElementRule : System.Text.Parsing.RuleParser
+        {
+            public ElementRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser emptyElemTagNonterminalParser = GetNonterminal("EmptyElemTag");
+                emptyElemTagNonterminalParser.Pre = PreEmptyElemTag;
+                NonterminalParser sTagNonterminalParser = GetNonterminal("STag");
+                sTagNonterminalParser.Pre = PreSTag;
+                NonterminalParser contentNonterminalParser = GetNonterminal("Content");
+                contentNonterminalParser.Pre = PreContent;
+                NonterminalParser eTagNonterminalParser = GetNonterminal("ETag");
+                eTagNonterminalParser.Pre = PreETag;
+            }
+            public void PreEmptyElemTag(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreSTag(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreContent(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreETag(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class STagRule : System.Text.Parsing.RuleParser
+        {
+            public STagRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser nameNonterminalParser = GetNonterminal("Name");
+                nameNonterminalParser.Post = PostName;
+                NonterminalParser attributeNonterminalParser = GetNonterminal("Attribute");
+                attributeNonterminalParser.Pre = PreAttribute;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.BeginStartTag(context.fromName);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.EndStartTag(span, fileName);
+            }
+            public void PostName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromName = cast<string>(stack.Pop());
+                }
+            }
+            public void PreAttribute(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromName;
+            }
+        }
+        public class AttributeRule : System.Text.Parsing.RuleParser
+        {
+            public AttributeRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser attNameNonterminalParser = GetNonterminal("attName");
+                attNameNonterminalParser.Post = PostattName;
+                NonterminalParser attValueNonterminalParser = GetNonterminal("attValue");
+                attValueNonterminalParser.Pre = PreattValue;
+                attValueNonterminalParser.Post = PostattValue;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.AddAttribute(context.fromattName, context.fromattValue, span, fileName);
+            }
+            public void PostattName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromattName = cast<string>(stack.Pop());
+                }
+            }
+            public void PreattValue(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PostattValue(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromattValue = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromattName;
+                public string fromattValue;
+            }
+        }
+        public class ETagRule : System.Text.Parsing.RuleParser
+        {
+            public ETagRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser nameNonterminalParser = GetNonterminal("Name");
+                nameNonterminalParser.Post = PostName;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.EndTag(context.fromName, span, fileName);
+            }
+            public void PostName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromName = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromName;
+            }
+        }
+        public class ContentRule : System.Text.Parsing.RuleParser
+        {
+            public ContentRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser cd1NonterminalParser = GetNonterminal("cd1");
+                cd1NonterminalParser.Pre = Precd1;
+                NonterminalParser elementNonterminalParser = GetNonterminal("Element");
+                elementNonterminalParser.Pre = PreElement;
+                NonterminalParser referenceNonterminalParser = GetNonterminal("Reference");
+                referenceNonterminalParser.Pre = PreReference;
+                NonterminalParser cDSectNonterminalParser = GetNonterminal("CDSect");
+                cDSectNonterminalParser.Pre = PreCDSect;
+                NonterminalParser pINonterminalParser = GetNonterminal("PI");
+                pINonterminalParser.Pre = PrePI;
+                NonterminalParser commentNonterminalParser = GetNonterminal("Comment");
+                commentNonterminalParser.Pre = PreComment;
+                NonterminalParser cd2NonterminalParser = GetNonterminal("cd2");
+                cd2NonterminalParser.Pre = Precd2;
+            }
+            public void Precd1(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreElement(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreReference(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreCDSect(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PrePI(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreComment(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void Precd2(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class EmptyElemTagRule : System.Text.Parsing.RuleParser
+        {
+            public EmptyElemTagRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+                LocalVariables.Add(new AttrOrVar("string", "tagName"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser nameNonterminalParser = GetNonterminal("Name");
+                nameNonterminalParser.Post = PostName;
+                NonterminalParser attributeNonterminalParser = GetNonterminal("Attribute");
+                attributeNonterminalParser.Pre = PreAttribute;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.tagName = context.fromName;
+                context.processor.BeginStartTag(context.tagName);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.EndStartTag(span, fileName);
+                context.processor.EndTag(context.tagName, span, fileName);
+            }
+            public void PostName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromName = cast<string>(stack.Pop());
+                }
+            }
+            public void PreAttribute(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string tagName;
+                public string fromName;
+            }
+        }
+        public class AttlistDeclRule : System.Text.Parsing.RuleParser
+        {
+            public AttlistDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser nameNonterminalParser = GetNonterminal("Name");
+                nameNonterminalParser.Post = PostName;
+                NonterminalParser attDefNonterminalParser = GetNonterminal("AttDef");
+                attDefNonterminalParser.Pre = PreAttDef;
+            }
+            public void PostName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromName = cast<string>(stack.Pop());
+                }
+            }
+            public void PreAttDef(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromName;
+            }
+        }
+        public class AttDefRule : System.Text.Parsing.RuleParser
+        {
+            public AttDefRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser nameNonterminalParser = GetNonterminal("Name");
+                nameNonterminalParser.Post = PostName;
+                NonterminalParser defaultDeclNonterminalParser = GetNonterminal("DefaultDecl");
+                defaultDeclNonterminalParser.Pre = PreDefaultDecl;
+            }
+            public void PostName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromName = cast<string>(stack.Pop());
+                }
+            }
+            public void PreDefaultDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromName;
+            }
+        }
+        public class DefaultDeclRule : System.Text.Parsing.RuleParser
+        {
+            public DefaultDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser attValueNonterminalParser = GetNonterminal("AttValue");
+                attValueNonterminalParser.Pre = PreAttValue;
+                attValueNonterminalParser.Post = PostAttValue;
+            }
+            public void PreAttValue(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PostAttValue(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromAttValue = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromAttValue;
+            }
+        }
+        public class ConditionalSectRule : System.Text.Parsing.RuleParser
+        {
+            public ConditionalSectRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser includeSectNonterminalParser = GetNonterminal("IncludeSect");
+                includeSectNonterminalParser.Pre = PreIncludeSect;
+            }
+            public void PreIncludeSect(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class IncludeSectRule : System.Text.Parsing.RuleParser
+        {
+            public IncludeSectRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser extSubsetDeclNonterminalParser = GetNonterminal("ExtSubsetDecl");
+                extSubsetDeclNonterminalParser.Pre = PreExtSubsetDecl;
+            }
+            public void PreExtSubsetDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class CharRefRule : System.Text.Parsing.RuleParser
+        {
+            public CharRefRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "char";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser dcrNonterminalParser = GetNonterminal("dcr");
+                dcrNonterminalParser.Post = Postdcr;
+                NonterminalParser hcrNonterminalParser = GetNonterminal("hcr");
+                hcrNonterminalParser.Post = Posthcr;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = cast<char>(context.fromdcr);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = cast<char>(context.fromhcr);
+            }
+            public void Postdcr(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromdcr = cast<uint>(stack.Pop());
+                }
+            }
+            public void Posthcr(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromhcr = cast<uint>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public char value;
+                public uint fromdcr;
+                public uint fromhcr;
+            }
+        }
+        public class ReferenceRule : System.Text.Parsing.RuleParser
+        {
+            public ReferenceRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser entityRefNonterminalParser = GetNonterminal("EntityRef");
+                entityRefNonterminalParser.Pre = PreEntityRef;
+                NonterminalParser charRefNonterminalParser = GetNonterminal("CharRef");
+                charRefNonterminalParser.Post = PostCharRef;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.Text(new string(context.fromCharRef, 1));
+            }
+            public void PreEntityRef(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PostCharRef(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromCharRef = cast<char>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public char fromCharRef;
+            }
+        }
+        public class EntityRefRule : System.Text.Parsing.RuleParser
+        {
+            public EntityRefRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser nameNonterminalParser = GetNonterminal("Name");
+                nameNonterminalParser.Post = PostName;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.EntityRef(context.fromName, span, fileName);
+            }
+            public void PostName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromName = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromName;
+            }
+        }
+        public class PEReferenceRule : System.Text.Parsing.RuleParser
+        {
+            public PEReferenceRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser nameNonterminalParser = GetNonterminal("Name");
+                nameNonterminalParser.Post = PostName;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.ParamEntityRef(context.fromName);
+            }
+            public void PostName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromName = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromName;
+            }
+        }
+        public class EntityDeclRule : System.Text.Parsing.RuleParser
+        {
+            public EntityDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser gEDeclNonterminalParser = GetNonterminal("GEDecl");
+                gEDeclNonterminalParser.Pre = PreGEDecl;
+                NonterminalParser pEDeclNonterminalParser = GetNonterminal("PEDecl");
+                pEDeclNonterminalParser.Pre = PrePEDecl;
+            }
+            public void PreGEDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PrePEDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class GEDeclRule : System.Text.Parsing.RuleParser
+        {
+            public GEDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser entityNameNonterminalParser = GetNonterminal("entityName");
+                entityNameNonterminalParser.Post = PostentityName;
+                NonterminalParser entityValueNonterminalParser = GetNonterminal("entityValue");
+                entityValueNonterminalParser.Pre = PreentityValue;
+                entityValueNonterminalParser.Post = PostentityValue;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.GeneralEntity(context.fromentityName, context.fromentityValue);
+            }
+            public void PostentityName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromentityName = cast<string>(stack.Pop());
+                }
+            }
+            public void PreentityValue(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PostentityValue(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromentityValue = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromentityName;
+                public string fromentityValue;
+            }
+        }
+        public class PEDeclRule : System.Text.Parsing.RuleParser
+        {
+            public PEDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser nameNonterminalParser = GetNonterminal("Name");
+                nameNonterminalParser.Post = PostName;
+                NonterminalParser pEDefNonterminalParser = GetNonterminal("PEDef");
+                pEDefNonterminalParser.Pre = PrePEDef;
+            }
+            public void PostName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromName = cast<string>(stack.Pop());
+                }
+            }
+            public void PrePEDef(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromName;
+            }
+        }
+        public class EntityDefRule : System.Text.Parsing.RuleParser
+        {
+            public EntityDefRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+                ValueTypeName = "string";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser entityValueNonterminalParser = GetNonterminal("EntityValue");
+                entityValueNonterminalParser.Pre = PreEntityValue;
+                entityValueNonterminalParser.Post = PostEntityValue;
+                NonterminalParser externalIDNonterminalParser = GetNonterminal("ExternalID");
+                externalIDNonterminalParser.Pre = PreExternalID;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromEntityValue;
+            }
+            public void PreEntityValue(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PostEntityValue(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromEntityValue = cast<string>(stack.Pop());
+                }
+            }
+            public void PreExternalID(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string value;
+                public string fromEntityValue;
+            }
+        }
+        public class PEDefRule : System.Text.Parsing.RuleParser
+        {
+            public PEDefRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser entityValueNonterminalParser = GetNonterminal("EntityValue");
+                entityValueNonterminalParser.Pre = PreEntityValue;
+                entityValueNonterminalParser.Post = PostEntityValue;
+                NonterminalParser externalIDNonterminalParser = GetNonterminal("ExternalID");
+                externalIDNonterminalParser.Pre = PreExternalID;
+            }
+            public void PreEntityValue(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PostEntityValue(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromEntityValue = cast<string>(stack.Pop());
+                }
+            }
+            public void PreExternalID(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromEntityValue;
+            }
+        }
+        public class ExternalIDRule : System.Text.Parsing.RuleParser
+        {
+            public ExternalIDRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser s1NonterminalParser = GetNonterminal("s1");
+                s1NonterminalParser.Pre = Pres1;
+                NonterminalParser pubidLiteralNonterminalParser = GetNonterminal("PubidLiteral");
+                pubidLiteralNonterminalParser.Pre = PrePubidLiteral;
+                NonterminalParser s2NonterminalParser = GetNonterminal("s2");
+                s2NonterminalParser.Pre = Pres2;
+            }
+            public void Pres1(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PrePubidLiteral(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void Pres2(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class TextDeclRule : System.Text.Parsing.RuleParser
+        {
+            public TextDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser versionInfoNonterminalParser = GetNonterminal("VersionInfo");
+                versionInfoNonterminalParser.Pre = PreVersionInfo;
+                NonterminalParser encodingDeclNonterminalParser = GetNonterminal("EncodingDecl");
+                encodingDeclNonterminalParser.Pre = PreEncodingDecl;
+            }
+            public void PreVersionInfo(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreEncodingDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class ExtParsedEntRule : System.Text.Parsing.RuleParser
+        {
+            public ExtParsedEntRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser textDeclNonterminalParser = GetNonterminal("TextDecl");
+                textDeclNonterminalParser.Pre = PreTextDecl;
+                NonterminalParser contentNonterminalParser = GetNonterminal("Content");
+                contentNonterminalParser.Pre = PreContent;
+            }
+            public void PreTextDecl(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PreContent(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public class EncodingDeclRule : System.Text.Parsing.RuleParser
+        {
+            public EncodingDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser en1NonterminalParser = GetNonterminal("en1");
+                en1NonterminalParser.Post = Posten1;
+                NonterminalParser en2NonterminalParser = GetNonterminal("en2");
+                en2NonterminalParser.Post = Posten2;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.Encoding(context.fromen1);
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor.Encoding(context.fromen2);
+            }
+            public void Posten1(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromen1 = cast<string>(stack.Pop());
+                }
+            }
+            public void Posten2(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromen2 = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromen1;
+                public string fromen2;
+            }
+        }
+        public class EncNameRule : System.Text.Parsing.RuleParser
+        {
+            public EncNameRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "string";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public string value;
+            }
+        }
+        public class NotationDeclRule : System.Text.Parsing.RuleParser
+        {
+            public NotationDeclRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser nameNonterminalParser = GetNonterminal("Name");
+                nameNonterminalParser.Post = PostName;
+                NonterminalParser externalIDNonterminalParser = GetNonterminal("ExternalID");
+                externalIDNonterminalParser.Pre = PreExternalID;
+                NonterminalParser publicIDNonterminalParser = GetNonterminal("PublicID");
+                publicIDNonterminalParser.Pre = PrePublicID;
+            }
+            public void PostName(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromName = cast<string>(stack.Pop());
+                }
+            }
+            public void PreExternalID(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public void PrePublicID(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+                public string fromName;
+            }
+        }
+        public class PublicIDRule : System.Text.Parsing.RuleParser
+        {
+            public PublicIDRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("XmlProcessor", "processor"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.processor = cast<XmlProcessor>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                NonterminalParser pubidLiteralNonterminalParser = GetNonterminal("PubidLiteral");
+                pubidLiteralNonterminalParser.Pre = PrePubidLiteral;
+            }
+            public void PrePubidLiteral(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.processor);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public XmlProcessor processor;
+            }
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("uint", this, "System.Text.Parsing.stdlib.uint"));
+            AddRuleLink(new RuleLink("hexdword", this, "System.Text.Parsing.stdlib.hexdword"));
+            AddRule(new DocumentRule("Document", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new EmptyParser()),
+                    new ActionParser("A1",
+                        new SequenceParser(
+                            new SequenceParser(
+                                new NonterminalParser("Prolog", "Prolog", 1),
+                                new NonterminalParser("Element", "Element", 1)),
+                            new KleeneStarParser(
+                                new NonterminalParser("Misc", "Misc", 1)))))));
+            AddRule(new RuleParser("Char", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new CharSetParser("\t\n\r"),
+                            new RangeParser(32u, 55295u)),
+                        new RangeParser(57344u, 65533u)),
+                    new RangeParser(65536u, 1114111u))));
+            AddRule(new RuleParser("S", GetScope(), Domain.GetNextRuleId(),
+                new PositiveParser(
+                    new CharSetParser(" \t\r\n"))));
+            AddRule(new RuleParser("NameStartChar", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new AlternativeParser(
+                                            new AlternativeParser(
+                                                new AlternativeParser(
+                                                    new AlternativeParser(
+                                                        new AlternativeParser(
+                                                            new AlternativeParser(
+                                                                new AlternativeParser(
+                                                                    new CharParser(':'),
+                                                                    new CharSetParser("A-Z_a-z")),
+                                                                new RangeParser(192u, 214u)),
+                                                            new RangeParser(216u, 246u)),
+                                                        new RangeParser(248u, 767u)),
+                                                    new RangeParser(880u, 893u)),
+                                                new RangeParser(895u, 8191u)),
+                                            new RangeParser(8204u, 8205u)),
+                                        new RangeParser(8304u, 8591u)),
+                                    new RangeParser(11264u, 12271u)),
+                                new RangeParser(12289u, 55295u)),
+                            new RangeParser(63744u, 64975u)),
+                        new RangeParser(65008u, 65533u)),
+                    new RangeParser(65536u, 983039u))));
+            AddRule(new RuleParser("NameChar", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new NonterminalParser("NameStartChar", "NameStartChar", 0),
+                            new CharSetParser("-.0-9\xB7")),
+                        new RangeParser(768u, 879u)),
+                    new RangeParser(8255u, 8256u))));
+            AddRule(new NameRule("Name", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new NonterminalParser("NameStartChar", "NameStartChar", 0),
+                        new KleeneStarParser(
+                            new NonterminalParser("NameChar", "NameChar", 0))))));
+            AddRule(new RuleParser("Names", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("f", "Name", 0),
+                    new KleeneStarParser(
+                        new SequenceParser(
+                            new CharParser(' '),
+                            new NonterminalParser("n", "Name", 0))))));
+            AddRule(new RuleParser("Nmtoken", GetScope(), Domain.GetNextRuleId(),
+                new PositiveParser(
+                    new NonterminalParser("NameChar", "NameChar", 0))));
+            AddRule(new RuleParser("Nmtokens", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("Nmtoken", "Nmtoken", 0),
+                    new KleeneStarParser(
+                        new SequenceParser(
+                            new CharParser(' '),
+                            new NonterminalParser("Nmtoken", "Nmtoken", 0))))));
+            AddRule(new EntityValueRule("EntityValue", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new ActionParser("A0",
+                                new CharParser('"')),
+                            new KleeneStarParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new ActionParser("A1",
+                                            new CharSetParser("%&\"", true)),
+                                        new ActionParser("A2",
+                                            new NonterminalParser("pr1", "PEReference", 1))),
+                                    new ActionParser("A3",
+                                        new NonterminalParser("ref1", "Reference", 1))))),
+                        new ActionParser("A4",
+                            new CharParser('"'))),
+                    new SequenceParser(
+                        new SequenceParser(
+                            new ActionParser("A5",
+                                new CharParser('\'')),
+                            new KleeneStarParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new ActionParser("A6",
+                                            new CharSetParser("%&'", true)),
+                                        new ActionParser("A7",
+                                            new NonterminalParser("pr2", "PEReference", 1))),
+                                    new ActionParser("A8",
+                                        new NonterminalParser("ref2", "Reference", 1))))),
+                        new ActionParser("A9",
+                            new CharParser('\''))))));
+            AddRule(new AttValueRule("AttValue", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new ActionParser("A0",
+                                new CharParser('"')),
+                            new KleeneStarParser(
+                                new AlternativeParser(
+                                    new ActionParser("A1",
+                                        new CharSetParser("<&\"", true)),
+                                    new NonterminalParser("ref1", "Reference", 1)))),
+                        new ActionParser("A2",
+                            new CharParser('"'))),
+                    new SequenceParser(
+                        new SequenceParser(
+                            new ActionParser("A3",
+                                new CharParser('\'')),
+                            new KleeneStarParser(
+                                new AlternativeParser(
+                                    new ActionParser("A4",
+                                        new CharSetParser("<&'", true)),
+                                    new NonterminalParser("ref2", "Reference", 1)))),
+                        new ActionParser("A5",
+                            new CharParser('\''))))));
+            AddRule(new SystemLiteralRule("SystemLiteral", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new CharParser('"'),
+                            new ActionParser("A0",
+                                new KleeneStarParser(
+                                    new CharSetParser("\"", true)))),
+                        new CharParser('"')),
+                    new SequenceParser(
+                        new SequenceParser(
+                            new CharParser('\''),
+                            new ActionParser("A1",
+                                new KleeneStarParser(
+                                    new CharSetParser("'", true)))),
+                        new CharParser('\'')))));
+            AddRule(new PubidLiteralRule("PubidLiteral", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new CharParser('"'),
+                            new ActionParser("A0",
+                                new KleeneStarParser(
+                                    new NonterminalParser("PubidChar", "PubidChar", 0)))),
+                        new CharParser('"')),
+                    new SequenceParser(
+                        new SequenceParser(
+                            new CharParser('\''),
+                            new ActionParser("A1",
+                                new KleeneStarParser(
+                                    new DifferenceParser(
+                                        new NonterminalParser("PubidChar", "PubidChar", 0),
+                                        new CharParser('\''))))),
+                        new CharParser('\'')))));
+            AddRule(new RuleParser("PubidChar", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new CharSetParser(" \r\n"),
+                        new CharSetParser("a-zA-Z0-9")),
+                    new CharSetParser("-'()+,./:=?;!*#@$_%"))));
+            AddRule(new CharDataRule("CharData", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new DifferenceParser(
+                        new KleeneStarParser(
+                            new CharSetParser("<&", true)),
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KleeneStarParser(
+                                    new CharSetParser("<&", true)),
+                                new StringParser("]]>")),
+                            new KleeneStarParser(
+                                new CharSetParser("<&", true)))))));
+            AddRule(new CommentRule("Comment", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new StringParser("<!--"),
+                        new ActionParser("A0",
+                            new KleeneStarParser(
+                                new AlternativeParser(
+                                    new DifferenceParser(
+                                        new NonterminalParser("Char", "Char", 0),
+                                        new CharParser('-')),
+                                    new SequenceParser(
+                                        new CharParser('-'),
+                                        new DifferenceParser(
+                                            new NonterminalParser("Char", "Char", 0),
+                                            new CharParser('-'))))))),
+                    new StringParser("-->"))));
+            AddRule(new PIRule("PI", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new StringParser("<?"),
+                            new NonterminalParser("target", "PITarget", 0)),
+                        new ActionParser("A0",
+                            new OptionalParser(
+                                new SequenceParser(
+                                    new NonterminalParser("S", "S", 0),
+                                    new DifferenceParser(
+                                        new KleeneStarParser(
+                                            new NonterminalParser("Char", "Char", 0)),
+                                        new SequenceParser(
+                                            new SequenceParser(
+                                                new KleeneStarParser(
+                                                    new NonterminalParser("Char", "Char", 0)),
+                                                new StringParser("?>")),
+                                            new KleeneStarParser(
+                                                new NonterminalParser("Char", "Char", 0)))))))),
+                    new StringParser("?>"))));
+            AddRule(new PITargetRule("PITarget", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new DifferenceParser(
+                        new NonterminalParser("Name", "Name", 0),
+                        new SequenceParser(
+                            new SequenceParser(
+                                new AlternativeParser(
+                                    new CharParser('X'),
+                                    new CharParser('x')),
+                                new AlternativeParser(
+                                    new CharParser('M'),
+                                    new CharParser('m'))),
+                            new AlternativeParser(
+                                new CharParser('L'),
+                                new CharParser('l')))))));
+            AddRule(new CDSectRule("CDSect", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new NonterminalParser("CDStart", "CDStart", 0),
+                        new ActionParser("A0",
+                            new NonterminalParser("CData", "CData", 0))),
+                    new NonterminalParser("CDEnd", "CDEnd", 0))));
+            AddRule(new RuleParser("CDStart", GetScope(), Domain.GetNextRuleId(),
+                new StringParser("<![CDATA[")));
+            AddRule(new CDataRule("CData", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new DifferenceParser(
+                        new KleeneStarParser(
+                            new NonterminalParser("Char", "Char", 0)),
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KleeneStarParser(
+                                    new NonterminalParser("Char", "Char", 0)),
+                                new StringParser("]]>")),
+                            new KleeneStarParser(
+                                new NonterminalParser("Char", "Char", 0)))))));
+            AddRule(new RuleParser("CDEnd", GetScope(), Domain.GetNextRuleId(),
+                new StringParser("]]>")));
+            AddRule(new PrologRule("Prolog", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new OptionalParser(
+                            new NonterminalParser("XMLDecl", "XMLDecl", 1)),
+                        new KleeneStarParser(
+                            new NonterminalParser("m1", "Misc", 1))),
+                    new OptionalParser(
+                        new SequenceParser(
+                            new NonterminalParser("DocTypeDecl", "DocTypeDecl", 1),
+                            new KleeneStarParser(
+                                new NonterminalParser("m2", "Misc", 1)))))));
+            AddRule(new XMLDeclRule("XMLDecl", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new StringParser("<?xml"),
+                                    new NonterminalParser("VersionInfo", "VersionInfo", 1)),
+                                new OptionalParser(
+                                    new NonterminalParser("EncodingDecl", "EncodingDecl", 1))),
+                            new OptionalParser(
+                                new NonterminalParser("SDDecl", "SDDecl", 0))),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new StringParser("?>"))));
+            AddRule(new VersionInfoRule("VersionInfo", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new NonterminalParser("S", "S", 0),
+                            new StringParser("version")),
+                        new NonterminalParser("Eq", "Eq", 0)),
+                    new AlternativeParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new CharParser('\''),
+                                new ActionParser("A0",
+                                    new NonterminalParser("VersionNum", "VersionNum", 0))),
+                            new CharParser('\'')),
+                        new SequenceParser(
+                            new SequenceParser(
+                                new CharParser('"'),
+                                new ActionParser("A1",
+                                    new NonterminalParser("VersionNum", "VersionNum", 0))),
+                            new CharParser('"'))))));
+            AddRule(new RuleParser("Eq", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0)),
+                        new CharParser('=')),
+                    new OptionalParser(
+                        new NonterminalParser("S", "S", 0)))));
+            AddRule(new RuleParser("VersionNum", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new StringParser("1."),
+                    new PositiveParser(
+                        new CharSetParser("0-9")))));
+            AddRule(new MiscRule("Misc", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new NonterminalParser("Comment", "Comment", 1),
+                        new NonterminalParser("PI", "PI", 1)),
+                    new NonterminalParser("S", "S", 0))));
+            AddRule(new DocTypeDeclRule("DocTypeDecl", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new StringParser("<!DOCTYPE"),
+                                        new NonterminalParser("S", "S", 0)),
+                                    new NonterminalParser("Name", "Name", 0)),
+                                new OptionalParser(
+                                    new SequenceParser(
+                                        new NonterminalParser("S", "S", 0),
+                                        new NonterminalParser("ExternalID", "ExternalID", 1)))),
+                            new OptionalParser(
+                                new NonterminalParser("S", "S", 0))),
+                        new OptionalParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new CharParser('['),
+                                        new NonterminalParser("IntSubset", "IntSubset", 1)),
+                                    new CharParser(']')),
+                                new OptionalParser(
+                                    new NonterminalParser("S", "S", 0))))),
+                    new CharParser('>'))));
+            AddRule(new DeclSepRule("DeclSep", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("PEReference", "PEReference", 1),
+                    new NonterminalParser("S", "S", 0))));
+            AddRule(new IntSubsetRule("IntSubset", GetScope(), Domain.GetNextRuleId(),
+                new KleeneStarParser(
+                    new AlternativeParser(
+                        new NonterminalParser("MarkupDecl", "MarkupDecl", 1),
+                        new NonterminalParser("DeclSep", "DeclSep", 1)))));
+            AddRule(new MarkupDeclRule("MarkupDecl", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new NonterminalParser("ElementDecl", "ElementDecl", 0),
+                                    new NonterminalParser("AttlistDecl", "AttlistDecl", 1)),
+                                new NonterminalParser("EntityDecl", "EntityDecl", 1)),
+                            new NonterminalParser("NotationDecl", "NotationDecl", 1)),
+                        new NonterminalParser("PI", "PI", 1)),
+                    new NonterminalParser("Comment", "Comment", 1))));
+            AddRule(new ExtSubsetRule("ExtSubset", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new OptionalParser(
+                        new NonterminalParser("TextDecl", "TextDecl", 1)),
+                    new NonterminalParser("ExtSubsetDecl", "ExtSubsetDecl", 1))));
+            AddRule(new ExtSubsetDeclRule("ExtSubsetDecl", GetScope(), Domain.GetNextRuleId(),
+                new KleeneStarParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new NonterminalParser("MarkupDecl", "MarkupDecl", 1),
+                            new NonterminalParser("ConditionalSect", "ConditionalSect", 1)),
+                        new NonterminalParser("DeclSep", "DeclSep", 1)))));
+            AddRule(new RuleParser("SDDecl", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new NonterminalParser("S", "S", 0),
+                            new StringParser("standalone")),
+                        new NonterminalParser("Eq", "Eq", 0)),
+                    new AlternativeParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new CharParser('\''),
+                                new AlternativeParser(
+                                    new StringParser("yes"),
+                                    new StringParser("no"))),
+                            new CharParser('\'')),
+                        new SequenceParser(
+                            new SequenceParser(
+                                new CharParser('"'),
+                                new AlternativeParser(
+                                    new StringParser("yes"),
+                                    new StringParser("no"))),
+                            new CharParser('"'))))));
+            AddRule(new ElementRule("Element", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("EmptyElemTag", "EmptyElemTag", 1),
+                    new SequenceParser(
+                        new SequenceParser(
+                            new NonterminalParser("STag", "STag", 1),
+                            new NonterminalParser("Content", "Content", 1)),
+                        new NonterminalParser("ETag", "ETag", 1)))));
+            AddRule(new STagRule("STag", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new CharParser('<'),
+                                new ActionParser("A0",
+                                    new NonterminalParser("Name", "Name", 0))),
+                            new KleeneStarParser(
+                                new SequenceParser(
+                                    new NonterminalParser("S", "S", 0),
+                                    new NonterminalParser("Attribute", "Attribute", 1)))),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new ActionParser("A1",
+                        new CharParser('>')))));
+            AddRule(new AttributeRule("Attribute", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new NonterminalParser("attName", "Name", 0),
+                        new NonterminalParser("Eq", "Eq", 0)),
+                    new ActionParser("A0",
+                        new NonterminalParser("attValue", "AttValue", 1)))));
+            AddRule(new ETagRule("ETag", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new StringParser("</"),
+                            new ActionParser("A0",
+                                new NonterminalParser("Name", "Name", 0))),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new CharParser('>'))));
+            AddRule(new ContentRule("Content", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new OptionalParser(
+                        new NonterminalParser("cd1", "CharData", 1)),
+                    new KleeneStarParser(
+                        new SequenceParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new AlternativeParser(
+                                            new NonterminalParser("Element", "Element", 1),
+                                            new NonterminalParser("Reference", "Reference", 1)),
+                                        new NonterminalParser("CDSect", "CDSect", 1)),
+                                    new NonterminalParser("PI", "PI", 1)),
+                                new NonterminalParser("Comment", "Comment", 1)),
+                            new OptionalParser(
+                                new NonterminalParser("cd2", "CharData", 1)))))));
+            AddRule(new EmptyElemTagRule("EmptyElemTag", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new CharParser('<'),
+                                new ActionParser("A0",
+                                    new NonterminalParser("Name", "Name", 0))),
+                            new KleeneStarParser(
+                                new SequenceParser(
+                                    new NonterminalParser("S", "S", 0),
+                                    new NonterminalParser("Attribute", "Attribute", 1)))),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new ActionParser("A1",
+                        new StringParser("/>")))));
+            AddRule(new RuleParser("ElementDecl", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new StringParser("<!ELEMENT"),
+                                        new NonterminalParser("S", "S", 0)),
+                                    new NonterminalParser("Name", "Name", 0)),
+                                new NonterminalParser("S", "S", 0)),
+                            new NonterminalParser("ContentSpec", "ContentSpec", 0)),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new CharParser('>'))));
+            AddRule(new RuleParser("ContentSpec", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new StringParser("EMPTY"),
+                            new StringParser("ANY")),
+                        new NonterminalParser("Mixed", "Mixed", 0)),
+                    new NonterminalParser("Children", "Children", 0))));
+            AddRule(new RuleParser("Children", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new AlternativeParser(
+                        new NonterminalParser("Choice", "Choice", 0),
+                        new NonterminalParser("Seq", "Seq", 0)),
+                    new OptionalParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new CharParser('?'),
+                                new CharParser('*')),
+                            new CharParser('+'))))));
+            AddRule(new RuleParser("CP", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new NonterminalParser("Name", "Name", 0),
+                            new NonterminalParser("Choice", "Choice", 0)),
+                        new NonterminalParser("Seq", "Seq", 0)),
+                    new OptionalParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new CharParser('?'),
+                                new CharParser('*')),
+                            new CharParser('+'))))));
+            AddRule(new RuleParser("Choice", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new CharParser('('),
+                                    new OptionalParser(
+                                        new NonterminalParser("S", "S", 0))),
+                                new NonterminalParser("CP", "CP", 0)),
+                            new PositiveParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new OptionalParser(
+                                                new NonterminalParser("S", "S", 0)),
+                                            new CharParser('|')),
+                                        new OptionalParser(
+                                            new NonterminalParser("S", "S", 0))),
+                                    new NonterminalParser("CP", "CP", 0)))),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new CharParser(')'))));
+            AddRule(new RuleParser("Seq", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new CharParser('('),
+                                    new OptionalParser(
+                                        new NonterminalParser("S", "S", 0))),
+                                new NonterminalParser("CP", "CP", 0)),
+                            new KleeneStarParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new OptionalParser(
+                                                new NonterminalParser("S", "S", 0)),
+                                            new CharParser(',')),
+                                        new OptionalParser(
+                                            new NonterminalParser("S", "S", 0))),
+                                    new NonterminalParser("CP", "CP", 0)))),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new CharParser(')'))));
+            AddRule(new RuleParser("Mixed", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new CharParser('('),
+                                        new OptionalParser(
+                                            new NonterminalParser("S", "S", 0))),
+                                    new StringParser("#PCDATA")),
+                                new KleeneStarParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new SequenceParser(
+                                                new OptionalParser(
+                                                    new NonterminalParser("S", "S", 0)),
+                                                new CharParser('|')),
+                                            new OptionalParser(
+                                                new NonterminalParser("S", "S", 0))),
+                                        new NonterminalParser("Name", "Name", 0)))),
+                            new OptionalParser(
+                                new NonterminalParser("S", "S", 0))),
+                        new StringParser(")*")),
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new CharParser('('),
+                                    new OptionalParser(
+                                        new NonterminalParser("S", "S", 0))),
+                                new StringParser("#PCDATA")),
+                            new OptionalParser(
+                                new NonterminalParser("S", "S", 0))),
+                        new CharParser(')')))));
+            AddRule(new AttlistDeclRule("AttlistDecl", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new StringParser("<!ATTLIST"),
+                                    new NonterminalParser("S", "S", 0)),
+                                new NonterminalParser("Name", "Name", 0)),
+                            new KleeneStarParser(
+                                new NonterminalParser("AttDef", "AttDef", 1))),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new CharParser('>'))));
+            AddRule(new AttDefRule("AttDef", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new NonterminalParser("S", "S", 0),
+                                    new NonterminalParser("Name", "Name", 0)),
+                                new NonterminalParser("S", "S", 0)),
+                            new NonterminalParser("AttType", "AttType", 0)),
+                        new NonterminalParser("S", "S", 0)),
+                    new NonterminalParser("DefaultDecl", "DefaultDecl", 1))));
+            AddRule(new RuleParser("AttType", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new NonterminalParser("StringType", "StringType", 0),
+                        new NonterminalParser("TokenizedType", "TokenizedType", 0)),
+                    new NonterminalParser("EnumeratedType", "EnumeratedType", 0))));
+            AddRule(new RuleParser("StringType", GetScope(), Domain.GetNextRuleId(),
+                new StringParser("CDATA")));
+            AddRule(new RuleParser("TokenizedType", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new StringParser("ID"),
+                                        new StringParser("IDREF")),
+                                    new StringParser("IDREFS")),
+                                new StringParser("ENTITY")),
+                            new StringParser("ENTITIES")),
+                        new StringParser("NMTOKEN")),
+                    new StringParser("NMTOKENS"))));
+            AddRule(new RuleParser("EnumeratedType", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("NotationType", "NotationType", 0),
+                    new NonterminalParser("Enumeration", "Enumeration", 0))));
+            AddRule(new RuleParser("NotationType", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new StringParser("NOTATION"),
+                                            new NonterminalParser("S", "S", 0)),
+                                        new CharParser('(')),
+                                    new OptionalParser(
+                                        new NonterminalParser("S", "S", 0))),
+                                new NonterminalParser("f", "Name", 0)),
+                            new KleeneStarParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new OptionalParser(
+                                                new NonterminalParser("S", "S", 0)),
+                                            new CharParser('|')),
+                                        new OptionalParser(
+                                            new NonterminalParser("S", "S", 0))),
+                                    new NonterminalParser("n", "Name", 0)))),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new CharParser(')'))));
+            AddRule(new RuleParser("Enumeration", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new CharParser('('),
+                                    new OptionalParser(
+                                        new NonterminalParser("S", "S", 0))),
+                                new NonterminalParser("Nmtoken", "Nmtoken", 0)),
+                            new KleeneStarParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new OptionalParser(
+                                                new NonterminalParser("S", "S", 0)),
+                                            new CharParser('|')),
+                                        new OptionalParser(
+                                            new NonterminalParser("S", "S", 0))),
+                                    new NonterminalParser("Nmtoken", "Nmtoken", 0)))),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new CharParser(')'))));
+            AddRule(new DefaultDeclRule("DefaultDecl", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new StringParser("#REQUIRED"),
+                        new StringParser("#IMPLIED")),
+                    new SequenceParser(
+                        new OptionalParser(
+                            new SequenceParser(
+                                new StringParser("#FIXED"),
+                                new NonterminalParser("S", "S", 0))),
+                        new NonterminalParser("AttValue", "AttValue", 1)))));
+            AddRule(new ConditionalSectRule("ConditionalSect", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("IncludeSect", "IncludeSect", 1),
+                    new NonterminalParser("IgnoreSect", "IgnoreSect", 0))));
+            AddRule(new IncludeSectRule("IncludeSect", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new StringParser("<!"),
+                                        new OptionalParser(
+                                            new NonterminalParser("S", "S", 0))),
+                                    new StringParser("INCLUDE")),
+                                new OptionalParser(
+                                    new NonterminalParser("S", "S", 0))),
+                            new CharParser('[')),
+                        new NonterminalParser("ExtSubsetDecl", "ExtSubsetDecl", 1)),
+                    new StringParser("]]>"))));
+            AddRule(new RuleParser("IgnoreSect", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new StringParser("<!"),
+                                        new OptionalParser(
+                                            new NonterminalParser("S", "S", 0))),
+                                    new StringParser("IGNORE")),
+                                new OptionalParser(
+                                    new NonterminalParser("S", "S", 0))),
+                            new CharParser('[')),
+                        new KleeneStarParser(
+                            new NonterminalParser("IgnoreSectContents", "IgnoreSectContents", 0))),
+                    new StringParser("]]>"))));
+            AddRule(new RuleParser("IgnoreSectContents", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("Ignore", "Ignore", 0),
+                    new KleeneStarParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new StringParser("<!["),
+                                    new NonterminalParser("IgnoreSectContents", "IgnoreSectContents", 0)),
+                                new StringParser("]]>")),
+                            new NonterminalParser("Ignore", "Ignore", 0))))));
+            AddRule(new RuleParser("Ignore", GetScope(), Domain.GetNextRuleId(),
+                new DifferenceParser(
+                    new KleeneStarParser(
+                        new NonterminalParser("Char", "Char", 0)),
+                    new SequenceParser(
+                        new SequenceParser(
+                            new KleeneStarParser(
+                                new NonterminalParser("Char", "Char", 0)),
+                            new AlternativeParser(
+                                new StringParser("<!["),
+                                new StringParser("]]>"))),
+                        new KleeneStarParser(
+                            new NonterminalParser("Char", "Char", 0))))));
+            AddRule(new CharRefRule("CharRef", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new StringParser("&#"),
+                            new ActionParser("A0",
+                                new NonterminalParser("dcr", "uint", 0))),
+                        new CharParser(';')),
+                    new SequenceParser(
+                        new SequenceParser(
+                            new StringParser("&#x"),
+                            new ActionParser("A1",
+                                new NonterminalParser("hcr", "hexdword", 0))),
+                        new CharParser(';')))));
+            AddRule(new ReferenceRule("Reference", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("EntityRef", "EntityRef", 1),
+                    new ActionParser("A0",
+                        new NonterminalParser("CharRef", "CharRef", 0)))));
+            AddRule(new EntityRefRule("EntityRef", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new CharParser('&'),
+                        new ActionParser("A0",
+                            new NonterminalParser("Name", "Name", 0))),
+                    new CharParser(';'))));
+            AddRule(new PEReferenceRule("PEReference", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new CharParser('%'),
+                        new ActionParser("A0",
+                            new NonterminalParser("Name", "Name", 0))),
+                    new CharParser(';'))));
+            AddRule(new EntityDeclRule("EntityDecl", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("GEDecl", "GEDecl", 1),
+                    new NonterminalParser("PEDecl", "PEDecl", 1))));
+            AddRule(new GEDeclRule("GEDecl", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new StringParser("<!ENTITY"),
+                                            new NonterminalParser("S", "S", 0)),
+                                        new NonterminalParser("entityName", "Name", 0)),
+                                    new NonterminalParser("S", "S", 0)),
+                                new NonterminalParser("entityValue", "EntityDef", 1)),
+                            new OptionalParser(
+                                new NonterminalParser("S", "S", 0))),
+                        new CharParser('>')))));
+            AddRule(new PEDeclRule("PEDecl", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new SequenceParser(
+                                                new StringParser("<!ENTITY"),
+                                                new NonterminalParser("S", "S", 0)),
+                                            new CharParser('%')),
+                                        new NonterminalParser("S", "S", 0)),
+                                    new NonterminalParser("Name", "Name", 0)),
+                                new NonterminalParser("S", "S", 0)),
+                            new NonterminalParser("PEDef", "PEDef", 1)),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new CharParser('>'))));
+            AddRule(new EntityDefRule("EntityDef", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("EntityValue", "EntityValue", 1)),
+                    new SequenceParser(
+                        new NonterminalParser("ExternalID", "ExternalID", 1),
+                        new OptionalParser(
+                            new NonterminalParser("NDataDecl", "NDataDecl", 0))))));
+            AddRule(new PEDefRule("PEDef", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("EntityValue", "EntityValue", 1),
+                    new NonterminalParser("ExternalID", "ExternalID", 1))));
+            AddRule(new ExternalIDRule("ExternalID", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new StringParser("SYSTEM"),
+                            new NonterminalParser("S", "S", 0)),
+                        new NonterminalParser("s1", "SystemLiteral", 1)),
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new StringParser("PUBLIC"),
+                                    new NonterminalParser("S", "S", 0)),
+                                new NonterminalParser("PubidLiteral", "PubidLiteral", 1)),
+                            new NonterminalParser("S", "S", 0)),
+                        new NonterminalParser("s2", "SystemLiteral", 1)))));
+            AddRule(new RuleParser("NDataDecl", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new NonterminalParser("S", "S", 0),
+                            new StringParser("NDATA")),
+                        new NonterminalParser("S", "S", 0)),
+                    new NonterminalParser("Name", "Name", 0))));
+            AddRule(new TextDeclRule("TextDecl", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new StringParser("<?xml"),
+                                new OptionalParser(
+                                    new NonterminalParser("VersionInfo", "VersionInfo", 1))),
+                            new NonterminalParser("EncodingDecl", "EncodingDecl", 1)),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new StringParser("?>"))));
+            AddRule(new ExtParsedEntRule("ExtParsedEnt", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new OptionalParser(
+                        new NonterminalParser("TextDecl", "TextDecl", 1)),
+                    new NonterminalParser("Content", "Content", 1))));
+            AddRule(new EncodingDeclRule("EncodingDecl", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new NonterminalParser("S", "S", 0),
+                            new StringParser("encoding")),
+                        new NonterminalParser("Eq", "Eq", 0)),
+                    new AlternativeParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new CharParser('"'),
+                                new ActionParser("A0",
+                                    new NonterminalParser("en1", "EncName", 0))),
+                            new CharParser('"')),
+                        new SequenceParser(
+                            new SequenceParser(
+                                new CharParser('\''),
+                                new ActionParser("A1",
+                                    new NonterminalParser("en2", "EncName", 0))),
+                            new CharParser('\''))))));
+            AddRule(new EncNameRule("EncName", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new CharSetParser("A-Za-z"),
+                        new KleeneStarParser(
+                            new CharSetParser("A-Za-z0-9._-"))))));
+            AddRule(new NotationDeclRule("NotationDecl", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new StringParser("<!NOTATION"),
+                                        new NonterminalParser("S", "S", 0)),
+                                    new NonterminalParser("Name", "Name", 0)),
+                                new NonterminalParser("S", "S", 0)),
+                            new AlternativeParser(
+                                new NonterminalParser("ExternalID", "ExternalID", 1),
+                                new NonterminalParser("PublicID", "PublicID", 1))),
+                        new OptionalParser(
+                            new NonterminalParser("S", "S", 0))),
+                    new CharParser('>'))));
+            AddRule(new PublicIDRule("PublicID", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new StringParser("PUBLIC"),
+                        new NonterminalParser("S", "S", 0)),
+                    new NonterminalParser("PubidLiteral", "PubidLiteral", 1))));
+        }
+    }
+}

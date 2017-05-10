@@ -110,6 +110,8 @@ namespace Syntax
                 a10ActionParser.Action = A10Action;
                 ActionParser a11ActionParser = GetAction("A11");
                 a11ActionParser.Action = A11Action;
+                ActionParser a12ActionParser = GetAction("A12");
+                a12ActionParser.Action = A12Action;
                 NonterminalParser charNonterminalParser = GetNonterminal("Char");
                 charNonterminalParser.Post = PostChar;
                 NonterminalParser stringNonterminalParser = GetNonterminal("String");
@@ -134,6 +136,8 @@ namespace Syntax
                 hexDigitNonterminalParser.Post = PostHexDigit;
                 NonterminalParser punctuationNonterminalParser = GetNonterminal("Punctuation");
                 punctuationNonterminalParser.Post = PostPunctuation;
+                NonterminalParser rangeNonterminalParser = GetNonterminal("Range");
+                rangeNonterminalParser.Post = PostRange;
             }
             public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
@@ -194,6 +198,11 @@ namespace Syntax
             {
                 Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = context.fromPunctuation;
+            }
+            public void A12Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromRange;
             }
             public void PostChar(Stack<object> stack, ParsingData parsingData, bool matched)
             {
@@ -291,6 +300,14 @@ namespace Syntax
                     context.fromPunctuation = cast<Parser>(stack.Pop());
                 }
             }
+            public void PostRange(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromRange = cast<Parser>(stack.Pop());
+                }
+            }
             public class Context : System.Text.Parsing.Context
             {
                 public Parser value;
@@ -306,6 +323,7 @@ namespace Syntax
                 public Parser fromDigit;
                 public Parser fromHexDigit;
                 public Parser fromPunctuation;
+                public Parser fromRange;
             }
         }
         public class CharRule : System.Text.Parsing.RuleParser
@@ -1069,6 +1087,127 @@ namespace Syntax
                 public Parser value;
             }
         }
+        public class RangeRule : System.Text.Parsing.RuleParser
+        {
+            public RangeRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser sNonterminalParser = GetNonterminal("s");
+                sNonterminalParser.Post = Posts;
+                NonterminalParser eNonterminalParser = GetNonterminal("e");
+                eNonterminalParser.Post = Poste;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new RangeParser(context.froms, context.frome);
+            }
+            public void Posts(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.froms = cast<uint>(stack.Pop());
+                }
+            }
+            public void Poste(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.frome = cast<uint>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+                public uint froms;
+                public uint frome;
+            }
+        }
+        public class CodePointRule : System.Text.Parsing.RuleParser
+        {
+            public CodePointRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "uint";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser xNonterminalParser = GetNonterminal("x");
+                xNonterminalParser.Post = Postx;
+                NonterminalParser dNonterminalParser = GetNonterminal("d");
+                dNonterminalParser.Post = Postd;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromx;
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromd;
+            }
+            public void Postx(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromx = cast<uint>(stack.Pop());
+                }
+            }
+            public void Postd(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromd = cast<uint>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public uint value;
+                public uint fromx;
+                public uint fromd;
+            }
+        }
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
@@ -1090,6 +1229,8 @@ namespace Syntax
             AddRuleLink(new RuleLink("char", this, "System.Text.Parsing.stdlib.char"));
             AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
             AddRuleLink(new RuleLink("escape", this, "System.Text.Parsing.stdlib.escape"));
+            AddRuleLink(new RuleLink("hexdword", this, "System.Text.Parsing.stdlib.hexdword"));
+            AddRuleLink(new RuleLink("uint", this, "System.Text.Parsing.stdlib.uint"));
             AddRuleLink(new RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
             AddRuleLink(new RuleLink("StringArray", this, "ElementGrammar.StringArray"));
             AddRule(new PrimitiveRule("Primitive", GetScope(), Domain.GetNextRuleId(),
@@ -1104,30 +1245,33 @@ namespace Syntax
                                                 new AlternativeParser(
                                                     new AlternativeParser(
                                                         new AlternativeParser(
-                                                            new ActionParser("A0",
-                                                                new NonterminalParser("Char", "Char", 0)),
-                                                            new ActionParser("A1",
-                                                                new NonterminalParser("String", "String", 0))),
-                                                        new ActionParser("A2",
-                                                            new NonterminalParser("CharSet", "CharSet", 0))),
-                                                    new ActionParser("A3",
-                                                        new NonterminalParser("Keyword", "Keyword", 0))),
-                                                new ActionParser("A4",
-                                                    new NonterminalParser("KeywordList", "KeywordList", 0))),
-                                            new ActionParser("A5",
-                                                new NonterminalParser("Empty", "Empty", 0))),
-                                        new ActionParser("A6",
-                                            new NonterminalParser("Space", "Space", 0))),
-                                    new ActionParser("A7",
-                                        new NonterminalParser("AnyChar", "AnyChar", 0))),
-                                new ActionParser("A8",
-                                    new NonterminalParser("Letter", "Letter", 0))),
-                            new ActionParser("A9",
-                                new NonterminalParser("Digit", "Digit", 0))),
-                        new ActionParser("A10",
-                            new NonterminalParser("HexDigit", "HexDigit", 0))),
-                    new ActionParser("A11",
-                        new NonterminalParser("Punctuation", "Punctuation", 0)))));
+                                                            new AlternativeParser(
+                                                                new ActionParser("A0",
+                                                                    new NonterminalParser("Char", "Char", 0)),
+                                                                new ActionParser("A1",
+                                                                    new NonterminalParser("String", "String", 0))),
+                                                            new ActionParser("A2",
+                                                                new NonterminalParser("CharSet", "CharSet", 0))),
+                                                        new ActionParser("A3",
+                                                            new NonterminalParser("Keyword", "Keyword", 0))),
+                                                    new ActionParser("A4",
+                                                        new NonterminalParser("KeywordList", "KeywordList", 0))),
+                                                new ActionParser("A5",
+                                                    new NonterminalParser("Empty", "Empty", 0))),
+                                            new ActionParser("A6",
+                                                new NonterminalParser("Space", "Space", 0))),
+                                        new ActionParser("A7",
+                                            new NonterminalParser("AnyChar", "AnyChar", 0))),
+                                    new ActionParser("A8",
+                                        new NonterminalParser("Letter", "Letter", 0))),
+                                new ActionParser("A9",
+                                    new NonterminalParser("Digit", "Digit", 0))),
+                            new ActionParser("A10",
+                                new NonterminalParser("HexDigit", "HexDigit", 0))),
+                        new ActionParser("A11",
+                            new NonterminalParser("Punctuation", "Punctuation", 0))),
+                    new ActionParser("A12",
+                        new NonterminalParser("Range", "Range", 0)))));
             AddRule(new CharRule("Char", GetScope(), Domain.GetNextRuleId(),
                 new ActionParser("A0",
                     new NonterminalParser("chr", "char", 0))));
@@ -1235,6 +1379,33 @@ namespace Syntax
             AddRule(new PunctuationRule("Punctuation", GetScope(), Domain.GetNextRuleId(),
                 new ActionParser("A0",
                     new KeywordParser("punctuation"))));
+            AddRule(new RangeRule("Range", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new KeywordParser("range"),
+                                        new ExpectationParser(
+                                            new CharParser('('))),
+                                    new ExpectationParser(
+                                        new NonterminalParser("s", "CodePoint", 0))),
+                                new ExpectationParser(
+                                    new CharParser(','))),
+                            new ExpectationParser(
+                                new NonterminalParser("e", "CodePoint", 0))),
+                        new ExpectationParser(
+                            new CharParser(')'))))));
+            AddRule(new CodePointRule("CodePoint", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new TokenParser(
+                        new SequenceParser(
+                            new CharParser('x'),
+                            new ActionParser("A0",
+                                new NonterminalParser("x", "hexdword", 0)))),
+                    new ActionParser("A1",
+                        new NonterminalParser("d", "uint", 0)))));
         }
     }
 }

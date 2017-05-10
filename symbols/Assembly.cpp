@@ -63,6 +63,7 @@ CminorSystemAssemblyNameCollection::CminorSystemAssemblyNameCollection()
     systemAssemblyNames.push_back(U"System.Text.Parsing.CodeDom");
     systemAssemblyNames.push_back(U"System.Json");
     systemAssemblyNames.push_back(U"System.Net.Sockets");
+    systemAssemblyNames.push_back(U"System.Xml");
     for (const utf32_string& systemAssemblyName : systemAssemblyNames)
     {
         systemAssemblyNameMap.insert(StringPtr(systemAssemblyName.c_str()));
@@ -762,7 +763,7 @@ void Assembly::Write(SymbolWriter& writer)
     nameId.Write(writer);
     machineFunctionTable.Write(writer);
     symbolTable.Write(writer);
-    WriteSymbolIdMapping(writer);
+    //WriteSymbolIdMapping(writer);
     WriteExportedFunctions(writer);
     WriteFunctionVarMappings(writer);
     WriteClassDataVarMappings(writer);
@@ -864,7 +865,7 @@ void Assembly::FinishReads(std::vector<CallInst*>& callInstructions, std::vector
         reader.SetClassTemplateSpecializationNames(&classTemplateSpecializationNames);
         reader.Skip(finishReadPos);
         symbolTable.Read(reader);
-        ReadSymbolIdMapping(reader);
+        //ReadSymbolIdMapping(reader);
         ReadExportedFunctions(reader);
         ReadFunctionVarMappings(reader);
         ReadClasDataVarMappings(reader);
@@ -943,7 +944,7 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
         setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap, readMap);
     ImportSymbolTables();
     symbolTable.Read(reader);
-    ReadSymbolIdMapping(reader);
+    //ReadSymbolIdMapping(reader);
     ReadExportedFunctions(reader);
     ReadFunctionVarMappings(reader);
     ReadClasDataVarMappings(reader);
@@ -1193,58 +1194,6 @@ void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadTy
                 throw std::runtime_error("assembly file path '" + assemblyFilePath + "' not found from assembly read map for assembly " + ToUtf8(Name().Value()));
             }
         }
-    }
-}
-
-void Assembly::AddSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId, uint32_t mySymbolId)
-{
-    std::pair<std::string, uint32_t> key = std::make_pair(assemblyName, assemblySymbolId);
-    symbolIdMapping[key] = mySymbolId;
-    utf32_string an = ToUtf32(assemblyName);
-    constantPool.Install(StringPtr(an.c_str()));
-}
-
-uint32_t Assembly::GetSymbolIdMapping(const std::string& assemblyName, uint32_t assemblySymbolId) const
-{
-    std::pair<std::string, uint32_t> key = std::make_pair(assemblyName, assemblySymbolId);
-    auto it = symbolIdMapping.find(key);
-    if (it != symbolIdMapping.cend())
-    {
-        return it->second;
-    }
-    return noSymbolId;
-}
-
-void Assembly::WriteSymbolIdMapping(SymbolWriter& writer)
-{
-    uint32_t n = uint32_t(symbolIdMapping.size());
-    writer.AsMachineWriter().PutEncodedUInt(n);
-    for (const auto& x : symbolIdMapping)
-    {
-        const std::string& assemblyName = x.first.first;
-        utf32_string an = ToUtf32(assemblyName);
-        ConstantId id = constantPool.GetIdFor(an);
-        Assert(id != noConstantId, "got no id for constant");
-        id.Write(writer);
-        writer.AsMachineWriter().PutEncodedUInt(x.first.second);
-        writer.AsMachineWriter().PutEncodedUInt(x.second);
-    }
-}
-
-void Assembly::ReadSymbolIdMapping(SymbolReader& reader)
-{
-    uint32_t n = reader.GetEncodedUInt();
-    for (uint32_t i = 0; i < n; ++i)
-    {
-        ConstantId id;
-        id.Read(reader);
-        Constant constant = constantPool.GetConstant(id);
-        Assert(constant.Value().GetType() == ValueType::stringLiteral, "string literal expected");
-        std::string assemblyName = ToUtf8(constant.Value().AsStringLiteral());
-        uint32_t assemblySymbolId = reader.GetEncodedUInt();
-        uint32_t mySymbolId = reader.GetEncodedUInt();
-        std::pair<std::string, uint32_t> key = std::make_pair(assemblyName, assemblySymbolId);
-        symbolIdMapping[key] = mySymbolId;
     }
 }
 

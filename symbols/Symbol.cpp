@@ -2075,8 +2075,8 @@ void ClassTemplateSpecializationSymbol::Read(SymbolReader& reader)
         {
             Symbol* symbol = reader.GetSymbol();
             ClassTemplateSpecializationSymbol* specializationSymbol = dynamic_cast<ClassTemplateSpecializationSymbol*>(symbol);
-            specializationSymbol->SetReopened();
             Assert(specializationSymbol, "class template specialization expected");
+            specializationSymbol->SetReopened();
             toBeMerged.push_back(std::unique_ptr<ClassTemplateSpecializationSymbol>(specializationSymbol));
         }
         return;
@@ -2221,12 +2221,10 @@ void ClassTemplateSpecializationSymbol::MergeOpenedInstances(Assembly* assembly)
 
 void ClassTemplateSpecializationSymbol::MergeConstructorSymbol(ConstructorSymbol& constructorSymbol, Assembly* assembly)
 {
-    uint32_t constructorSymbolId = constructorSymbol.Id();
     bool found = false;
     for (ConstructorSymbol* baseConstructor : Constructors())
     {
-        if (constructorSymbolId == baseConstructor->Id() || 
-            constructorSymbolId == constructorSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseConstructor->GetAssembly()->Name().Value()), baseConstructor->Id()))
+        if (baseConstructor->Name() == constructorSymbol.Name())
         {
             baseConstructor->Merge(constructorSymbol, assembly);
             found = true;
@@ -2235,18 +2233,16 @@ void ClassTemplateSpecializationSymbol::MergeConstructorSymbol(ConstructorSymbol
     }
     if (!found)
     {
-        throw Exception("could not merge '" + ToUtf8(constructorSymbol.FullName()) + "': target symbol not found", constructorSymbol.GetSpan(), GetSpan());
+        throw Exception("could not merge '" + ToUtf8(constructorSymbol.Name().Value()) + "': target symbol not found", constructorSymbol.GetSpan(), GetSpan());
     }
 }
 
 void ClassTemplateSpecializationSymbol::MergeMemberFunctionSymbol(MemberFunctionSymbol& memberFunctionSymbol, Assembly* assembly)
 {
-    uint32_t memFunSymbolId = memberFunctionSymbol.Id();
     bool found = false;
     for (MemberFunctionSymbol* baseMemFun : MemberFunctions())
     {
-        if (memFunSymbolId == baseMemFun->Id() || 
-            memFunSymbolId == memberFunctionSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseMemFun->GetAssembly()->Name().Value()), baseMemFun->Id()))
+        if (baseMemFun->Name() == memberFunctionSymbol.Name())
         {
             baseMemFun->Merge(memberFunctionSymbol, assembly);
             found = true;
@@ -2255,18 +2251,16 @@ void ClassTemplateSpecializationSymbol::MergeMemberFunctionSymbol(MemberFunction
     }
     if (!found)
     {
-        throw Exception("could not merge '" + ToUtf8(memberFunctionSymbol.FullName()) + "': target symbol not found", memberFunctionSymbol.GetSpan(), GetSpan());
+        throw Exception("could not merge '" + ToUtf8(memberFunctionSymbol.Name().Value()) + "': target symbol not found", memberFunctionSymbol.GetSpan(), GetSpan());
     }
 }
 
 void ClassTemplateSpecializationSymbol::MergePropertySymbol(PropertySymbol& propertySymbol, Assembly* assembly)
 {
-    uint32_t propertySymbolId = propertySymbol.Id();
     bool found = false;
     for (PropertySymbol* baseProperty : Properties())
     {
-        if (propertySymbolId == baseProperty->Id() ||
-            propertySymbolId == propertySymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseProperty->GetAssembly()->Name().Value()), baseProperty->Id()))
+        if (baseProperty->Name() == propertySymbol.Name())
         {
             baseProperty->Merge(propertySymbol, assembly);
             found = true;
@@ -2275,18 +2269,16 @@ void ClassTemplateSpecializationSymbol::MergePropertySymbol(PropertySymbol& prop
     }
     if (!found)
     {
-        throw Exception("could not merge '" + ToUtf8(propertySymbol.FullName()) + "': target symbol not found", propertySymbol.GetSpan(), GetSpan());
+        throw Exception("could not merge '" + ToUtf8(propertySymbol.Name().Value()) + "': target symbol not found", propertySymbol.GetSpan(), GetSpan());
     }
 }
 
 void ClassTemplateSpecializationSymbol::MergeIndexerSymbol(IndexerSymbol& indexerSymbol, Assembly* assembly)
 {
-    uint32_t indexerSymbolId = indexerSymbol.Id();
     bool found = false;
     for (IndexerSymbol* baseIndexer : Indexers())
     {
-        if (indexerSymbolId == baseIndexer->Id() || 
-            indexerSymbolId == indexerSymbol.GetAssembly()->GetSymbolIdMapping(ToUtf8(baseIndexer->GetAssembly()->Name().Value()), baseIndexer->Id()))
+        if (baseIndexer->Name() == indexerSymbol.Name())
         {
             baseIndexer->Merge(indexerSymbol, assembly);
             found = true;
@@ -2295,7 +2287,7 @@ void ClassTemplateSpecializationSymbol::MergeIndexerSymbol(IndexerSymbol& indexe
     }
     if (!found)
     {
-        throw Exception("could not merge '" + ToUtf8(indexerSymbol.FullName()) + "': target symbol not found", indexerSymbol.GetSpan(), GetSpan());
+        throw Exception("could not merge '" + ToUtf8(indexerSymbol.Name().Value()) + "': target symbol not found", indexerSymbol.GetSpan(), GetSpan());
     }
 }
 

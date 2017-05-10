@@ -19,6 +19,8 @@ namespace Syntax
         Digit : Parser;
         HexDigit : Parser;
         Punctuation : Parser;
+        Range : Parser;
+        CodePoint : uint;
     }
     grammar GrammarGrammar
     {

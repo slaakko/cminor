@@ -1,0 +1,68 @@
+using System;
+using System.IO;
+
+namespace System.Xml
+{
+    public class DefaultXmlContentParser : XmlContentParser
+    {
+        public DefaultXmlContentParser(XmlContentGrammar grammar)
+        {
+            this.grammar = grammar;
+        }
+        public override void ParseXmlContent(string xmlContent, XmlProcessor processor)
+        {
+            grammar.Parse(xmlContent, 0, "", processor);
+        }
+        private XmlContentGrammar grammar;
+    }
+
+    internal class XmlGrammarProvider
+    {
+        static XmlGrammarProvider()
+        {
+            contentGrammar = new XmlContentGrammar();
+            documentGrammar = new XmlDocumentGrammar();
+        }
+        public static XmlContentGrammar ContentGrammar
+        {
+            get { return contentGrammar; }
+        }
+        public static XmlDocumentGrammar DocumentGrammar
+        {
+            get { return documentGrammar; }
+        }
+        private static XmlContentGrammar contentGrammar;
+        private static XmlDocumentGrammar documentGrammar;
+    }
+
+    public class XmlReader 
+    {
+        public XmlReader()
+        {
+            processor = new DefaultXmlProcessor();
+            contentParser = new DefaultXmlContentParser(XmlGrammarProvider.ContentGrammar);
+        }
+        public void ParseFile(string xmlFileName, ContentHandler contentHandler)
+        {
+            if (contentHandler == null)
+            {
+                throw new ArgumentNullException("provided content handler is null");
+            }
+            processor.SetContentHandler(contentHandler);
+            processor.SetContentParser(contentParser);
+            XmlGrammarProvider.DocumentGrammar.Parse(File.ReadAllText(xmlFileName), 0, xmlFileName, processor);
+        }
+        public XmlProcessor Processor
+        {
+            get { return processor; }
+            set { processor = value; }
+        }
+        public XmlContentParser ContentParser
+        {
+            get { return contentParser; }
+            set { contentParser = value; }
+        }
+        private XmlProcessor processor;
+        private XmlContentParser contentParser;
+    }
+}

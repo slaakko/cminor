@@ -1,0 +1,244 @@
+using System;
+using System.Text;
+using System.Collections.Generic;
+
+namespace System.Xml
+{
+    public class DefaultXmlProcessor : XmlProcessor
+    {
+        public DefaultXmlProcessor()
+        {
+            this.contentHandler = new ContentHandler();
+            this.contentParser = null;
+            this.tagStack = new Stack<string>();
+            this.namespaceUriStack = new Stack<string>();
+            this.currentNamespaceUri = string.Empty;
+            this.namespacePrefixMap = new HashMap<string, string>();
+            this.namespacePrefixStack = new Stack<string>();
+            this.currentNamespacePrefix = string.Empty;
+            this.entityMap = new HashMap<string, string>();
+            this.recursiveEntityNames = new HashSet<string>();
+            this.attributeValueBuilder = null;
+            this.parsingEntityValue = false;
+            entityMap["quot"] = "\"";
+            entityMap["amp"] = "&";
+            entityMap["apos"] = "'";
+            entityMap["lt"] = "<";
+            entityMap["gt"] = ">";
+        }
+        public override void SetContentParser(XmlContentParser contentParser) 
+        {
+            this.contentParser = contentParser;
+        }
+        public override void SetContentHandler(ContentHandler contentHandler)
+        {
+            this.contentHandler = contentHandler;
+        }
+        public override void Version(string xmlVersion) 
+        {
+            contentHandler.XmlVersion(xmlVersion);
+        }
+        public override void Encoding(string encodingName) 
+        {
+            contentHandler.Encoding(encodingName);
+        }
+        public override void StartDocument()
+        {
+            contentHandler.StartDocument();
+        }
+        public override void EndDocument()
+        {
+            contentHandler.EndDocument();
+        }
+        public override void BeginStartTag(string tagName) 
+        {
+            tagStack.Push(currentTagName);
+            currentTagName = tagName;
+            attributes = new Attributes();
+            namespaceUriStack.Push(currentNamespaceUri);
+            namespacePrefixStack.Push(currentNamespacePrefix);
+        }
+        public override void BeginAttributeValue(StringBuilder attributeValueBuilder) 
+        {
+            this.attributeValueBuilder = attributeValueBuilder;
+        }
+        public override string EndAttributeValue() 
+        {
+            string attributeValue = attributeValueBuilder.ToString();
+            this.attributeValueBuilder = null;
+            return attributeValue;
+        }
+        public override void BeginEntityValue() 
+        {
+            this.parsingEntityValue = true;
+        }
+        public override void EndEntityValue() 
+        {
+            this.parsingEntityValue = false;
+        }
+        public override void AddAttribute(string attributeName, string attributeValue, System.Text.Parsing.Span span, string systemId)
+        {
+            string localName;
+            string prefix;
+            ParseQualifiedName(attributeName, ref localName, ref prefix, span, systemId);
+            if (prefix == "xmlns")
+            {
+                currentNamespacePrefix = localName;
+                currentNamespaceUri = attributeValue;
+                namespacePrefixMap[currentNamespacePrefix] = currentNamespaceUri;
+            }
+            else if (localName == "xmlns")
+            {   
+                currentNamespacePrefix = string.Empty;
+                currentNamespaceUri = attributeValue;
+            }
+            else
+            {
+                attributes.Add(new Attribute(GetNamespaceUri(prefix, span, systemId), localName, attributeName, attributeValue));
+            }
+        }
+        public override void EndStartTag(System.Text.Parsing.Span span, string systemId)
+        {
+            string localName;
+            string prefix;
+            ParseQualifiedName(currentTagName, ref localName, ref prefix, span, systemId);
+            if (prefix == "xmlns")
+            {
+                throw new XmlProcessingException("'xmlns' prefix cannot be declared for an element");
+            }
+            contentHandler.StartElement(GetNamespaceUri(prefix, span, systemId), localName, currentTagName, attributes);
+        }
+        public override void EndTag(string tagName, System.Text.Parsing.Span span, string systemId)
+        {
+            if (tagStack.Count == 0)
+            {
+                throw new XmlProcessingException("end tag '" + tagName + "' has no corresponding start tag");
+            }
+            if (tagName != currentTagName)
+            {
+                throw new XmlProcessingException("end tag '" + tagName + "' does not match start tag '" + currentTagName + "'");
+            }
+            string localName;
+            string prefix;
+            ParseQualifiedName(currentTagName, ref localName, ref prefix, span, systemId);
+            if (prefix == "xmlns")
+            {
+                throw new XmlProcessingException("'xmlns' prefix cannot be declared for an element");
+            }
+            contentHandler.EndElement(GetNamespaceUri(prefix, span, systemId), localName, currentTagName);
+            currentNamespaceUri = namespaceUriStack.Pop();
+            namespacePrefixMap.Remove(currentNamespacePrefix);
+            currentNamespacePrefix = namespacePrefixStack.Pop();
+            namespacePrefixMap[currentNamespacePrefix] = currentNamespaceUri;
+            currentTagName = tagStack.Pop();
+        }
+        public override void EntityRef(string entityName, System.Text.Parsing.Span span, string systemId)
+        {
+            string entityValue;
+            if (entityMap.TryGetValue(entityName, ref entityValue))
+            { 
+                if (parsingEntityValue)
+                {
+                    return;
+                }
+                if (contentParser != null)
+                {
+                    if (recursiveEntityNames.Contains(entityName))
+                    {
+                        throw new XmlProcessingException("recursive reference to entity '" + entityName + "' detected");
+                    }
+                    recursiveEntityNames.Add(entityName);
+                    contentParser.ParseXmlContent(entityValue, this);
+                    recursiveEntityNames.Remove(entityName);
+                }
+                else
+                {
+                    Text(entityValue);
+                }
+            }
+            else
+            {
+                contentHandler.SkippedEntity(entityName);
+            }
+        }
+        public override void GeneralEntity(string entityName, string entityValue) 
+        {
+            entityMap[entityName] = entityValue;
+        }
+        public override void Text(string text) 
+        {
+            if (attributeValueBuilder != null)
+            {
+                foreach (char c in text)
+                {
+                    if (char.IsCSpace(c))
+                    {
+                        attributeValueBuilder.Append(' ');
+                    }
+                    else
+                    {
+                        attributeValueBuilder.Append(c);
+                    }
+                }
+                return;
+            }
+            contentHandler.Text(text);
+        }
+        public override void PI(string target, string data) 
+        {
+            contentHandler.ProcessingInstruction(target, data);
+        }
+        public override void Comment(string comment) 
+        {
+            contentHandler.Comment(comment);
+        }
+        public void ParseQualifiedName(string qualifiedName, ref string localName, ref string prefix, System.Text.Parsing.Span span, string systemId)
+        {
+            List<string> parts = qualifiedName.Split(':');
+            if (parts.Count > 2)
+            {
+                throw new XmlProcessingException("qualified name '" + qualifiedName + "' has more than one ':' character");
+            }
+            else if (parts.Count == 2)
+            {
+                prefix = parts[0];
+                localName = parts[1];
+            }
+            else
+            {
+                prefix = string.Empty;
+                localName = qualifiedName;
+            }
+        }
+        private string GetNamespaceUri(string namespacePrefix, System.Text.Parsing.Span span, string systemId)
+        {
+            if (string.IsNullOrEmpty(namespacePrefix))
+            {
+                return currentNamespaceUri;
+            }
+            string namespaceUri;
+            if (namespacePrefixMap.TryGetValue(namespacePrefix, ref namespaceUri))
+            {
+                return namespaceUri;
+            }
+            else
+            {
+                throw new XmlProcessingException("namespace prefix '" + namespacePrefix + "' not bound to any namespace URI");
+            }
+        }
+        private XmlContentParser contentParser;
+        private ContentHandler contentHandler;
+        private Stack<string> tagStack;
+        private string currentTagName;
+        private Attributes attributes;
+        private Stack<string> namespaceUriStack;
+        private string currentNamespaceUri;
+        private Stack<string> namespacePrefixStack;
+        private string currentNamespacePrefix;
+        private HashMap<string, string> namespacePrefixMap;
+        private HashMap<string, string> entityMap;
+        private HashSet<string> recursiveEntityNames;
+        private StringBuilder attributeValueBuilder;
+        private bool parsingEntityValue;
+    }
+}

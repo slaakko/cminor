@@ -1,0 +1,97 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Xml
+{
+    public class Attribute
+    {
+        public Attribute(string namespaceUri, string localName, string qualifiedName, string value)
+        {
+            this.namespaceUri = namespaceUri;
+            this.localName = localName;
+            this.qualifiedName = qualifiedName;
+            this.value = value;
+        }
+        public string NamespaceUri
+        {
+            get { return namespaceUri; }
+        }
+        public string LocalName
+        {
+            get { return localName; }
+        }
+        public string QualifiedName
+        {
+            get { return qualifiedName; }
+        }
+        public string Value
+        {
+            get { return this.value; }
+        }
+        private string namespaceUri;
+        private string localName;
+        private string qualifiedName;
+        private string value;
+    }
+
+    public class Attributes : Enumerable
+    {
+        public Attributes()
+        {
+            attributes = new List<Attribute>();
+        }
+        public void Add(Attribute attribute)
+        {
+            attributes.Add(attribute);
+        }
+        public Enumerator GetEnumerator()
+        {
+            return attributes.GetEnumerator();
+        }
+        public string GetAttributeValue(string namespaceUri, string localName)
+        {
+            foreach (Attribute attribute in attributes)
+            {
+                if (attribute.NamespaceUri == namespaceUri && attribute.LocalName == localName)
+                {
+                    return attribute.Value;
+                }
+            }
+            return string.Empty;
+        }
+        public string GetAttributeValue(string qualifiedName)
+        {
+            foreach (Attribute attribute in attributes)
+            {
+                if (attribute.QualifiedName == qualifiedName)
+                {
+                    return attribute.Value;
+                }
+            }
+            return string.Empty;
+        }
+        public Attribute this[int index]
+        {
+            get { return attributes[index]; }
+        }
+        public int Count
+        {
+            get { return attributes.Count; }
+        }
+        private List<Attribute> attributes;
+    }
+
+    public class ContentHandler
+    {
+        public virtual void StartDocument() {}
+        public virtual void EndDocument() {}
+        public virtual void XmlVersion(string version) {}
+        public virtual void Encoding(string encoding) {}
+        public virtual void StartElement(string namespaceUri, string localName, string qualifiedName, Attributes attributes) {}
+        public virtual void EndElement(string namespaceUri, string localName, string qualifiedName) {}
+        public virtual void SkippedEntity(string entityName) {}
+        public virtual void Text(string text) {}
+        public virtual void ProcessingInstruction(string target, string data) {}
+        public virtual void Comment(string comment) {}
+    }
+}
