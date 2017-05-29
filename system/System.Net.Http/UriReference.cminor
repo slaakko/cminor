@@ -1,0 +1,196 @@
+using System;
+using System.Text;
+
+namespace System.Net.Http
+{
+    public class UriReference
+    {
+        public static UriReference Create(string uri)
+        {
+            return HttpParser.Instance.ParseUri(uri);
+        }
+        public static UriReference Combine(UriReference baseUri, UriReference relativeUri)
+        {
+            if (baseUri == null)
+            {
+                throw new ArgumentNullException("provided base URI is null");
+            }
+            if (relativeUri == null)
+            {
+                throw new ArgumentNullException("provided relative URI is null");
+            }
+            if (!baseUri.IsAbsolute)
+            {
+                throw new ArgumentException("base URI not absolute");
+            }
+            if (relativeUri.IsAbsolute)
+            {
+                return relativeUri;
+            }
+            string basePath = "/";
+            if (!string.IsNullOrEmpty(baseUri.Path))
+            {
+                if (baseUri.Path.StartsWith("/"))
+                {
+                    basePath = baseUri.Path;
+                }
+                else
+                {
+                    basePath = "/" + baseUri.Path;
+                }
+            }
+            UriReference combined = new UriReference();
+            combined.Scheme = baseUri.Scheme;
+            combined.UserInfo = baseUri.UserInfo;
+            combined.Host = baseUri.Host;
+            combined.Port = baseUri.Port;
+            combined.Path = System.IO.GetFullPath(System.IO.Path.Combine(basePath, relativeUri.Path));
+            combined.Query = relativeUri.Query;
+            combined.Fragment = relativeUri.Fragment;
+            return combined;
+        }
+        public UriReference()
+        {
+            asterisk = false;
+        }
+        public override string ToString()
+        {
+            if (asterisk)
+            {
+                return "*";
+            }
+            else
+            {
+                StringBuilder s = new StringBuilder();
+                if (!string.IsNullOrEmpty(scheme))
+                {
+                    s.Append(scheme).Append("://");
+                }
+                if (string.IsNullOrEmpty(host))
+                {
+                    if (!string.IsNullOrEmpty(regName))
+                    {
+                        s.Append(regName);
+                    }
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(userInfo))
+                    {
+                        s.Append(userInfo).Append('@');
+                    }
+                    if (!string.IsNullOrEmpty(host))
+                    {
+                        s.Append(host);
+                        if (port != 0u)
+                        {
+                            s.Append(":").Append(port.ToString());
+                        }
+                    }
+                }
+                if (!string.IsNullOrEmpty(path))
+                {
+                    s.Append(path);
+                }
+                if (!string.IsNullOrEmpty(query))
+                {
+                    s.Append('?').Append(query);
+                }
+                if (!string.IsNullOrEmpty(fragment))
+                {
+                    s.Append('#').Append(fragment);
+                }
+                return s.ToString();
+            }
+        }
+        public bool Asterisk
+        {
+            get { return asterisk; }
+            set { asterisk = value; }
+        }
+        public string Scheme
+        {
+            get { return scheme; }
+            set { scheme = value; }
+        }
+        public string UserInfo
+        {
+            get { return userInfo; }
+            set { userInfo = value; }
+        }
+        public string Host
+        {
+            get { return host; }
+            set { host = value; }
+        }
+        public uint Port
+        {
+            get { return port; }
+            set { port = value; }
+        }
+        public string RegName
+        {
+            get { return regName; }
+            set { regName = value; }
+        }
+        public string Authority
+        {
+            get 
+            { 
+                if (string.IsNullOrEmpty(host))
+                {
+                    return regName;
+                }
+                else
+                {
+                    StringBuilder s = new StringBuilder();
+                    if (!string.IsNullOrEmpty(userInfo))
+                    {
+                        s.Append(userInfo).Append('@');
+                    }
+                    if (!string.IsNullOrEmpty(host))
+                    {
+                        s.Append(host);
+                        if (port != 0u)
+                        {
+                            s.Append(":").Append(port.ToString());
+                        }
+                    }
+                    return s.ToString();
+                }
+            }
+        }
+        public string Path
+        {
+            get { return path; }
+            set { path = value; }
+        }
+        public string Query
+        {
+            get { return query; }
+            set { query = value; }
+        }
+        public string Fragment
+        {
+            get { return fragment; }
+            set { fragment = value; }
+        }
+        public bool IsAbsolute
+        {
+            get { return !string.IsNullOrEmpty(scheme) && !string.IsNullOrEmpty(Authority) && !string.IsNullOrEmpty(path); }
+        }
+        public bool IsRelative
+        {
+            get { return !IsAbsolute; }
+        }
+        private bool asterisk;
+        private string scheme;
+        private string userInfo;
+        private string host;
+        private uint port;
+        private string regName;
+        private string path;
+        private string query;
+        private string fragment;
+    }
+}

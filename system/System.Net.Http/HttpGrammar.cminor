@@ -1,0 +1,1322 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Parsing;
+using System.Text;
+
+namespace System.Net.Http
+{
+    public class HttpConnectionHeaderGrammar : System.Text.Parsing.Grammar
+    {
+        public HttpConnectionHeaderGrammar() : this(new ParsingDomain())
+        {
+        }
+        public HttpConnectionHeaderGrammar(ParsingDomain parsingDomain) : base("HttpConnectionHeaderGrammar", parsingDomain.GetNamespaceScope("System.Net.Http"), parsingDomain)
+        {
+            Owner = 0;
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public List<ConnectionToken> Parse(string content, int fileIndex, string fileName)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                Match match = Parse(scanner, stack, parsingData);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+            List<ConnectionToken> result = cast<List<ConnectionToken>>(stack.Pop());
+            return result;
+        }
+        public class ConnectionTokenListRule : System.Text.Parsing.RuleParser
+        {
+            public ConnectionTokenListRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "List<ConnectionToken>";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser connectionTokensNonterminalParser = GetNonterminal("ConnectionTokens");
+                connectionTokensNonterminalParser.Post = PostConnectionTokens;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromConnectionTokens;
+            }
+            public void PostConnectionTokens(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromConnectionTokens = cast<List<ConnectionToken>>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public List<ConnectionToken> value;
+                public List<ConnectionToken> fromConnectionTokens;
+            }
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Net.Http.HttpGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = new System.Net.Http.HttpGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("ConnectionTokens", this, "HttpGrammar.ConnectionTokens"));
+            AddRule(new ConnectionTokenListRule("ConnectionTokenList", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new NonterminalParser("ConnectionTokens", "ConnectionTokens", 0))));
+        }
+    }
+    public class HttpHeaderGrammar : System.Text.Parsing.Grammar
+    {
+        public HttpHeaderGrammar() : this(new ParsingDomain())
+        {
+        }
+        public HttpHeaderGrammar(ParsingDomain parsingDomain) : base("HttpHeaderGrammar", parsingDomain.GetNamespaceScope("System.Net.Http"), parsingDomain)
+        {
+            Owner = 0;
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public HttpHeader Parse(string content, int fileIndex, string fileName)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                Match match = Parse(scanner, stack, parsingData);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+            HttpHeader result = cast<HttpHeader>(stack.Pop());
+            return result;
+        }
+        public class HttpHeaderRule : System.Text.Parsing.RuleParser
+        {
+            public HttpHeaderRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "HttpHeader";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser headerNonterminalParser = GetNonterminal("header");
+                headerNonterminalParser.Post = Postheader;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromheader;
+            }
+            public void Postheader(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromheader = cast<HttpHeader>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public HttpHeader value;
+                public HttpHeader fromheader;
+            }
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Net.Http.HttpGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = new System.Net.Http.HttpGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("header", this, "HttpGrammar.header"));
+            AddRule(new HttpHeaderRule("HttpHeader", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new NonterminalParser("header", "header", 0))));
+        }
+    }
+    public class HttpStatusGrammar : System.Text.Parsing.Grammar
+    {
+        public HttpStatusGrammar() : this(new ParsingDomain())
+        {
+        }
+        public HttpStatusGrammar(ParsingDomain parsingDomain) : base("HttpStatusGrammar", parsingDomain.GetNamespaceScope("System.Net.Http"), parsingDomain)
+        {
+            Owner = 0;
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public HttpStatus Parse(string content, int fileIndex, string fileName)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                Match match = Parse(scanner, stack, parsingData);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+            HttpStatus result = cast<HttpStatus>(stack.Pop());
+            return result;
+        }
+        public class HttpStatusRule : System.Text.Parsing.RuleParser
+        {
+            public HttpStatusRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "HttpStatus";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser statusLineNonterminalParser = GetNonterminal("StatusLine");
+                statusLineNonterminalParser.Post = PostStatusLine;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromStatusLine;
+            }
+            public void PostStatusLine(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromStatusLine = cast<HttpStatus>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public HttpStatus value;
+                public HttpStatus fromStatusLine;
+            }
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Net.Http.HttpGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = new System.Net.Http.HttpGrammar(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("StatusLine", this, "HttpGrammar.StatusLine"));
+            AddRule(new HttpStatusRule("HttpStatus", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new NonterminalParser("StatusLine", "StatusLine", 0))));
+        }
+    }
+    public class HttpGrammar : System.Text.Parsing.Grammar
+    {
+        public HttpGrammar() : this(new ParsingDomain())
+        {
+        }
+        public HttpGrammar(ParsingDomain parsingDomain) : base("HttpGrammar", parsingDomain.GetNamespaceScope("System.Net.Http"), parsingDomain)
+        {
+            Owner = 0;
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public class CHARRule : System.Text.Parsing.RuleParser
+        {
+            public CHARRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "char";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match[0];
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public char value;
+            }
+        }
+        public class quoted_stringRule : System.Text.Parsing.RuleParser
+        {
+            public quoted_stringRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "string";
+                LocalVariables.Add(new AttrOrVar("StringBuilder", "s"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                ActionParser a2ActionParser = GetAction("A2");
+                a2ActionParser.Action = A2Action;
+                ActionParser a3ActionParser = GetAction("A3");
+                a3ActionParser.Action = A3Action;
+                NonterminalParser quoted_pairNonterminalParser = GetNonterminal("quoted_pair");
+                quoted_pairNonterminalParser.Post = Postquoted_pair;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.s = new StringBuilder();
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.s.Append(match);
+            }
+            public void A2Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.s.Append(context.fromquoted_pair);
+            }
+            public void A3Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.s.ToString();
+            }
+            public void Postquoted_pair(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromquoted_pair = cast<char>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public string value;
+                public StringBuilder s;
+                public char fromquoted_pair;
+            }
+        }
+        public class quoted_pairRule : System.Text.Parsing.RuleParser
+        {
+            public quoted_pairRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "char";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser cHARNonterminalParser = GetNonterminal("CHAR");
+                cHARNonterminalParser.Post = PostCHAR;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromCHAR;
+            }
+            public void PostCHAR(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromCHAR = cast<char>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public char value;
+                public char fromCHAR;
+            }
+        }
+        public class HTTP_VersionRule : System.Text.Parsing.RuleParser
+        {
+            public HTTP_VersionRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "string";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public string value;
+            }
+        }
+        public class StatusCodeRule : System.Text.Parsing.RuleParser
+        {
+            public StatusCodeRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "ushort";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = ushort.Parse(match);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public ushort value;
+            }
+        }
+        public class ReasonPhraseRule : System.Text.Parsing.RuleParser
+        {
+            public ReasonPhraseRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "string";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public string value;
+            }
+        }
+        public class StatusLineRule : System.Text.Parsing.RuleParser
+        {
+            public StatusLineRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "HttpStatus";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser versionNonterminalParser = GetNonterminal("version");
+                versionNonterminalParser.Post = Postversion;
+                NonterminalParser statusCodeNonterminalParser = GetNonterminal("statusCode");
+                statusCodeNonterminalParser.Post = PoststatusCode;
+                NonterminalParser reasonNonterminalParser = GetNonterminal("reason");
+                reasonNonterminalParser.Post = Postreason;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new HttpStatus(context.fromversion, context.fromstatusCode, context.fromreason);
+            }
+            public void Postversion(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromversion = cast<string>(stack.Pop());
+                }
+            }
+            public void PoststatusCode(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromstatusCode = cast<ushort>(stack.Pop());
+                }
+            }
+            public void Postreason(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromreason = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public HttpStatus value;
+                public string fromversion;
+                public ushort fromstatusCode;
+                public string fromreason;
+            }
+        }
+        public class headerRule : System.Text.Parsing.RuleParser
+        {
+            public headerRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "HttpHeader";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser field_nameNonterminalParser = GetNonterminal("field_name");
+                field_nameNonterminalParser.Post = Postfield_name;
+                NonterminalParser field_valueNonterminalParser = GetNonterminal("field_value");
+                field_valueNonterminalParser.Post = Postfield_value;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new HttpHeader(context.fromfield_name, context.fromfield_value);
+            }
+            public void Postfield_name(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromfield_name = cast<string>(stack.Pop());
+                }
+            }
+            public void Postfield_value(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromfield_value = cast<string>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public HttpHeader value;
+                public string fromfield_name;
+                public string fromfield_value;
+            }
+        }
+        public class field_nameRule : System.Text.Parsing.RuleParser
+        {
+            public field_nameRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "string";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public string value;
+            }
+        }
+        public class field_valueRule : System.Text.Parsing.RuleParser
+        {
+            public field_valueRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "string";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = match;
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public string value;
+            }
+        }
+        public class ConnectionTokensRule : System.Text.Parsing.RuleParser
+        {
+            public ConnectionTokensRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "List<ConnectionToken>";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser connection_tokenNonterminalParser = GetNonterminal("connection_token");
+                connection_tokenNonterminalParser.Post = Postconnection_token;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new List<ConnectionToken>();
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value.Add(context.fromconnection_token);
+            }
+            public void Postconnection_token(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromconnection_token = cast<ConnectionToken>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public List<ConnectionToken> value;
+                public ConnectionToken fromconnection_token;
+            }
+        }
+        public class connection_tokenRule : System.Text.Parsing.RuleParser
+        {
+            public connection_tokenRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "ConnectionToken";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (match == "close") context.value = new CloseConnectionToken(); else if (match == "keep-alive") context.value = new KeepAliveConnectionToken(); else context.value = new ConnectionToken(match);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public ConnectionToken value;
+            }
+        }
+        public override void GetReferencedGrammars()
+        {
+        }
+        public override void CreateRules()
+        {
+            AddRule(new RuleParser("OCTET", GetScope(), Domain.GetNextRuleId(),
+                new RangeParser(0u, 255u)));
+            AddRule(new CHARRule("CHAR", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new RangeParser(0u, 127u))));
+            AddRule(new RuleParser("UPALPHA", GetScope(), Domain.GetNextRuleId(),
+                new CharSetParser("A-Z")));
+            AddRule(new RuleParser("LOALPHA", GetScope(), Domain.GetNextRuleId(),
+                new CharSetParser("a-z")));
+            AddRule(new RuleParser("ALPHA", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("UPALPHA", "UPALPHA", 0),
+                    new NonterminalParser("LOALPHA", "LOALPHA", 0))));
+            AddRule(new RuleParser("DIGIT", GetScope(), Domain.GetNextRuleId(),
+                new CharSetParser("0-9")));
+            AddRule(new RuleParser("CTL", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new RangeParser(0u, 31u),
+                    new CharParser('\x7F'))));
+            AddRule(new RuleParser("CR", GetScope(), Domain.GetNextRuleId(),
+                new CharParser('\r')));
+            AddRule(new RuleParser("LF", GetScope(), Domain.GetNextRuleId(),
+                new CharParser('\n')));
+            AddRule(new RuleParser("SP", GetScope(), Domain.GetNextRuleId(),
+                new CharParser(' ')));
+            AddRule(new RuleParser("HT", GetScope(), Domain.GetNextRuleId(),
+                new CharParser('\t')));
+            AddRule(new RuleParser("QUOTE", GetScope(), Domain.GetNextRuleId(),
+                new CharParser('"')));
+            AddRule(new RuleParser("CRLF", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("CR", "CR", 0),
+                    new NonterminalParser("LF", "LF", 0))));
+            AddRule(new RuleParser("LWS", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new OptionalParser(
+                        new NonterminalParser("CRLF", "CRLF", 0)),
+                    new PositiveParser(
+                        new AlternativeParser(
+                            new NonterminalParser("SP", "SP", 0),
+                            new NonterminalParser("HT", "HT", 0))))));
+            AddRule(new RuleParser("TEXT", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new DifferenceParser(
+                                    new NonterminalParser("OCTET", "OCTET", 0),
+                                    new NonterminalParser("CTL", "CTL", 0)),
+                                new NonterminalParser("CR", "CR", 0)),
+                            new NonterminalParser("LF", "LF", 0)),
+                        new NonterminalParser("SP", "SP", 0)),
+                    new NonterminalParser("HT", "HT", 0))));
+            AddRule(new RuleParser("HEX", GetScope(), Domain.GetNextRuleId(),
+                new CharSetParser("A-Fa-f0-9")));
+            AddRule(new RuleParser("separator", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new CharSetParser("()<>@,;:\\\"/[]?={}"),
+                        new NonterminalParser("SP", "SP", 0)),
+                    new NonterminalParser("HT", "HT", 0))));
+            AddRule(new RuleParser("http_token", GetScope(), Domain.GetNextRuleId(),
+                new PositiveParser(
+                    new DifferenceParser(
+                        new NonterminalParser("CHAR", "CHAR", 0),
+                        new AlternativeParser(
+                            new NonterminalParser("CTL", "CTL", 0),
+                            new NonterminalParser("separator", "separator", 0))))));
+            AddRule(new RuleParser("comment", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new CharParser('('),
+                        new KleeneStarParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new NonterminalParser("ctext", "ctext", 0),
+                                    new NonterminalParser("quoted_pair", "quoted_pair", 0)),
+                                new NonterminalParser("comment", "comment", 0)))),
+                    new CharParser(')'))));
+            AddRule(new RuleParser("ctext", GetScope(), Domain.GetNextRuleId(),
+                new DifferenceParser(
+                    new NonterminalParser("TEXT", "TEXT", 0),
+                    new CharSetParser("()"))));
+            AddRule(new quoted_stringRule("quoted_string", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new ActionParser("A0",
+                            new CharParser('"')),
+                        new KleeneStarParser(
+                            new AlternativeParser(
+                                new ActionParser("A1",
+                                    new NonterminalParser("qdtext", "qdtext", 0)),
+                                new ActionParser("A2",
+                                    new NonterminalParser("quoted_pair", "quoted_pair", 0))))),
+                    new ActionParser("A3",
+                        new CharParser('"')))));
+            AddRule(new RuleParser("qdtext", GetScope(), Domain.GetNextRuleId(),
+                new DifferenceParser(
+                    new NonterminalParser("TEXT", "TEXT", 0),
+                    new CharParser('"'))));
+            AddRule(new quoted_pairRule("quoted_pair", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new CharParser('\\'),
+                    new ActionParser("A0",
+                        new NonterminalParser("CHAR", "CHAR", 0)))));
+            AddRule(new HTTP_VersionRule("HTTP_Version", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new StringParser("HTTP"),
+                                    new CharParser('/')),
+                                new PositiveParser(
+                                    new NonterminalParser("DIGIT", "DIGIT", 0))),
+                            new CharParser('.')),
+                        new PositiveParser(
+                            new NonterminalParser("DIGIT", "DIGIT", 0))))));
+            AddRule(new StatusCodeRule("StatusCode", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new NonterminalParser("DIGIT", "DIGIT", 0),
+                            new NonterminalParser("DIGIT", "DIGIT", 0)),
+                        new NonterminalParser("DIGIT", "DIGIT", 0)))));
+            AddRule(new ReasonPhraseRule("ReasonPhrase", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KleeneStarParser(
+                        new DifferenceParser(
+                            new NonterminalParser("TEXT", "TEXT", 0),
+                            new AlternativeParser(
+                                new NonterminalParser("CR", "CR", 0),
+                                new NonterminalParser("LF", "LF", 0)))))));
+            AddRule(new StatusLineRule("StatusLine", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new NonterminalParser("version", "HTTP_Version", 0),
+                                    new NonterminalParser("SP", "SP", 0)),
+                                new NonterminalParser("statusCode", "StatusCode", 0)),
+                            new NonterminalParser("SP", "SP", 0)),
+                        new NonterminalParser("reason", "ReasonPhrase", 0)))));
+            AddRule(new RuleParser("HTTP_Date", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new NonterminalParser("RFC1123_date", "RFC1123_date", 0),
+                        new NonterminalParser("RFC850_date", "RFC850_date", 0)),
+                    new NonterminalParser("asctime_date", "asctime_date", 0))));
+            AddRule(new RuleParser("RFC1123_date", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new NonterminalParser("wkday", "wkday", 0),
+                                            new StringParser(",")),
+                                        new NonterminalParser("SP", "SP", 0)),
+                                    new NonterminalParser("date1", "date1", 0)),
+                                new NonterminalParser("SP", "SP", 0)),
+                            new NonterminalParser("time", "time", 0)),
+                        new NonterminalParser("SP", "SP", 0)),
+                    new StringParser("GMT"))));
+            AddRule(new RuleParser("RFC850_date", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new NonterminalParser("weekday", "weekday", 0),
+                                            new StringParser(",")),
+                                        new NonterminalParser("SP", "SP", 0)),
+                                    new NonterminalParser("date2", "date2", 0)),
+                                new NonterminalParser("SP", "SP", 0)),
+                            new NonterminalParser("time", "time", 0)),
+                        new NonterminalParser("SP", "SP", 0)),
+                    new StringParser("GMT"))));
+            AddRule(new RuleParser("asctime_date", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new NonterminalParser("wkday", "wkday", 0),
+                                        new NonterminalParser("SP", "SP", 0)),
+                                    new NonterminalParser("date3", "date3", 0)),
+                                new NonterminalParser("SP", "SP", 0)),
+                            new NonterminalParser("time", "time", 0)),
+                        new NonterminalParser("SP", "SP", 0)),
+                    new NonterminalParser("Year", "Year", 0))));
+            AddRule(new RuleParser("Year", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new NonterminalParser("DIGIT", "DIGIT", 0),
+                            new NonterminalParser("DIGIT", "DIGIT", 0)),
+                        new NonterminalParser("DIGIT", "DIGIT", 0)),
+                    new NonterminalParser("DIGIT", "DIGIT", 0))));
+            AddRule(new RuleParser("Year2", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("DIGIT", "DIGIT", 0),
+                    new NonterminalParser("DIGIT", "DIGIT", 0))));
+            AddRule(new RuleParser("Day", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("DIGIT", "DIGIT", 0),
+                    new NonterminalParser("DIGIT", "DIGIT", 0))));
+            AddRule(new RuleParser("Day1", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("SP", "SP", 0),
+                    new NonterminalParser("DIGIT", "DIGIT", 0))));
+            AddRule(new RuleParser("date1", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new NonterminalParser("Day", "Day", 0),
+                                new NonterminalParser("SP", "SP", 0)),
+                            new NonterminalParser("month", "month", 0)),
+                        new NonterminalParser("SP", "SP", 0)),
+                    new NonterminalParser("Year", "Year", 0))));
+            AddRule(new RuleParser("date2", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new NonterminalParser("Day", "Day", 0),
+                                new CharParser('-')),
+                            new NonterminalParser("month", "month", 0)),
+                        new CharParser('-')),
+                    new NonterminalParser("Year2", "Year2", 0))));
+            AddRule(new RuleParser("date3", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new NonterminalParser("month", "month", 0),
+                        new NonterminalParser("SP", "SP", 0)),
+                    new AlternativeParser(
+                        new NonterminalParser("Day", "Day", 0),
+                        new NonterminalParser("Day1", "Day1", 0)))));
+            AddRule(new RuleParser("time", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new NonterminalParser("Hour", "Hour", 0),
+                                new CharParser(':')),
+                            new NonterminalParser("Min", "Min", 0)),
+                        new CharParser(':')),
+                    new NonterminalParser("Sec", "Sec", 0))));
+            AddRule(new RuleParser("Hour", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("DIGIT", "DIGIT", 0),
+                    new NonterminalParser("DIGIT", "DIGIT", 0))));
+            AddRule(new RuleParser("Min", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("DIGIT", "DIGIT", 0),
+                    new NonterminalParser("DIGIT", "DIGIT", 0))));
+            AddRule(new RuleParser("Sec", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("DIGIT", "DIGIT", 0),
+                    new NonterminalParser("DIGIT", "DIGIT", 0))));
+            AddRule(new RuleParser("wkday", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new StringParser("Mon"),
+                                        new StringParser("Tue")),
+                                    new StringParser("Wed")),
+                                new StringParser("Thu")),
+                            new StringParser("Fri")),
+                        new StringParser("Sat")),
+                    new StringParser("Sun"))));
+            AddRule(new RuleParser("weekday", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new StringParser("Monday"),
+                                        new StringParser("Tuesday")),
+                                    new StringParser("Wednesday")),
+                                new StringParser("Thursday")),
+                            new StringParser("Friday")),
+                        new StringParser("Saturday")),
+                    new StringParser("Sunday"))));
+            AddRule(new RuleParser("month", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new AlternativeParser(
+                                    new AlternativeParser(
+                                        new AlternativeParser(
+                                            new AlternativeParser(
+                                                new AlternativeParser(
+                                                    new AlternativeParser(
+                                                        new AlternativeParser(
+                                                            new StringParser("Jan"),
+                                                            new StringParser("Feb")),
+                                                        new StringParser("Mar")),
+                                                    new StringParser("Apr")),
+                                                new StringParser("May")),
+                                            new StringParser("Jun")),
+                                        new StringParser("Jul")),
+                                    new StringParser("Aug")),
+                                new StringParser("Sep")),
+                            new StringParser("Oct")),
+                        new StringParser("Nov")),
+                    new StringParser("Dec"))));
+            AddRule(new RuleParser("delta_seconds", GetScope(), Domain.GetNextRuleId(),
+                new PositiveParser(
+                    new NonterminalParser("DIGIT", "DIGIT", 0))));
+            AddRule(new RuleParser("charset", GetScope(), Domain.GetNextRuleId(),
+                new NonterminalParser("http_token", "http_token", 0)));
+            AddRule(new RuleParser("content_coding", GetScope(), Domain.GetNextRuleId(),
+                new NonterminalParser("http_token", "http_token", 0)));
+            AddRule(new RuleParser("transfer_coding", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new StringParser("chunked"),
+                    new NonterminalParser("transfer_extension", "transfer_extension", 0))));
+            AddRule(new RuleParser("transfer_extension", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("http_token", "http_token", 0),
+                    new KleeneStarParser(
+                        new SequenceParser(
+                            new CharParser(';'),
+                            new NonterminalParser("parameter", "parameter", 0))))));
+            AddRule(new RuleParser("parameter", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new NonterminalParser("attribute", "attribute", 0),
+                        new CharParser('=')),
+                    new NonterminalParser("value", "value", 0))));
+            AddRule(new RuleParser("attribute", GetScope(), Domain.GetNextRuleId(),
+                new NonterminalParser("http_token", "http_token", 0)));
+            AddRule(new RuleParser("value", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("http_token", "http_token", 0),
+                    new NonterminalParser("quoted_string", "quoted_string", 0))));
+            AddRule(new RuleParser("media_type", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new NonterminalParser("type", "type", 0),
+                            new StringParser("/")),
+                        new NonterminalParser("subtype", "subtype", 0)),
+                    new KleeneStarParser(
+                        new SequenceParser(
+                            new CharParser(';'),
+                            new NonterminalParser("parameter", "parameter", 0))))));
+            AddRule(new RuleParser("type", GetScope(), Domain.GetNextRuleId(),
+                new NonterminalParser("http_token", "http_token", 0)));
+            AddRule(new RuleParser("subtype", GetScope(), Domain.GetNextRuleId(),
+                new NonterminalParser("http_token", "http_token", 0)));
+            AddRule(new headerRule("header", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new NonterminalParser("field_name", "field_name", 0),
+                            new CharParser(':')),
+                        new NonterminalParser("field_value", "field_value", 0)))));
+            AddRule(new field_nameRule("field_name", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new NonterminalParser("http_token", "http_token", 0))));
+            AddRule(new field_valueRule("field_value", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KleeneStarParser(
+                        new AnyCharParser()))));
+            AddRule(new ConnectionTokensRule("ConnectionTokens", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new EmptyParser()),
+                    new ListParser(
+                        new ActionParser("A1",
+                            new NonterminalParser("connection_token", "connection_token", 0)),
+                        new CharParser(',')))));
+            AddRule(new connection_tokenRule("connection_token", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new NonterminalParser("http_token", "http_token", 0))));
+        }
+    }
+}

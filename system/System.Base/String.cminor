@@ -208,6 +208,24 @@ namespace System
         {
             return new StringEnumerator(this);
         }
+        public string ToLower()
+        {
+            StringBuilder s = new StringBuilder();
+            foreach (char c in this)
+            {
+                s.Append(char.ToLower(c));
+            }
+            return s.ToString();
+        }
+        public string ToUpper()
+        {
+            StringBuilder s = new StringBuilder();
+            foreach (char c in this)
+            {
+                s.Append(char.ToUpper(c));
+            }
+            return s.ToString();
+        }
         public int Length
         {   
             get { return length; }

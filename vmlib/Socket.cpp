@@ -32,6 +32,13 @@ using namespace cminor::machine;
 #define SOCKET int;
 #endif
 
+int gnu_tls_logging_level = 0; // 0 - 9
+
+void SetGnuTlsLoggingLevel(int level)
+{
+    gnu_tls_logging_level = level;
+}
+
 class SocketTable
 {
 public:
@@ -124,6 +131,7 @@ void SocketTable::InitSockets()
         throw socketError;
     }
 #endif
+    //gnutls_global_set_log_level(gnu_tls_logging_level);
     socketsInitialized = true;
 }
 

@@ -26,7 +26,7 @@ namespace System.Xml
             ;
 
         NameChar
-            ::= NameStartChar | [-.0-9\xB7] | range(x0300, x036F) | range(x203F, x2040)
+            ::= NameStartChar | [-.0-9] | range(xB7, xB7) | range(x0300, x036F) | range(x203F, x2040)
             ;
 
         Name : string
@@ -69,12 +69,12 @@ namespace System.Xml
                 )* '\''{ value = processor.EndAttributeValue(); }
             ;
 
-        SystemLiteral(XmlProcessor processor)
-            ::= ('"' ([^"]*){ processor.SystemLiteral(match); } '"') | ('\'' ([^']*){ processor.SystemLiteral(match); } '\'')
+        SystemLiteral : string
+            ::= ('"' ([^"]*){ value = match; } '"') | ('\'' ([^']*){ value = match; } '\'')
             ;
 
-        PubidLiteral(XmlProcessor processor)
-            ::= '"' (PubidChar*){ processor.PublicLiteral(match); } '"' | '\'' ((PubidChar - '\'')*){ processor.PublicLiteral(match); } '\''
+        PubidLiteral : string
+            ::= '"' (PubidChar*){ value = match; } '"' | '\'' ((PubidChar - '\'')*){ value = match; } '\''
             ;
 
         PubidChar
@@ -138,7 +138,7 @@ namespace System.Xml
             ;
 
         DocTypeDecl(XmlProcessor processor)
-            ::= "<!DOCTYPE" S Name (S ExternalID(processor))? S? ('[' IntSubset(processor) ']' S?)? '>'
+            ::= "<!DOCTYPE" S Name:rootElementName{ processor.RootElementName(rootElementName); } (S ExternalID)? S? ('[' IntSubset(processor) ']' S?)? '>'
             ;
 
         DeclSep(XmlProcessor processor)
@@ -150,7 +150,7 @@ namespace System.Xml
             ;
 
         MarkupDecl(XmlProcessor processor)
-            ::= ElementDecl | AttlistDecl(processor) | EntityDecl(processor) | NotationDecl(processor) | PI(processor) | Comment(processor)
+            ::= ElementDecl(processor) | AttlistDecl(processor) | EntityDecl(processor) | NotationDecl(processor) | PI(processor) | Comment(processor)
             ;
 
         ExtSubset(XmlProcessor processor)
@@ -165,13 +165,11 @@ namespace System.Xml
             ::= S "standalone" Eq (('\'' ("yes" | "no") '\'') | ('"' ("yes" | "no") '"'))
             ;
 
-        Element(XmlProcessor processor)
-            ::= EmptyElemTag(processor)
-            |   STag(processor) Content(processor) ETag(processor)
-            ;
-
-        STag(XmlProcessor processor)
-            ::= '<' Name{ processor.BeginStartTag(Name); } (S Attribute(processor))* S? '>'{ processor.EndStartTag(span, fileName); }
+        Element(XmlProcessor processor, var string tagName)
+            ::= '<' Name{ tagName = Name; processor.BeginStartTag(tagName); }  (S Attribute(processor))* S? 
+                (   "/>"{ processor.EndStartTag(span, fileName); processor.EndTag(tagName, span, fileName); } 
+                |   '>'{ processor.EndStartTag(span, fileName); } Content(processor) ETag(processor)
+                )
             ;
 
         Attribute(XmlProcessor processor)
@@ -186,12 +184,8 @@ namespace System.Xml
             ::= CharData(processor):cd1? ((Element(processor) | Reference(processor) | CDSect(processor) | PI(processor) | Comment(processor)) CharData(processor):cd2?)*
             ;
 
-        EmptyElemTag(XmlProcessor processor, var string tagName)
-            ::= '<' Name{ tagName = Name; processor.BeginStartTag(tagName); }  (S Attribute(processor))* S? "/>"{ processor.EndStartTag(span, fileName); processor.EndTag(tagName, span, fileName); }
-            ;
-
-        ElementDecl
-            ::= "<!ELEMENT" S Name S ContentSpec S? '>'
+        ElementDecl(XmlProcessor processor)
+            ::= "<!ELEMENT" S Name:elementName{ processor.BeginElementTypeDeclaration(elementName, span, fileName); } S ContentSpec S? '>'{ processor.EndElementTypeDeclaration(elementName); }
             ;
 
         ContentSpec
@@ -295,7 +289,7 @@ namespace System.Xml
             ;
 
         PEReference(XmlProcessor processor)
-            ::= '%' Name{ processor.ParamEntityRef(Name); } ';'
+            ::= '%' Name{ processor.ParamEntityRef(Name, span, fileName); } ';'
             ;
 
         EntityDecl(XmlProcessor processor)
@@ -307,24 +301,24 @@ namespace System.Xml
             ;
 
         PEDecl(XmlProcessor processor)
-            ::= "<!ENTITY" S '%' S Name S PEDef(processor) S? '>'
+            ::= ("<!ENTITY" S '%' S Name:peName S PEDef(processor):peValue S? '>'){ processor.ParameterEntity(peName, peValue); }
             ;
 
-        EntityDef(XmlProcessor processor) : string 
-            ::= EntityValue(processor){ value = EntityValue; } | (ExternalID(processor) NDataDecl?)
+        EntityDef(XmlProcessor processor) : EntityValue
+            ::= EntityValue(processor){ value = new InternalEntity(EntityValue); } | (ExternalID NDataDecl:notation?){ value = new ExternalEntity(ExternalID, notation); }
+            ;
+        
+        PEDef(XmlProcessor processor) : ParameterEntityValue
+            ::= EntityValue(processor){ value = new InternalParameterEntity(EntityValue); } | ExternalID{ value = new ExternalParameterEntity(ExternalID); }
             ;
 
-        PEDef(XmlProcessor processor)
-            ::= EntityValue(processor) | ExternalID(processor)
+        ExternalID : ExternalID
+            ::= ("SYSTEM" S SystemLiteral:s1){ value = new ExternalID(string.Empty, s1); }
+            |   ("PUBLIC" S PubidLiteral:p2 S SystemLiteral:s2){ value = new ExternalID(p2, s2); }
             ;
 
-        ExternalID(XmlProcessor processor)
-            ::= "SYSTEM" S SystemLiteral(processor):s1
-            |   "PUBLIC" S PubidLiteral(processor) S SystemLiteral(processor):s2
-            ;
-
-        NDataDecl
-            ::= S "NDATA" S Name
+        NDataDecl : string
+            ::= S "NDATA" S Name{ value = Name; }
             ;
 
         TextDecl(XmlProcessor processor)
@@ -344,13 +338,12 @@ namespace System.Xml
             ;
 
         NotationDecl(XmlProcessor processor)
-            ::= "<!NOTATION" S Name S (ExternalID(processor) | PublicID(processor)) S? '>'
+            ::= "<!NOTATION" S Name S (ExternalID | PublicID) S? '>'
             ;
 
-        PublicID(XmlProcessor processor)
-            ::= "PUBLIC" S PubidLiteral(processor)
+        PublicID
+            ::= "PUBLIC" S PubidLiteral
             ;
-
     }
 
     grammar XmlContentGrammar
@@ -359,6 +352,15 @@ namespace System.Xml
 
         XmlContent(XmlProcessor processor)
             ::= Content(processor)
+            ;
+    }
+
+    grammar XmlExternalParsedEntityGrammar
+    {
+        using XmlDocumentGrammar.ExtParsedEnt;
+
+        ExternalParsedEntity(XmlProcessor processor)
+            ::= ExtParsedEnt(processor)
             ;
     }
 }

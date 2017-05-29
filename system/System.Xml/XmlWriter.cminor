@@ -1,0 +1,495 @@
+using System;
+using System.Text;
+
+namespace System.Xml
+{
+    public string XmlEscape(string text)
+    {
+        StringBuilder s = new StringBuilder();
+        foreach (char c in text)
+        {
+            switch (c)
+            {
+                case '"': s.Append("&quot;") break;
+                case '&': s.Append("&amp;"); break;
+                case "'": s.Append("&apos;"); break;
+                case '<': s.Append("&gt;"); break;
+                case '>': s.Append("&lt;"); break;
+                default: s.Append(c); break;
+            }
+        }
+        return s.ToString();
+    }
+
+    public class Attr
+    {
+        public Attr(string localName, string value) : this(string.Empty, localName, value)
+        {
+        }
+        public Attr(string prefix, string localName, string value)
+        {
+            if (string.IsNullOrEmpty(localName)
+            {
+                throw new XmlProcessingException("attribute name is empty");
+            }
+            if (localName.IndexOf(':') != -1)
+            {
+                throw new XmlProcessingException("':' in attribute '" + localName + "'");
+            }
+            if (string.IsNullOrEmpty(prefix))
+            {
+                qualifiedName = localName;
+            }
+            else
+            {
+                if (prefix.IndexOf(':') != -1)
+                {
+                    throw new XmlProcessingException("':' in attribute prefix");
+                }
+                qualifiedName = prefix + ":" + localName;
+            }
+            this.value = value;
+        }
+        public override string ToString()
+        {
+            return qualifiedName + "=\"" + XmlEscape(value) + "\"";
+        }
+        public string QualifiedName
+        {
+            get { return qualifiedName; }
+        }
+        private string qualifiedName;
+        private string value;
+    }
+
+    public class NamespaceAttr : Attr
+    {
+        public NamespaceAttr(string namespaceUri) : base("xmlns", namespaceUri)
+        {
+        }
+        public NamespaceAttr(string prefix, namespaceUri) : base("xmlns", prefix, namespaceUri)
+        {
+        }
+    }
+
+    public class Attrs
+    {
+        public Attr() 
+        {
+            attrNames = new HashSet<string>();
+            attrs = new List<Attr>();
+        }
+        public void Add(Attr attr)
+        {
+            if (attrNames.Contains(attr.QualifiedName))
+            {
+                throw new XmlProcessingException("attribute '" + attr.QualifiedName + "' already added");
+            }
+            attrNames.Add(attr.QualifiedName);
+            attrs.Add(attr);
+        }
+        public List<Attr> AttrList
+        {
+            get { return attrs; }
+        }
+        private HashSet<string> attrNames;
+        private List<Attr> attrs;
+    }
+
+    public class XmlWriter : Closable
+    {
+        public XmlWriter(StreamWriter writer)
+        {
+            this.formatter = new CodeFormatter(writer);
+            this.formatter.IndentSize = 1;
+            this.indented = true;
+            this.elementNameStack = new Stack<string>();
+        }
+        public void Close()
+        {
+            formatter.Close();
+        }
+        public void WriteStartElement(string localName)
+        {
+            WriteStartElement(localname, new Attrs());
+        }
+        public void WriteStartElement(string localName, Attrs attributes)
+        {
+            WriteStartElement(localName, string.Empty, attributes);
+        }
+        public void WriteStartElement(string localName, string prefix)
+        {
+            WriteStartElement(localName, prefix, new Attrs());
+        }
+        public void WriteStartElement(string localName, string prefix, Attrs attributes)
+        {
+            if (string.IsNullOrEmpty(localName))
+            {
+                throw new XmlProcessingException("element name is empty");
+            }
+            if (localName.IndexOf(':') != -1)
+            {
+                throw new XmlProcessingException("':' in element '" + localName + "'");
+            }
+            string qualifiedName;
+            if (string.IsNullOrEmpty(prefix))
+            {
+                qualifiedName = localName;
+            }
+            else
+            {
+                if (prefix.IndexOf(':') != -1)
+                {
+                    throw new XmlProcessingException("':' in element prefix");
+                }
+                qualifiedName = prefix + ":" + localName;
+            }
+            elementNameStack.Push(qualifiedName);
+            if (indented)
+            {
+                if (attributes == null || attributes.AttrList.Count == 0)
+                {
+                    formatter.WriteLine("<" + qualifiedName + ">");
+                    formatter.IncIndent();
+                }
+                else
+                {
+                    formatter.WriteLine("<" + qualifiedName);
+                    formatter.IncIndent();
+                    int n = attributes.AttrList.Count;
+                    for (int i = 0; i < n; ++i)
+                    {
+                        Attr attr = attributes.AttrList[i];
+                        if (i < n - 1)
+                        {
+                            formatter.WriteLine(attr.ToString());
+                        }
+                        else
+                        {   
+                            formatter.WriteLine(attr.ToString() + ">");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (attributes == null || attributes.AttrList.Count == 0)
+                {
+                    formatter.Writer.Write("<" + qualifiedName + ">");
+                }
+                else
+                {
+                    formatter.Writer.Write("<" + qualifiedName);
+                    int n = attributes.AttrList.Count;
+                    for (int i = 0; i < n; ++i)
+                    {
+                        Attr attr = attributes.AttrList[i];
+                        if (i < n - 1)
+                        {
+                            formatter.Writer.Write(" " + attr.ToString());
+                        }
+                        else
+                        {   
+                            formatter.Writer.Write(" " + attr.ToString() + ">");
+                        }
+                    }
+                }
+            }
+        }
+        public void WriteEndElement()
+        {
+            if (elementNameStack.Count == 0)
+            {
+                throw new XmlProcessingException("no element open");
+            }
+            string elementName = elementNameStack.Pop();
+            if (indented)
+            {
+                formatter.DecIndent();
+                formatter.WriteLine("</" + elementName + ">");
+            }
+            else
+            {
+                formatter.Writer.Write("</" + elementName + ">");
+            }
+        }
+        public void WriteEmptyElement(string localName)
+        {
+            WriteEmptyElement(localname, new Attrs());
+        }
+        public void WriteEmptyElement(string localName, Attrs attributes)
+        {
+            WriteEmptyElement(localName, string.Empty, attributes);
+        }
+        public void WriteEmptyElement(string localName, string prefix)
+        {
+            WriteEmptyElement(localName, prefix, new Attrs());
+        }
+        public void WriteEmptyElement(string localName, string prefix, Attrs attributes)
+        {
+            if (string.IsNullOrEmpty(localName))
+            {
+                throw new XmlProcessingException("element name is empty");
+            }
+            if (localName.IndexOf(':') != -1)
+            {
+                throw new XmlProcessingException("':' in element '" + localName + "'");
+            }
+            string qualifiedName;
+            if (string.IsNullOrEmpty(prefix))
+            {
+                qualifiedName = localName;
+            }
+            else
+            {
+                if (prefix.IndexOf(':') != -1)
+                {
+                    throw new XmlProcessingException("':' in element prefix");
+                }
+                qualifiedName = prefix + ":" + localName;
+            }
+            if (indented)
+            {
+                if (attributes == null || attributes.AttrList.Count == 0)
+                {
+                    formatter.WriteLine("<" + qualifiedName + "/>");
+                }
+                else
+                {
+                    formatter.WriteLine("<" + qualifiedName);
+                    formatter.IncIndent();
+                    int n = attributes.AttrList.Count;
+                    for (int i = 0; i < n; ++i)
+                    {
+                        Attr attr = attributes.AttrList[i];
+                        if (i < n - 1)
+                        {
+                            formatter.WriteLine(attr.ToString());
+                        }
+                        else
+                        {   
+                            formatter.WriteLine(attr.ToString() + "/>");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (attributes == null || attributes.AttrList.Count == 0)
+                {
+                    formatter.Writer.Write("<" + qualifiedName + "/>");
+                }
+                else
+                {
+                    formatter.Writer.Write("<" + qualifiedName);
+                    int n = attributes.AttrList.Count;
+                    for (int i = 0; i < n; ++i)
+                    {
+                        Attr attr = attributes.AttrList[i];
+                        if (i < n - 1)
+                        {
+                            formatter.Writer.Write(" " + attr.ToString());
+                        }
+                        else
+                        {   
+                            formatter.Writer.Write(" " + attr.ToString() + "/>");
+                        }
+                    }
+                }
+            }
+        }
+        public void WriteElementString(string localName, string value)
+        {
+            WriteElementString(localName, value, new Attrs());
+        }
+        public void WriteElementString(string localName, string value, Attrs attributes)
+        {
+            WriteElementString(localName, string.Empty, value, attributes);
+        }
+        public void WriteElementString(string localName, string prefix, string value)
+        {
+            WriteElementString(localName, prefix, value, new Attrs());
+        }
+        public void WriteElementString(string localName, string prefix, string value, Attrs attributes)
+        {
+            if (string.IsNullOrEmpty(localName))
+            {
+                throw new XmlProcessingException("element name is empty");
+            }
+            if (localName.IndexOf(':') != -1)
+            {
+                throw new XmlProcessingException("':' in element '" + localName + "'");
+            }
+            string qualifiedName;
+            if (string.IsNullOrEmpty(prefix))
+            {
+                qualifiedName = localName;
+            }
+            else
+            {
+                if (prefix.IndexOf(':') != -1)
+                {
+                    throw new XmlProcessingException("':' in element prefix");
+                }
+                qualifiedName = prefix + ":" + localName;
+            }
+            if (indented)
+            {
+                if (attributes == null || attributes.AttrList.Count == 0)
+                {
+                    formatter.WriteLine("<" + qualifiedName + ">" + XmlEscape(value) + "</" + qualifiedName + ">");
+                }
+                else
+                {
+                    formatter.WriteLine("<" + qualifiedName);
+                    formatter.IncIndent();
+                    int n = attributes.AttrList.Count;
+                    for (int i = 0; i < n; ++i)
+                    {
+                        Attr attr = attributes.AttrList[i];
+                        if (i < n - 1)
+                        {
+                            formatter.WriteLine(attr.ToString());
+                        }
+                        else
+                        {   
+                            formatter.WriteLine(attr.ToString() + ">" + XmlEsacpe(value) + "</" + qualifiedName + ">");
+                        }
+                    }
+                    formatter.DecIndent();
+                }
+            }
+            else
+            {
+                if (attributes == null || attributes.AttrList.Count == 0)
+                {
+                    formatter.Writer.Write("<" + qualifiedName + ">" + XmlEscape(value) + "</" + qualifiedName + ">");
+                }
+                else
+                {
+                    formatter.Writer.Write("<" + qualifiedName);
+                    int n = attributes.AttrList.Count;
+                    for (int i = 0; i < n; ++i)
+                    {
+                        Attr attr = attributes.AttrList[i];
+                        if (i < n - 1)
+                        {
+                            formatter.Writer.Write(" " + attr.ToString());
+                        }
+                        else
+                        {   
+                            formatter.Writer.Write(" " + attr.ToString() + ">" + XmlEsacpe(value) + "</" + qualifiedName + ">");
+                        }
+                    }
+                }
+            }
+        }
+        public void WriteCData(string cdata)
+        {
+            if (cdata == null)
+            {
+                throw new ArgumentNullException("given character data is null");
+            }
+            if (indented)
+            {
+                formatter.WriteLine("<![CDATA[" + cdata + "]]>");
+            }
+            else
+            {
+                formatter.Writer.Write("<![CDATA[" + cdata + "]]>");
+            }
+        }
+        public void WriteString(string s)
+        {
+            if (s == null)
+            {
+                throw new ArgumentNullException("given string is null");
+            }
+            if (indented)
+            {
+                formatter.WriteLine(s);
+            }
+            else
+            {
+                formatter.Writer.Write(s);
+            }
+        }
+        public void WriteStartDocument()
+        {
+            if (indented)
+            {
+                formatter.WriteLine("<?xml version=\"1.0\"?>");
+            }
+            else
+            {
+                formatter.Writer.Write("<?xml version=\"1.0\"?>");
+            }
+        }
+        public void WriteProcessingInstruction(string name, string text)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new ArgumentNullException("given name is empty");
+            }
+            if (indented)
+            {
+                formatter.WriteLine("<?" + name + " " + text + "?>");
+            }
+            else
+            {
+                formatter.Writer.Write("<?" + name + " " + text + "?>");
+            }
+        }
+        public void WriteEntityReference(string entityRefName)
+        {
+            if (string.IsNullOrEmpty(entityRefName))
+            {
+                throw new ArgumentNullException("given entity reference name is empty");
+            }
+            if (indented)
+            {
+                formatter.Write("&" + entityRefName + ";");
+            }
+            else
+            {
+                formatter.Writer.Write("&" + entityRefName + ";");
+            }
+        }
+        public void WriteCharEntity(char c)
+        {
+            uint x = cast<uint>(c);
+            if (indented)
+            {
+                formatter.Write("&#" + x.ToString() + ";");
+            }
+            else
+            {
+                formatter.Writer.Write("&#" + x.ToString() + ";");
+            }
+        }
+        public void WriteComment(string comment)
+        {
+            if (indented)
+            {
+                formatter.WriteLine("<!--" + comment + "-->");
+            }
+            else
+            {
+                formatter.Writer.Write("<!--" + comment + "-->");
+            }
+        }
+        public bool Indented
+        {
+            get { return indented; }
+            set { indented = value; }
+        }
+        public int IndentSize
+        {
+            get { return formatter.IndentSize; }
+            set { formatter.IndentSize = value; }
+        }
+        private CodeFormatter formatter;
+        private bool indented;
+        private Stack<string> elementNameStack;
+    }
+}

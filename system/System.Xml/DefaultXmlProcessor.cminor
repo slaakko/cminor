@@ -8,31 +8,47 @@ namespace System.Xml
     {
         public DefaultXmlProcessor()
         {
-            this.contentHandler = new ContentHandler();
+            this.content = string.Empty;
+            this.contentStack = new Stack<string>();
+            this.contentHandler = new XmlContentHandler();
+            this.entityResolver = new XmlEntityResolver();
             this.contentParser = null;
+            this.externalEntityParser = null;
+            this.rootElementName = string.Empty;
             this.tagStack = new Stack<string>();
             this.namespaceUriStack = new Stack<string>();
             this.currentNamespaceUri = string.Empty;
             this.namespacePrefixMap = new HashMap<string, string>();
             this.namespacePrefixStack = new Stack<string>();
             this.currentNamespacePrefix = string.Empty;
-            this.entityMap = new HashMap<string, string>();
+            this.entityMap = new HashMap<string, EntityValue>();
+            this.paramEntityMap = new HashMap<string, ParameterEntityValue>();
             this.recursiveEntityNames = new HashSet<string>();
+            this.elementTypeDeclarationMap = new HashMap<string, ElementContentSpec>();
+            this.elementContentSpec = null;
             this.attributeValueBuilder = null;
             this.parsingEntityValue = false;
-            entityMap["quot"] = "\"";
-            entityMap["amp"] = "&";
-            entityMap["apos"] = "'";
-            entityMap["lt"] = "<";
-            entityMap["gt"] = ">";
+            this.entityMap["quot"] = new InternalEntity("\"");
+            this.entityMap["amp"] = new InternalEntity("&");
+            this.entityMap["apos"] = new InternalEntity("'");
+            this.entityMap["lt"] = new InternalEntity("<");
+            this.entityMap["gt"] = new InternalEntity(">");
+        }
+        public override void SetContent(string content)
+        {
+            this.content = content;
+        }
+        public override void SetContentHandler(XmlContentHandler contentHandler)
+        {
+            this.contentHandler = contentHandler;
         }
         public override void SetContentParser(XmlContentParser contentParser) 
         {
             this.contentParser = contentParser;
         }
-        public override void SetContentHandler(ContentHandler contentHandler)
+        public override void SetExternalEntityParser(XmlExternalEntityParser externalEntityParser) 
         {
-            this.contentHandler = contentHandler;
+            this.externalEntityParser = externalEntityParser;
         }
         public override void Version(string xmlVersion) 
         {
@@ -104,7 +120,7 @@ namespace System.Xml
             ParseQualifiedName(currentTagName, ref localName, ref prefix, span, systemId);
             if (prefix == "xmlns")
             {
-                throw new XmlProcessingException("'xmlns' prefix cannot be declared for an element");
+                throw new XmlProcessingException(GetErrorLocationStr(systemId, span) + ": 'xmlns' prefix cannot be declared for an element");
             }
             contentHandler.StartElement(GetNamespaceUri(prefix, span, systemId), localName, currentTagName, attributes);
         }
@@ -112,18 +128,18 @@ namespace System.Xml
         {
             if (tagStack.Count == 0)
             {
-                throw new XmlProcessingException("end tag '" + tagName + "' has no corresponding start tag");
+                throw new XmlProcessingException(GetErrorLocationStr(systemId, span) + ": end tag '" + tagName + "' has no corresponding start tag");
             }
             if (tagName != currentTagName)
             {
-                throw new XmlProcessingException("end tag '" + tagName + "' does not match start tag '" + currentTagName + "'");
+                throw new XmlProcessingException(GetErrorLocationStr(systemId, span) + ": end tag '" + tagName + "' does not match start tag '" + currentTagName + "'");
             }
             string localName;
             string prefix;
             ParseQualifiedName(currentTagName, ref localName, ref prefix, span, systemId);
             if (prefix == "xmlns")
             {
-                throw new XmlProcessingException("'xmlns' prefix cannot be declared for an element");
+                throw new XmlProcessingException(GetErrorLocationStr(systemId, span) + ": 'xmlns' prefix cannot be declared for an element");
             }
             contentHandler.EndElement(GetNamespaceUri(prefix, span, systemId), localName, currentTagName);
             currentNamespaceUri = namespaceUriStack.Pop();
@@ -134,26 +150,55 @@ namespace System.Xml
         }
         public override void EntityRef(string entityName, System.Text.Parsing.Span span, string systemId)
         {
-            string entityValue;
+            if (parsingEntityValue)
+            {
+                return;
+            }
+            EntityValue entityValue;
             if (entityMap.TryGetValue(entityName, ref entityValue))
             { 
-                if (parsingEntityValue)
+                if (entityValue is InternalEntity)
                 {
-                    return;
-                }
-                if (contentParser != null)
-                {
-                    if (recursiveEntityNames.Contains(entityName))
+                    InternalEntity internalEntity = cast<InternalEntity>(entityValue);
+                    string value = internalEntity.Value;
+                    if (attributeValueBuilder != null)
                     {
-                        throw new XmlProcessingException("recursive reference to entity '" + entityName + "' detected");
+                        attributeValueBuilder.Append(value);
                     }
-                    recursiveEntityNames.Add(entityName);
-                    contentParser.ParseXmlContent(entityValue, this);
-                    recursiveEntityNames.Remove(entityName);
+                    else
+                    {
+                        Text(value);
+                    }
+                }
+                else if (entityValue is ExternalEntity)
+                {
+                    ExternalEntity externalEntity = cast<ExternalEntity>(entityValue);
+                    ExternalID externalId = externalEntity.ExtID;
+                    string notation  = externalEntity.Notation;
+                    if (string.IsNullOrEmpty(notation))
+                    {
+                        string publicLiteral = externalId.PublicLiteral;
+                        string systemLiteral = externalId.SystemLiteral;
+                        string externalEntityContent = entityResolver.ResolveEntity(publicLiteral, ref systemLiteral);
+                        if (recursiveEntityNames.Contains(entityName))
+                        {
+                            throw new XmlProcessingException(GetErrorLocationStr(systemId, span) + ": recursive reference to entity '" + entityName + "' detected");
+                        }
+                        recursiveEntityNames.Add(entityName);
+                        contentStack.Push(content);
+                        content = externalEntityContent;
+                        externalEntityParser.ParseExternalXmlEntity(externalEntityContent, systemLiteral, this);
+                        content = contentStack.Pop();
+                        recursiveEntityNames.Remove(entityName);
+                    }
+                    else
+                    {
+                        // todo
+                    }
                 }
                 else
                 {
-                    Text(entityValue);
+                    throw new Exception("logic error");
                 }
             }
             else
@@ -161,9 +206,29 @@ namespace System.Xml
                 contentHandler.SkippedEntity(entityName);
             }
         }
-        public override void GeneralEntity(string entityName, string entityValue) 
+        public override void ParamEntityRef(string paramEntityRefName, System.Text.Parsing.Span span, string systemId) 
+        {
+            if (parsingEntityValue)
+            {
+                return;
+            }
+            ParameterEntityValue paramEntityValue;
+            if (paramEntityMap.TryGetValue(paramEntityRefName, ref paramEntityValue))
+            {
+                // todo
+            }
+            else
+            {
+                throw new XmlProcessingException(GetErrorLocationStr(systemId, span) + ": parameter entity '" + paramEntityRefName + "' not found");
+            }
+        }
+        public override void GeneralEntity(string entityName, EntityValue entityValue) 
         {
             entityMap[entityName] = entityValue;
+        }
+        public override void ParameterEntity(string peName, ParameterEntityValue peValue) 
+        {
+            paramEntityMap[peName] = peValue;
         }
         public override void Text(string text) 
         {
@@ -192,12 +257,29 @@ namespace System.Xml
         {
             contentHandler.Comment(comment);
         }
-        public void ParseQualifiedName(string qualifiedName, ref string localName, ref string prefix, System.Text.Parsing.Span span, string systemId)
+        public override void RootElementName(string rootElementName) 
+        {
+            this.rootElementName = rootElementName;
+        }
+        public override void BeginElementTypeDeclaration(string elementName, System.Text.Parsing.Span span, string systemId) 
+        {
+            if (elementTypeDeclarationMap.ContainsKey(elementName))
+            {
+                throw new XmlProcessingException(GetErrorLocationStr(systemId, span) + ": element '" + elementName + "' type declaration not unique");
+            }
+            elementContentSpec = new ElementContentSpec();
+            elementTypeDeclarationMap[elementName] = elementContentSpec;
+        }
+        public override void EndElementTypeDeclaration(string elementName) 
+        {
+            elementContentSpec = null;
+        }
+        private void ParseQualifiedName(string qualifiedName, ref string localName, ref string prefix, System.Text.Parsing.Span span, string systemId)
         {
             List<string> parts = qualifiedName.Split(':');
             if (parts.Count > 2)
             {
-                throw new XmlProcessingException("qualified name '" + qualifiedName + "' has more than one ':' character");
+                throw new XmlProcessingException(GetErrorLocationStr(systemId, span) + ": qualified name '" + qualifiedName + "' has more than one ':' character");
             }
             else if (parts.Count == 2)
             {
@@ -223,11 +305,35 @@ namespace System.Xml
             }
             else
             {
-                throw new XmlProcessingException("namespace prefix '" + namespacePrefix + "' not bound to any namespace URI");
+                throw new XmlProcessingException(GetErrorLocationStr(systemId, span) + ": namespace prefix '" + namespacePrefix + "' not bound to any namespace URI");
             }
         }
+        private string GetErrorLocationStr(string systemId, System.Text.Parsing.Span span)
+        {
+            int errorColumn = GetErrorColumn(span.Start);
+            return "error in '" + systemId + "' at line " + span.LineNumber.ToString() + " column " + errorColumn.ToString() + " (index " + span.Start.ToString() + ")";
+        }
+        private int GetErrorColumn(int index)
+        {
+            int errorColumn = 0;
+            while (index > 0 && content[index] != '\n' && content[index] != '\r')
+            {
+                ++errorColumn;
+                --index;
+            }
+            if (errorColumn == 0)
+            {
+                errorColumn = 1;
+            }
+            return errorColumn;
+        }
+        private string content;
+        private Stack<string> contentStack;
+        private XmlContentHandler contentHandler;
+        private XmlEntityResolver entityResolver;
         private XmlContentParser contentParser;
-        private ContentHandler contentHandler;
+        private XmlExternalEntityParser externalEntityParser;
+        private string rootElementName;
         private Stack<string> tagStack;
         private string currentTagName;
         private Attributes attributes;
@@ -236,8 +342,11 @@ namespace System.Xml
         private Stack<string> namespacePrefixStack;
         private string currentNamespacePrefix;
         private HashMap<string, string> namespacePrefixMap;
-        private HashMap<string, string> entityMap;
+        private HashMap<string, EntityValue> entityMap;
+        private HashMap<string, ParameterEntityValue> paramEntityMap;
         private HashSet<string> recursiveEntityNames;
+        private HashMap<string, ElementContentSpec> elementTypeDeclarationMap;
+        private ElementContentSpec elementContentSpec;
         private StringBuilder attributeValueBuilder;
         private bool parsingEntityValue;
     }

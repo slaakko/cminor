@@ -1,0 +1,53 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Net.Http
+{
+    public class HttpParser
+    {
+        static HttpParser()
+        {
+            instance = new HttpParser();
+        }
+        private HttpParser()
+        {
+            httpGrammar = new HttpGrammar();
+            headerGrammar = new HttpHeaderGrammar(httpGrammar.Domain);
+            statusGrammar = new HttpStatusGrammar(httpGrammar.Domain);
+            uriGrammar = new UriGrammar(httpGrammar.Domain);
+            mediaTypeGrammar = new MediaTypeGrammar(httpGrammar.Domain);
+            connectionHeaderGrammar = new HttpConnectionHeaderGrammar(httpGrammar.Domain);
+        }
+        public static HttpParser Instance
+        {
+            get { return instance; }
+        }
+        public HttpHeader ParseHeader(string header)
+        {
+            return headerGrammar.Parse(header, 0, "");
+        }
+        public HttpStatus ParseStatusLine(string statusLine)
+        {
+            return statusGrammar.Parse(statusLine, 0, "");
+        }
+        public UriReference ParseUri(string uri)
+        {
+            return uriGrammar.Parse(uri, 0, "");
+        }
+        public MimeType ParseMimeType(string mimeType)
+        {
+            return mediaTypeGrammar.Parse(mimeType.ToLower(), 0, "");
+        }
+        public List<ConnectionToken> ParseConnectionTokens(string connectionTokens)
+        {
+            return connectionHeaderGrammar.Parse(connectionTokens, 0, "");
+        }
+        private static HttpParser instance;
+        private HttpGrammar httpGrammar;
+        private HttpHeaderGrammar headerGrammar;
+        private HttpStatusGrammar statusGrammar;
+        private UriGrammar uriGrammar;
+        private MediaTypeGrammar mediaTypeGrammar;
+        private HttpConnectionHeaderGrammar connectionHeaderGrammar;
+    }
+}

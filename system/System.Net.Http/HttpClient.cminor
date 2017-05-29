@@ -1,0 +1,314 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.IO;
+using System.Net.Sockets;
+
+namespace System.Net.Http
+{
+    public const ushort firstInformationalStatus = 100u;
+    public const ushort lastInformationalStatus = 199u;
+    public const ushort statusContinue = 100u;
+    public const ushort statusSwitchingProtocols = 101u;
+
+    public const ushort firstSuccessStatus = 200u;
+    public const ushort lastSuccessStatus = 299u;
+    public const ushort statusOK = 200u;
+    public const ushort statusCreated = 201u;
+    public const ushort statusAccepted = 202u;
+    public const ushort statusNonAuthoritativeInformation = 203u;
+    public const ushort statusNoContent = 204u;
+    public const ushort statusResetContent = 205u;
+    public const ushort statusPartialContent = 206u;
+
+    public const ushort firstRedirectionStatus = 300u;
+    public const ushort lastRedirectionStatus = 399u;
+    public const ushort statusMultipleChoices = 300u;
+    public const ushort statusMovedPermanently = 301u;
+    public const ushort statusFound = 302u;
+    public const ushort statusSeeOther = 303u;
+    public const ushort statusNotModified = 304u;
+    public const ushort statusUseProxy = 305u;
+    public const ushort statusTemporaryRedirect = 307u;
+
+    public const ushort firstClientErrorStatus = 400u;
+    public const ushort lastClientErrorStatus = 499u;
+    public const ushort statusBadRequest = 400u;
+    public const ushort statusUnauthorized = 401u;
+    public const ushort statusPaymentRequired = 402u;
+    public const ushort statusForbidden = 403u;
+    public const ushort statusNotFound = 404u;
+    public const ushort statusMethodNotAllowed = 405u;
+    public const ushort statusNotAcceptable = 406u;
+    public const ushort statusProxyAuthenticationRequired = 407u;
+    public const ushort statusRequestTimeout = 408u;
+    public const ushort statusConflict = 409u;
+    public const ushort statusGone = 410u;
+    public const ushort statusLengthRequired = 411u;
+    public const ushort statusPreconditionFailed = 412u;
+    public const ushort statusRequestEntityTooLarge = 413u;
+    public const ushort statusRequestURITooLarge = 414u;
+    public const ushort statusUnsupportedMediaType = 415u;
+    public const ushort statusRequestedRangeNotSatisfiable = 416u;
+    public const ushort statusExpectationFailed = 417u;
+
+    public const ushort firstServerErrorStatus = 500u;
+    public const ushort lastServerErrorStatus = 599u;
+    public const ushort statusInternalServerError = 500u;
+    public const ushort statusNotImplemented = 501u;
+    public const ushort statusBadGateway = 502u;
+    public const ushort statusServiceUnavailable = 503u;
+    public const ushort statusGatewayTimeout = 504u;
+    public const ushort statusHTTPVersionNotSupported = 505u;
+
+    public class HttpStatus
+    {
+        public HttpStatus(string httpVersion, ushort statusCode, string reason)
+        {
+            this.httpVersion = httpVersion;
+            this.statusCode = statusCode;
+            this.reason = reason;
+        }
+        public bool Success()
+        {
+            return statusCode >= firstSuccessStatus && statusCode <= lastSuccessStatus;
+        }
+        public string HttpVersion
+        {
+            get { return httpVersion; }
+        }
+        public ushort StatusCode
+        {
+            get { return statusCode; }
+        }
+        public string Reason
+        {
+            get { return reason; }
+        }
+        private string httpVersion;
+        private ushort statusCode;
+        private string reason;
+    }
+
+    public class HttpException : Exception
+    {
+        public HttpException(HttpStatus httpStatus) : base(httpStatus.Reason)
+        {
+            this.httpStatus = httpStatus;
+        }
+        public HttpStatus Status
+        {
+            get { return httpStatus; }
+        }
+        private HttpStatus httpStatus;
+    }
+
+    public class HttpClient : HttpAgent, Closable
+    {
+        public HttpClient() : base()
+        {
+            this.baseAddress = null;
+            this.host = null;
+            this.port = 0u;
+            this.tcpClient = null;
+            this.stream = null;
+            this.alwaysClose = false;
+        }
+        public void Connect(string host)
+        {
+            Connect(host, 0u);
+        }
+        public void Connect(string host, uint port)
+        {
+            if (stream != null)
+            {
+                Close();
+            }
+            this.host = host;
+            if (port == 0u)
+            {
+                port = 80u;
+            }
+            this.port = port;
+            this.tcpClient = new TcpClient(host, port.ToString());
+            this.stream = new BufferedStream(tcpClient.GetStream());
+        }
+        public void Close()
+        {
+            if (tcpClient != null)
+            {
+                tcpClient.Client.Shutdown(ShutdownMode.both);
+                tcpClient = null;
+            }
+            if (stream != null)
+            {
+                stream.Close();
+                stream = null;
+            }
+            host = null;
+            port = 0u;
+        }
+        public string Get(UriReference uri)
+        {
+            return Get(uri, null);
+        }
+        public string Get(UriReference uri, List<HttpHeader> requestHeaders)
+        {
+            if (baseAddress == null)
+            {
+                baseAddress = uri;
+            }
+            UriReference absoluteUri = UriReference.Combine(baseAddress, uri);
+            if (stream == null || HostOrPortDiffers(absoluteUri))
+            {
+                Connect(absoluteUri.Host, absoluteUri.Port);
+            }
+            UriReference requestUri = new UriReference();
+            requestUri.Path = absoluteUri.Path;
+            requestUri.Query = absoluteUri.Query;
+            requestUri.Fragment = absoluteUri.Fragment;
+            if (requestHeaders == null)
+            {
+                requestHeaders = new List<HttpHeader>();
+            }
+            BuildRequestHeaders(requestHeaders);
+            HttpRequest request = new HttpRequest(new HttpGetMethod(), requestUri, new HttpVersion_1_1(), requestHeaders);
+            StreamWriter writer = new StreamWriter(stream);
+            request.Write(writer, Log);
+            return ReadResponse();
+        }
+        public UriReference BaseAddress
+        {
+            get { return baseAddress; }
+            set { baseAddress = value; }
+        }
+        public Stream ContainedStream
+        {
+            get { return stream; }
+            set { stream = value; }
+        }
+        public bool AlwaysClose
+        {
+            get { return alwaysClose; }
+            set { alwaysClose = value; }
+        }
+        private void BuildRequestHeaders(List<HttpHeader> requestHeaders)
+        {
+            HashMap<string, HttpHeader> requestHeaderMap = new HashMap<string, HttpHeader>();
+            foreach (HttpHeader header in requestHeaders)
+            {
+                requestHeaderMap[header.FieldName] = header;
+            }
+            if (!requestHeaderMap.ContainsKey("host"))
+            {
+                requestHeaders.Add(new HttpHostHeader(host, port));
+            }
+            HttpHeader userAgentHeader;
+            if (requestHeaderMap.TryGetValue("user-agent", ref userAgentHeader))
+            {
+                if (userAgentHeader is HttpUserAgentHeader)
+                {
+                    HttpUserAgentHeader httpUserAgentHeader = cast<HttpUserAgentHeader>(userAgentHeader);
+                    httpUserAgentHeader.AddProduct(new CminorSystemNetHttpProduct());
+                }
+            }
+            else
+            {
+                requestHeaders.Add(new HttpUserAgentHeader(new CminorSystemNetHttpProduct()));
+            }
+        }
+        private string ReadResponse()
+        {
+            List<HttpHeader> responseHeaders = new List<HttpHeader>();
+            string statusLine = ReadStartOfMessage(stream, ref responseHeaders);
+            HttpStatus httpStatus = HttpParser.Instance.ParseStatusLine(statusLine);
+            if (httpStatus.Success())
+            {
+                ResponseState responseState = ProcessResponseHeaders(responseHeaders);
+                string content;
+                uint n = responseState.ContentLength;
+                if (n != 0u)
+                {
+                    MemoryStream memoryStream = new MemoryStream();
+                    for (uint i = 0u; i < n; ++i)
+                    {
+                        int result = stream.ReadByte();
+                        if (result == -1)
+                        {
+                            throw new Exception("unexpected end of HTTP response stream");
+                        }
+                        byte b = cast<byte>(result);
+                        memoryStream.WriteByte(b);
+                    }
+                    StreamReader reader = new StreamReader(memoryStream);
+                    content = reader.ReadToEnd();
+                }
+                else
+                {
+                    StreamReader reader = new StreamReader(stream);
+                    content = reader.ReadToEnd();
+                }
+                if (responseState.CloseConnection || alwaysClose)
+                {
+                    Close();
+                }
+                return content;
+            }
+            else
+            {
+                throw new HttpException(httpStatus);
+            }
+        }
+        private ResponseState ProcessResponseHeaders(List<HttpHeader> headers)
+        {
+            ResponseState responseState = new ResponseState();
+            foreach (HttpHeader header in headers)
+            {
+                if (header.FieldName == "connection")
+                {
+                    List<ConnectionToken> connectionTokens = HttpParser.Instance.ParseConnectionTokens(header.FieldValue.ToLower());
+                    foreach (ConnectionToken connectionToken in connectionTokens)
+                    {
+                        if (connectionToken is CloseConnectionToken)
+                        {
+                            responseState.CloseConnection = true;
+                        }
+                        else if (connectionToken is KeepAliveConnectionToken)
+                        {
+                            responseState.KeepAliveConnection = true;
+                        }
+                    }
+                }
+            }
+            return responseState;
+        }
+        private bool HostOrPortDiffers(UriReference uri)
+        {
+            if (string.IsNullOrEmpty(host) || uri.Host != host)
+            {
+                return true;
+            }
+            uint uriPort = uri.Port;
+            if (uriPort == 0u)
+            {
+                uriPort = 80u;
+            }
+            uint thisPort = port;
+            if (thisPort == 0u)
+            {
+                thisPort = 80u;
+            }
+            if (uriPort != thisPort)
+            {
+                return true;
+            }
+            return false;
+        }
+        private UriReference baseAddress;
+        private string host;
+        private uint port;
+        private TcpClient tcpClient;
+        private Stream stream;
+        private bool alwaysClose;
+    }
+}

@@ -1,0 +1,161 @@
+using System;
+
+namespace System.Net.Http
+{
+    grammar UriGrammar
+    {
+        using stdlib.uint;
+
+        UriReference : UriReference
+            ::= empty{ value = new UriReference(); } (AbsoluteUri(value) | RelativeUri(value))? ('#' Fragment{ value.Fragment = match; })?
+            ;
+
+        AbsoluteUri(UriReference uriReference)
+            ::= Scheme{ uriReference.Scheme = match; } ':' (HierPart(uriReference) | OpaquePart)
+            ;
+
+        RelativeUri(UriReference uriReference)
+            ::= (NetPath(uriReference) | AbsPath{ uriReference.Path = match; } | RelPath{ uriReference.Path = match; }) ('?' Query{ uriReference.Query = match; })?
+            ;
+
+        HierPart(UriReference uriReference)
+            ::= (NetPath(uriReference) | AbsPath{ uriReference.Path = match; }) ('?' Query{ uriReference.Query = match; })?
+            ;
+
+        OpaquePart
+            ::= UriCNoSlash UriC*
+            ;
+
+        UriCNoSlash
+            ::= Unreserved | Escaped | [;?:@&=+$,]
+            ;
+
+        NetPath(UriReference uriReference)
+            ::= "//" Authority(uriReference) (AbsPath{ uriReference.Path = match; })?
+            ;
+
+        AbsPath
+            ::= '/' PathSegments
+            ;
+
+        RelPath
+            ::= RelSegment AbsPath?
+            ;
+
+        RelSegment
+            ::= (Unreserved | Escaped | [;@&=+$,])+
+            ;
+
+        Scheme
+            ::= Alpha (Alpha | Digit | [+.-])*
+            ;
+
+        Authority(UriReference uriReference)
+            ::= Server(uriReference) | RegName{ uriReference.Host = null; uriReference.Port = 0u; uriReference.RegName = match; }
+            ;
+
+        RegName
+            ::= (Unreserved | Escaped | [$,;:@&=+])+
+            ;
+
+        Server(UriReference uriReference, var string userInfo)
+            ::= ((UserInfo{ userInfo = match; } '@'{ uriReference.UserInfo = userInfo; })? HostPort(uriReference))?
+            ;
+
+        UserInfo
+            ::= (Unreserved | Escaped | [;:&=+$,])*
+            ;
+
+        HostPort(UriReference uriReference)
+            ::= Host{ uriReference.Host = match; } (':' Port:port{ uriReference.Port = port; })?
+            ;
+
+        Host
+            ::= HostName | IPv4Address
+            ;
+
+        HostName(var string dl)
+            ::= (DomainLabel{ dl = match; } '.')* (TopLabel '.'? | empty{ if (char.IsCDigit(dl[0])) pass = false; })
+            ;
+
+        DomainLabel
+            ::= (AlphaNumOrDash+){ if (match[0] == '-' || match[match.Length - 1] == '-') pass = false; }
+            ;
+
+        TopLabel
+            ::= Alpha (AlphaNumOrDash+){ if (match[match.Length - 1] == '-') pass = false; } | Alpha
+            ;
+
+        IPv4Address
+            ::= Digit+ '.' Digit+ '.' Digit+ '.' Digit+
+            ;
+
+        Port : uint
+            ::= (uint:port{ value = port; })?
+            ;
+
+        Path
+            ::= (AbsPath | OpaquePart)?
+            ;
+
+        PathSegments
+            ::= Segment ('/' Segment)*
+            ;
+
+        Segment
+            ::= PChar* (';' Param)*
+            ;
+
+        Param
+            ::= PChar*
+            ;
+
+        PChar
+            ::= Unreserved | Escaped | [:@&=+$,]
+            ;
+
+        Query
+            ::= UriC*
+            ;
+
+        Fragment
+            ::= UriC*
+            ;
+
+        UriC
+            ::= Reserved | Unreserved | Escaped
+            ;
+
+        Reserved
+            ::= [;/?:@&=+$,]
+            ;
+
+        Unreserved
+            ::= AlphaNum | Mark
+            ;
+
+        Mark
+            ::= [-_.!~*'()]
+            ;
+
+        Escaped
+            ::= '%' hexdigit hexdigit
+            ;
+
+        AlphaNumOrDash
+            ::= AlphaNum | '-'
+            ;
+
+        AlphaNum
+            ::= Alpha | Digit
+            ;
+
+        Alpha
+            ::= letter
+            ;
+
+        Digit
+            ::= digit
+            ;
+    }
+}

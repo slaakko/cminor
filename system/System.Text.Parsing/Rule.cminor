@@ -162,7 +162,7 @@ namespace System.Text.Parsing
                 XmlLog log = scanner.Log;
                 log.WriteBeginRule(Name);
                 log.IncIndent();
-                log.WriteTry(scanner.RestOfLine);
+                log.WriteTry(scanner.RestOfLine(log.MaxLineLength));
                 log.IncIndent();
             }
             int startIndex = scanner.SpanValue.Start;

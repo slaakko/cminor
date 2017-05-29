@@ -81,7 +81,7 @@ namespace System.Xml
         private List<Attribute> attributes;
     }
 
-    public class ContentHandler
+    public class XmlContentHandler
     {
         public virtual void StartDocument() {}
         public virtual void EndDocument() {}

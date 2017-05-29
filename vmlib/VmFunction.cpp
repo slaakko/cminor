@@ -92,7 +92,11 @@ void VmSystemIsCSpaceChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    bool isSpace = std::isspace(char(c));
+    bool isSpace = false;
+    if (c < 256)
+    {
+        isSpace = std::isspace(static_cast<unsigned char>(c));
+    }
     frame.OpStack().Push(MakeIntegralValue<bool>(isSpace, ValueType::boolType));
 }
 
@@ -114,7 +118,11 @@ void VmSystemIsCAlphaChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    bool isAlpha = std::isalpha(char(c));
+    bool isAlpha = false;
+    if (c < 256)
+    {
+        isAlpha = std::isalpha(static_cast<unsigned char>(c));
+    }
     frame.OpStack().Push(MakeIntegralValue<bool>(isAlpha, ValueType::boolType));
 }
 
@@ -136,8 +144,12 @@ void VmSystemIsCAlnumChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    bool isalnum = std::isalnum(char(c));
-    frame.OpStack().Push(MakeIntegralValue<bool>(isalnum, ValueType::boolType));
+    bool isAlnum = false;
+    if (c < 256)
+    {
+        isAlnum = std::isalnum(static_cast<unsigned char>(c));
+    }
+    frame.OpStack().Push(MakeIntegralValue<bool>(isAlnum, ValueType::boolType));
 }
 
 class VmSystemIsCDigitChar : public VmFunction
@@ -158,7 +170,11 @@ void VmSystemIsCDigitChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    bool isDigit = std::isdigit(char(c));
+    bool isDigit = false;
+    if (c < 256)
+    {
+        isDigit = std::isdigit(static_cast<unsigned char>(c));
+    }
     frame.OpStack().Push(MakeIntegralValue<bool>(isDigit, ValueType::boolType));
 }
 
@@ -180,7 +196,11 @@ void VmSystemIsCHexDigitChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    bool isHexDigit = std::isxdigit(char(c));
+    bool isHexDigit = false;
+    if (c < 256)
+    {
+        isHexDigit = std::isxdigit(static_cast<unsigned char>(c));
+    }
     frame.OpStack().Push(MakeIntegralValue<bool>(isHexDigit, ValueType::boolType));
 }
 
@@ -202,7 +222,11 @@ void VmSystemIsCPunctuationChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    bool isPunctuation = std::ispunct(char(c));
+    bool isPunctuation = false;
+    if (c < 256)
+    {
+        isPunctuation = std::ispunct(static_cast<unsigned char>(c));
+    }
     frame.OpStack().Push(MakeIntegralValue<bool>(isPunctuation, ValueType::boolType));
 }
 
@@ -224,7 +248,11 @@ void VmSystemIsCPrintableChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    bool isPrintable = std::isprint(char(c));
+    bool isPrintable = false;
+    if (c < 256)
+    {
+        isPrintable = std::isprint(static_cast<unsigned char>(c));
+    }
     frame.OpStack().Push(MakeIntegralValue<bool>(isPrintable, ValueType::boolType));
 }
 
@@ -246,7 +274,11 @@ void VmSystemIsCLowerChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    bool isLower = std::islower(char(c));
+    bool isLower = false;
+    if (c < 256)
+    {
+        isLower = std::islower(static_cast<unsigned char>(c));
+    }
     frame.OpStack().Push(MakeIntegralValue<bool>(isLower, ValueType::boolType));
 }
 
@@ -268,7 +300,11 @@ void VmSystemIsCUpperChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    bool isUpper = std::isupper(char(c));
+    bool isUpper = false;
+    if (c < 256)
+    {
+        isUpper = std::isupper(static_cast<unsigned char>(c));
+    }
     frame.OpStack().Push(MakeIntegralValue<bool>(isUpper, ValueType::boolType));
 }
 
@@ -290,7 +326,11 @@ void VmSystemToCLowerChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    char32_t toLower = std::tolower(char(c));
+    char32_t toLower = c;
+    if (c < 256)
+    {
+        toLower = std::tolower(static_cast<unsigned char>(c));
+    }
     frame.OpStack().Push(MakeIntegralValue<char32_t>(toLower, ValueType::charType));
 }
 
@@ -312,7 +352,11 @@ void VmSystemToCUpperChar::Execute(Frame& frame)
 {
     IntegralValue value = frame.Local(0).GetValue();
     char32_t c = value.AsChar();
-    char32_t toUpper = std::toupper(char(c));
+    char32_t toUpper = c;
+    if (c < 256)
+    {
+        toUpper = std::toupper(static_cast<unsigned char>(c));
+    }
     frame.OpStack().Push(MakeIntegralValue<char32_t>(toUpper, ValueType::charType));
 }
 
@@ -2514,6 +2558,110 @@ void VmSystemDoubleAsULong::Execute(Frame& frame)
     frame.OpStack().Push(ulongValue);
 }
 
+class VmSystemCurrentDate : public VmFunction
+{
+public:
+    VmSystemCurrentDate(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemCurrentDate::VmSystemCurrentDate(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"curdate"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemCurrentDate::Execute(Frame& frame)
+{
+    time_t rawTime;
+    struct tm* timeInfo;
+    time(&rawTime);
+    timeInfo = gmtime(&rawTime);
+    int year = 1900 + timeInfo->tm_year;
+    int month = 1 + timeInfo->tm_mon;
+    int day = timeInfo->tm_mday;
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    ClassData* dateClassData = ClassDataTable::GetClassData(U"System.Date");
+    ObjectType* dateType = dateClassData->Type();
+    ObjectReference date = memoryPool.CreateObject(frame.GetThread(), dateType);
+    memoryPool.SetField(date, 0, IntegralValue(dateClassData));
+    memoryPool.SetField(date, 1, MakeIntegralValue<uint16_t>(static_cast<uint16_t>(year), ValueType::ushortType));
+    memoryPool.SetField(date, 2, MakeIntegralValue<uint8_t>(static_cast<uint8_t>(month), ValueType::byteType));
+    memoryPool.SetField(date, 3, MakeIntegralValue<uint8_t>(static_cast<uint8_t>(day), ValueType::byteType));
+    frame.OpStack().Push(date);
+}
+
+class VmSystemCurrentUtcTime : public VmFunction
+{
+public:
+    VmSystemCurrentUtcTime(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemCurrentUtcTime::VmSystemCurrentUtcTime(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"curutctime"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemCurrentUtcTime::Execute(Frame& frame)
+{
+    time_t rawTime;
+    struct tm* timeInfo;
+    time(&rawTime);
+    timeInfo = gmtime(&rawTime);
+    int hour = timeInfo->tm_hour;
+    int min = timeInfo->tm_min;
+    int sec = timeInfo->tm_sec;
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    ClassData* timeOfDayClassData = ClassDataTable::GetClassData(U"System.TimeOfDay");
+    ObjectType* timeOfDayType = timeOfDayClassData->Type();
+    ObjectReference timeOfDay = memoryPool.CreateObject(frame.GetThread(), timeOfDayType);
+    memoryPool.SetField(timeOfDay, 0, IntegralValue(timeOfDayClassData));
+    memoryPool.SetField(timeOfDay, 1, MakeIntegralValue<uint8_t>(static_cast<uint8_t>(hour), ValueType::byteType));
+    memoryPool.SetField(timeOfDay, 2, MakeIntegralValue<uint8_t>(static_cast<uint8_t>(min), ValueType::byteType));
+    memoryPool.SetField(timeOfDay, 3, MakeIntegralValue<uint8_t>(static_cast<uint8_t>(sec), ValueType::byteType));
+    ObjectReference zoneObjectRef = memoryPool.CreateString(frame.GetThread(), U"UT");
+    memoryPool.SetField(timeOfDay, 4, zoneObjectRef);
+    frame.OpStack().Push(timeOfDay);
+}
+
+class VmSystemCurrentLocalTime : public VmFunction
+{
+public:
+    VmSystemCurrentLocalTime(ConstantPool& constantPool);
+    void Execute(Frame& frame) override;
+};
+
+VmSystemCurrentLocalTime::VmSystemCurrentLocalTime(ConstantPool& constantPool)
+{
+    Constant name = constantPool.GetConstant(constantPool.Install(U"curlocaltime"));
+    SetName(name);
+    VmFunctionTable::RegisterVmFunction(this);
+}
+
+void VmSystemCurrentLocalTime::Execute(Frame& frame)
+{
+    time_t rawTime;
+    struct tm* timeInfo;
+    time(&rawTime);
+    timeInfo = localtime(&rawTime);
+    int hour = timeInfo->tm_hour;
+    int min = timeInfo->tm_min;
+    int sec = timeInfo->tm_sec;
+    ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
+    ClassData* timeOfDayClassData = ClassDataTable::GetClassData(U"System.TimeOfDay");
+    ObjectType* timeOfDayType = timeOfDayClassData->Type();
+    ObjectReference timeOfDay = memoryPool.CreateObject(frame.GetThread(), timeOfDayType);
+    memoryPool.SetField(timeOfDay, 0, IntegralValue(timeOfDayClassData));
+    memoryPool.SetField(timeOfDay, 1, MakeIntegralValue<uint8_t>(static_cast<uint8_t>(hour), ValueType::byteType));
+    memoryPool.SetField(timeOfDay, 2, MakeIntegralValue<uint8_t>(static_cast<uint8_t>(min), ValueType::byteType));
+    memoryPool.SetField(timeOfDay, 3, MakeIntegralValue<uint8_t>(static_cast<uint8_t>(sec), ValueType::byteType));
+    frame.OpStack().Push(timeOfDay);
+}
+
 class VmFunctionPool
 {
 public:
@@ -2607,6 +2755,9 @@ void VmFunctionPool::CreateVmFunctions(ConstantPool& constantPool)
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemULongAsDouble(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemFloatAsUInt(constantPool)));
     vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemDoubleAsULong(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemCurrentDate(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemCurrentUtcTime(constantPool)));
+    vmFunctions.push_back(std::unique_ptr<VmFunction>(new VmSystemCurrentLocalTime(constantPool)));
 }
 
 void InitVmFunctions(ConstantPool& vmFunctionNamePool)

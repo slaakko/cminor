@@ -394,6 +394,7 @@ void FunctionSymbol::CreateMachineFunction()
             machineFunction->SetAlreadyGenerated();
             return;
         }
+        SetExported();
     }
     machineFunction = GetAssembly()->GetMachineFunctionTable().CreateFunction(this);
     FunctionTable::AddFunction(machineFunction, memberOfClassTemplateSpecialization);

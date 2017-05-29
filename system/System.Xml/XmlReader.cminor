@@ -9,30 +9,49 @@ namespace System.Xml
         {
             this.grammar = grammar;
         }
-        public override void ParseXmlContent(string xmlContent, XmlProcessor processor)
+        public override void ParseXmlContent(string xmlContent, string systemId, XmlProcessor processor)
         {
-            grammar.Parse(xmlContent, 0, "", processor);
+            grammar.Parse(xmlContent, 0, systemId, processor);
         }
         private XmlContentGrammar grammar;
     }
 
-    internal class XmlGrammarProvider
+    public class DefaultXmlExternalEntityParser : XmlExternalEntityParser
+    {
+        public DefaultXmlExternalEntityParser(XmlExternalParsedEntityGrammar grammar)
+        {
+            this.grammar = grammar;
+        }
+        public override void ParseExternalXmlEntity(string externalEntityContent, string systemId, XmlProcessor processor)
+        {
+            grammar.Parse(externalEntityContent, 0, systemId, processor);
+        }
+        private XmlExternalParsedEntityGrammar grammar;
+    }
+
+    public class XmlGrammarProvider
     {
         static XmlGrammarProvider()
         {
-            contentGrammar = new XmlContentGrammar();
             documentGrammar = new XmlDocumentGrammar();
-        }
-        public static XmlContentGrammar ContentGrammar
-        {
-            get { return contentGrammar; }
+            contentGrammar = new XmlContentGrammar();
+            externalParsedEntityGrammar = new XmlExternalParsedEntityGrammar();
         }
         public static XmlDocumentGrammar DocumentGrammar
         {
             get { return documentGrammar; }
         }
-        private static XmlContentGrammar contentGrammar;
+        public static XmlContentGrammar ContentGrammar
+        {
+            get { return contentGrammar; }
+        }
+        public static XmlExternalParsedEntityGrammar ExternalParsedEntityGrammar
+        {
+            get { return externalParsedEntityGrammar; }
+        }
         private static XmlDocumentGrammar documentGrammar;
+        private static XmlContentGrammar contentGrammar;
+        private static XmlExternalParsedEntityGrammar externalParsedEntityGrammar;
     }
 
     public class XmlReader 
@@ -40,29 +59,42 @@ namespace System.Xml
         public XmlReader()
         {
             processor = new DefaultXmlProcessor();
+            contentHandler = new XmlContentHandler();
             contentParser = new DefaultXmlContentParser(XmlGrammarProvider.ContentGrammar);
+            externalEntityParser = new DefaultXmlExternalEntityParser(XmlGrammarProvider.ExternalParsedEntityGrammar);
         }
-        public void ParseFile(string xmlFileName, ContentHandler contentHandler)
+        public void ParseFile(string xmlFileName)
         {
-            if (contentHandler == null)
-            {
-                throw new ArgumentNullException("provided content handler is null");
-            }
             processor.SetContentHandler(contentHandler);
             processor.SetContentParser(contentParser);
-            XmlGrammarProvider.DocumentGrammar.Parse(File.ReadAllText(xmlFileName), 0, xmlFileName, processor);
+            processor.SetExternalEntityParser(externalEntityParser);
+            string content = File.ReadAllText(xmlFileName);
+            processor.SetContent(content);
+            XmlGrammarProvider.DocumentGrammar.Parse(content, 0, xmlFileName, processor);
         }
         public XmlProcessor Processor
         {
             get { return processor; }
             set { processor = value; }
         }
+        public XmlContentHandler ContentHandler
+        {
+            get { return contentHandler; }
+            set { contentHandler = value; }
+        }
         public XmlContentParser ContentParser
         {
             get { return contentParser; }
             set { contentParser = value; }
         }
+        public XmlExternalEntityParser ExternalEntityParser
+        {
+            get { return externalEntityParser; }
+            set { externalEntityParser = value; }
+        }
         private XmlProcessor processor;
+        private XmlContentHandler contentHandler;
         private XmlContentParser contentParser;
+        private XmlExternalEntityParser externalEntityParser;
     }
 }

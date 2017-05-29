@@ -4,6 +4,8 @@
 //  duration between two time points in nanoseconds.
 //  ========================================================
 
+using System.Text;
+
 namespace System
 {
     public class TimePoint
@@ -165,4 +167,230 @@ namespace System
         SleepFor(dur);
     }
 
+    public class TimeOfDay
+    {
+        public TimeOfDay()
+        {
+            hour = 0u;
+            min = 0u;
+            sec = 0u;
+            zone = string.Empty;
+        }
+        public TimeOfDay(byte hour, byte min, byte sec) : this(hour, min, sec, string.Empty)
+        {
+        }
+        public TimeOfDay(byte hour, byte min, byte sec, string zone)
+        {
+            this.hour = hour;
+            this.min = min;
+            this.sec = sec;
+            this.zone = zone;
+        }
+        public override string ToString()
+        {
+            StringBuilder s = new StringBuilder();
+            s.Append(cast<char>(cast<int>('0') + hour / 10u));
+            s.Append(cast<char>(cast<int>('0') + hour % 10u));
+            s.Append(':');
+            s.Append(cast<char>(cast<int>('0') + min / 10u));
+            s.Append(cast<char>(cast<int>('0') + min % 10u));
+            s.Append(':');
+            s.Append(cast<char>(cast<int>('0') + sec / 10u));
+            s.Append(cast<char>(cast<int>('0') + sec % 10u));
+            return s.ToString();
+        }
+        public string ToInternetString()
+        {
+            StringBuilder s = new StringBuilder();
+            s.Append(ToString());
+            if (!string.IsNullOrEmpty(zone))
+            {
+                s.Append(' ').Append(zone);
+            }
+            return s.ToString();
+        }
+        public byte Hour
+        {
+            get { return hour; }
+            set { hour = value; }
+        }
+        public byte Min
+        {
+            get { return min; }
+            set { min = value; }
+        }
+        public byte Sec
+        {
+            get { return sec; }
+            set { sec = value; }
+        }
+        public string Zone
+        {
+            get { return zone; }
+            set { zone = value; }
+        }
+        private byte hour;
+        private byte min;
+        private byte sec;
+        private string zone;
+    }
+
+    public bool operator==(TimeOfDay left, TimeOfDay right)
+    {
+        if (left.Hour != right.Hour || left.Min != right.Min || left.Sec != right.Sec) return false;
+        string leftZone = string.Empty;
+        if (!string.IsNullOrEmpty(left.Zone)) leftZone = left.Zone;
+        string rightZone = string.Empty;
+        if (!string.IsNullOrEmpty(right.Zone)) rightZone = right.Zone;
+        return leftZone == rightZone;
+    }
+
+    public bool operator<(TimeOfDay left, TimeOfDay right)
+    {
+        if (left.Hour < right.Hour) return true;
+        if (left.Hour > right.Hour) return false;
+        if (left.Min < right.Min) return true;
+        if (left.Min > right.Min) return false;
+        return left.Sec < right.Sec;
+    }
+
+    [vmf=curutctime]
+    public extern TimeOfDay CurrentUtcTime();
+    [vmf=curlocaltime]
+    public extern TimeOfDay CurrentLocalTime();
+
+    public bool TryParseTime(string s, ref TimeOfDay time)
+    {
+        if (string.IsNullOrEmpty(s)) return false;
+        if (s[0] < '0' || s[0] > '9') return false;
+        if (s[1] < '0' || s[1] > '9') return false;
+        if (s[2] != ':')  return false;
+        if (s[3] < '0' || s[3] > '9') return false;
+        if (s[4] < '0' || s[4] > '9') return false;
+        if (s[5] != ':')  return false;
+        if (s[6] < '0' || s[6] > '9') return false;
+        if (s[7] < '0' || s[7] > '9') return false;
+        int hour = (cast<int>(s[0]) - cast<int>('0')) * 10 + (cast<int>(s[1]) - cast<int>('0'));
+        if (hour > 23) return false;
+        int min = (cast<int>(s[3]) - cast<int>('0')) * 10 + (cast<int>(s[4]) - cast<int>('0'));
+        if (min > 59) return false;
+        int sec = (cast<int>(s[6]) - cast<int>('0')) * 10 + (cast<int>(s[7]) - cast<int>('0'));
+        if (sec > 59) return false;
+        string zone = s.Substring(8).Trim();
+        if (string.IsNullOrEmpty(zone))
+        {
+            time = new TimeOfDay(cast<byte>(hour), cast<byte>(min), cast<byte>(sec));
+        }
+        else
+        {
+            time = new TimeOfDay(cast<byte>(hour), cast<byte>(min), cast<byte>(sec), zone);
+        }
+        return true;
+    }
+
+    public TimeOfDay ParseTime(string s)
+    {
+        TimeOfDay time;
+        if (TryParseTime(s, ref time))
+        {
+            return time;
+        }
+        else
+        {
+            ThrowConversionException("invalid time '" + s + "': format HH:MM:SS [zone] expected");
+        }
+        return null;
+    }
+
+    public class DateTime
+    {
+        public DateTime()
+        {
+            this.date = CurrentDate();
+            this.time = CurrentUtcTime();
+        }
+        public DateTime(Date date)
+        {
+            this.date = date;
+            this.time = new TimeOfDay();
+        }
+        public DateTime(TimeOfDay time)
+        {
+            this.date = CurrentDate();
+            this.time = time;
+        }
+        public DateTime(Date date, TimeOfDay time)
+        {
+            this.date = date;
+            this.time = time;
+        }
+        public override string ToString() 
+        {
+            return date.ToString() + " " + time.ToString();
+        }
+        public string ToInternetString()
+        {
+            return date.ToInternetString() + " " + time.ToInternetString();
+        }
+        public Date DatePart
+        {
+            get { return date; }
+            set { date = value; }
+        }
+        public TimeOfDay TimePart
+        {
+            get { return time; }
+            set { time = value; }
+        }
+        private Date date;
+        private TimeOfDay time;
+    }
+
+    public bool operator==(DateTime left, DateTime right)
+    {
+        return left.DatePart == right.DatePart && left.TimePart == right.TimePart;
+    }
+
+    public bool operator<(DateTime left, DateTime right)
+    {
+        if (left.DatePart < right.DatePart) return true;
+        if (left.DatePart > right.DatePart) return false;
+        return left.TimePart < right.TimePart;
+    }
+
+    public bool TryParseDateTime(string s, ref DateTime dateTime)
+    {
+        string dateStr = s.Substring(0, 10);
+        Date date;
+        if (TryParseDate(dateStr, ref date))
+        {
+            TimeOfDay time = new TimeOfDay();
+            string timeStr = s.Substring(11).Trim();
+            if (string.IsNullOrEmpty(timeStr))
+            {
+                dateTime = new DateTime(date);
+                return true;
+            }
+            else if (TryParseTime(timeStr, ref time))
+            {
+                dateTime = new DateTime(date, time);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public DateTime ParseDateTime(string s)
+    {
+        DateTime dateTime;
+        if (TryParseDateTime(s, ref dateTime))
+        {
+            return dateTime;
+        }
+        else
+        {
+            ThrowConversionException("invalid date time '" + s + "': format YYYY-MM-DD HH:MM:SS [zone] expected");
+        }
+        return null;
+    }
 }

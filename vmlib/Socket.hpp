@@ -15,6 +15,7 @@ enum class ShutdownMode
     receive = 0, send = 1, both = 2
 };
 
+void SetGnuTlsLoggingLevel(int level); // 0 - 9
 int32_t CreateSocket();
 void BindSocket(int32_t socketHandle, int port);
 void ListenSocket(int32_t socketHandle, int backlog);

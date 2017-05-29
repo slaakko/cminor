@@ -157,6 +157,8 @@ void PrintHelp(HelpTopics helpTopics)
             "       When N > 0, memory allocator of the virtual machine allocates extra memory\n" <<
             "       whose size is N * <system memory page size> for the thread making the allocation.\n" <<
             "       Thread can consume this extra memory without any further locking.\n" <<
+            "  --gnutls-logging-level=N (-l=N)\n" <<
+            "       Set GnuTLS library logging level to N (N=0-9). Default is 0.\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
@@ -178,6 +180,8 @@ void PrintHelp(HelpTopics helpTopics)
             "       When N > 0, memory allocator of the virtual machine allocates extra memory\n" <<
             "       whose size is N * <system memory page size> for the thread making the allocation.\n" <<
             "       Thread can consume this extra memory without any further locking.\n" <<
+            "  --gnutls-logging-level=N (-l=N)\n" <<
+            "       Set GnuTLS library logging level to N (N=0-9). Default is 0.\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
@@ -384,6 +388,10 @@ int main(int argc, const char** argv)
                                 {
                                     runOptions.push_back(arg);
                                 }
+                                else if (components[0] == "-l" || components[0] == "--gnutls-logging-level")
+                                {
+                                    runOptions.push_back(arg);
+                                }
                                 else
                                 {
                                     throw std::runtime_error("unknown run option '" + arg + "'");
@@ -433,6 +441,10 @@ int main(int argc, const char** argv)
                                     debugOptions.push_back(arg);
                                 }
                                 else if (components[0] == "-t" || components[0] == "--thread-pages")
+                                {
+                                    debugOptions.push_back(arg);
+                                }
+                                else if (components[0] == "-l" || components[0] == "--gnutls-logging-level")
                                 {
                                     debugOptions.push_back(arg);
                                 }

@@ -15,6 +15,11 @@ namespace System
         }
     }
 
+    public void ThrowConversionException(string message)
+    {
+        throw new ConversionException(message);
+    }
+
     internal static class UnsignedConversion<T>
     {
         static UnsignedConversion()

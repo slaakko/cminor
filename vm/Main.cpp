@@ -117,6 +117,8 @@ void PrintHelp()
         "       When N > 0, memory allocator of the virtual machine allocates extra memory\n" <<
         "       whose size is N * <system memory page size> for the thread making the allocation.\n" <<
         "       Thread can consume this extra memory without any further locking.\n" <<
+        "  --gnutls-logging-level=N (-l=N)\n" <<
+        "       Set GnuTLS library logging level to N (N=0-9). Default is 0.\n" <<
         std::endl;
 }
 
@@ -199,8 +201,13 @@ int main(int argc, const char** argv)
                             }
                             else if (components[0] == "-t" || components[0] == "--thread-pages")
                             {
-                                uint8_t threadPages = boost::lexical_cast<uint8_t>(components[1]);
+                                int threadPages = boost::lexical_cast<int>(components[1]);
                                 SetNumAllocationContextPages(threadPages);
+                            }
+                            else if (components[0] == "-l" || components[0] == "--gnutls-logging-level")
+                            {
+                                int level = boost::lexical_cast<int>(components[1]);
+                                SetGnuTlsLoggingLevel(level);
                             }
                             else
                             {

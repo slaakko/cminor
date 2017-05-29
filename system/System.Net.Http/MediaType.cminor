@@ -1,0 +1,282 @@
+using System;
+using System.Text;
+using System.Collections.Generic;
+
+namespace System.Net.Http
+{
+    public class MediaType
+    {
+        public MediaType(string name)
+        {
+            this.name = name;
+        }
+        public string Name
+        {
+            get { return name; }
+        }
+        private string name;
+    }
+
+    public class AnyMediaType : MediaType
+    {
+        public AnyMediaType() : base("*")
+        {
+        }
+    }
+
+    public class Subtype
+    {
+        public Subtype(string name)
+        {
+            this.name = name;
+        }
+        public string Name
+        {
+            get { return name; }
+        }
+        private string name;
+    }
+
+    public class AnySubtype : Subtype
+    {
+        public AnySubtype() : base("*")
+        {
+        }
+    }
+
+    public class TextMediaType : MediaType
+    {
+        public TextMediaType() :  base("text")
+        {
+        }
+    }
+
+    public class PlainSubtype : Subtype
+    {
+        public PlainSubtype() : base("plain")
+        {
+        }
+    }
+
+    public class ImageMediaType : MediaType
+    {
+        public ImageMediaType() : base("image")
+        {
+        }
+    }
+
+    public class JpegSubtype : Subtype
+    {
+        public JpegSubtype() : base("jpeg")
+        {
+        }
+    }
+
+    public class AudioMediaType : MediaType
+    {
+        public AudioMediaType() : base("audio")
+        {
+        }
+    }
+
+    public class BasicSubtype : Subtype
+    {
+        public BasicSubtype() : base("basic")
+        {
+        }
+    }
+
+    public class VideoMediaType : MediaType
+    {
+        public VideoMediaType() : base("video")
+        {
+        }
+    }
+
+    public class MpegSubtype : Subtype
+    {
+        public MpegSubtype() : base("mpeg")
+        {
+        }
+    }
+
+    public class ApplicationMediaType : MediaType
+    {
+        public ApplicationMediaType() : base("application")
+        {
+        }
+    }
+
+    public class OctetStreamSubtype : Subtype
+    {
+        public OctetStreamSubtype() : base("octet-stream")
+        {
+        }
+    }
+
+    public class PostScriptSubtype : Subtype
+    {
+        public PostScriptSubtype() : base("postscript")
+        {
+        }
+    }
+
+    public class MultipartMediaType : MediaType
+    {
+        public MultipartMediaType() : base("multipart")
+        {
+        }
+    }
+
+    public class MessageMediaType : MediaType
+    {
+        public MessageMediaType() : base("message")
+        {
+        }
+    }
+
+    public class Rfc822Subtype : Subtype
+    {
+        public Rfc822Subtype() : base("rfc822")
+        {
+        }
+    }
+
+    public class PartialSubtype : Subtype
+    {
+        public PartialSubtype() : base("partial")
+        {
+        }
+    }
+
+    public class ExternalBodySubtype : Subtype
+    {
+        public ExternalBodySubtype() : base("external-body")
+        {
+        }
+    }
+
+    public class MimeType 
+    {
+        public MimeType()
+        {
+            this.mediaType = new AnyMediaType();
+            this.subtype = new AnySubtype();
+            this.parameters = new Map<string, string>();
+        }
+        public MimeType(MediaType mediaType)
+        {
+            this.mediaType = mediaType;
+            this.subtype = new AnySubtype();
+            this.parameters = new Map<string, string>();
+        }
+        public MimeType(MediaType mediaType, Subtype subtype)
+        {
+            this.mediaType = mediaType;
+            this.subtype = subtype;
+            this.parameters = new Map<string, string>();
+        }
+        public MediaType MdaType
+        {
+            get { return mediaType; }
+            set { mediaType = value; }
+        }
+        public Subtype SbType
+        {
+            get { return subtype; }
+            set { subtype = value; }
+        }
+        public Map<string, string> Parameters
+        {
+            get { return parameters; }
+        }
+        public override string ToString()
+        {
+            if (parameters.Count == 0)
+            {
+                return mediaType.Name + "/" + subtype.Name;
+            }
+            else
+            {
+                StringBuilder s = new StringBuilder();
+                s.Append(mediaType.Name).Append('/').Append(subtype.Name);
+                foreach (KeyValuePair<string, string> parameter in parameters)
+                {
+                    string paramValue = parameter.Value;
+                    if (paramValue.IndexOf('"') != -1)
+                    {
+                        paramValue = MakeStringLiteral(paramValue);
+                    }
+                    s.Append(";").Append(parameter.Key).Append('=').Append(paramValue);
+                }
+                return s.ToString();
+            }
+        }
+        private MediaType mediaType;
+        private Subtype subtype;
+        private Map<string, string> parameters;
+    }
+
+    public class MediaRange
+    {
+        public MediaRange()
+        {
+            this.mimeType = new MimeType();
+            this.quality = 1;
+            this.acceptParams = new Map<string, string>();
+        }
+        public MediaRange(MimeType mimeType)
+        {
+            this.mimeType = mimeType;
+            this.quality = 1;
+            this.acceptParams = new Map<string, string>();
+        }
+        public MimeType MmeType
+        {
+            get { return mimeType; }
+            set { mimeType = value; }
+        }
+        public override string ToString()
+        {
+            if (quality == 1 && acceptParams.Count == 0)
+            {
+                return mimeType.ToString();
+            }
+            else
+            {
+                StringBuilder s = new StringBuilder();
+                s.Append(mimeType.ToString()).Append(' ');
+                if (quality != 1)
+                {
+                    s.Append(";q=").Append(System.ToString(quality, 3));
+                }
+                foreach (KeyValuePair<string, string> parameter in acceptParams)
+                {
+                    s.Append(";").Append(parameter.Key);
+                    string paramValue = parameter.Value;
+                    if (!string.IsNullOrEmpty(paramValue)) 
+                    {
+                        if (paramValue.IndexOf('"') != -1)
+                        {
+                            paramValue = MakeStringLiteral(paramValue);
+                        }
+                        s.Append('=').Append(paramValue);
+                    }
+                }
+                return s.ToString();
+            }
+        }
+        public double Quality
+        {
+            get { return quality; }
+            set { quality = value; }
+        }
+        public Map<string, string> AcceptParams
+        {
+            get { return acceptParams; }
+        }
+        private MimeType mimeType;
+        private double quality;
+        private Map<string, string> acceptParams;
+    }
+}

@@ -1,0 +1,55 @@
+using System;
+
+namespace System.Net.Http
+{
+    public class ConnectionToken
+    {
+        public ConnectionToken(string token)
+        {
+            this.token = token;
+        }
+        private string token;
+    }
+
+    public class CloseConnectionToken : ConnectionToken
+    {
+        public CloseConnectionToken() : base("close")
+        {
+        }
+    }
+
+    public class KeepAliveConnectionToken : ConnectionToken
+    {
+        public KeepAliveConnectionToken() : base("keep-alive")
+        {
+        }
+    }
+
+    public class ResponseState
+    {
+        public ResponseState()
+        {
+            this.closeConnection = false;
+            this.keepAliveConnection = false;
+            this.contentLength = 0u;
+        }
+        public bool CloseConnection
+        {
+            get { return closeConnection; }
+            set { closeConnection = value; }
+        }
+        public bool KeepAliveConnection
+        {
+            get { return keepAliveConnection; }
+            set { keepAliveConnection = value; }
+        }
+        public uint ContentLength
+        {
+            get { return contentLength; }
+            set { contentLength = value; }
+        }
+        private bool closeConnection;
+        private bool keepAliveConnection;
+        private uint contentLength;
+    }
+}

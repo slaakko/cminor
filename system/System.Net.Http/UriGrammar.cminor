@@ -1,0 +1,844 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Parsing;
+
+namespace System.Net.Http
+{
+    public class UriGrammar : System.Text.Parsing.Grammar
+    {
+        public UriGrammar() : this(new ParsingDomain())
+        {
+        }
+        public UriGrammar(ParsingDomain parsingDomain) : base("UriGrammar", parsingDomain.GetNamespaceScope("System.Net.Http"), parsingDomain)
+        {
+            Owner = 0;
+            parsingDomain.AddGrammar(this);
+            CreateRules();
+            Link();
+        }
+        public UriReference Parse(string content, int fileIndex, string fileName)
+        {
+            Stack<object> stack = new Stack<object>();
+            Scanner scanner = new Scanner(content, fileIndex, fileName, SkipRule);
+            ParsingData parsingData = new ParsingData(Domain.NumRules);
+            scanner.Data = parsingData;
+            System.IO.StreamWriter log = Log;
+            XmlLog xmlLog = null;
+            try
+            {
+                if (log != null)
+                {
+                    xmlLog = new XmlLog(log);
+                    scanner.Log = xmlLog;
+                    xmlLog.WriteBeginRule("parse");
+                    xmlLog.IncIndent();
+                }
+                Match match = Parse(scanner, stack, parsingData);
+                Span stop = scanner.SpanValue;
+                if (log != null)
+                {
+                    xmlLog.DecIndent();
+                    xmlLog.WriteEndRule("parse");
+                }
+                if (!match.Hit || stop.Start != content.Length)
+                {
+                    RuleParser startRule = StartRule;
+                    if (startRule != null)
+                    {
+                        throw new ExpectationFailure(startRule.Info, fileName, stop, content);
+                    }
+                    else
+                    {
+                        throw new Exception("grammar '" + Name + "' has no start rule");
+                    }
+                }
+            }
+            finally
+            {
+                if (xmlLog != null)
+                {
+                    xmlLog.Close();
+                }
+            }
+            UriReference result = cast<UriReference>(stack.Pop());
+            return result;
+        }
+        public class UriReferenceRule : System.Text.Parsing.RuleParser
+        {
+            public UriReferenceRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "UriReference";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser absoluteUriNonterminalParser = GetNonterminal("AbsoluteUri");
+                absoluteUriNonterminalParser.Pre = PreAbsoluteUri;
+                NonterminalParser relativeUriNonterminalParser = GetNonterminal("RelativeUri");
+                relativeUriNonterminalParser.Pre = PreRelativeUri;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new UriReference();
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value.Fragment = match;
+            }
+            public void PreAbsoluteUri(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.value);
+            }
+            public void PreRelativeUri(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.value);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public UriReference value;
+            }
+        }
+        public class AbsoluteUriRule : System.Text.Parsing.RuleParser
+        {
+            public AbsoluteUriRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("UriReference", "uriReference"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference = cast<UriReference>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser hierPartNonterminalParser = GetNonterminal("HierPart");
+                hierPartNonterminalParser.Pre = PreHierPart;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference.Scheme = match;
+            }
+            public void PreHierPart(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.uriReference);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public UriReference uriReference;
+            }
+        }
+        public class RelativeUriRule : System.Text.Parsing.RuleParser
+        {
+            public RelativeUriRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("UriReference", "uriReference"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference = cast<UriReference>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                ActionParser a2ActionParser = GetAction("A2");
+                a2ActionParser.Action = A2Action;
+                NonterminalParser netPathNonterminalParser = GetNonterminal("NetPath");
+                netPathNonterminalParser.Pre = PreNetPath;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference.Path = match;
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference.Path = match;
+            }
+            public void A2Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference.Query = match;
+            }
+            public void PreNetPath(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.uriReference);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public UriReference uriReference;
+            }
+        }
+        public class HierPartRule : System.Text.Parsing.RuleParser
+        {
+            public HierPartRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("UriReference", "uriReference"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference = cast<UriReference>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser netPathNonterminalParser = GetNonterminal("NetPath");
+                netPathNonterminalParser.Pre = PreNetPath;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference.Path = match;
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference.Query = match;
+            }
+            public void PreNetPath(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.uriReference);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public UriReference uriReference;
+            }
+        }
+        public class NetPathRule : System.Text.Parsing.RuleParser
+        {
+            public NetPathRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("UriReference", "uriReference"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference = cast<UriReference>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser authorityNonterminalParser = GetNonterminal("Authority");
+                authorityNonterminalParser.Pre = PreAuthority;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference.Path = match;
+            }
+            public void PreAuthority(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.uriReference);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public UriReference uriReference;
+            }
+        }
+        public class AuthorityRule : System.Text.Parsing.RuleParser
+        {
+            public AuthorityRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("UriReference", "uriReference"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference = cast<UriReference>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser serverNonterminalParser = GetNonterminal("Server");
+                serverNonterminalParser.Pre = PreServer;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference.Host = null;
+                context.uriReference.Port = 0u;
+                context.uriReference.RegName = match;
+            }
+            public void PreServer(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.uriReference);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public UriReference uriReference;
+            }
+        }
+        public class ServerRule : System.Text.Parsing.RuleParser
+        {
+            public ServerRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("UriReference", "uriReference"));
+                LocalVariables.Add(new AttrOrVar("string", "userInfo"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference = cast<UriReference>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser hostPortNonterminalParser = GetNonterminal("HostPort");
+                hostPortNonterminalParser.Pre = PreHostPort;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.userInfo = match;
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference.UserInfo = context.userInfo;
+            }
+            public void PreHostPort(Stack<object> stack, ParsingData parsingData)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                stack.Push(context.uriReference);
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public UriReference uriReference;
+                public string userInfo;
+            }
+        }
+        public class HostPortRule : System.Text.Parsing.RuleParser
+        {
+            public HostPortRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                InheritedAttributes.Add(new AttrOrVar("UriReference", "uriReference"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference = cast<UriReference>(stack.Pop());
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+                NonterminalParser portNonterminalParser = GetNonterminal("port");
+                portNonterminalParser.Post = Postport;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference.Host = match;
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.uriReference.Port = context.fromport;
+            }
+            public void Postport(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromport = cast<uint>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public UriReference uriReference;
+                public uint fromport;
+            }
+        }
+        public class HostNameRule : System.Text.Parsing.RuleParser
+        {
+            public HostNameRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                LocalVariables.Add(new AttrOrVar("string", "dl"));
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                ActionParser a1ActionParser = GetAction("A1");
+                a1ActionParser.Action = A1Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.dl = match;
+            }
+            public void A1Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (char.IsCDigit(context.dl[0])) pass = false;
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public string dl;
+            }
+        }
+        public class DomainLabelRule : System.Text.Parsing.RuleParser
+        {
+            public DomainLabelRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (match[0] == '-' || match[match.Length - 1] == '-') pass = false;
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+            }
+        }
+        public class TopLabelRule : System.Text.Parsing.RuleParser
+        {
+            public TopLabelRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (match[match.Length - 1] == '-') pass = false;
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+            }
+        }
+        public class PortRule : System.Text.Parsing.RuleParser
+        {
+            public PortRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "uint";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+                NonterminalParser portNonterminalParser = GetNonterminal("port");
+                portNonterminalParser.Post = Postport;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromport;
+            }
+            public void Postport(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromport = cast<uint>(stack.Pop());
+                }
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public uint value;
+                public uint fromport;
+            }
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain parsingDomain = Domain;
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
+            }
+            ReferencedGrammars.Add(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("uint", this, "System.Text.Parsing.stdlib.uint"));
+            AddRule(new UriReferenceRule("UriReference", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new ActionParser("A0",
+                            new EmptyParser()),
+                        new OptionalParser(
+                            new AlternativeParser(
+                                new NonterminalParser("AbsoluteUri", "AbsoluteUri", 1),
+                                new NonterminalParser("RelativeUri", "RelativeUri", 1)))),
+                    new OptionalParser(
+                        new SequenceParser(
+                            new CharParser('#'),
+                            new ActionParser("A1",
+                                new NonterminalParser("Fragment", "Fragment", 0)))))));
+            AddRule(new AbsoluteUriRule("AbsoluteUri", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new ActionParser("A0",
+                            new NonterminalParser("Scheme", "Scheme", 0)),
+                        new CharParser(':')),
+                    new AlternativeParser(
+                        new NonterminalParser("HierPart", "HierPart", 1),
+                        new NonterminalParser("OpaquePart", "OpaquePart", 0)))));
+            AddRule(new RelativeUriRule("RelativeUri", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new NonterminalParser("NetPath", "NetPath", 1),
+                            new ActionParser("A0",
+                                new NonterminalParser("AbsPath", "AbsPath", 0))),
+                        new ActionParser("A1",
+                            new NonterminalParser("RelPath", "RelPath", 0))),
+                    new OptionalParser(
+                        new SequenceParser(
+                            new CharParser('?'),
+                            new ActionParser("A2",
+                                new NonterminalParser("Query", "Query", 0)))))));
+            AddRule(new HierPartRule("HierPart", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new AlternativeParser(
+                        new NonterminalParser("NetPath", "NetPath", 1),
+                        new ActionParser("A0",
+                            new NonterminalParser("AbsPath", "AbsPath", 0))),
+                    new OptionalParser(
+                        new SequenceParser(
+                            new CharParser('?'),
+                            new ActionParser("A1",
+                                new NonterminalParser("Query", "Query", 0)))))));
+            AddRule(new RuleParser("OpaquePart", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("UriCNoSlash", "UriCNoSlash", 0),
+                    new KleeneStarParser(
+                        new NonterminalParser("UriC", "UriC", 0)))));
+            AddRule(new RuleParser("UriCNoSlash", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new NonterminalParser("Unreserved", "Unreserved", 0),
+                        new NonterminalParser("Escaped", "Escaped", 0)),
+                    new CharSetParser(";?:@&=+$,"))));
+            AddRule(new NetPathRule("NetPath", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new StringParser("//"),
+                        new NonterminalParser("Authority", "Authority", 1)),
+                    new OptionalParser(
+                        new ActionParser("A0",
+                            new NonterminalParser("AbsPath", "AbsPath", 0))))));
+            AddRule(new RuleParser("AbsPath", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new CharParser('/'),
+                    new NonterminalParser("PathSegments", "PathSegments", 0))));
+            AddRule(new RuleParser("RelPath", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("RelSegment", "RelSegment", 0),
+                    new OptionalParser(
+                        new NonterminalParser("AbsPath", "AbsPath", 0)))));
+            AddRule(new RuleParser("RelSegment", GetScope(), Domain.GetNextRuleId(),
+                new PositiveParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new NonterminalParser("Unreserved", "Unreserved", 0),
+                            new NonterminalParser("Escaped", "Escaped", 0)),
+                        new CharSetParser(";@&=+$,")))));
+            AddRule(new RuleParser("Scheme", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("Alpha", "Alpha", 0),
+                    new KleeneStarParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new NonterminalParser("Alpha", "Alpha", 0),
+                                new NonterminalParser("Digit", "Digit", 0)),
+                            new CharSetParser("+.-"))))));
+            AddRule(new AuthorityRule("Authority", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("Server", "Server", 1),
+                    new ActionParser("A0",
+                        new NonterminalParser("RegName", "RegName", 0)))));
+            AddRule(new RuleParser("RegName", GetScope(), Domain.GetNextRuleId(),
+                new PositiveParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new NonterminalParser("Unreserved", "Unreserved", 0),
+                            new NonterminalParser("Escaped", "Escaped", 0)),
+                        new CharSetParser("$,;:@&=+")))));
+            AddRule(new ServerRule("Server", GetScope(), Domain.GetNextRuleId(),
+                new OptionalParser(
+                    new SequenceParser(
+                        new OptionalParser(
+                            new SequenceParser(
+                                new ActionParser("A0",
+                                    new NonterminalParser("UserInfo", "UserInfo", 0)),
+                                new ActionParser("A1",
+                                    new CharParser('@')))),
+                        new NonterminalParser("HostPort", "HostPort", 1)))));
+            AddRule(new RuleParser("UserInfo", GetScope(), Domain.GetNextRuleId(),
+                new KleeneStarParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new NonterminalParser("Unreserved", "Unreserved", 0),
+                            new NonterminalParser("Escaped", "Escaped", 0)),
+                        new CharSetParser(";:&=+$,")))));
+            AddRule(new HostPortRule("HostPort", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("Host", "Host", 0)),
+                    new OptionalParser(
+                        new SequenceParser(
+                            new CharParser(':'),
+                            new ActionParser("A1",
+                                new NonterminalParser("port", "Port", 0)))))));
+            AddRule(new RuleParser("Host", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("HostName", "HostName", 0),
+                    new NonterminalParser("IPv4Address", "IPv4Address", 0))));
+            AddRule(new HostNameRule("HostName", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new KleeneStarParser(
+                        new SequenceParser(
+                            new ActionParser("A0",
+                                new NonterminalParser("DomainLabel", "DomainLabel", 0)),
+                            new CharParser('.'))),
+                    new AlternativeParser(
+                        new SequenceParser(
+                            new NonterminalParser("TopLabel", "TopLabel", 0),
+                            new OptionalParser(
+                                new CharParser('.'))),
+                        new ActionParser("A1",
+                            new EmptyParser())))));
+            AddRule(new DomainLabelRule("DomainLabel", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new PositiveParser(
+                        new NonterminalParser("AlphaNumOrDash", "AlphaNumOrDash", 0)))));
+            AddRule(new TopLabelRule("TopLabel", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new SequenceParser(
+                        new NonterminalParser("Alpha", "Alpha", 0),
+                        new ActionParser("A0",
+                            new PositiveParser(
+                                new NonterminalParser("AlphaNumOrDash", "AlphaNumOrDash", 0)))),
+                    new NonterminalParser("Alpha", "Alpha", 0))));
+            AddRule(new RuleParser("IPv4Address", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new PositiveParser(
+                                            new NonterminalParser("Digit", "Digit", 0)),
+                                        new CharParser('.')),
+                                    new PositiveParser(
+                                        new NonterminalParser("Digit", "Digit", 0))),
+                                new CharParser('.')),
+                            new PositiveParser(
+                                new NonterminalParser("Digit", "Digit", 0))),
+                        new CharParser('.')),
+                    new PositiveParser(
+                        new NonterminalParser("Digit", "Digit", 0)))));
+            AddRule(new PortRule("Port", GetScope(), Domain.GetNextRuleId(),
+                new OptionalParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("port", "uint", 0)))));
+            AddRule(new RuleParser("Path", GetScope(), Domain.GetNextRuleId(),
+                new OptionalParser(
+                    new AlternativeParser(
+                        new NonterminalParser("AbsPath", "AbsPath", 0),
+                        new NonterminalParser("OpaquePart", "OpaquePart", 0)))));
+            AddRule(new RuleParser("PathSegments", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new NonterminalParser("Segment", "Segment", 0),
+                    new KleeneStarParser(
+                        new SequenceParser(
+                            new CharParser('/'),
+                            new NonterminalParser("Segment", "Segment", 0))))));
+            AddRule(new RuleParser("Segment", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new KleeneStarParser(
+                        new NonterminalParser("PChar", "PChar", 0)),
+                    new KleeneStarParser(
+                        new SequenceParser(
+                            new CharParser(';'),
+                            new NonterminalParser("Param", "Param", 0))))));
+            AddRule(new RuleParser("Param", GetScope(), Domain.GetNextRuleId(),
+                new KleeneStarParser(
+                    new NonterminalParser("PChar", "PChar", 0))));
+            AddRule(new RuleParser("PChar", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new NonterminalParser("Unreserved", "Unreserved", 0),
+                        new NonterminalParser("Escaped", "Escaped", 0)),
+                    new CharSetParser(":@&=+$,"))));
+            AddRule(new RuleParser("Query", GetScope(), Domain.GetNextRuleId(),
+                new KleeneStarParser(
+                    new NonterminalParser("UriC", "UriC", 0))));
+            AddRule(new RuleParser("Fragment", GetScope(), Domain.GetNextRuleId(),
+                new KleeneStarParser(
+                    new NonterminalParser("UriC", "UriC", 0))));
+            AddRule(new RuleParser("UriC", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new NonterminalParser("Reserved", "Reserved", 0),
+                        new NonterminalParser("Unreserved", "Unreserved", 0)),
+                    new NonterminalParser("Escaped", "Escaped", 0))));
+            AddRule(new RuleParser("Reserved", GetScope(), Domain.GetNextRuleId(),
+                new CharSetParser(";/?:@&=+$,")));
+            AddRule(new RuleParser("Unreserved", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("AlphaNum", "AlphaNum", 0),
+                    new NonterminalParser("Mark", "Mark", 0))));
+            AddRule(new RuleParser("Mark", GetScope(), Domain.GetNextRuleId(),
+                new CharSetParser("-_.!~*'()")));
+            AddRule(new RuleParser("Escaped", GetScope(), Domain.GetNextRuleId(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new CharParser('%'),
+                        new HexDigitParser()),
+                    new HexDigitParser())));
+            AddRule(new RuleParser("AlphaNumOrDash", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("AlphaNum", "AlphaNum", 0),
+                    new CharParser('-'))));
+            AddRule(new RuleParser("AlphaNum", GetScope(), Domain.GetNextRuleId(),
+                new AlternativeParser(
+                    new NonterminalParser("Alpha", "Alpha", 0),
+                    new NonterminalParser("Digit", "Digit", 0))));
+            AddRule(new RuleParser("Alpha", GetScope(), Domain.GetNextRuleId(),
+                new LetterParser()));
+            AddRule(new RuleParser("Digit", GetScope(), Domain.GetNextRuleId(),
+                new DigitParser()));
+        }
+    }
+}

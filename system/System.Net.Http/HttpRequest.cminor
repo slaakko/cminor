@@ -1,0 +1,308 @@
+using System;
+using System.Text;
+using System.IO;
+using System.Collections.Generic;
+
+namespace System.Net.Http
+{
+    public abstract class HttpMethod
+    {
+    }
+
+    public class HttpOptionsMethod : HttpMethod
+    {
+        public override string ToString() 
+        {
+            return "OPTIONS";
+        }
+    }
+
+    public class HttpGetMethod : HttpMethod
+    {
+        public override string ToString() 
+        {
+            return "GET";
+        }
+    }
+
+    public class HttpHeadMethod : HttpMethod
+    {
+        public override string ToString() 
+        {
+            return "HEAD";
+        }
+    }
+
+    public class HttpPostMethod : HttpMethod
+    {
+        public override string ToString() 
+        {
+            return "POST";
+        }
+    }
+
+    public class HttpPutMethod : HttpMethod
+    {
+        public override string ToString() 
+        {
+            return "PUT";
+        }
+    }
+
+    public class HttpDeleteMethod : HttpMethod
+    {
+        public override string ToString() 
+        {
+            return "DELETE";
+        }
+    }
+
+    public class HttpTraceMethod : HttpMethod
+    {
+        public override string ToString() 
+        {
+            return "TRACE";
+        }
+    }
+
+    public class HttpConnectMethod : HttpMethod
+    {
+        public override string ToString() 
+        {
+            return "CONNECT";
+        }
+    }
+
+    public abstract class HttpVersion
+    {
+    }
+
+    public class HttpVersion_1_1 : HttpVersion
+    {
+        public override string ToString()
+        {
+            return "HTTP/1.1";
+        }
+    }
+
+    public string MakeHttpHostValue(string host, uint port)
+    {
+        if (port == 0u)
+        {
+            port = 80u;
+        }
+        if (port != 80u)
+        {
+            return host + ":" + port.ToString();
+        }
+        return host;
+    }
+
+    public class HttpHostHeader : HttpHeader
+    {
+        public HttpHostHeader(string host) : this(host, 80u)
+        {
+        }
+        public HttpHostHeader(string host, uint port) : base("Host", MakeHttpHostValue(host, port))
+        {
+        }
+    }
+
+    public class Product
+    {
+        public Product(string name) : this(name, string.Empty)
+        {
+        }
+        public Product(string name, string version)
+        {
+            this.name = name;
+            this.version = version;
+        }
+        public override string ToString() 
+        {
+            if (string.IsNullOrEmpty(version))
+            {
+                return name;
+            }
+            return name + "/" + version;
+        }
+        public string Name
+        {
+            get { return name; }
+        }
+        public string Version
+        {
+            get { return version; }
+        }
+        private string name;
+        private string version;
+    }
+
+    public class CminorSystemNetHttpProduct : Product
+    {
+        public CminorSystemNetHttpProduct() : base("Cminor.System.Net.Http", "0.2.0")
+        {
+        }
+    }
+
+    public bool operator==(Product left, Product right)
+    {
+        if (left.Name != right.Name) return false;
+        string leftVersion = string.Empty;
+        if (!string.IsNullOrEmpty(left.Version)) leftVersion = left.Version;
+        string rightVersion = string.Empty;
+        if (!string.IsNullOrEmpty(right.Version)) rightVersion = right.Version;
+        return leftVersion == rightVersion;
+    }
+
+    public List<Product> MakeSingleHttpProductList(Product product)
+    {
+        List<Product> productList = new List<Product>();
+        productList.Add(product);
+        return productList;
+    }
+
+    public string MakeHttpProductListValue(List<Product> productList)
+    {
+        if (productList == null)
+        {
+            throw new ArgumentNullException("provided product list is null");
+        }
+        if (productList.Count == 0)
+        {
+            throw new ArgumentOutOfRangeException("provided product list is empty");
+        }
+        bool first = true;
+        StringBuilder s = new StringBuilder();
+        foreach (Product product in productList)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                s.Append(' ');
+            }
+            s.Append(product.ToString());
+        }
+        return s.ToString();
+    }
+
+    public class HttpUserAgentHeader : HttpHeader
+    {
+        public HttpUserAgentHeader(Product product) : this(MakeSingleHttpProductList(product))
+        {
+        }
+        public HttpUserAgentHeader(List<Product> products) : base("User-Agent", string.Empty)
+        {
+            this.products = products;
+        }
+        public void AddProduct(Product product)
+        {
+            foreach (Product p in products)
+            {
+                if (p == product) return;
+            }
+            products.Add(product);
+        }
+        public override string ToString()
+        {
+            return FieldName + ": " + MakeHttpProductListValue(products);
+        }
+        public List<Product> Products
+        {
+            get { return products; }
+        }
+        private List<Product> products;
+    }
+
+    public List<MediaRange> MakeSingleMediaRangeList(MediaRange mediaRange)
+    {
+        List<MediaRange> mediaRanges = new List<MediaRange>();
+        mediaRanges.Add(mediaRange);
+        return mediaRanges;
+    }
+
+    public string MakeMediaRangeListValue(List<MediaRange> mediaRanges)
+    {
+        StringBuilder s = new StringBuilder();
+        bool first = true;
+        foreach (MediaRange mediaRange in mediaRanges)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                s.Append(",");
+            }
+            s.Append(mediaRange.ToString());
+        }
+        return s.ToString();
+    }
+
+    public class HttpAcceptHeader : HttpHeader
+    {
+        public HttpAcceptHeader(MediaRange mediaRange) : this(MakeSingleMediaRangeList(mediaRange))
+        {
+        }
+        public HttpAcceptHeader(List<MediaRange> mediaRanges) : base("Accept", MakeMediaRangeListValue(mediaRanges))
+        {
+        }
+    }
+
+    public class HttpRequest
+    {
+        public HttpRequest(HttpMethod method, UriReference uri, HttpVersion version) : this(method, uri, version, new List<HttpHeader>())
+        {
+        }
+        public HttpRequest(HttpMethod method, UriReference uri, HttpVersion version, List<HttpHeader> headers)
+        {
+            this.method = method;
+            this.uri = uri;
+            this.version = version;
+            this.headers = headers;
+        }
+        public void Write(StreamWriter writer)
+        {
+            Write(writer, null);
+        }
+        public void Write(StreamWriter writer, StreamWriter log)
+        {
+            string requestLine = RequestLine;
+            if (log != null)
+            {
+                log.WriteLine("REQUEST:");
+                log.WriteLine(requestLine);
+            }
+            writer.Write(requestLine);
+            writer.Write("\r\n");
+            foreach (HttpHeader header in headers)
+            {
+                string headerStr = header.ToString();
+                if (log != null)
+                {
+                    log.WriteLine(headerStr);
+                }
+                writer.Write(headerStr);
+                writer.Write("\r\n");
+            }
+            writer.Write("\r\n");
+            writer.ContainedStream.Flush();
+        }
+        public string RequestLine
+        {
+            get { return method.ToString() + " " + uri.ToString() + " " + version.ToString(); }
+        }
+        public List<HttpHeader> Headers
+        {
+            get { return headers; }
+        }
+        private HttpMethod method;
+        private UriReference uri;
+        private HttpVersion version;
+        private List<HttpHeader> headers;
+    }
+}

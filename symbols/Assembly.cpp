@@ -63,6 +63,7 @@ CminorSystemAssemblyNameCollection::CminorSystemAssemblyNameCollection()
     systemAssemblyNames.push_back(U"System.Text.Parsing.CodeDom");
     systemAssemblyNames.push_back(U"System.Json");
     systemAssemblyNames.push_back(U"System.Net.Sockets");
+    systemAssemblyNames.push_back(U"System.Net.Http");
     systemAssemblyNames.push_back(U"System.Xml");
     for (const utf32_string& systemAssemblyName : systemAssemblyNames)
     {
@@ -865,7 +866,6 @@ void Assembly::FinishReads(std::vector<CallInst*>& callInstructions, std::vector
         reader.SetClassTemplateSpecializationNames(&classTemplateSpecializationNames);
         reader.Skip(finishReadPos);
         symbolTable.Read(reader);
-        //ReadSymbolIdMapping(reader);
         ReadExportedFunctions(reader);
         ReadFunctionVarMappings(reader);
         ReadClasDataVarMappings(reader);
@@ -944,7 +944,6 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
         setClassDataInstructions, classTypeSymbols, classTemplateSpecializationNames, assemblies, dependencyMap, readMap);
     ImportSymbolTables();
     symbolTable.Read(reader);
-    //ReadSymbolIdMapping(reader);
     ReadExportedFunctions(reader);
     ReadFunctionVarMappings(reader);
     ReadClasDataVarMappings(reader);

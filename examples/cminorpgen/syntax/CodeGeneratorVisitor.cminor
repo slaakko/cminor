@@ -108,6 +108,7 @@ namespace Syntax
                     formatter.WriteLine("{");
                     formatter.IncIndent();
                     formatter.WriteLine("xmlLog = new XmlLog(log);");
+                    formatter.WriteLine("xmlLog.MaxLineLength = MaxLogLineLength;");
                     formatter.WriteLine("scanner.Log = xmlLog;");
                     formatter.WriteLine("xmlLog.WriteBeginRule(\"parse\");");
                     formatter.WriteLine("xmlLog.IncIndent();");

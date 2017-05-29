@@ -1,0 +1,284 @@
+using System;
+using System.Text;
+
+namespace System.Net.Http
+{
+    grammar HttpGrammar
+    {
+        OCTET
+            ::= range(0, 255)
+            ;
+
+        CHAR : char
+            ::= range(0, 127){ value = match[0]; }
+            ;
+
+        UPALPHA
+            ::= [A-Z]
+            ;
+
+        LOALPHA
+            ::= [a-z]
+            ;
+
+        ALPHA
+            ::= UPALPHA | LOALPHA
+            ;
+
+        DIGIT
+            ::= [0-9]
+            ;
+
+        CTL
+            ::= range(0, 31) | '\d127'
+            ;
+
+        CR
+            ::= '\r'
+            ;
+
+        LF
+            ::= '\n'
+            ;
+
+        SP
+            ::= ' '
+            ;
+
+        HT
+            ::= '\t'
+            ;
+
+        QUOTE
+            ::= '"'
+            ;
+
+        CRLF
+            ::= CR LF
+            ;
+
+        LWS
+            ::= CRLF? (SP | HT)+
+            ;
+
+        TEXT
+            ::= (OCTET - CTL) | CR | LF | SP | HT
+            ;
+
+        HEX
+            ::= [A-Fa-f0-9]
+            ;
+
+        separator
+            ::= [()<>@,;:\\"/[\]?={}] | SP | HT
+            ;
+
+        http_token
+            ::= (CHAR - (CTL | separator))+
+            ;
+
+        comment
+            ::= '(' (ctext | quoted_pair | comment)* ')'
+            ;
+
+        ctext
+            ::= TEXT - [()]
+            ;
+
+        quoted_string(var StringBuilder s) : string
+            ::= '"'{ s = new StringBuilder(); }  (qdtext{ s.Append(match); } | quoted_pair{ s.Append(quoted_pair); })* '"'{ value = s.ToString(); }
+            ;
+
+        qdtext
+            ::= TEXT - '"'
+            ;
+
+        quoted_pair : char
+            ::= '\\' CHAR{ value = CHAR; }
+            ;
+
+        HTTP_Version : string
+            ::= ("HTTP" '/' DIGIT+ '.' DIGIT+){ value = match; }
+            ;
+            
+        StatusCode : ushort
+            ::= (DIGIT DIGIT DIGIT){ value = ushort.Parse(match); }
+            ;
+
+        ReasonPhrase : string
+            ::= ((TEXT - (CR | LF))*){ value = match; }
+            ;
+
+        StatusLine : HttpStatus
+            ::= (HTTP_Version:version SP StatusCode:statusCode SP ReasonPhrase:reason){ value = new HttpStatus(version, statusCode, reason); }
+            ;
+
+        HTTP_Date
+            ::= RFC1123_date | RFC850_date | asctime_date
+            ;
+
+        RFC1123_date
+            ::= wkday "," SP date1 SP time SP "GMT"
+            ;
+
+        RFC850_date
+            ::= weekday "," SP date2 SP time SP "GMT"
+            ;
+
+        asctime_date
+            ::= wkday SP date3 SP time SP Year
+            ;
+
+        Year
+            ::= DIGIT DIGIT DIGIT DIGIT
+            ;
+
+        Year2
+            ::= DIGIT DIGIT
+            ;
+
+        Day
+            ::= DIGIT DIGIT
+            ;
+
+        Day1
+            ::= SP DIGIT
+            ;
+
+        date1
+            ::= Day SP month SP Year
+            ;
+
+        date2
+            ::= Day '-' month '-' Year2
+            ;
+
+        date3
+            ::= month SP (Day | Day1)
+            ;
+
+        time
+            ::= Hour ':' Min ':' Sec
+            ;
+
+        Hour
+            ::= DIGIT DIGIT
+            ;
+
+        Min
+            ::= DIGIT DIGIT
+            ;
+
+        Sec
+            ::= DIGIT DIGIT
+            ;
+
+        wkday
+            ::= "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun"
+            ;
+
+        weekday
+            ::= "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday"
+            ;
+
+        month
+            ::= "Jan" | "Feb" | "Mar" | "Apr" | "May" | "Jun" | "Jul" | "Aug" | "Sep" | "Oct" | "Nov" | "Dec"
+            ;
+
+        delta_seconds
+            ::= DIGIT+
+            ;
+
+        charset
+            ::= http_token
+            ;
+
+        content_coding
+            ::= http_token
+            ;
+
+        transfer_coding
+            ::= "chunked" | transfer_extension
+            ;
+
+        transfer_extension
+            ::= http_token (';' parameter)*
+            ;
+
+        parameter
+            ::= attribute '=' value
+            ;
+
+        attribute
+            ::= http_token
+            ;
+
+        value
+            ::= http_token | quoted_string
+            ;
+
+        media_type
+            ::= type "/" subtype (';' parameter)*
+            ;
+
+        type
+            ::= http_token
+            ;
+
+        subtype
+            ::= http_token
+            ;
+
+        header : HttpHeader
+            ::= (field_name ':' field_value){ value = new HttpHeader(field_name, field_value); }
+            ;
+
+        field_name : string
+            ::= http_token{ value = match; }
+            ;
+
+        field_value : string
+            ::= (anychar*){ value = match; }
+            ;
+
+        ConnectionTokens : List<ConnectionToken>
+            ::= empty{ value = new List<ConnectionToken>(); } (connection_token{ value.Add(connection_token); } % ',')
+            ;
+
+        connection_token : ConnectionToken
+            ::= http_token
+            { 
+                if (match == "close") value = new CloseConnectionToken(); 
+                else if (match == "keep-alive") value = new KeepAliveConnectionToken();
+                else value = new ConnectionToken(match); 
+            }
+            ;
+    }
+
+    grammar HttpHeaderGrammar
+    {
+        using HttpGrammar.header;
+
+        HttpHeader : HttpHeader
+            ::= header{ value = header; }
+            ;
+    }
+
+    grammar HttpStatusGrammar
+    {
+        using HttpGrammar.StatusLine;
+
+        HttpStatus : HttpStatus
+            ::= StatusLine{ value = StatusLine; }
+            ;
+    }
+
+    grammar HttpConnectionHeaderGrammar
+    {
+        using HttpGrammar.ConnectionTokens;
+
+        ConnectionTokenList : List<ConnectionToken>
+            ::= ConnectionTokens{ value = ConnectionTokens; }
+            ;
+    }
+}

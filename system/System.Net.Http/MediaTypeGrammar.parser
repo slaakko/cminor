@@ -1,0 +1,96 @@
+using System;
+using System.Collections.Generic;
+
+namespace System.Net.Http
+{
+    grammar MediaTypeGrammar
+    {
+        using HttpGrammar.http_token;
+        using HttpGrammar.quoted_string;
+
+        MimeType : MimeType
+            ::= empty{ value = new MimeType(); } (type(value) '/' subtype(value) (';' parameter(value))*)
+            ;
+
+        MediaRanges : List<MediaRange>
+            ::= empty{ value = new List<MediaRange>(); } ((MediaRange:mediaRange AcceptParams(mediaRange)?){ value.Add(mediaRange); } % ',')
+            ;
+
+        AcceptParams(MediaRange mediaRange)
+            ::= ';' ('q' '=' qvalue){ mediaRange.Quality = qvalue; } AcceptExtension(mediaRange)*
+            ;
+
+        AcceptExtension(MediaRange mediaRange, var string extattr)
+            ::= ';' http_token{ extattr = match; }
+            (   ('='
+                    (   http_token{ Map<string, string> acceptParams = mediaRange.AcceptParams; acceptParams[extattr] = match; } 
+                    |   quoted_string{ Map<string, string> acceptParams = mediaRange.AcceptParams; acceptParams[extattr] = quoted_string; }
+                    )
+                ) 
+                |   empty{ Map<string, string> acceptParams = mediaRange.AcceptParams; acceptParams[extattr] = string.Empty; }
+            )
+            ;
+
+        MediaRange : MediaRange
+            ::= empty{ value = new MediaRange(); }
+            (   "*/*"
+            |   (type(value.MmeType):anysub '/' '*'{ value.MmeType.SbType = new AnySubtype(); })
+            |   (type(value.MmeType):specified '/' subtype(value.MmeType))
+            )(';' parameter(value.MmeType))*
+            ;
+
+        type(MimeType mimeType)
+            ::= discrete_type(mimeType) | composite_type(mimeType)
+            ;
+
+        discrete_type(MimeType mimeType)
+            ::= "text"{ mimeType.MdaType = new TextMediaType(); } 
+            |   "image"{ mimeType.MdaType = new ImageMediaType(); } 
+            |   "audio"{ mimeType.MdaType = new AudioMediaType(); }
+            |   "video"{ mimeType.MdaType = new VideoMediaType(); }
+            |   "application"{ mimeType.MdaType = new ApplicationMediaType(); }
+            |   extension_token{ mimeType.MdaType = new MediaType(match); }
+            ;
+
+        extension_token
+            ::= x_token | ietf_token 
+            ;
+
+        x_token
+            ::= "x-" http_token
+            ;
+
+        ietf_token
+            ::= http_token
+            ;
+
+        composite_type(MimeType mimeType)
+            ::= "message"{ mimeType.MdaType = new MessageMediaType(); }
+            |   "multipart"{ mimeType.MdaType = new MultipartMediaType(); }
+            |   extension_token{ mimeType.MdaType = new MediaType(match); }
+            ;
+
+        subtype(MimeType mimeType)
+            ::= extension_token{ mimeType.SbType = new Subtype(match); }
+            ;
+
+        parameter(MimeType mimeType)
+            ::= ((attribute - "q") '=' value){ Map<string, string> parameters = mimeType.Parameters; parameters[attribute] = value; }
+            ;
+
+        attribute : string
+            ::= http_token{ value = match; }
+            ;
+
+        value : string
+            ::= quoted_string{ value = quoted_string; } | http_token{ value = match; }
+            ;
+
+        qvalue : double
+            ::= 
+            (   '0' ('.' (digit (digit digit?)?)?)?
+            |   '1' ('.' ('0' ('0' '0'?)?)?)?
+            ){ value = double.Parse(match); }
+            ;
+    }
+}

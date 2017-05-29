@@ -12,13 +12,109 @@ namespace System.Xml
 
     public class XmlContentParser
     {
-        public virtual void ParseXmlContent(string xmlContent, XmlProcessor processor) {}
+        public virtual void ParseXmlContent(string xmlContent, string systemId, XmlProcessor processor) {}
+    }
+
+    public class XmlExternalEntityParser
+    {
+        public virtual void ParseExternalXmlEntity(string externalEntityContent, string systemId, XmlProcessor processor) {}
+    }
+
+    public class ExternalID
+    {
+        public ExternalID(string publicLiteral, string systemLiteral)
+        {
+            this.publicLiteral = publicLiteral;
+            this.systemLiteral = systemLiteral;
+        }
+        public string PublicLiteral
+        {
+            get { return publicLiteral; }
+        }
+        public string SystemLiteral
+        {
+            get { return systemLiteral; }
+        }
+        private string publicLiteral;
+        private string systemLiteral;
+    }
+
+    public abstract class ParameterEntityValue
+    {
+    }
+
+    public class InternalParameterEntity : ParameterEntityValue
+    {
+        public InternalParameterEntity(string entityValue)
+        {
+            this.entityValue = entityValue;
+        }
+        public string Value
+        {
+            get { return entityValue; }
+        }
+        private string entityValue;
+    }
+
+    public class ExternalParameterEntity : ParameterEntityValue
+    {
+        public ExternalParameterEntity(ExternalID externalID)
+        {
+            this.externalID = externalID;
+        }
+        public ExternalID ExtID
+        {
+            get { return externalID; }
+        }
+        private ExternalID externalID;
+    }
+
+    public abstract class EntityValue
+    {
+    }
+
+    public class InternalEntity : EntityValue
+    {
+        public InternalEntity(string entityValue)
+        {
+            this.entityValue = entityValue;
+        }
+        public string Value
+        {
+            get { return entityValue; }
+        }
+        private string entityValue;
+    }
+
+    public class ExternalEntity : EntityValue
+    {
+        public ExternalEntity(ExternalID externalID, string notation)
+        {
+            this.externalID = externalID;
+            this.notation = notation;
+        }
+        public ExternalID ExtID
+        {
+            get { return externalID; }
+        }
+        public string Notation
+        {
+            get { return notation; }
+        }
+        private ExternalID externalID;
+        private string notation;
+    }
+
+    public class ElementContentSpec
+    {
     }
 
     public class XmlProcessor
     {
+        public virtual void SetContent(string content) {}
+        public virtual void SetContentHandler(XmlContentHandler contentHandler) {}
         public virtual void SetContentParser(XmlContentParser contentParser) {}
-        public virtual void SetContentHandler(ContentHandler contentHandler) {}
+        public virtual void SetExternalEntityParser(XmlExternalEntityParser externalEntityParser) {}
         public virtual void StartDocument() {}
         public virtual void EndDocument() {}
         public virtual void Version(string xmlVersion) {}
@@ -32,12 +128,14 @@ namespace System.Xml
         public virtual void EndStartTag(System.Text.Parsing.Span span, string systemId) {}
         public virtual void EndTag(string tagName, System.Text.Parsing.Span span, string systemId) {}
         public virtual void EntityRef(string entityName, System.Text.Parsing.Span span, string systemId) {}
-        public virtual void ParamEntityRef(string paramEntityRefName) {}
+        public virtual void ParamEntityRef(string paramEntityRefName, System.Text.Parsing.Span span, string systemId) {}
         public virtual void Text(string text) {}
         public virtual void PI(string target, string instruction) {}
         public virtual void Comment(string comment) {}
-        public virtual void SystemLiteral(string systemLiteral) {}
-        public virtual void PublicLiteral(string publicLiteral) {}
-        public virtual void GeneralEntity(string entityName, string entityValue) {}
+        public virtual void GeneralEntity(string entityName, EntityValue entityValue) {}
+        public virtual void ParameterEntity(string peName, ParameterEntityValue peValue) {}
+        public virtual void RootElementName(string rootElementName) {}
+        public virtual void BeginElementTypeDeclaration(string elementName, System.Text.Parsing.Span span, string systemId) {}
+        public virtual void EndElementTypeDeclaration(string elementName) {}
     }
 }

@@ -96,25 +96,23 @@ namespace System.Text.Parsing
             get { return log; }
             set { log = value; }
         }
-        public int LineEndIndex
+        public int LineEndIndex(int maxLineLength)
         {
-            get 
-            { 
-                int lineEndIndex = span.Start;
-                int contentLength = content.Length;
-                while (lineEndIndex < contentLength && content[lineEndIndex] != '\r' && content[lineEndIndex] != '\n')
-                {
-                    ++lineEndIndex;
-                }
-                return lineEndIndex;
-            }
-        }
-        public string RestOfLine
-        {
-            get 
+            int lineEndIndex = span.Start;
+            int end = content.Length;
+            if (maxLineLength != 0)
             {
-                return content.Substring(span.Start, LineEndIndex - span.Start);
+                end = Math.Min(content.Length, span.Start + maxLineLength);
             }
+            while (lineEndIndex < end && content[lineEndIndex] != '\r' && content[lineEndIndex] != '\n')
+            {
+                ++lineEndIndex;
+            }
+            return lineEndIndex;
+        }
+        public string RestOfLine(int maxLineLength)
+        {
+            return content.Substring(span.Start, LineEndIndex(maxLineLength) - span.Start);
         }
 		public ParsingData Data
 		{

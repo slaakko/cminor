@@ -17,6 +17,7 @@ namespace System.Text.Parsing
             this.referencedGrammars = new HashSet<Grammar>();
             this.linking = false;
             this.linked = false;
+            this.maxLogLineLength = 0;
             ContainerScope = new Scope(name, enclosingScope);
         }
         public ParsingDomain Domain
@@ -58,6 +59,7 @@ namespace System.Text.Parsing
                 if (log != null)
                 {
                     xmlLog = new XmlLog(log);
+                    xmlLog.MaxLineLength = maxLogLineLength;
                     scanner.Log = xmlLog;
                     xmlLog.WriteBeginRule("parse");
                     xmlLog.IncIndent();
@@ -237,6 +239,11 @@ namespace System.Text.Parsing
             get { return log; }
             set { log = value; }
         }
+        public int MaxLogLineLength
+        {
+            get { return maxLogLineLength; }
+            set { maxLogLineLength = value; }
+        }
         private string name;
         private Scope enclosingScope;
         private ParsingDomain parsingDomain;
@@ -251,6 +258,7 @@ namespace System.Text.Parsing
         private HashSet<Grammar> referencedGrammars;
         private bool linking;
         private bool linked;
+        private int maxLogLineLength;
         private StreamWriter log;
     }
 }

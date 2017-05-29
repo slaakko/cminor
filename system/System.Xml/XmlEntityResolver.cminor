@@ -1,0 +1,30 @@
+using System;
+
+namespace System.Xml
+{
+    public class XmlEntityResolver
+    {
+        public XmlEntityResolver()
+        {
+            this.localEntitiesRead = false;
+        }
+        public virtual bool SatisfyParameterEntityRequestsLocally()
+        { 
+            return true; 
+        }
+        public virtual string ResolveEntity(string publicId, ref string systemId) 
+        {
+            if (SatisfyParameterEntityRequestsLocally() && !localEntitiesRead)
+            {
+                ReadLocalEntities();
+            }
+            return string.Empty;
+        }
+        public virtual void ReadLocalEntities()
+        {
+            localEntitiesRead = true;
+
+        }
+        private bool localEntitiesRead;
+    }
+}

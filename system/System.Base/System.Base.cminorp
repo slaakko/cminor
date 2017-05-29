@@ -12,6 +12,7 @@ source <CodeFormatter.cminor>;
 source <ConditionVariable.cminor>;
 source <Console.cminor>;
 source <Convert.cminor>;
+source <Date.cminor>;
 source <Enumerator.cminor>;
 source <Environment.cminor>;
 source <Exception.cminor>;

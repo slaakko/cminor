@@ -1,0 +1,198 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.IO;
+
+namespace System.Net.Http
+{
+    public class HttpHeader
+    {
+        public HttpHeader(string fieldName, string fieldValue)
+        {
+            this.fieldName = fieldName.ToLower();
+            this.fieldValue = fieldValue.Trim();
+        }
+        public override string ToString()
+        {
+            return fieldName + ": " + fieldValue;
+        }
+        public string FieldName
+        {
+            get { return fieldName; }
+        }
+        public string FieldValue
+        {
+            get { return fieldValue; }
+        }
+        private string fieldName;
+        private string fieldValue;
+    }
+
+    public abstract class HttpAgent
+    {
+        public HttpAgent()
+        {
+        }
+        public string ReadStartOfMessage(Stream stream, ref List<HttpHeader> headerList)
+        {
+            if (log != null)
+            {
+                log.WriteLine("RESPONSE:");
+            }
+            List<HttpHeader> headers = new List<HttpHeader>();
+            bool firstLine = true;
+            string startLine = string.Empty;
+            int state = 0;
+            StringBuilder s = new StringBuilder();
+            int x = stream.ReadByte();
+            while (x != -1)
+            {
+                byte c = cast<byte>(x);
+                switch (state)
+                {
+                    case 0:
+                    {
+                        if (c == 13)
+                        {
+                            state = 1;
+                        }
+                        else 
+                        {
+                            s.Append(cast<char>(c));
+                            state = 2;
+                        }
+                        break;
+                    }
+                    case 1:
+                    {
+                        if (c == 10)
+                        {
+                            state = 0;
+                        }
+                        else if (c != 13)
+                        {
+                            s.Append(cast<char>(c));
+                            state = 2;
+                        }
+                        break;
+                    }
+                    case 2:
+                    {
+                        if (c == 13)
+                        {
+                            state = 3;
+                        }
+                        else
+                        {
+                            s.Append(cast<char>(c));
+                        }
+                        break;
+                    }
+                    case 3:
+                    {
+                        if (c == 10)
+                        {
+                            string line = s.ToString();
+                            if (log != null)
+                            {
+                                log.WriteLine(line);
+                            }
+                            if (firstLine)
+                            {
+                                firstLine = false;
+                                startLine = line;
+                            }
+                            else
+                            {
+                                headers.Add(HttpParser.Instance.ParseHeader(line));
+                            }
+                            s.Clear();
+                            state = 4;
+                        }
+                        else if (c == 13)
+                        {
+                            s.Append(cast<char>(13));
+                            s.Append(cast<char>(13));
+                            state = 5;
+                        }
+                        else
+                        {
+                            state = 2;
+                            s.Append(cast<char>(13));
+                            s.Append(cast<char>(c));
+                        }
+                        break;
+                    }
+                    case 4:
+                    {
+                        if (c == 13)
+                        {
+                            state = 6;
+                        }
+                        else
+                        {
+                            s.Append(cast<char>(c));
+                            state = 2;
+                        }
+                        break;
+                    }
+                    case 5:
+                    {
+                        if (c == 13)
+                        {
+                            s.Append(cast<char>(13));
+                        }
+                        else if (c == 10)
+                        {
+                            string line = s.ToString();
+                            if (log != null)
+                            {
+                                log.WriteLine(line);
+                            }
+                            if (firstLine)
+                            {
+                                firstLine = false;
+                                startLine = line;
+                            }
+                            else
+                            {
+                                headers.Add(HttpParser.Instance.ParseHeader(line));
+                            }
+                            s.Clear();
+                            state = 4;
+                        }
+                        else
+                        {
+                            s.Append(cast<char>(c));
+                            state = 2;
+                        }
+                        break;
+                    }
+                    case 6:
+                    {
+                        if (c == 10)
+                        {
+                            headerList = headers;
+                            return startLine;
+                        }
+                        else 
+                        {
+                            s.Append(cast<char>(13));
+                            s.Append(cast<char>(c));
+                            state = 2;
+                        }
+                        break;
+                    }
+                }
+                x = stream.ReadByte();
+            }
+            throw new HttpException(new HttpStatus("HTTP/1.1", statusBadRequest, "invalid HTTP message"));
+        }
+        public StreamWriter Log
+        {
+            get { return log; }
+            set { log = value; }
+        }
+        private StreamWriter log;
+    }
+}

@@ -1,0 +1,14 @@
+project System.Net.Http;
+target=library;
+reference <../System.Net.Sockets/System.Net.Sockets.cminorp>;
+reference <../System.Text.Parsing/System.Text.Parsing.cminorp>;
+source <HttpAgent.cminor>;
+source <HttpClient.cminor>;
+source <HttpGrammar.cminor>;
+source <HttpParser.cminor>;
+source <HttpRequest.cminor>;
+source <HttpResponse.cminor>;
+source <MediaType.cminor>;
+source <MediaTypeGrammar.cminor>;
+source <UriGrammar.cminor>;
+source <UriReference.cminor>;

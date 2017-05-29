@@ -4,6 +4,10 @@ namespace System.Xml
     {
         XmlContent(XmlProcessor processor);
     }
+    grammar XmlExternalParsedEntityGrammar
+    {
+        ExternalParsedEntity(XmlProcessor processor);
+    }
     grammar XmlDocumentGrammar
     {
         Document(XmlProcessor processor);
@@ -17,8 +21,8 @@ namespace System.Xml
         Nmtokens;
         EntityValue(XmlProcessor processor, var StringBuilder entityValueBuilder) : string;
         AttValue(XmlProcessor processor, var StringBuilder attValueBuilder) : string;
-        SystemLiteral(XmlProcessor processor);
-        PubidLiteral(XmlProcessor processor);
+        SystemLiteral : string;
+        PubidLiteral : string;
         PubidChar;
         CharData(XmlProcessor processor);
         Comment(XmlProcessor processor);
@@ -41,13 +45,11 @@ namespace System.Xml
         ExtSubset(XmlProcessor processor);
         ExtSubsetDecl(XmlProcessor processor);
         SDDecl;
-        Element(XmlProcessor processor);
-        STag(XmlProcessor processor);
+        Element(XmlProcessor processor, var string tagName);
         Attribute(XmlProcessor processor);
         ETag(XmlProcessor processor);
         Content(XmlProcessor processor);
-        EmptyElemTag(XmlProcessor processor, var string tagName);
-        ElementDecl;
+        ElementDecl(XmlProcessor processor);
         ContentSpec;
         Children;
         CP;
@@ -75,15 +77,15 @@ namespace System.Xml
         EntityDecl(XmlProcessor processor);
         GEDecl(XmlProcessor processor);
         PEDecl(XmlProcessor processor);
-        EntityDef(XmlProcessor processor) : string;
-        PEDef(XmlProcessor processor);
-        ExternalID(XmlProcessor processor);
-        NDataDecl;
+        EntityDef(XmlProcessor processor) : EntityValue;
+        PEDef(XmlProcessor processor) : ParameterEntityValue;
+        ExternalID : ExternalID;
+        NDataDecl : string;
         TextDecl(XmlProcessor processor);
         ExtParsedEnt(XmlProcessor processor);
         EncodingDecl(XmlProcessor processor);
         EncName : string;
         NotationDecl(XmlProcessor processor);
-        PublicID(XmlProcessor processor);
+        PublicID;
     }
 }
