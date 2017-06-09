@@ -85,6 +85,13 @@ void FunctionSymbol::Write(SymbolWriter& writer)
     writer.AsMachineWriter().Put(hasMachineFunction);
     if (hasMachineFunction)
     {
+        Assembly* machineFunctionAssembly = reinterpret_cast<Assembly*>(machineFunction->GetAssembly());
+        bool differentMachineFunctionAssembly = machineFunctionAssembly != nullptr && machineFunctionAssembly != GetAssembly();
+        writer.AsMachineWriter().Put(differentMachineFunctionAssembly);
+        if (differentMachineFunctionAssembly)
+        {
+            writer.AsMachineWriter().Put(ToUtf8(machineFunctionAssembly->Name().Value()));
+        }
         writer.AsMachineWriter().PutEncodedUInt(machineFunction->Id());
     }
     uint32_t n = uint32_t(pcContainerScopeIdMap.size());
@@ -121,8 +128,19 @@ void FunctionSymbol::Read(SymbolReader& reader)
     bool hasMachineFunction = reader.GetBool();
     if (hasMachineFunction)
     {
-        uint32_t machineFunctionId = reader.GetEncodedUInt();
-        machineFunction = GetAssembly()->GetMachineFunctionTable().GetFunction(machineFunctionId);
+        bool hasDifferentAssembly = reader.GetBool();
+        if (hasDifferentAssembly)
+        {
+            std::string assemblyName = reader.GetUtf8String();
+            uint32_t machineFunctionId = reader.GetEncodedUInt();
+            Assembly* assembly = AssemblyTable::Instance().GetAssembly(assemblyName);
+            machineFunction = assembly->GetMachineFunctionTable().GetFunction(machineFunctionId);
+        }
+        else
+        {
+            uint32_t machineFunctionId = reader.GetEncodedUInt();
+            machineFunction = GetAssembly()->GetMachineFunctionTable().GetFunction(machineFunctionId);
+        }
         machineFunction->SetFunctionSymbol(this);
         if (StringPtr(groupName.Value().AsStringLiteral()) == StringPtr(U"main"))
         {

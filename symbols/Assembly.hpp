@@ -292,6 +292,7 @@ public:
     static AssemblyTable& Instance();
     void AddAssembly(Assembly* assembly);
     Assembly* GetAssembly(uint32_t assemblyId) const;
+    Assembly* GetAssembly(const std::string& assemblyName) const;
     const std::vector<Assembly*> Assemblies() const { return assemblies; }
 private:
     static std::unique_ptr<AssemblyTable> instance;

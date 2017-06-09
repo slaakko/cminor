@@ -113,6 +113,9 @@ namespace System.Net.Http
             this.tcpClient = null;
             this.stream = null;
             this.alwaysClose = false;
+            this.start = null;
+            this.end = null;
+            this.duration = new Duration();
         }
         public void Connect(string host)
         {
@@ -174,6 +177,7 @@ namespace System.Net.Http
             BuildRequestHeaders(requestHeaders);
             HttpRequest request = new HttpRequest(new HttpGetMethod(), requestUri, new HttpVersion_1_1(), requestHeaders);
             StreamWriter writer = new StreamWriter(stream);
+            start = Now();
             request.Write(writer, Log);
             return ReadResponse();
         }
@@ -191,6 +195,11 @@ namespace System.Net.Http
         {
             get { return alwaysClose; }
             set { alwaysClose = value; }
+        }
+        public Duration Dur
+        {
+            get { return duration; }
+            set { duration = value; }
         }
         private void BuildRequestHeaders(List<HttpHeader> requestHeaders)
         {
@@ -224,6 +233,9 @@ namespace System.Net.Http
             HttpStatus httpStatus = HttpParser.Instance.ParseStatusLine(statusLine);
             if (httpStatus.Success())
             {
+                end = Now();
+                Duration dur = end - start;
+                duration = duration + dur;
                 ResponseState responseState = ProcessResponseHeaders(responseHeaders);
                 string content;
                 uint n = responseState.ContentLength;
@@ -310,5 +322,8 @@ namespace System.Net.Http
         private TcpClient tcpClient;
         private Stream stream;
         private bool alwaysClose;
+        private TimePoint start;
+        private TimePoint end;
+        private Duration duration;
     }
 }

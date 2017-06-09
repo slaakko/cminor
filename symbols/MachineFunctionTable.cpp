@@ -33,10 +33,6 @@ Function* MachineFunctionTable::CreateFunction(FunctionSymbol* functionSymbol)
 
 Function* MachineFunctionTable::GetFunction(uint32_t functionId) const
 {
-    if (functionId >= uint32_t(machineFunctions.size()))
-    {
-        int x = 0;
-    }
     Assert(functionId < uint32_t(machineFunctions.size()), "invalid function id");
     Function* function = machineFunctions[functionId].get();
     Assert(function, "function not set");

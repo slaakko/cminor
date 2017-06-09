@@ -764,7 +764,6 @@ void Assembly::Write(SymbolWriter& writer)
     nameId.Write(writer);
     machineFunctionTable.Write(writer);
     symbolTable.Write(writer);
-    //WriteSymbolIdMapping(writer);
     WriteExportedFunctions(writer);
     WriteFunctionVarMappings(writer);
     WriteClassDataVarMappings(writer);
@@ -1697,6 +1696,19 @@ Assembly* AssemblyTable::GetAssembly(uint32_t assemblyId) const
 {
     Assert(assemblyId < assemblies.size(), "invalid assembly id");
     return assemblies[assemblyId];
+}
+
+Assembly* AssemblyTable::GetAssembly(const std::string& assemblyName) const
+{
+    std::u32string aname = ToUtf32(assemblyName);
+    for (Assembly* assembly : assemblies)
+    {
+        if (assembly->Name() == StringPtr(aname.c_str()))
+        {
+            return assembly;
+        }
+    }
+    throw std::runtime_error("assembly '" + assemblyName + "' not found");
 }
 
 void InitAssembly()

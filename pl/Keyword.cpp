@@ -30,11 +30,9 @@ IdentifierCharsRule::IdentifierCharsRule():
             new PositiveParser(
                 new AlternativeParser(
                     new AlternativeParser(
-                        new AlternativeParser(
-                            new LetterParser(),
-                            new DigitParser()),
-                        new CharParser('_')),
-                    new CharParser('.')))))
+                        new LetterParser(),
+                        new DigitParser()),
+                    new CharParser('_')))))
 {
     rule->SetOwned();
 }

@@ -40,8 +40,6 @@ KeywordGrammar::KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_): 
     keywords0.push_back("case");
     keywords0.push_back("catch");
     keywords0.push_back("char");
-    keywords0.push_back("char16_t");
-    keywords0.push_back("char32_t");
     keywords0.push_back("class");
     keywords0.push_back("const");
     keywords0.push_back("const_cast");
