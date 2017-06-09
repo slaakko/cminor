@@ -32,8 +32,8 @@
     <None Include="Rule.parser" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CodeGeneratorSoul.cpp" />
-    <ClCompile Include="CodeGeneratorVisitorSoul.cpp" />
+    <ClCompile Include="CodeGenerator.cpp" />
+    <ClCompile Include="CodeGeneratorVisitor.cpp" />
     <ClCompile Include="Compiler.cpp" />
     <ClCompile Include="Composite.cpp" />
     <ClCompile Include="Element.cpp" />
@@ -49,8 +49,8 @@
     <ClCompile Include="Rule.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CodeGeneratorSoul.hpp" />
-    <ClInclude Include="CodeGeneratorVisitorSoul.hpp" />
+    <ClInclude Include="CodeGenerator.hpp" />
+    <ClInclude Include="CodeGeneratorVisitor.hpp" />
     <ClInclude Include="Compiler.hpp" />
     <ClInclude Include="Composite.hpp" />
     <ClInclude Include="Element.hpp" />
