@@ -18,7 +18,7 @@
 #include <vector>
 #include <fstream>
 
-const char* version = "0.0.1";
+const char* version = "0.2.0";
 
 void PrintHelp()
 {

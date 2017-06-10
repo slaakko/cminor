@@ -8,10 +8,10 @@ Object.o OsInterface.o Reader.o Runtime.o Stack.o Stats.o Thread.o Type.o Variab
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 ifeq ($(config),debug)
-    soname=libcminormachined.so.0.1.0
+    soname=libcminormachined.so.0.2.0
     sobasename=libcminormachined
 else
-    soname=libcminormachine.so.0.1.0
+    soname=libcminormachine.so.0.2.0
     sobasename=libcminormachine
 endif
 
