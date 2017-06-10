@@ -37,9 +37,9 @@ endif
 install:
 	mkdir -p $(prefix)/bin
 	cp bin/* $(prefix)/bin
-	cp lib/$(machinesoname).so.0.1.0 $(prefix)/lib
-	ln -f $(prefix)/lib/$(machinesoname).so.0.1.0 $(prefix)/lib/$(machinesoname).so.0
-	ln -f $(prefix)/lib/$(machinesoname).so.0.1.0 $(prefix)/lib/$(machinesoname).so
+	cp lib/$(machinesoname).so.0.2.0 $(prefix)/lib
+	ln -f $(prefix)/lib/$(machinesoname).so.0.2.0 $(prefix)/lib/$(machinesoname).so.0
+	ln -f $(prefix)/lib/$(machinesoname).so.0.2.0 $(prefix)/lib/$(machinesoname).so
 
 clean:
 	$(MAKE) -C ast clean
