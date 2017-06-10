@@ -8,7 +8,7 @@ endif
 
 OBJECTS = Command.o CommandGrammar.o Main.o Shell.o
 
-LIBRARIES = ../lib/libcminorast.a ../lib/libcminorbinder.a ../lib/libcminorbuild.a ../lib/libcminoremitter.a ../lib/lib$(machinesoname).so.0.1.0 ../lib/libcminorparser.a \
+LIBRARIES = ../lib/libcminorast.a ../lib/libcminorbinder.a ../lib/libcminorbuild.a ../lib/libcminoremitter.a ../lib/lib$(machinesoname).so.0.2.0 ../lib/libcminorparser.a \
 ../lib/libcminorpl.a ../lib/libcminorpom.a ../lib/libcminorsymbols.a ../lib/libcminorutil.a ../lib/libcminorvmlib.a
 
 %o: %.cpp

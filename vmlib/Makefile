@@ -1,6 +1,6 @@
 include ../Makefile.common
 
-OBJECTS = File.o Socket.cpp Threading.o VmFunction.o
+OBJECTS = File.o Socket.o Threading.o VmFunction.o
 
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<

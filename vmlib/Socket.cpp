@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
 #else
 #error unknown platform
 #endif
@@ -29,7 +30,7 @@ namespace cminor { namespace vmlib {
 using namespace cminor::machine;
 
 #ifndef _WIN32
-#define SOCKET int;
+#define SOCKET int 
 #endif
 
 int gnu_tls_logging_level = 0; // 0 - 9
