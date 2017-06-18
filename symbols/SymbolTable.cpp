@@ -1167,6 +1167,7 @@ void InitSymbol()
     SymbolFactory::Instance().Register(SymbolType::refTypeInit, new ConcreteSymbolCreator<RefTypeInit>());
     SymbolFactory::Instance().Register(SymbolType::delegateNullEqual, new ConcreteSymbolCreator<DelegateNullEqual>());
     SymbolFactory::Instance().Register(SymbolType::nullDelegateEqual, new ConcreteSymbolCreator<NullDelegateEqual>());
+    SymbolFactory::Instance().Register(SymbolType::requestGcFunctionSymbol, new ConcreteSymbolCreator<RequestGcFunctionSymbol>());
 }
 
 void DoneSymbol()
@@ -1237,6 +1238,7 @@ std::unique_ptr<Assembly> CreateSystemCoreAssembly(Machine& machine, const std::
     systemCoreAssembly->GetSymbolTable().Container()->AddSymbol(std::unique_ptr<TypeSymbol>(nullReferenceTypeSymbol));
     Constant requestGcFunctionName = systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"RequestGc()"));
     FunctionSymbol* requestGcFunctionSymbol = new RequestGcFunctionSymbol(Span(), requestGcFunctionName);
+    requestGcFunctionSymbol->SetPublic();
     requestGcFunctionSymbol->SetReturnType(voidTypeSymbol);
     requestGcFunctionSymbol->SetAssembly(systemCoreAssembly.get());
     Constant requestGcGroupName = systemCoreAssembly->GetConstantPool().GetConstant(systemCoreAssembly->GetConstantPool().Install(U"RequestGc"));

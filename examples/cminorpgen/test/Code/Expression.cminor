@@ -30,6 +30,7 @@ namespace Code
                 if (log != null)
                 {
                     xmlLog = new XmlLog(log);
+                    xmlLog.MaxLineLength = MaxLogLineLength;
                     scanner.Log = xmlLog;
                     xmlLog.WriteBeginRule("parse");
                     xmlLog.IncIndent();
@@ -2071,28 +2072,28 @@ namespace Code
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.BasicTypeGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.LiteralGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new Code.BasicTypeGrammar(parsingDomain);
+                grammar0 = new Code.LiteralGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
+            Grammar grammar1 = parsingDomain.GetGrammar("Code.TemplateGrammar");
             if (grammar1 == null)
             {
-                grammar1 = new Code.TypeExprGrammar(parsingDomain);
+                grammar1 = new Code.TemplateGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
-            Grammar grammar2 = parsingDomain.GetGrammar("Code.LiteralGrammar");
+            Grammar grammar2 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
             if (grammar2 == null)
             {
-                grammar2 = new Code.LiteralGrammar(parsingDomain);
+                grammar2 = new Code.TypeExprGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar2);
-            Grammar grammar3 = parsingDomain.GetGrammar("Code.TemplateGrammar");
+            Grammar grammar3 = parsingDomain.GetGrammar("Code.BasicTypeGrammar");
             if (grammar3 == null)
             {
-                grammar3 = new Code.TemplateGrammar(parsingDomain);
+                grammar3 = new Code.BasicTypeGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar3);
             Grammar grammar4 = parsingDomain.GetGrammar("Code.IdentifierGrammar");

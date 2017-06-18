@@ -282,7 +282,8 @@ Function::Function() : groupName(), callName(), fullName(), sourceFilePath(), id
 
 Function::Function(Constant groupName_, Constant callName_, Constant friendlyName_, uint32_t id_, ConstantPool* constantPool_) :
     groupName(groupName_), callName(callName_), fullName(friendlyName_), sourceFilePath(), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false), emitter(nullptr),
-    returnsValue(false), returnType(ValueType::none), flags(FunctionFlags::none), address(nullptr), assembly(nullptr), functionSymbol(nullptr), alreadyGenerated(false)
+    returnsValue(false), returnType(ValueType::none), flags(FunctionFlags::none), address(nullptr), assembly(nullptr), functionSymbol(nullptr),
+    alreadyGenerated(false)
 {
 }
 
@@ -358,6 +359,7 @@ void Function::Write(Writer& writer)
         writer.PutEncodedUInt(p.first);
         writer.PutEncodedUInt(p.second);
     }
+    //writer.Put(stackMapRecordId);
 }
 
 void Function::Read(Reader& reader)
@@ -421,6 +423,7 @@ void Function::Read(Reader& reader)
             SourceFileTable::MapSourceFileLine(sourceFilePath, sourceLine, this);
         }
     }
+    //stackMapRecordId = reader.GetULong();
 }
 
 void Function::SetNumLocals(uint32_t numLocals_)
@@ -923,6 +926,54 @@ void Function::Accept(MachineFunctionVisitor& visitor)
     visitor.EndVisitFunction(*this);
 }
 
+/*
+void Function::FetchRoots(void* framePtr, std::vector<uint64_t>& stackRoots)
+{
+    if (stackMapRecord == nullptr) return;
+    for (const Location& location : stackMapRecord->Locations())
+    {
+        switch (location.Type())
+        {
+            case LocationType::reg:
+            {
+                throw std::runtime_error("register location " + std::string(RegisterStr(location.Reg())) + " not supported");
+                break;
+            }
+            case LocationType::direct:
+            {
+                if (location.Reg() == Register::rbp)
+                {
+                    int32_t offset = location.Offset();
+                    uint8_t* ptr = reinterpret_cast<uint8_t*>(framePtr) + offset;
+                    uint64_t root = *reinterpret_cast<uint64_t*>(ptr);
+                    stackRoots.push_back(root);
+                }
+                else
+                {
+                    throw std::runtime_error("direct register location " + std::string(RegisterStr(location.Reg())) + " not supported");
+                }
+                break;
+            }
+            case LocationType::indirect:
+            {
+                throw std::runtime_error("indirect register location " + std::string(RegisterStr(location.Reg())) + " not supported");
+                break;
+            }
+            case LocationType::constant:
+            {
+                throw std::runtime_error("small constant location " + std::to_string(location.Offset()) + " not supported");
+                break;
+            }
+            case LocationType::constIndex:
+            {
+                throw std::runtime_error("large constant location index " + std::to_string(location.Offset()) + " not supported");
+                break;
+            }
+        }
+    }
+}
+*/
+
 class FunctionTableImpl
 {
 public:
@@ -935,10 +986,14 @@ public:
     Function* GetFunctionNothrow(StringPtr functionCallName) const;
     Function* GetMain() const { return main; }
     void ResolveExceptionVarTypes();
+    void AddNativeFunction(Function* fun);
+    void SortNativeFunctionsByAddress();
+    Function* GetNativeFunction(void* rip) const;
 private:
     static std::unique_ptr<FunctionTableImpl> instance;
     std::unordered_map<StringPtr, Function*, StringPtrHash> functionMap;
     Function* main;
+    std::vector<Function*> nativeFunctions;
 };
 
 FunctionTableImpl::FunctionTableImpl() : main(nullptr)
@@ -1007,6 +1062,55 @@ void FunctionTableImpl::ResolveExceptionVarTypes()
     }
 }
 
+void FunctionTableImpl::AddNativeFunction(Function* fun)
+{
+    nativeFunctions.push_back(fun);
+}
+
+struct AddressLess
+{
+    bool operator()(Function* left, Function* right) const
+    {
+        return left->Address() < right->Address();
+    }
+};
+
+void FunctionTableImpl::SortNativeFunctionsByAddress()
+{
+    std::sort(nativeFunctions.begin(), nativeFunctions.end(), AddressLess());
+}
+
+struct FunctionAddressCompare
+{
+    bool operator()(Function* fun, void* rip) const
+    {
+        return fun->Address() < rip;
+    }
+};
+
+Function* FunctionTableImpl::GetNativeFunction(void* rip) const
+{
+    auto it = std::lower_bound(nativeFunctions.begin(), nativeFunctions.end(), rip, FunctionAddressCompare());
+    if (it != nativeFunctions.cend())
+    {
+        Function* fun = *it;
+        if (rip < fun->Address())
+        {
+            if (it != nativeFunctions.begin())
+            {
+                --it;
+                fun = *it;
+                return fun;
+            }
+        }
+        else
+        {
+            return fun;
+        }
+    }
+    return nullptr;
+}
+
 std::unique_ptr<FunctionTableImpl> FunctionTableImpl::instance;
 
 void FunctionTableImpl::Init()
@@ -1052,6 +1156,21 @@ MACHINE_API Function* FunctionTable::GetMain()
 MACHINE_API void FunctionTable::ResolveExceptionVarTypes()
 {
     FunctionTableImpl::Instance().ResolveExceptionVarTypes();
+}
+
+MACHINE_API void FunctionTable::AddNativeFunction(Function* fun)
+{
+    FunctionTableImpl::Instance().AddNativeFunction(fun);
+}
+
+MACHINE_API void FunctionTable::SortNativeFunctionsByAddress()
+{
+    FunctionTableImpl::Instance().SortNativeFunctionsByAddress();
+}
+
+MACHINE_API Function* FunctionTable::GetNativeFunction(void* rip)
+{
+    return FunctionTableImpl::Instance().GetNativeFunction(rip);
 }
 
 VmFunction::~VmFunction()

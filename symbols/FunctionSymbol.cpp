@@ -395,6 +395,10 @@ void FunctionSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function
 
 void FunctionSymbol::CreateMachineFunction()
 {
+    if (IsIntrinsic())
+    {
+        return;
+    }
     SymbolAccess access = Access();
     if (access == SymbolAccess::public_ || access == SymbolAccess::protected_)
     {

@@ -9,6 +9,7 @@
 #include <cminor/machine/Runtime.hpp>
 #include <cminor/machine/Stats.hpp>
 #include <cminor/machine/Class.hpp>
+#include <cminor/machine/Function.hpp>
 #include <iostream>
 
 namespace cminor { namespace machine {
@@ -324,6 +325,7 @@ void GarbageCollector::MarkLiveAllocations()
         }
         if (RunningNativeCode())
         {
+            std::vector<uint64_t> gcRoots;
             FunctionStackEntry* functionStackEntry = thread->GetFunctionStack();
             while (functionStackEntry)
             {
@@ -334,11 +336,17 @@ void GarbageCollector::MarkLiveAllocations()
                     for (int32_t i = 0; i < n; ++i)
                     {
                         uint64_t* gcRootPtr = gcEntry[i];
-                        ObjectReference gcRoot(*gcRootPtr);
-                        MarkLiveAllocations(gcRoot, checked);
+                        uint64_t gcRoot(*gcRootPtr);
+                        gcRoots.push_back(gcRoot);
                     }
                 }
                 functionStackEntry = functionStackEntry->next;
+            }
+            std::sort(gcRoots.begin(), gcRoots.end());
+            gcRoots.erase(std::unique(gcRoots.begin(), gcRoots.end()), gcRoots.end());
+            for (const ObjectReference& gcRoot : gcRoots)
+            {
+                MarkLiveAllocations(ObjectReference(gcRoot), checked);
             }
         }
     }

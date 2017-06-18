@@ -8,6 +8,7 @@
 #include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Constant.hpp>
 #include <cminor/machine/Instruction.hpp>
+//#include <cminor/machine/StackMap.hpp>
 #include <ostream>
 #include <map>
 
@@ -225,6 +226,13 @@ public:
     void SetFunctionSymbol(void* functionSymbol_) { functionSymbol = functionSymbol_; }
     void SetAlreadyGenerated() { alreadyGenerated = true; }
     bool AlreadyGenerated() const { return alreadyGenerated; }
+/*
+    void SetStackMapRecordId(uint64_t stackMapRecordId_) { stackMapRecordId = stackMapRecordId_; }
+    uint64_t GetStackMapRecordId() const { return stackMapRecordId; }
+    void SetStackMapRecord(StackMapRecord* stackMapRecord_) { stackMapRecord = stackMapRecord_; }
+    const StackMapRecord* GetStackMapRecord() const { return stackMapRecord; }
+    void FetchRoots(void* framePtr, std::vector<uint64_t>& stackRoots);
+*/
 private:
     Constant groupName;
     Constant callName;
@@ -249,6 +257,8 @@ private:
     std::unordered_set<uint32_t> breakPoints;
     Emitter* emitter;
     FunctionFlags flags;
+    //uint64_t stackMapRecordId;
+    //StackMapRecord* stackMapRecord;
     void* address;
     void* assembly;
     void* functionSymbol;
@@ -269,6 +279,9 @@ public:
     MACHINE_API static Function* GetFunctionNothrow(StringPtr functionCallName);
     MACHINE_API static Function* GetMain();
     MACHINE_API static void ResolveExceptionVarTypes();
+    MACHINE_API static void AddNativeFunction(Function* fun);
+    MACHINE_API static void SortNativeFunctionsByAddress();
+    MACHINE_API static Function* GetNativeFunction(void* rip);
 };
 
 class MACHINE_API VmFunction

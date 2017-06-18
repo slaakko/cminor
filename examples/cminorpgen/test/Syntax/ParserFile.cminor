@@ -31,6 +31,7 @@ namespace Syntax
                 if (log != null)
                 {
                     xmlLog = new XmlLog(log);
+                    xmlLog.MaxLineLength = MaxLogLineLength;
                     scanner.Log = xmlLog;
                     xmlLog.WriteBeginRule("parse");
                     xmlLog.IncIndent();
@@ -345,22 +346,22 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Syntax.GrammarGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.NamespaceGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new Syntax.GrammarGrammar(parsingDomain);
+                grammar0 = new Code.NamespaceGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            Grammar grammar1 = parsingDomain.GetGrammar("Syntax.GrammarGrammar");
             if (grammar1 == null)
             {
-                grammar1 = new System.Text.Parsing.stdlib(parsingDomain);
+                grammar1 = new Syntax.GrammarGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
-            Grammar grammar2 = parsingDomain.GetGrammar("Code.NamespaceGrammar");
+            Grammar grammar2 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
             if (grammar2 == null)
             {
-                grammar2 = new Code.NamespaceGrammar(parsingDomain);
+                grammar2 = new System.Text.Parsing.stdlib(parsingDomain);
             }
             ReferencedGrammars.Add(grammar2);
         }

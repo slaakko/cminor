@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BinaryReader.cpp" />
     <ClCompile Include="CodeFormatter.cpp" />
     <ClCompile Include="MappedInputFile.cpp" />
     <ClCompile Include="Mutex.cpp" />
@@ -31,6 +32,7 @@
     <ClCompile Include="Unicode.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BinaryReader.hpp" />
     <ClInclude Include="CodeFormatter.hpp" />
     <ClInclude Include="Defines.hpp" />
     <ClInclude Include="Error.hpp" />

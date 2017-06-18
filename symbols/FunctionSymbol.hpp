@@ -28,7 +28,8 @@ enum class FunctionSymbolFlags : uint8_t
     external_ = 1 << 1,
     conversionFun = 1 << 2,
     exported = 1 << 3,
-    canThrow = 1 << 4
+    canThrow = 1 << 4,
+    intrinsic = 1 << 5
 };
 
 inline FunctionSymbolFlags operator&(FunctionSymbolFlags left, FunctionSymbolFlags right)
@@ -56,6 +57,8 @@ public:
     bool IsInline() const { return GetFlag(FunctionSymbolFlags::inline_); }
     void SetExternal() { SetFlag(FunctionSymbolFlags::external_); }
     bool IsExternal() const { return GetFlag(FunctionSymbolFlags::external_); }
+    void SetIntrinsic() { SetFlag(FunctionSymbolFlags::intrinsic); }
+    bool IsIntrinsic() const { return GetFlag(FunctionSymbolFlags::intrinsic); }
     bool IsExported() const { return GetFlag(FunctionSymbolFlags::exported); }
     void SetExported() { SetFlag(FunctionSymbolFlags::exported); }
     bool CanThrow() const { return GetFlag(FunctionSymbolFlags::canThrow); }
@@ -374,6 +377,8 @@ class RequestGcFunctionSymbol : public FunctionSymbol
 {
 public:
     RequestGcFunctionSymbol(const Span& span_, Constant name_);
+    SymbolType GetSymbolType() const override { return SymbolType::requestGcFunctionSymbol; }
+    std::string TypeString() const override { return "request GC function"; }
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
 };
 

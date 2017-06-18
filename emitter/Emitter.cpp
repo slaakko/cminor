@@ -225,6 +225,10 @@ void EmitterVisitor::Visit(BoundClass& boundClass)
 
 void EmitterVisitor::Visit(BoundFunction& boundFunction)
 {
+    if (boundFunction.GetFunctionSymbol()->IsIntrinsic())
+    {
+        return;
+    }
     boundFunction.GetFunctionSymbol()->CreateMachineFunction();
     Function* prevFunction = function;
     function = boundFunction.GetFunctionSymbol()->MachineFunction();

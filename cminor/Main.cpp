@@ -203,6 +203,8 @@ void PrintHelp(HelpTopics helpTopics)
             "       Dump symbol table.\n" <<
             "   --mappings (-m)\n" <<
             "       Dump assembly mappings.\n" <<
+            "   --stackmaps (-k)\n" <<
+            "       Dump stack maps.\n" <<
             "---------------------------------------------------------------------\n" <<
             std::endl;
     }
@@ -507,6 +509,10 @@ int main(int argc, const char** argv)
                                 dumpOptions.push_back(arg);
                             }
                             else if (arg == "-m" || arg == "--mappings")
+                            {
+                                dumpOptions.push_back(arg);
+                            }
+                            else if (arg == "-k" || arg == "--stackmaps")
                             {
                                 dumpOptions.push_back(arg);
                             }

@@ -52,7 +52,7 @@ enum class SymbolType : uint8_t
     basicTypeDefaultInit, basicTypeCopyInit, basicTypeAssignment, basicTypeReturn, basicTypeConversion, basicTypeUnaryOp, basicTypBinaryOp, objectDefaultInit, objectCopyInit, objectNullInit, 
     objectAssignment, objectNullAssignment, objectNullEqual, nullObjectEqual, nullToObjectConversion, classTypeConversion, classToInterfaceConversion, enumTypeSymbol, enumConstantSymbol,
     enumTypeDefaultInit, enumTypeConversion, delegateTypeSymbol, delegateDefaultInit, functionGroupTypeSymbol, classDelegateTypeSymbol, memberExpressionTypeSymbol, refTypeSymbol, refTypeAssignment,
-    refTypeInit, delegateNullEqual, nullDelegateEqual, delegateFunConstructorSymbol,
+    refTypeInit, delegateNullEqual, nullDelegateEqual, delegateFunConstructorSymbol, requestGcFunctionSymbol,
     maxSymbol
 };
 

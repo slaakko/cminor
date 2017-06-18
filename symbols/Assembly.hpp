@@ -7,6 +7,7 @@
 #define CMINOR_SYMBOLS_ASSEMBLY_INCLUDED
 #include <cminor/symbols/SymbolTable.hpp>
 #include <cminor/symbols/MachineFunctionTable.hpp>
+//#include <cminor/machine/StackMap.hpp>
 
 namespace cminor { namespace symbols {
 
@@ -23,7 +24,8 @@ enum class DumpOptions : uint8_t
     functions = 1 << 2, 
     symbols = 1 << 3,
     mappings = 1 << 4,
-    all = header | constants | functions | symbols | mappings
+    stackmaps = 1 << 5,
+    all = header | constants | functions | symbols | mappings | stackmaps
 };
 
 inline DumpOptions operator&(DumpOptions left, DumpOptions right)
@@ -166,6 +168,7 @@ public:
     void Dump(CodeFormatter& formatter, DumpOptions dumpOptions);
     void DumpHeader(CodeFormatter& formatter);
     void DumpMappings(CodeFormatter& formatter);
+    void DumpStackMaps(CodeFormatter& formatter);
     void Write(SymbolWriter& writer);
     void Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
         std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
@@ -235,6 +238,7 @@ public:
     void* SharedLibraryHandle() const { return sharedLibraryHandle; }
     void SetMainEntryPointAddress(void* mainEntryPointAddress_) { mainEntryPointAddress = mainEntryPointAddress_; }
     void* MainEntryPointAddress() const { return mainEntryPointAddress; }
+    //void SetStackMapSection(StackMapSection* stackMapSection_) { stackMapSection.reset(stackMapSection_); }
 private:
     Machine& machine;
     AssemblyFlags flags;
@@ -261,6 +265,7 @@ private:
     TransientAssemblyFlags transientFlags;
     void* sharedLibraryHandle;
     void* mainEntryPointAddress;
+    //std::unique_ptr<StackMapSection> stackMapSection;
     void Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, const std::string& currentAssemblyDir,
         std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
         std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
@@ -274,6 +279,7 @@ private:
     void ReadClasDataVarMappings(Reader& reader);
     void WriteTypePtrVarMappings(Writer& writer);
     void ReadTypePtrVarMappings(Reader& reader);
+    void ReadStackMapSection(Reader& reader);
     void PrepareForNativeExecution();
     bool GetFlag(AssemblyFlags flag) const { return (flags & flag) != AssemblyFlags::none; }
     void SetFlag(AssemblyFlags flag) { flags = (flags | flag); }

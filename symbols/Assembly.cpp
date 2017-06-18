@@ -654,6 +654,12 @@ void Assembly::Dump(CodeFormatter& formatter, DumpOptions dumpOptions)
     {
         DumpMappings(formatter);
     }
+/*
+    if ((dumpOptions & DumpOptions::stackmaps) != DumpOptions::none)
+    {
+        DumpStackMaps(formatter);
+    }
+*/
 }
 
 void Assembly::DumpHeader(CodeFormatter& formatter)
@@ -738,6 +744,18 @@ void Assembly::DumpMappings(CodeFormatter& formatter)
     formatter.WriteLine();
 }
 
+/*
+void Assembly::DumpStackMaps(CodeFormatter& formatter)
+{
+    formatter.WriteLine("STACK MAPS");
+    formatter.WriteLine();
+    if (stackMapSection)
+    {
+        stackMapSection->Dump(formatter);
+    }
+}
+*/
+
 void Assembly::Write(SymbolWriter& writer)
 {
     AssemblyTag tag;
@@ -768,6 +786,14 @@ void Assembly::Write(SymbolWriter& writer)
     WriteFunctionVarMappings(writer);
     WriteClassDataVarMappings(writer);
     WriteTypePtrVarMappings(writer);
+/*
+    bool hasStackMapSection = stackMapSection != nullptr;
+    writer.AsMachineWriter().Put(hasStackMapSection);
+    if (hasStackMapSection)
+    {
+        stackMapSection->Write(writer);
+    }
+*/
 }
 
 void Assembly::BeginRead(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet,
@@ -869,6 +895,7 @@ void Assembly::FinishReads(std::vector<CallInst*>& callInstructions, std::vector
         ReadFunctionVarMappings(reader);
         ReadClasDataVarMappings(reader);
         ReadTypePtrVarMappings(reader);
+        //ReadStackMapSection(reader);
         callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
         fun2DlgInstructions.insert(fun2DlgInstructions.end(), reader.Fun2DlgInstructions().cbegin(), reader.Fun2DlgInstructions().cend());
         memFun2ClassDlgInstructions.insert(memFun2ClassDlgInstructions.end(), reader.MemFun2ClassDlgInstructions().cbegin(), reader.MemFun2ClassDlgInstructions().cend());
@@ -947,6 +974,7 @@ void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* roo
     ReadFunctionVarMappings(reader);
     ReadClasDataVarMappings(reader);
     ReadTypePtrVarMappings(reader);
+    //ReadStackMapSection(reader);
     callInstructions.insert(callInstructions.end(), reader.CallInstructions().cbegin(), reader.CallInstructions().cend());
     fun2DlgInstructions.insert(fun2DlgInstructions.end(), reader.Fun2DlgInstructions().cbegin(), reader.Fun2DlgInstructions().cend());
     memFun2ClassDlgInstructions.insert(memFun2ClassDlgInstructions.end(), reader.MemFun2ClassDlgInstructions().cbegin(), reader.MemFun2ClassDlgInstructions().cend());
@@ -1332,6 +1360,32 @@ void Assembly::ReadTypePtrVarMappings(Reader& reader)
     }
 }
 
+/*
+void Assembly::ReadStackMapSection(Reader& reader)
+{
+    bool hasStackMapSection = reader.GetBool();
+    if (hasStackMapSection)
+    {
+        stackMapSection.reset(new StackMapSection());
+        stackMapSection->Read(reader);
+        for (const std::unique_ptr<Function>& function : machineFunctionTable.MachineFunctions())
+        {
+            uint64_t stackMapRecordId = function->GetStackMapRecordId();
+            StackMapRecord* stackMapRecord = stackMapSection->GetStackMapRecordById(stackMapRecordId);
+            if (stackMapRecord)
+            {
+                function->SetStackMapRecord(stackMapRecord);
+            }
+            else
+            {
+                throw std::runtime_error("error loading native assembly '" + ToUtf8(Name().Value()) + "': stack map record " + std::to_string(stackMapRecordId) + " for function '" + 
+                    ToUtf8(function->CallName().Value().AsStringLiteral()) + "' not found");
+            }
+        }
+    }
+}
+*/
+
 void LoadSharedLibrariesIntoMemory(Assembly* assembly)
 {
     if (assembly->IsCore()) return;
@@ -1383,6 +1437,7 @@ void ResolveAddressesOfExportedFunctions(Assembly* assembly)
         {
             void* symbolAddress = ResolveSymbolAddress(sharedLibraryHandle, assembly->NativeSharedLibraryFilePath(), exportedFunction->MangledName());
             exportedFunction->SetAddress(symbolAddress);
+            FunctionTable::AddNativeFunction(exportedFunction);
         }
         catch (const std::runtime_error& ex)
         {
@@ -1542,6 +1597,7 @@ void Assembly::PrepareForNativeExecution()
     Assert(IsNative(), "not native");
     LoadSharedLibrariesIntoMemory(this);
     ResolveAddressesOfExportedFunctions(this);
+    FunctionTable::SortNativeFunctionsByAddress();
     ResolveFunctionPtrVarMappings(this);
     ResolveClassDataPtrVarMappings(this);
     ResolveTypePtrVarMappings(this);

@@ -66,6 +66,7 @@ void PrintHelp()
         "-f | --functions : dump function table\n" <<
         "-s | --symbols   : dump symbol table\n" <<
         "-m | --mappings  : dump mappings\n" <<
+        "-k | --stackmaps : dump stackmaps\n" <<
         std::endl;
 }
 
@@ -124,6 +125,10 @@ int main(int argc, const char** argv)
                 else if (arg == "-m" || arg == "--mappings")
                 {
                     dumpOptions = dumpOptions | DumpOptions::mappings;
+                }
+                else if (arg == "-k" || arg == "--stackmaps")
+                {
+                    dumpOptions = dumpOptions | DumpOptions::stackmaps;
                 }
                 else
                 {
@@ -211,6 +216,14 @@ int main(int argc, const char** argv)
                     description.append(" and ");
                 }
                 description = "mappings";
+            }
+            if ((dumpOptions & DumpOptions::stackmaps) != DumpOptions::none)
+            {
+                if (!description.empty())
+                {
+                    description.append(" and ");
+                }
+                description = "stackmaps";
             }
             std::string target = "standard output";
             if (!outputFileName.empty())

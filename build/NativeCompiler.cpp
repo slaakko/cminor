@@ -7,6 +7,7 @@
 #include <cminor/machine/MachineFunctionVisitor.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Class.hpp>
+//#include <cminor/machine/StackMap.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/util/Path.hpp>
@@ -17,6 +18,7 @@
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/util/System.hpp>
+#include <cminor/util/BinaryReader.hpp>
 #include <boost/filesystem.hpp>
 #include <algorithm>
 #include <fstream>
@@ -49,6 +51,8 @@
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/Analysis/TargetLibraryInfo.h>
+#include <llvm/Object/ObjectFile.h>
+
 #ifdef _WIN32
 #pragma warning(default:4267)
 #pragma warning(default:4244)
@@ -275,16 +279,20 @@ private:
     llvm::AllocaInst* gcEntry;
     std::unordered_map<int32_t, int32_t> temporaryGcRootMap;
     std::unordered_set<Function*> inlinedFunctions;
+    uint64_t nextStackMapRecordId;
     void ScanForInlineCandidates(Function& function);
     bool MakeInlineDecisionFor(Function& function);
     void GenerateInlineDefinitionFor(Function& function);
     void CreateDllMain();
     void GenerateObjectFile(const std::string& assemblyObjectFilePath);
-    void Link(const std::string& assemblyObjectFilePath);
-    void LinkWindows(const std::string& assemblyObjectFilePath);
-    void LinkLinux(const std::string& assemblyObjectFilePath);
+    //void ReadStackMapsFromSharedLibraryFile(const std::string& sharedibraryFilePath);
+    //void ReadStackMapSection(const uint8_t* begin, const uint8_t* end);
+    void Link(const std::string& assemblyObjectFilePath, std::string& sharedibraryFilePath);
+    void LinkWindows(const std::string& assemblyObjectFilePath, std::string& sharedLibraryFilePath);
+    void LinkLinux(const std::string& assemblyObjectFilePath, std::string& sharedLibraryFilePath);
     void CreateLocalVariables();
     void CreateVariablesForTemporaryGcRoots();
+    //void CreateStackMap();
     void StoreTemporaryGcRoot(Instruction& instruction);
     llvm::TargetOptions GetTargetOptions();
     void SetPersonalityFunction();
@@ -326,7 +334,7 @@ NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), 
     functionConstantPool(nullptr), constantPoolVariable(nullptr), nextFunctionVarNumber(0), nextClassDataVarNumber(0), 
     nextTypePtrVarNumber(0), functionStackEntry(nullptr), currentBasicBlock(nullptr), entryBasicBlock(nullptr), lastAlloca(nullptr), currentExceptionBlockId(-1),  
     currentCatchSectionExceptionBlockId(-1), currentPad(nullptr), currentPadKind(LlvmPadKind::none), currentLandingPad(nullptr), exceptionPtr(nullptr), isGCFun(false), optimizationLevel(0),
-    inlineLimit(0), inlineLocals(0), mode(Mode::normalMode)
+    inlineLimit(0), inlineLocals(0), mode(Mode::normalMode), gcEntry(nullptr)
 {
     InitializeAllTargetInfos();
     InitializeAllTargets();
@@ -453,6 +461,28 @@ void NativeCompilerImpl::CreateVariablesForTemporaryGcRoots()
         }
     }
 }
+
+/*
+void NativeCompilerImpl::CreateStackMap()
+{
+    std::vector<llvm::Type*> stackMapParamTypes;
+    stackMapParamTypes.push_back(GetType(ValueType::ulongType));
+    stackMapParamTypes.push_back(GetType(ValueType::intType));
+    llvm::FunctionType* stackMapFunctionType = llvm::FunctionType::get(GetType(ValueType::none), stackMapParamTypes, true);
+    llvm::Function* stackMapIntrinsic = cast<llvm::Function>(module->getOrInsertFunction("llvm.experimental.stackmap", stackMapFunctionType));
+    ImportFunction(stackMapIntrinsic);
+    ArgVector args;
+    uint64_t stackMapRecordId = ++nextStackMapRecordId;
+    args.push_back(builder.getInt64(stackMapRecordId));
+    function->SetStackMapRecordId(stackMapRecordId);
+    args.push_back(builder.getInt32(0));
+    for (AllocaInst* gcRoot : gcRoots)
+    {
+        args.push_back(gcRoot);
+    }
+    builder.CreateCall(stackMapIntrinsic, args);
+}
+*/
 
 void NativeCompilerImpl::StoreTemporaryGcRoot(Instruction& instruction)
 {
@@ -1061,7 +1091,9 @@ void NativeCompilerImpl::EndModule()
         llvm::raw_os_ostream optLlOs(optLlFile);
         module->print(optLlOs, nullptr);
     }
-    Link(assemblyObjectFilePath);
+    std::string sharedLibraryFilePath;
+    Link(assemblyObjectFilePath, sharedLibraryFilePath);
+    //ReadStackMapsFromSharedLibraryFile(sharedLibraryFilePath);
 }
 
 void NativeCompilerImpl::CreateDllMain()
@@ -1119,16 +1151,103 @@ void NativeCompilerImpl::GenerateObjectFile(const std::string& assemblyObjectFil
     }
 }
 
-void NativeCompilerImpl::Link(const std::string& assemblyObjectFilePath)
+/*
+void NativeCompilerImpl::ReadStackMapsFromSharedLibraryFile(const std::string& sharedLibraryFilePath)
+{
+    auto objectFile = llvm::object::ObjectFile::createObjectFile(sharedLibraryFilePath);
+    auto begin = objectFile->getBinary()->section_begin();
+    auto end = objectFile->getBinary()->section_end();
+    for (auto it = begin; it != end; ++it)
+    {
+        llvm::StringRef name;
+        std::error_code error = it->getName(name);
+        if (!error)
+        {
+            if (name == ".llvm_stackmaps")
+            {
+                uint64_t size = it->getSize();
+                llvm::StringRef result;
+                error = it->getContents(result);
+                if (!error)
+                {
+                    const uint8_t* begin = reinterpret_cast<const uint8_t*>(result.begin());
+                    const uint8_t* end = reinterpret_cast<const uint8_t*>(result.end());
+                    ReadStackMapSection(begin, end);
+                }
+                break;
+            }
+        }
+    }
+}
+
+void NativeCompilerImpl::ReadStackMapSection(const uint8_t* begin, const uint8_t* end)
+{
+    std::unique_ptr<StackMapSection> stackMapSection(new StackMapSection());
+    BinaryReader reader(begin, end);
+    uint8_t version = reader.GetByte();
+    if (version != 2)
+    {
+        throw std::runtime_error("NativeCompiler: unknown LLVM stack map version " + std::to_string(version) + " (version 2 expected)");
+    }
+    uint8_t r0 = reader.GetByte();
+    uint16_t r1 = reader.GetUShort();
+    uint32_t numFunctions = reader.GetUInt();
+    uint32_t numConstants = reader.GetUInt();
+    uint32_t numRecords = reader.GetUInt();
+    for (uint32_t i = 0; i < numFunctions; ++i)
+    {
+        uint64_t functionAddress = reader.GetULong();
+        uint64_t stackSize = reader.GetULong();
+        uint64_t recordCount = reader.GetULong();
+    }
+    for (uint32_t i = 0; i < numConstants; ++i)
+    {
+        uint64_t value = reader.GetULong();
+    }
+    for (uint32_t i = 0; i < numRecords; ++i)
+    {
+        uint64_t stackMapId = reader.GetULong();
+        uint32_t instructionOffset = reader.GetUInt();
+        std::unique_ptr<StackMapRecord> record(new StackMapRecord(stackMapId, instructionOffset));
+        uint16_t recordFlags = reader.GetUShort();
+        uint16_t numLocations = reader.GetUShort();
+        for (uint16_t l = 0; l < numLocations; ++l)
+        {
+            uint8_t locationType = reader.GetByte();
+            uint8_t locationFlags = reader.GetByte();
+            uint16_t dwarfRegNum = reader.GetUShort();
+            int32_t offset = reader.GetInt();
+            record->AddLocation(Location(static_cast<LocationType>(locationType), static_cast<Register>(dwarfRegNum), offset));
+        }
+        uint16_t padding = reader.GetUShort();
+        uint16_t numLiveOuts = reader.GetUShort();
+        for (uint16_t o = 0; o < numLiveOuts; ++o)
+        {
+            uint16_t dwarfRegNum = reader.GetUShort();
+            uint8_t reserved = reader.GetByte();
+            uint8_t size = reader.GetByte();
+            record->AddLiveOut(LiveOut(static_cast<Register>(dwarfRegNum), size));
+        }
+        if (reader.Pos() % 8 != 0)
+        {
+            uint32_t padding = reader.GetUInt();
+        }
+        stackMapSection->AddStackMapRecord(record.release());
+    }
+    assembly->SetStackMapSection(stackMapSection.release());
+}
+*/
+
+void NativeCompilerImpl::Link(const std::string& assemblyObjectFilePath, std::string& sharedLibraryFilePath)
 {
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
         std::cout << "Linking " << assemblyObjectFilePath << "..." << std::endl;
     }
 #ifdef _WIN32
-    LinkWindows(assemblyObjectFilePath);
+    LinkWindows(assemblyObjectFilePath, sharedLibraryFilePath);
 #else
-    LinkLinux(assemblyObjectFilePath);
+    LinkLinux(assemblyObjectFilePath, sharedLibraryFilePath);
 #endif
 }
 
@@ -1166,7 +1285,7 @@ void ImportAssemblyReferences(Assembly* assembly, std::vector<std::string>& args
     }
 }
 
-void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
+void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath, std::string& sharedLibraryFilePath)
 {
     std::vector<std::string> args;
     args.push_back("/dll");
@@ -1235,9 +1354,10 @@ void NativeCompilerImpl::LinkWindows(const std::string& assemblyObjectFilePath)
         }
         throw std::runtime_error("NativeCompiler: linking '" + assemblyObjectFilePath + "' failed: " + ex.what() + ":\nerrors:\n" + errors);
     }
+    sharedLibraryFilePath = dllFilePath;
 }
 
-void NativeCompilerImpl::LinkLinux(const std::string& assemblyObjectFilePath)
+void NativeCompilerImpl::LinkLinux(const std::string& assemblyObjectFilePath, std::string& sharedLibraryFilePath)
 {
     std::string so10FilePath = Path::ChangeExtension(assemblyObjectFilePath, ".so.1.0");
     std::string soFileName = Path::GetFileName(Path::ChangeExtension(assemblyObjectFilePath, ".so"));
@@ -1310,6 +1430,7 @@ void NativeCompilerImpl::LinkLinux(const std::string& assemblyObjectFilePath)
         }
         throw std::runtime_error("NativeCompiler: creating hard link for '" + so10FilePath + "' failed: " + ex.what() + ":\nerrors:\n" + errors);
     }
+    sharedLibraryFilePath = so10FilePath;
 }
 
 void NativeCompilerImpl::GenerateInlineDefinitionFor(Function& function)
@@ -1424,6 +1545,9 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     fun = cast<llvm::Function>(module->getOrInsertFunction(mangledFunctionName, funType));
     if (mode == Mode::normalMode)
     {
+        // export all functions...
+        //ExportFunction(fun); 
+        //assembly->AddExportedFunction(function.CallName());
         if (function.IsExported())
         {
             ExportFunction(fun);
@@ -1475,6 +1599,7 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     gcRoots.clear();
     CreateLocalVariables();
     CreateVariablesForTemporaryGcRoots();
+    //CreateStackMap();
     gcEntry = nullptr;
     if (isGCFun)
     {
@@ -1497,7 +1622,7 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
         llvm::PointerType::get(GetType(ValueType::byteType), 0),        // field 01: (void*)Function* function       : pointer to IL function
         GetType(ValueType::intType),                                    // field 02: int32_t lineNumber              : current line number (updated before each call or throw)
         GetType(ValueType::intType),                                    // field 03: int32_t numGcRoots              : number of GC roots in this function
-        llvm::PointerType::get(llvm::PointerType::get(GetType(ValueType::objectReference), 0), 0),
+        llvm::PointerType::get(llvm::PointerType::get(GetType(ValueType::objectReference), 0), 0),                  
                                                                         // field 04: uint64_t** gcEntry              : pointer to array of GC root pointers
         nullptr);
     functionStackEntry = builder.CreateAlloca(functionStackEntryType);
@@ -2327,7 +2452,7 @@ void NativeCompilerImpl::EnterFunction()
     {
         builder.CreateStore(llvm::Constant::getNullValue(PointerType::get(PointerType::get(GetType(ValueType::objectReference), 0), 0)), fseGCEntryPtr);
     }
-    llvm::Function* rtEnterFunction = cast<llvm::Function>(module->getOrInsertFunction("RtEnterFunction", GetType(ValueType::none), 
+    llvm::Function* rtEnterFunction = cast<llvm::Function>(module->getOrInsertFunction("RtEnterFunction", GetType(ValueType::none),
         llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtEnterFunction);
     ArgVector args;

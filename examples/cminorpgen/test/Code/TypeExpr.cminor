@@ -30,6 +30,7 @@ namespace Code
                 if (log != null)
                 {
                     xmlLog = new XmlLog(log);
+                    xmlLog.MaxLineLength = MaxLogLineLength;
                     scanner.Log = xmlLog;
                     xmlLog.WriteBeginRule("parse");
                     xmlLog.IncIndent();
@@ -306,10 +307,10 @@ namespace Code
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.ExpressionGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("Code.TemplateGrammar");
             if (grammar0 == null)
             {
-                grammar0 = new Code.ExpressionGrammar(parsingDomain);
+                grammar0 = new Code.TemplateGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
             Grammar grammar1 = parsingDomain.GetGrammar("Code.BasicTypeGrammar");
@@ -318,10 +319,10 @@ namespace Code
                 grammar1 = new Code.BasicTypeGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
-            Grammar grammar2 = parsingDomain.GetGrammar("Code.TemplateGrammar");
+            Grammar grammar2 = parsingDomain.GetGrammar("Code.ExpressionGrammar");
             if (grammar2 == null)
             {
-                grammar2 = new Code.TemplateGrammar(parsingDomain);
+                grammar2 = new Code.ExpressionGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar2);
             Grammar grammar3 = parsingDomain.GetGrammar("Code.IdentifierGrammar");

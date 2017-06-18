@@ -4,16 +4,20 @@
 // =================================
 
 #include <cminor/machine/OsInterface.hpp>
+#include <cminor/machine/Function.hpp>
 #include <iostream>
 #include <string>
 #include <stdexcept>
 #include <cstring>
+#include <boost/filesystem.hpp>
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <Windows.h>
     #include <winnt.h>
-#include <io.h>
-#include <fcntl.h>
+    #include <Psapi.h>
+    #include <DbgHelp.h>
+    #include <io.h>
+    #include <fcntl.h>
 #else
     #include <unistd.h>
     #include <sys/mman.h>
@@ -74,33 +78,6 @@ MACHINE_API void WriteInGreenToConsole(const std::string& line)
     if (!written)
     {
         std::cout << line << std::endl;
-    }
-}
-
-void InspectStack(uint64_t threadHandle)
-{
-    HANDLE thread = reinterpret_cast<HANDLE>(threadHandle);
-    DWORD suspendResult = SuspendThread(thread);
-    if (suspendResult == (DWORD)-1)
-    {
-        throw std::runtime_error("suspend thread failed");
-    }
-    CONTEXT context;
-    context.ContextFlags = CONTEXT_INTEGER;
-    BOOL getThreadContextResult = GetThreadContext(thread, &context);
-    if (!getThreadContextResult)
-    {
-        DWORD resumeResult = ResumeThread(thread);
-        if (resumeResult == (DWORD)-1)
-        {
-            // resume thread failed
-        }
-        throw std::runtime_error("get thread context failed");
-    }
-    DWORD resumeResult = ResumeThread(thread);
-    if (resumeResult == (DWORD)-1)
-    {
-        // resume thread failed
     }
 }
 

@@ -10,6 +10,9 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/util/Util.hpp>
 #include <iostream>
+#ifdef _WIN32
+#include <intrin.h>
+#endif
 
 namespace cminor { namespace machine {
 
@@ -154,13 +157,14 @@ extern "C" MACHINE_API void RtThrowException(uint64_t exceptionObjectReference)
         RtThrowSystemException(SystemException("tried to throw null reference"));
         return;
     }
+    Thread& thread = GetCurrentThread();
     currentException = exceptionObjectReference;
     ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
     std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
     void* object = memoryPool.GetObject(exceptionObjectReference, lock);
     ManagedAllocationHeader* header = GetAllocationHeader(object);
     header->Reference();
-    ObjectReference stackTraceStr = memoryPool.CreateString(GetCurrentThread(), GetStackTrace(), lock);
+    ObjectReference stackTraceStr = memoryPool.CreateString(thread, GetStackTrace(), lock);
     SetObjectField(object, stackTraceStr, 2);
     throw CminorException(exceptionObjectReference);
 }
@@ -208,10 +212,6 @@ extern "C" MACHINE_API void RtDisposeException()
 extern "C" MACHINE_API void RtEnterFunction(void* functionStackEntry)
 {
     FunctionStackEntry* entry = static_cast<FunctionStackEntry*>(functionStackEntry);
-    if (trace)
-    {
-        std::cerr << "> " << ToUtf8(entry->function->CallName().Value().AsStringLiteral()) << std::endl;
-    }
     entry->next = functionStack;
     functionStack = entry;
 }
@@ -219,10 +219,6 @@ extern "C" MACHINE_API void RtEnterFunction(void* functionStackEntry)
 extern "C" MACHINE_API void RtLeaveFunction(void* functionStackEntry)
 {
     FunctionStackEntry* entry = static_cast<FunctionStackEntry*>(functionStackEntry);
-    if (trace)
-    {
-        std::cerr << "< " << ToUtf8(entry->function->CallName().Value().AsStringLiteral()) << std::endl;
-    }
     functionStack = entry->next;
 }
 
@@ -1204,8 +1200,8 @@ extern "C" MACHINE_API void RtVmCall(void* function, void* constantPool, uint32_
 {
     try
     {
-        Function* fun = static_cast<Function*>(function);
         Thread& thread = GetCurrentThread();
+        Function* fun = static_cast<Function*>(function);
         int numLocals = vmCallContext->numLocals;
         uint64_t frameSize = Align(sizeof(Frame), 8) + numLocals * Align(sizeof(LocalVariable), 8);
         std::unique_ptr<uint8_t> frameMem(new uint8_t[frameSize]);
@@ -1359,8 +1355,9 @@ extern "C" MACHINE_API uint64_t RtCreateObject(void* classDataPtr)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ClassData* cd = static_cast<ClassData*>(classDataPtr);
-        ObjectReference objectReference = GetManagedMemoryPool().CreateObject(GetCurrentThread(), cd->Type());
+        ObjectReference objectReference = GetManagedMemoryPool().CreateObject(thread, cd->Type());
         return objectReference.Value();
     }
     catch (const SystemException& ex)
@@ -1374,8 +1371,9 @@ extern "C" MACHINE_API uint64_t RtCopyObject(uint64_t objectReference)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectReference reference(objectReference);
-        ObjectReference copy = GetManagedMemoryPool().CopyObject(GetCurrentThread(), reference);
+        ObjectReference copy = GetManagedMemoryPool().CopyObject(thread, reference);
         return copy.Value();
     }
     catch (const SystemException& ex)
@@ -1389,9 +1387,9 @@ extern "C" MACHINE_API uint64_t RtStrLitToString(const char32_t* strLitValue)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         uint32_t len = static_cast<uint32_t>(StringLen(strLitValue));
         ClassData* classData = ClassDataTable::GetSystemStringClassData();
-        Thread& thread = GetCurrentThread();
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
         ObjectReference objectReference = memoryPool.CreateObject(thread, classData->Type(), lock);
@@ -2136,10 +2134,11 @@ extern "C" MACHINE_API uint64_t RtBoxSb(int8_t value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::sbyteType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::sbyteType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2161,10 +2160,11 @@ extern "C" MACHINE_API uint64_t RtBoxBy(uint8_t value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::byteType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::byteType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2186,10 +2186,11 @@ extern "C" MACHINE_API uint64_t RtBoxSh(int16_t value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::shortType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::shortType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2211,10 +2212,11 @@ extern "C" MACHINE_API uint64_t RtBoxUs(uint16_t value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::ushortType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::ushortType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2236,10 +2238,11 @@ extern "C" MACHINE_API uint64_t RtBoxIn(int32_t value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::intType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::intType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2261,10 +2264,11 @@ extern "C" MACHINE_API uint64_t RtBoxUi(uint32_t value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::uintType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::uintType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2286,10 +2290,11 @@ extern "C" MACHINE_API uint64_t RtBoxLo(int64_t value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::longType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::longType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2311,10 +2316,11 @@ extern "C" MACHINE_API uint64_t RtBoxUl(uint64_t value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::ulongType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::ulongType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2336,10 +2342,11 @@ extern "C" MACHINE_API uint64_t RtBoxFl(float value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::floatType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::floatType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2361,10 +2368,11 @@ extern "C" MACHINE_API uint64_t RtBoxDo(double value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::doubleType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::doubleType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2386,10 +2394,11 @@ extern "C" MACHINE_API uint64_t RtBoxCh(uint32_t value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::charType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::charType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2411,10 +2420,11 @@ extern "C" MACHINE_API uint64_t RtBoxBo(bool value)
 {
     try
     {
+        Thread& thread = GetCurrentThread();
         ObjectType* objectType = GetBoxedType(ValueType::boolType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        ObjectReference objectReference = memoryPool.CreateObject(GetCurrentThread(), objectType, lock);
+        ObjectReference objectReference = memoryPool.CreateObject(thread, objectType, lock);
         ClassData* classData = GetClassDataForBoxedType(ValueType::boolType);
         IntegralValue classDataValue(classData);
         memoryPool.SetField(objectReference, 0, classDataValue, lock);
@@ -2826,10 +2836,10 @@ extern "C" MACHINE_API void RtMemFun2ClassDelegate(uint64_t classObjectRererence
     }
 }
 
-extern "C" MACHINE_API void RtRequestGc(bool requestFullCollection)
+extern "C" MACHINE_API void RtRequestGc()
 {
     Thread& thread = GetCurrentThread();
-    thread.RequestGc(requestFullCollection);
+    thread.RequestGc(false);
     thread.WaitUntilGarbageCollected();
 }
 
@@ -2837,7 +2847,8 @@ extern "C" MACHINE_API void RtPollGc()
 {
     if (wantToCollectGarbage)
     {
-        GetCurrentThread().WaitUntilGarbageCollected();
+        Thread& thread = GetCurrentThread();
+        thread.WaitUntilGarbageCollected();
     }
 }
 

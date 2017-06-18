@@ -7,6 +7,7 @@
 #define CMINOR_MACHINE_OS_INTERFACE_INCLUDED
 #include <cminor/util/Defines.hpp>
 #include <cminor/machine/MachineApi.hpp>
+#include <vector>
 #include <string>
 #include <stdint.h>
 
@@ -19,7 +20,6 @@ void FreeMemory(uint8_t* baseAddress, uint64_t size);
 
 MACHINE_API void WriteInGreenToConsole(const std::string& line);
 
-void InspectStack(uint64_t threadHandle);
 uint64_t GetCurrentThreadHandle();
 void CloseThreadHandle(uint64_t threadHandle);
 
