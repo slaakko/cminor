@@ -54,7 +54,7 @@ public:
     void Put(double x);
     void Put(char32_t x);
     void Put(const std::string& s);
-    void Put(const utf32_string& s);
+    void Put(const std::u32string& s);
     void Put(const Span& span);
     void PutEncodedUInt(uint32_t x);
     uint32_t Pos() const { return pos; }

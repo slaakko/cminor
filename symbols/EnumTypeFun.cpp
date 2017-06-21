@@ -9,8 +9,11 @@
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace symbols {
+
+using namespace cminor::unicode;
 
 EnumTypeDefaultInit::EnumTypeDefaultInit(const Span& span_, Constant name_) : BasicTypeInit(span_, name_)
 {
@@ -40,11 +43,11 @@ void EnumTypeConversionFun::Write(SymbolWriter& writer)
     BasicTypeFun::Write(writer);
     writer.AsMachineWriter().Put(uint8_t(conversionType));
     writer.AsMachineWriter().PutEncodedUInt(conversionDistance);
-    utf32_string sourceTypeFullName = sourceType->FullName();
+    std::u32string sourceTypeFullName = sourceType->FullName();
     ConstantId sourceTypeId = GetAssembly()->GetConstantPool().GetIdFor(sourceTypeFullName);
     Assert(sourceTypeId != noConstantId, "got no id");
     sourceTypeId.Write(writer);
-    utf32_string targetTypeFullName = targetType->FullName();
+    std::u32string targetTypeFullName = targetType->FullName();
     ConstantId targetTypeId = GetAssembly()->GetConstantPool().GetIdFor(targetTypeFullName);
     Assert(targetTypeId != noConstantId, "got no id");
     targetTypeId.Write(writer);
@@ -86,7 +89,7 @@ void EnumTypeConversionFun::EmplaceType(TypeSymbol* type, int index)
 void CreateEnumFun(Assembly& assembly, EnumTypeSymbol* enumType)
 {
     ConstantPool& constantPool = assembly.GetConstantPool();
-    utf32_string enumNs = enumType->Ns()->FullName();
+    std::u32string enumNs = enumType->Ns()->FullName();
     assembly.GetSymbolTable().BeginNamespace(StringPtr(enumNs.c_str()), Span());
     
     CreateBasicTypeBasicFun(assembly, enumType, true);

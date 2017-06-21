@@ -10,8 +10,11 @@
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Function.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace symbols {
+
+using namespace cminor::unicode;
 
 BasicTypeFun::BasicTypeFun(const Span& span_, Constant name_) : FunctionSymbol(span_, name_), type(nullptr)
 {
@@ -20,7 +23,7 @@ BasicTypeFun::BasicTypeFun(const Span& span_, Constant name_) : FunctionSymbol(s
 void BasicTypeFun::Write(SymbolWriter& writer)
 {
     FunctionSymbol::Write(writer);
-    utf32_string typeFullName = type->FullName();
+    std::u32string typeFullName = type->FullName();
     ConstantId typeNameId = GetAssembly()->GetConstantPool().GetIdFor(typeFullName);
     Assert(typeNameId != noConstantId, "got no id");
     typeNameId.Write(writer);
@@ -147,11 +150,11 @@ void BasicTypeConversion::Write(SymbolWriter& writer)
     BasicTypeFun::Write(writer);
     writer.AsMachineWriter().Put(uint8_t(conversionType));
     writer.AsMachineWriter().PutEncodedUInt(conversionDistance);
-    utf32_string sourceTypeFullName = sourceType->FullName();
+    std::u32string sourceTypeFullName = sourceType->FullName();
     ConstantId sourceTypeId = GetAssembly()->GetConstantPool().GetIdFor(sourceTypeFullName);
     Assert(sourceTypeId != noConstantId, "got no id");
     sourceTypeId.Write(writer);
-    utf32_string targetTypeFullName = targetType->FullName();
+    std::u32string targetTypeFullName = targetType->FullName();
     ConstantId targetTypeId = GetAssembly()->GetConstantPool().GetIdFor(targetTypeFullName);
     Assert(targetTypeId != noConstantId, "got no id");
     targetTypeId.Write(writer);
@@ -252,7 +255,7 @@ void BasicTypeBinaryOpFun::GenerateCall(Machine& machine, Assembly& assembly, Fu
     function.AddInst(std::move(inst));
 }
 
-void CreateBasicTypeUnaryOpFun(Assembly& assembly, TypeSymbol* type, const utf32_string& groupName, const std::string& instGroupName)
+void CreateBasicTypeUnaryOpFun(Assembly& assembly, TypeSymbol* type, const std::u32string& groupName, const std::string& instGroupName)
 {
     std::string typeName = ToUtf8(type->FullName());
     ConstantPool& constantPool = assembly.GetConstantPool();
@@ -275,7 +278,7 @@ void CreateBasicTypeUnaryOpFun(Assembly& assembly, TypeSymbol* type, const utf32
     assembly.GetSymbolTable().EndNamespace();
 }
 
-void CreateBasicTypeBinaryOpFun(Assembly& assembly, TypeSymbol* type, const utf32_string& groupName, const std::string& instGroupName)
+void CreateBasicTypeBinaryOpFun(Assembly& assembly, TypeSymbol* type, const std::u32string& groupName, const std::string& instGroupName)
 {
     std::string typeName = ToUtf8(type->FullName());
     ConstantPool& constantPool = assembly.GetConstantPool();
@@ -303,7 +306,7 @@ void CreateBasicTypeBinaryOpFun(Assembly& assembly, TypeSymbol* type, const utf3
     assembly.GetSymbolTable().EndNamespace();
 }
 
-void CreateBasicTypeComparisonFun(Assembly& assembly, TypeSymbol* type, TypeSymbol* boolType, const utf32_string& groupName, const std::string& instGroupName)
+void CreateBasicTypeComparisonFun(Assembly& assembly, TypeSymbol* type, TypeSymbol* boolType, const std::u32string& groupName, const std::string& instGroupName)
 {
     std::string typeName = ToUtf8(type->FullName());
     ConstantPool& constantPool = assembly.GetConstantPool();

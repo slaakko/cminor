@@ -5,27 +5,39 @@
 
 #ifndef CMINOR_UTIL_BINARY_READER_INCLUDED
 #define CMINOR_UTIL_BINARY_READER_INCLUDED
-#include <stdint.h>
+#include <cminor/util/MappedInputFile.hpp>
 
 namespace cminor { namespace util {
 
 class BinaryReader
 {
 public:
-    BinaryReader(const uint8_t* begin_, const uint8_t* end_);
-    uint8_t GetByte();
-    int8_t GetSByte();
-    uint16_t GetUShort();
-    int16_t GetShort();
-    uint32_t GetUInt();
-    int32_t GetInt();
-    uint64_t GetULong();
-    int64_t GetLong();
+    BinaryReader(const std::string& fileName_);
+    virtual ~BinaryReader();
+    bool ReadBool();
+    uint8_t ReadByte();
+    int8_t ReadSByte();
+    uint16_t ReadUShort();
+    int16_t ReadShort();
+    uint32_t ReadUInt();
+    int32_t ReadInt();
+    uint64_t ReadULong();
+    int64_t ReadLong();
+    float ReadFloat();
+    double ReadDouble();
+    char32_t ReadChar();
+    std::string ReadUtf8String();
+    std::u32string ReadUtf32String();
+    uint32_t ReadEncodedUInt();
     uint32_t Pos() const { return pos; }
+    void Skip(uint32_t size);
 private:
+    std::string fileName;
+    MappedInputFile file;
     const uint8_t* begin;
     const uint8_t* end;
     uint32_t pos;
+    void CheckEof();
 };
 
 } } // namespace cminor::util

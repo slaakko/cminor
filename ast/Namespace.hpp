@@ -22,7 +22,7 @@ public:
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return id->Str(); }
+    std::u32string ToString() const override { return id->Str(); }
     void AddMember(Node* member);
     IdentifierNode* Id() const { return id.get(); }
     NodeList<Node>& Members() { return members; }

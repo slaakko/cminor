@@ -21,8 +21,8 @@ public:
     void SetParent(BoundStatement* parent_) { parent = parent_; }
     BoundStatement* Parent() const { return parent; }
     BoundCompoundStatement* Block() const;
-    void SetLabel(const std::string& label_);
-    const std::string& Label() const { return label; }
+    void SetLabel(const std::u32string& label_);
+    const std::u32string& Label() const { return label; }
     void SetSpan(const Span& span_);
     const Span& GetSpan() const { return span; }
     int32_t FirstInstIndex() const { return firstInstIndex; }
@@ -32,7 +32,7 @@ public:
     ContainerScope* GetContainerScope() const { return containerScope; }
 private:
     BoundStatement* parent;
-    std::string label;
+    std::u32string label;
     Span span;
     int32_t firstInstIndex;
     std::vector<Instruction*> jumpsToThis;
@@ -206,15 +206,15 @@ public:
 class BoundGotoStatement : public BoundStatement
 {
 public:
-    BoundGotoStatement(Assembly& assembly_, const std::string& target_);
+    BoundGotoStatement(Assembly& assembly_, const std::u32string& target_);
     void Accept(BoundNodeVisitor& visitor) override;
-    const std::string& Target() const { return target; }
+    const std::u32string& Target() const { return target; }
     void SetTargetStatement(BoundStatement* targetStatement_) { targetStatement = targetStatement_; }
     BoundStatement* TargetStatement() const { return targetStatement; }
     void SetTargetBlock(BoundCompoundStatement* targetBlock_) { targetBlock = targetBlock_; }
     BoundCompoundStatement* TargetBlock() const { return targetBlock; }
 private:
-    std::string target;
+    std::u32string target;
     BoundStatement* targetStatement;
     BoundCompoundStatement* targetBlock;
 };

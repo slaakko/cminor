@@ -4,8 +4,11 @@
 // =================================
 
 #include <cminor/machine/Reader.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace machine {
+
+using namespace cminor::unicode;
 
 Reader::Reader(const std::string& filePath_) :
     machine(nullptr), filePath(filePath_), file(filePath), begin(reinterpret_cast<const uint8_t*>(file.Begin())), end(reinterpret_cast<const uint8_t*>(file.End())), constantPool(nullptr), 
@@ -154,7 +157,7 @@ std::string Reader::GetUtf8String()
     return s;
 }
 
-utf32_string Reader::GetUtf32String()
+std::u32string Reader::GetUtf32String()
 {
     std::string s = GetUtf8String();
     return ToUtf32(s);

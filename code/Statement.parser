@@ -1,0 +1,200 @@
+﻿// =================================
+// Copyright (c) 2017 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[cpp]#include <cminor/code/Expression.hpp>
+[cpp]#include <cminor/code/Declaration.hpp>
+[cpp]#include <cminor/code/Declarator.hpp>
+[cpp]#include <cminor/code/Identifier.hpp>
+[hpp]#include <cminor/codedom/Statement.hpp>
+[cpp]#include <cminor/codedom/Type.hpp>
+
+namespace cminor.code
+{
+    [cpp]using namespace cminor::codedom;
+    
+    grammar StatementGrammar
+    {
+        using ExpressionGrammar.Expression;
+        using ExpressionGrammar.ConstantExpression;
+        using ExpressionGrammar.AssignmentExpression;
+        using DeclaratorGrammar.TypeId;
+        using DeclaratorGrammar.Declarator;
+        using DeclaratorGrammar.TypeSpecifierSeq;
+        using DeclaratorGrammar.AbstractDeclarator;
+        using IdentifierGrammar.Identifier;
+        using DeclarationGrammar.SimpleDeclaration;
+        using DeclarationGrammar.BlockDeclaration;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        start CompoundStatement;
+        
+        Statement: cminor::codedom::Statement*
+                    ::= LabeledStatement{ value = LabeledStatement; }
+                    |   EmptyStatement{ value = EmptyStatement; }
+                    |   CompoundStatement{ value = CompoundStatement; }
+                    |   SelectionStatement{ value = SelectionStatement; }
+                    |   IterationStatement{ value = IterationStatement; }
+                    |   JumpStatement{ value = JumpStatement; }
+                    |   DeclarationStatement{ value = DeclarationStatement; }
+                    |   TryStatement{ value = TryStatement; }
+                    |   ExpressionStatement{ value = ExpressionStatement; }
+                    ;
+        
+        LabeledStatement: cminor::codedom::Statement*
+                    ::= (Label (':' - "::") Statement:s1!){ value = new LabeledStatement(Label, s1); }
+                    |   (keyword("case") ConstantExpression! ':'! Statement:s2!){ value = new CaseStatement(ConstantExpression, s2); }
+                    |   (keyword("default") ':'! Statement:s3!){ value = new DefaultStatement(s3); }
+                    ;
+                    
+        Label: std::u32string
+                    ::= Identifier{ value = Identifier; }
+                    ;
+                    
+        EmptyStatement: cminor::codedom::Statement*
+                    ::= ';'{ value = new EmptyStatement(); }
+                    ;
+                    
+        ExpressionStatement: cminor::codedom::Statement*
+                    ::= (Expression ';'!){ value = new ExpressionStatement(Expression); }
+                    ;
+                    
+        CompoundStatement(var std::unique_ptr<CompoundStatement> cs): cminor::codedom::CompoundStatement*
+                    ::= '{'{ cs.reset(new CompoundStatement()); } 
+                        (Statement{ cs->Add(Statement); })* 
+                        '}'!{ value = cs.release(); }
+                    ;
+                    
+        SelectionStatement: cminor::codedom::Statement*
+                    ::= IfStatement{ value = IfStatement; }
+                    |   SwitchStatement{ value = SwitchStatement; }
+                    ;
+                    
+        IfStatement: cminor::codedom::Statement*
+                    ::= (keyword("if") '('! Condition! ')'! Statement:thenStatement! (keyword("else") Statement:elseStatement!)?)
+                    {
+                        value = new IfStatement(Condition, thenStatement, elseStatement);
+                    }
+                    ;
+                    
+        SwitchStatement: cminor::codedom::Statement*
+                    ::= keyword("switch") '('! Condition! ')'! Statement!
+                    {
+                        value = new SwitchStatement(Condition, Statement);
+                    }
+                    ;
+                    
+        IterationStatement: cminor::codedom::Statement*
+                    ::= WhileStatement{ value = WhileStatement; }
+                    |   DoStatement{ value = DoStatement; }
+                    |   ForStatement{ value = ForStatement; }
+                    ;
+                    
+        WhileStatement: cminor::codedom::Statement*
+                    ::= keyword("while") '('! Condition! ')'! Statement!
+                    {
+                        value = new WhileStatement(Condition, Statement);
+                    }
+                    ;
+                    
+        DoStatement: cminor::codedom::Statement*
+                    ::= keyword("do") Statement! keyword("while")! '('! Expression! ')'! ';'!
+                    {
+                        value = new DoStatement(Statement, Expression);
+                    }
+                    ;
+                    
+        ForStatement: cminor::codedom::Statement*
+                    ::= keyword("for") '('! ForInitStatement! Condition? ';'! Expression? ')'! Statement!
+                    {
+                        value = new ForStatement(ForInitStatement, Condition, Expression, Statement);
+                    }
+                    ;
+                    
+        ForInitStatement: cminor::codedom::CppObject*
+                    ::= EmptyStatement{ value = EmptyStatement; }
+                    |   ExpressionStatement{ value = ExpressionStatement; }
+                    |   SimpleDeclaration{ value = SimpleDeclaration; }
+                    ;
+                    
+        JumpStatement: cminor::codedom::Statement*
+                    ::= BreakStatement{ value = BreakStatement; }
+                    |   ContinueStatement{ value = ContinueStatement; }
+                    |   ReturnStatement{ value = ReturnStatement; }
+                    |   GotoStatement{ value = GotoStatement; }
+                    ;
+                    
+        BreakStatement: cminor::codedom::Statement*
+                    ::= keyword("break") ';'!
+                    {
+                        value = new BreakStatement(); 
+                    }
+                    ;
+                    
+        ContinueStatement: cminor::codedom::Statement*
+                    ::= keyword("continue") ';'!
+                    {
+                        value = new ContinueStatement();
+                    }
+                    ;
+                    
+        ReturnStatement: cminor::codedom::Statement*
+                    ::= keyword("return") Expression? ';'!
+                    {
+                        value = new ReturnStatement(Expression);
+                    }
+                    ;
+                    
+        GotoStatement: cminor::codedom::Statement*
+                    ::= keyword("goto") GotoTarget! ';'!
+                    {
+                        value = new GotoStatement(GotoTarget);
+                    }
+                    ;
+                    
+        GotoTarget: std::u32string
+                    ::= Identifier{ value = Identifier; }
+                    ;
+                    
+        DeclarationStatement: cminor::codedom::Statement*
+                    ::= BlockDeclaration{ value = new DeclarationStatement(BlockDeclaration); }
+                    ;
+                    
+        Condition(var std::unique_ptr<TypeId> ti): cminor::codedom::CppObject*
+                    ::= TypeId{ ti.reset(TypeId); } Declarator '=' AssignmentExpression{ value = new ConditionWithDeclarator(ti.release(), Declarator, AssignmentExpression); }
+                    |   Expression{ value = Expression; }
+                    ;
+                    
+        TryStatement: cminor::codedom::TryStatement*
+                    ::= keyword("try") CompoundStatement! { value = new TryStatement(CompoundStatement); }
+                        HandlerSeq(value)!
+                    ;
+        
+        HandlerSeq(TryStatement* st)
+                    ::= Handler!{ st->Add(Handler); } HandlerSeq(st)?
+                    ;
+        
+        Handler: cminor::codedom::Handler*
+                    ::= keyword("catch") '('! ExceptionDeclaration! ')'! CompoundStatement!
+                    {
+                        value = new Handler(ExceptionDeclaration, CompoundStatement);
+                    }
+                    ;
+                    
+        ExceptionDeclaration(var std::unique_ptr<ExceptionDeclaration> ed): cminor::codedom::ExceptionDeclaration*
+                    ::= empty{ ed.reset(new ExceptionDeclaration()); }
+                    (
+                        TypeSpecifierSeq(ed->GetTypeId())
+                        (   Declarator{ ed->GetTypeId()->Declarator() = Declarator; }
+                        |   AbstractDeclarator{ ed->GetTypeId()->Declarator() = AbstractDeclarator; }
+                        |   empty
+                        )
+                    |   "..."{ value->CatchAll() = true; }
+                    )
+                    {
+                        value = ed.release();
+                    }
+                    ;
+    }
+}

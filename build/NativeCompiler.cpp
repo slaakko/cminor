@@ -13,12 +13,13 @@
 #include <cminor/util/Path.hpp>
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/util/Sha1.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cminor/symbols/GlobalFlags.hpp>
 #include <cminor/symbols/PropertySymbol.hpp>
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/util/System.hpp>
-#include <cminor/util/BinaryReader.hpp>
+#include <cminor/util/MemoryReader.hpp>
 #include <boost/filesystem.hpp>
 #include <algorithm>
 #include <fstream>
@@ -66,6 +67,7 @@ namespace cminor { namespace build {
 using namespace llvm;
 using namespace cminor::machine;
 using namespace cminor::util;
+using namespace cminor::unicode;
 
 typedef llvm::SmallVector<llvm::Value*, 4> ArgVector;
 
@@ -883,7 +885,7 @@ llvm::Constant* NativeCompilerImpl::GetClassDataPtrVar(ClassData* classData)
         return it->second;
     }
     std::string classDataPtrVarName = "__CD" + std::to_string(nextClassDataVarNumber++) + "_" + assembly->Hash();
-    utf32_string classDataPtrVarNameUtf32 = ToUtf32(classDataPtrVarName);
+    std::u32string classDataPtrVarNameUtf32 = ToUtf32(classDataPtrVarName);
     Constant classDataPtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(classDataPtrVarNameUtf32.c_str())));
     Constant classDataNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(classData->Type()->Name()));
     assembly->AddClassDataVarMapping(classDataPtrVarNameConstant, classDataNameConstant);
@@ -903,7 +905,7 @@ llvm::Constant* NativeCompilerImpl::GetTypePtrVar(Type* type)
         return it->second;
     }
     std::string typePtrVarName = "__T" + std::to_string(nextTypePtrVarNumber++) + "_" + assembly->Hash();
-    utf32_string typePtrVarNameUtf32 = ToUtf32(typePtrVarName);
+    std::u32string typePtrVarNameUtf32 = ToUtf32(typePtrVarName);
     Constant typePtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(typePtrVarNameUtf32.c_str())));
     Constant typeNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(type->Name()));
     assembly->AddTypePtrVarMapping(typePtrVarNameConstant, typeNameConstant);
@@ -923,7 +925,7 @@ llvm::Constant* NativeCompilerImpl::GetFunctionPtrVar(Function* function)
         return it->second;
     }
     std::string functionPtrVarName = "__F" + std::to_string(nextFunctionVarNumber++) + "_" + assembly->Hash();
-    utf32_string functionPtrVarNameUtf32 = ToUtf32(functionPtrVarName);
+    std::u32string functionPtrVarNameUtf32 = ToUtf32(functionPtrVarName);
     Constant functionPtrVarNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(StringPtr(functionPtrVarNameUtf32.c_str())));
     Constant functionNameConstant = assembly->GetConstantPool().GetConstant(assembly->GetConstantPool().Install(function->CallName()));
     assembly->AddFunctionVarMapping(functionPtrVarNameConstant, functionNameConstant);
@@ -1183,7 +1185,7 @@ void NativeCompilerImpl::ReadStackMapsFromSharedLibraryFile(const std::string& s
 void NativeCompilerImpl::ReadStackMapSection(const uint8_t* begin, const uint8_t* end)
 {
     std::unique_ptr<StackMapSection> stackMapSection(new StackMapSection());
-    BinaryReader reader(begin, end);
+    MemoryReader reader(begin, end);
     uint8_t version = reader.GetByte();
     if (version != 2)
     {

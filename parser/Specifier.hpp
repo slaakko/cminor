@@ -1,8 +1,8 @@
-#ifndef Specifier_hpp_7033
-#define Specifier_hpp_7033
+#ifndef Specifier_hpp_21399
+#define Specifier_hpp_21399
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/ast/Specifier.hpp>
 
 namespace cminor { namespace parser {
@@ -13,7 +13,7 @@ class SpecifierGrammar : public cminor::parsing::Grammar
 public:
     static SpecifierGrammar* Create();
     static SpecifierGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    Specifiers Parse(const char* start, const char* end, int fileIndex, const std::string& fileName);
+    Specifiers Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName);
 private:
     SpecifierGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -24,4 +24,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Specifier_hpp_7033
+#endif // Specifier_hpp_21399

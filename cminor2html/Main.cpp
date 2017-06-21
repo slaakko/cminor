@@ -7,10 +7,12 @@
 #include <cminor/parser/SolutionFile.hpp>
 #include <cminor/parser/SourceToken.hpp>
 #include <cminor/ast/SourceToken.hpp>
-#include <cminor/pl/InitDone.hpp>
+#include <cminor/parsing/InitDone.hpp>
 #include <cminor/util/CodeFormatter.hpp>
 #include <cminor/util/MappedInputFile.hpp>
 #include <cminor/util/TextUtils.hpp>
+#include <cminor/util/Unicode.hpp>
+#include <cminor/util/InitDone.hpp>
 #include <cminor/machine/Error.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -34,6 +36,7 @@ void PrintHelp()
 using namespace cminor::ast;
 using namespace cminor::parser;
 using namespace cminor::util;
+using namespace cminor::unicode;
 using namespace cminor::machine;
 
 std::string HtmlEscape(const std::string& s)
@@ -301,11 +304,11 @@ struct InitDone
     InitDone()
     {
         cminor::parsing::Init();
-        cminor::util::unicode::Init();
+        cminor::util::Init();
     }
     ~InitDone()
     {
-        cminor::util::unicode::Done();
+        cminor::util::Done();
         cminor::parsing::Done();
     }
 };
@@ -361,13 +364,15 @@ int main(int argc, const char** argv)
             if (sfp.extension() == ".cminor")
             {
                 MappedInputFile file(sourceFile);
+                std::u32string s(ToUtf32(std::string(file.Begin(), file.End())));
                 HtmlSourceTokenFormatter formatter(sourceFile, styleSheetPath);
-                grammar->Parse(file.Begin(), file.End(), 0, sourceFile, &formatter);
+                grammar->Parse(&s[0], &s[0] + s.length(), 0, sourceFile, &formatter);
             }
             else if (sfp.extension() == ".cminorp")
             {
                 MappedInputFile file(sourceFile);
-                std::unique_ptr<Project> project(projectGrammar->Parse(file.Begin(), file.End(), 0, sourceFile, "debug"));
+                std::u32string s(ToUtf32(std::string(file.Begin(), file.End())));
+                std::unique_ptr<Project> project(projectGrammar->Parse(&s[0], &s[0] + s.length(), 0, sourceFile, "debug"));
                 project->ResolveDeclarations();
                 HtmlProjectFormatter projectFormatter(sourceFile, styleSheetPath);
                 project->Format(projectFormatter);
@@ -375,7 +380,8 @@ int main(int argc, const char** argv)
             else if (sfp.extension() == ".cminors")
             {
                 MappedInputFile file(sourceFile);
-                std::unique_ptr<Solution> solution(solutionGrammar->Parse(file.Begin(), file.End(), 0, sourceFile));
+                std::u32string s(ToUtf32(std::string(file.Begin(), file.End())));
+                std::unique_ptr<Solution> solution(solutionGrammar->Parse(&s[0], &s[0] + s.length(), 0, sourceFile));
                 solution->ResolveDeclarations();
                 HtmlSolutionFormatter solutionFormatter(sourceFile, styleSheetPath);
                 solution->Format(solutionFormatter);

@@ -113,7 +113,7 @@ namespace cminor.parsing
         identifier: std::string             ::= token((letter | '_' | range(128, 255)) (letter | digit | '_' | range(128, 255))*)
                                             {
                                                 value = std::string(matchBegin, matchEnd);
-                                                pass = cminor::util::unicode::IsIdentifier(cminor::util::ToUtf32(value));
+                                                pass = cminor::unicode::IsIdentifier(cminor::util::ToUtf32(value));
                                             }
                                             ;
 

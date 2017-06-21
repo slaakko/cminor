@@ -28,6 +28,7 @@
 #include <cminor/util/Path.hpp>
 #include <cminor/util/System.hpp>
 #include <cminor/util/TextUtils.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <iostream>
 #include <stdexcept>
 
@@ -39,6 +40,7 @@ using namespace cminor::symbols;
 using namespace cminor::binder;
 using namespace cminor::emitter;
 using namespace cminor::machine;
+using namespace cminor::unicode;
 
 CompileUnitGrammar* compileUnitGrammar = nullptr;
 
@@ -67,7 +69,8 @@ std::vector<std::unique_ptr<CompileUnitNode>> ParseSourcesInMainThread(const std
         {
             compileUnitGrammar->SetLog(&std::cout);
         }
-        std::unique_ptr<CompileUnitNode> compileUnit(compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), fileIndex, sourceFilePath, &parsingContext));
+        std::u32string s(ToUtf32(std::string(sourceFile.Begin(), sourceFile.End())));
+        std::unique_ptr<CompileUnitNode> compileUnit(compileUnitGrammar->Parse(&s[0], &s[0] + s.length(), fileIndex, sourceFilePath, &parsingContext));
         compileUnits.push_back(std::move(compileUnit));
     }
     if (GetGlobalFlag(GlobalFlags::verbose))
@@ -114,7 +117,8 @@ void ParseSourceFile(ParserData* parserData)
             MappedInputFile sourceFile(sourceFilePath);
             ParsingContext parsingContext;
             int fileIndex = parserData->fileIndeces[index];
-            std::unique_ptr<CompileUnitNode> compileUnit(compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), fileIndex, sourceFilePath, &parsingContext));
+            std::u32string s(ToUtf32(std::string(sourceFile.Begin(), sourceFile.End())));
+            std::unique_ptr<CompileUnitNode> compileUnit(compileUnitGrammar->Parse(&s[0], &s[0] + s.length(), fileIndex, sourceFilePath, &parsingContext));
             parserData->compileUnits[index].reset(compileUnit.release());
         }
     }
@@ -280,8 +284,8 @@ BoundCompoundStatement* CreateBodyForArrayGetEnumeratorMemberFunctionSymbol(Boun
 {
     const Span& span = getEnumeratorMemberFunctionSymbol->GetSpan();
     CompoundStatementNode bodyNode(span);
-    TemplateIdNode* arrayEnumeratorTemplateId = new TemplateIdNode(span, new IdentifierNode(span, "System.ArrayEnumerator"));
-    arrayEnumeratorTemplateId->AddTemplateArgument(new IdentifierNode(span, ToUtf8(arrayType->ElementType()->FullName())));
+    TemplateIdNode* arrayEnumeratorTemplateId = new TemplateIdNode(span, new IdentifierNode(span, U"System.ArrayEnumerator"));
+    arrayEnumeratorTemplateId->AddTemplateArgument(new IdentifierNode(span, arrayType->ElementType()->FullName()));
     NewNode* newNode = new NewNode(span, arrayEnumeratorTemplateId);
     newNode->AddArgument(new ThisNode(span));
     bodyNode.AddStatement(new ReturnStatementNode(span, newNode));
@@ -448,14 +452,14 @@ void CleanProject(Project* project)
     std::string config = GetConfig();
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "Cleaning project '" << project->Name() << "' (" << project->FilePath() << ") using " << config << " configuration." << std::endl;
+        std::cout << "Cleaning project '" << ToUtf8(project->Name()) << "' (" << project->FilePath() << ") using " << config << " configuration." << std::endl;
     }
     boost::filesystem::path afp = project->AssemblyFilePath();
     afp.remove_filename();
     boost::filesystem::remove_all(afp);
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "Project '" << project->Name() << "' cleaned successfully." << std::endl;
+        std::cout << "Project '" << ToUtf8(project->Name()) << "' cleaned successfully." << std::endl;
     }
 }
 
@@ -467,7 +471,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     std::string config = GetConfig();
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "Building project '" << project->Name() << "' (" << project->FilePath() << ") using " << config << " configuration." << std::endl;
+        std::cout << "Building project '" << ToUtf8(project->Name()) << "' (" << project->FilePath() << ") using " << config << " configuration." << std::endl;
     }
     CompileWarningCollection::Instance().SetCurrentProjectName(project->Name());
     std::vector<std::unique_ptr<CompileUnitNode>> compileUnits;
@@ -480,7 +484,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     {
         compileUnits = ParseSourcesConcurrently(project->SourceFilePaths(), numCores);
     }
-    utf32_string assemblyName = ToUtf32(project->Name());
+    const std::u32string& assemblyName = project->Name();
     Machine machine;
     AssemblyTable::Init();
     Assembly assembly(machine, assemblyName, project->AssemblyFilePath());
@@ -522,7 +526,7 @@ void BuildProject(Project* project, std::set<AssemblyReferenceInfo>& assemblyRef
     assembly.Write(writer);
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "Project '" << project->Name() << "' built successfully." << std::endl;
+        std::cout << "Project '" << ToUtf8(project->Name()) << "' built successfully." << std::endl;
         std::cout << "=> " << assembly.OriginalFilePath() << std::endl;
     }
     if (assembly.IsSystemAssembly())
@@ -649,7 +653,8 @@ void BuildProject(const std::string& projectFilePath, std::set<AssemblyReference
     }
     std::string config = GetConfig();
     MappedInputFile projectFile(projectFilePath);
-    std::unique_ptr<Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, config));
+    std::u32string p(ToUtf32(std::string(projectFile.Begin(), projectFile.End())));
+    std::unique_ptr<Project> project(projectGrammar->Parse(&p[0], &p[0] + p.length(), 0, projectFilePath, config));
     project->ResolveDeclarations();
     if (GetGlobalFlag(GlobalFlags::clean))
     {
@@ -681,24 +686,26 @@ void BuildSolution(const std::string& solutionFilePath)
         projectGrammar = ProjectGrammar::Create();
     }
     MappedInputFile solutionFile(solutionFilePath);
-    std::unique_ptr<Solution> solution(solutionGrammar->Parse(solutionFile.Begin(), solutionFile.End(), 0, solutionFilePath));
+    std::u32string s(ToUtf32(std::string(solutionFile.Begin(), solutionFile.End())));
+    std::unique_ptr<Solution> solution(solutionGrammar->Parse(&s[0], &s[0] + s.length(), 0, solutionFilePath));
     solution->ResolveDeclarations();
     std::string config = GetConfig();
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
         if (GetGlobalFlag(GlobalFlags::clean))
         {
-            std::cout << "Cleaning solution '" << solution->Name() << "' (" << solution->FilePath() << ") using " << config << " configuration." << std::endl;
+            std::cout << "Cleaning solution '" << ToUtf8(solution->Name()) << "' (" << solution->FilePath() << ") using " << config << " configuration." << std::endl;
         }
         else
         {
-            std::cout << "Building solution '" << solution->Name() << "' (" << solution->FilePath() << ") using " << config << " configuration." << std::endl;
+            std::cout << "Building solution '" << ToUtf8(solution->Name()) << "' (" << solution->FilePath() << ") using " << config << " configuration." << std::endl;
         }
     }
     for (const std::string& projectFilePath : solution->ProjectFilePaths())
     {
         MappedInputFile projectFile(projectFilePath);
-        std::unique_ptr<Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, config));
+        std::u32string p(ToUtf32(std::string(projectFile.Begin(), projectFile.End())));
+        std::unique_ptr<Project> project(projectGrammar->Parse(&p[0], &p[0] + p.length(), 0, projectFilePath, config));
         project->ResolveDeclarations();
         solution->AddProject(std::move(project));
     }
@@ -735,7 +742,7 @@ void BuildSolution(const std::string& solutionFilePath)
         boost::filesystem::remove_all(solutionAssemblyDir);
         if (GetGlobalFlag(GlobalFlags::verbose))
         {
-            std::cout << "Solution '" << solution->Name() << "' cleaned successfully." << std::endl;
+            std::cout << "Solution '" << ToUtf8(solution->Name()) << "' cleaned successfully." << std::endl;
         }
         return;
     }
@@ -854,7 +861,7 @@ void BuildSolution(const std::string& solutionFilePath)
     }
     if (GetGlobalFlag(GlobalFlags::verbose))
     {
-        std::cout << "Solution '" << solution->Name() << "' build successfully." << std::endl;
+        std::cout << "Solution '" << ToUtf8(solution->Name()) << "' build successfully." << std::endl;
         std::cout << "=> " << GetFullPath(solutionAssemblyDir.generic_string()) << std::endl;
     }
 }

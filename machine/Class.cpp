@@ -5,9 +5,12 @@
 
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Type.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cstring>
 
 namespace cminor { namespace machine {
+
+using namespace cminor::unicode;
 
 void MethodTable::Resize(int32_t n)
 {

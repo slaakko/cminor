@@ -16,6 +16,8 @@
 
 namespace cminor { namespace machine {
 
+using namespace cminor::unicode;
+
 InstIndexRequest::InstIndexRequest() : index(-1)
 {
 }
@@ -1392,15 +1394,15 @@ void SourceFileTableImpl::Done()
 
 Constant SourceFileTableImpl::GetSourceFilePath(const std::string& sourceFileName) const
 {
-    utf32_string sfp = ToUtf32(sourceFileName);
-    std::vector<utf32_string> components = Split(sfp, char32_t('/'));
+    std::u32string sfp = ToUtf32(sourceFileName);
+    std::vector<std::u32string> components = Split(sfp, char32_t('/'));
     int cn = int(components.size());
     std::vector<Constant> sourceFilePaths;
     for (const std::pair<Constant, const LineFunctionTable&>& p : sourceFileLineFunctionMap)
     {
         Constant c = p.first;
-        utf32_string s = c.Value().AsStringLiteral();
-        std::vector<utf32_string> v = Split(s, char32_t('/'));
+        std::u32string s = c.Value().AsStringLiteral();
+        std::vector<std::u32string> v = Split(s, char32_t('/'));
         int vn = int(v.size());
         int n = std::min(cn, vn);
         if (n > 0)

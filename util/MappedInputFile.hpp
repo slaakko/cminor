@@ -23,6 +23,8 @@ private:
     MappedInputFileImpl* impl;
 };
 
+std::string ReadFile(const std::string& fileName);
+
 } } // namespace cminor::util
 
 #endif // CMINOR_UTIL_MAPPED_INPUT_FILE_INCLUDED

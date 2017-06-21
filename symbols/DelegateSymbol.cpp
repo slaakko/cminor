@@ -9,8 +9,11 @@
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Class.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace symbols {
+
+using namespace cminor::unicode;
 
 DelegateTypeSymbol::DelegateTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(span_, name_), returnType(nullptr)
 {
@@ -65,7 +68,7 @@ void DelegateTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
 void DelegateTypeSymbol::Write(SymbolWriter& writer)
 {
     TypeSymbol::Write(writer);
-    utf32_string returnTypeFullName = returnType->FullName();
+    std::u32string returnTypeFullName = returnType->FullName();
     ConstantId returnTypeNameId = GetAssembly()->GetConstantPool().GetIdFor(returnTypeFullName);
     Assert(returnTypeNameId != noConstantId, "got no id for return type");
     returnTypeNameId.Write(writer);
@@ -256,7 +259,7 @@ void ClassDelegateTypeSymbol::AddSymbol(std::unique_ptr<Symbol>&& symbol)
 void ClassDelegateTypeSymbol::Write(SymbolWriter& writer)
 {
     ClassTypeSymbol::Write(writer);
-    utf32_string returnTypeFullName = returnType->FullName();
+    std::u32string returnTypeFullName = returnType->FullName();
     ConstantId returnTypeNameId = GetAssembly()->GetConstantPool().GetIdFor(returnTypeFullName);
     Assert(returnTypeNameId != noConstantId, "got no id for return type");
     returnTypeNameId.Write(writer);

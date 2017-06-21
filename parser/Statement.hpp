@@ -1,8 +1,8 @@
-#ifndef Statement_hpp_22059
-#define Statement_hpp_22059
+#ifndef Statement_hpp_294
+#define Statement_hpp_294
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/ast/Statement.hpp>
 #include <cminor/parser/ParsingContext.hpp>
 
@@ -14,7 +14,7 @@ class StatementGrammar : public cminor::parsing::Grammar
 public:
     static StatementGrammar* Create();
     static StatementGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    StatementNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
+    StatementNode* Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
 private:
     StatementGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -61,4 +61,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Statement_hpp_22059
+#endif // Statement_hpp_294

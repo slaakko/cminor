@@ -6,14 +6,17 @@
 #include <cminor/ast/Statement.hpp>
 #include <cminor/ast/Identifier.hpp>
 #include <cminor/ast/Visitor.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace ast {
+
+using namespace cminor::unicode;
 
 LabelNode::LabelNode(const Span& span_) : Node(span_)
 {
 }
 
-LabelNode::LabelNode(const Span& span_, const std::string& label_) : Node(span_), label(label_)
+LabelNode::LabelNode(const Span& span_, const std::u32string& label_) : Node(span_), label(label_)
 {
 }
 
@@ -25,13 +28,13 @@ Node* LabelNode::Clone(CloneContext& cloneContext) const
 void LabelNode::Write(AstWriter& writer)
 {
     Node::Write(writer);
-    writer.AsMachineWriter().Put(label);
+    writer.AsMachineWriter().Put(ToUtf8(label));
 }
 
 void LabelNode::Read(AstReader& reader)
 {
     Node::Read(reader);
-    label = reader.GetUtf8String();
+    label = ToUtf32(reader.GetUtf8String());
 }
 
 StatementNode::StatementNode(const Span& span_) : Node(span_)
@@ -509,7 +512,7 @@ GotoStatementNode::GotoStatementNode(const Span& span_) : StatementNode(span_)
 {
 }
 
-GotoStatementNode::GotoStatementNode(const Span& span_, const std::string& target_) : StatementNode(span_), target(target_)
+GotoStatementNode::GotoStatementNode(const Span& span_, const std::u32string& target_) : StatementNode(span_), target(target_)
 {
 }
 
@@ -521,13 +524,13 @@ Node* GotoStatementNode::Clone(CloneContext& cloneContext) const
 void GotoStatementNode::Write(AstWriter& writer)
 {
     StatementNode::Write(writer);
-    writer.AsMachineWriter().Put(target);
+    writer.AsMachineWriter().Put(ToUtf8(target));
 }
 
 void GotoStatementNode::Read(AstReader& reader)
 {
     StatementNode::Read(reader);
-    target = reader.GetUtf8String();
+    target = ToUtf32(reader.GetUtf8String());
 }
 
 void GotoStatementNode::Accept(Visitor& visitor)

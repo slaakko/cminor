@@ -1,8 +1,8 @@
-#ifndef CommandGrammar_hpp_7892
-#define CommandGrammar_hpp_7892
+#ifndef CommandGrammar_hpp_17145
+#define CommandGrammar_hpp_17145
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/db/Command.hpp>
 
 namespace cminor { namespace db {
@@ -12,7 +12,7 @@ class CommandGrammar : public cminor::parsing::Grammar
 public:
     static CommandGrammar* Create();
     static CommandGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    Command* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName);
+    Command* Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName);
 private:
     CommandGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -24,4 +24,4 @@ private:
 
 } } // namespace cminor.db
 
-#endif // CommandGrammar_hpp_7892
+#endif // CommandGrammar_hpp_17145

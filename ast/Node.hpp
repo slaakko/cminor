@@ -6,7 +6,7 @@
 #ifndef CMINOR_AST_NODE_INCLUDED
 #define CMINOR_AST_NODE_INCLUDED
 #include <cminor/ast/Clone.hpp>
-#include <cminor/pl/Scanner.hpp>
+#include <cminor/parsing/Scanner.hpp>
 
 namespace cminor { namespace ast {
 
@@ -51,7 +51,7 @@ public:
     virtual void Write(AstWriter& writer);
     virtual void Read(AstReader& reader);
     virtual void Accept(Visitor& visitor);
-    virtual std::string ToString() const { return ""; }
+    virtual std::u32string ToString() const { return U""; }
     Span& GetSpan() { return span; }
     const Span& GetSpan() const { return span; }
     Node* Parent() const { return parent; }

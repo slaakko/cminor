@@ -1,8 +1,8 @@
-#ifndef Keyword_hpp_7033
-#define Keyword_hpp_7033
+#ifndef Keyword_hpp_21399
+#define Keyword_hpp_21399
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 
 namespace cminor { namespace parser {
 
@@ -12,7 +12,7 @@ public:
     static KeywordGrammar* Create();
     static KeywordGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
 private:
-    std::vector<std::string> keywords0;
+    std::vector<std::u32string> keywords0;
     KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
@@ -20,4 +20,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Keyword_hpp_7033
+#endif // Keyword_hpp_21399

@@ -7,9 +7,12 @@
 #include <cminor/binder/BoundCompileUnit.hpp>
 #include <cminor/symbols/FunctionSymbol.hpp>
 #include <cminor/symbols/BasicTypeFun.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <algorithm>
 
 namespace cminor { namespace binder {
+
+using namespace cminor::unicode;
 
 bool BetterFunctionMatch::operator()(const FunctionMatch& left, const FunctionMatch& right) const
 {

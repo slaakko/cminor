@@ -1,8 +1,8 @@
-#ifndef Literal_hpp_7033
-#define Literal_hpp_7033
+#ifndef Literal_hpp_21399
+#define Literal_hpp_21399
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/ast/Literal.hpp>
 
 namespace cminor { namespace parser {
@@ -13,7 +13,7 @@ class LiteralGrammar : public cminor::parsing::Grammar
 public:
     static LiteralGrammar* Create();
     static LiteralGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    Node* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName);
+    Node* Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName);
 private:
     LiteralGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -39,4 +39,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Literal_hpp_7033
+#endif // Literal_hpp_21399

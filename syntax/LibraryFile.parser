@@ -1,0 +1,52 @@
+// =================================
+// Copyright (c) 2017 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/parsing/ParsingDomain.hpp>
+[cpp]#include <cminor/parsing/Rule.hpp>
+[cpp]#include <cminor/parsing/Namespace.hpp>
+[cpp]#include <cminor/syntax/Element.hpp>
+
+namespace cminor.syntax
+{
+    grammar LibraryFileGrammar
+    {
+        using stdlib.identifier;
+        using stdlib.qualified_id;
+        using stdlib.spaces_and_comments;
+        using ElementGrammar.Identifier;
+        using ElementGrammar.Signature;
+
+        skip spaces_and_comments;
+
+        LibraryFile(cminor::parsing::ParsingDomain* parsingDomain)
+                        ::= NamespaceContent(parsingDomain)
+                        ;
+
+        NamespaceContent(cminor::parsing::ParsingDomain* parsingDomain)
+                        ::= 
+                        (   Grammar(parsingDomain->CurrentNamespace()->GetScope()){ parsingDomain->AddGrammar(Grammar); }
+                        |   Namespace(parsingDomain)
+                        )*
+                        ;
+
+        Namespace(cminor::parsing::ParsingDomain* parsingDomain)
+                        ::= keyword("namespace") qualified_id:ns!{ parsingDomain->BeginNamespace(ns); } '{'! NamespaceContent(parsingDomain) '}'!{ parsingDomain->EndNamespace(); }
+                        ;
+
+        Grammar(cminor::parsing::Scope* enclosingScope): cminor::parsing::Grammar*
+                        ::= keyword("grammar") 
+                            Identifier:grammarName!{ value = new Grammar(grammarName, enclosingScope); value->SetNs(enclosingScope->Ns()); }
+                            '{'! GrammarContent(value) '}'!
+                        ;
+
+        GrammarContent(cminor::parsing::Grammar* grammar)
+                        ::= (Rule(grammar->GetScope()){ grammar->AddRule(Rule); })*
+                        ;
+
+        Rule(cminor::parsing::Scope* enclosingScope): cminor::parsing::Rule*
+                        ::= Identifier:ruleName{ value = new cminor::parsing::Rule(ruleName, enclosingScope); } Signature(value) ';'
+                        ;
+    }
+}

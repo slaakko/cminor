@@ -1,8 +1,8 @@
-#ifndef Interface_hpp_7033
-#define Interface_hpp_7033
+#ifndef Interface_hpp_21399
+#define Interface_hpp_21399
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/ast/Interface.hpp>
 #include <cminor/parser/ParsingContext.hpp>
 
@@ -14,7 +14,7 @@ class InterfaceGrammar : public cminor::parsing::Grammar
 public:
     static InterfaceGrammar* Create();
     static InterfaceGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    InterfaceNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
+    InterfaceNode* Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
 private:
     InterfaceGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -27,4 +27,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Interface_hpp_7033
+#endif // Interface_hpp_21399

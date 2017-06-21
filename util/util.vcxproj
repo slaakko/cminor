@@ -20,8 +20,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BinaryReader.cpp" />
+    <ClCompile Include="BinaryWriter.cpp" />
     <ClCompile Include="CodeFormatter.cpp" />
+    <ClCompile Include="InitDone.cpp" />
     <ClCompile Include="MappedInputFile.cpp" />
+    <ClCompile Include="MemoryReader.cpp" />
     <ClCompile Include="Mutex.cpp" />
     <ClCompile Include="Path.cpp" />
     <ClCompile Include="Prime.cpp" />
@@ -33,11 +36,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BinaryReader.hpp" />
+    <ClInclude Include="BinaryWriter.hpp" />
     <ClInclude Include="CodeFormatter.hpp" />
     <ClInclude Include="Defines.hpp" />
     <ClInclude Include="Error.hpp" />
     <ClInclude Include="Handle.hpp" />
+    <ClInclude Include="InitDone.hpp" />
     <ClInclude Include="MappedInputFile.hpp" />
+    <ClInclude Include="MemoryReader.hpp" />
     <ClInclude Include="Mutex.hpp" />
     <ClInclude Include="Path.hpp" />
     <ClInclude Include="Prime.hpp" />
@@ -100,7 +106,18 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>cminorutil</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetName>cminorutil</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>cminorutil</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>cminorutil</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
@@ -110,7 +127,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251;4267</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -125,7 +142,7 @@
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251;4267</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -141,7 +158,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251;4267</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -159,7 +176,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../..;C:\Programming\boost_1_60_0</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4146;4800;4996;4251</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4146;4800;4996;4251;4267</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

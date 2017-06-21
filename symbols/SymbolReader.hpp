@@ -54,10 +54,10 @@ public:
     void BeginReadingClassTemplateSpecialization();
     void EndReadingClassTemplateSpecialization();
     bool ReadingClassTemplateSpecialization() const { return readingClassTemplateSpecialization; }
-    void SetClassTemplateSpecializationNames(std::unordered_set<utf32_string>* classTemplateSpecializationNames_) { classTemplateSpecializationNames = classTemplateSpecializationNames_;  }
-    utf32_string MakeFullClassTemplateSpecializationName(const utf32_string& classTemplateSpecializationName);
-    bool FoundInClassTemplateSpecializationNames(const utf32_string& fullClassTemplateSpecializationName) const;
-    void AddToClassTemplateSpecializationNames(const utf32_string& fullClassTemplateSpecializationName);
+    void SetClassTemplateSpecializationNames(std::unordered_set<std::u32string>* classTemplateSpecializationNames_) { classTemplateSpecializationNames = classTemplateSpecializationNames_;  }
+    std::u32string MakeFullClassTemplateSpecializationName(const std::u32string& classTemplateSpecializationName);
+    bool FoundInClassTemplateSpecializationNames(const std::u32string& fullClassTemplateSpecializationName) const;
+    void AddToClassTemplateSpecializationNames(const std::u32string& fullClassTemplateSpecializationName);
     FunctionSymbol* CurrentFunctionSymbol() const { return currentFunctionSymbol; }
     void SetCurrentFunctionSymbol(FunctionSymbol* currentFunctionSymbol_) { currentFunctionSymbol = currentFunctionSymbol_; }
 private:
@@ -66,12 +66,12 @@ private:
     std::vector<TypeSymbol*> types;
     std::vector<TypeRequest> typeRequests;
     std::vector<ClassTypeSymbol*> classTypeSymbols;
-    std::unordered_set<utf32_string>* classTemplateSpecializationNames;
+    std::unordered_set<std::u32string>* classTemplateSpecializationNames;
     std::vector<FunctionSymbol*> conversions;
     std::vector<ClassTemplateSpecializationSymbol*> classTemplateSpecializations;
     bool readingClassTemplateSpecialization;
     std::stack<bool> readingClassTemplateSpecializationStack;
-    std::vector<utf32_string> currentNamespaceComponents;
+    std::vector<std::u32string> currentNamespaceComponents;
     FunctionSymbol* currentFunctionSymbol;
 };
 

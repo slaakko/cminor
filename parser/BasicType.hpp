@@ -1,8 +1,8 @@
-#ifndef BasicType_hpp_7033
-#define BasicType_hpp_7033
+#ifndef BasicType_hpp_21399
+#define BasicType_hpp_21399
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/ast/BasicType.hpp>
 
 namespace cminor { namespace parser {
@@ -13,7 +13,7 @@ class BasicTypeGrammar : public cminor::parsing::Grammar
 public:
     static BasicTypeGrammar* Create();
     static BasicTypeGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    Node* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName);
+    Node* Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName);
 private:
     BasicTypeGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -23,4 +23,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // BasicType_hpp_7033
+#endif // BasicType_hpp_21399

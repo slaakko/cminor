@@ -296,8 +296,8 @@ public:
     AllocationHandle CreateStringCharsFromLiteral(Thread& thread, const char32_t* strLit, uint32_t len, std::unique_lock<std::recursive_mutex>& lock);
     std::pair<AllocationHandle, int32_t> CreateStringCharsFromCharArray(Thread& thread, ObjectReference charArray);
     std::pair<AllocationHandle, int32_t> CreateStringCharsFromCharArray(Thread& thread, ObjectReference charArray, std::unique_lock<std::recursive_mutex>& lock);
-    ObjectReference CreateString(Thread& thread, const utf32_string& s);
-    ObjectReference CreateString(Thread& thread, const utf32_string& s, std::unique_lock<std::recursive_mutex>& lock);
+    ObjectReference CreateString(Thread& thread, const std::u32string& s);
+    ObjectReference CreateString(Thread& thread, const std::u32string& s, std::unique_lock<std::recursive_mutex>& lock);
     IntegralValue GetStringChar(ObjectReference str, int32_t index);
     IntegralValue GetStringChar(ObjectReference str, int32_t index, std::unique_lock<std::recursive_mutex>& lock);
     std::string GetUtf8String(ObjectReference str);
@@ -309,7 +309,7 @@ public:
     void SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue);
     void SetArrayElement(ObjectReference reference, int32_t index, IntegralValue elementValue, std::unique_lock<std::recursive_mutex>& lock);
     int32_t GetNumArrayElements(ObjectReference arr);
-    ObjectReference CreateStringArray(Thread& thread, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
+    ObjectReference CreateStringArray(Thread& thread, const std::vector<std::u32string>& programArguments, ObjectType* argsArrayObjectType);
     void ResetLiveFlags();
     void MoveLiveAllocationsToArena(ArenaId fromArenaId, Arena& toArena);
     void MoveLiveAllocationsToNewSegments(Arena& arena);

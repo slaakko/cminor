@@ -5,11 +5,13 @@
 
 #include <cminor/ast/Project.hpp>
 #include <cminor/util/Path.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <algorithm>
 
 namespace cminor { namespace ast {
 
 using namespace cminor::util;
+using namespace cminor::unicode;
 
 ProjectFormatter::~ProjectFormatter()
 {
@@ -31,7 +33,7 @@ TargetDeclaration::TargetDeclaration(Target target_) : target(target_)
 {
 }
 
-Project::Project(const std::string& name_, const std::string& filePath_, const std::string& config_) : 
+Project::Project(const std::u32string& name_, const std::string& filePath_, const std::string& config_) : 
     name(name_), filePath(filePath_), config(config_), target(Target::program), basePath(filePath), isSystemProject(false)
 {
     basePath.remove_filename();
@@ -134,7 +136,7 @@ void Project::ResolveDeclarations()
 void Project::Format(ProjectFormatter& formatter)
 {
     formatter.BeginFormat();
-    formatter.FormatName(name);
+    formatter.FormatName(ToUtf8(name));
     for (const std::unique_ptr<ProjectDeclaration>& declaration : declarations)
     {
         if (TargetDeclaration* targetDeclaration = dynamic_cast<TargetDeclaration*>(declaration.get()))

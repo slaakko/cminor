@@ -1,17 +1,20 @@
 #include "Keyword.hpp"
-#include <cminor/pl/Action.hpp>
-#include <cminor/pl/Rule.hpp>
-#include <cminor/pl/ParsingDomain.hpp>
-#include <cminor/pl/Primitive.hpp>
-#include <cminor/pl/Composite.hpp>
-#include <cminor/pl/Nonterminal.hpp>
-#include <cminor/pl/Exception.hpp>
-#include <cminor/pl/StdLib.hpp>
-#include <cminor/pl/XmlLog.hpp>
+#include <cminor/parsing/Action.hpp>
+#include <cminor/parsing/Rule.hpp>
+#include <cminor/parsing/ParsingDomain.hpp>
+#include <cminor/parsing/Primitive.hpp>
+#include <cminor/parsing/Composite.hpp>
+#include <cminor/parsing/Nonterminal.hpp>
+#include <cminor/parsing/Exception.hpp>
+#include <cminor/parsing/StdLib.hpp>
+#include <cminor/parsing/XmlLog.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace parser {
 
 using namespace cminor::parsing;
+using namespace cminor::util;
+using namespace cminor::unicode;
 
 KeywordGrammar* KeywordGrammar::Create()
 {
@@ -28,76 +31,76 @@ KeywordGrammar* KeywordGrammar::Create(cminor::parsing::ParsingDomain* parsingDo
     return grammar;
 }
 
-KeywordGrammar::KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("KeywordGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
+KeywordGrammar::KeywordGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar(ToUtf32("KeywordGrammar"), parsingDomain_->GetNamespaceScope(ToUtf32("cminor.parser")), parsingDomain_)
 {
     SetOwner(0);
-    keywords0.push_back("abstract");
-    keywords0.push_back("as");
-    keywords0.push_back("base");
-    keywords0.push_back("bool");
-    keywords0.push_back("break");
-    keywords0.push_back("byte");
-    keywords0.push_back("case");
-    keywords0.push_back("cast");
-    keywords0.push_back("catch");
-    keywords0.push_back("char");
-    keywords0.push_back("class");
-    keywords0.push_back("const");
-    keywords0.push_back("continue");
-    keywords0.push_back("default");
-    keywords0.push_back("delegate");
-    keywords0.push_back("do");
-    keywords0.push_back("double");
-    keywords0.push_back("else");
-    keywords0.push_back("enum");
-    keywords0.push_back("false");
-    keywords0.push_back("finally");
-    keywords0.push_back("float");
-    keywords0.push_back("for");
-    keywords0.push_back("foreach");
-    keywords0.push_back("goto");
-    keywords0.push_back("if");
-    keywords0.push_back("in");
-    keywords0.push_back("inline");
-    keywords0.push_back("int");
-    keywords0.push_back("interface");
-    keywords0.push_back("internal");
-    keywords0.push_back("is");
-    keywords0.push_back("lock");
-    keywords0.push_back("long");
-    keywords0.push_back("namespace");
-    keywords0.push_back("new");
-    keywords0.push_back("null");
-    keywords0.push_back("object");
-    keywords0.push_back("operator");
-    keywords0.push_back("override");
-    keywords0.push_back("private");
-    keywords0.push_back("protected");
-    keywords0.push_back("public");
-    keywords0.push_back("ref");
-    keywords0.push_back("return");
-    keywords0.push_back("sbyte");
-    keywords0.push_back("short");
-    keywords0.push_back("static");
-    keywords0.push_back("string");
-    keywords0.push_back("switch");
-    keywords0.push_back("this");
-    keywords0.push_back("throw");
-    keywords0.push_back("true");
-    keywords0.push_back("try");
-    keywords0.push_back("uint");
-    keywords0.push_back("ulong");
-    keywords0.push_back("ushort");
-    keywords0.push_back("using");
-    keywords0.push_back("virtual");
-    keywords0.push_back("void");
-    keywords0.push_back("while");
+    keywords0.push_back(ToUtf32("abstract"));
+    keywords0.push_back(ToUtf32("as"));
+    keywords0.push_back(ToUtf32("base"));
+    keywords0.push_back(ToUtf32("bool"));
+    keywords0.push_back(ToUtf32("break"));
+    keywords0.push_back(ToUtf32("byte"));
+    keywords0.push_back(ToUtf32("case"));
+    keywords0.push_back(ToUtf32("cast"));
+    keywords0.push_back(ToUtf32("catch"));
+    keywords0.push_back(ToUtf32("char"));
+    keywords0.push_back(ToUtf32("class"));
+    keywords0.push_back(ToUtf32("const"));
+    keywords0.push_back(ToUtf32("continue"));
+    keywords0.push_back(ToUtf32("default"));
+    keywords0.push_back(ToUtf32("delegate"));
+    keywords0.push_back(ToUtf32("do"));
+    keywords0.push_back(ToUtf32("double"));
+    keywords0.push_back(ToUtf32("else"));
+    keywords0.push_back(ToUtf32("enum"));
+    keywords0.push_back(ToUtf32("false"));
+    keywords0.push_back(ToUtf32("finally"));
+    keywords0.push_back(ToUtf32("float"));
+    keywords0.push_back(ToUtf32("for"));
+    keywords0.push_back(ToUtf32("foreach"));
+    keywords0.push_back(ToUtf32("goto"));
+    keywords0.push_back(ToUtf32("if"));
+    keywords0.push_back(ToUtf32("in"));
+    keywords0.push_back(ToUtf32("inline"));
+    keywords0.push_back(ToUtf32("int"));
+    keywords0.push_back(ToUtf32("interface"));
+    keywords0.push_back(ToUtf32("internal"));
+    keywords0.push_back(ToUtf32("is"));
+    keywords0.push_back(ToUtf32("lock"));
+    keywords0.push_back(ToUtf32("long"));
+    keywords0.push_back(ToUtf32("namespace"));
+    keywords0.push_back(ToUtf32("new"));
+    keywords0.push_back(ToUtf32("null"));
+    keywords0.push_back(ToUtf32("object"));
+    keywords0.push_back(ToUtf32("operator"));
+    keywords0.push_back(ToUtf32("override"));
+    keywords0.push_back(ToUtf32("private"));
+    keywords0.push_back(ToUtf32("protected"));
+    keywords0.push_back(ToUtf32("public"));
+    keywords0.push_back(ToUtf32("ref"));
+    keywords0.push_back(ToUtf32("return"));
+    keywords0.push_back(ToUtf32("sbyte"));
+    keywords0.push_back(ToUtf32("short"));
+    keywords0.push_back(ToUtf32("static"));
+    keywords0.push_back(ToUtf32("string"));
+    keywords0.push_back(ToUtf32("switch"));
+    keywords0.push_back(ToUtf32("this"));
+    keywords0.push_back(ToUtf32("throw"));
+    keywords0.push_back(ToUtf32("true"));
+    keywords0.push_back(ToUtf32("try"));
+    keywords0.push_back(ToUtf32("uint"));
+    keywords0.push_back(ToUtf32("ulong"));
+    keywords0.push_back(ToUtf32("ushort"));
+    keywords0.push_back(ToUtf32("using"));
+    keywords0.push_back(ToUtf32("virtual"));
+    keywords0.push_back(ToUtf32("void"));
+    keywords0.push_back(ToUtf32("while"));
 }
 
 void KeywordGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar(ToUtf32("cminor.parsing.stdlib"));
     if (!grammar0)
     {
         grammar0 = cminor::parsing::stdlib::Create(pd);
@@ -107,9 +110,9 @@ void KeywordGrammar::GetReferencedGrammars()
 
 void KeywordGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
-    AddRule(new cminor::parsing::Rule("Keyword", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::KeywordListParser("identifier", keywords0)));
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("identifier"), this, ToUtf32("cminor.parsing.stdlib.identifier")));
+    AddRule(new cminor::parsing::Rule(ToUtf32("Keyword"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::KeywordListParser(ToUtf32("identifier"), keywords0)));
 }
 
 } } // namespace cminor.parser

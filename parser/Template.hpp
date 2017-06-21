@@ -1,8 +1,8 @@
-#ifndef Template_hpp_7033
-#define Template_hpp_7033
+#ifndef Template_hpp_21399
+#define Template_hpp_21399
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/parser/ParsingContext.hpp>
 #include <cminor/ast/Template.hpp>
 
@@ -14,7 +14,7 @@ class TemplateGrammar : public cminor::parsing::Grammar
 public:
     static TemplateGrammar* Create();
     static TemplateGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    Node* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
+    Node* Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
 private:
     TemplateGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -26,4 +26,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Template_hpp_7033
+#endif // Template_hpp_21399

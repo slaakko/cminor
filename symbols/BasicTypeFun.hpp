@@ -126,7 +126,7 @@ private:
 void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type);
 void CreateBasicTypeBasicFun(Assembly& assembly, TypeSymbol* type, bool noDefaultInit);
 void InitBasicTypeFun(Assembly& assembly);
-void CreateBasicTypeComparisonFun(Assembly& assembly, TypeSymbol* type, TypeSymbol* boolType, const utf32_string& groupName, const std::string& instGroupName);
+void CreateBasicTypeComparisonFun(Assembly& assembly, TypeSymbol* type, TypeSymbol* boolType, const std::u32string& groupName, const std::string& instGroupName);
 
 } } // namespace cminor::symbols
 

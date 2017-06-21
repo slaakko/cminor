@@ -10,6 +10,7 @@
 #include <cminor/symbols/VariableSymbol.hpp>
 #include <cminor/machine/OsInterface.hpp>
 #include <cminor/util/TextUtils.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cminor/vmlib/File.hpp>
 #include <stdexcept>
 #include <iostream>
@@ -17,6 +18,7 @@
 namespace cminor { namespace db {
 
 using namespace cminor::vmlib;
+using namespace cminor::unicode;
 
 struct BinaryModeChanger
 {
@@ -46,7 +48,7 @@ void Shell::StartMachine()
     ended = false;
 }
 
-void Shell::Run(FunctionSymbol* mainFun_, Assembly& assembly, const std::vector<utf32_string>& programArguments_)
+void Shell::Run(FunctionSymbol* mainFun_, Assembly& assembly, const std::vector<std::u32string>& programArguments_)
 {
     SwitchToTextMode();
     mainFun = mainFun_;
@@ -117,7 +119,8 @@ void Shell::Run(FunctionSymbol* mainFun_, Assembly& assembly, const std::vector<
             std::cout << "cminordb> ";
             std::string line;
             std::getline(std::cin, line);
-            std::unique_ptr<Command> command(commandGrammar->Parse(line.c_str(), line.c_str() + line.length(), 0, ""));
+            std::u32string s(ToUtf32(line));
+            std::unique_ptr<Command> command(commandGrammar->Parse(&s[0], &s[0] + s.length(), 0, ""));
             command->Execute(*this);
             if (!dynamic_cast<PrevCommand*>(command.get()))
             {
@@ -333,7 +336,7 @@ void Shell::Print(const std::string& name)
         ContainerScope* scope = functionSymbol->GetMappedContainerScopeForPC(frame->PC());
         if (scope)
         {
-            utf32_string s = ToUtf32(name);
+            std::u32string s = ToUtf32(name);
             Symbol* symbol = scope->Lookup(StringPtr(s.c_str()), ScopeLookup::this_and_base_and_parent);
             if (symbol)
             {
@@ -441,7 +444,7 @@ void Shell::PrintAllocation(int handle)
     {
         ObjectHeader* objectHeader = &header->objectHeader;
         ObjectType* type = objectHeader->GetType();
-        utf32_string us = type->Name().Value();
+        std::u32string us = type->Name().Value();
         std::string s = ToUtf8(us);
         std::cout << "object " << s << " : " << GetManagedMemoryPool().GetFieldCount(ObjectReference(allocationHandle.Value())) << std::endl;
     }

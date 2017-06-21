@@ -122,8 +122,8 @@ public:
     void SetSpan(const Span& span_) { span = span_; }
     StringPtr Name() const;
     void SetName(StringPtr newName);
-    virtual utf32_string FullName() const;
-    virtual utf32_string SimpleName() const { return Name().Value(); }
+    virtual std::u32string FullName() const;
+    virtual std::u32string SimpleName() const { return Name().Value(); }
     Constant NameConstant() const { return name; }
     SymbolAccess Access() const { return SymbolAccess(flags & SymbolFlags::access); }
     virtual SymbolAccess DeclaredAccess() const { return Access(); }
@@ -231,7 +231,7 @@ public:
     void Install(Symbol* symbol);
     Symbol* Lookup(StringPtr name) const override;
     Symbol* Lookup(StringPtr name, ScopeLookup lookup) const override;
-    Symbol* LookupQualified(const std::vector<utf32_string>& components, ScopeLookup lookup) const;
+    Symbol* LookupQualified(const std::vector<std::u32string>& components, ScopeLookup lookup) const;
     void CollectViableFunctions(int arity, StringPtr groupName, std::unordered_set<ContainerScope*>& scopesLookedUp, ScopeLookup scopeLookup, std::unordered_set<FunctionSymbol*>& viableFunctions);
     NamespaceSymbol* Ns() const;
     NamespaceSymbol* CreateNamespace(StringPtr qualifiedNsName, const Span& span);
@@ -313,7 +313,7 @@ public:
     virtual bool IsInComplete() const { return false; }
     virtual bool IsReopenedClassTemplateSpecialization() const { return false; }
     virtual bool HasBoxedType() const { return false; }
-    virtual std::string GetBoxedTypeName() const { return std::string(); }
+    virtual std::u32string GetBoxedTypeName() const { return std::u32string(); }
     virtual bool IsSwitchConditionType() const { return false; }
     virtual bool IsVoidType() const { return false; }
     virtual bool IsClassType() const { return false; }
@@ -349,7 +349,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::boolTypeSymbol; }
     std::string TypeString() const override { return "bool type"; }
     ValueType GetValueType() const override { return ValueType::boolType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedBoolean"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedBoolean"; }
 };
 
 class CharTypeSymbol : public BasicTypeSymbol
@@ -359,7 +359,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::charTypeSymbol; }
     std::string TypeString() const override { return "char type"; }
     ValueType GetValueType() const override { return ValueType::charType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedChar"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedChar"; }
 };
 
 class VoidTypeSymbol : public BasicTypeSymbol
@@ -380,7 +380,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::sbyteTypeSymbol; }
     std::string TypeString() const override { return "sbyte type"; }
     ValueType GetValueType() const override { return ValueType::sbyteType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedInt8"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedInt8"; }
 };
 
 class ByteTypeSymbol : public BasicTypeSymbol
@@ -391,7 +391,7 @@ public:
     bool IsUnsignedType() const override { return true; }
     std::string TypeString() const override { return "byte type"; }
     ValueType GetValueType() const override { return ValueType::byteType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedUInt8"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedUInt8"; }
 };
 
 class ShortTypeSymbol : public BasicTypeSymbol
@@ -401,7 +401,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::shortTypeSymbol; }
     std::string TypeString() const override { return "short type"; }
     ValueType GetValueType() const override { return ValueType::shortType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedInt16"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedInt16"; }
 };
 
 class UShortTypeSymbol : public BasicTypeSymbol
@@ -412,7 +412,7 @@ public:
     bool IsUnsignedType() const override { return true; }
     std::string TypeString() const override { return "ushort type"; }
     ValueType GetValueType() const override { return ValueType::ushortType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedUInt16"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedUInt16"; }
 };
 
 class IntTypeSymbol : public BasicTypeSymbol
@@ -422,7 +422,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::intTypeSymbol; }
     std::string TypeString() const override { return "int type"; }
     ValueType GetValueType() const override { return ValueType::intType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedInt32"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedInt32"; }
 };
 
 class UIntTypeSymbol : public BasicTypeSymbol
@@ -433,7 +433,7 @@ public:
     bool IsUnsignedType() const override { return true; }
     std::string TypeString() const override { return "uint type"; }
     ValueType GetValueType() const override { return ValueType::uintType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedUInt32"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedUInt32"; }
 };
 
 class LongTypeSymbol : public BasicTypeSymbol
@@ -443,7 +443,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::longTypeSymbol; }
     std::string TypeString() const override { return "long type"; }
     ValueType GetValueType() const override { return ValueType::longType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedInt64"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedInt64"; }
 };
 
 class ULongTypeSymbol : public BasicTypeSymbol
@@ -454,7 +454,7 @@ public:
     bool IsUnsignedType() const override { return true; }
     std::string TypeString() const override { return "ulong type"; }
     ValueType GetValueType() const override { return ValueType::ulongType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedUInt64"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedUInt64"; }
 };
 
 class FloatTypeSymbol : public BasicTypeSymbol
@@ -464,7 +464,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::floatTypeSymbol; }
     std::string TypeString() const override { return "float type"; }
     ValueType GetValueType() const override { return ValueType::floatType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedFloat"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedFloat"; }
     bool IsSwitchConditionType() const override { return false; }
 };
 
@@ -475,7 +475,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::doubleTypeSymbol; }
     std::string TypeString() const override { return "double type"; }
     ValueType GetValueType() const override { return ValueType::doubleType; }
-    std::string GetBoxedTypeName() const override { return "System.BoxedDouble"; }
+    std::u32string GetBoxedTypeName() const override { return U"System.BoxedDouble"; }
     bool IsSwitchConditionType() const override { return false; }
 };
 
@@ -495,7 +495,7 @@ public:
     TypeParameterSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::typeParameterSymbol; }
     std::string TypeString() const override { return "type parameter"; };
-    utf32_string FullName() const override;
+    std::u32string FullName() const override;
     Type* GetMachineType() const override { Assert(false, "no machine type");  return nullptr; }
     void AddTo(ClassTypeSymbol* classTypeSymbol) override;
 };
@@ -675,7 +675,7 @@ public:
     ArrayTypeSymbol(const Span& span_, Constant name_);
     SymbolType GetSymbolType() const override { return SymbolType::arrayTypeSymbol; }
     std::string TypeString() const override { return "array"; }
-    utf32_string SimpleName() const override;
+    std::u32string SimpleName() const override;
     void SetElementType(TypeSymbol* elementType_) { elementType = elementType_; }
     TypeSymbol* ElementType() const { return elementType; }
     void Write(SymbolWriter& writer) override;
@@ -762,7 +762,7 @@ public:
     void SetKey(const ClassTemplateSpecializationKey& key_);
     const ClassTemplateSpecializationKey& Key() const { return key; }
     ClassTypeSymbol* PrimaryClassTemplate() const { return key.classTypeSymbol; }
-    utf32_string SimpleName() const override;
+    std::u32string SimpleName() const override;
     int NumTypeArguments() const { return int(key.typeArguments.size()); }
     TypeSymbol* TypeArgument(int index) const { Assert(index >= 0 && index < key.typeArguments.size(), "invalid type argument index"); return key.typeArguments[index]; }
     void SetGlobalNs(std::unique_ptr<NamespaceNode>&& globalNs_);

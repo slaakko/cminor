@@ -67,9 +67,9 @@ public:
     StringPtr GroupName() const { return StringPtr(groupName.Value().AsStringLiteral()); }
     void SetGroupNameConstant(Constant groupName_) { groupName = groupName_; }
     virtual void ComputeName();
-    utf32_string FullName() const override;
-    virtual utf32_string FullNameWithSpecifiers() const;
-    virtual utf32_string FullParsingName() const;
+    std::u32string FullName() const override;
+    virtual std::u32string FullNameWithSpecifiers() const;
+    virtual std::u32string FullParsingName() const;
     int Arity() const { return int(parameters.size()); }
     void AddSymbol(std::unique_ptr<Symbol>&& symbol) override;
     const std::vector<ParameterSymbol*>& Parameters() const { return parameters; }
@@ -125,8 +125,8 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::staticConstructorSymbol; }
     std::string TypeString() const override { return "static constructor"; }
     void SetSpecifiers(Specifiers specifiers);
-    utf32_string FullParsingName() const override;
-    utf32_string FullNameWithSpecifiers() const override;
+    std::u32string FullParsingName() const override;
+    std::u32string FullNameWithSpecifiers() const override;
     bool IsDerived() const override { return true; }
     void AddTo(ClassTypeSymbol* classTypeSymbol) override;
     void SetFullNameConstant(Constant fullNameConstant_) { fullNameConstant = fullNameConstant_; }
@@ -158,8 +158,8 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::constructorSymbol; }
     std::string TypeString() const override { return "constructor"; }
     void SetSpecifiers(Specifiers specifiers);
-    utf32_string FullParsingName() const override;
-    utf32_string FullNameWithSpecifiers() const override;
+    std::u32string FullParsingName() const override;
+    std::u32string FullNameWithSpecifiers() const override;
     void GenerateCall(Machine& machine, Assembly& assembly, Function& function, std::vector<GenObject*>& objects, int start) override;
     void CreateMachineFunction() override;
     bool IsDefaultConstructorSymbol() const;
@@ -216,8 +216,8 @@ public:
     void Write(SymbolWriter& writer) override;
     void Read(SymbolReader& reader) override;
     void SetSpecifiers(Specifiers specifiers);
-    utf32_string FullParsingName() const override;
-    utf32_string FullNameWithSpecifiers() const override;
+    std::u32string FullParsingName() const override;
+    std::u32string FullNameWithSpecifiers() const override;
     void CreateMachineFunction() override;
     bool IsVirtual() const { return GetFlag(MemberFunctionSymbolFlags::virtual_); }
     void SetVirtual() { SetFlag(MemberFunctionSymbolFlags::virtual_); }

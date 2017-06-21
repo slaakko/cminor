@@ -1,5 +1,15 @@
 namespace cminor.parser
 {
+    grammar FunctionGrammar
+    {
+        Function(ParsingContext* ctx, var AttributeMap attributeMap, var std::unique_ptr<FunctionNode> fun, var Span s, var std::unique_ptr<IdentifierNode> qid): FunctionNode*;
+        FunctionGroupId(ParsingContext* ctx): FunctionGroupIdNode*;
+        OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): FunctionGroupIdNode*;
+        Attributes(AttributeMap* attributeMap);
+        NameValuePair(AttributeMap* attributeMap);
+        Name: std::string;
+        Value: std::string;
+    }
     grammar ExpressionGrammar
     {
         Expression(ParsingContext* ctx): Node*;
@@ -26,6 +36,10 @@ namespace cminor.parser
         BasicType: Node*;
         IdentifierChars;
     }
+    grammar ConstantGrammar
+    {
+        Constant(ParsingContext* ctx): ConstantNode*;
+    }
     grammar ClassGrammar
     {
         Class(ParsingContext* ctx): ClassNode*;
@@ -42,38 +56,10 @@ namespace cminor.parser
         Indexer(ParsingContext* ctx, var std::unique_ptr<Node> indexer): Node*;
         GetterOrSetter(ParsingContext* ctx, Node* subject);
     }
-    grammar ConstantGrammar
+    grammar DelegateGrammar
     {
-        Constant(ParsingContext* ctx): ConstantNode*;
-    }
-    grammar LiteralGrammar
-    {
-        Literal: Node*;
-        BooleanLiteral: Node*;
-        FloatingLiteral(var Span s): Node*;
-        FloatingLiteralValue: double;
-        FractionalFloatingLiteral;
-        ExponentFloatingLiteral;
-        ExponentPart;
-        IntegerLiteral(var Span s): Node*;
-        IntegerLiteralValue: uint64_t;
-        HexIntegerLiteral: uint64_t;
-        DecIntegerLiteral: uint64_t;
-        CharLiteral(var utf32_char litValue): Node*;
-        StringLiteral(var utf32_string s): Node*;
-        NullLiteral: Node*;
-        CharEscape: utf32_char;
-        DecDigitSequence: uint64_t;
-        HexDigitSequence: uint64_t;
-        HexDigit4: uint16_t;
-        HexDigit8: uint32_t;
-        OctalDigitSequence: uint64_t;
-        Sign;
-    }
-    grammar IdentifierGrammar
-    {
-        Identifier: IdentifierNode*;
-        QualifiedId: IdentifierNode*;
+        Delegate(ParsingContext* ctx): Node*;
+        ClassDelegate(ParsingContext* ctx): Node*;
     }
     grammar CompileUnitGrammar
     {
@@ -94,10 +80,12 @@ namespace cminor.parser
         DelegateDefinition(ParsingContext* ctx): Node*;
         ClassDelegateDefinition(ParsingContext* ctx): Node*;
     }
-    grammar DelegateGrammar
+    grammar SolutionGrammar
     {
-        Delegate(ParsingContext* ctx): Node*;
-        ClassDelegate(ParsingContext* ctx): Node*;
+        Solution: Solution*;
+        Declaration: SolutionDeclaration*;
+        SolutionProjectDeclaration: SolutionDeclaration*;
+        FilePath: std::string;
     }
     grammar EnumerationGrammar
     {
@@ -106,22 +94,10 @@ namespace cminor.parser
         EnumConstants(ParsingContext* ctx, EnumTypeNode* enumType);
         EnumConstant(ParsingContext* ctx, EnumTypeNode* enumType, var Span s): EnumConstantNode*;
     }
-    grammar FunctionGrammar
+    grammar IdentifierGrammar
     {
-        Function(ParsingContext* ctx, var AttributeMap attributeMap, var std::unique_ptr<FunctionNode> fun, var Span s, var std::unique_ptr<IdentifierNode> qid): FunctionNode*;
-        FunctionGroupId(ParsingContext* ctx): FunctionGroupIdNode*;
-        OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): FunctionGroupIdNode*;
-        Attributes(AttributeMap* attributeMap);
-        NameValuePair(AttributeMap* attributeMap);
-        Name: std::string;
-        Value: std::string;
-    }
-    grammar SolutionGrammar
-    {
-        Solution: Solution*;
-        Declaration: SolutionDeclaration*;
-        SolutionProjectDeclaration: SolutionDeclaration*;
-        FilePath: std::string;
+        Identifier: IdentifierNode*;
+        QualifiedId: IdentifierNode*;
     }
     grammar InterfaceGrammar
     {
@@ -134,12 +110,29 @@ namespace cminor.parser
     {
         Keyword;
     }
-    grammar TypeExprGrammar
+    grammar LiteralGrammar
     {
-        TypeExpr(ParsingContext* ctx): Node*;
-        PrefixTypeExpr(ParsingContext* ctx): Node*;
-        PostfixTypeExpr(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr, var Span s): Node*;
-        PrimaryTypeExpr(ParsingContext* ctx): Node*;
+        Literal: Node*;
+        BooleanLiteral: Node*;
+        FloatingLiteral(var Span s): Node*;
+        FloatingLiteralValue: double;
+        FractionalFloatingLiteral;
+        ExponentFloatingLiteral;
+        ExponentPart;
+        IntegerLiteral(var Span s): Node*;
+        IntegerLiteralValue: uint64_t;
+        HexIntegerLiteral: uint64_t;
+        DecIntegerLiteral: uint64_t;
+        CharLiteral(var char32_t litValue): Node*;
+        StringLiteral(var std::u32string s): Node*;
+        NullLiteral: Node*;
+        CharEscape: char32_t;
+        DecDigitSequence: uint64_t;
+        HexDigitSequence: uint64_t;
+        HexDigit4: uint16_t;
+        HexDigit8: uint32_t;
+        OctalDigitSequence: uint64_t;
+        Sign;
     }
     grammar ParameterGrammar
     {
@@ -214,5 +207,12 @@ namespace cminor.parser
         TemplateId(ParsingContext* ctx, var std::unique_ptr<TemplateIdNode> templateId): Node*;
         TemplateParameter(ParsingContext* ctx): TemplateParameterNode*;
         TemplateParameterList(ParsingContext* ctx, Node* owner);
+    }
+    grammar TypeExprGrammar
+    {
+        TypeExpr(ParsingContext* ctx): Node*;
+        PrefixTypeExpr(ParsingContext* ctx): Node*;
+        PostfixTypeExpr(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr, var Span s): Node*;
+        PrimaryTypeExpr(ParsingContext* ctx): Node*;
     }
 }

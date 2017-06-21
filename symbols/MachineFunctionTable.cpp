@@ -9,21 +9,24 @@
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/machine/FileRegistry.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace symbols {
 
+using namespace cminor::unicode;
+
 Function* MachineFunctionTable::CreateFunction(FunctionSymbol* functionSymbol)
 {
-    utf32_string functionCallName = functionSymbol->FullName();
+    std::u32string functionCallName = functionSymbol->FullName();
     ConstantPool& constantPool = functionSymbol->GetAssembly()->GetConstantPool();
     Constant functionGroupNameConstant = constantPool.GetConstant(constantPool.Install(functionSymbol->GroupName()));
     Constant functionCallNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(functionCallName.c_str())));
-    utf32_string functionFullNameWithSpecifiers = functionSymbol->FullNameWithSpecifiers();
+    std::u32string functionFullNameWithSpecifiers = functionSymbol->FullNameWithSpecifiers();
     Constant functionFullNameWithSpecifiersConstant = constantPool.GetConstant(constantPool.Install(StringPtr(functionFullNameWithSpecifiers.c_str())));
     Function* function = new Function(functionGroupNameConstant, functionCallNameConstant, functionFullNameWithSpecifiersConstant, uint32_t(machineFunctions.size()), &constantPool);
     if (functionSymbol->GetSpan().Valid())
     {
-        utf32_string sfp = ToUtf32(FileRegistry::GetParsedFileName(functionSymbol->GetSpan().FileIndex()));
+        std::u32string sfp = ToUtf32(FileRegistry::GetParsedFileName(functionSymbol->GetSpan().FileIndex()));
         Constant sourceFilePath = constantPool.GetConstant(constantPool.Install(StringPtr(sfp.c_str())));
         function->SetSourceFilePath(sourceFilePath);
     }

@@ -1,37 +1,27 @@
 //  ===============================================
-//  This file contains minimal support for Unicode.
+//  This file contains support for Unicode.
 //  It is implemented as an interface to a binary 
-//  file named unicode.bin that contains the 
-//  Unicode character information. The unicode.bin 
+//  file named cminor_ucd.bin that contains the 
+//  Unicode character information. The cminor_ucd.bin 
 //  is not read entirely when character information 
 //  is first needed, but it is divided into pages 
 //  for faster access. One character information 
 //  page (CharInfoPage class) contains information
-//  for 4096 characters (64 kilobytes). Similarly 
-//  one character name page (CharNamePage class) 
-//  contains Unicode names for 4096 characters.
+//  for 1024 characters (32 kilobytes). 
 //  ===============================================
 
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Text;
+using System.Collections.Generic;
 
 namespace System.Unicode
 {
-    public string PathToUnicodeDirectory()
+    public class UnicodeException : Exception
     {
-        string cminorRoot = GetEnvironmentVariable("CMINOR_ROOT");
-        if (string.IsNullOrEmpty(cminorRoot))
+        public UnicodeException(string message) : base(message)
         {
-            throw new Exception("CMINOR_ROOT environment variable not set (set it to point to /path/to/cminor directory)");
         }
-        return Path.Combine(cminorRoot, "unicode");
-    }
-
-    public string PathToUnicodeBinFile()
-    {
-        return Path.Combine(PathToUnicodeDirectory(), "unicode.bin");
     }
 
     public class EncodingException : Exception
@@ -46,6 +36,21 @@ namespace System.Unicode
         public DecodingException(string message) : base(message)
         {
         }
+    }
+
+    public string PathToUnicodeDirectory()
+    {
+        string cminorRoot = GetEnvironmentVariable("CMINOR_ROOT");
+        if (string.IsNullOrEmpty(cminorRoot))
+        {
+            throw new Exception("CMINOR_ROOT environment variable not set (set it to point to /path/to/cminor directory)");
+        }
+        return Path.Combine(cminorRoot, "unicode");
+    }
+    
+    public string PathToUcdBinFile()
+    {
+        return Path.Combine(PathToUnicodeDirectory(), "cminor_ucd.bin");
     }
 
     public class Utf8Encoder
@@ -321,710 +326,2335 @@ namespace System.Unicode
         private Stream stream;
     }
 
-    public enum Category : uint
+    public string MakeCanonicalPropertyName(string s)
     {
-        none = 0u,
-        letterUpper = 1u << 0u,                 // Lu
-        letterLower = 1u << 1u,                 // Ll
-        letterCased = 1u << 2u,                 // LC 
-        letterModifier = 1u << 3u,              // Lm
-        letterOther = 1u << 4u,                 // Lo
-        letterTitle = 1u << 5u,                 // Lt
-        letter = letterUpper | letterLower | letterCased | letterModifier | letterOther | letterTitle,
-        markSpacing = 1u << 6u,                 // Mc
-        markEnclosing = 1u << 7u,               // Me
-        markNonspacing = 1u << 8u,              // Mn
-        mark = markSpacing | markEnclosing | markNonspacing,
-        numberDecimal = 1u << 9u,               // Nd
-        numberLetter = 1u << 10u,               // Nl
-        numberOther = 1u << 11u,                // No
-        number = numberDecimal | numberLetter | numberOther,
-        punctuationConnector = 1u << 12u,       // Pc
-        punctuationDash = 1u << 13u,            // Pd
-        punctuationClose = 1u << 14u,           // Pe
-        punctuationFinalQuote = 1u << 15u,      // Pf
-        punctuationInitialQuote = 1u << 16u,    // Pi
-        punctuationOther = 1u << 17u,           // Po
-        punctuationOpen = 1u << 18u,            // Ps
-        punctuation = punctuationConnector | punctuationDash | punctuationClose | punctuationFinalQuote | punctuationInitialQuote | punctuationOther | punctuationOpen,
-        symbolCurrency = 1u << 19u,             // Sc
-        symbolModifier = 1u << 20u,             // Sk
-        symbolMath = 1u << 21u,                 // Sm
-        symbolOther = 1u << 22u,                // So
-        symbol = symbolCurrency | symbolModifier | symbolMath | symbolOther,
-        separatorLine = 1u << 23u,              // Zl
-        separatorParagraph = 1u << 24u,         // Zp
-        separatorSpace = 1u << 25u,             // Zs
-        separator = separatorLine | separatorParagraph | separatorSpace
+        StringBuilder nameBuilder = new StringBuilder();
+        foreach (char c in s)
+        {
+            if (c != '_' && c != ' ' && c != '-')
+            {
+                nameBuilder.Append(c);
+            }
+        }
+        return nameBuilder.ToString().ToLower();
     }
 
-    public class CategoryMap
+    public enum BinaryPropertyId : byte
     {
-        static CategoryMap()
+        asciiHexDigit,
+        alphabetic,
+        bidiControl,
+        bidiMirrored,
+        cased,
+        compositionExclusion,
+        caseIgnorable,
+        fullCompositionExclusion,
+        changesWhenCasefolded,
+        changesWhenCaseMapped,
+        changesWhenNFKCCasefolded,
+        changesWhenLowercased,
+        changesWhenTitlecased,
+        changesWhenUppercased,
+        dash,
+        deprecated,
+        defaultIgnorableCodePoint,
+        diacritic,
+        extender,
+        graphemeBase,
+        graphemeExtend,
+        graphemeLink,
+        hexDigit,
+        hyphen,
+        idContinue,
+        ideographic,
+        idStart,
+        idsBinaryOperator,
+        idsTrinaryOperator,
+        joinControl,
+        logicalOrderException,
+        lowercase,
+        math,
+        noncharacterCodePoint,
+        otherAlphabetic,
+        otherDefaultIgnorableCodePoint,
+        otherGraphemeExtend,
+        otherIdContinue,
+        otherIdStart,
+        otherLowercase,
+        otherMath,
+        otherUppercase,
+        patternSyntax,
+        patternWhiteSpace,
+        prependedConcatenationMark,
+        quotationMark,
+        radical,
+        softDotted,
+        sentenceterminal,
+        terminalPunctuation,
+        unifiedIdeograph,
+        uppercase,
+        variationSelector,
+        whiteSpace,
+        xidContinue,
+        xidStart,
+        expandsOnNFC,
+        expandsOnNFD,
+        expandsOnNFKC,
+        expandsOnNFKD
+    }
+
+    public class BinaryProperty
+    {
+        public BinaryProperty(BinaryPropertyId id, string shortName, string longName)
         {
-            instance = new CategoryMap();
+            this.id = id;
+            this.shortName = shortName;
+            this.longName = longName;
         }
-        public static CategoryMap Instance
+        public BinaryPropertyId Id
+        {
+            get { return id; }
+        }
+        public string ShortName
+        {
+            get { return shortName; }
+        }
+        public string LongName
+        {
+            get { return longName; }
+        }
+        private BinaryPropertyId id;
+        private string shortName;
+        private string longName;
+    }
+
+    public class BinaryPropertyTable
+    {
+        static BinaryPropertyTable()
+        {
+            instance = new BinaryPropertyTable();
+        }
+        public static BinaryPropertyTable Instance
         {
             get { return instance; }
         }
-        private CategoryMap()
+        public BinaryProperty GetBinaryProperty(BinaryPropertyId id)
         {
-            strCategoryMap = new HashMap<string, Category>();
-            categoryStrMap = new HashMap<uint, string>();
-            strCategoryMap["Lu"] = Category.letterUpper;
-            categoryStrMap[Category.letterUpper] = "Lu";
-            strCategoryMap["Ll"] = Category.letterLower;
-            categoryStrMap[Category.letterLower] = "Ll";
-            strCategoryMap["LC"] = Category.letterCased;
-            categoryStrMap[Category.letterCased] = "LC";
-            strCategoryMap["Lm"] = Category.letterModifier;
-            categoryStrMap[Category.letterModifier] = "Lm";
-            strCategoryMap["Lo"] = Category.letterOther;
-            categoryStrMap[Category.letterOther] = "Lo";
-            strCategoryMap["Lt"] = Category.letterTitle;
-            categoryStrMap[Category.letterTitle] = "Lt";
-            strCategoryMap["Mc"] = Category.markSpacing;
-            categoryStrMap[Category.markSpacing] = "Mc";
-            strCategoryMap["Me"] = Category.markEnclosing;
-            categoryStrMap[Category.markEnclosing] = "Me";
-            strCategoryMap["Mn"] = Category.markNonspacing;
-            categoryStrMap[Category.markNonspacing] = "Mn";
-            strCategoryMap["Nd"] = Category.numberDecimal;
-            categoryStrMap[Category.numberDecimal] = "Nd";
-            strCategoryMap["Nl"] = Category.numberLetter;
-            categoryStrMap[Category.numberLetter] = "Nl";
-            strCategoryMap["No"] = Category.numberOther;
-            categoryStrMap[Category.numberOther] = "No";
-            strCategoryMap["Pc"] = Category.punctuationConnector;
-            categoryStrMap[Category.punctuationConnector] = "Pc";
-            strCategoryMap["Pd"] = Category.punctuationDash;
-            categoryStrMap[Category.punctuationDash] = "Pd";
-            strCategoryMap["Pe"] = Category.punctuationClose;
-            categoryStrMap[Category.punctuationClose] = "Pe";
-            strCategoryMap["Pf"] = Category.punctuationFinalQuote;
-            categoryStrMap[Category.punctuationFinalQuote] = "Pf";
-            strCategoryMap["Pi"] = Category.punctuationInitialQuote;
-            categoryStrMap[Category.punctuationInitialQuote] = "Pi";
-            strCategoryMap["Po"] = Category.punctuationOther;
-            categoryStrMap[Category.punctuationOther] = "Po";
-            strCategoryMap["Ps"] = Category.punctuationOpen;
-            categoryStrMap[Category.punctuationOpen] = "Ps";
-            strCategoryMap["Sc"] = Category.symbolCurrency;
-            categoryStrMap[Category.symbolCurrency] = "Sc";
-            strCategoryMap["Sk"] = Category.symbolModifier;
-            categoryStrMap[Category.symbolModifier] = "Sk";
-            strCategoryMap["Sm"] = Category.symbolMath;
-            categoryStrMap[Category.symbolMath] = "Sm";
-            strCategoryMap["So"] = Category.symbolOther;
-            categoryStrMap[Category.symbolOther] = "So";
-            strCategoryMap["Zl"] = Category.separatorLine;
-            categoryStrMap[Category.separatorLine] = "Zl";
-            strCategoryMap["Zp"] = Category.separatorParagraph;
-            categoryStrMap[Category.separatorParagraph] ="Zp";
-            strCategoryMap["Zs"] = Category.separatorSpace;
-            categoryStrMap[Category.separatorSpace] = "Zs";
+            return binaryPropertyIdMap[cast<byte>(id)];
         }
-        public Category GetCategory(string categoryName) 
+        public BinaryProperty GetBinaryPropertyByShortName(string shortName)
         {
-            Category category = Category.none;
-            if (strCategoryMap.TryGetValue(categoryName, ref category))
+            return shortNameMap[MakeCanonicalPropertyName(shortName)];
+        }
+        public BinaryProperty GetBinaryPropertyByLongName(string longName)
+        {
+            return longNameMap[MakeCanonicalPropertyName(longName)];
+        }
+        private BinaryPropertyTable()
+        {
+            binaryProperties = new List<BinaryProperty>();
+            binaryPropertyIdMap = new HashMap<byte, BinaryProperty>();
+            shortNameMap = new HashMap<string, BinaryProperty>();
+            longNameMap = new HashMap<string, BinaryProperty>();
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.asciiHexDigit, "AHex", "Ascii Hex Digit"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.alphabetic, "Alpha", "Alphabetic"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.bidiControl, "Bidi C", "Bidi Control"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.bidiMirrored, "Bidi M", "Bidi Mirrored"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.cased, "Cased", "Cased"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.compositionExclusion, "CE", "Composition Exclusion"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.caseIgnorable, "CI", "Case Ignorable"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.fullCompositionExclusion, "Comp Ex", "Full Composition Exclusion"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.changesWhenCasefolded, "CWCF", "Changes When Casefolded"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.changesWhenCaseMapped, "CWCM", "Changes When Casemapped"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.changesWhenNFKCCasefolded, "CWKCF", "Changes When NFKC Casefolded"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.changesWhenLowercased, "CWL", "Changes When Lowercased"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.changesWhenTitlecased, "CWT", "Changes When Titlecased"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.changesWhenUppercased, "CWU", "Changes When Uppercased"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.dash, "Dash", "Dash"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.deprecated, "Dep", "Deprecated"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.defaultIgnorableCodePoint, "DI", "Default Ignorable Code Point"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.diacritic, "Dia", "Diacritic"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.extender, "Ext", "Extender"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.graphemeBase, "Gr Base", "Grapheme Base"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.graphemeExtend, "Gr Ext", "Grapheme Extend"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.graphemeLink, "Gr Link", "Grapheme Link"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.hexDigit, "Hex", "Hex Digit"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.hyphen, "Hyphen", "Hyphen"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.idContinue, "IDC", "ID Continue"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.ideographic, "Ideo", "Ideographic"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.idStart, "IDS", "ID Start"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.idsBinaryOperator, "IDSB", "IDS Binary Operator"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.idsTrinaryOperator, "IDST", "IDS Trinary Operator"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.joinControl, "Join C", "Join Control"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.logicalOrderException, "LOE", "Logical Order Exception"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.lowercase, "Lower", "Lowercase"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.math, "Math", "Math"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.noncharacterCodePoint, "NChar", "Noncharacter Code Point"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.otherAlphabetic, "OAlpha", "Other Alphabetic"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.otherDefaultIgnorableCodePoint, "ODI", "Other Default Ignorable Code Point"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.otherGraphemeExtend, "OGr Ext", "Other Grapheme Extend"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.otherIdContinue, "OIDC", "Other ID Continue"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.otherIdStart, "OIDS", "Other ID Start"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.otherLowercase, "OLower", "Other Lowercase"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.otherMath, "OMath", "Other Math"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.otherUppercase, "OUpper", "Other Uppercase"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.patternSyntax, "Pat Syn", "Pattern Syntax"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.patternWhiteSpace, "Pat WS", "Pattern White Space"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.prependedConcatenationMark, "PCM", "Prepended Concatenation Mark"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.quotationMark, "QMark", "Quotation Mark"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.radical, "Radical", "Radical"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.softDotted, "SD", "Soft Dotted"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.sentenceterminal, "STerm", "Sentence Terminal"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.terminalPunctuation, "Term", "Terminal Punctuation"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.unifiedIdeograph, "UIdeo", "Unified Ideograph"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.uppercase, "Upper", "Uppercase"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.variationSelector, "VS", "Variation Selector"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.whiteSpace, "WSpace", "White Space"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.xidContinue, "XIDC", "XID Continue"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.xidStart, "XIDS", "XID Start"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.expandsOnNFC, "XO NFC", "Expands On NFC"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.expandsOnNFD, "XO NFD", "Expands On NFD"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.expandsOnNFKC, "XO NFKC", "Expands On NFKC"));
+            binaryProperties.Add(new BinaryProperty(BinaryPropertyId.expandsOnNFKD, "XO NFKD", "Expands On NFKD"));
+            foreach (BinaryProperty binaryProperty in binaryProperties)
             {
-                return category;
+                binaryPropertyIdMap[cast<byte>(binaryProperty.Id)] = binaryProperty;
+                shortNameMap[MakeCanonicalPropertyName(binaryProperty.ShortName)] = binaryProperty;
+                longNameMap[MakeCanonicalPropertyName(binaryProperty.LongName)] = binaryProperty;
             }
-            return Category.none;
         }
-        public string GetCategoryName(Category category)
+        private List<BinaryProperty> binaryProperties;
+        private HashMap<byte, BinaryProperty> binaryPropertyIdMap;
+        private HashMap<string, BinaryProperty> shortNameMap;
+        private HashMap<string, BinaryProperty> longNameMap;
+        private static BinaryPropertyTable instance;
+    }
+
+    public BinaryProperty GetBinaryProperty(BinaryPropertyId id)
+    {
+        return BinaryPropertyTable.Instance.GetBinaryProperty(id);
+    }
+
+    public BinaryProperty GetBinaryPropertyByShortName(string shortName)
+    {
+        return BinaryPropertyTable.Instance.GetBinaryPropertyByShortName(shortName);
+    }
+
+    public BinaryProperty GetBinaryPropertyByLongName(string longName)
+    {
+        return BinaryPropertyTable.Instance.GetBinaryPropertyByLongName(longName);
+    }
+
+    public enum BlockId : ushort
+    {
+        none = 0u,
+        adlam, aegeanNumbers, ahom, alchemical, alphabeticPf, anatolianHieroglyphs, ancientGreekMusic, ancientGreekNumbers, ancientSymbols,
+        arabic, arabicExtA, arabicMath, arabicPfA, arabicPfB, arabicSup, armenian, arrows, ascii, avestan,
+        balinese, bamum, bamumSup, bassaVah, batak, bengali, bhaisuki, blockElements, bopomofo, bopomofoExt, boxDrawing,
+        brahmi, braille, buginese, buhid, byzantineMusic,
+        carian, caucasianAlbanian, chakma, cham, cherokee, cherokeeSup, 
+        cjk, cjkCompat, cjkCompatForms, cjkCompatIdeographs, cjkCompatIdeographsSup, cjkExtA, cjkExtB, cjkExtC, cjkExtD, cjkExtE,
+        cjkRadicalsSup, cjkStrokes, cjkSymbols, compatJamo, controlPictures, coptic, copticEpactNumbers, countingRod, cuneiform,
+        cuneiformNumbers, currencySymbols, cypriotSyllabary, cyrillic, cyrillicExtA, cyrillicExtB, cyrillicExtC, cyrillicSup,
+        deseret, devanagari, devanagariExt, diacriticals, diariticalsForSymbols, diacriticalsSup, diacriticalsExt, dingbats, domino, duployan,
+        earlyDynasticCuneiform, egyptianHieroglyphs, elbasan, emoticons, enclosedAlphanum, enclosedAlphanumSup, enclosedCjk, enclosedIdeographicSup,
+        ethiopic, ethiopicExt, ethiopicExtA, ethiopicSup,
+        geometricShapes, geometricShapesExt, georgian, georgianSup, glagolitic, glagoliticSup, gothic, grantha, greek, greekExt, gujarati, gurmukhi,
+        halfAndFullForms, halfMarks, hangul, hanunoo, hatran, hebrew, highPuSurrogates, highSurrogates, hiragana,
+        idc, ideographicSymbols, imperialAramaic, indicNumberForms, inscriptionalPahlavi, inscriptionalParthian, ipaExt,
+        jamo, jamoExtA, jamoExtB, javanese, kaithi, kanaSup, kanbun, kangxi, kannada, katakana, katakanaExt, kayahLi, kharoshthi, khmer, khmerSymbols, khojki, khudawadi,
+        lao, latin1Sup, latinExtA, latinExtAdditional, latinExtB, latinExtC, latinExtD, latinExtE, lepcha, letterlikeSymbols, limbu,
+        linearA, linearBIdeograms, linearBSyllabary, lisu, lowSurrogates, lycian, lydian,
+        mahajani, mahjong, malayalam, mandaic, manichean, marchen, mathAlphanum, mathOperators, meeteiMayek, meeteiMayekExt, mendeKikakui, meroiticCursive, meroiticHieroglyphs,
+        miao, miscArrows, miscMathSymbolsA, miscMathSymbolsB, miscPictographs, miscSymbols, miscTechnical, modi, modifierLetters, modifierToneLetters, mongolian, mongolianSup,
+        mro, music, multani, myanmar, myanmarExtA, myanmarExtB,
+        nabataean, nb, newTaiLue, newa, nko, numberForms,
+        ocr, ogham, olChiki, oldHungarian, oldItalic, oldNorthArabian, oldPermic, oldPersian, oldSouthArabian, oldTurkic, oriya, ornamentalDingbats, osage, osmanya,
+        pahawhHmong, palmyrene, pauCinHau, phagsPa, phaistos, phoenician, phoneticExt, phoneticExtSup, playingCards, psalterPahlavi, pua, punctuation,
+        rejang, rumi, runic,
+        samaritan, saurashtra, sharada, shavian, shorthandFormatControls, siddham, sinhala, sinhalaArchaicNumbers, smallForms, soraSompeng, specials, sundanese, sundaneseSup,
+        supArrowsA, supArrowsB, supArrowsC, supMathOperators, supPuaA, supPuaB, supPunctuation, supSymbolsAndPictographs, superAndSub, suttonSignWriting, sylotiNagri, syriac,
+        tagalog, tagbanwa, tags, taiLe, taiTham, taiViet, taiXuanJing, takri, tamil, tangut, tangutComponents, telugu, thaana, thai, tibetan, tifinagh, tirhuta, transportAndMap,
+        ucas, ucasExt, ugaritic, vai, vedicExt, verticalForms, vs, vsSup, warangCiti, yiRadicals, yiSyllables, yijing
+    }
+
+    public class Block 
+    {
+        public Block(BlockId id, string shortName, string longName, char start, char end)
         {
-            string categoryName;
-            if (categoryStrMap.TryGetValue(cast<uint>(category), ref categoryName))
-            {
-                return categoryName;
-            }
-            return string.Empty;
+            this.id = id;
+            this.shortName = shortName;
+            this.longName = longName;
+            this.start = start;
+            this.end = end;
         }
-        private HashMap<string, Category> strCategoryMap;
-        private HashMap<uint, string> categoryStrMap;
-        private static CategoryMap instance;
+        public BlockId Id 
+        {
+            get { return id; }
+        }
+        public string ShortName
+        {
+            get { return shortName; }
+        }
+        public string LongName
+        {
+            get { return longName; }
+        }
+        public char Start
+        {
+            get { return start; }
+        }
+        public char End
+        {
+            get { return end; }
+        }
+        private BlockId id;
+        private string shortName;
+        private string longName;
+        private char start;
+        private char end;
+    }
+
+    public class BlockTable
+    {
+        static BlockTable()
+        {
+            instance = new BlockTable();
+        }
+        public static BlockTable Instance
+        {
+            get { return instance; }
+        }
+        public Block GetBlock(BlockId id)
+        {
+            return blockIdMap[cast<ushort>(id)];
+        }
+        public Block GetBlockByShortName(string shortName)
+        {
+            return shortNameMap[MakeCanonicalPropertyName(shortName)];
+        }
+        public Block GetBlockByLongName(string longName)
+        {
+            return longNameMap[MakeCanonicalPropertyName(longName)];
+        }
+        private BlockTable()
+        {
+            blocks = new List<Block>();
+            blockIdMap = new HashMap<ushort, Block>();
+            shortNameMap = new HashMap<string, Block>();
+            longNameMap = new HashMap<string, Block>();
+            blocks.Add(new Block(BlockId.ascii, "ASCII", "Basic Latin", cast<char>(0x0000u), cast<char>(0x007Fu)));
+            blocks.Add(new Block(BlockId.latin1Sup, "Latin 1 Sup", "Latin-1 Supplement", cast<char>(0x0080u), cast<char>(0x00FFu)));
+            blocks.Add(new Block(BlockId.latinExtA, "Latin Ext A", "Latin Extended-A", cast<char>(0x0100u), cast<char>(0x017Fu)));
+            blocks.Add(new Block(BlockId.latinExtB, "Latin Ext B", "Latin Extended-B", cast<char>(0x0180u), cast<char>(0x0024Fu)));
+            blocks.Add(new Block(BlockId.ipaExt, "IPA Ext", "IPA Extensions", cast<char>(0x0250u), cast<char>(0x02AFu)));
+            blocks.Add(new Block(BlockId.modifierLetters, "Modifier Letters", "Spacing Modifier Letters", cast<char>(0x02B0u), cast<char>(0x02FFu)));
+            blocks.Add(new Block(BlockId.diacriticals, "Diacriticals", "Combining Diacritical Marks", cast<char>(0x0300u), cast<char>(0x036Fu)));
+            blocks.Add(new Block(BlockId.greek, "Greek", "Greek and Coptic", cast<char>(0x0370u), cast<char>(0x03FFu)));
+            blocks.Add(new Block(BlockId.cyrillic, "Cyrillic", "Cyrillic", cast<char>(0x0400u), cast<char>(0x04FFu)));
+            blocks.Add(new Block(BlockId.cyrillicSup, "Cyrillic Sup", "Cyrillic Supplement", cast<char>(0x0500u), cast<char>(0x052Fu)));
+            blocks.Add(new Block(BlockId.armenian, "Armenian", "Armenian", cast<char>(0x0530u), cast<char>(0x058Fu)));
+            blocks.Add(new Block(BlockId.hebrew, "Hebrew", "Hebrew", cast<char>(0x0590u), cast<char>(0x05FFu)));
+            blocks.Add(new Block(BlockId.arabic, "Arabic", "Arabic", cast<char>(0x0600u), cast<char>(0x06FFu)));
+            blocks.Add(new Block(BlockId.syriac, "Syriac", "Syriac", cast<char>(0x0700u), cast<char>(0x074Fu)));
+            blocks.Add(new Block(BlockId.arabicSup, "Arabic Sup", "Arabic Supplement", cast<char>(0x0750u), cast<char>(0x077Fu)));
+            blocks.Add(new Block(BlockId.thaana, "Thaana", "Thaana", cast<char>(0x0780u), cast<char>(0x07BFu)));
+            blocks.Add(new Block(BlockId.nko, "Nko", "Nko", cast<char>(0x07C0u), cast<char>(0x07FFu)));
+            blocks.Add(new Block(BlockId.samaritan, "Samaritan", "Samaritan", cast<char>(0x0800u), cast<char>(0x083Fu)));
+            blocks.Add(new Block(BlockId.mandaic, "Mandaic", "Mandaic", cast<char>(0x0840u), cast<char>(0x085Fu)));
+            blocks.Add(new Block(BlockId.arabicExtA, "Arabic Ext A", "Arabic Extended-A", cast<char>(0x08A0u), cast<char>(0x08FFu)));
+            blocks.Add(new Block(BlockId.devanagari, "Devanagari", "Devanagari", cast<char>(0x0900u), cast<char>(0x097Fu)));
+            blocks.Add(new Block(BlockId.bengali, "Bengali", "Bengali", cast<char>(0x0980u), cast<char>(0x09FFu)));
+            blocks.Add(new Block(BlockId.gurmukhi, "Gurmukhi", "Gurmukhi", cast<char>(0x0A00u), cast<char>(0x0A7Fu)));
+            blocks.Add(new Block(BlockId.gujarati, "Gujarati", "Gujarati", cast<char>(0x0A80u), cast<char>(0x0AFFu)));
+            blocks.Add(new Block(BlockId.oriya, "Oriya", "Oriya", cast<char>(0x0B00u), cast<char>(0x0B7Fu)));
+            blocks.Add(new Block(BlockId.tamil, "Tamil", "Tamil", cast<char>(0x0B80u), cast<char>(0x0BFFu)));
+            blocks.Add(new Block(BlockId.telugu, "Telugu", "Telugu", cast<char>(0x0C00u), cast<char>(0x0C7Fu)));
+            blocks.Add(new Block(BlockId.kannada, "Kannada", "Kannada", cast<char>(0x0C80u), cast<char>(0x0CFFu)));
+            blocks.Add(new Block(BlockId.malayalam, "Malayalam", "Malayalam", cast<char>(0x0D00u), cast<char>(0x0D7Fu)));
+            blocks.Add(new Block(BlockId.sinhala, "Sinhala", "Sinhala", cast<char>(0x0D80u), cast<char>(0x0DFFu)));
+            blocks.Add(new Block(BlockId.thai, "Thai", "Thai", cast<char>(0x0E00u), cast<char>(0x0E7Fu)));
+            blocks.Add(new Block(BlockId.lao, "Lao", "Lao", cast<char>(0x0E80u), cast<char>(0x0EFFu)));
+            blocks.Add(new Block(BlockId.tibetan, "Tibetan", "Tibetan", cast<char>(0x0F00u), cast<char>(0x0FFFu)));
+            blocks.Add(new Block(BlockId.myanmar, "Myanmar", "Myanmar", cast<char>(0x1000u), cast<char>(0x109Fu)));
+            blocks.Add(new Block(BlockId.georgian, "Georgian", "Georgian", cast<char>(0x10A0u), cast<char>(0x10FFu)));
+            blocks.Add(new Block(BlockId.jamo, "Jamo", "Hangul Jamo", cast<char>(0x1100u), cast<char>(0x11FFu)));
+            blocks.Add(new Block(BlockId.ethiopic, "Ethiopic", "Ethiopic", cast<char>(0x1200u), cast<char>(0x137Fu)));
+            blocks.Add(new Block(BlockId.ethiopicSup, "Ethiopic Sup", "Ethiopic Supplement", cast<char>(0x1380u), cast<char>(0x139Fu)));
+            blocks.Add(new Block(BlockId.cherokee, "Cherokee", "Cherokee", cast<char>(0x13A0u), cast<char>(0x13FFu)));
+            blocks.Add(new Block(BlockId.ucas, "UCAS", "Unified Canadian Aboriginal Syllabics", cast<char>(0x1400u), cast<char>(0x167Fu)));
+            blocks.Add(new Block(BlockId.ogham, "Ogham", "Ogham", cast<char>(0x1680u), cast<char>(0x169Fu)));
+            blocks.Add(new Block(BlockId.runic, "Runic", "Runic", cast<char>(0x16A0u), cast<char>(0x16FFu)));
+            blocks.Add(new Block(BlockId.tagalog, "Tagalog", "Tagalog", cast<char>(0x1700u), cast<char>(0x171Fu)));
+            blocks.Add(new Block(BlockId.hanunoo, "Hanunoo", "Hanunoo", cast<char>(0x1720u), cast<char>(0x173Fu)));
+            blocks.Add(new Block(BlockId.buhid, "Buhid", "Buhid", cast<char>(0x1740u), cast<char>(0x175Fu)));
+            blocks.Add(new Block(BlockId.tagbanwa, "Tagbanwa", "Tagbanwa", cast<char>(0x1760u), cast<char>(0x177Fu)));
+            blocks.Add(new Block(BlockId.khmer, "Khmer", "Khmer", cast<char>(0x1780u), cast<char>(0x17FFu)));
+            blocks.Add(new Block(BlockId.mongolian, "Mongolian", "Mongolian", cast<char>(0x1800u), cast<char>(0x18AFu)));
+            blocks.Add(new Block(BlockId.ucasExt, "UCAS Ext", "Unified Canadian Aboriginal Syllabics Extended", cast<char>(0x18B0u), cast<char>(0x18FFu)));
+            blocks.Add(new Block(BlockId.limbu, "Limbu", "Limbu", cast<char>(0x1900u), cast<char>(0x194Fu)));
+            blocks.Add(new Block(BlockId.taiLe, "Tai Le", "Tai Le", cast<char>(0x1950u), cast<char>(0x197Fu)));
+            blocks.Add(new Block(BlockId.newTaiLue, "New Tai Lue", "New Tai Lue", cast<char>(0x1980u), cast<char>(0x19DFu)));
+            blocks.Add(new Block(BlockId.khmerSymbols, "Khmer Symbols", "Khmer Symbols", cast<char>(0x19E0u), cast<char>(0x19FFu)));
+            blocks.Add(new Block(BlockId.buginese, "Buginese", "Buginese", cast<char>(0x1A00u), cast<char>(0x1A1Fu)));
+            blocks.Add(new Block(BlockId.taiTham, "Tai Tham", "Tai Tham", cast<char>(0x1A20u), cast<char>(0x1AAFu)));
+            blocks.Add(new Block(BlockId.diacriticalsExt, "Diacriticals Ext", "Combining Diacritical Marks Extended", cast<char>(0x1AB0u), cast<char>(0x1AFFu)));
+            blocks.Add(new Block(BlockId.balinese, "Balinese", "Balinese", cast<char>(0x1B00u), cast<char>(0x1B7Fu)));
+            blocks.Add(new Block(BlockId.sundanese, "Sundanese", "Sundanese", cast<char>(0x1B80u), cast<char>(0x1BBFu)));
+            blocks.Add(new Block(BlockId.batak, "Batak", "Batak", cast<char>(0x1BC0u), cast<char>(0x1BFFu)));
+            blocks.Add(new Block(BlockId.lepcha, "Lepcha", "Lepcha", cast<char>(0x1C00u), cast<char>(0x1C4Fu)));
+            blocks.Add(new Block(BlockId.olChiki, "Ol Chiki", "Ol Chiki", cast<char>(0x1C50u), cast<char>(0x1C7Fu)));
+            blocks.Add(new Block(BlockId.cyrillicExtC, "Cyrillic Ext C", "Cyrillic Extended-C", cast<char>(0x1C80u), cast<char>(0x1C8Fu)));
+            blocks.Add(new Block(BlockId.sundaneseSup, "Sundanese Sup", "Sundanese Supplement", cast<char>(0x1CC0u), cast<char>(0x1CCFu)));
+            blocks.Add(new Block(BlockId.vedicExt, "Vedic Ext", "Vedic Extensions", cast<char>(0x1CD0u), cast<char>(0x1CFFu)));
+            blocks.Add(new Block(BlockId.phoneticExt, "Phonetic Ext", "Phonetic Extensions", cast<char>(0x1D00u), cast<char>(0x1D7Fu)));
+            blocks.Add(new Block(BlockId.phoneticExtSup, "Phonetic Ext Sup", "Phonetic Extensions Supplement", cast<char>(0x1D80u), cast<char>(0x1DBFu)));
+            blocks.Add(new Block(BlockId.diacriticalsSup, "Diacriticals Sup", "Combining Diacritical Marks Supplement", cast<char>(0x1DC0u), cast<char>(0x1DFFu)));
+            blocks.Add(new Block(BlockId.latinExtAdditional, "Latin Ext Additional", "Latin Extended Additional", cast<char>(0x1E00u), cast<char>(0x1EFFu)));
+            blocks.Add(new Block(BlockId.greekExt, "Greek Ext", "Greek Extended", cast<char>(0x1F00u), cast<char>(0x1FFFu)));
+            blocks.Add(new Block(BlockId.punctuation, "Punctuation", "General Punctuation", cast<char>(0x2000u), cast<char>(0x206Fu)));
+            blocks.Add(new Block(BlockId.superAndSub, "Super And Sub", "Superscripts and Subscripts", cast<char>(0x2070u), cast<char>(0x209Fu)));
+            blocks.Add(new Block(BlockId.currencySymbols, "Currency Symbols", "Currency Symbols", cast<char>(0x20A0u), cast<char>(0x20CFu)));
+            blocks.Add(new Block(BlockId.diariticalsForSymbols, "Diacriticals For Symbols", "Combining Diacritical Marks for Symbols", cast<char>(0x20D0u), cast<char>(0x20FFu)));
+            blocks.Add(new Block(BlockId.letterlikeSymbols, "Letterlike Symbols", "Letterlike Symbols", cast<char>(0x2100u), cast<char>(0x214Fu)));
+            blocks.Add(new Block(BlockId.numberForms, "Number Forms", "Number Forms", cast<char>(0x2150u), cast<char>(0x218Fu)));
+            blocks.Add(new Block(BlockId.arrows, "Arrows", "Arrows", cast<char>(0x2190u), cast<char>(0x21FFu)));
+            blocks.Add(new Block(BlockId.mathOperators, "Math Operators", "Mathematical Operators", cast<char>(0x2200u), cast<char>(0x22FFu)));
+            blocks.Add(new Block(BlockId.miscTechnical, "Misc Technical", "Miscellaneous Technical", cast<char>(0x2300u), cast<char>(0x23FFu)));
+            blocks.Add(new Block(BlockId.controlPictures, "Control Pictures", "Control Pictures", cast<char>(0x2400u), cast<char>(0x243Fu)));
+            blocks.Add(new Block(BlockId.ocr, "OCR", "Optical Character Regognition", cast<char>(0x2440u), cast<char>(0x245Fu)));
+            blocks.Add(new Block(BlockId.enclosedAlphanum, "Enclosed Alphanum", "Enclosed Alphanumerics", cast<char>(0x2460u), cast<char>(0x24FFu)));
+            blocks.Add(new Block(BlockId.boxDrawing, "Box Drawing", "Box Drawing", cast<char>(0x2500u), cast<char>(0x257Fu)));
+            blocks.Add(new Block(BlockId.blockElements, "Block Elements", "Block Elements", cast<char>(0x2580u), cast<char>(0x259Fu)));
+            blocks.Add(new Block(BlockId.geometricShapes, "Geometric Shapes", "Geometric Shapes", cast<char>(0x25A0u), cast<char>(0x25FFu)));
+            blocks.Add(new Block(BlockId.miscSymbols, "Misc Symbols", "Miscellaneous Symbols", cast<char>(0x2600u), cast<char>(0x26FFu)));
+            blocks.Add(new Block(BlockId.dingbats, "Dingbats", "Dingbats", cast<char>(0x2700u), cast<char>(0x27BFu)));
+            blocks.Add(new Block(BlockId.miscMathSymbolsA, "Misc Math Symbols A", "Miscellaneous Mathematical Symbols - A", cast<char>(0x27C0u), cast<char>(0x27EFu)));
+            blocks.Add(new Block(BlockId.supArrowsA, "Sup Arrows A", "Supplemental Arrows-A", cast<char>(0x27F0u), cast<char>(0x27FFu)));
+            blocks.Add(new Block(BlockId.braille, "Braille", "Braille Patterns", cast<char>(0x2800u), cast<char>(0x28FFu)));
+            blocks.Add(new Block(BlockId.supArrowsB, "Sup Arrows B", "Supplemental Arrows-B", cast<char>(0x2900u), cast<char>(0x297Fu)));
+            blocks.Add(new Block(BlockId.miscMathSymbolsB, "Misc Math Symbols B", "Miscellaneous Mathematical Symbols-B", cast<char>(0x2980u), cast<char>(0x29FFu)));
+            blocks.Add(new Block(BlockId.supMathOperators, "Sup Math Operators", "Supplemental Mathematical Operators", cast<char>(0x2A00u), cast<char>(0x2AFFu)));
+            blocks.Add(new Block(BlockId.miscArrows, "Misc Arrows", "Miscellaneous Symbols and Arrows", cast<char>(0x2B00u), cast<char>(0x2BFFu)));
+            blocks.Add(new Block(BlockId.glagolitic, "Glagolitic", "Glagolitic", cast<char>(0x2C00u), cast<char>(0x2C5Fu)));
+            blocks.Add(new Block(BlockId.latinExtC, "Latin Ext C", "Latin Extended-C", cast<char>(0x2C60u), cast<char>(0x2C7Fu)));
+            blocks.Add(new Block(BlockId.coptic, "Coptic", "Coptic", cast<char>(0x2C80u), cast<char>(0x2CFFu)));
+            blocks.Add(new Block(BlockId.georgianSup, "Georgian Sup", "Georgian Supplement", cast<char>(0x2D00u), cast<char>(0x2D2Fu)));
+            blocks.Add(new Block(BlockId.tifinagh, "Tifinagh", "Tifinagh", cast<char>(0x2D30u), cast<char>(0x2D7Fu)));
+            blocks.Add(new Block(BlockId.ethiopicExt, "Ethiopic Ext", "Ethiopic Extended", cast<char>(0x2D80u), cast<char>(0x2DDFu)));
+            blocks.Add(new Block(BlockId.cyrillicExtA, "Cyrillic Ext A", "Cyrillic Extended-A", cast<char>(0x2DE0u), cast<char>(0x2DFFu)));
+            blocks.Add(new Block(BlockId.supPunctuation, "Sup Punctuation", "Supplemental Punctuation", cast<char>(0x2E00u), cast<char>(0x2E7Fu)));
+            blocks.Add(new Block(BlockId.cjkRadicalsSup, "CJK Radicals Sup", "CJK Radicals Supplement", cast<char>(0x2E80u), cast<char>(0x2EFFu)));
+            blocks.Add(new Block(BlockId.kangxi, "Kangxi", "Kangxi Radicals", cast<char>(0x2F00u), cast<char>(0x2FDFu)));
+            blocks.Add(new Block(BlockId.idc, "IDC", "Ideographic Description Characters", cast<char>(0x2FF0u), cast<char>(0x2FFFu)));
+            blocks.Add(new Block(BlockId.cjkSymbols, "CJK Symbols", "CJK Symbols and Punctuation", cast<char>(0x3000u), cast<char>(0x303Fu)));
+            blocks.Add(new Block(BlockId.hiragana, "Hiragana", "Hiragana", cast<char>(0x3040u), cast<char>(0x309Fu)));
+            blocks.Add(new Block(BlockId.katakana, "Katakana", "Katakana", cast<char>(0x30A0u), cast<char>(0x30FFu)));
+            blocks.Add(new Block(BlockId.bopomofo, "Bopomofo", "Bopomofo", cast<char>(0x3100u), cast<char>(0x312Fu)));
+            blocks.Add(new Block(BlockId.compatJamo, "Compat Jamo", "Hangul Compatibility Jamo", cast<char>(0x3130u), cast<char>(0x318Fu)));
+            blocks.Add(new Block(BlockId.kanbun, "Kanbun", "Kanbun", cast<char>(0x3190u), cast<char>(0x319Fu)));
+            blocks.Add(new Block(BlockId.bopomofoExt, "Bopomofo Ext", "Bopomofo Extended", cast<char>(0x31A0u), cast<char>(0x31BFu)));
+            blocks.Add(new Block(BlockId.cjkStrokes, "CJK Strokes", "CJK Strokes", cast<char>(0x31C0u), cast<char>(0x31EFu)));
+            blocks.Add(new Block(BlockId.katakanaExt, "Katakana Ext", "Katakana Phonetic Extensions", cast<char>(0x31F0u), cast<char>(0x31FFu)));
+            blocks.Add(new Block(BlockId.enclosedCjk, "Enclosed CJK", "Enclosed CJK Letters and Months", cast<char>(0x3200u), cast<char>(0x32FFu)));
+            blocks.Add(new Block(BlockId.cjkCompat, "CJK Compat", "CJK Compatibility", cast<char>(0x3300u), cast<char>(0x33FFu)));
+            blocks.Add(new Block(BlockId.cjkExtA, "CJK Ext A", "CJK Unified Ideographic Extension A", cast<char>(0x3400u), cast<char>(0x4DBFu)));
+            blocks.Add(new Block(BlockId.yijing, "Yijing", "Yijing Hexagram Symbols", cast<char>(0x4DC0u), cast<char>(0x4DFFu)));
+            blocks.Add(new Block(BlockId.cjk, "CJK", "CJK Unified Ideographs", cast<char>(0x4E00u), cast<char>(0x9FFFu)));
+            blocks.Add(new Block(BlockId.yiSyllables, "Yi Syllables", "Yi Syllables", cast<char>(0xA000u), cast<char>(0xA48Fu)));
+            blocks.Add(new Block(BlockId.yiRadicals, "Yi Radicals", "Yi Radicals", cast<char>(0xA090u), cast<char>(0xA4CFu)));
+            blocks.Add(new Block(BlockId.lisu, "Lisu", "Lisu", cast<char>(0xA0D0u), cast<char>(0xA4FFu)));
+            blocks.Add(new Block(BlockId.vai, "Vai", "Vai", cast<char>(0xA500u), cast<char>(0xA63Fu)));
+            blocks.Add(new Block(BlockId.cyrillicExtB, "Cyrillic Ext B", "Cyrillic Extended-B", cast<char>(0xA640u), cast<char>(0xA69Fu)));
+            blocks.Add(new Block(BlockId.bamum, "Bamum", "Bamum", cast<char>(0xA6A0u), cast<char>(0xA6FFu)));
+            blocks.Add(new Block(BlockId.modifierToneLetters, "Modifier Tone Letters", "Modifier Tone Letters", cast<char>(0xA700u), cast<char>(0xA71Fu)));
+            blocks.Add(new Block(BlockId.latinExtD, "Latin Ext D", "Latin Extended-D", cast<char>(0xA720u), cast<char>(0xA7FFu)));
+            blocks.Add(new Block(BlockId.sylotiNagri, "Syloti Nagri", "Syloti Nagri", cast<char>(0xA800u), cast<char>(0xA82Fu)));
+            blocks.Add(new Block(BlockId.indicNumberForms, "Indic Number Forms", "Common Indic Number Forms", cast<char>(0xA830u), cast<char>(0xA83Fu)));
+            blocks.Add(new Block(BlockId.phagsPa, "Phags Pa", "Phags-Pa", cast<char>(0xA840u), cast<char>(0xA87Fu)));
+            blocks.Add(new Block(BlockId.saurashtra, "Saurashtra", "Saurashtra", cast<char>(0xA880u), cast<char>(0xA8DFu)));
+            blocks.Add(new Block(BlockId.devanagariExt, "Devanagari Ext", "Devanagari Extended", cast<char>(0xA8E0u), cast<char>(0xA8FFu)));
+            blocks.Add(new Block(BlockId.kayahLi, "Kayah Li", "Kayah Li", cast<char>(0xA900u), cast<char>(0xA92Fu)));
+            blocks.Add(new Block(BlockId.rejang, "Rejang", "Rejang", cast<char>(0xA930u), cast<char>(0xA95Fu)));
+            blocks.Add(new Block(BlockId.jamoExtA, "Jamo Ext A", "Hangul Jamo Extended-A", cast<char>(0xA960u), cast<char>(0xA97Fu)));
+            blocks.Add(new Block(BlockId.javanese, "Javanese", "Javanese", cast<char>(0xA980u), cast<char>(0xA9DFu)));
+            blocks.Add(new Block(BlockId.myanmarExtB, "Myanmar Ext B", "Myanmar Extended - B", cast<char>(0xA9E0u), cast<char>(0xA9FFu)));
+            blocks.Add(new Block(BlockId.cham, "Cham","Cham", cast<char>(0xAA00u), cast<char>(0xAA5Fu)));
+            blocks.Add(new Block(BlockId.myanmarExtA, "Myanmar Ext A", "Myanmar Extended-A", cast<char>(0xAA60u), cast<char>(0xAA7Fu)));
+            blocks.Add(new Block(BlockId.taiViet, "Tai Viet", "Tai Viet", cast<char>(0xAA80u), cast<char>(0xAADFu)));
+            blocks.Add(new Block(BlockId.meeteiMayekExt, "Meetei Mayek Ext", "Meetei Mayek Extensions", cast<char>(0xAAE0u), cast<char>(0xAAFFu)));
+            blocks.Add(new Block(BlockId.ethiopicExtA, "Ethiopic Ext A", "Ethiopic Extended-A", cast<char>(0xAB00u), cast<char>(0xAB2Fu)));
+            blocks.Add(new Block(BlockId.latinExtE, "Latin Ext E", "Latin Extended-E", cast<char>(0xAB30u), cast<char>(0xAB6Fu)));
+            blocks.Add(new Block(BlockId.cherokeeSup, "Cherokee Sup", "Cherokee Supplement", cast<char>(0xAB70u), cast<char>(0xABBFu)));
+            blocks.Add(new Block(BlockId.meeteiMayek, "Meetei Mayek", "Meetei Mayek", cast<char>(0xABC0u), cast<char>(0xABFFu)));
+            blocks.Add(new Block(BlockId.hangul, "Hangul", "Hangul Syllables", cast<char>(0xAC00u), cast<char>(0xD7AFu)));
+            blocks.Add(new Block(BlockId.jamoExtB, "Jamo Ext B", "Hangul Jamo Extended-B", cast<char>(0xD7B0u), cast<char>(0xD7FFu)));
+            blocks.Add(new Block(BlockId.highSurrogates, "High Surrogates", "High Surrogates", cast<char>(0xD800u), cast<char>(0xDB7Fu)));
+            blocks.Add(new Block(BlockId.highPuSurrogates,  "High PU Surrogates", "High Private Use Surrogates", cast<char>(0xDB80u), cast<char>(0xDBFFu)));
+            blocks.Add(new Block(BlockId.lowSurrogates, "Low Surrogates", "Low Surrogates", cast<char>(0xDC00u), cast<char>(0xDFFFu)));
+            blocks.Add(new Block(BlockId.pua, "PUA", "Private Use Area", cast<char>(0xE000u), cast<char>(0xF8FFu)));
+            blocks.Add(new Block(BlockId.cjkCompatIdeographs, "CJK Compat Ideographs", "CJK Compatibility Ideographs", cast<char>(0xF900u), cast<char>(0xFAFFu)));
+            blocks.Add(new Block(BlockId.alphabeticPf, "Alphabetic PF", "Alphabetic Presentations Forms", cast<char>(0xFB00u), cast<char>(0xFB4Fu)));
+            blocks.Add(new Block(BlockId.arabicPfA, "Arabic PF A", "Arabic Presentation Forms-A", cast<char>(0xFB50u), cast<char>(0xFDFFu)));
+            blocks.Add(new Block(BlockId.vs, "VS", "Variation Selectors", cast<char>(0xFE00u), cast<char>(0xFE0Fu)));
+            blocks.Add(new Block(BlockId.verticalForms, "Vertical Forms", "Vertical Forms", cast<char>(0xFE10u), cast<char>(0xFE1Fu)));
+            blocks.Add(new Block(BlockId.halfMarks, "Half Marks", "Combining Half Marks", cast<char>(0xFE20u), cast<char>(0xFE2Fu)));
+            blocks.Add(new Block(BlockId.cjkCompatForms, "CJK Compat Forms", "CJK Compatibility Forms", cast<char>(0xFE30u), cast<char>(0xFE4Fu)));
+            blocks.Add(new Block(BlockId.smallForms, "Small Forms", "Small Form Variants", cast<char>(0xFE50u), cast<char>(0xFE6Fu)));
+            blocks.Add(new Block(BlockId.arabicPfB, "Arabic PF B", "Arabic Presentation Forms-B", cast<char>(0xFE70u), cast<char>(0xFEFFu)));
+            blocks.Add(new Block(BlockId.halfAndFullForms, "Half And Full Forms", "Halfwidth and Fullwidth Forms", cast<char>(0xFF00u), cast<char>(0xFFEFu)));
+            blocks.Add(new Block(BlockId.specials, "Specials", "Specials", cast<char>(0xFFF0u), cast<char>(0xFFFFu)));
+            blocks.Add(new Block(BlockId.linearBSyllabary, "Linear B Syllabary", "Linear B Syllabary", cast<char>(0x10000u), cast<char>(0x1007Fu)));
+            blocks.Add(new Block(BlockId.linearBIdeograms, "Linear B Ideograms", "Linear B Ideograms", cast<char>(0x10080u), cast<char>(0x100FFu)));
+            blocks.Add(new Block(BlockId.aegeanNumbers, "Aegean Numbers", "Aegean Numbers", cast<char>(0x10100u), cast<char>(0x1013Fu)));
+            blocks.Add(new Block(BlockId.ancientGreekNumbers, "Ancient Greek Numbers", "Ancient Greek Numbers", cast<char>(0x10140u), cast<char>(0x1018Fu)));
+            blocks.Add(new Block(BlockId.ancientSymbols, "Ancient Symbols", "Ancient Symbols", cast<char>(0x10190u), cast<char>(0x101CFu)));
+            blocks.Add(new Block(BlockId.phaistos, "Phaistos", "Phaistos Disc", cast<char>(0x101D0u), cast<char>(0x101FFu)));
+            blocks.Add(new Block(BlockId.lycian, "Lycian", "Lycian", cast<char>(0x10280u), cast<char>(0x1029Fu)));
+            blocks.Add(new Block(BlockId.carian, "Carian", "Carian", cast<char>(0x102A0u), cast<char>(0x102DFu)));
+            blocks.Add(new Block(BlockId.copticEpactNumbers, "Coptic Epact Numbers", "Coptic Epact Numbers", cast<char>(0x102E0u), cast<char>(0x102FFu)));
+            blocks.Add(new Block(BlockId.oldItalic, "Old Italic", "Old Italic", cast<char>(0x10300u), cast<char>(0x1032Fu)));
+            blocks.Add(new Block(BlockId.gothic, "Gothic", "Gothic", cast<char>(0x10330u), cast<char>(0x1034Fu)));
+            blocks.Add(new Block(BlockId.oldPermic, "Old Permic", "Old Permic", cast<char>(0x10350u), cast<char>(0x1037Fu)));
+            blocks.Add(new Block(BlockId.ugaritic, "Ugaritic", "Ugaritic", cast<char>(0x10380u), cast<char>(0x1039Fu)));
+            blocks.Add(new Block(BlockId.oldPersian, "Old Persian", "Old Persian", cast<char>(0x103A0u), cast<char>(0x103DFu)));
+            blocks.Add(new Block(BlockId.deseret, "Deseret", "Deseret", cast<char>(0x10400u), cast<char>(0x1044Fu)));
+            blocks.Add(new Block(BlockId.shavian, "Shavian", "Shavian", cast<char>(0x10450u), cast<char>(0x1047Fu)));
+            blocks.Add(new Block(BlockId.osmanya, "Osmanya", "Osmanya", cast<char>(0x10480u), cast<char>(0x104AFu)));
+            blocks.Add(new Block(BlockId.osage, "Osage", "Osage", cast<char>(0x104B0u), cast<char>(0x104FFu)));
+            blocks.Add(new Block(BlockId.elbasan, "Elbasan", "Elbasan", cast<char>(0x10500u), cast<char>(0x1052Fu)));
+            blocks.Add(new Block(BlockId.caucasianAlbanian, "Caucasian Albanian", "Caucasian Albanian", cast<char>(0x10530u), cast<char>(0x1056Fu)));
+            blocks.Add(new Block(BlockId.linearA, "Linear A", "Linear A", cast<char>(0x10600u), cast<char>(0x1077Fu)));
+            blocks.Add(new Block(BlockId.cypriotSyllabary, "Cypriot Syllabary", "Cypriot Syllabary", cast<char>(0x10800u), cast<char>(0x1083Fu)));
+            blocks.Add(new Block(BlockId.imperialAramaic, "Imperial Aramaic", "Imperial Aramaic", cast<char>(0x10840u), cast<char>(0x1085Fu)));
+            blocks.Add(new Block(BlockId.palmyrene, "Palmyrene", "Palmyrene", cast<char>(0x10860u), cast<char>(0x1087Fu)));
+            blocks.Add(new Block(BlockId.nabataean, "Nabataean", "Nabataean", cast<char>(0x10880u), cast<char>(0x108AFu)));
+            blocks.Add(new Block(BlockId.hatran, "Hatran", "Hatran", cast<char>(0x108E0u), cast<char>(0x108FFu)));
+            blocks.Add(new Block(BlockId.phoenician, "Phoenician", "Phoenician", cast<char>(0x10900u), cast<char>(0x1091Fu)));
+            blocks.Add(new Block(BlockId.lydian, "Lydian", "Lydian", cast<char>(0x10920u), cast<char>(0x1093Fu)));
+            blocks.Add(new Block(BlockId.meroiticHieroglyphs, "Meroitic Hieroglyphs", "Meroitic Hieroglyphs", cast<char>(0x10980u), cast<char>(0x1099Fu)));
+            blocks.Add(new Block(BlockId.meroiticCursive, "Meroitic Cursive", "Meroitic Cursive", cast<char>(0x109A0u), cast<char>(0x109FFu)));
+            blocks.Add(new Block(BlockId.kharoshthi, "Kharoshthi", "Kharoshthi", cast<char>(0x10A00u), cast<char>(0x10A5Fu)));
+            blocks.Add(new Block(BlockId.oldSouthArabian, "Old South Arabian", "Old South Arabian", cast<char>(0x10A60u), cast<char>(0x10A7Fu)));
+            blocks.Add(new Block(BlockId.oldNorthArabian, "Old North Arabian", "Old North Arabian", cast<char>(0x10A80u), cast<char>(0x10A9Fu)));
+            blocks.Add(new Block(BlockId.manichean, "Manichaean", "Manichaean", cast<char>(0x10AC0u), cast<char>(0x10AFFu)));
+            blocks.Add(new Block(BlockId.avestan, "Avestan", "Avestan", cast<char>(0x10B00u), cast<char>(0x10B3Fu)));
+            blocks.Add(new Block(BlockId.inscriptionalParthian, "Inscriptional Parthian", "Inscriptional Parthian", cast<char>(0x10B40u), cast<char>(0x10B5Fu)));
+            blocks.Add(new Block(BlockId.inscriptionalPahlavi, "Inscriptional Pahlavi", "Inscriptional Pahlavi", cast<char>(0x10B60u), cast<char>(0x10B7Fu)));
+            blocks.Add(new Block(BlockId.psalterPahlavi, "Psalter Pahlavi", "Psalter Pahlavi", cast<char>(0x10B80u), cast<char>(0x10BAFu)));
+            blocks.Add(new Block(BlockId.oldTurkic, "Old Turkic", "Old Turkic", cast<char>(0x10C00u), cast<char>(0x10C4Fu)));
+            blocks.Add(new Block(BlockId.oldHungarian, "Old Hungarian", "Old Hungarian", cast<char>(0x10C80u), cast<char>(0x10CFFu)));
+            blocks.Add(new Block(BlockId.rumi, "Rumi", "Rumi Numeral Symbols", cast<char>(0x10E60u), cast<char>(0x10E7Fu)));
+            blocks.Add(new Block(BlockId.brahmi, "Brahmi", "Brahmi", cast<char>(0x11000u), cast<char>(0x1107Fu)));
+            blocks.Add(new Block(BlockId.kaithi, "Kaithi", "Kaithi", cast<char>(0x11080u), cast<char>(0x110CFu)));
+            blocks.Add(new Block(BlockId.soraSompeng, "Sora Sompeng", "Sora Sompeng", cast<char>(0x110D0u), cast<char>(0x110FFu)));
+            blocks.Add(new Block(BlockId.chakma, "Chakma", "Chakma", cast<char>(0x11100u), cast<char>(0x1114Fu)));
+            blocks.Add(new Block(BlockId.mahajani, "Mahajani", "Mahajani", cast<char>(0x11150u), cast<char>(0x1117Fu)));
+            blocks.Add(new Block(BlockId.sharada, "Sharada", "Sharada", cast<char>(0x11180u), cast<char>(0x111DFu)));
+            blocks.Add(new Block(BlockId.sinhalaArchaicNumbers, "Sinhala Archaic Numbers", "Sinhala Archaic Numbers", cast<char>(0x111E0u), cast<char>(0x111FFu)));
+            blocks.Add(new Block(BlockId.khojki, "Khojki", "Khojki", cast<char>(0x11200u), cast<char>(0x1124Fu)));
+            blocks.Add(new Block(BlockId.multani, "Multani", "Multani", cast<char>(0x11280u), cast<char>(0x112AFu)));
+            blocks.Add(new Block(BlockId.khudawadi, "Khudawadi", "Khudawadi", cast<char>(0x112B0u), cast<char>(0x112FFu)));
+            blocks.Add(new Block(BlockId.grantha, "Grantha", "Grantha", cast<char>(0x11300u), cast<char>(0x1137Fu)));
+            blocks.Add(new Block(BlockId.newa, "Newa", "Newa", cast<char>(0x11400u), cast<char>(0x1147Fu)));
+            blocks.Add(new Block(BlockId.tirhuta, "Tirhuta", "Tirhuta", cast<char>(0x11480u), cast<char>(0x114DFu)));
+            blocks.Add(new Block(BlockId.siddham, "Siddham", "Siddham", cast<char>(0x11580u), cast<char>(0x115FFu)));
+            blocks.Add(new Block(BlockId.modi, "Modi", "Modi", cast<char>(0x11600u), cast<char>(0x1165Fu)));
+            blocks.Add(new Block(BlockId.mongolianSup, "Mongolian Sup", "Mongolian Supplement", cast<char>(0x11660u), cast<char>(0x1167Fu)));
+            blocks.Add(new Block(BlockId.takri, "Takri", "Takri", cast<char>(0x11680u), cast<char>(0x116CFu)));
+            blocks.Add(new Block(BlockId.ahom, "Ahom", "Ahom", cast<char>(0x11700u), cast<char>(0x1173Fu)));
+            blocks.Add(new Block(BlockId.warangCiti, "Warang Citi", "Warang Citi", cast<char>(0x118A0u), cast<char>(0x118FFu)));
+            blocks.Add(new Block(BlockId.pauCinHau, "Pau Cin Hau", "Pau Cin Hau", cast<char>(0x11AC0u), cast<char>(0x11AFFu)));
+            blocks.Add(new Block(BlockId.bhaisuki, "Bhaiksuki", "Bhaiksuki", cast<char>(0x11C00u), cast<char>(0x11C6Fu)));
+            blocks.Add(new Block(BlockId.marchen, "Marchen", "Marchen", cast<char>(0x11C70u), cast<char>(0x11CBFu)));
+            blocks.Add(new Block(BlockId.cuneiform, "Cuneiform", "Cuneiform", cast<char>(0x12000u), cast<char>(0x123FFu)));
+            blocks.Add(new Block(BlockId.cuneiformNumbers, "Cuneiform Numbers", "Cuneiform Numbers and Punctuation", cast<char>(0x12400u), cast<char>(0x1247Fu)));
+            blocks.Add(new Block(BlockId.earlyDynasticCuneiform, "Early Dynastic Cuneiform", "Early Dynastic Cuneiform", cast<char>(0x12480u), cast<char>(0x1254Fu)));
+            blocks.Add(new Block(BlockId.egyptianHieroglyphs, "Egyptian Hieroglyphs", "Egyptian Hieroglyphs", cast<char>(0x13000u), cast<char>(0x1342Fu)));
+            blocks.Add(new Block(BlockId.anatolianHieroglyphs, "Anatolian Hieroglyphs", "Anatolian Hieroglyphs", cast<char>(0x14400u), cast<char>(0x1467Fu)));
+            blocks.Add(new Block(BlockId.bamumSup, "Bamum Sup", "Bamum Supplement", cast<char>(0x16800u), cast<char>(0x16A3Fu)));
+            blocks.Add(new Block(BlockId.mro, "Mro", "Mro", cast<char>(0x16A40u), cast<char>(0x16A6Fu)));
+            blocks.Add(new Block(BlockId.bassaVah, "Bassa Vah", "Bassa Vah", cast<char>(0x16AD0u), cast<char>(0x16AFFu)));
+            blocks.Add(new Block(BlockId.pahawhHmong, "Pahawh Hmong", "Pahawh Hmong", cast<char>(0x16B00u), cast<char>(0x16B8Fu)));
+            blocks.Add(new Block(BlockId.miao, "Miao", "Miao", cast<char>(0x16F00u), cast<char>(0x16F9Fu)));
+            blocks.Add(new Block(BlockId.ideographicSymbols, "Ideographic Symbols", "Ideographic Symbols and Punctuation", cast<char>(0x16FE0u), cast<char>(0x16FFFu)));
+            blocks.Add(new Block(BlockId.tangut, "Tangut", "Tangut", cast<char>(0x17000u), cast<char>(0x187FFu)));
+            blocks.Add(new Block(BlockId.tangutComponents, "Tangut Components", "Tangut Components", cast<char>(0x18800u), cast<char>(0x18AFFu)));
+            blocks.Add(new Block(BlockId.kanaSup, "Kana Sup", "Kana Supplement", cast<char>(0x1B000u), cast<char>(0x1B0FFu)));
+            blocks.Add(new Block(BlockId.duployan, "Duployan", "Duployan", cast<char>(0x1BC00u), cast<char>(0x1BC9Fu)));
+            blocks.Add(new Block(BlockId.shorthandFormatControls, "Shorthand Format Controls", "Shorthand Format Controls", cast<char>(0x1BCA0u), cast<char>(0x1BCAFu)));
+            blocks.Add(new Block(BlockId.byzantineMusic, "Byzantine Music", "Byzantine Musical Symbols", cast<char>(0x1D000u), cast<char>(0x1D0FFu)));
+            blocks.Add(new Block(BlockId.music, "Music", "Musical Symbols", cast<char>(0x1D100u), cast<char>(0x1D1FFu)));
+            blocks.Add(new Block(BlockId.ancientGreekMusic, "Ancient Greek Music", "Ancient Greek Musical Notation", cast<char>(0x1D200u), cast<char>(0x1D24Fu)));
+            blocks.Add(new Block(BlockId.taiXuanJing, "Tai Xuan Jing", "Tai Xuan Jing Symbols", cast<char>(0x1D300u), cast<char>(0x1D35Fu)));
+            blocks.Add(new Block(BlockId.countingRod, "Counting Rod", "Counting Rod Numerals", cast<char>(0x1D360u), cast<char>(0x1D37Fu)));
+            blocks.Add(new Block(BlockId.mathAlphanum, "Math Alphanum", "Mathematical Alphanumeric Symbols", cast<char>(0x1D400u), cast<char>(0x1D7FFu)));
+            blocks.Add(new Block(BlockId.suttonSignWriting, "Sutton SignWriting", "Sutton SignWriting", cast<char>(0x1D800u), cast<char>(0x1DAAFu)));
+            blocks.Add(new Block(BlockId.glagoliticSup, "Glagolitic Sup", "Glagolitic Supplement", cast<char>(0x1E000u), cast<char>(0x1E02Fu)));
+            blocks.Add(new Block(BlockId.mendeKikakui, "Mende Kikakui", "Mende Kikakui", cast<char>(0x1E800u), cast<char>(0x1E8DFu)));
+            blocks.Add(new Block(BlockId.adlam, "Adlam", "Adlam", cast<char>(0x1E900u), cast<char>(0x1E95Fu)));
+            blocks.Add(new Block(BlockId.arabicMath, "Arabic Math", "Arabic Mathematical Alphabetic Symbols", cast<char>(0x1EE00u), cast<char>(0x1EEFFu)));
+            blocks.Add(new Block(BlockId.mahjong, "Mahjong", "Mahjong Tiles", cast<char>(0x1F000u), cast<char>(0x1F02Fu)));
+            blocks.Add(new Block(BlockId.domino, "Domino", "Domino Tiles", cast<char>(0x1F030u), cast<char>(0x1F09Fu)));
+            blocks.Add(new Block(BlockId.playingCards, "Playing Cards", "Playing Cards", cast<char>(0x1F0A0u), cast<char>(0x1F0FFu)));
+            blocks.Add(new Block(BlockId.enclosedAlphanumSup, "Enclosed Alphanum Sup", "Enclosed Alphanumeric Supplement", cast<char>(0x1F100u), cast<char>(0x1F1FFu)));
+            blocks.Add(new Block(BlockId.enclosedIdeographicSup, "Enclosed Ideographic Sup", "Enclosed Ideographic Supplement", cast<char>(0x1F200u), cast<char>(0x1F2FFu)));
+            blocks.Add(new Block(BlockId.miscPictographs, "Misc Pictographs", "Miscellaneous Symbols and Pictographs", cast<char>(0x1F300u), cast<char>(0x1F5FFu)));
+            blocks.Add(new Block(BlockId.emoticons, "Emoticons", "Emoticons", cast<char>(0x1F600u), cast<char>(0x1F64Fu)));
+            blocks.Add(new Block(BlockId.ornamentalDingbats, "Ornamental Dingbats", "Ornamental Dingbats", cast<char>(0x1F650u), cast<char>(0x1F67Fu)));
+            blocks.Add(new Block(BlockId.transportAndMap, "Transport And Map", "Transport and Map Symbols", cast<char>(0x1F680u), cast<char>(0x1F6FFu)));
+            blocks.Add(new Block(BlockId.alchemical, "Alchemical", "Alchemical Symbols", cast<char>(0x1F700u), cast<char>(0x1F77Fu)));
+            blocks.Add(new Block(BlockId.geometricShapesExt, "Geometric Shapes Ext", "Geometric Shapes Extended", cast<char>(0x1F780u), cast<char>(0x1F7FFu)));
+            blocks.Add(new Block(BlockId.supArrowsC, "Sup Arrows C", "Supplemental Arrows-C", cast<char>(0x1F800u), cast<char>(0x1F8FFu)));
+            blocks.Add(new Block(BlockId.supSymbolsAndPictographs, "Sup Symbols And Pictographs", "Supplemental Symbols and Pictographs", cast<char>(0x1F900u), cast<char>(0x1F9FFu)));
+            blocks.Add(new Block(BlockId.cjkExtB, "CJK Ext B", "CJK Unified Ideographs Extension B", cast<char>(0x20000u), cast<char>(0x2A6DFu)));
+            blocks.Add(new Block(BlockId.cjkExtC, "CJK Ext C", "CJK Unified Ideographs Extension C", cast<char>(0x2A700u), cast<char>(0x2B73Fu)));
+            blocks.Add(new Block(BlockId.cjkExtD, "CJK Ext D", "CJK Unified Ideographs Extension D", cast<char>(0x2B740u), cast<char>(0x2B81Fu)));
+            blocks.Add(new Block(BlockId.cjkExtE, "CJK Ext E", "CJK Unified Ideographs Extension E", cast<char>(0x2B820u), cast<char>(0x2CEAFu)));
+            blocks.Add(new Block(BlockId.cjkCompatIdeographsSup, "CJK Compat Ideographs Sup", "CJK Compatibility Ideographs Supplement", cast<char>(0x2F800u), cast<char>(0x2FA1Fu)));
+            blocks.Add(new Block(BlockId.tags, "Tags", "Tags", cast<char>(0xE0000u), cast<char>(0xE007Fu)));
+            blocks.Add(new Block(BlockId.vsSup, "VS Sup", "Variation Selectors Supplement", cast<char>(0xE0100u), cast<char>(0xE01EFu)));
+            blocks.Add(new Block(BlockId.supPuaA, "Sup PUA A", "Supplementary Private Use Area-A", cast<char>(0xF0000u), cast<char>(0xFFFFFu)));
+            blocks.Add(new Block(BlockId.supPuaB, "Sup PUA B", "Supplementary Private Use Area-B", cast<char>(0x100000u), cast<char>(0x10FFFFu)));
+            foreach (Block block in blocks)
+            {
+                blockIdMap[cast<ushort>(block.Id)] = block;
+                shortNameMap[MakeCanonicalPropertyName(block.ShortName)] = block;
+                longNameMap[MakeCanonicalPropertyName(block.LongName)] = block;
+            }
+        }
+        private static BlockTable instance;
+        private List<Block> blocks;
+        private HashMap<ushort, Block> blockIdMap;
+        private HashMap<string, Block> shortNameMap;
+        private HashMap<string, Block> longNameMap;
+    }
+
+    public Block GetBlock(BlockId id)
+    {
+        return BlockTable.Instance.GetBlock(id);
+    }
+
+    public Block GetBlockByShortName(string shortName)
+    {
+        return BlockTable.Instance.GetBlockByShortName(shortName); 
+    }
+
+    public Block GetBlockByLongName(string longName)
+    {
+        return BlockTable.Instance.GetBlockByLongName(longName); 
+    }
+
+    public enum GeneralCategoryId : uint
+    {
+        none = 0u,
+        Lu = 1u << 0u, Ll = 1u << 1u, Lt = 1u << 2u, Lm = 1u << 3u, Lo = 1u << 4u, 
+        LC = Lu | Ll | Lt,
+        L = Lu | Ll | Lt | Lm | Lo,
+        Mn = 1u << 5u, Mc = 1u << 6u, Me = 1u << 7u,
+        M = Mn | Mc | Me,
+        Nd = 1u << 8u, Nl = 1u << 9u, No = 1u << 10u,
+        N = Nd | Nl | No,
+        Pc = 1u << 11u, Pd = 1u << 12u, Ps = 1u << 13u, Pe = 1u << 14u, Pi = 1u << 15u, Pf = 1u << 16u, Po = 1u << 17u,
+        P = Pc | Pd | Ps | Pe | Pi | Pf | Po,
+        Sm = 1u << 18u, Sc = 1u << 19u, Sk = 1u << 20u, So = 1u << 21u,
+        S = Sm | Sc | Sk | So,
+        Zs = 1u << 22u, Zl = 1u << 23u, Zp = 1u << 24u,
+        Z = Zs | Zl | Zp,
+        Cc = 1u << 25u, Cf = 1u << 26u, Cs = 1u << 27u, Co = 1u << 28u, Cn = 1u << 29u,
+        C = Cc | Cf | Cs | Co | Cn,
+        G = L | M | N | P | S | Zs,
+        B = L | N | P | S | Zs
+    }
+
+    public class GeneralCategory
+    {
+        public GeneralCategory(GeneralCategoryId id, string shortName, string longName)
+        {
+            this.id = id;
+            this.shortName = shortName;
+            this.longName = longName;
+        }
+        public GeneralCategoryId Id
+        {
+            get { return id; }
+        }
+        public string ShortName
+        {
+            get { return shortName; }
+        }
+        public string LongName
+        {
+            get { return longName; }
+        }
+        private GeneralCategoryId id;
+        private string shortName;
+        private string longName;
+    }
+
+    public class GeneralCategoryTable
+    {
+        static GeneralCategoryTable()
+        {
+            instance = new GeneralCategoryTable();
+        }
+        public static GeneralCategoryTable Instance
+        {
+            get { return instance; }
+        }
+        public GeneralCategory GetGeneralCategory(GeneralCategoryId id)
+        {
+            return generalCategoryIdMap[cast<uint>(id)];
+        }
+        public GeneralCategory GetGeneralCategoryByShortName(string shortName)
+        {
+            return shortNameMap[MakeCanonicalPropertyName(shortName)];
+        }
+        public GeneralCategory GetGeneralCategoryByLongName(string longName)
+        {
+            return longNameMap[MakeCanonicalPropertyName(longName)];
+        }
+        private GeneralCategoryTable()
+        {
+            generalCategories = new List<GeneralCategory>();
+            generalCategoryIdMap = new HashMap<uint, GeneralCategory>();
+            shortNameMap = new HashMap<string, GeneralCategory>();
+            longNameMap = new HashMap<string, GeneralCategory>();
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Lu, "Lu", "Uppercase Letter"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Lu, "Ll", "Lowercase Letter"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Lt, "Lt", "Titlecase Letter"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.LC, "LC", "Cased Letter"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Lm, "Lm", "Modifier Letter"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Lo, "Lo", "Other Letter"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.L, "L", "Letter"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Mn, "Mn", "Nonspacing Mark"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Mc, "Mc", "Spacing Mark"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Me, "Me", "Enclosing Mark"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.M, "M", "Mark"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Nd, "Nd", "Decimal Number"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Nl, "Nl", "Letter Number"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.No, "No", "Other Number"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.N, "N", "Number"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Pc, "Pc", "Connector Punctuation"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Pd, "Pd", "Dash Punctuation"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Ps, "Ps", "Open Punctuation"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Pe, "Pe", "Close Punctuation"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Pi, "Pi", "Initial Punctuation"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Pf, "Pf", "Final Punctuation"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Po, "Po", "Other Punctuation"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.P, "P", "Punctuation"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Sm, "Sm", "Math Symbol"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Sc, "Sc", "Currency Symbol"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Sk, "Sk", "Modifier Symbol"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.So, "So", "Other Symbol"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.S, "S", "Symbol"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Zs, "Zs", "Space Separator"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Zl, "Zl", "Line Separator"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Zp, "Zp", "Paragraph Separator"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Z, "Z", "Separator"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Cc, "Cc", "Control"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Cf, "Cf", "Format"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Cs, "Cs", "Surrogate"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Co, "Co", "Private Use"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.Cn, "Cn", "Unassigned"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.C, "C", "Other"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.G, "G", "Graphic"));
+            generalCategories.Add(new GeneralCategory(GeneralCategoryId.B, "B", "Base"));
+            foreach (GeneralCategory generalCategory in generalCategories)
+            {
+                generalCategoryIdMap[cast<uint>(generalCategory.Id)] = generalCategory;
+                shortNameMap[MakeCanonicalPropertyName(generalCategory.ShortName)] = generalCategory;
+                longNameMap[MakeCanonicalPropertyName(generalCategory.LongName)] = generalCategory;
+            }
+        }
+        private static GeneralCategoryTable instance;
+        private List<GeneralCategory> generalCategories;
+        private HashMap<uint, GeneralCategory> generalCategoryIdMap;
+        private HashMap<string, GeneralCategory> shortNameMap;
+        private HashMap<string, GeneralCategory> longNameMap;
+    }
+
+    public GeneralCategory GetGeneralCategory(GeneralCategoryId id)
+    {
+        return GeneralCategoryTable.Instance.GetGeneralCategory(id);
+    }
+
+    public GeneralCategory GetGeneralCategoryByShortName(string shortName)
+    {
+        return GeneralCategoryTable.Instance.GetGeneralCategoryByShortName(shortName);
+    }
+
+    public GeneralCategory GetGeneralCategoryByLongName(string longName)
+    {
+        return GeneralCategoryTable.Instance.GetGeneralCategoryByLongName(longName);
+    }
+
+    public enum AgeId : byte
+    {
+        age_unassigned = 0u,
+        age_1_1, 
+        age_2_0, age_2_1,
+        age_3_0, age_3_1, age_3_2,
+        age_4_0, age_4_1,
+        age_5_0, age_5_1, age_5_2,
+        age_6_0, age_6_1, age_6_2, age_6_3,
+        age_7_0,
+        age_8_0,
+        age_9_0
+    }
+
+    public class Age
+    {
+        public Age(AgeId id, string version)
+        {
+            this.id = id;
+            this.version = version;
+        }
+        public AgeId Id
+        {
+            get { return id; }
+        }
+        public string Version
+        {
+            get { return version; }
+        }
+        private AgeId id;
+        private string version;
+    }
+
+    public class AgeTable
+    {
+        static AgeTable()
+        {
+            instance = new AgeTable();
+        }
+        public static AgeTable Instance
+        {
+            get { return instance; }
+        }
+        public Age GetAge(AgeId id)
+        {
+            return ageIdMap[cast<byte>(id)];
+        }
+        public Age GetAge(string version)
+        {
+            return versionMap[version];
+        }
+        private AgeTable()
+        {
+            ages = new List<Age>();
+            ageIdMap = new HashMap<byte, Age>();
+            versionMap = new HashMap<string, Age>();
+            ages.Add(new Age(AgeId.age_1_1, "1.1"));
+            ages.Add(new Age(AgeId.age_2_0, "2.0"));
+            ages.Add(new Age(AgeId.age_2_1, "2.1"));
+            ages.Add(new Age(AgeId.age_3_0, "3.0"));
+            ages.Add(new Age(AgeId.age_3_1, "3.1"));
+            ages.Add(new Age(AgeId.age_3_2, "3.2"));
+            ages.Add(new Age(AgeId.age_4_0, "4.0"));
+            ages.Add(new Age(AgeId.age_4_1, "4.1"));
+            ages.Add(new Age(AgeId.age_5_0, "5.0"));
+            ages.Add(new Age(AgeId.age_5_1, "5.1"));
+            ages.Add(new Age(AgeId.age_5_2, "5.2"));
+            ages.Add(new Age(AgeId.age_6_0, "6.0"));
+            ages.Add(new Age(AgeId.age_6_1, "6.1"));
+            ages.Add(new Age(AgeId.age_6_2, "6.2"));
+            ages.Add(new Age(AgeId.age_6_3, "6.3"));
+            ages.Add(new Age(AgeId.age_7_0, "7.0"));
+            ages.Add(new Age(AgeId.age_8_0, "8.0"));
+            ages.Add(new Age(AgeId.age_9_0, "9.0"));
+            foreach (Age age in ages)
+            {
+                ageIdMap[cast<byte>(age.Id)] = age;
+                versionMap[age.Version] = age;
+            }
+        }
+        private static AgeTable instance;
+        private List<Age> ages;
+        private HashMap<byte, Age> ageIdMap;
+        private HashMap<string, Age> versionMap;
+    }
+
+    public Age GetAge(AgeId id)
+    {
+        return AgeTable.Instance.GetAge(id);
+    }
+
+    public Age GetAge(string version)
+    {
+        return AgeTable.Instance.GetAge(version);
+    }
+
+    public enum ScriptId : byte
+    {
+        none = 0u,
+        adlm, aghb, ahom, arab, armi, armn, avst,
+        bali, bamu, bass, batk, beng, bhks, bopo, brah, brai, bugi, buhd,
+        cakm, cans, cari, cham, cher, copt, cprt, cyrl,
+        deva, dsrt, dupl, 
+        elba, egyp, ethi, 
+        geor, glag, goth, gran, grek, gujr, guru, 
+        hang, hani, hano, hatr, hebr, hira, hluw, hmng, hrkt, hung,
+        ital, 
+        java,
+        kali, kana, khar, khmr, khoj, knda, kthi, 
+        lana, laoo, latn, lepc, limb, lina, linb, lisu, lyci, lydi,
+        mahj, mand, mani, marc, mend, merc, mero, mlym, modi, mong, mroo, mtei, mult, mymr,
+        narb, nbat, newa, nkoo, 
+        ogam, olck, orkh, orya, osge, osma, 
+        palm, pauc, perm, phag, phli, phlp, phnx, plrd, prti,
+        qaai,
+        rjng, runr, 
+        samr, sarb, saur, sgnw, shaw, shrd, sidd, sind, sinh, sora, sund, sylo, syrc, 
+        tagb, takr, tale, talu, taml, tang, tavt, telu, tfng, tglg, thaa, thai, tibt, tirh,
+        ugar,
+        vaii, 
+        wara,
+        xpeo, xsux,
+        yiii,
+        zinh, zyyy, zzzz
+    }
+
+    public class Script
+    {
+        public Script(ScriptId id, string shortName, string longName)
+        {
+            this.id = id;
+            this.shortName = shortName;
+            this.longName = longName;
+        }
+        public ScriptId Id
+        {
+            get { return id; }
+        }
+        public string ShortName
+        {
+            get { return shortName; }
+        }
+        public string LongName
+        {
+            get { return longName; }
+        }
+        private ScriptId id;
+        private string shortName;
+        private string longName;
+    }
+
+    public class ScriptTable
+    {
+        static ScriptTable()
+        {
+            instance = new ScriptTable();
+        }
+        public static ScriptTable Instance
+        {
+            get { return instance; }
+        }
+        public Script GetScript(ScriptId id)
+        {
+            return scriptIdMap[cast<byte>(id)];
+        }
+        public Script GetScriptByShortName(string shortName)
+        {
+            return shortNameMap[MakeCanonicalPropertyName(shortName)];
+        }
+        public Script GetScriptByLongName(string longName)
+        {
+            return longNameMap[MakeCanonicalPropertyName(longName)];
+        }
+        private ScriptTable()
+        {
+            scripts = new List<Script>();
+            scriptIdMap = new HashMap<byte, Script>();
+            shortNameMap = new HashMap<string, Script>();
+            longNameMap = new HashMap<string, Script>();
+            scripts.Add(new Script(ScriptId.adlm, "Adlm", "Adlam"));
+            scripts.Add(new Script(ScriptId.aghb, "Aghb", "Caucasian Albanian"));
+            scripts.Add(new Script(ScriptId.ahom, "Ahom", "Ahom"));
+            scripts.Add(new Script(ScriptId.arab, "Arab", "Arabic"));
+            scripts.Add(new Script(ScriptId.armi, "Armi", "Imperial Aramaic"));
+            scripts.Add(new Script(ScriptId.armn, "Armn", "Armenian"));
+            scripts.Add(new Script(ScriptId.avst, "Avst", "Avestan"));
+            scripts.Add(new Script(ScriptId.bali, "Bali", "Balinese"));
+            scripts.Add(new Script(ScriptId.bamu, "Bamu", "Bamum"));
+            scripts.Add(new Script(ScriptId.bass, "Bass", "Bassa Vah"));
+            scripts.Add(new Script(ScriptId.batk, "Batk", "Batak")); 
+            scripts.Add(new Script(ScriptId.beng, "Beng", "Bengali"));
+            scripts.Add(new Script(ScriptId.bhks, "Bhks", "Bhaisuki"));
+            scripts.Add(new Script(ScriptId.bopo, "Bopo", "Bopomofo"));
+            scripts.Add(new Script(ScriptId.brah, "Brah", "Brahmi"));
+            scripts.Add(new Script(ScriptId.brai, "Brai", "Braille"));
+            scripts.Add(new Script(ScriptId.bugi, "Bugi", "Buginese"));
+            scripts.Add(new Script(ScriptId.buhd, "Buhd", "Buhid"));
+            scripts.Add(new Script(ScriptId.cakm, "Cakm", "Chakma"));
+            scripts.Add(new Script(ScriptId.cans, "Cans", "Canadian Aboriginal"));
+            scripts.Add(new Script(ScriptId.cari, "Cari", "Carian"));
+            scripts.Add(new Script(ScriptId.cham, "Cham", "Cham"));
+            scripts.Add(new Script(ScriptId.cher, "Cher", "Cherokee"));
+            scripts.Add(new Script(ScriptId.copt, "Copt", "Coptic"));
+            scripts.Add(new Script(ScriptId.cprt, "Cprt", "Cypriot"));
+            scripts.Add(new Script(ScriptId.cyrl, "Cyrl", "Cyrillic"));
+            scripts.Add(new Script(ScriptId.deva, "Deva", "Devanagari"));
+            scripts.Add(new Script(ScriptId.dsrt, "Dsrt", "Deseret"));
+            scripts.Add(new Script(ScriptId.dupl, "Dupl", "Duployan"));
+            scripts.Add(new Script(ScriptId.egyp, "Egyp", "Egyptian Hieroglyphs"));
+            scripts.Add(new Script(ScriptId.elba, "Elba", "Elbasan"));
+            scripts.Add(new Script(ScriptId.ethi, "Ethi", "Ethiopian"));
+            scripts.Add(new Script(ScriptId.geor, "Geor", "Georgian"));
+            scripts.Add(new Script(ScriptId.glag, "Glag", "Glagolitic"));
+            scripts.Add(new Script(ScriptId.goth, "Goth", "Gothic"));
+            scripts.Add(new Script(ScriptId.gran, "Gran", "Grantha"));
+            scripts.Add(new Script(ScriptId.grek, "Grek", "Greek"));
+            scripts.Add(new Script(ScriptId.gujr, "Gujr", "Gujarati"));
+            scripts.Add(new Script(ScriptId.guru, "Guru", "Gurmukhi"));
+            scripts.Add(new Script(ScriptId.hang, "Hang", "Hangul"));
+            scripts.Add(new Script(ScriptId.hani, "Hani", "Han"));
+            scripts.Add(new Script(ScriptId.hano, "Hano", "Hanunoo"));
+            scripts.Add(new Script(ScriptId.hatr, "Hatr", "Hatran"));
+            scripts.Add(new Script(ScriptId.hebr, "Hebr", "Hebrew"));
+            scripts.Add(new Script(ScriptId.hira, "Hira", "Hiragana"));
+            scripts.Add(new Script(ScriptId.hluw, "Hluw", "Anatolian Hieroglyphs"));
+            scripts.Add(new Script(ScriptId.hmng, "Hmng", "Pahawh Hmong"));
+            scripts.Add(new Script(ScriptId.hrkt, "Hrkt", "Katakana Or Hiragana"));
+            scripts.Add(new Script(ScriptId.hung, "Hung", "Old Hungarian"));
+            scripts.Add(new Script(ScriptId.ital, "Ital", "Old Italic"));
+            scripts.Add(new Script(ScriptId.java, "Java", "Javanese"));
+            scripts.Add(new Script(ScriptId.kali, "Kali", "Kayah Li"));
+            scripts.Add(new Script(ScriptId.kana, "Kana", "Katakana"));
+            scripts.Add(new Script(ScriptId.khar, "Khar", "Kharoshthi"));
+            scripts.Add(new Script(ScriptId.khmr, "Khmr", "Khmer"));
+            scripts.Add(new Script(ScriptId.khoj, "Khoj", "Khojki"));
+            scripts.Add(new Script(ScriptId.knda, "Knda", "Kannada"));
+            scripts.Add(new Script(ScriptId.kthi, "Kthi", "Kaithi"));
+            scripts.Add(new Script(ScriptId.lana, "Lana", "Tai Tham"));
+            scripts.Add(new Script(ScriptId.laoo, "Laoo", "Lao"));
+            scripts.Add(new Script(ScriptId.latn, "Latn", "Latin"));
+            scripts.Add(new Script(ScriptId.lepc, "Lepc", "Lepcha"));
+            scripts.Add(new Script(ScriptId.limb, "Limb", "Limbu"));
+            scripts.Add(new Script(ScriptId.lina, "Lina", "Linear A"));
+            scripts.Add(new Script(ScriptId.linb, "Linb", "Linear B"));
+            scripts.Add(new Script(ScriptId.lisu, "Lisu", "Lisu"));
+            scripts.Add(new Script(ScriptId.lyci, "Lyci", "Lycian"));
+            scripts.Add(new Script(ScriptId.lydi, "Lydi", "Lydian"));
+            scripts.Add(new Script(ScriptId.mahj, "Mahj", "Mahajani"));
+            scripts.Add(new Script(ScriptId.mand, "Mand", "Mandaic"));
+            scripts.Add(new Script(ScriptId.mani, "Mani", "Manichaean"));
+            scripts.Add(new Script(ScriptId.marc, "Marc", "Marchen"));
+            scripts.Add(new Script(ScriptId.mend, "Mend", "Mende Kikakui"));
+            scripts.Add(new Script(ScriptId.merc, "Merc", "Meroitic Cursive"));
+            scripts.Add(new Script(ScriptId.mero, "Mero", "Meroitic Hieroglyphs"));
+            scripts.Add(new Script(ScriptId.mlym, "Mlym", "Malayalam"));
+            scripts.Add(new Script(ScriptId.modi, "Modi", "Modi"));
+            scripts.Add(new Script(ScriptId.mong, "Mong", "Mongolian"));
+            scripts.Add(new Script(ScriptId.mroo, "Mroo", "Mro"));
+            scripts.Add(new Script(ScriptId.mtei, "Mtei", "Meetei Mayak"));
+            scripts.Add(new Script(ScriptId.mult, "Mult", "Multani"));
+            scripts.Add(new Script(ScriptId.mymr, "Mymr", "Myanmar"));
+            scripts.Add(new Script(ScriptId.narb, "Narb", "Old North Arabian"));
+            scripts.Add(new Script(ScriptId.nbat, "Nbat", "Nabataean"));
+            scripts.Add(new Script(ScriptId.newa, "Newa", "Newa"));
+            scripts.Add(new Script(ScriptId.nkoo, "Nkoo", "Nko"));
+            scripts.Add(new Script(ScriptId.ogam, "Ogam", "Ogham"));
+            scripts.Add(new Script(ScriptId.olck, "Olck", "Ol Chiki"));
+            scripts.Add(new Script(ScriptId.orkh, "Orkh", "Old Turkic"));
+            scripts.Add(new Script(ScriptId.orya, "Orya", "Oriya"));
+            scripts.Add(new Script(ScriptId.osge, "Osge", "Osage"));
+            scripts.Add(new Script(ScriptId.osma, "Osma", "Osmanya"));
+            scripts.Add(new Script(ScriptId.palm, "Palm", "Palmyrene"));
+            scripts.Add(new Script(ScriptId.pauc, "Pauc", "Pau Cin Hau"));
+            scripts.Add(new Script(ScriptId.perm, "Perm", "Old Permic"));
+            scripts.Add(new Script(ScriptId.phag, "Phag", "Phags Pa"));
+            scripts.Add(new Script(ScriptId.phli, "Phli", "Inscriptional Pahlavi"));
+            scripts.Add(new Script(ScriptId.phlp, "Phlp", "Psalter Pahlavi"));
+            scripts.Add(new Script(ScriptId.phnx, "Phnx", "Phoenician"));
+            scripts.Add(new Script(ScriptId.plrd, "Plrd", "Miao"));
+            scripts.Add(new Script(ScriptId.prti, "Prti", "Inscriptional Parthian"));
+            scripts.Add(new Script(ScriptId.rjng, "Rjng", "Rejang"));
+            scripts.Add(new Script(ScriptId.runr, "Runr", "Runic"));
+            scripts.Add(new Script(ScriptId.samr, "Samr", "Samaritan"));
+            scripts.Add(new Script(ScriptId.sarb, "Sarb", "Old South Arabian"));
+            scripts.Add(new Script(ScriptId.saur, "Saur", "Saurashtra"));
+            scripts.Add(new Script(ScriptId.sgnw, "Sgnw", "SignWriting"));
+            scripts.Add(new Script(ScriptId.shaw, "Shaw", "Shawian"));
+            scripts.Add(new Script(ScriptId.shrd, "Shrd", "Sharada"));
+            scripts.Add(new Script(ScriptId.sidd, "Sidd", "Shiddham"));
+            scripts.Add(new Script(ScriptId.sind, "Sind", "Khudawadi"));
+            scripts.Add(new Script(ScriptId.sinh, "Sinh", "Sinhala"));
+            scripts.Add(new Script(ScriptId.sora, "Sora", "Sora Sompeng"));
+            scripts.Add(new Script(ScriptId.sund, "Sund", "Sundanese"));
+            scripts.Add(new Script(ScriptId.sylo, "Sylo", "Syloti Nagri"));
+            scripts.Add(new Script(ScriptId.syrc, "Syrc", "Syriac"));
+            scripts.Add(new Script(ScriptId.tagb, "Tagb", "Tagbanwa"));
+            scripts.Add(new Script(ScriptId.takr, "Takr", "Takri"));
+            scripts.Add(new Script(ScriptId.tale, "Tale", "Tai Le"));
+            scripts.Add(new Script(ScriptId.talu, "Talu", "New Tai Lue"));
+            scripts.Add(new Script(ScriptId.taml, "Taml", "Tamil"));
+            scripts.Add(new Script(ScriptId.tang, "Tang", "Tangut"));
+            scripts.Add(new Script(ScriptId.tavt, "Tavt", "Tai Viet"));
+            scripts.Add(new Script(ScriptId.telu, "Telu", "Telugu"));
+            scripts.Add(new Script(ScriptId.tfng, "Tfng", "Tifinag"));
+            scripts.Add(new Script(ScriptId.tglg, "Tglg", "Tagalog"));
+            scripts.Add(new Script(ScriptId.thaa, "Thaa", "Thaana"));
+            scripts.Add(new Script(ScriptId.thai, "Thai", "Thai"));
+            scripts.Add(new Script(ScriptId.tibt, "Tibt", "Tibetan"));
+            scripts.Add(new Script(ScriptId.tirh, "Tirh", "Tirhuta"));
+            scripts.Add(new Script(ScriptId.ugar, "Ugar", "Ugaritic"));
+            scripts.Add(new Script(ScriptId.vaii, "Vaii", "Vai"));
+            scripts.Add(new Script(ScriptId.wara, "Wara", "Warang Citi"));
+            scripts.Add(new Script(ScriptId.xpeo, "Xpeo", "Old Persian"));
+            scripts.Add(new Script(ScriptId.xsux, "Xsux", "Cuneiform"));
+            scripts.Add(new Script(ScriptId.yiii, "Yiii", "Yi"));
+            scripts.Add(new Script(ScriptId.zinh, "Zinh", "Inherited"));
+            scripts.Add(new Script(ScriptId.zyyy, "Zyyy", "Common"));
+            scripts.Add(new Script(ScriptId.zzzz, "Zzzz", "Unknown"));
+            foreach (Script script in scripts)
+            {
+                scriptIdMap[cast<byte>(script.Id)] = script;
+                shortNameMap[MakeCanonicalPropertyName(script.ShortName)] = script;
+                longNameMap[MakeCanonicalPropertyName(script.LongName)] = script;
+            }
+        }
+        private static ScriptTable instance;
+        private List<Script> scripts;
+        private HashMap<byte, Script> scriptIdMap;
+        private HashMap<string, Script> shortNameMap;
+        private HashMap<string, Script> longNameMap;
+    }
+
+    public Script GetScript(ScriptId id)
+    {
+        return ScriptTable.Instance.GetScript(id);
+    }
+
+    public Script GetScriptByShortName(string shortName)
+    {
+        return ScriptTable.Instance.GetScriptByShortName(shortName);
+    }
+
+    public Script GetScriptByLongName(string longName)
+    {
+        return ScriptTable.Instance.GetScriptByLongName(longName);
     }
 
     public class CharacterInfo
     {
         public CharacterInfo()
         {
-            this.code = cast<char>(0u);
-            this.category = Category.none;
-            this.toLower = cast<char>(0u);
-            this.toUpper = cast<char>(0u);
+            binaryProperties = 0u;
+            generalCategory = GeneralCategoryId.none;
+            upper = cast<char>(0u);
+            lower = cast<char>(0u);
+            title = cast<char>(0u);
+            folding = cast<char>(0u);
+            block = BlockId.none;
+            age = AgeId.age_unassigned;
+            script = ScriptId.none;
         }
-        public CharacterInfo(char code, Category category, char toLower, char toUpper) 
+        public bool GetBinaryProperty(BinaryPropertyId binaryPropertyId)
         {
-            this.code = code;
-            this.category = category;
-            this.toLower = toLower;
-            this.toUpper = toUpper;
+            ulong mask = cast<ulong>(1u) << cast<ulong>(cast<byte>(binaryPropertyId));
+            return (binaryProperties & mask) != 0u;
         }
-        public char Code
+        public bool HasGeneralCategory(GeneralCategoryId generalCategory_)
         {
-            get { return code; }
+            return (generalCategory & generalCategory_) != GeneralCategoryId.none;
         }
-        public Category Cat 
+        public GeneralCategoryId GeneralCategoryValue
         {
-            get { return category; }
-        }
-        public char Lower
-        {
-            get { return toLower; }
+            get { return generalCategory; }
         }
         public char Upper
         {
-            get { return toUpper; }
+            get { return upper; }
         }
-        public bool IsLetter
+        public char Lower
         {
-            get { return (category & Category.letter) != Category.none; }
+            get { return lower; }
         }
-        public bool IsMark
+        public char Title
         {
-            get { return (category & Category.mark) != Category.none; }
+            get { return title; }
         }
-        public bool IsNumber
+        public char Folding
         {
-            get { return (category & Category.number) != Category.none; }
+            get { return folding; }
         }
-        public bool IsPunctuation
+        public BlockId BlockValue
         {
-            get { return (category & Category.punctuation) != Category.none; }
+            get { return block; }
         }
-        public bool IsSymbol
+        public AgeId AgeValue
         {
-            get { return (category & Category.symbol) != Category.none; }
+            get { return age; }
         }
-        public bool IsSeparator
+        public ScriptId ScriptValue
         {
-            get { return (category & Category.separator) != Category.none; }
-        }
-        public void Read(BinaryReader unicodeBinReader)
-        {
-            code = unicodeBinReader.ReadChar();
-            category = cast<Category>(unicodeBinReader.ReadUInt());
-            toLower = unicodeBinReader.ReadChar();
-            toUpper = unicodeBinReader.ReadChar();
-        }
-        public void Write(BinaryWriter unicodeBinWriter)
-        {
-            unicodeBinWriter.Write(code);
-            unicodeBinWriter.Write(cast<uint>(category));
-            unicodeBinWriter.Write(toLower);
-            unicodeBinWriter.Write(toUpper);
-        }
-        private char code;
-        private Category category;
-        private char toLower;
-        private char toUpper;
-    }
-
-    public class UnicodeBinHeader
-    {
-        public UnicodeBinHeader()
-        {
-            this.numCharInfoPages = 0u;
-            this.startCharNameTable = 0u;
-            this.startCharInfoPagesPos = 0u;
-            this.headerMagic = "UNICODE1";
-        }
-        public void Write(BinaryWriter writer)
-        {
-            foreach (char c in headerMagic)
-            {
-                byte b = cast<byte>(c);
-                writer.Write(b);
-            }
-            writer.Write(numCharInfoPages);
-            writer.Write(startCharNameTable);
+            get { return script; }
         }
         public void Read(BinaryReader reader)
         {
-            int headerMagicLen = headerMagic.Length;
-            StringBuilder headerMagicBuilder = new StringBuilder();
-            for (int i = 0; i < headerMagicLen; ++i)
-            {
-                byte b = reader.ReadByte();
-                headerMagicBuilder.Append(cast<char>(b));
-            }
-            string magic = headerMagicBuilder.ToString();
-            if (magic != headerMagic)
-            {
-                if (magic.Substring(0, headerMagicLen - 1) != headerMagic.Substring(0, headerMagicLen - 1))
-                {
-                    throw new Exception("invalid unicode.bin header magic (not '" + headerMagic + "')");
-                }
-                if (magic.Substring(headerMagicLen - 1) != headerMagic.Substring(headerMagicLen - 1))
-                {
-                    throw new Exception("invalid unicode.bin version ('" + magic.Substring(headerMagicLen - 1) + "' read, '" + headerMagic.Substring(headerMagicLen - 1) + "' expected");
-                }
-            }
-            numCharInfoPages = reader.ReadUInt();
-            startCharNameTable  = reader.ReadUInt();
-            startCharInfoPagesPos = cast<uint>(reader.Tell());
+            binaryProperties = reader.ReadULong();
+            generalCategory = cast<GeneralCategoryId>(reader.ReadUInt());
+            upper = reader.ReadChar();
+            lower = reader.ReadChar();
+            title = reader.ReadChar();
+            folding = reader.ReadChar();
+            block = cast<BlockId>(reader.ReadUShort());
+            age = cast<AgeId>(reader.ReadByte());
+            script = cast<ScriptId>(reader.ReadByte());
         }
-        public uint NumCharInfoPages
-        {
-            get { return numCharInfoPages; }
-            set { numCharInfoPages = value; }
-        }
-        public uint StartCharNameTable
-        {
-            get { return startCharNameTable; }
-            set { startCharNameTable = value; }
-        }
-        public uint StartCharInfoPagesPos
-        {
-            get { return startCharInfoPagesPos; }
-        }
-        private uint numCharInfoPages;
-        private uint startCharNameTable;
-        private uint startCharInfoPagesPos;
-        private string headerMagic;
+        private ulong binaryProperties;
+        private GeneralCategoryId generalCategory;
+        private char upper;
+        private char lower;
+        private char title;
+        private char folding;
+        private BlockId block;
+        private AgeId age;
+        private ScriptId script;
     }
 
-    public const uint numCharactersInPage = 4096u;
-    public const uint charInfoPageSize = cast<uint>(4u) * 4u * numCharactersInPage;
-    public const uint numNamesInPage = 4096u;
+    public const int numInfosInPage = 1024;
+    public const uint characterInfoSize = 32u;
+    public const uint characterInfoPageSize = cast<ulong>(numInfosInPage) * characterInfoSize;
 
-    public class CharInfoPage
+    public enum NumericTypeId : byte
     {
-        public CharInfoPage()
-        {
-            charInfos = new CharacterInfo[cast<int>(numCharactersInPage)];
-        }
-        public void Read(BinaryReader reader)
-        {
-            int n = charInfos.Length;
-            for (int i = 0; i < n; ++i)
-            {
-                CharacterInfo charInfo = new CharacterInfo();
-                charInfo.Read(reader);
-                charInfos[i] = charInfo;
-            }
-        }
-        public void Write(BinaryWriter writer)
-        {
-            CharacterInfo emptyCharInfo = new CharacterInfo();
-            foreach (CharacterInfo charInfo in charInfos)
-            {
-                if (charInfo == null)
-                {
-                    emptyCharInfo.Write(writer);
-                }
-                else
-                {
-                    charInfo.Write(writer);
-                }
-            }
-        }
-        public CharacterInfo this[int index]
-        {
-            get { return charInfos[index]; }
-            set { charInfos[index] = value; }
-        }
-        CharacterInfo[] charInfos;
+        none = 0u,
+        de, di, nu
     }
 
-    public class CharNameTableHeader
+    public class NumericType
     {
-        public CharNameTableHeader()
+        public NumericType(NumericTypeId id, string shortName, string longName)
         {
-            this.numCharNamePages = 0u;
-            this.pageStarts = null;
+            this.id = id;
+            this.shortName = shortName;
+            this.longName = longName;
         }
-        public void Write(BinaryWriter writer)
+        public NumericTypeId Id
         {
-            writer.Write(numCharNamePages);
-            foreach (uint pageStart in pageStarts)
-            {
-                writer.Write(pageStart);
-            }
+            get { return id; }
         }
-        public void Read(BinaryReader reader)
+        public string ShortName
         {
-            numCharNamePages = reader.ReadUInt();
-            pageStarts = new uint[cast<int>(numCharNamePages)];
-            for (uint i = 0u; i < numCharNamePages; ++i)
-            {
-                pageStarts[cast<int>(i)] = reader.ReadUInt();
-            }
+            get { return shortName; }
         }
-        public uint NumCharNamePages
+        public string LongName
         {
-            get 
-            { 
-                return numCharNamePages; 
-            }
-            set 
-            { 
-                numCharNamePages = value; 
-                pageStarts = new uint[cast<int>(numCharNamePages)];
-            }
+            get { return longName; }
         }
-        public uint GetPageStart(int pageIndex)
-        {
-            return pageStarts[pageIndex];
-        }
-        public void SetPageStart(int pageIndex, uint pageStart)
-        {
-            pageStarts[pageIndex] = pageStart;
-        }
-        private uint numCharNamePages;
-        private uint[] pageStarts;
+        private NumericTypeId id;
+        private string shortName;
+        private string longName;
     }
 
-    public class CharNamePage
+    public class NumericTypeTable
     {
-        public CharNamePage()
+        static NumericTypeTable()
         {
-            this.charNames = new string[cast<int>(numNamesInPage)];
+            instance = new NumericTypeTable();
         }
-        public void Write(BinaryWriter writer)
-        {
-            foreach (string charName in charNames)
-            {
-                writer.Write(charName);
-            }
-        }
-        public void Read(BinaryReader reader)
-        {
-            for (uint i = 0u; i < numNamesInPage; ++i)
-            {
-                string charName = reader.ReadString();
-                charNames[cast<int>(i)] = charName;
-            }
-        }
-        public string this[int index]
-        {
-            get { return charNames[index]; }
-            set { charNames[index] = value; }
-        }
-        private string[] charNames;
-    }
-
-    public class CharacterInfoMap
-    {
-        static CharacterInfoMap()
-        {
-            instance = new CharacterInfoMap();
-        }
-        public static CharacterInfoMap Instance
+        public static NumericTypeTable Instance
         {
             get { return instance; }
         }
-        private CharacterInfoMap()
+        public NumericType GetNumericType(NumericTypeId id)
         {
-            this.header = null;
-            this.charInfoPages = new List<CharInfoPage>();
-            this.nameTableHeader = null;
-            this.charNamePages = new List<CharNamePage>();
+            return numericTypeIdMap[cast<byte>(id)];
         }
-        public void Write()
+        public NumericType GetNumericTypeByShortName(string shortName)
         {
-            using (BinaryWriter writer = File.CreateBinary(PathToUnicodeBinFile()))
+            return shortNameMap[MakeCanonicalPropertyName(shortName)];
+        }
+        public NumericType GetNumericTypeByLongName(string longName)
+        {
+            return longNameMap[MakeCanonicalPropertyName(longName)];
+        }
+        private NumericTypeTable()
+        {
+            numericTypes = new List<NumericType>();
+            numericTypeIdMap = new HashMap<byte, NumericType>();
+            shortNameMap = new HashMap<string, NumericType>();
+            longNameMap = new HashMap<string, NumericType>();
+            numericTypes.Add(new NumericType(NumericTypeId.none, "None", "None"));
+            numericTypes.Add(new NumericType(NumericTypeId.de, "De", "Decimal"));
+            numericTypes.Add(new NumericType(NumericTypeId.di, "Di", "Digit"));
+            numericTypes.Add(new NumericType(NumericTypeId.nu, "Nu", "Numeric"));
+            foreach (NumericType numericType in numericTypes)
             {
-                header = new UnicodeBinHeader();
-                header.NumCharInfoPages = cast<uint>(charInfoPages.Count);
-                header.Write(writer);
-                CharInfoPage emptyCharInfoPage = new CharInfoPage();
-                foreach (CharInfoPage page in charInfoPages)
+                numericTypeIdMap[cast<byte>(numericType.Id)] = numericType;
+                shortNameMap[MakeCanonicalPropertyName(numericType.ShortName)] = numericType;
+                longNameMap[MakeCanonicalPropertyName(numericType.LongName)] = numericType;
+            }
+        }
+        private List<NumericType> numericTypes;
+        private HashMap<byte, NumericType> numericTypeIdMap;
+        private HashMap<string, NumericType> shortNameMap;
+        private HashMap<string, NumericType> longNameMap;
+        private static NumericTypeTable instance;
+    }
+
+    public NumericType GetNumericType(NumericTypeId id)
+    {
+        return NumericTypeTable.Instance.GetNumericType(id);
+    }
+
+    public NumericType GetNumericTypeByShortName(string shortName)
+    {
+        return NumericTypeTable.Instance.GetNumericTypeByShortName(shortName);
+    }
+
+    public NumericType GetNumericTypeByLongName(string longName)
+    {
+        return NumericTypeTable.Instance.GetNumericTypeByLongName(longName);
+    }
+
+    public enum BidiClassId : byte
+    {
+        none = 0u,
+        al, an, b, bn, cs, en, es, et, fsi, l, lre, lri, lro, nsm, on, pdf, pdi, r, rle, rli, rlo, s, ws
+    }
+
+    public class BidiClass
+    {
+        public BidiClass(BidiClassId id, string shortName, string longName)
+        {
+            this.id = id;
+            this.shortName = shortName;
+            this.longName = longName;
+        }
+        public BidiClassId Id
+        {
+            get { return id; }
+        }
+        public string ShortName
+        {
+            get { return shortName; }
+        }
+        public string LongName
+        {
+            get { return longName; }
+        }
+        private BidiClassId id;
+        private string shortName;
+        private string longName;
+    }
+
+    public class BidiClassTable
+    {
+        static BidiClassTable()
+        {
+            instance = new BidiClassTable();
+        }
+        public static BidiClassTable Instance
+        {
+            get { return instance; }
+        }
+        public BidiClass GetBidiClass(BidiClassId id)
+        {
+            return bidiClassIdMap[cast<byte>(id)];
+        }
+        public BidiClass GetBidiClassByShortName(string shortName)
+        {
+            return shortNameMap[MakeCanonicalPropertyName(shortName)];
+        }
+        public BidiClass GetBidiClassByLongName(string longName)
+        {
+            return longNameMap[MakeCanonicalPropertyName(longName)];
+        }
+        private BidiClassTable()
+        {
+            bidiClasses = new List<BidiClass>();
+            bidiClassIdMap = new HashMap<byte, BidiClass>();
+            shortNameMap = new HashMap<string, BidiClass>();
+            longNameMap = new HashMap<string, BidiClass>();
+            bidiClasses.Add(new BidiClass(BidiClassId.al, "AL", "Arabic Letter"));
+            bidiClasses.Add(new BidiClass(BidiClassId.an, "AN", "Arabic Number"));
+            bidiClasses.Add(new BidiClass(BidiClassId.b, "B", "Paragraph Separator"));
+            bidiClasses.Add(new BidiClass(BidiClassId.bn, "BN", "Boundary Neutral"));
+            bidiClasses.Add(new BidiClass(BidiClassId.cs, "CS", "Common Separator"));
+            bidiClasses.Add(new BidiClass(BidiClassId.en, "EN", "European Number"));
+            bidiClasses.Add(new BidiClass(BidiClassId.es, "ES", "European Separator"));
+            bidiClasses.Add(new BidiClass(BidiClassId.et, "ET", "European Terminator"));
+            bidiClasses.Add(new BidiClass(BidiClassId.fsi, "FSI", "First Strong Isolate"));
+            bidiClasses.Add(new BidiClass(BidiClassId.l, "L", "Left To Right"));
+            bidiClasses.Add(new BidiClass(BidiClassId.lre, "LRE", "Left To Right Embedding"));
+            bidiClasses.Add(new BidiClass(BidiClassId.lri, "LRI", "Left To Right Isolate"));
+            bidiClasses.Add(new BidiClass(BidiClassId.lro, "LRO", "Left To Right Override"));
+            bidiClasses.Add(new BidiClass(BidiClassId.nsm, "NSM", "Nonspacing Mark"));
+            bidiClasses.Add(new BidiClass(BidiClassId.on, "ON", "Other Neutral"));
+            bidiClasses.Add(new BidiClass(BidiClassId.pdf, "PDF", "Pop Directional Format"));
+            bidiClasses.Add(new BidiClass(BidiClassId.pdi, "PDI", "Pop Directional Isolate"));
+            bidiClasses.Add(new BidiClass(BidiClassId.r, "R", "Right To Left"));
+            bidiClasses.Add(new BidiClass(BidiClassId.rle, "RLE", "Right To Left Embedding"));
+            bidiClasses.Add(new BidiClass(BidiClassId.rli, "RLI", "Right To Left Isolate"));
+            bidiClasses.Add(new BidiClass(BidiClassId.rlo, "RLO", "Right To Left Override"));
+            bidiClasses.Add(new BidiClass(BidiClassId.s, "S", "Segment Separator"));
+            bidiClasses.Add(new BidiClass(BidiClassId.ws, "WS", "White Space"));
+            foreach (BidiClass bidiClass in bidiClasses)
+            {
+                bidiClassIdMap[cast<byte>(bidiClass.Id)] = bidiClass;
+                shortNameMap[MakeCanonicalPropertyName(bidiClass.ShortName)] = bidiClass;
+                longNameMap[MakeCanonicalPropertyName(bidiClass.LongName)] = bidiClass;
+            }
+        }
+        private static BidiClassTable instance;
+        private List<BidiClass> bidiClasses;
+        private HashMap<byte, BidiClass> bidiClassIdMap;
+        private HashMap<string, BidiClass> shortNameMap;
+        private HashMap<string, BidiClass> longNameMap;
+    }
+
+    public BidiClass GetBidiClass(BidiClassId id)
+    {
+        return BidiClassTable.Instance.GetBidiClass(id);
+    }
+
+    public BidiClass GetBidiClassByShortName(string shortName)
+    {
+        return BidiClassTable.Instance.GetBidiClassByShortName(shortName);
+    }
+
+    public BidiClass GetBidiClassByLongName(string longName)
+    {
+        return BidiClassTable.Instance.GetBidiClassByLongName(longName);
+    }
+
+    public enum BidiPairedBracketTypeId : byte
+    {
+        none = 0u,
+        o, c
+    }
+
+    public class BidiPairedBracketType
+    {
+        public BidiPairedBracketType(BidiPairedBracketTypeId id, string shortName, string longName)
+        {
+            this.id = id;
+            this.shortName = shortName;
+            this.longName = longName;
+        }
+        public BidiPairedBracketTypeId Id
+        {
+            get { return id; }
+        }
+        public string ShortName
+        {
+            get { return shortName; }
+        }
+        public string LongName
+        {
+            get { return longName; }
+        }
+        private BidiPairedBracketTypeId id;
+        private string shortName;
+        private string longName;
+    }
+
+    public class BidiPairedBracketTypeTable
+    {
+        static BidiPairedBracketTypeTable()
+        {
+            instance = new BidiPairedBracketTypeTable();
+        }
+        public static BidiPairedBracketTypeTable Instance
+        {
+            get { return instance; }
+        }
+        public BidiPairedBracketType GetBidiPairedBracketType(BidiPairedBracketTypeId id)
+        {
+            return bidiPairedBracketTypeIdMap[cast<byte>(id)];
+        }
+        public BidiPairedBracketType GetBidiPairedBracketTypeByShortName(string shortName)
+        {
+            return shortNameMap[MakeCanonicalPropertyName(shortName)];
+        }
+        public BidiPairedBracketType GetBidiPairedBracketTypeByLongName(string longName)
+        {
+            return longNameMap[MakeCanonicalPropertyName(longName)];
+        }
+        private BidiPairedBracketTypeTable()
+        {
+            bidiPairedBracketTypes = new List<BidiPairedBracketType>();
+            bidiPairedBracketTypeIdMap = new HashMap<byte, BidiPairedBracketType>();
+            shortNameMap = new HashMap<string, BidiPairedBracketType>();
+            longNameMap = new HashMap<string, BidiPairedBracketType>();
+            bidiPairedBracketTypes.Add(new BidiPairedBracketType(BidiPairedBracketTypeId.o, "O", "Open"));
+            bidiPairedBracketTypes.Add(new BidiPairedBracketType(BidiPairedBracketTypeId.c, "C", "Close"));
+            bidiPairedBracketTypes.Add(new BidiPairedBracketType(BidiPairedBracketTypeId.none, "N", "None"));
+            foreach (BidiPairedBracketType bidiPairedBracketType in bidiPairedBracketTypes)
+            {
+                bidiPairedBracketTypeIdMap[cast<byte>(bidiPairedBracketType.Id)] = bidiPairedBracketType;
+                shortNameMap[MakeCanonicalPropertyName(bidiPairedBracketType.ShortName)] = bidiPairedBracketType;
+                longNameMap[MakeCanonicalPropertyName(bidiPairedBracketType.LongName)] = bidiPairedBracketType;
+            }
+        }
+        private static BidiPairedBracketTypeTable instance;
+        private List<BidiPairedBracketType> bidiPairedBracketTypes;
+        private HashMap<byte, BidiPairedBracketType> bidiPairedBracketTypeIdMap;
+        private HashMap<string, BidiPairedBracketType> shortNameMap;
+        private HashMap<string, BidiPairedBracketType> longNameMap;
+    }
+
+    public BidiPairedBracketType GetBidiPairedBracketType(BidiPairedBracketTypeId id)
+    {
+        return BidiPairedBracketTypeTable.Instance.GetBidiPairedBracketType(id);
+    }
+
+    public BidiPairedBracketType GetBidiPairedBracketTypeByShortName(string shortName)
+    {
+        return BidiPairedBracketTypeTable.Instance.GetBidiPairedBracketTypeByShortName(shortName);
+    }
+
+    public BidiPairedBracketType GetBidiPairedBracketTypeByLongName(string longName)
+    {
+        return BidiPairedBracketTypeTable.Instance.GetBidiPairedBracketTypeByLongName(longName);
+    }
+
+    public enum AliasTypeId : byte
+    {
+        none = 0u,
+        correction, control, alternate, figment, abbreviation
+    }
+
+    public class AliasType
+    {
+        public AliasType(AliasTypeId id, string name)
+        {
+            this.id = id;
+            this.name = name;
+        }
+        public AliasTypeId Id
+        {
+            get { return id; }
+        }
+        public string Name
+        {
+            get { return name; }
+        }
+        private AliasTypeId id;
+        private string name;
+    }
+
+    public class AliasTypeTable
+    {
+        static AliasTypeTable()
+        {
+            instance = new AliasTypeTable();
+        }
+        public static AliasTypeTable Instance
+        {
+            get { return instance; }
+        }
+        public AliasType GetAliasType(AliasTypeId id)
+        {
+            return aliasTypeIdMap[cast<byte>(id)];
+        }
+        public AliasType GetAliasType(string name)
+        {
+            return nameMap[name];
+        }
+        private AliasTypeTable()
+        {
+            aliasTypes = new List<AliasType>();
+            aliasTypeIdMap = new HashMap<byte, AliasType>();
+            nameMap = new HashMap<string, AliasType>();
+            aliasTypes.Add(new AliasType(AliasTypeId.abbreviation, "abbreviation"));
+            aliasTypes.Add(new AliasType(AliasTypeId.alternate, "alternate"));
+            aliasTypes.Add(new AliasType(AliasTypeId.control, "control"));
+            aliasTypes.Add(new AliasType(AliasTypeId.correction, "correction"));
+            aliasTypes.Add(new AliasType(AliasTypeId.figment, "figment"));
+            foreach (AliasType aliasType in aliasTypes)
+            {
+                aliasTypeIdMap[cast<byte>(aliasType.Id)] = aliasType;
+                nameMap[aliasType.Name] = aliasType;
+            }
+        }
+        private static AliasTypeTable instance;
+        private List<AliasType> aliasTypes;
+        private HashMap<byte, AliasType> aliasTypeIdMap;
+        private HashMap<string, AliasType> nameMap;
+    }
+
+    public AliasType GetAliasType(AliasTypeId id)
+    {
+        return AliasTypeTable.Instance.GetAliasType(id);
+    }
+
+    public AliasType GetAliasType(string name)
+    {
+        return AliasTypeTable.Instance.GetAliasType(name);
+    }
+
+    public class Alias
+    {
+        public Alias()
+        {
+            this.typeId = AliasTypeId.none;
+            this.name = string.Empty;
+        }
+        public Alias(AliasTypeId typeId, string name)
+        {
+            this.typeId = typeId;
+            this.name = name;
+        }
+        public AliasTypeId TypeId
+        {
+            get { return typeId; }
+        }
+        public string Name
+        {
+            get { return name; }
+        }
+        public void Read(BinaryReader reader)
+        {
+            typeId = cast<AliasTypeId>(reader.ReadByte());
+            name = reader.ReadString();
+        }
+        private AliasTypeId typeId;
+        private string name;
+    }
+
+    public class ExtendedCharacterInfo
+    {
+        public ExtendedCharacterInfo()
+        {
+            characterName = string.Empty;
+            unicode1Name = string.Empty;
+            canonicalCombiningClass = 0u;
+            fullUpper = string.Empty;
+            fullLower = string.Empty;
+            fullTitle = string.Empty;
+            fullFolding = string.Empty;
+            bidiClass = BidiClassId.none;
+            numericType = NumericTypeId.none;
+            numericValue = string.Empty;
+            aliases = new List<Alias>();
+            bidiMirroringGlyph = cast<char>(0u);
+            bidiPairedBracketType = BidiPairedBracketTypeId.none;
+            bidiPairedBracket = cast<char>(0u);
+        }
+        public string CharacterName
+        {
+            get { return characterName; }
+        }
+        public string Unicode1Name
+        {
+            get { return unicode1Name; }
+        }
+        public byte CanonicalCombiningClass
+        {
+            get { return canonicalCombiningClass; }
+        }
+        public string FullUpper
+        {
+            get { return fullUpper; }
+        }
+        public string FullLower
+        {
+            get { return fullLower; }
+        }
+        public string FullTitle
+        {
+            get { return fullTitle; }
+        }
+        public string FullFolding
+        {
+            get { return fullFolding; }
+        }
+        public BidiClassId BidiClassValue
+        {
+            get { return bidiClass; }
+        }
+        public NumericTypeId NumericTypeValue
+        {
+            get { return numericType; }
+        }
+        public string NumericValue
+        {
+            get { return numericValue; }
+        }
+        public List<Alias> Aliases
+        {
+            get { return aliases; }
+        }
+        public char BidiMirroringGlyph
+        {
+            get { return bidiMirroringGlyph; }
+        }
+        public BidiPairedBracketTypeId BidiPairedBracketTypeValue
+        {
+            get { return bidiPairedBracketType; }
+        }
+        public char BidiPairedBracket
+        {
+            get { return bidiPairedBracket; }
+        }
+        public void Read(BinaryReader reader)
+        {
+            characterName = reader.ReadString();
+            unicode1Name = reader.ReadString();
+            canonicalCombiningClass = reader.ReadByte();
+            StringBuilder s = new StringBuilder();
+            byte nu = reader.ReadByte();
+            for (byte i = 0u; i < nu; ++i)
+            {
+                s.Append(reader.ReadChar());
+            }
+            fullUpper = s.ToString();
+            s.Clear();
+            byte nl = reader.ReadByte();
+            for (byte i = 0u; i < nl; ++i)
+            {
+                s.Append(reader.ReadChar());
+            }
+            fullLower = s.ToString();
+            s.Clear();
+            byte nt = reader.ReadByte();
+            for (byte i = 0u; i < nt; ++i)
+            {
+                s.Append(reader.ReadChar());
+            }
+            fullTitle = s.ToString();
+            s.Clear();
+            byte nf = reader.ReadByte();
+            for (byte i = 0u; i < nf; ++i)
+            {
+                s.Append(reader.ReadChar());
+            }
+            fullFolding = s.ToString();
+            bidiClass = cast<BidiClassId>(reader.ReadByte());
+            numericType = cast<NumericTypeId>(reader.ReadByte());
+            numericValue = reader.ReadString();
+            byte na = reader.ReadByte();
+            for (byte i = 0u; i < na; ++i)
+            {
+                Alias alias = new Alias();
+                alias.Read(reader);
+                aliases.Add(alias);
+            }
+            bidiMirroringGlyph = reader.ReadChar();
+            bidiPairedBracketType = cast<BidiPairedBracketTypeId>(reader.ReadByte());
+            bidiPairedBracket = reader.ReadChar();
+        }
+        private string characterName;
+        private string unicode1Name;
+        private byte canonicalCombiningClass;
+        private string fullUpper;
+        private string fullLower;
+        private string fullTitle;
+        private string fullFolding;
+        private BidiClassId bidiClass;
+        private NumericTypeId numericType;
+        private string numericValue;
+        private List<Alias> aliases;
+        private char bidiMirroringGlyph;
+        private BidiPairedBracketTypeId bidiPairedBracketType;
+        private char bidiPairedBracket;
+    }
+
+    public class CharacterInfoPage
+    {
+        public CharacterInfoPage()
+        {
+            characterInfos = new CharacterInfo[numInfosInPage];
+        }
+        public CharacterInfo this[int index]
+        {
+            get { return characterInfos[index]; }
+        }
+        public void Read(BinaryReader reader)
+        {
+            for (int i = 0; i < numInfosInPage; ++i)
+            {
+                CharacterInfo characterInfo = new CharacterInfo();
+                characterInfo.Read(reader);
+                characterInfos[i] = characterInfo;
+            }
+        }
+        private CharacterInfo[] characterInfos;
+    }
+
+    public class ExtendedCharacterInfoPage
+    {
+        public ExtendedCharacterInfoPage()
+        {
+            extendedCharacterInfos = new ExtendedCharacterInfo[numInfosInPage];
+        }
+        public ExtendedCharacterInfo this[int index]
+        {
+            get { return extendedCharacterInfos[index]; }
+        }
+        public void Read(BinaryReader reader)
+        {
+            for (int i = 0; i < numInfosInPage; ++i)
+            {
+                ExtendedCharacterInfo extendedCharacterInfo = new ExtendedCharacterInfo();
+                extendedCharacterInfo.Read(reader);
+                extendedCharacterInfos[i] = extendedCharacterInfo;
+            }
+        }
+        private ExtendedCharacterInfo[] extendedCharacterInfos;
+    }
+
+    public class ExtendedCharacterInfoHeader
+    {
+        public ExtendedCharacterInfoHeader()
+        {
+            extendedPageStarts = null;
+        }
+        public uint this[int index]
+        {
+            get { return extendedPageStarts[index]; }
+        }
+        public void Read(BinaryReader reader)
+        {
+            uint n = reader.ReadUInt();
+            extendedPageStarts = new uint[cast<int>(n)];
+            for (uint i = 0u; i < n; ++i)
+            {
+                extendedPageStarts[i] = reader.ReadUInt();
+            }
+        }
+        private uint[] extendedPageStarts;
+    }
+
+    public const byte cminor_ucd_version_1 = cast<byte>('1');
+    public const byte current_cminor_ucd_version = cminor_ucd_version_1;
+
+    public class CharacterTable
+    {
+        static CharacterTable()
+        {
+            instance = new CharacterTable();
+        }
+        public static CharacterTable Instance
+        {
+            get { return instance; }
+        }
+        public CharacterInfo GetCharacterInfo(char codePoint)
+        {
+            if (codePoint > cast<char>(0x10FFFF))
+            {
+                throw new UnicodeException("invalid Unicode code point " + uint.ToHexString(cast<uint>(codePoint)));
+            }
+            int pageIndex = cast<int>(codePoint) / numInfosInPage;
+            if (pages.Count <= pageIndex)
+            {
+                lock (characterTableLock)
+                {
+                    while (pages.Count <= pageIndex)
+                    {
+                        pages.Add(null);
+                    }
+                }
+            }
+            CharacterInfoPage page = pages[pageIndex];
+            if (page == null)
+            {
+                lock (characterTableLock)
                 {
                     if (page == null)
                     {
-                        emptyCharInfoPage.Write(writer);
-                    }
-                    else
-                    {
-                        page.Write(writer);
+                        using (BinaryReader reader = File.OpenBinary(PathToUcdBinFile()))
+                        {
+                            if (!headerRead)
+                            {
+                                ReadHeader(reader);
+                            }
+                            uint pageStart = headerSize + characterInfoPageSize * cast<uint>(pageIndex);
+                            reader.Seek(cast<int>(pageStart), Origin.seekSet);
+                            page = new CharacterInfoPage();
+                            page.Read(reader);
+                            pages[pageIndex] = page;
+                        }
                     }
                 }
-                header.StartCharNameTable = cast<uint>(writer.Tell());
-                nameTableHeader = new CharNameTableHeader();
-                nameTableHeader.NumCharNamePages = cast<uint>(charNamePages.Count);
-                nameTableHeader.Write(writer);
-                CharNamePage emptyNamePage = new CharNamePage();
-                for (int i = 0; i < charNamePages.Count; ++i)
+            }
+            int infoIndex = cast<int>(codePoint) % numInfosInPage;
+            return page[infoIndex];
+        }
+        public ExtendedCharacterInfo GetExtendedCharacterInfo(char codePoint)
+        {
+            if (codePoint > cast<char>(0x10FFFF))
+            {
+                throw new UnicodeException("invalid Unicode code point " + uint.ToHexString(cast<uint>(codePoint)));
+            }
+            int pageIndex = cast<int>(codePoint) / numInfosInPage;
+            if (extendedPages.Count <= pageIndex)
+            {
+                lock (characterTableLock)
                 {
-                    CharNamePage page = charNamePages[i];
-                    uint pageStart = cast<uint>(writer.Tell());
-                    nameTableHeader.SetPageStart(i, pageStart);
-                    if (page == null)
+                    while (extendedPages.Count <= pageIndex)
                     {
-                        emptyNamePage.Write(writer);
-                    }
-                    else
-                    {
-                        page.Write(writer);
+                        extendedPages.Add(null);
                     }
                 }
-                writer.Seek(cast<int>(header.StartCharNameTable), Origin.seekSet);
-                nameTableHeader.Write(writer);
-                writer.Seek(0, Origin.seekSet);
-                header.Write(writer);
             }
-        }
-        public void AddCharInfo(CharacterInfo characterInfo)
-        {
-            char c = characterInfo.Code;
-            CharInfoPage page = GetCharInfoPage(c);
-            if (page == null)
+            ExtendedCharacterInfoPage extendedPage = extendedPages[pageIndex];
+            if (extendedPage == null)
             {
-                page = new CharInfoPage();
-                SetCharInfoPage(c, page);
-            }
-            uint charIndex = cast<uint>(c);
-            uint infoIndex = charIndex % numCharactersInPage;
-            page[cast<int>(infoIndex)] = characterInfo;
-        }
-        public void AddCharName(char c, string charName)
-        {
-            CharNamePage page = GetCharNamePage(c);
-            if (page == null)
-            {
-                page = new CharNamePage();
-                SetCharNamePage(c, page);
-            }
-            uint charIndex = cast<uint>(c);
-            uint nameIndex = charIndex % numNamesInPage;
-            page[cast<int>(nameIndex)] = charName;
-        }
-        public CharacterInfo GetCharacterInfo(char c)
-        {
-            CharInfoPage page = GetCharInfoPage(c);
-            if (page == null)
-            {
-                page = new CharInfoPage();
-                using (BinaryReader reader = File.OpenBinary(PathToUnicodeBinFile()))
+                lock (characterTableLock)
                 {
-                    if (header == null)
+                    if (extendedPage == null)
                     {
-                        header = new UnicodeBinHeader();
-                        header.Read(reader);
-                    }
-                    uint charIndex = cast<uint>(c);
-                    uint pageNumber = charIndex / numCharactersInPage;
-                    uint numPages = header.NumCharInfoPages;
-                    if (pageNumber < numPages)
-                    {
-                        reader.Seek(cast<int>(header.StartCharInfoPagesPos) + cast<int>(pageNumber) * cast<int>(charInfoPageSize), Origin.seekSet);
-                        page.Read(reader);
-                        SetCharInfoPage(c, page);
-                    }
-                    else
-                    {
-                        return null;
+                        using (BinaryReader reader = File.OpenBinary(PathToUcdBinFile()))
+                        {
+                            if (!headerRead)
+                            {
+                                ReadHeader(reader);
+                            }
+                            if (extendedHeader == null)
+                            {
+                                reader.Seek(cast<int>(extendedHeaderStart), Origin.seekSet);
+                                ReadExtendedHeader(reader);
+                            }
+                            reader.Seek(cast<int>(extendedHeader[pageIndex]), Origin.seekSet);
+                            extendedPage = new ExtendedCharacterInfoPage();
+                            extendedPage.Read(reader);
+                            extendedPages[pageIndex] = extendedPage;
+                        }
                     }
                 }
             }
-            uint charIndex = cast<uint>(c);
-            uint infoIndex = charIndex % numCharactersInPage;
-            CharacterInfo info = page[cast<int>(infoIndex)];
-            if (info.Code == c)
-            {
-                return info;
-            }
-            return null;
+            int infoIndex = cast<int>(codePoint) % numInfosInPage;
+            return extendedPage[infoIndex];
         }
-        public string GetCharacterName(char c)
+        private CharacterTable()
         {
-            CharNamePage page = GetCharNamePage(c);
-            if (page == null)
+            this.headerMagic = new byte[8];
+            string hdrmgc = "CMNRUCD";
+            for (int i = 0; i < 8; ++i)
             {
-                page = new CharNamePage();
-                using (BinaryReader reader = File.OpenBinary(PathToUnicodeBinFile()))
+                if (i < 7)
                 {
-                    if (header == null)
-                    {
-                        header = new UnicodeBinHeader();
-                        header.Read(reader);
-                    }
-                    if (nameTableHeader == null)
-                    {
-                        nameTableHeader = new CharNameTableHeader();
-                        reader.Seek(cast<int>(header.StartCharNameTable), Origin.seekSet);
-                        nameTableHeader.Read(reader);
-                    }
-                    uint charIndex = cast<uint>(c);
-                    uint pageNumber = charIndex / numCharactersInPage;
-                    uint numPages = nameTableHeader.NumCharNamePages;
-                    if (pageNumber < numPages)
-                    {
-                        uint pageStart = nameTableHeader.GetPageStart(cast<int>(pageNumber));
-                        reader.Seek(cast<int>(pageStart), Origin.seekSet);
-                        page.Read(reader);
-                        SetCharNamePage(c, page);
-                    }
-                    else
-                    {
-                        return null;
-                    }
+                    this.headerMagic[i] = cast<byte>(hdrmgc[i]);
+                }
+                else
+                {
+                    this.headerMagic[i] = current_cminor_ucd_version;
                 }
             }
-            uint charIndex = cast<uint>(c);
-            uint nameIndex = charIndex % numNamesInPage;
-            string charName = page[cast<int>(nameIndex)];
-            return charName;
+            this.headerRead = false;
+            this.pages = new List<CharacterInfoPage>();
+            this.extendedHeaderStart = 0u;
+            this.extendedHeaderEnd = 0u;
+            this.extendedHeader = null;
+            this.extendedPages = new List<ExtendedCharacterInfoPage>();
+            this.characterTableLock = new object();
         }
-        private CharInfoPage GetCharInfoPage(char c)
+        private void ReadHeader(BinaryReader reader)
         {
-            uint charIndex = cast<uint>(c);
-            uint pageNumber = charIndex / numCharactersInPage;
-            while (pageNumber >= cast<uint>(charInfoPages.Count))
+            headerRead = true;
+            byte[] magic = new byte[8];
+            for (int i = 0; i < 8; ++i)
             {
-                charInfoPages.Add(null);
+                magic[i] = reader.ReadByte();
             }
-            return charInfoPages[cast<int>(pageNumber)];
-        }
-        private void SetCharInfoPage(char c, CharInfoPage page)
-        {
-            uint charIndex = cast<uint>(c);
-            uint pageNumber = charIndex / numCharactersInPage;
-            charInfoPages[cast<int>(pageNumber)] = page;
-        }
-        private CharNamePage GetCharNamePage(char c)
-        {
-            uint charIndex = cast<uint>(c);
-            uint pageNumber = charIndex / numNamesInPage;
-            while (pageNumber >= cast<uint>(charNamePages.Count))
+            for (int i = 0; i < 7; ++i)
             {
-                charNamePages.Add(null);
+                if (magic[i] != cast<byte>(headerMagic[i]))
+                {
+                    throw new UnicodeException("invalid cminor_ucd.bin header magic: 'CMNRUCD' expected");
+                }
             }
-            return charNamePages[cast<int>(pageNumber)];
-        }
-        private void SetCharNamePage(char c, CharNamePage page)
-        {
-            uint charIndex = cast<uint>(c);
-            uint pageNumber = charIndex / numNamesInPage;
-            charNamePages[cast<int>(pageNumber)] = page;
-        }
-        private static CharacterInfoMap instance;
-        private UnicodeBinHeader header;
-        private List<CharInfoPage> charInfoPages;
-        private CharNameTableHeader nameTableHeader;
-        private List<CharNamePage> charNamePages;
-    }
-
-    public Category GetCategory(char c)
-    {
-        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
-        if (info != null)
-        {
-            return info.Cat;
-        }
-        return Category.none;
-    }
-
-    public string GetCategoryName(Category category)
-    {
-        return CategoryMap.Instance.GetCategoryName(category);
-    }
-
-    public string GetCharacterName(char c)
-    {
-        return CharacterInfoMap.Instance.GetCharacterName(c);
-    }
-
-    public char ToLower(char c)
-    {
-        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
-        if (info != null)
-        {
-            char toLower = info.Lower;
-            if (toLower != cast<char>(0u))
+            if (magic[7] != headerMagic[7])
             {
-                return toLower;
+                throw new UnicodeException("invalid cminor_ucd.bin version: version " + new string(cast<char>(headerMagic[7]), 1) + " expected, version " + new string(cast<char>(magic[7]), 1) + " read");
             }
+            extendedHeaderStart = reader.ReadUInt();
+            extendedHeaderEnd = reader.ReadUInt();
         }
-        return c;
+        private void ReadExtendedHeader(BinaryReader reader)
+        {
+            extendedHeader = new ExtendedCharacterInfoHeader();
+            extendedHeader.Read(reader);
+        }
+        private const uint headerSize = 16u;
+        private static CharacterTable instance;
+        private byte[] headerMagic;
+        private bool headerRead;
+        private List<CharacterInfoPage> pages;
+        private uint extendedHeaderStart;
+        private uint extendedHeaderEnd;
+        private ExtendedCharacterInfoHeader extendedHeader;
+        private List<ExtendedCharacterInfoPage> extendedPages;
+        private object characterTableLock;
     }
 
-    public char ToUpper(char c)
+    public CharacterInfo GetCharacterInfo(char codePoint)
     {
-        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
-        if (info != null)
-        {
-            char toUpper = info.Upper;
-            if (toUpper != cast<char>(0u))
-            {
-                return toUpper;
-            }
-        }
-        return c;
+        return CharacterTable.Instance.GetCharacterInfo(codePoint);
+    }
+
+    public ExtendedCharacterInfo GetExtendedCharacterInfo(char codePoint)
+    {
+        return CharacterTable.Instance.GetExtendedCharacterInfo(codePoint);
+    }
+
+    public GeneralCategoryId GetGeneralCategory(char c) 
+    {
+        return GetCharacterInfo(c).GeneralCategoryValue;
+    }
+
+    public bool HasGeneralCategory(char c, GeneralCategoryId generalCategory)
+    {
+        return GetCharacterInfo(c).HasGeneralCategory(generalCategory);
+    }
+
+    public bool IsUpperLetter(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Lu;
+    }
+
+    public bool IsLowerLetter(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Ll;
+    }
+
+    public bool IsTitleLetter(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Lt;
+    }
+
+    public bool IsModifierLetter(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Lm;
+    }
+
+    public bool IsOtherLetter(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Lo;
+    }
+
+    public bool IsCasedLetter(char c)
+    {
+        return HasGeneralCategory(c, GeneralCategoryId.LC);
     }
 
     public bool IsLetter(char c)
     {
-        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
-        if (info != null)
-        {
-            return info.IsLetter;
-        }
-        return false;
+        return HasGeneralCategory(c, GeneralCategoryId.L);
     }
 
-    public bool IsLower(char c)
+    public bool IsNonspacingMark(char c)
     {
-        return GetCategory(c) == Category.letterLower; 
+        return GetGeneralCategory(c) == GeneralCategoryId.Mn;
     }
-    
-    public bool IsUpper(char c)
+
+    public bool IsSpacingMark(char c)
     {
-        return GetCategory(c) == Category.letterUpper;
+        return GetGeneralCategory(c) == GeneralCategoryId.Mc;
     }
-    
+
+    public bool IsEnclosingMark(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Me;
+    }
+
     public bool IsMark(char c)
     {
-        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
-        if (info != null)
-        {
-            return info.IsMark;
-        }
-        return false;
+        return HasGeneralCategory(c, GeneralCategoryId.M);
     }
-    
+
+    public bool IsDecimalNumber(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Nd;
+    }
+
+    public bool IsLetterNumber(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Nl;
+    }
+
+    public bool IsOtherNumber(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.No;
+    }
+
     public bool IsNumber(char c)
     {
-        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
-        if (info != null)
-        {
-            return info.IsNumber;
-        }
-        return false;
+        return HasGeneralCategory(c, GeneralCategoryId.N);
     }
-    
+
+    public bool IsConnectorPunctuation(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Pc;
+    }
+
+    public bool IsDashPunctuation(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Pd;
+    }
+
+    public bool IsOpenPunctuation(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Ps;
+    }
+
+    public bool IsClosePunctuation(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Pe;
+    }
+
+    public bool IsInitialPunctuation(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Pi;
+    }
+
+    public bool IsFinalPunctuation(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Pf;
+    }
+
+    public bool IsOtherPunctuation(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Po;
+    }
+
     public bool IsPunctuation(char c)
     {
-        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
-        if (info != null)
-        {
-            return info.IsPunctuation;
-        }
-        return false;
+        return HasGeneralCategory(c, GeneralCategoryId.P);
     }
-    
+
+    public bool IsMathSymbol(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Sm;
+    }
+
+    public bool IsCurrencySymbol(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Sc;
+    }
+
+    public bool IsModifierSymbol(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Sk;
+    }
+
+    public bool IsOtherSymbol(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.So;
+    }
+
     public bool IsSymbol(char c)
     {
-        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
-        if (info != null)
-        {
-            return info.IsSymbol;
-        }
-        return false;
+        return HasGeneralCategory(c, GeneralCategoryId.S);
     }
-    
+
+    public bool IsSpaceSeparator(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Zs;
+    }
+
+    public bool IsLineSeparator(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Zl;
+    }
+
+    public bool IsParagraphSeparator(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Zp;
+    }
+
     public bool IsSeparator(char c)
     {
-        CharacterInfo info = CharacterInfoMap.Instance.GetCharacterInfo(c);
-        if (info != null)
-        {
-            return info.IsSeparator;
-        }
-        return false;
+        return HasGeneralCategory(c, GeneralCategoryId.Z);
+    }
+
+    public bool IsControl(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Cc;
+    }
+
+    public bool IsFormat(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Cf;
+    }
+
+    public bool IsSurrogate(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Cs;
+    }
+
+    public bool IsPrivateUse(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Co;
+    }
+
+    public bool IsUnassigned(char c)
+    {
+        return GetGeneralCategory(c) == GeneralCategoryId.Cn;
+    }
+
+    public bool IsOther(char c)
+    {
+        return HasGeneralCategory(c, GeneralCategoryId.C);
+    }
+
+    public bool IsGraphic(char c)
+    {
+        return HasGeneralCategory(c, GeneralCategoryId.G);
+    }
+
+    public bool IsBaseChar(char c)
+    {
+        return HasGeneralCategory(c, GeneralCategoryId.B);
+    }
+
+    public bool IsCombining(char c)
+    {
+        return IsMark(c);
+    }
+
+    public char ToUpper(char c)
+    {
+        return GetCharacterInfo(c).Upper;
+    }
+
+    public char ToLower(char c)
+    {
+        return GetCharacterInfo(c).Lower;
+    }
+
+    public char ToTitle(char c)
+    {
+        return GetCharacterInfo(c).Title;
+    }
+
+    public char ToFolding(char c)
+    {
+        return GetCharacterInfo(c).Folding;
+    }
+
+    public string FullUpper(char c)
+    {
+        return GetExtendedCharacterInfo(c).FullUpper;
+    }
+
+    public string FullLower(char c)
+    {
+        return GetExtendedCharacterInfo(c).FullLower;
+    }
+
+    public string FullTitle(char c)
+    {
+        return GetExtendedCharacterInfo(c).FullTitle;
+    }
+
+    public string FullFolding(char c)
+    {
+        return GetExtendedCharacterInfo(c).FullFolding;
+    }
+
+    public bool IsWhiteSpace(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.whiteSpace);
+    }
+
+    public bool IsAlphabetic(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.alphabetic);
+    }
+
+    public bool IsAsciiHexDigit(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.asciiHexDigit);
+    }
+
+    public bool IsAsciiDigit(char c)
+    {
+        return char.IsCDigit(c);
+    }
+
+    public bool IsUppercase(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.uppercase);
+    }
+
+    public bool IsLowercase(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.lowercase);
+    }
+
+    public bool IsIdStart(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.idStart);
+    }
+
+    public bool IsIdCont(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.idContinue);
+    }
+
+    public bool IsGraphemeBase(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.graphemeBase);
+    }
+
+    public bool IsGraphemeExtender(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.graphemeExtend);
+    }
+
+    public bool IsOtherLower(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.otherLowercase);
+    }
+
+    public bool IsOtherUpper(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.otherUppercase);
+    }
+
+    public string GetCharacterName(char c)
+    {
+        return GetExtendedCharacterInfo(c).CharacterName;
+    }
+
+    public string GetUnicode1Name(char c)
+    {
+        return GetExtendedCharacterInfo(c).Unicode1Name;
+    }
+
+    public NumericTypeId GetNumericType(char c)
+    {
+        return GetExtendedCharacterInfo(c).NumericTypeValue;
+    }
+
+    public string GetNumericValue(char c)
+    {
+        return GetExtendedCharacterInfo(c).NumericValue;
+    }
+
+    public bool IsBidiMirrored(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.bidiMirrored);
+    }
+
+    public bool IsBidiControl(char c)
+    {
+        return GetCharacterInfo(c).GetBinaryProperty(BinaryPropertyId.bidiControl);
+    }
+
+    public char GetBidiMirroringGlyph(char c)
+    {
+        return GetExtendedCharacterInfo(c).BidiMirroringGlyph;
+    }
+
+    public BidiPairedBracketTypeId GetBidiPairedBracketType(char c)
+    {
+        return GetExtendedCharacterInfo(c).BidiPairedBracketTypeValue;
+    }
+
+    public char GetBidiPairedBracket(char c)
+    {
+        return GetExtendedCharacterInfo(c).BidiPairedBracket;
+    }
+
+    public List<Alias> Aliases(char c)
+    {
+        return GetExtendedCharacterInfo(c).Aliases;
     }
 }

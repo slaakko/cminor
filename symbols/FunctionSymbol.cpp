@@ -13,8 +13,11 @@
 #include <cminor/symbols/ObjectFun.hpp>
 #include <cminor/symbols/StringFun.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace symbols {
+
+using namespace cminor::unicode;
 
 std::string FunctionSymbolFlagStr(FunctionSymbolFlags flags)
 {
@@ -72,7 +75,7 @@ void FunctionSymbol::Write(SymbolWriter& writer)
     {
         writer.AsMachineWriter().Put(false);
     }
-    utf32_string returnTypeFullName;
+    std::u32string returnTypeFullName;
     if (returnType)
     {
         returnTypeFullName = returnType->FullName();
@@ -213,7 +216,7 @@ void FunctionSymbol::EmplaceType(TypeSymbol* type, int index)
 
 void FunctionSymbol::ComputeName()
 {
-    utf32_string name;
+    std::u32string name;
     name.append(GroupName().Value());
     name.append(1, U'(');
     int n = int(Parameters().size());
@@ -226,16 +229,16 @@ void FunctionSymbol::ComputeName()
         ParameterSymbol* parameter = Parameters()[i];
         name.append(parameter->GetType()->FullName());
         name.append(1, U' ');
-        name.append(utf32_string(parameter->Name().Value()));
+        name.append(std::u32string(parameter->Name().Value()));
     }
     name.append(1, U')');
     SetName(StringPtr(name.c_str()));
 }
 
-utf32_string FunctionSymbol::FullName() const
+std::u32string FunctionSymbol::FullName() const
 {
-    utf32_string fullName;
-    utf32_string parentFullName = Parent()->FullName();
+    std::u32string fullName;
+    std::u32string parentFullName = Parent()->FullName();
     fullName.append(parentFullName);
     if (!parentFullName.empty())
     {
@@ -257,10 +260,10 @@ utf32_string FunctionSymbol::FullName() const
     return fullName;
 }
 
-utf32_string FunctionSymbol::FullParsingName() const
+std::u32string FunctionSymbol::FullParsingName() const
 {
-    utf32_string fullParsingName;
-    utf32_string parentFullName = Parent()->FullName();
+    std::u32string fullParsingName;
+    std::u32string parentFullName = Parent()->FullName();
     fullParsingName.append(parentFullName);
     if (!parentFullName.empty())
     {
@@ -282,9 +285,9 @@ utf32_string FunctionSymbol::FullParsingName() const
     return fullParsingName;
 }
 
-utf32_string FunctionSymbol::FullNameWithSpecifiers() const
+std::u32string FunctionSymbol::FullNameWithSpecifiers() const
 {
-    utf32_string fullName;
+    std::u32string fullName;
     fullName.append(ToUtf32(SymbolFlagStr(Symbol::Flags())));
     std::string functionSymbolFlagStr = FunctionSymbolFlagStr(flags);
     if (!functionSymbolFlagStr.empty())
@@ -303,7 +306,7 @@ utf32_string FunctionSymbol::FullNameWithSpecifiers() const
         }
         fullName.append(returnType->FullName());
     }
-    utf32_string parentFullName = Parent()->FullName();
+    std::u32string parentFullName = Parent()->FullName();
     if (!parentFullName.empty())
     {
         if (!fullName.empty())
@@ -345,7 +348,7 @@ utf32_string FunctionSymbol::FullNameWithSpecifiers() const
         ParameterSymbol* parameter = Parameters()[i];
         fullName.append(parameter->GetType()->FullName());
         fullName.append(1, U' ');
-        fullName.append(utf32_string(parameter->Name().Value()));
+        fullName.append(std::u32string(parameter->Name().Value()));
     }
     fullName.append(1, U')');
     return fullName;
@@ -378,7 +381,7 @@ void FunctionSymbol::GenerateCall(Machine& machine, Assembly& assembly, Function
     }
     std::unique_ptr<Instruction> inst = machine.CreateInst("call");
     CallInst* callInst = dynamic_cast<CallInst*>(inst.get());
-    utf32_string callName = FullName();
+    std::u32string callName = FullName();
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant callNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(callName.c_str())));
     callInst->SetFunctionCallName(callNameConstant);
@@ -408,7 +411,7 @@ void FunctionSymbol::CreateMachineFunction()
     if (Parent()->GetSymbolType() == SymbolType::classTemplateSpecializationSymbol)
     {
         memberOfClassTemplateSpecialization = true;
-        utf32_string fullName = FullName();
+        std::u32string fullName = FullName();
         Function* prevMachineFunction = FunctionTable::GetFunctionNothrow(StringPtr(fullName.c_str()));
         if (prevMachineFunction)
         {
@@ -550,10 +553,10 @@ void StaticConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
-utf32_string StaticConstructorSymbol::FullParsingName() const
+std::u32string StaticConstructorSymbol::FullParsingName() const
 {
-    utf32_string fullParsingName = U"static ";
-    utf32_string parentFullName = Parent()->FullName();
+    std::u32string fullParsingName = U"static ";
+    std::u32string parentFullName = Parent()->FullName();
     fullParsingName.append(parentFullName);
     if (!parentFullName.empty())
     {
@@ -564,7 +567,7 @@ utf32_string StaticConstructorSymbol::FullParsingName() const
     return fullParsingName;
 }
 
-utf32_string StaticConstructorSymbol::FullNameWithSpecifiers() const
+std::u32string StaticConstructorSymbol::FullNameWithSpecifiers() const
 {
     return FullParsingName();
 }
@@ -609,10 +612,10 @@ void ConstructorSymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
-utf32_string ConstructorSymbol::FullParsingName() const
+std::u32string ConstructorSymbol::FullParsingName() const
 {
-    utf32_string fullParsingName;
-    utf32_string parentFullName = Parent()->FullName();
+    std::u32string fullParsingName;
+    std::u32string parentFullName = Parent()->FullName();
     fullParsingName.append(parentFullName);
     if (!parentFullName.empty())
     {
@@ -634,9 +637,9 @@ utf32_string ConstructorSymbol::FullParsingName() const
     return fullParsingName;
 }
 
-utf32_string ConstructorSymbol::FullNameWithSpecifiers() const
+std::u32string ConstructorSymbol::FullNameWithSpecifiers() const
 {
-    utf32_string fullName;
+    std::u32string fullName;
     fullName.append(ToUtf32(SymbolFlagStr(Symbol::Flags())));
     std::string functionSymbolFlagStr = FunctionSymbolFlagStr(GetFlags());
     if (!functionSymbolFlagStr.empty())
@@ -647,7 +650,7 @@ utf32_string ConstructorSymbol::FullNameWithSpecifiers() const
         }
         fullName.append(ToUtf32(functionSymbolFlagStr));
     }
-    utf32_string parentFullName = Parent()->FullName();
+    std::u32string parentFullName = Parent()->FullName();
     if (!parentFullName.empty())
     {
         if (!fullName.empty())
@@ -669,7 +672,7 @@ utf32_string ConstructorSymbol::FullNameWithSpecifiers() const
         ParameterSymbol* parameter = Parameters()[i];
         fullName.append(parameter->GetType()->FullName());
         fullName.append(1, U' ');
-        fullName.append(utf32_string(parameter->Name().Value()));
+        fullName.append(std::u32string(parameter->Name().Value()));
     }
     fullName.append(1, U')');
     return fullName;
@@ -686,7 +689,7 @@ void ConstructorSymbol::GenerateCall(Machine& machine, Assembly& assembly, Funct
     std::unique_ptr<Instruction> callInst = machine.CreateInst("call");
     CallInst* callInstruction = dynamic_cast<CallInst*>(callInst.get());
     Assert(callInst, "call inst expceted");
-    utf32_string callName = FullName();
+    std::u32string callName = FullName();
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant callNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(callName.c_str())));
     callInstruction->SetFunctionCallName(callNameConstant);
@@ -718,7 +721,7 @@ void ConstructorSymbol::CreateMachineFunction()
         std::unique_ptr<Instruction> inst = GetAssembly()->GetMachine().CreateInst("staticinit");
         StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
         ConstantPool& constantPool = GetAssembly()->GetConstantPool();
-        utf32_string fullClassName = classTypeSymbol->FullName();
+        std::u32string fullClassName = classTypeSymbol->FullName();
         Constant classFullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
         staticInitInst->SetTypeName(classFullNameConstant);
         MachineFunction()->AddInst(std::move(inst));
@@ -734,7 +737,7 @@ void ConstructorSymbol::CreateMachineFunction()
     Assert(setClassDataInst, "set class data inst expected");
     ClassTypeSymbol* containingClass = ContainingClass();;
     Assert(containingClass, "containing class not found");
-    utf32_string fullClassName = containingClass->FullName();
+    std::u32string fullClassName = containingClass->FullName();
     ConstantPool& constantPool = GetAssembly()->GetConstantPool();
     Constant fullClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
     setClassDataInst->SetClassName(fullClassNameConstant);
@@ -837,7 +840,7 @@ void ArraySizeConstructorSymbol::CreateMachineFunction()
     ArrayTypeSymbol* arrayType = dynamic_cast<ArrayTypeSymbol*>(type);
     Assert(arrayType, "array type expected");
     TypeSymbol* elementType = arrayType->ElementType();
-    utf32_string elementTypeName = elementType->FullName();
+    std::u32string elementTypeName = elementType->FullName();
     ConstantPool& constantPool = GetAssembly()->GetConstantPool();
     Constant elementTypeNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(elementTypeName.c_str())));
     allocElemsInst->SetTypeName(elementTypeNameConstant);
@@ -882,9 +885,9 @@ MemberFunctionSymbol::MemberFunctionSymbol(const Span& span_, Constant name_) : 
 {
 }
 
-utf32_string MemberFunctionSymbol::FullNameWithSpecifiers() const
+std::u32string MemberFunctionSymbol::FullNameWithSpecifiers() const
 {
-    utf32_string fullName;
+    std::u32string fullName;
     std::string flagStr = SymbolFlagStr(Symbol::Flags());
     std::string functionSymbolFlagStr = FunctionSymbolFlagStr(GetFlags());
     if (!functionSymbolFlagStr.empty())
@@ -916,7 +919,7 @@ utf32_string MemberFunctionSymbol::FullNameWithSpecifiers() const
         }
         fullName.append(ReturnType()->FullName());
     }
-    utf32_string parentFullName = Parent()->FullName();
+    std::u32string parentFullName = Parent()->FullName();
     if (!parentFullName.empty())
     {
         if (!fullName.empty())
@@ -955,7 +958,7 @@ utf32_string MemberFunctionSymbol::FullNameWithSpecifiers() const
         ParameterSymbol* parameter = Parameters()[i];
         fullName.append(parameter->GetType()->FullName());
         fullName.append(1, U' ');
-        fullName.append(utf32_string(parameter->Name().Value()));
+        fullName.append(std::u32string(parameter->Name().Value()));
     }
     fullName.append(1, U')');
     return fullName;
@@ -1063,10 +1066,10 @@ void MemberFunctionSymbol::SetSpecifiers(Specifiers specifiers)
     }
 }
 
-utf32_string MemberFunctionSymbol::FullParsingName() const
+std::u32string MemberFunctionSymbol::FullParsingName() const
 {
-    utf32_string fullParsingName;
-    utf32_string parentFullName = Parent()->FullName();
+    std::u32string fullParsingName;
+    std::u32string parentFullName = Parent()->FullName();
     fullParsingName.append(parentFullName);
     if (!parentFullName.empty())
     {
@@ -1099,7 +1102,7 @@ void MemberFunctionSymbol::GenerateVirtualCall(Machine& machine, Assembly& assem
     std::unique_ptr<Instruction> inst = machine.CreateInst("callv");
     VirtualCallInst* vcall = dynamic_cast<VirtualCallInst*>(inst.get());
     Assert(vcall, "virtual call instruction expected");
-    utf32_string callName = FullName();
+    std::u32string callName = FullName();
     ConstantPool& constantPool = assembly.GetConstantPool();
     Constant callNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(callName.c_str())));
     vcall->SetNumArgs(n);
@@ -1201,7 +1204,7 @@ void ClassTypeConversion::GenerateCall(Machine& machine, Assembly& assembly, Fun
     {
         TypeInstruction* typeInstruction = dynamic_cast<TypeInstruction*>(inst.get());
         Assert(typeInstruction, "type instruction expected");
-        utf32_string targetTypeClassName = targetType->FullName();
+        std::u32string targetTypeClassName = targetType->FullName();
         ConstantPool& constantPool = assembly.GetConstantPool();
         Constant targetTypeClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(targetTypeClassName.c_str())));
         typeInstruction->SetTypeName(targetTypeClassNameConstant);
@@ -1219,7 +1222,7 @@ void ClassToInterfaceConversion::GenerateCall(Machine& machine, Assembly& assemb
     std::unique_ptr<Instruction> createInst;
     createInst = machine.CreateInst("createo");
     ConstantPool& constantPool = assembly.GetConstantPool();
-    utf32_string targetTypeInterfaceName = targetType->FullName();
+    std::u32string targetTypeInterfaceName = targetType->FullName();
     Constant targetTypeInterfaceNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(targetTypeInterfaceName.c_str())));
     CreateObjectInst* createObjectInst = dynamic_cast<CreateObjectInst*>(createInst.get());
     Assert(createObjectInst, "CreateObject instruction expected");
@@ -1394,7 +1397,7 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
         {
             ConstantPool& constantPool = assembly.GetConstantPool();
             Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
-            utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
+            std::u32string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
             Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
             std::unique_ptr<NullToObjectConversion> conversion(new NullToObjectConversion(targetClassType->GetSpan(), conversionNameConstant));
             FunctionSymbol* conversionFun = conversion.get();
@@ -1415,7 +1418,7 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
             if (sourceClassType->HasBaseClass(targetClassType, distance))
             {
                 Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
-                utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
+                std::u32string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
                 Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
                 std::unique_ptr<ClassTypeConversion> conversion(new ClassTypeConversion(sourceClassType->GetSpan(), conversionNameConstant));
                 FunctionSymbol* conversionFun = conversion.get();
@@ -1434,7 +1437,7 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
                 if (targetClassType->HasBaseClass(sourceClassType, distance))
                 {
                     Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
-                    utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
+                    std::u32string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
                     Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
                     std::unique_ptr<ClassTypeConversion> conversion(new ClassTypeConversion(sourceClassType->GetSpan(), conversionNameConstant));
                     FunctionSymbol* conversionFun = conversion.get();
@@ -1460,7 +1463,7 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
                     int32_t itabIndex = i;
                     ConstantPool& constantPool = assembly.GetConstantPool();
                     Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
-                    utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
+                    std::u32string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
                     Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
                     std::unique_ptr<ClassToInterfaceConversion> conversion(new ClassToInterfaceConversion(sourceClassType->GetSpan(), conversionNameConstant));
                     FunctionSymbol* conversionFun = conversion.get();
@@ -1542,11 +1545,11 @@ FunctionSymbol* ConversionTable::GetConversion(TypeSymbol* sourceType, TypeSymbo
             if (functionFound)
             {
                 ConstantPool& constantPool = assembly.GetConstantPool();
-                utf32_string fullFunctionName = viableFunction->FullName();
+                std::u32string fullFunctionName = viableFunction->FullName();
                 viableFunction->SetExported();
                 Constant functionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullFunctionName.c_str())));
                 Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
-                utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
+                std::u32string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
                 Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
                 std::unique_ptr<FunctionToDelegateConversion> fun2DlgConversion(new FunctionToDelegateConversion(Span(), conversionNameConstant));
                 fun2DlgConversion->SetAssembly(&assembly);

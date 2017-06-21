@@ -7,7 +7,7 @@
 
 namespace cminor { namespace symbols {
 
-Warning::Warning(const std::string& project_, const std::string& message_) : project(project_), message(message_)
+Warning::Warning(const std::u32string& project_, const std::string& message_) : project(project_), message(message_)
 {
 }
 
@@ -30,7 +30,7 @@ CompileWarningCollection& CompileWarningCollection::Instance()
     return *instance;
 }
 
-void CompileWarningCollection::SetCurrentProjectName(const std::string& currentProjectName_)
+void CompileWarningCollection::SetCurrentProjectName(const std::u32string& currentProjectName_)
 {
     currentProjectName = currentProjectName_;
 }

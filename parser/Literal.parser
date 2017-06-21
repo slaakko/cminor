@@ -82,16 +82,16 @@ namespace cminor.parser
             ::= DecDigitSequence{ value = DecDigitSequence; }
             ;
 
-        CharLiteral(var utf32_char litValue) : Node*
+        CharLiteral(var char32_t litValue) : Node*
             ::= token(  '\'' 
-                        (   ([^'\\\r\n]+){ utf32_string s = ToUtf32(std::string(matchBegin, matchEnd)); if (s.empty()) pass = false; else litValue = s[0]; } 
+                        (   ([^'\\\r\n]+){ std::u32string s = ToUtf32(std::string(matchBegin, matchEnd)); if (s.empty()) pass = false; else litValue = s[0]; } 
                         |   CharEscape{ litValue = CharEscape; }
                         ) 
                         '\''!
                     ){ value = new CharLiteralNode(span, litValue); }
             ;
 
-        StringLiteral(var utf32_string s) : Node*
+        StringLiteral(var std::u32string s) : Node*
             ::= '@' token('"' ([^"]*){ s = ToUtf32(std::string(matchBegin, matchEnd)); } '"'){ value = new StringLiteralNode(span, s); }
             |   token('"' 
                     (   ([^"\\\r\n]+){ s.append(ToUtf32(std::string(matchBegin, matchEnd))); }
@@ -105,20 +105,20 @@ namespace cminor.parser
             ::= keyword("null"){ value = new NullLiteralNode(span); }
             ;
 
-        CharEscape : utf32_char
+        CharEscape : char32_t
             ::= token('\\' 
-                (   [xX] HexDigitSequence{ value = utf32_char(HexDigitSequence); } 
-                |   [dD] DecDigitSequence{ value = utf32_char(DecDigitSequence); } 
-                |   OctalDigitSequence{ value = utf32_char(OctalDigitSequence); }
-                |   'u' HexDigit4{ value = utf32_char(HexDigit4); }
-                |   'U' HexDigit8{ value = utf32_char(HexDigit8); }
-                |   'a'{ value = utf32_char('\a'); }
-                |   'b'{ value = utf32_char('\b'); }
-                |   'f'{ value = utf32_char('\f'); }
-                |   'n'{ value = utf32_char('\n'); }
-                |   'r'{ value = utf32_char('\r'); }
-                |   't'{ value = utf32_char('\t'); }
-                |   'v'{ value = utf32_char('\v'); }
+                (   [xX] HexDigitSequence{ value = char32_t(HexDigitSequence); } 
+                |   [dD] DecDigitSequence{ value = char32_t(DecDigitSequence); } 
+                |   OctalDigitSequence{ value = char32_t(OctalDigitSequence); }
+                |   'u' HexDigit4{ value = char32_t(HexDigit4); }
+                |   'U' HexDigit8{ value = char32_t(HexDigit8); }
+                |   'a'{ value = char32_t('\a'); }
+                |   'b'{ value = char32_t('\b'); }
+                |   'f'{ value = char32_t('\f'); }
+                |   'n'{ value = char32_t('\n'); }
+                |   'r'{ value = char32_t('\r'); }
+                |   't'{ value = char32_t('\t'); }
+                |   'v'{ value = char32_t('\v'); }
                 |   anychar{ value = *matchBegin; }
                 ))
                 ;

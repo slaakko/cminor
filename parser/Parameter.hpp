@@ -1,8 +1,8 @@
-#ifndef Parameter_hpp_7033
-#define Parameter_hpp_7033
+#ifndef Parameter_hpp_21399
+#define Parameter_hpp_21399
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/ast/Parameter.hpp>
 #include <cminor/parser/ParsingContext.hpp>
 
@@ -14,7 +14,7 @@ class ParameterGrammar : public cminor::parsing::Grammar
 public:
     static ParameterGrammar* Create();
     static ParameterGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    void Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx, Node* owner);
+    void Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName, ParsingContext* ctx, Node* owner);
 private:
     ParameterGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -25,4 +25,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Parameter_hpp_7033
+#endif // Parameter_hpp_21399

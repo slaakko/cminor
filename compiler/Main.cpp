@@ -13,9 +13,10 @@
 #include <cminor/machine/Function.hpp>
 #include <cminor/util/Util.hpp>
 #include <cminor/machine/Class.hpp>
-#include <cminor/pl/InitDone.hpp>
+#include <cminor/parsing/InitDone.hpp>
 #include <cminor/util/Path.hpp>
 #include <cminor/util/System.hpp>
+#include <cminor/util/InitDone.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
@@ -57,11 +58,11 @@ struct InitDone
         InitWarning();
         InitAssembly();
         cminor::parsing::Init();
-        cminor::util::unicode::Init();
+        cminor::util::Init();
     }
     ~InitDone()
     {
-        cminor::util::unicode::Done();
+        cminor::util::Done();
         cminor::parsing::Done();
         DoneAssembly();
         DoneWarning();

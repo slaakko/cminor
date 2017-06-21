@@ -1,19 +1,22 @@
 #include "Template.hpp"
-#include <cminor/pl/Action.hpp>
-#include <cminor/pl/Rule.hpp>
-#include <cminor/pl/ParsingDomain.hpp>
-#include <cminor/pl/Primitive.hpp>
-#include <cminor/pl/Composite.hpp>
-#include <cminor/pl/Nonterminal.hpp>
-#include <cminor/pl/Exception.hpp>
-#include <cminor/pl/StdLib.hpp>
-#include <cminor/pl/XmlLog.hpp>
+#include <cminor/parsing/Action.hpp>
+#include <cminor/parsing/Rule.hpp>
+#include <cminor/parsing/ParsingDomain.hpp>
+#include <cminor/parsing/Primitive.hpp>
+#include <cminor/parsing/Composite.hpp>
+#include <cminor/parsing/Nonterminal.hpp>
+#include <cminor/parsing/Exception.hpp>
+#include <cminor/parsing/StdLib.hpp>
+#include <cminor/parsing/XmlLog.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cminor/parser/Identifier.hpp>
 #include <cminor/parser/TypeExpr.hpp>
 
 namespace cminor { namespace parser {
 
 using namespace cminor::parsing;
+using namespace cminor::util;
+using namespace cminor::unicode;
 
 TemplateGrammar* TemplateGrammar::Create()
 {
@@ -30,12 +33,12 @@ TemplateGrammar* TemplateGrammar::Create(cminor::parsing::ParsingDomain* parsing
     return grammar;
 }
 
-TemplateGrammar::TemplateGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("TemplateGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
+TemplateGrammar::TemplateGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar(ToUtf32("TemplateGrammar"), parsingDomain_->GetNamespaceScope(ToUtf32("cminor.parser")), parsingDomain_)
 {
     SetOwner(0);
 }
 
-Node* TemplateGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx)
+Node* TemplateGrammar::Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName, ParsingContext* ctx)
 {
     cminor::parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
     std::unique_ptr<cminor::parsing::XmlLog> xmlLog;
@@ -55,7 +58,7 @@ Node* TemplateGrammar::Parse(const char* start, const char* end, int fileIndex, 
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
+    if (!match.Hit() || stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -63,7 +66,7 @@ Node* TemplateGrammar::Parse(const char* start, const char* end, int fileIndex, 
         }
         else
         {
-            throw cminor::parsing::ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+            throw cminor::parsing::ParsingException("grammar '" + ToUtf8(Name()) + "' has no start rule", fileName, scanner.GetSpan(), start, end);
         }
     }
     std::unique_ptr<cminor::parsing::Object> value = std::move(stack.top());
@@ -75,12 +78,12 @@ Node* TemplateGrammar::Parse(const char* start, const char* end, int fileIndex, 
 class TemplateGrammar::TemplateIdRule : public cminor::parsing::Rule
 {
 public:
-    TemplateIdRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    TemplateIdRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("Node*");
-        AddLocalVariable(AttrOrVariable("std::unique_ptr<TemplateIdNode>", "templateId"));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("Node*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("std::unique_ptr<TemplateIdNode>"), ToUtf32("templateId")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -101,29 +104,29 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<TemplateIdRule>(this, &TemplateIdRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<TemplateIdRule>(this, &TemplateIdRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<TemplateIdRule>(this, &TemplateIdRule::A2Action));
-        cminor::parsing::NonterminalParser* primaryNonterminalParser = GetNonterminal("primary");
+        cminor::parsing::NonterminalParser* primaryNonterminalParser = GetNonterminal(ToUtf32("primary"));
         primaryNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<TemplateIdRule>(this, &TemplateIdRule::Postprimary));
-        cminor::parsing::NonterminalParser* templateArgNonterminalParser = GetNonterminal("templateArg");
+        cminor::parsing::NonterminalParser* templateArgNonterminalParser = GetNonterminal(ToUtf32("templateArg"));
         templateArgNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<TemplateIdRule>(this, &TemplateIdRule::PretemplateArg));
         templateArgNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<TemplateIdRule>(this, &TemplateIdRule::PosttemplateArg));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->templateId.release();
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->templateId.reset(new TemplateIdNode(span, context->fromprimary));
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->templateId->AddTemplateArgument(context->fromtemplateArg);
@@ -168,11 +171,11 @@ private:
 class TemplateGrammar::TemplateParameterRule : public cminor::parsing::Rule
 {
 public:
-    TemplateParameterRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    TemplateParameterRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("TemplateParameterNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("TemplateParameterNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -193,12 +196,12 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<TemplateParameterRule>(this, &TemplateParameterRule::A0Action));
-        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal(ToUtf32("Identifier"));
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<TemplateParameterRule>(this, &TemplateParameterRule::PostIdentifier));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new TemplateParameterNode(span, context->fromIdentifier);
@@ -226,11 +229,11 @@ private:
 class TemplateGrammar::TemplateParameterListRule : public cminor::parsing::Rule
 {
 public:
-    TemplateParameterListRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    TemplateParameterListRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        AddInheritedAttribute(AttrOrVariable("Node*", "owner"));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("Node*"), ToUtf32("owner")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -249,13 +252,13 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<TemplateParameterListRule>(this, &TemplateParameterListRule::A0Action));
-        cminor::parsing::NonterminalParser* templateParameterNonterminalParser = GetNonterminal("TemplateParameter");
+        cminor::parsing::NonterminalParser* templateParameterNonterminalParser = GetNonterminal(ToUtf32("TemplateParameter"));
         templateParameterNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<TemplateParameterListRule>(this, &TemplateParameterListRule::PreTemplateParameter));
         templateParameterNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<TemplateParameterListRule>(this, &TemplateParameterListRule::PostTemplateParameter));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->owner->AddTemplateParameter(context->fromTemplateParameter);
@@ -288,48 +291,48 @@ private:
 void TemplateGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar(ToUtf32("cminor.parser.IdentifierGrammar"));
     if (!grammar0)
     {
-        grammar0 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar0 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar(ToUtf32("cminor.parser.TypeExprGrammar"));
     if (!grammar1)
     {
-        grammar1 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar1 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void TemplateGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new cminor::parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRule(new TemplateIdRule("TemplateId", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("QualifiedId"), this, ToUtf32("IdentifierGrammar.QualifiedId")));
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("Identifier"), this, ToUtf32("IdentifierGrammar.Identifier")));
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("TypeExpr"), this, ToUtf32("TypeExprGrammar.TypeExpr")));
+    AddRule(new TemplateIdRule(ToUtf32("TemplateId"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
-                        new cminor::parsing::ActionParser("A1",
-                            new cminor::parsing::NonterminalParser("primary", "QualifiedId", 0)),
+                        new cminor::parsing::ActionParser(ToUtf32("A1"),
+                            new cminor::parsing::NonterminalParser(ToUtf32("primary"), ToUtf32("QualifiedId"), 0)),
                         new cminor::parsing::CharParser('<')),
                     new cminor::parsing::ListParser(
-                        new cminor::parsing::ActionParser("A2",
-                            new cminor::parsing::NonterminalParser("templateArg", "TypeExpr", 1)),
+                        new cminor::parsing::ActionParser(ToUtf32("A2"),
+                            new cminor::parsing::NonterminalParser(ToUtf32("templateArg"), ToUtf32("TypeExpr"), 1)),
                         new cminor::parsing::CharParser(','))),
                 new cminor::parsing::CharParser('>')))));
-    AddRule(new TemplateParameterRule("TemplateParameter", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
-            new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0))));
-    AddRule(new TemplateParameterListRule("TemplateParameterList", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new TemplateParameterRule(ToUtf32("TemplateParameter"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
+            new cminor::parsing::NonterminalParser(ToUtf32("Identifier"), ToUtf32("Identifier"), 0))));
+    AddRule(new TemplateParameterListRule(ToUtf32("TemplateParameterList"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::CharParser('<'),
                 new cminor::parsing::ListParser(
-                    new cminor::parsing::ActionParser("A0",
-                        new cminor::parsing::NonterminalParser("TemplateParameter", "TemplateParameter", 1)),
+                    new cminor::parsing::ActionParser(ToUtf32("A0"),
+                        new cminor::parsing::NonterminalParser(ToUtf32("TemplateParameter"), ToUtf32("TemplateParameter"), 1)),
                     new cminor::parsing::CharParser(','))),
             new cminor::parsing::ExpectationParser(
                 new cminor::parsing::CharParser('>')))));

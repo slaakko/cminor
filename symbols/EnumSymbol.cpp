@@ -51,7 +51,7 @@ void EnumTypeSymbol::SetSpecifiers(Specifiers specifiers)
 void EnumTypeSymbol::Write(SymbolWriter& writer)
 {
     TypeSymbol::Write(writer);
-    utf32_string underlyingTypeFullName = underlyingType->FullName();
+    std::u32string underlyingTypeFullName = underlyingType->FullName();
     ConstantId underlyingTypeId = GetAssembly()->GetConstantPool().GetIdFor(underlyingTypeFullName);
     Assert(underlyingTypeId != noConstantId, "got no id");
     underlyingTypeId.Write(writer);
@@ -81,7 +81,7 @@ void EnumTypeSymbol::SetUnderlyingType(TypeSymbol* underlyingType_)
 {
     underlyingType = underlyingType_;
     ConstantPool& constantPool = GetAssembly()->GetConstantPool();
-    utf32_string underlyingTypeName = underlyingType->FullName();
+    std::u32string underlyingTypeName = underlyingType->FullName();
     constantPool.Install(StringPtr(underlyingTypeName.c_str()));
 }
 

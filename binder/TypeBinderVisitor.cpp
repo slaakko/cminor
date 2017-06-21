@@ -19,9 +19,12 @@
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/symbols/Warning.hpp>
 #include <cminor/machine/Class.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <iostream>
 
 namespace cminor { namespace binder {
+
+using namespace cminor::unicode;
 
 TypeBinderVisitor::TypeBinderVisitor(BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), containerScope(nullptr), instantiateRequested(false), enumType(nullptr),
     sourceFilePathConstant()
@@ -79,7 +82,7 @@ void TypeBinderVisitor::Visit(FunctionNode& functionNode)
         {
             throw Exception("external function cannot have a body", functionNode.GetSpan());
         }
-        utf32_string vmf = ToUtf32(functionNode.Attributes().GetAttribute("vmf"));
+        std::u32string vmf = functionNode.Attributes().GetAttribute(U"vmf");
         if (vmf.empty())
         {
             throw Exception("virtual machine function name attribute ('vmf') not set for external function", functionNode.GetSpan());
@@ -194,7 +197,7 @@ void TypeBinderVisitor::BindClass(ClassTypeSymbol* classTypeSymbol, ClassNode& c
         return;
     }
     classTypeSymbol->SetSpecifiers(classNode.GetSpecifiers());
-    utf32_string fullName = classTypeSymbol->FullName();
+    std::u32string fullName = classTypeSymbol->FullName();
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     Constant fullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
     classTypeSymbol->GetObjectType()->SetNameConstant(fullNameConstant);
@@ -341,7 +344,7 @@ void TypeBinderVisitor::BindInterface(InterfaceTypeSymbol* interfaceTypeSymbol, 
     containerScope = interfaceTypeSymbol->GetContainerScope();
     ObjectType* objectType = interfaceTypeSymbol->GetObjectType();
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
-    utf32_string fullName = interfaceTypeSymbol->FullName();
+    std::u32string fullName = interfaceTypeSymbol->FullName();
     Constant fullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
     objectType->SetNameConstant(fullNameConstant);
     objectType->AddField(ValueType::objectReference);
@@ -387,7 +390,7 @@ void TypeBinderVisitor::Visit(StaticConstructorNode& staticConstructorNode)
             {
                 throw Exception("external function cannot have a body", staticConstructorNode.GetSpan());
             }
-            utf32_string vmf = ToUtf32(staticConstructorNode.Attributes().GetAttribute("vmf"));
+            std::u32string vmf = staticConstructorNode.Attributes().GetAttribute(U"vmf");
             if (vmf.empty())
             {
                 throw Exception("virtual machine function name attribute ('vmf') not set for external function", staticConstructorNode.GetSpan());
@@ -405,7 +408,7 @@ void TypeBinderVisitor::Visit(StaticConstructorNode& staticConstructorNode)
         classData->CreateStaticClassData();
     }
     StaticClassData* staticClassData = classData->GetStaticClassData();
-    utf32_string fullName = staticConstructorSymbol->FullName();
+    std::u32string fullName = staticConstructorSymbol->FullName();
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
     Constant fullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
     staticConstructorSymbol->SetFullNameConstant(fullNameConstant);
@@ -451,7 +454,7 @@ void TypeBinderVisitor::Visit(ConstructorNode& constructorNode)
             {
                 throw Exception("external function cannot have a body", constructorNode.GetSpan());
             }
-            utf32_string vmf = ToUtf32(constructorNode.Attributes().GetAttribute("vmf"));
+            std::u32string vmf = constructorNode.Attributes().GetAttribute(U"vmf");
             if (vmf.empty())
             {
                 throw Exception("virtual machine function name attribute ('vmf') not set for external function", constructorNode.GetSpan());
@@ -520,7 +523,7 @@ void TypeBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
             {
                 throw Exception("external function cannot have a body", memberFunctionNode.GetSpan());
             }
-            utf32_string vmf = ToUtf32(memberFunctionNode.Attributes().GetAttribute("vmf"));
+            std::u32string vmf = memberFunctionNode.Attributes().GetAttribute(U"vmf");
             if (vmf.empty())
             {
                 throw Exception("virtual machine function name attribute ('vmf') not set for external function", memberFunctionNode.GetSpan());
@@ -954,8 +957,8 @@ void TypeBinderVisitor::Visit(ClassDelegateNode& classDelegateNode)
     dlgMemVar->SetPublic();
     CloneContext cloneContext;
     DelegateNode delegateNode(classDelegateNode.GetSpan(), classDelegateNode.GetSpecifiers(), classDelegateNode.ReturnTypeExpr()->Clone(cloneContext),
-        new IdentifierNode(classDelegateNode.GetSpan(), "@" + classDelegateNode.Id()->Str() + "_delegate_type"));
-    delegateNode.AddParameter(new ParameterNode(classDelegateNode.GetSpan(), new IdentifierNode(classDelegateNode.GetSpan(), "System.Object"), new IdentifierNode(classDelegateNode.GetSpan(), "@obj")));
+        new IdentifierNode(classDelegateNode.GetSpan(), ToUtf32("@" + ToUtf8(classDelegateNode.Id()->Str()) + "_delegate_type")));
+    delegateNode.AddParameter(new ParameterNode(classDelegateNode.GetSpan(), new IdentifierNode(classDelegateNode.GetSpan(), U"System.Object"), new IdentifierNode(classDelegateNode.GetSpan(), U"@obj")));
     for (int i = 0; i < n; ++i)
     {
         ParameterNode* parameterNode = static_cast<ParameterNode*>(classDelegateNode.Parameters()[i]->Clone(cloneContext));

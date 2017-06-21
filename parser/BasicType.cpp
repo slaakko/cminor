@@ -1,17 +1,20 @@
 #include "BasicType.hpp"
-#include <cminor/pl/Action.hpp>
-#include <cminor/pl/Rule.hpp>
-#include <cminor/pl/ParsingDomain.hpp>
-#include <cminor/pl/Primitive.hpp>
-#include <cminor/pl/Composite.hpp>
-#include <cminor/pl/Nonterminal.hpp>
-#include <cminor/pl/Exception.hpp>
-#include <cminor/pl/StdLib.hpp>
-#include <cminor/pl/XmlLog.hpp>
+#include <cminor/parsing/Action.hpp>
+#include <cminor/parsing/Rule.hpp>
+#include <cminor/parsing/ParsingDomain.hpp>
+#include <cminor/parsing/Primitive.hpp>
+#include <cminor/parsing/Composite.hpp>
+#include <cminor/parsing/Nonterminal.hpp>
+#include <cminor/parsing/Exception.hpp>
+#include <cminor/parsing/StdLib.hpp>
+#include <cminor/parsing/XmlLog.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace parser {
 
 using namespace cminor::parsing;
+using namespace cminor::util;
+using namespace cminor::unicode;
 
 BasicTypeGrammar* BasicTypeGrammar::Create()
 {
@@ -28,12 +31,12 @@ BasicTypeGrammar* BasicTypeGrammar::Create(cminor::parsing::ParsingDomain* parsi
     return grammar;
 }
 
-BasicTypeGrammar::BasicTypeGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("BasicTypeGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
+BasicTypeGrammar::BasicTypeGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar(ToUtf32("BasicTypeGrammar"), parsingDomain_->GetNamespaceScope(ToUtf32("cminor.parser")), parsingDomain_)
 {
     SetOwner(0);
 }
 
-Node* BasicTypeGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName)
+Node* BasicTypeGrammar::Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName)
 {
     cminor::parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
     std::unique_ptr<cminor::parsing::XmlLog> xmlLog;
@@ -52,7 +55,7 @@ Node* BasicTypeGrammar::Parse(const char* start, const char* end, int fileIndex,
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
+    if (!match.Hit() || stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -60,7 +63,7 @@ Node* BasicTypeGrammar::Parse(const char* start, const char* end, int fileIndex,
         }
         else
         {
-            throw cminor::parsing::ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+            throw cminor::parsing::ParsingException("grammar '" + ToUtf8(Name()) + "' has no start rule", fileName, scanner.GetSpan(), start, end);
         }
     }
     std::unique_ptr<cminor::parsing::Object> value = std::move(stack.top());
@@ -72,10 +75,10 @@ Node* BasicTypeGrammar::Parse(const char* start, const char* end, int fileIndex,
 class BasicTypeGrammar::BasicTypeRule : public cminor::parsing::Rule
 {
 public:
-    BasicTypeRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    BasicTypeRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("Node*");
+        SetValueTypeName(ToUtf32("Node*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -93,108 +96,108 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A2Action));
-        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        cminor::parsing::ActionParser* a3ActionParser = GetAction(ToUtf32("A3"));
         a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A3Action));
-        cminor::parsing::ActionParser* a4ActionParser = GetAction("A4");
+        cminor::parsing::ActionParser* a4ActionParser = GetAction(ToUtf32("A4"));
         a4ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A4Action));
-        cminor::parsing::ActionParser* a5ActionParser = GetAction("A5");
+        cminor::parsing::ActionParser* a5ActionParser = GetAction(ToUtf32("A5"));
         a5ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A5Action));
-        cminor::parsing::ActionParser* a6ActionParser = GetAction("A6");
+        cminor::parsing::ActionParser* a6ActionParser = GetAction(ToUtf32("A6"));
         a6ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A6Action));
-        cminor::parsing::ActionParser* a7ActionParser = GetAction("A7");
+        cminor::parsing::ActionParser* a7ActionParser = GetAction(ToUtf32("A7"));
         a7ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A7Action));
-        cminor::parsing::ActionParser* a8ActionParser = GetAction("A8");
+        cminor::parsing::ActionParser* a8ActionParser = GetAction(ToUtf32("A8"));
         a8ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A8Action));
-        cminor::parsing::ActionParser* a9ActionParser = GetAction("A9");
+        cminor::parsing::ActionParser* a9ActionParser = GetAction(ToUtf32("A9"));
         a9ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A9Action));
-        cminor::parsing::ActionParser* a10ActionParser = GetAction("A10");
+        cminor::parsing::ActionParser* a10ActionParser = GetAction(ToUtf32("A10"));
         a10ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A10Action));
-        cminor::parsing::ActionParser* a11ActionParser = GetAction("A11");
+        cminor::parsing::ActionParser* a11ActionParser = GetAction(ToUtf32("A11"));
         a11ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A11Action));
-        cminor::parsing::ActionParser* a12ActionParser = GetAction("A12");
+        cminor::parsing::ActionParser* a12ActionParser = GetAction(ToUtf32("A12"));
         a12ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A12Action));
-        cminor::parsing::ActionParser* a13ActionParser = GetAction("A13");
+        cminor::parsing::ActionParser* a13ActionParser = GetAction(ToUtf32("A13"));
         a13ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A13Action));
-        cminor::parsing::ActionParser* a14ActionParser = GetAction("A14");
+        cminor::parsing::ActionParser* a14ActionParser = GetAction(ToUtf32("A14"));
         a14ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A14Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new BoolNode(span);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new SByteNode(span);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ByteNode(span);
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A3Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ShortNode(span);
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A4Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new UShortNode(span);
     }
-    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A5Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new IntNode(span);
     }
-    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A6Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new UIntNode(span);
     }
-    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A7Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new LongNode(span);
     }
-    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A8Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ULongNode(span);
     }
-    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A9Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new FloatNode(span);
     }
-    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A10Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new DoubleNode(span);
     }
-    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A11Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new CharNode(span);
     }
-    void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A12Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new StringNode(span);
     }
-    void A13Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A13Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new VoidNode(span);
     }
-    void A14Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A14Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ObjectNode(span);
@@ -213,7 +216,7 @@ void BasicTypeGrammar::GetReferencedGrammars()
 
 void BasicTypeGrammar::CreateRules()
 {
-    AddRule(new BasicTypeRule("BasicType", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new BasicTypeRule(ToUtf32("BasicType"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
@@ -228,37 +231,37 @@ void BasicTypeGrammar::CreateRules()
                                                     new cminor::parsing::AlternativeParser(
                                                         new cminor::parsing::AlternativeParser(
                                                             new cminor::parsing::AlternativeParser(
-                                                                new cminor::parsing::ActionParser("A0",
-                                                                    new cminor::parsing::KeywordParser("bool", "IdentifierChars")),
-                                                                new cminor::parsing::ActionParser("A1",
-                                                                    new cminor::parsing::KeywordParser("sbyte", "IdentifierChars"))),
-                                                            new cminor::parsing::ActionParser("A2",
-                                                                new cminor::parsing::KeywordParser("byte", "IdentifierChars"))),
-                                                        new cminor::parsing::ActionParser("A3",
-                                                            new cminor::parsing::KeywordParser("short", "IdentifierChars"))),
-                                                    new cminor::parsing::ActionParser("A4",
-                                                        new cminor::parsing::KeywordParser("ushort", "IdentifierChars"))),
-                                                new cminor::parsing::ActionParser("A5",
-                                                    new cminor::parsing::KeywordParser("int", "IdentifierChars"))),
-                                            new cminor::parsing::ActionParser("A6",
-                                                new cminor::parsing::KeywordParser("uint", "IdentifierChars"))),
-                                        new cminor::parsing::ActionParser("A7",
-                                            new cminor::parsing::KeywordParser("long", "IdentifierChars"))),
-                                    new cminor::parsing::ActionParser("A8",
-                                        new cminor::parsing::KeywordParser("ulong", "IdentifierChars"))),
-                                new cminor::parsing::ActionParser("A9",
-                                    new cminor::parsing::KeywordParser("float", "IdentifierChars"))),
-                            new cminor::parsing::ActionParser("A10",
-                                new cminor::parsing::KeywordParser("double", "IdentifierChars"))),
-                        new cminor::parsing::ActionParser("A11",
-                            new cminor::parsing::KeywordParser("char", "IdentifierChars"))),
-                    new cminor::parsing::ActionParser("A12",
-                        new cminor::parsing::KeywordParser("string", "IdentifierChars"))),
-                new cminor::parsing::ActionParser("A13",
-                    new cminor::parsing::KeywordParser("void", "IdentifierChars"))),
-            new cminor::parsing::ActionParser("A14",
-                new cminor::parsing::KeywordParser("object", "IdentifierChars")))));
-    AddRule(new cminor::parsing::Rule("IdentifierChars", GetScope(), GetParsingDomain()->GetNextRuleId(),
+                                                                new cminor::parsing::ActionParser(ToUtf32("A0"),
+                                                                    new cminor::parsing::KeywordParser(ToUtf32("bool"), ToUtf32("IdentifierChars"))),
+                                                                new cminor::parsing::ActionParser(ToUtf32("A1"),
+                                                                    new cminor::parsing::KeywordParser(ToUtf32("sbyte"), ToUtf32("IdentifierChars")))),
+                                                            new cminor::parsing::ActionParser(ToUtf32("A2"),
+                                                                new cminor::parsing::KeywordParser(ToUtf32("byte"), ToUtf32("IdentifierChars")))),
+                                                        new cminor::parsing::ActionParser(ToUtf32("A3"),
+                                                            new cminor::parsing::KeywordParser(ToUtf32("short"), ToUtf32("IdentifierChars")))),
+                                                    new cminor::parsing::ActionParser(ToUtf32("A4"),
+                                                        new cminor::parsing::KeywordParser(ToUtf32("ushort"), ToUtf32("IdentifierChars")))),
+                                                new cminor::parsing::ActionParser(ToUtf32("A5"),
+                                                    new cminor::parsing::KeywordParser(ToUtf32("int"), ToUtf32("IdentifierChars")))),
+                                            new cminor::parsing::ActionParser(ToUtf32("A6"),
+                                                new cminor::parsing::KeywordParser(ToUtf32("uint"), ToUtf32("IdentifierChars")))),
+                                        new cminor::parsing::ActionParser(ToUtf32("A7"),
+                                            new cminor::parsing::KeywordParser(ToUtf32("long"), ToUtf32("IdentifierChars")))),
+                                    new cminor::parsing::ActionParser(ToUtf32("A8"),
+                                        new cminor::parsing::KeywordParser(ToUtf32("ulong"), ToUtf32("IdentifierChars")))),
+                                new cminor::parsing::ActionParser(ToUtf32("A9"),
+                                    new cminor::parsing::KeywordParser(ToUtf32("float"), ToUtf32("IdentifierChars")))),
+                            new cminor::parsing::ActionParser(ToUtf32("A10"),
+                                new cminor::parsing::KeywordParser(ToUtf32("double"), ToUtf32("IdentifierChars")))),
+                        new cminor::parsing::ActionParser(ToUtf32("A11"),
+                            new cminor::parsing::KeywordParser(ToUtf32("char"), ToUtf32("IdentifierChars")))),
+                    new cminor::parsing::ActionParser(ToUtf32("A12"),
+                        new cminor::parsing::KeywordParser(ToUtf32("string"), ToUtf32("IdentifierChars")))),
+                new cminor::parsing::ActionParser(ToUtf32("A13"),
+                    new cminor::parsing::KeywordParser(ToUtf32("void"), ToUtf32("IdentifierChars")))),
+            new cminor::parsing::ActionParser(ToUtf32("A14"),
+                new cminor::parsing::KeywordParser(ToUtf32("object"), ToUtf32("IdentifierChars"))))));
+    AddRule(new cminor::parsing::Rule(ToUtf32("IdentifierChars"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::PositiveParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::LetterParser(),

@@ -142,10 +142,10 @@ public:
 class PrintCommand : public Command
 {
 public:
-    PrintCommand(const std::string& name_);
+    PrintCommand(const std::u32string& name_);
     void Execute(Shell& shell) override;
 private:
-    std::string name;
+    std::u32string name;
 };
 
 } } // namespace cminor::db

@@ -19,8 +19,11 @@
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/ast/Project.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace symbols {
+
+using namespace cminor::unicode;
 
 SymbolTable::SymbolTable(Assembly* assembly_) : assembly(assembly_), globalNs(Span(), assembly->GetConstantPool().GetEmptyStringConstant()), container(&globalNs), function(nullptr),
     mainFunction(nullptr), currentClass(nullptr), currentInterface(nullptr), declarationBlockId(0), doNotAddTypes(false), doNotAddClassTemplateSpecializations(false), conversionTable(*assembly), 
@@ -43,7 +46,7 @@ void SymbolTable::EndContainer()
 
 void SymbolTable::BeginNamespace(NamespaceNode& namespaceNode)
 {
-    utf32_string nsName = ToUtf32(namespaceNode.Id()->Str());
+    std::u32string nsName = namespaceNode.Id()->Str();
     StringPtr namespaceName(nsName.c_str());
     BeginNamespace(namespaceName, namespaceNode.GetSpan());
     MapNode(namespaceNode, container);
@@ -89,9 +92,9 @@ void SymbolTable::EndNamespace()
 void SymbolTable::BeginFunction(FunctionNode& functionNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(functionNode.Name());
+    std::u32string name = functionNode.Name();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
-    utf32_string groupName = ToUtf32(functionNode.GroupId()->Str());
+    std::u32string groupName = functionNode.GroupId()->Str();
     Constant groupNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(groupName.c_str())));
     function = new FunctionSymbol(functionNode.GetSpan(), nameConstant);
     function->SetAssembly(assembly);
@@ -183,11 +186,11 @@ void SymbolTable::EndConstructor()
 void SymbolTable::BeginMemberFunction(MemberFunctionNode& memberFunctionNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(memberFunctionNode.Name());
+    std::u32string name = memberFunctionNode.Name();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     function = new MemberFunctionSymbol(memberFunctionNode.GetSpan(), nameConstant);
     function->SetAssembly(assembly);
-    utf32_string groupName = ToUtf32(memberFunctionNode.GroupId()->Str());
+    std::u32string groupName = memberFunctionNode.GroupId()->Str();
     Constant groupNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(groupName.c_str())));
     function->SetGroupNameConstant(groupNameConstant);
     MapNode(memberFunctionNode, function);
@@ -232,7 +235,7 @@ void SymbolTable::EndMemberFunction()
 void SymbolTable::BeginClass(ClassNode& classNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(classNode.Id()->Str());
+    std::u32string name = classNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     ClassTypeSymbol* classTypeSymbol = new ClassTypeSymbol(classNode.GetSpan(), nameConstant);
     classTypeSymbol->SetAssembly(assembly);
@@ -275,7 +278,7 @@ void SymbolTable::EndClassTemplateSpecialization()
 void SymbolTable::BeginInterface(InterfaceNode& interfaceNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(interfaceNode.Id()->Str());
+    std::u32string name = interfaceNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     InterfaceTypeSymbol* interfaceTypeSymbol = new InterfaceTypeSymbol(interfaceNode.GetSpan(), nameConstant);
     interfaceTypeSymbol->SetAssembly(assembly);
@@ -299,7 +302,7 @@ void SymbolTable::EndInterface()
 void SymbolTable::AddParameter(ParameterNode& parameterNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(parameterNode.Id()->Str());
+    std::u32string name = parameterNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     ParameterSymbol* parameter = new ParameterSymbol(parameterNode.GetSpan(), nameConstant);
     parameter->SetAssembly(assembly);
@@ -310,7 +313,7 @@ void SymbolTable::AddParameter(ParameterNode& parameterNode)
 void SymbolTable::AddTemplateParameter(TemplateParameterNode& templateParameterNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(templateParameterNode.Id()->Str());
+    std::u32string name = templateParameterNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     TypeParameterSymbol* typeParameter = new TypeParameterSymbol(templateParameterNode.GetSpan(), nameConstant);
     typeParameter->SetAssembly(assembly);
@@ -321,7 +324,7 @@ void SymbolTable::AddTemplateParameter(TemplateParameterNode& templateParameterN
 void SymbolTable::BeginDeclarationBlock(Node& node)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = U"@locals" + ToUtf32(std::to_string(declarationBlockId++));
+    std::u32string name = U"@locals" + ToUtf32(std::to_string(declarationBlockId++));
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     DeclarationBlock* declarationBlock = new DeclarationBlock(node.GetSpan(), nameConstant);
     declarationBlock->SetAssembly(assembly);
@@ -346,7 +349,7 @@ void SymbolTable::EndDeclarationBlock()
 void SymbolTable::AddLocalVariable(ConstructionStatementNode& constructionStatementNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(constructionStatementNode.Id()->Str());
+    std::u32string name = constructionStatementNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     LocalVariableSymbol* localVariableSymbol = new LocalVariableSymbol(constructionStatementNode.GetSpan(), nameConstant);
     localVariableSymbol->SetAssembly(assembly);
@@ -357,7 +360,7 @@ void SymbolTable::AddLocalVariable(ConstructionStatementNode& constructionStatem
 void SymbolTable::AddLocalVariable(IdentifierNode& idNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(idNode.Str());
+    std::u32string name = idNode.Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     LocalVariableSymbol* localVariableSymbol = new LocalVariableSymbol(idNode.GetSpan(), nameConstant);
     localVariableSymbol->SetAssembly(assembly);
@@ -368,7 +371,7 @@ void SymbolTable::AddLocalVariable(IdentifierNode& idNode)
 void SymbolTable::AddMemberVariable(MemberVariableNode& memberVariableNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(memberVariableNode.Id()->Str());
+    std::u32string name = memberVariableNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     MemberVariableSymbol* memberVariableSymbol = new MemberVariableSymbol(memberVariableNode.GetSpan(), nameConstant);
     memberVariableSymbol->SetAssembly(assembly);
@@ -383,7 +386,7 @@ void SymbolTable::AddMemberVariable(MemberVariableNode& memberVariableNode)
 void SymbolTable::BeginProperty(PropertyNode& propertyNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(propertyNode.Id()->Str());
+    std::u32string name = propertyNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     PropertySymbol* propertySymbol = new PropertySymbol(propertyNode.GetSpan(), nameConstant);
     propertySymbol->SetAssembly(assembly);
@@ -403,7 +406,7 @@ void SymbolTable::EndProperty()
 void SymbolTable::BeginPropertyGetter(PropertyNode& propertyNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string getterName = U"@get";
+    std::u32string getterName = U"@get";
     Constant getterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(getterName.c_str())));
     PropertyGetterFunctionSymbol* getter = new PropertyGetterFunctionSymbol(propertyNode.Getter()->GetSpan(), getterNameConstant);
     function = getter;
@@ -441,7 +444,7 @@ void SymbolTable::EndPropertyGetter()
 void SymbolTable::BeginPropertySetter(PropertyNode& propertyNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string setterName = U"@set";
+    std::u32string setterName = U"@set";
     Constant setterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(setterName.c_str())));
     PropertySetterFunctionSymbol* setter = new PropertySetterFunctionSymbol(propertyNode.Setter()->GetSpan(), setterNameConstant);
     function = setter;
@@ -483,7 +486,7 @@ void SymbolTable::EndPropertySetter()
 void SymbolTable::BeginIndexer(IndexerNode& indexerNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = U"this";
+    std::u32string name = U"this";
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     IndexerSymbol* indexerSymbol = new IndexerSymbol(indexerNode.GetSpan(), nameConstant);
     indexerSymbol->SetAssembly(assembly);
@@ -503,7 +506,7 @@ void SymbolTable::EndIndexer()
 void SymbolTable::BeginIndexerGetter(IndexerNode& indexerNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string getterName = U"@get";
+    std::u32string getterName = U"@get";
     Constant getterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(getterName.c_str())));
     IndexerGetterFunctionSymbol* getter = new IndexerGetterFunctionSymbol(indexerNode.Getter()->GetSpan(), getterNameConstant);
     function = getter;
@@ -531,7 +534,7 @@ void SymbolTable::BeginIndexerGetter(IndexerNode& indexerNode)
     {
         getter->SetStatic();
     }
-    utf32_string indexParamName = ToUtf32(indexerNode.Id()->Str());
+    std::u32string indexParamName = indexerNode.Id()->Str();
     Constant indexParamNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(indexParamName.c_str())));
     ParameterSymbol* indexParam = new ParameterSymbol(indexerNode.Id()->GetSpan(), indexParamNameConstant);
     indexParam->SetAssembly(assembly);
@@ -546,7 +549,7 @@ void SymbolTable::EndIndexerGetter()
 void SymbolTable::BeginIndexerSetter(IndexerNode& indexerNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string setterName = U"@set";
+    std::u32string setterName = U"@set";
     Constant setterNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(setterName.c_str())));
     IndexerSetterFunctionSymbol* setter = new IndexerSetterFunctionSymbol(indexerNode.Setter()->GetSpan(), setterNameConstant);
     function = setter;
@@ -574,7 +577,7 @@ void SymbolTable::BeginIndexerSetter(IndexerNode& indexerNode)
         setter->SetStatic();
     }
     declarationBlockId = 0;
-    utf32_string indexParamName = ToUtf32(indexerNode.Id()->Str());
+    std::u32string indexParamName = indexerNode.Id()->Str();
     Constant indexParamNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(indexParamName.c_str())));
     ParameterSymbol* indexParam = new ParameterSymbol(indexerNode.Id()->GetSpan(), indexParamNameConstant);
     indexParam->SetAssembly(assembly);
@@ -593,7 +596,7 @@ void SymbolTable::EndIndexerSetter()
 void SymbolTable::BeginEnumType(EnumTypeNode& enumTypeNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(enumTypeNode.Id()->Str());
+    std::u32string name = enumTypeNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     EnumTypeSymbol* enumTypeSymbol = new EnumTypeSymbol(enumTypeNode.GetSpan(), nameConstant);
     enumTypeSymbol->SetAssembly(assembly);
@@ -613,7 +616,7 @@ void SymbolTable::EndEnumType()
 void SymbolTable::AddEnumConstant(EnumConstantNode& enumConstantNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(enumConstantNode.Id()->Str());
+    std::u32string name = enumConstantNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     EnumConstantSymbol* enumConstantSymbol = new EnumConstantSymbol(enumConstantNode.GetSpan(), nameConstant);
     enumConstantSymbol->SetAssembly(assembly);
@@ -624,7 +627,7 @@ void SymbolTable::AddEnumConstant(EnumConstantNode& enumConstantNode)
 void SymbolTable::AddConstant(ConstantNode& constantNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(constantNode.Id()->Str());
+    std::u32string name = constantNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     ConstantSymbol* constantSymbol = new ConstantSymbol(constantNode.GetSpan(), nameConstant);
     constantSymbol->SetAssembly(assembly);
@@ -635,7 +638,7 @@ void SymbolTable::AddConstant(ConstantNode& constantNode)
 void SymbolTable::BeginDelegate(DelegateNode& delegateNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(delegateNode.Id()->Str());
+    std::u32string name = delegateNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     DelegateTypeSymbol* delegateTypeSymbol = new DelegateTypeSymbol(delegateNode.GetSpan(), nameConstant);
     delegateTypeSymbol->SetAssembly(assembly);
@@ -655,7 +658,7 @@ void SymbolTable::EndDelegate()
 void SymbolTable::BeginClassDelegate(ClassDelegateNode& classDelegateNode)
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string name = ToUtf32(classDelegateNode.Id()->Str());
+    std::u32string name = classDelegateNode.Id()->Str();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     ClassDelegateTypeSymbol* classDelegateTypeSymbol = new ClassDelegateTypeSymbol(classDelegateNode.GetSpan(), nameConstant);
     classDelegateTypeSymbol->SetAssembly(assembly);
@@ -741,7 +744,7 @@ void SymbolTable::Clear()
     globalNs.Clear();
 }
 
-TypeSymbol* SymbolTable::GetTypeNoThrow(const utf32_string& typeFullName) const
+TypeSymbol* SymbolTable::GetTypeNoThrow(const std::u32string& typeFullName) const
 {
     ConstantPool& constantPool = assembly->GetConstantPool();
     ConstantId id = constantPool.GetIdFor(typeFullName);
@@ -757,7 +760,7 @@ TypeSymbol* SymbolTable::GetTypeNoThrow(const utf32_string& typeFullName) const
     return nullptr;
 }
 
-TypeSymbol* SymbolTable::GetType(const utf32_string& typeFullName) const
+TypeSymbol* SymbolTable::GetType(const std::u32string& typeFullName) const
 {
     TypeSymbol* type = GetTypeNoThrow(typeFullName);
     if (type)
@@ -774,7 +777,7 @@ void SymbolTable::AddType(TypeSymbol* type)
 {
     if (doNotAddTypes) return;
     if (dynamic_cast<TypeParameterSymbol*>(type)) return;
-    utf32_string typeFullName = type->FullName();
+    std::u32string typeFullName = type->FullName();
     ConstantPool& constantPool = assembly->GetConstantPool();
     ConstantId id = constantPool.GetIdFor(typeFullName);
     if (id == noConstantId)
@@ -897,7 +900,7 @@ void SymbolTable::AddConversion(FunctionSymbol* conversionFun)
 
 TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* elementType)
 {
-    utf32_string arrayName = elementType->FullName() + U"[]";
+    std::u32string arrayName = elementType->FullName() + U"[]";
     TypeSymbol* arrayType = GetTypeNoThrow(arrayName);
     if (arrayType) 
     {
@@ -921,9 +924,9 @@ TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* eleme
         Assert(enumerableInterface, "interface type expected");
         arrayTypeSymbol->AddImplementedInterface(enumerableInterface);
         arrayTypeSymbol->SetElementType(elementType);
-        utf32_string fullElementName = elementType->FullName();
+        std::u32string fullElementName = elementType->FullName();
         assembly->GetConstantPool().Install(StringPtr(fullElementName.c_str()));
-        utf32_string fullName = arrayTypeSymbol->FullName();
+        std::u32string fullName = arrayTypeSymbol->FullName();
         Constant fullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
         arrayTypeSymbol->GetObjectType()->SetNameConstant(fullNameConstant);
         arrayTypeSymbol->GetContainerScope()->SetBase(arrayTypeSymbol->BaseClass()->GetContainerScope());
@@ -954,9 +957,9 @@ TypeSymbol* SymbolTable::CreateArrayType(ArrayNode& arrayNode, TypeSymbol* eleme
     }
 }
 
-utf32_string MakeClassTemplateSpecializationName(ClassTypeSymbol* primaryClassTemplate, const std::vector<TypeSymbol*>& typeArguments)
+std::u32string MakeClassTemplateSpecializationName(ClassTypeSymbol* primaryClassTemplate, const std::vector<TypeSymbol*>& typeArguments)
 {
-    utf32_string name;
+    std::u32string name;
     name.append(primaryClassTemplate->Name().Value()).append(1, U'<');
     int n = int(typeArguments.size());
     for (int i = 0; i < n; ++i)
@@ -980,7 +983,7 @@ ClassTemplateSpecializationSymbol* SymbolTable::MakeClassTemplateSpecialization(
     {
         return it->second;
     }
-    utf32_string name = MakeClassTemplateSpecializationName(primaryClassTemplate, typeArguments);
+    std::u32string name = MakeClassTemplateSpecializationName(primaryClassTemplate, typeArguments);
     ConstantPool& constantPool = assembly->GetConstantPool();
     Constant nameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(name.c_str())));
     ClassTemplateSpecializationSymbol* classTemplateSpecialization = new ClassTemplateSpecializationSymbol(span, nameConstant);
@@ -1010,7 +1013,7 @@ TypeSymbol* SymbolTable::MakeRefType(Node& node, TypeSymbol* baseType)
         return it->second;
     }
     ConstantPool& constantPool = assembly->GetConstantPool();
-    utf32_string s = U"ref " + baseType->FullName();
+    std::u32string s = U"ref " + baseType->FullName();
     Constant name = constantPool.GetConstant(constantPool.Install(StringPtr(s.c_str())));
     RefTypeSymbol* refTypeSymbol = new RefTypeSymbol(node.GetSpan(), name);
     refTypeSymbol->SetAssembly(assembly);

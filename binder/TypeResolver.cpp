@@ -8,8 +8,11 @@
 #include <cminor/binder/ExpressionBinder.hpp>
 #include <cminor/ast/Expression.hpp>
 #include <cminor/ast/Visitor.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace binder {
+
+using namespace cminor::unicode;
 
 class NamespaceTypeSymbol : public TypeSymbol
 {
@@ -161,7 +164,7 @@ void TypeResolverVisitor::ResolveSymbol(Node& node, Symbol* symbol)
 
 void TypeResolverVisitor::Visit(IdentifierNode& identifierNode)
 {
-    utf32_string s = ToUtf32(identifierNode.Str());
+    std::u32string s = identifierNode.Str();
     Symbol* symbol = containerScope->Lookup(StringPtr(s.c_str()), ScopeLookup::this_and_base_and_parent);
     if (!symbol)
     {
@@ -180,7 +183,7 @@ void TypeResolverVisitor::Visit(IdentifierNode& identifierNode)
     }
     else
     {
-        throw Exception("type symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+        throw Exception("type symbol '" + ToUtf8(identifierNode.Str()) + "' not found", identifierNode.GetSpan());
     }
 }
 
@@ -223,7 +226,7 @@ void TypeResolverVisitor::Visit(DotNode& dotNode)
     {
         throw Exception("symbol '" + ToUtf8(type->FullName()) + "' does not denote a class or namespace", dotNode.GetSpan(), type->GetSpan());
     }
-    utf32_string s = ToUtf32(dotNode.MemberStr());
+    std::u32string s = dotNode.MemberStr();
     Symbol* symbol = scope->Lookup(StringPtr(s.c_str()), ScopeLookup::this_and_base);
     if (symbol)
     {
@@ -231,7 +234,7 @@ void TypeResolverVisitor::Visit(DotNode& dotNode)
     }
     else
     {
-        throw Exception("type symbol '" + dotNode.MemberStr() + "' not found", dotNode.GetSpan());
+        throw Exception("type symbol '" + ToUtf8(dotNode.MemberStr()) + "' not found", dotNode.GetSpan());
     }
 }
 

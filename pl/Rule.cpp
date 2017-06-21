@@ -286,8 +286,7 @@ RuleLink::RuleLink(const std::string& name_, Grammar* grammar_, const std::strin
     std::string prefix = GetPrefix(linkedRuleName);
     if (prefix == "stdlib")
     {
-        //linkedRuleName = "cminor.parsing.stdlib." + GetCommonName(linkedRuleName);
-        linkedRuleName = "soul.parsing.stdlib." + GetCommonName(linkedRuleName);
+        linkedRuleName = "cminor.parsing.stdlib." + GetCommonName(linkedRuleName);
     }
 }
 
@@ -296,8 +295,7 @@ RuleLink::RuleLink(Grammar* grammar_, const std::string& linkedRuleName_): Parsi
     std::string prefix = GetPrefix(linkedRuleName);
     if (prefix == "stdlib")
     {
-        //linkedRuleName = "cminor.parsing.stdlib." + GetCommonName(linkedRuleName);
-        linkedRuleName = "soul.parsing.stdlib." + GetCommonName(linkedRuleName);
+        linkedRuleName = "cminor.parsing.stdlib." + GetCommonName(linkedRuleName);
     }
 }
 

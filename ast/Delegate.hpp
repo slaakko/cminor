@@ -21,8 +21,8 @@ public:
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
-    std::string Name() const;
-    std::string ToString() const override { return Name(); }
+    std::u32string Name() const;
+    std::u32string ToString() const override { return Name(); }
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
     IdentifierNode* Id() const { return id.get(); }
@@ -45,8 +45,8 @@ public:
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
-    std::string Name() const;
-    std::string ToString() const override { return Name(); }
+    std::u32string Name() const;
+    std::u32string ToString() const override { return Name(); }
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
     IdentifierNode* Id() const { return id.get(); }

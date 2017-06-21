@@ -51,4 +51,10 @@ const char* MappedInputFile::End() const
     return impl->Data() + impl->Size();
 }
 
+std::string ReadFile(const std::string& fileName)
+{
+    MappedInputFile mappedFile(fileName);
+    return std::string(mappedFile.Begin(), mappedFile.End());
+}
+
 } } // namespace cminor::util

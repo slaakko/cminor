@@ -1,19 +1,22 @@
 #include "Literal.hpp"
-#include <cminor/pl/Action.hpp>
-#include <cminor/pl/Rule.hpp>
-#include <cminor/pl/ParsingDomain.hpp>
-#include <cminor/pl/Primitive.hpp>
-#include <cminor/pl/Composite.hpp>
-#include <cminor/pl/Nonterminal.hpp>
-#include <cminor/pl/Exception.hpp>
-#include <cminor/pl/StdLib.hpp>
-#include <cminor/pl/XmlLog.hpp>
+#include <cminor/parsing/Action.hpp>
+#include <cminor/parsing/Rule.hpp>
+#include <cminor/parsing/ParsingDomain.hpp>
+#include <cminor/parsing/Primitive.hpp>
+#include <cminor/parsing/Composite.hpp>
+#include <cminor/parsing/Nonterminal.hpp>
+#include <cminor/parsing/Exception.hpp>
+#include <cminor/parsing/StdLib.hpp>
+#include <cminor/parsing/XmlLog.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <sstream>
 
 namespace cminor { namespace parser {
 
 using namespace cminor::util;
 using namespace cminor::parsing;
+using namespace cminor::util;
+using namespace cminor::unicode;
 
 LiteralGrammar* LiteralGrammar::Create()
 {
@@ -30,12 +33,12 @@ LiteralGrammar* LiteralGrammar::Create(cminor::parsing::ParsingDomain* parsingDo
     return grammar;
 }
 
-LiteralGrammar::LiteralGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("LiteralGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
+LiteralGrammar::LiteralGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar(ToUtf32("LiteralGrammar"), parsingDomain_->GetNamespaceScope(ToUtf32("cminor.parser")), parsingDomain_)
 {
     SetOwner(0);
 }
 
-Node* LiteralGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName)
+Node* LiteralGrammar::Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName)
 {
     cminor::parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
     std::unique_ptr<cminor::parsing::XmlLog> xmlLog;
@@ -54,7 +57,7 @@ Node* LiteralGrammar::Parse(const char* start, const char* end, int fileIndex, c
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
+    if (!match.Hit() || stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -62,7 +65,7 @@ Node* LiteralGrammar::Parse(const char* start, const char* end, int fileIndex, c
         }
         else
         {
-            throw cminor::parsing::ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+            throw cminor::parsing::ParsingException("grammar '" + ToUtf8(Name()) + "' has no start rule", fileName, scanner.GetSpan(), start, end);
         }
     }
     std::unique_ptr<cminor::parsing::Object> value = std::move(stack.top());
@@ -74,10 +77,10 @@ Node* LiteralGrammar::Parse(const char* start, const char* end, int fileIndex, c
 class LiteralGrammar::LiteralRule : public cminor::parsing::Rule
 {
 public:
-    LiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    LiteralRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("Node*");
+        SetValueTypeName(ToUtf32("Node*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -95,57 +98,57 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<LiteralRule>(this, &LiteralRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<LiteralRule>(this, &LiteralRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<LiteralRule>(this, &LiteralRule::A2Action));
-        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        cminor::parsing::ActionParser* a3ActionParser = GetAction(ToUtf32("A3"));
         a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<LiteralRule>(this, &LiteralRule::A3Action));
-        cminor::parsing::ActionParser* a4ActionParser = GetAction("A4");
+        cminor::parsing::ActionParser* a4ActionParser = GetAction(ToUtf32("A4"));
         a4ActionParser->SetAction(new cminor::parsing::MemberParsingAction<LiteralRule>(this, &LiteralRule::A4Action));
-        cminor::parsing::ActionParser* a5ActionParser = GetAction("A5");
+        cminor::parsing::ActionParser* a5ActionParser = GetAction(ToUtf32("A5"));
         a5ActionParser->SetAction(new cminor::parsing::MemberParsingAction<LiteralRule>(this, &LiteralRule::A5Action));
-        cminor::parsing::NonterminalParser* booleanLiteralNonterminalParser = GetNonterminal("BooleanLiteral");
+        cminor::parsing::NonterminalParser* booleanLiteralNonterminalParser = GetNonterminal(ToUtf32("BooleanLiteral"));
         booleanLiteralNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LiteralRule>(this, &LiteralRule::PostBooleanLiteral));
-        cminor::parsing::NonterminalParser* floatingLiteralNonterminalParser = GetNonterminal("FloatingLiteral");
+        cminor::parsing::NonterminalParser* floatingLiteralNonterminalParser = GetNonterminal(ToUtf32("FloatingLiteral"));
         floatingLiteralNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LiteralRule>(this, &LiteralRule::PostFloatingLiteral));
-        cminor::parsing::NonterminalParser* integerLiteralNonterminalParser = GetNonterminal("IntegerLiteral");
+        cminor::parsing::NonterminalParser* integerLiteralNonterminalParser = GetNonterminal(ToUtf32("IntegerLiteral"));
         integerLiteralNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LiteralRule>(this, &LiteralRule::PostIntegerLiteral));
-        cminor::parsing::NonterminalParser* charLiteralNonterminalParser = GetNonterminal("CharLiteral");
+        cminor::parsing::NonterminalParser* charLiteralNonterminalParser = GetNonterminal(ToUtf32("CharLiteral"));
         charLiteralNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LiteralRule>(this, &LiteralRule::PostCharLiteral));
-        cminor::parsing::NonterminalParser* stringLiteralNonterminalParser = GetNonterminal("StringLiteral");
+        cminor::parsing::NonterminalParser* stringLiteralNonterminalParser = GetNonterminal(ToUtf32("StringLiteral"));
         stringLiteralNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LiteralRule>(this, &LiteralRule::PostStringLiteral));
-        cminor::parsing::NonterminalParser* nullLiteralNonterminalParser = GetNonterminal("NullLiteral");
+        cminor::parsing::NonterminalParser* nullLiteralNonterminalParser = GetNonterminal(ToUtf32("NullLiteral"));
         nullLiteralNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LiteralRule>(this, &LiteralRule::PostNullLiteral));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromBooleanLiteral;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromFloatingLiteral;
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromIntegerLiteral;
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A3Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromCharLiteral;
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A4Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromStringLiteral;
     }
-    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A5Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromNullLiteral;
@@ -227,10 +230,10 @@ private:
 class LiteralGrammar::BooleanLiteralRule : public cminor::parsing::Rule
 {
 public:
-    BooleanLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    BooleanLiteralRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("Node*");
+        SetValueTypeName(ToUtf32("Node*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -248,17 +251,17 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BooleanLiteralRule>(this, &BooleanLiteralRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BooleanLiteralRule>(this, &BooleanLiteralRule::A1Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new BooleanLiteralNode(span, true);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new BooleanLiteralNode(span, false);
@@ -274,11 +277,11 @@ private:
 class LiteralGrammar::FloatingLiteralRule : public cminor::parsing::Rule
 {
 public:
-    FloatingLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    FloatingLiteralRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("Node*");
-        AddLocalVariable(AttrOrVariable("Span", "s"));
+        SetValueTypeName(ToUtf32("Node*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("Span"), ToUtf32("s")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -296,27 +299,27 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<FloatingLiteralRule>(this, &FloatingLiteralRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<FloatingLiteralRule>(this, &FloatingLiteralRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<FloatingLiteralRule>(this, &FloatingLiteralRule::A2Action));
-        cminor::parsing::NonterminalParser* floatingLiteralValueNonterminalParser = GetNonterminal("FloatingLiteralValue");
+        cminor::parsing::NonterminalParser* floatingLiteralValueNonterminalParser = GetNonterminal(ToUtf32("FloatingLiteralValue"));
         floatingLiteralValueNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<FloatingLiteralRule>(this, &FloatingLiteralRule::PostFloatingLiteralValue));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->s = span;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->s.SetEnd(span.End());
         context->value = CreateFloatingLiteralNode(context->s, context->fromFloatingLiteralValue, true);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = CreateFloatingLiteralNode(context->s, context->fromFloatingLiteralValue, false);
@@ -344,10 +347,10 @@ private:
 class LiteralGrammar::FloatingLiteralValueRule : public cminor::parsing::Rule
 {
 public:
-    FloatingLiteralValueRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    FloatingLiteralValueRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("double");
+        SetValueTypeName(ToUtf32("double"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -365,10 +368,10 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<FloatingLiteralValueRule>(this, &FloatingLiteralValueRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::stringstream s;
@@ -386,11 +389,11 @@ private:
 class LiteralGrammar::IntegerLiteralRule : public cminor::parsing::Rule
 {
 public:
-    IntegerLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    IntegerLiteralRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("Node*");
-        AddLocalVariable(AttrOrVariable("Span", "s"));
+        SetValueTypeName(ToUtf32("Node*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("Span"), ToUtf32("s")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -408,27 +411,27 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IntegerLiteralRule>(this, &IntegerLiteralRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IntegerLiteralRule>(this, &IntegerLiteralRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IntegerLiteralRule>(this, &IntegerLiteralRule::A2Action));
-        cminor::parsing::NonterminalParser* integerLiteralValueNonterminalParser = GetNonterminal("IntegerLiteralValue");
+        cminor::parsing::NonterminalParser* integerLiteralValueNonterminalParser = GetNonterminal(ToUtf32("IntegerLiteralValue"));
         integerLiteralValueNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IntegerLiteralRule>(this, &IntegerLiteralRule::PostIntegerLiteralValue));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->s = span;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->s.SetEnd(span.End());
         context->value = CreateIntegerLiteralNode(context->s, context->fromIntegerLiteralValue, true);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = CreateIntegerLiteralNode(context->s, context->fromIntegerLiteralValue, false);
@@ -456,10 +459,10 @@ private:
 class LiteralGrammar::IntegerLiteralValueRule : public cminor::parsing::Rule
 {
 public:
-    IntegerLiteralValueRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    IntegerLiteralValueRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("uint64_t");
+        SetValueTypeName(ToUtf32("uint64_t"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -477,21 +480,21 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IntegerLiteralValueRule>(this, &IntegerLiteralValueRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IntegerLiteralValueRule>(this, &IntegerLiteralValueRule::A1Action));
-        cminor::parsing::NonterminalParser* hexIntegerLiteralNonterminalParser = GetNonterminal("HexIntegerLiteral");
+        cminor::parsing::NonterminalParser* hexIntegerLiteralNonterminalParser = GetNonterminal(ToUtf32("HexIntegerLiteral"));
         hexIntegerLiteralNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IntegerLiteralValueRule>(this, &IntegerLiteralValueRule::PostHexIntegerLiteral));
-        cminor::parsing::NonterminalParser* decIntegerLiteralNonterminalParser = GetNonterminal("DecIntegerLiteral");
+        cminor::parsing::NonterminalParser* decIntegerLiteralNonterminalParser = GetNonterminal(ToUtf32("DecIntegerLiteral"));
         decIntegerLiteralNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IntegerLiteralValueRule>(this, &IntegerLiteralValueRule::PostDecIntegerLiteral));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromHexIntegerLiteral;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromDecIntegerLiteral;
@@ -529,10 +532,10 @@ private:
 class LiteralGrammar::HexIntegerLiteralRule : public cminor::parsing::Rule
 {
 public:
-    HexIntegerLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    HexIntegerLiteralRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("uint64_t");
+        SetValueTypeName(ToUtf32("uint64_t"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -550,12 +553,12 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<HexIntegerLiteralRule>(this, &HexIntegerLiteralRule::A0Action));
-        cminor::parsing::NonterminalParser* hexDigitSequenceNonterminalParser = GetNonterminal("HexDigitSequence");
+        cminor::parsing::NonterminalParser* hexDigitSequenceNonterminalParser = GetNonterminal(ToUtf32("HexDigitSequence"));
         hexDigitSequenceNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<HexIntegerLiteralRule>(this, &HexIntegerLiteralRule::PostHexDigitSequence));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromHexDigitSequence;
@@ -582,10 +585,10 @@ private:
 class LiteralGrammar::DecIntegerLiteralRule : public cminor::parsing::Rule
 {
 public:
-    DecIntegerLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    DecIntegerLiteralRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("uint64_t");
+        SetValueTypeName(ToUtf32("uint64_t"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -603,12 +606,12 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<DecIntegerLiteralRule>(this, &DecIntegerLiteralRule::A0Action));
-        cminor::parsing::NonterminalParser* decDigitSequenceNonterminalParser = GetNonterminal("DecDigitSequence");
+        cminor::parsing::NonterminalParser* decDigitSequenceNonterminalParser = GetNonterminal(ToUtf32("DecDigitSequence"));
         decDigitSequenceNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DecIntegerLiteralRule>(this, &DecIntegerLiteralRule::PostDecDigitSequence));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromDecDigitSequence;
@@ -635,11 +638,11 @@ private:
 class LiteralGrammar::CharLiteralRule : public cminor::parsing::Rule
 {
 public:
-    CharLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    CharLiteralRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("Node*");
-        AddLocalVariable(AttrOrVariable("utf32_char", "litValue"));
+        SetValueTypeName(ToUtf32("Node*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("char32_t"), ToUtf32("litValue")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -657,28 +660,28 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharLiteralRule>(this, &CharLiteralRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharLiteralRule>(this, &CharLiteralRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharLiteralRule>(this, &CharLiteralRule::A2Action));
-        cminor::parsing::NonterminalParser* charEscapeNonterminalParser = GetNonterminal("CharEscape");
+        cminor::parsing::NonterminalParser* charEscapeNonterminalParser = GetNonterminal(ToUtf32("CharEscape"));
         charEscapeNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CharLiteralRule>(this, &CharLiteralRule::PostCharEscape));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new CharLiteralNode(span, context->litValue);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        utf32_string s = ToUtf32(std::string(matchBegin, matchEnd));
+        std::u32string s = ToUtf32(std::string(matchBegin, matchEnd));
         if (s.empty()) pass = false;
         else context->litValue = s[0];
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->litValue = context->fromCharEscape;
@@ -689,7 +692,7 @@ public:
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromCharEscape_value = std::move(stack.top());
-            context->fromCharEscape = *static_cast<cminor::parsing::ValueObject<utf32_char>*>(fromCharEscape_value.get());
+            context->fromCharEscape = *static_cast<cminor::parsing::ValueObject<char32_t>*>(fromCharEscape_value.get());
             stack.pop();
         }
     }
@@ -698,19 +701,19 @@ private:
     {
         Context(): value(), litValue(), fromCharEscape() {}
         Node* value;
-        utf32_char litValue;
-        utf32_char fromCharEscape;
+        char32_t litValue;
+        char32_t fromCharEscape;
     };
 };
 
 class LiteralGrammar::StringLiteralRule : public cminor::parsing::Rule
 {
 public:
-    StringLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    StringLiteralRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("Node*");
-        AddLocalVariable(AttrOrVariable("utf32_string", "s"));
+        SetValueTypeName(ToUtf32("Node*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("std::u32string"), ToUtf32("s")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -728,40 +731,40 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A2Action));
-        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        cminor::parsing::ActionParser* a3ActionParser = GetAction(ToUtf32("A3"));
         a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A3Action));
-        cminor::parsing::ActionParser* a4ActionParser = GetAction("A4");
+        cminor::parsing::ActionParser* a4ActionParser = GetAction(ToUtf32("A4"));
         a4ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A4Action));
-        cminor::parsing::NonterminalParser* charEscapeNonterminalParser = GetNonterminal("CharEscape");
+        cminor::parsing::NonterminalParser* charEscapeNonterminalParser = GetNonterminal(ToUtf32("CharEscape"));
         charEscapeNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StringLiteralRule>(this, &StringLiteralRule::PostCharEscape));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new StringLiteralNode(span, context->s);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->s = ToUtf32(std::string(matchBegin, matchEnd));
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new StringLiteralNode(span, context->s);
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A3Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->s.append(ToUtf32(std::string(matchBegin, matchEnd)));
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A4Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->s.append(1, context->fromCharEscape);
@@ -772,7 +775,7 @@ public:
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromCharEscape_value = std::move(stack.top());
-            context->fromCharEscape = *static_cast<cminor::parsing::ValueObject<utf32_char>*>(fromCharEscape_value.get());
+            context->fromCharEscape = *static_cast<cminor::parsing::ValueObject<char32_t>*>(fromCharEscape_value.get());
             stack.pop();
         }
     }
@@ -781,18 +784,18 @@ private:
     {
         Context(): value(), s(), fromCharEscape() {}
         Node* value;
-        utf32_string s;
-        utf32_char fromCharEscape;
+        std::u32string s;
+        char32_t fromCharEscape;
     };
 };
 
 class LiteralGrammar::NullLiteralRule : public cminor::parsing::Rule
 {
 public:
-    NullLiteralRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    NullLiteralRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("Node*");
+        SetValueTypeName(ToUtf32("Node*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -810,10 +813,10 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<NullLiteralRule>(this, &NullLiteralRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new NullLiteralNode(span);
@@ -829,10 +832,10 @@ private:
 class LiteralGrammar::CharEscapeRule : public cminor::parsing::Rule
 {
 public:
-    CharEscapeRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    CharEscapeRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("utf32_char");
+        SetValueTypeName(ToUtf32("char32_t"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -844,110 +847,110 @@ public:
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<utf32_char>(context->value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<char32_t>(context->value)));
         }
         parsingData->PopContext(Id());
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A2Action));
-        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        cminor::parsing::ActionParser* a3ActionParser = GetAction(ToUtf32("A3"));
         a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A3Action));
-        cminor::parsing::ActionParser* a4ActionParser = GetAction("A4");
+        cminor::parsing::ActionParser* a4ActionParser = GetAction(ToUtf32("A4"));
         a4ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A4Action));
-        cminor::parsing::ActionParser* a5ActionParser = GetAction("A5");
+        cminor::parsing::ActionParser* a5ActionParser = GetAction(ToUtf32("A5"));
         a5ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A5Action));
-        cminor::parsing::ActionParser* a6ActionParser = GetAction("A6");
+        cminor::parsing::ActionParser* a6ActionParser = GetAction(ToUtf32("A6"));
         a6ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A6Action));
-        cminor::parsing::ActionParser* a7ActionParser = GetAction("A7");
+        cminor::parsing::ActionParser* a7ActionParser = GetAction(ToUtf32("A7"));
         a7ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A7Action));
-        cminor::parsing::ActionParser* a8ActionParser = GetAction("A8");
+        cminor::parsing::ActionParser* a8ActionParser = GetAction(ToUtf32("A8"));
         a8ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A8Action));
-        cminor::parsing::ActionParser* a9ActionParser = GetAction("A9");
+        cminor::parsing::ActionParser* a9ActionParser = GetAction(ToUtf32("A9"));
         a9ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A9Action));
-        cminor::parsing::ActionParser* a10ActionParser = GetAction("A10");
+        cminor::parsing::ActionParser* a10ActionParser = GetAction(ToUtf32("A10"));
         a10ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A10Action));
-        cminor::parsing::ActionParser* a11ActionParser = GetAction("A11");
+        cminor::parsing::ActionParser* a11ActionParser = GetAction(ToUtf32("A11"));
         a11ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A11Action));
-        cminor::parsing::ActionParser* a12ActionParser = GetAction("A12");
+        cminor::parsing::ActionParser* a12ActionParser = GetAction(ToUtf32("A12"));
         a12ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CharEscapeRule>(this, &CharEscapeRule::A12Action));
-        cminor::parsing::NonterminalParser* hexDigitSequenceNonterminalParser = GetNonterminal("HexDigitSequence");
+        cminor::parsing::NonterminalParser* hexDigitSequenceNonterminalParser = GetNonterminal(ToUtf32("HexDigitSequence"));
         hexDigitSequenceNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CharEscapeRule>(this, &CharEscapeRule::PostHexDigitSequence));
-        cminor::parsing::NonterminalParser* decDigitSequenceNonterminalParser = GetNonterminal("DecDigitSequence");
+        cminor::parsing::NonterminalParser* decDigitSequenceNonterminalParser = GetNonterminal(ToUtf32("DecDigitSequence"));
         decDigitSequenceNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CharEscapeRule>(this, &CharEscapeRule::PostDecDigitSequence));
-        cminor::parsing::NonterminalParser* octalDigitSequenceNonterminalParser = GetNonterminal("OctalDigitSequence");
+        cminor::parsing::NonterminalParser* octalDigitSequenceNonterminalParser = GetNonterminal(ToUtf32("OctalDigitSequence"));
         octalDigitSequenceNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CharEscapeRule>(this, &CharEscapeRule::PostOctalDigitSequence));
-        cminor::parsing::NonterminalParser* hexDigit4NonterminalParser = GetNonterminal("HexDigit4");
+        cminor::parsing::NonterminalParser* hexDigit4NonterminalParser = GetNonterminal(ToUtf32("HexDigit4"));
         hexDigit4NonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CharEscapeRule>(this, &CharEscapeRule::PostHexDigit4));
-        cminor::parsing::NonterminalParser* hexDigit8NonterminalParser = GetNonterminal("HexDigit8");
+        cminor::parsing::NonterminalParser* hexDigit8NonterminalParser = GetNonterminal(ToUtf32("HexDigit8"));
         hexDigit8NonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CharEscapeRule>(this, &CharEscapeRule::PostHexDigit8));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char(context->fromHexDigitSequence);
+        context->value = char32_t(context->fromHexDigitSequence);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char(context->fromDecDigitSequence);
+        context->value = char32_t(context->fromDecDigitSequence);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char(context->fromOctalDigitSequence);
+        context->value = char32_t(context->fromOctalDigitSequence);
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A3Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char(context->fromHexDigit4);
+        context->value = char32_t(context->fromHexDigit4);
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A4Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char(context->fromHexDigit8);
+        context->value = char32_t(context->fromHexDigit8);
     }
-    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A5Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char('\a');
+        context->value = char32_t('\a');
     }
-    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A6Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char('\b');
+        context->value = char32_t('\b');
     }
-    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A7Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char('\f');
+        context->value = char32_t('\f');
     }
-    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A8Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char('\n');
+        context->value = char32_t('\n');
     }
-    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A9Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char('\r');
+        context->value = char32_t('\r');
     }
-    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A10Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char('\t');
+        context->value = char32_t('\t');
     }
-    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A11Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
-        context->value = utf32_char('\v');
+        context->value = char32_t('\v');
     }
-    void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A12Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = *matchBegin;
@@ -1006,7 +1009,7 @@ private:
     struct Context : cminor::parsing::Context
     {
         Context(): value(), fromHexDigitSequence(), fromDecDigitSequence(), fromOctalDigitSequence(), fromHexDigit4(), fromHexDigit8() {}
-        utf32_char value;
+        char32_t value;
         uint64_t fromHexDigitSequence;
         uint64_t fromDecDigitSequence;
         uint64_t fromOctalDigitSequence;
@@ -1018,10 +1021,10 @@ private:
 class LiteralGrammar::DecDigitSequenceRule : public cminor::parsing::Rule
 {
 public:
-    DecDigitSequenceRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    DecDigitSequenceRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("uint64_t");
+        SetValueTypeName(ToUtf32("uint64_t"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1039,10 +1042,10 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<DecDigitSequenceRule>(this, &DecDigitSequenceRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::stringstream s;
@@ -1060,10 +1063,10 @@ private:
 class LiteralGrammar::HexDigitSequenceRule : public cminor::parsing::Rule
 {
 public:
-    HexDigitSequenceRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    HexDigitSequenceRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("uint64_t");
+        SetValueTypeName(ToUtf32("uint64_t"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1081,10 +1084,10 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<HexDigitSequenceRule>(this, &HexDigitSequenceRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::stringstream s;
@@ -1102,10 +1105,10 @@ private:
 class LiteralGrammar::HexDigit4Rule : public cminor::parsing::Rule
 {
 public:
-    HexDigit4Rule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    HexDigit4Rule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("uint16_t");
+        SetValueTypeName(ToUtf32("uint16_t"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1123,10 +1126,10 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<HexDigit4Rule>(this, &HexDigit4Rule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::stringstream s;
@@ -1144,10 +1147,10 @@ private:
 class LiteralGrammar::HexDigit8Rule : public cminor::parsing::Rule
 {
 public:
-    HexDigit8Rule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    HexDigit8Rule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("uint32_t");
+        SetValueTypeName(ToUtf32("uint32_t"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1165,10 +1168,10 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<HexDigit8Rule>(this, &HexDigit8Rule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         std::stringstream s;
@@ -1186,10 +1189,10 @@ private:
 class LiteralGrammar::OctalDigitSequenceRule : public cminor::parsing::Rule
 {
 public:
-    OctalDigitSequenceRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    OctalDigitSequenceRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("uint64_t");
+        SetValueTypeName(ToUtf32("uint64_t"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1207,10 +1210,10 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<OctalDigitSequenceRule>(this, &OctalDigitSequenceRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = 8 * context->value + *matchBegin - '0';
@@ -1229,148 +1232,148 @@ void LiteralGrammar::GetReferencedGrammars()
 
 void LiteralGrammar::CreateRules()
 {
-    AddRule(new LiteralRule("Literal", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new LiteralRule(ToUtf32("Literal"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
                     new cminor::parsing::AlternativeParser(
                         new cminor::parsing::AlternativeParser(
-                            new cminor::parsing::ActionParser("A0",
-                                new cminor::parsing::NonterminalParser("BooleanLiteral", "BooleanLiteral", 0)),
-                            new cminor::parsing::ActionParser("A1",
-                                new cminor::parsing::NonterminalParser("FloatingLiteral", "FloatingLiteral", 0))),
-                        new cminor::parsing::ActionParser("A2",
-                            new cminor::parsing::NonterminalParser("IntegerLiteral", "IntegerLiteral", 0))),
-                    new cminor::parsing::ActionParser("A3",
-                        new cminor::parsing::NonterminalParser("CharLiteral", "CharLiteral", 0))),
-                new cminor::parsing::ActionParser("A4",
-                    new cminor::parsing::NonterminalParser("StringLiteral", "StringLiteral", 0))),
-            new cminor::parsing::ActionParser("A5",
-                new cminor::parsing::NonterminalParser("NullLiteral", "NullLiteral", 0)))));
-    AddRule(new BooleanLiteralRule("BooleanLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
+                            new cminor::parsing::ActionParser(ToUtf32("A0"),
+                                new cminor::parsing::NonterminalParser(ToUtf32("BooleanLiteral"), ToUtf32("BooleanLiteral"), 0)),
+                            new cminor::parsing::ActionParser(ToUtf32("A1"),
+                                new cminor::parsing::NonterminalParser(ToUtf32("FloatingLiteral"), ToUtf32("FloatingLiteral"), 0))),
+                        new cminor::parsing::ActionParser(ToUtf32("A2"),
+                            new cminor::parsing::NonterminalParser(ToUtf32("IntegerLiteral"), ToUtf32("IntegerLiteral"), 0))),
+                    new cminor::parsing::ActionParser(ToUtf32("A3"),
+                        new cminor::parsing::NonterminalParser(ToUtf32("CharLiteral"), ToUtf32("CharLiteral"), 0))),
+                new cminor::parsing::ActionParser(ToUtf32("A4"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("StringLiteral"), ToUtf32("StringLiteral"), 0))),
+            new cminor::parsing::ActionParser(ToUtf32("A5"),
+                new cminor::parsing::NonterminalParser(ToUtf32("NullLiteral"), ToUtf32("NullLiteral"), 0)))));
+    AddRule(new BooleanLiteralRule(ToUtf32("BooleanLiteral"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
-            new cminor::parsing::ActionParser("A0",
-                new cminor::parsing::KeywordParser("true")),
-            new cminor::parsing::ActionParser("A1",
-                new cminor::parsing::KeywordParser("false")))));
-    AddRule(new FloatingLiteralRule("FloatingLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
+            new cminor::parsing::ActionParser(ToUtf32("A0"),
+                new cminor::parsing::KeywordParser(ToUtf32("true"))),
+            new cminor::parsing::ActionParser(ToUtf32("A1"),
+                new cminor::parsing::KeywordParser(ToUtf32("false"))))));
+    AddRule(new FloatingLiteralRule(ToUtf32("FloatingLiteral"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::ActionParser("A0",
-                    new cminor::parsing::NonterminalParser("FloatingLiteralValue", "FloatingLiteralValue", 0)),
+                new cminor::parsing::ActionParser(ToUtf32("A0"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("FloatingLiteralValue"), ToUtf32("FloatingLiteralValue"), 0)),
                 new cminor::parsing::AlternativeParser(
-                    new cminor::parsing::ActionParser("A1",
-                        new cminor::parsing::CharSetParser("fF")),
-                    new cminor::parsing::ActionParser("A2",
+                    new cminor::parsing::ActionParser(ToUtf32("A1"),
+                        new cminor::parsing::CharSetParser(ToUtf32("fF"))),
+                    new cminor::parsing::ActionParser(ToUtf32("A2"),
                         new cminor::parsing::EmptyParser()))))));
-    AddRule(new FloatingLiteralValueRule("FloatingLiteralValue", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new FloatingLiteralValueRule(ToUtf32("FloatingLiteralValue"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::TokenParser(
                 new cminor::parsing::AlternativeParser(
-                    new cminor::parsing::NonterminalParser("FractionalFloatingLiteral", "FractionalFloatingLiteral", 0),
-                    new cminor::parsing::NonterminalParser("ExponentFloatingLiteral", "ExponentFloatingLiteral", 0))))));
-    AddRule(new cminor::parsing::Rule("FractionalFloatingLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
+                    new cminor::parsing::NonterminalParser(ToUtf32("FractionalFloatingLiteral"), ToUtf32("FractionalFloatingLiteral"), 0),
+                    new cminor::parsing::NonterminalParser(ToUtf32("ExponentFloatingLiteral"), ToUtf32("ExponentFloatingLiteral"), 0))))));
+    AddRule(new cminor::parsing::Rule(ToUtf32("FractionalFloatingLiteral"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::TokenParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::SequenceParser(
                             new cminor::parsing::OptionalParser(
-                                new cminor::parsing::NonterminalParser("s0", "DecDigitSequence", 0)),
+                                new cminor::parsing::NonterminalParser(ToUtf32("s0"), ToUtf32("DecDigitSequence"), 0)),
                             new cminor::parsing::CharParser('.')),
-                        new cminor::parsing::NonterminalParser("m", "DecDigitSequence", 0)),
+                        new cminor::parsing::NonterminalParser(ToUtf32("m"), ToUtf32("DecDigitSequence"), 0)),
                     new cminor::parsing::OptionalParser(
-                        new cminor::parsing::NonterminalParser("ExponentPart", "ExponentPart", 0)))),
+                        new cminor::parsing::NonterminalParser(ToUtf32("ExponentPart"), ToUtf32("ExponentPart"), 0)))),
             new cminor::parsing::TokenParser(
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::NonterminalParser("s1", "DecDigitSequence", 0),
+                    new cminor::parsing::NonterminalParser(ToUtf32("s1"), ToUtf32("DecDigitSequence"), 0),
                     new cminor::parsing::CharParser('.'))))));
-    AddRule(new cminor::parsing::Rule("ExponentFloatingLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new cminor::parsing::Rule(ToUtf32("ExponentFloatingLiteral"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::NonterminalParser("DecDigitSequence", "DecDigitSequence", 0),
-                new cminor::parsing::NonterminalParser("ExponentPart", "ExponentPart", 0)))));
-    AddRule(new cminor::parsing::Rule("ExponentPart", GetScope(), GetParsingDomain()->GetNextRuleId(),
+                new cminor::parsing::NonterminalParser(ToUtf32("DecDigitSequence"), ToUtf32("DecDigitSequence"), 0),
+                new cminor::parsing::NonterminalParser(ToUtf32("ExponentPart"), ToUtf32("ExponentPart"), 0)))));
+    AddRule(new cminor::parsing::Rule(ToUtf32("ExponentPart"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::CharSetParser("eE"),
+                    new cminor::parsing::CharSetParser(ToUtf32("eE")),
                     new cminor::parsing::OptionalParser(
-                        new cminor::parsing::NonterminalParser("Sign", "Sign", 0))),
-                new cminor::parsing::NonterminalParser("DecDigitSequence", "DecDigitSequence", 0)))));
-    AddRule(new IntegerLiteralRule("IntegerLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
+                        new cminor::parsing::NonterminalParser(ToUtf32("Sign"), ToUtf32("Sign"), 0))),
+                new cminor::parsing::NonterminalParser(ToUtf32("DecDigitSequence"), ToUtf32("DecDigitSequence"), 0)))));
+    AddRule(new IntegerLiteralRule(ToUtf32("IntegerLiteral"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::ActionParser("A0",
-                    new cminor::parsing::NonterminalParser("IntegerLiteralValue", "IntegerLiteralValue", 0)),
+                new cminor::parsing::ActionParser(ToUtf32("A0"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("IntegerLiteralValue"), ToUtf32("IntegerLiteralValue"), 0)),
                 new cminor::parsing::AlternativeParser(
-                    new cminor::parsing::ActionParser("A1",
-                        new cminor::parsing::CharSetParser("uU")),
-                    new cminor::parsing::ActionParser("A2",
+                    new cminor::parsing::ActionParser(ToUtf32("A1"),
+                        new cminor::parsing::CharSetParser(ToUtf32("uU"))),
+                    new cminor::parsing::ActionParser(ToUtf32("A2"),
                         new cminor::parsing::EmptyParser()))))));
-    AddRule(new IntegerLiteralValueRule("IntegerLiteralValue", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new IntegerLiteralValueRule(ToUtf32("IntegerLiteralValue"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::AlternativeParser(
-                new cminor::parsing::ActionParser("A0",
-                    new cminor::parsing::NonterminalParser("HexIntegerLiteral", "HexIntegerLiteral", 0)),
-                new cminor::parsing::ActionParser("A1",
-                    new cminor::parsing::NonterminalParser("DecIntegerLiteral", "DecIntegerLiteral", 0))))));
-    AddRule(new HexIntegerLiteralRule("HexIntegerLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
+                new cminor::parsing::ActionParser(ToUtf32("A0"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("HexIntegerLiteral"), ToUtf32("HexIntegerLiteral"), 0)),
+                new cminor::parsing::ActionParser(ToUtf32("A1"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("DecIntegerLiteral"), ToUtf32("DecIntegerLiteral"), 0))))));
+    AddRule(new HexIntegerLiteralRule(ToUtf32("HexIntegerLiteral"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::AlternativeParser(
-                    new cminor::parsing::StringParser("0x"),
-                    new cminor::parsing::StringParser("0X")),
-                new cminor::parsing::ActionParser("A0",
-                    new cminor::parsing::NonterminalParser("HexDigitSequence", "HexDigitSequence", 0))))));
-    AddRule(new DecIntegerLiteralRule("DecIntegerLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
-            new cminor::parsing::NonterminalParser("DecDigitSequence", "DecDigitSequence", 0))));
-    AddRule(new CharLiteralRule("CharLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                    new cminor::parsing::StringParser(ToUtf32("0x")),
+                    new cminor::parsing::StringParser(ToUtf32("0X"))),
+                new cminor::parsing::ActionParser(ToUtf32("A0"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("HexDigitSequence"), ToUtf32("HexDigitSequence"), 0))))));
+    AddRule(new DecIntegerLiteralRule(ToUtf32("DecIntegerLiteral"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
+            new cminor::parsing::NonterminalParser(ToUtf32("DecDigitSequence"), ToUtf32("DecDigitSequence"), 0))));
+    AddRule(new CharLiteralRule(ToUtf32("CharLiteral"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::TokenParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::CharParser('\''),
                         new cminor::parsing::AlternativeParser(
-                            new cminor::parsing::ActionParser("A1",
+                            new cminor::parsing::ActionParser(ToUtf32("A1"),
                                 new cminor::parsing::PositiveParser(
-                                    new cminor::parsing::CharSetParser("\'\\\r\n", true))),
-                            new cminor::parsing::ActionParser("A2",
-                                new cminor::parsing::NonterminalParser("CharEscape", "CharEscape", 0)))),
+                                    new cminor::parsing::CharSetParser(ToUtf32("\'\\\r\n"), true))),
+                            new cminor::parsing::ActionParser(ToUtf32("A2"),
+                                new cminor::parsing::NonterminalParser(ToUtf32("CharEscape"), ToUtf32("CharEscape"), 0)))),
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser('\'')))))));
-    AddRule(new StringLiteralRule("StringLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new StringLiteralRule(ToUtf32("StringLiteral"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::CharParser('@'),
-                new cminor::parsing::ActionParser("A0",
+                new cminor::parsing::ActionParser(ToUtf32("A0"),
                     new cminor::parsing::TokenParser(
                         new cminor::parsing::SequenceParser(
                             new cminor::parsing::SequenceParser(
                                 new cminor::parsing::CharParser('\"'),
-                                new cminor::parsing::ActionParser("A1",
+                                new cminor::parsing::ActionParser(ToUtf32("A1"),
                                     new cminor::parsing::KleeneStarParser(
-                                        new cminor::parsing::CharSetParser("\"", true)))),
+                                        new cminor::parsing::CharSetParser(ToUtf32("\""), true)))),
                             new cminor::parsing::CharParser('\"'))))),
-            new cminor::parsing::ActionParser("A2",
+            new cminor::parsing::ActionParser(ToUtf32("A2"),
                 new cminor::parsing::TokenParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::SequenceParser(
                             new cminor::parsing::CharParser('\"'),
                             new cminor::parsing::KleeneStarParser(
                                 new cminor::parsing::AlternativeParser(
-                                    new cminor::parsing::ActionParser("A3",
+                                    new cminor::parsing::ActionParser(ToUtf32("A3"),
                                         new cminor::parsing::PositiveParser(
-                                            new cminor::parsing::CharSetParser("\"\\\r\n", true))),
-                                    new cminor::parsing::ActionParser("A4",
-                                        new cminor::parsing::NonterminalParser("CharEscape", "CharEscape", 0))))),
+                                            new cminor::parsing::CharSetParser(ToUtf32("\"\\\r\n"), true))),
+                                    new cminor::parsing::ActionParser(ToUtf32("A4"),
+                                        new cminor::parsing::NonterminalParser(ToUtf32("CharEscape"), ToUtf32("CharEscape"), 0))))),
                         new cminor::parsing::ExpectationParser(
                             new cminor::parsing::CharParser('\"'))))))));
-    AddRule(new NullLiteralRule("NullLiteral", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
-            new cminor::parsing::KeywordParser("null"))));
-    AddRule(new CharEscapeRule("CharEscape", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new NullLiteralRule(ToUtf32("NullLiteral"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
+            new cminor::parsing::KeywordParser(ToUtf32("null")))));
+    AddRule(new CharEscapeRule(ToUtf32("CharEscape"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::TokenParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::CharParser('\\'),
@@ -1387,51 +1390,51 @@ void LiteralGrammar::CreateRules()
                                                         new cminor::parsing::AlternativeParser(
                                                             new cminor::parsing::AlternativeParser(
                                                                 new cminor::parsing::SequenceParser(
-                                                                    new cminor::parsing::CharSetParser("xX"),
-                                                                    new cminor::parsing::ActionParser("A0",
-                                                                        new cminor::parsing::NonterminalParser("HexDigitSequence", "HexDigitSequence", 0))),
+                                                                    new cminor::parsing::CharSetParser(ToUtf32("xX")),
+                                                                    new cminor::parsing::ActionParser(ToUtf32("A0"),
+                                                                        new cminor::parsing::NonterminalParser(ToUtf32("HexDigitSequence"), ToUtf32("HexDigitSequence"), 0))),
                                                                 new cminor::parsing::SequenceParser(
-                                                                    new cminor::parsing::CharSetParser("dD"),
-                                                                    new cminor::parsing::ActionParser("A1",
-                                                                        new cminor::parsing::NonterminalParser("DecDigitSequence", "DecDigitSequence", 0)))),
-                                                            new cminor::parsing::ActionParser("A2",
-                                                                new cminor::parsing::NonterminalParser("OctalDigitSequence", "OctalDigitSequence", 0))),
+                                                                    new cminor::parsing::CharSetParser(ToUtf32("dD")),
+                                                                    new cminor::parsing::ActionParser(ToUtf32("A1"),
+                                                                        new cminor::parsing::NonterminalParser(ToUtf32("DecDigitSequence"), ToUtf32("DecDigitSequence"), 0)))),
+                                                            new cminor::parsing::ActionParser(ToUtf32("A2"),
+                                                                new cminor::parsing::NonterminalParser(ToUtf32("OctalDigitSequence"), ToUtf32("OctalDigitSequence"), 0))),
                                                         new cminor::parsing::SequenceParser(
                                                             new cminor::parsing::CharParser('u'),
-                                                            new cminor::parsing::ActionParser("A3",
-                                                                new cminor::parsing::NonterminalParser("HexDigit4", "HexDigit4", 0)))),
+                                                            new cminor::parsing::ActionParser(ToUtf32("A3"),
+                                                                new cminor::parsing::NonterminalParser(ToUtf32("HexDigit4"), ToUtf32("HexDigit4"), 0)))),
                                                     new cminor::parsing::SequenceParser(
                                                         new cminor::parsing::CharParser('U'),
-                                                        new cminor::parsing::ActionParser("A4",
-                                                            new cminor::parsing::NonterminalParser("HexDigit8", "HexDigit8", 0)))),
-                                                new cminor::parsing::ActionParser("A5",
+                                                        new cminor::parsing::ActionParser(ToUtf32("A4"),
+                                                            new cminor::parsing::NonterminalParser(ToUtf32("HexDigit8"), ToUtf32("HexDigit8"), 0)))),
+                                                new cminor::parsing::ActionParser(ToUtf32("A5"),
                                                     new cminor::parsing::CharParser('a'))),
-                                            new cminor::parsing::ActionParser("A6",
+                                            new cminor::parsing::ActionParser(ToUtf32("A6"),
                                                 new cminor::parsing::CharParser('b'))),
-                                        new cminor::parsing::ActionParser("A7",
+                                        new cminor::parsing::ActionParser(ToUtf32("A7"),
                                             new cminor::parsing::CharParser('f'))),
-                                    new cminor::parsing::ActionParser("A8",
+                                    new cminor::parsing::ActionParser(ToUtf32("A8"),
                                         new cminor::parsing::CharParser('n'))),
-                                new cminor::parsing::ActionParser("A9",
+                                new cminor::parsing::ActionParser(ToUtf32("A9"),
                                     new cminor::parsing::CharParser('r'))),
-                            new cminor::parsing::ActionParser("A10",
+                            new cminor::parsing::ActionParser(ToUtf32("A10"),
                                 new cminor::parsing::CharParser('t'))),
-                        new cminor::parsing::ActionParser("A11",
+                        new cminor::parsing::ActionParser(ToUtf32("A11"),
                             new cminor::parsing::CharParser('v'))),
-                    new cminor::parsing::ActionParser("A12",
+                    new cminor::parsing::ActionParser(ToUtf32("A12"),
                         new cminor::parsing::AnyCharParser()))))));
-    AddRule(new DecDigitSequenceRule("DecDigitSequence", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new DecDigitSequenceRule(ToUtf32("DecDigitSequence"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::TokenParser(
                 new cminor::parsing::PositiveParser(
                     new cminor::parsing::DigitParser())))));
-    AddRule(new HexDigitSequenceRule("HexDigitSequence", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new HexDigitSequenceRule(ToUtf32("HexDigitSequence"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::TokenParser(
                 new cminor::parsing::PositiveParser(
                     new cminor::parsing::HexDigitParser())))));
-    AddRule(new HexDigit4Rule("HexDigit4", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new HexDigit4Rule(ToUtf32("HexDigit4"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::TokenParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
@@ -1440,8 +1443,8 @@ void LiteralGrammar::CreateRules()
                             new cminor::parsing::HexDigitParser()),
                         new cminor::parsing::HexDigitParser()),
                     new cminor::parsing::HexDigitParser())))));
-    AddRule(new HexDigit8Rule("HexDigit8", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new HexDigit8Rule(ToUtf32("HexDigit8"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::TokenParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
@@ -1458,12 +1461,12 @@ void LiteralGrammar::CreateRules()
                             new cminor::parsing::HexDigitParser()),
                         new cminor::parsing::HexDigitParser()),
                     new cminor::parsing::HexDigitParser())))));
-    AddRule(new OctalDigitSequenceRule("OctalDigitSequence", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new OctalDigitSequenceRule(ToUtf32("OctalDigitSequence"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::PositiveParser(
             new cminor::parsing::TokenParser(
-                new cminor::parsing::ActionParser("A0",
-                    new cminor::parsing::CharSetParser("0-7"))))));
-    AddRule(new cminor::parsing::Rule("Sign", GetScope(), GetParsingDomain()->GetNextRuleId(),
+                new cminor::parsing::ActionParser(ToUtf32("A0"),
+                    new cminor::parsing::CharSetParser(ToUtf32("0-7")))))));
+    AddRule(new cminor::parsing::Rule(ToUtf32("Sign"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::CharParser('+'),
             new cminor::parsing::CharParser('-'))));

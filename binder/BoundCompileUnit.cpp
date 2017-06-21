@@ -95,11 +95,11 @@ FunctionSymbol* BoundCompileUnit::GetConversion(TypeSymbol* sourceType, TypeSymb
             if (functionFound)
             {
                 ConstantPool& constantPool = assembly.GetConstantPool();
-                utf32_string fullFunctionName = viableFunction->FullName();
+                std::u32string fullFunctionName = viableFunction->FullName();
                 viableFunction->SetExported();
                 Constant functionNameContant = constantPool.GetConstant(constantPool.Install(StringPtr(fullFunctionName.c_str())));
                 Constant groupName = constantPool.GetConstant(constantPool.Install(StringPtr(U"@conversion")));
-                utf32_string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
+                std::u32string conversionName = sourceType->FullName() + U"2" + targetType->FullName();
                 Constant conversionNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(conversionName.c_str())));
                 std::unique_ptr<MemFunToClassDelegateConversion> memfun2ClassDlgConversion(new MemFunToClassDelegateConversion(Span(), conversionNameConstant));
                 memfun2ClassDlgConversion->SetAssembly(&assembly);

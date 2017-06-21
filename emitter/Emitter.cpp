@@ -1007,7 +1007,7 @@ void EmitterVisitor::Visit(BoundCatchStatement& boundCatchStatement)
     LocalVariableSymbol* exceptionVar = boundCatchStatement.ExceptionVar();
     TypeSymbol* exceptionVarType = exceptionVar->GetType();
     ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
-    utf32_string fullClassName = exceptionVarType->FullName();
+    std::u32string fullClassName = exceptionVarType->FullName();
     Constant exceptionVarClassTypeFullName = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
     catchBlockPtr->SetExceptionVarClassTypeFullName(exceptionVarClassTypeFullName);
     catchBlockPtr->SetExceptionVarIndex(exceptionVar->Index());

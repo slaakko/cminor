@@ -58,7 +58,7 @@ void ConstantSymbol::SetValue(Value* value_)
 void ConstantSymbol::Write(SymbolWriter& writer)
 {
     Symbol::Write(writer);
-    utf32_string typeName = type->FullName();
+    std::u32string typeName = type->FullName();
     ConstantPool& constantPool = GetAssembly()->GetConstantPool();
     ConstantId typeId = constantPool.GetIdFor(typeName);
     typeId.Write(writer);

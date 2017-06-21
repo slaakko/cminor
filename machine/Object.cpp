@@ -12,10 +12,13 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/util/Random.hpp>
 #include <cminor/machine/Log.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cstring>
 #include <iostream>
 
 namespace cminor { namespace machine {
+
+using namespace cminor::unicode;
 
 std::string ValueTypeStr(ValueType type)
 {
@@ -63,7 +66,7 @@ void IntegralValue::Write(Writer& writer)
         case ValueType::floatType: writer.Put(AsFloat()); break;
         case ValueType::doubleType: writer.Put(AsDouble()); break;
         case ValueType::charType: writer.Put(AsChar()); break;
-        case ValueType::stringLiteral: writer.Put(utf32_string(AsStringLiteral())); break;
+        case ValueType::stringLiteral: writer.Put(std::u32string(AsStringLiteral())); break;
         case ValueType::allocationHandle: throw SystemException("cannot write allocation handles"); writer.Put(AsULong()); break;
         case ValueType::objectReference: if (value != 0) { throw SystemException("cannot write nonnull object references"); } writer.Put(AsULong()); break;
         default: throw SystemException("invalid integral value type to write");
@@ -114,7 +117,7 @@ std::string IntegralValue::ValueStr()
         case ValueType::ulongType: return std::to_string(AsULong());
         case ValueType::floatType: return std::to_string(AsFloat());
         case ValueType::doubleType: return std::to_string(AsDouble());
-        case ValueType::charType: return "'" + UCharStr(AsChar()) + "'";
+        case ValueType::charType: return "'" + ToUtf8(CharStr(AsChar())) + "'";
         case ValueType::memPtr: return ToHexString(AsULong());
         case ValueType::stringLiteral: return "\"" + StringStr(ToUtf8(AsStringLiteral())) + "\"";
         case ValueType::allocationHandle: return AsULong() == 0 ? "null" : std::to_string(AsULong());
@@ -754,13 +757,13 @@ std::pair<AllocationHandle, int32_t> ManagedMemoryPool::CreateStringCharsFromCha
     }
 }
 
-ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_string& s)
+ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const std::u32string& s)
 {
     std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
     return CreateString(thread, s, lock);
 }
 
-ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const utf32_string& s, std::unique_lock<std::recursive_mutex>& lock)
+ObjectReference ManagedMemoryPool::CreateString(Thread& thread, const std::u32string& s, std::unique_lock<std::recursive_mutex>& lock)
 {
     ClassData* classData = ClassDataTable::GetSystemStringClassData();
     int32_t numChars = int32_t(s.length());
@@ -828,7 +831,7 @@ std::string ManagedMemoryPool::GetUtf8String(ObjectReference str)
     void* stringChars = GetAllocation(handle, lock);
     ManagedAllocationHeader* header = GetAllocationHeader(stringChars);
     StringCharactersHeader* stringCharsHeader = &header->stringCharactersHeader;
-    utf32_string s;
+    std::u32string s;
     int32_t n = stringCharsHeader->NumChars();
     for (int32_t i = 0; i < n; ++i)
     {
@@ -959,7 +962,7 @@ int32_t ManagedMemoryPool::GetNumArrayElements(ObjectReference arr)
     return arrayElementsHeader->NumElements();
 }
 
-ObjectReference ManagedMemoryPool::CreateStringArray(Thread& thread, const std::vector<utf32_string>& strings, ObjectType* argsArrayObjectType)
+ObjectReference ManagedMemoryPool::CreateStringArray(Thread& thread, const std::vector<std::u32string>& strings, ObjectType* argsArrayObjectType)
 {
     std::unique_lock<std::recursive_mutex> lock(allocationsMutex, std::defer_lock_t());
     ObjectReference arrayReference = CreateObject(thread, argsArrayObjectType, lock);
@@ -971,7 +974,7 @@ ObjectReference ManagedMemoryPool::CreateStringArray(Thread& thread, const std::
     AllocateArrayElements(thread, arrayReference, classData->Type(), length, lock);
     for (int32_t i = 0; i < length; ++i)
     {
-        const utf32_string& s = strings[i];
+        const std::u32string& s = strings[i];
         ObjectReference str = CreateString(thread, s, lock);
         SetArrayElement(arrayReference, i, str, lock);
     }

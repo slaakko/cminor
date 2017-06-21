@@ -20,7 +20,7 @@ namespace cminor.parser
             ;
 
         QualifiedId : IdentifierNode*
-            ::= token((identifier - Keyword) % '.'){ value = new IdentifierNode(span, std::string(matchBegin, matchEnd)); }
+            ::= token((identifier - Keyword) % '.'){ value = new IdentifierNode(span, std::u32string(matchBegin, matchEnd)); }
             ;
     }
 }

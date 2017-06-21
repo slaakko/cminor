@@ -277,7 +277,7 @@ public:
     Node* Clone(CloneContext& cloneContext) const override;
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
-    const std::string& MemberStr() const;
+    const std::u32string& MemberStr() const;
     void Accept(Visitor& visitor) override;
 private:
     std::unique_ptr<Node> memberId;

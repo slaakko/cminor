@@ -5,7 +5,7 @@ void main()
 {
     try
     {
-        string aName = char.UnicodeName('a');
+        string aName = char.CharacterName('a');
         Console.WriteLine("unicode character name for a is " + aName);
         TimePoint s = Now();
         if (char.IsLetter('a'))
@@ -105,7 +105,7 @@ void main()
         }
         else
         {
-            Console.WriteLine("error: , is not punctuation");
+            Console.WriteLine("error: . is not punctuation");
         }
     }
     catch (Exception ex)

@@ -532,7 +532,7 @@ public:
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = std::string(matchBegin, matchEnd);
-        pass = cminor::util::unicode::IsIdentifier(cminor::util::ToUtf32(context->value));
+        //pass = cminor::unicode::IsIdentifier(cminor::util::ToUtf32(context->value));
     }
 private:
     struct Context : cminor::parsing::Context

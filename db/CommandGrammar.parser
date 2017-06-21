@@ -43,11 +43,11 @@ namespace cminor.db
 
         FilePath : std::string
             ::= token((([a-zA-Z] ':')? [^: ]+){ value = std::string(matchBegin, matchEnd); } | 
-                ('"' ([^"]+){ value = std::string(matchBegin, matchEnd); } '"') | 
-                ('<' ([^>]+){ value = std::string(matchBegin, matchEnd); } '>'))
+                ('"' ([^"]+){ value = ToUtf8(std::u32string(matchBegin, matchEnd)); } '"') | 
+                ('<' ([^>]+){ value = ToUtf8(std::u32string(matchBegin, matchEnd)); } '>'))
             ;
 
-        QualifiedId : std::string
+        QualifiedId : std::u32string
             ::= qualified_id{ value = qualified_id; }
             ;
     }

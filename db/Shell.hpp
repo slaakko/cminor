@@ -23,7 +23,7 @@ class Shell
 public:
     Shell(Machine& machine_);
     void StartMachine();
-    void Run(FunctionSymbol* mainFun_, Assembly& assembly, const std::vector<utf32_string>& programArguments_);
+    void Run(FunctionSymbol* mainFun_, Assembly& assembly, const std::vector<std::u32string>& programArguments_);
     void Exit();
     void Step();
     void Next();
@@ -48,7 +48,7 @@ private:
     Machine& machine;
     bool exit;
     std::unique_ptr<Command> prevCommand;
-    std::vector<utf32_string> programArguments;
+    std::vector<std::u32string> programArguments;
     ObjectType* argsArrayObjectType;
     FunctionSymbol* mainFun;
     int numListLines;

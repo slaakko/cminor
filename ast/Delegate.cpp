@@ -20,16 +20,16 @@ DelegateNode::DelegateNode(const Span& span_, Specifiers specifiers_, Node* retu
     id->SetParent(this);
 }
 
-std::string DelegateNode::Name() const
+std::u32string DelegateNode::Name() const
 {
-    std::string name = id->Str();
+    std::u32string name = id->Str();
     name.append(1, '(');
     int n = parameters.Count();
     for (int i = 0; i < n; ++i)
     {
         if (i > 0)
         {
-            name.append(", ");
+            name.append(U", ");
         }
         name.append(parameters[i]->ToString());
     }
@@ -91,16 +91,16 @@ ClassDelegateNode::ClassDelegateNode(const Span& span_, Specifiers specifiers_, 
     id->SetParent(this);
 }
 
-std::string ClassDelegateNode::Name() const
+std::u32string ClassDelegateNode::Name() const
 {
-    std::string name = id->Str();
+    std::u32string name = id->Str();
     name.append(1, '(');
     int n = parameters.Count();
     for (int i = 0; i < n; ++i)
     {
         if (i > 0)
         {
-            name.append(", ");
+            name.append(U", ");
         }
         name.append(parameters[i]->ToString());
     }

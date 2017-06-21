@@ -38,11 +38,11 @@ namespace cminor.parser
             |   LockStatement(ctx){ value = LockStatement; }
             ;
 
-        LabelId : std::string
+        LabelId : std::u32string
             ::= (identifier - Keyword){ value = identifier; }
             ;
 
-        Label(var std::string label) : LabelNode*
+        Label(var std::u32string label) : LabelNode*
             ::= (LabelId{ label = LabelId; } ':'){ value = new LabelNode(span, label); }
             ;
 

@@ -15,11 +15,13 @@
 #include <cminor/symbols/ConstantSymbol.hpp>
 #include <cminor/symbols/EnumSymbol.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <functional>
 
 namespace cminor { namespace binder {
 
 using namespace cminor::machine;
+using namespace cminor::unicode;
 
 class ScopedValue : public Value
 {
@@ -429,7 +431,7 @@ void Evaluator::Visit(NullLiteralNode& nullLiteralNode)
 void Evaluator::Visit(IdentifierNode& identifierNode)
 {
     bool dontThrow = (flags & EvaluationFlags::dontThrow) != EvaluationFlags::none;
-    utf32_string s = ToUtf32(identifierNode.Str());
+    std::u32string s = identifierNode.Str();
     Symbol* symbol = containerScope->Lookup(StringPtr(s.c_str()), ScopeLookup::this_and_base_and_parent);
     if (!symbol)
     {
@@ -454,7 +456,7 @@ void Evaluator::Visit(IdentifierNode& identifierNode)
             interrupted = true;
             return;
         }
-        throw Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+        throw Exception("symbol '" + ToUtf8(identifierNode.Str()) + "' not found", identifierNode.GetSpan());
     }
 }
 
@@ -1264,7 +1266,7 @@ void Evaluator::Visit(DotNode& dotNode)
     {
         ContainerSymbol* containerSymbol = scopedValue->GetContainerSymbol();
         ContainerScope* scope = containerSymbol->GetContainerScope();
-        utf32_string memberStr = ToUtf32(dotNode.MemberStr());
+        std::u32string memberStr = dotNode.MemberStr();
         Symbol* symbol = scope->Lookup(StringPtr(memberStr.c_str()));
         if (symbol)
         {
@@ -1277,7 +1279,7 @@ void Evaluator::Visit(DotNode& dotNode)
                 interrupted = true;
                 return;
             }
-            throw Exception("symbol '" + ToUtf8(containerSymbol->FullName()) + "' does not have member '" + dotNode.MemberStr() + "'", dotNode.GetSpan());
+            throw Exception("symbol '" + ToUtf8(containerSymbol->FullName()) + "' does not have member '" + ToUtf8(dotNode.MemberStr()) + "'", dotNode.GetSpan());
         }
     }
     else
@@ -1287,7 +1289,7 @@ void Evaluator::Visit(DotNode& dotNode)
             interrupted = true;
             return;
         }
-        throw Exception("expression '" + dotNode.Child()->ToString() + "' must denote a namespace, class type or enumerated type", dotNode.Child()->GetSpan());
+        throw Exception("expression '" + ToUtf8(dotNode.Child()->ToString()) + "' must denote a namespace, class type or enumerated type", dotNode.Child()->GetSpan());
     }
 }
 

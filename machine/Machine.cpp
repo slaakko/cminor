@@ -576,7 +576,7 @@ Machine::~Machine()
     }
 }
 
-void Machine::Start(bool startWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
+void Machine::Start(bool startWithArgs, const std::vector<std::u32string>& programArguments, ObjectType* argsArrayObjectType)
 {
     threads.clear();
     Function* mainFun = FunctionTable::GetMain();
@@ -613,7 +613,7 @@ void Machine::Start(bool startWithArgs, const std::vector<utf32_string>& program
     RunGarbageCollector();
 }
 
-void Machine::RunMain(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
+void Machine::RunMain(bool runWithArgs, const std::vector<std::u32string>& programArguments, ObjectType* argsArrayObjectType)
 {
     Function* mainFun = FunctionTable::GetMain();
     if (!mainFun)

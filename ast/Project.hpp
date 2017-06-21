@@ -65,10 +65,10 @@ public:
 class Project
 {
 public:
-    Project(const std::string& name_, const std::string& filePath_, const std::string& config_);
+    Project(const std::u32string& name_, const std::string& filePath_, const std::string& config_);
     void AddDeclaration(ProjectDeclaration* declaration);
     void ResolveDeclarations();
-    const std::string& Name() const { return name; }
+    const std::u32string& Name() const { return name; }
     const std::string& FilePath() const { return filePath; }
     const boost::filesystem::path& BasePath() const { return basePath; }
     const std::string& AssemblyFilePath() const { return assemblyFilePath; }
@@ -84,7 +84,7 @@ public:
     void SetSystemProject() { isSystemProject = true; }
     void Format(ProjectFormatter& formatter);
 private:
-    std::string name;
+    std::u32string name;
     std::string filePath;
     std::string config;
     Target target;

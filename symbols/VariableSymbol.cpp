@@ -7,8 +7,11 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace symbols {
+
+using namespace cminor::unicode;
 
 VariableSymbol::VariableSymbol(const Span& span_, Constant name_) : Symbol(span_, name_), type(nullptr)
 {
@@ -17,7 +20,7 @@ VariableSymbol::VariableSymbol(const Span& span_, Constant name_) : Symbol(span_
 void VariableSymbol::Write(SymbolWriter& writer)
 {
     Symbol::Write(writer);
-    utf32_string typeFullName = type->FullName();
+    std::u32string typeFullName = type->FullName();
     ConstantId id = GetAssembly()->GetConstantPool().GetIdFor(typeFullName);
     Assert(id != noConstantId, "got no id");
     id.Write(writer);

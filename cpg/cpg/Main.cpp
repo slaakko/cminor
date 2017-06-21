@@ -8,6 +8,7 @@
 #include <cminor/pl/InitDone.hpp>
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/util/Unicode.hpp>
+#include <cminor/util/InitDone.hpp>
 #include <iostream>
 #include <string>
 #include <stdlib.h>
@@ -24,11 +25,11 @@ public:
     InitDone()
     {
         cminor::parsing::Init();
-        cminor::util::unicode::Init();
+        cminor::util::Init();
     }
     ~InitDone()
     {
-        cminor::util::unicode::Done();
+        cminor::util::Done();
         cminor::parsing::Done();
     }
 };

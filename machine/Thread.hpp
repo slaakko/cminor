@@ -74,7 +74,7 @@ public:
     void SetNativeId(int32_t nativeId_) { nativeId = nativeId_; }
     Machine& GetMachine() { return machine; }
     OperandStack& OpStack() { return opStack; }
-    void RunMain(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
+    void RunMain(bool runWithArgs, const std::vector<std::u32string>& programArguments, ObjectType* argsArrayObjectType);
     void RunUser();
     void Step();
     void Next();
@@ -98,7 +98,7 @@ public:
     void RethrowCurrentException();
     void EndCatch();
     void EndFinally();
-    utf32_string GetStackTrace() const;
+    std::u32string GetStackTrace() const;
     void MapFrame(Frame* frame);
     void RemoveFrame(int32_t frameId);
     Frame* GetFrame(int32_t frameId) const;

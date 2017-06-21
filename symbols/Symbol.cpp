@@ -19,11 +19,14 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/ast/Project.hpp>
 #include <cminor/util/Util.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
 
 namespace cminor { namespace symbols {
+
+using namespace cminor::unicode;
 
 const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
 {
@@ -170,9 +173,9 @@ void Symbol::SetName(StringPtr newName)
     name = constantPool.GetConstant(constantPool.Install(newName));
 }
 
-utf32_string Symbol::FullName() const
+std::u32string Symbol::FullName() const
 {
-    utf32_string fullName;
+    std::u32string fullName;
     if (parent)
     {
         fullName.append(parent->FullName());
@@ -496,7 +499,7 @@ void ContainerScope::Install(Symbol* symbol)
     }
 }
 
-Symbol* ContainerScope::LookupQualified(const std::vector<utf32_string>& components, ScopeLookup lookup) const
+Symbol* ContainerScope::LookupQualified(const std::vector<std::u32string>& components, ScopeLookup lookup) const
 {
     const ContainerScope* scope = this;
     Symbol* s = nullptr;
@@ -504,7 +507,7 @@ Symbol* ContainerScope::LookupQualified(const std::vector<utf32_string>& compone
     bool allComponentsMatched = true;
     for (int i = 0; i < n; ++i)
     {
-        const utf32_string& component = components[i];
+        const std::u32string& component = components[i];
         if (scope)
         {
             s = scope->Lookup(StringPtr(component.c_str()), ScopeLookup::this_);
@@ -577,8 +580,8 @@ NamespaceSymbol* ContainerScope::CreateNamespace(StringPtr qualifiedNsName, cons
 {
     ContainerScope* scope = this;
     NamespaceSymbol* parentNs = scope->Ns();
-    std::vector<utf32_string> components = Split(utf32_string(qualifiedNsName.Value()), '.');
-    for (const utf32_string& component : components)
+    std::vector<std::u32string> components = Split(std::u32string(qualifiedNsName.Value()), '.');
+    for (const std::u32string& component : components)
     {
         Symbol* s = scope->Lookup(StringPtr(component.c_str()));
         if (s)
@@ -671,11 +674,11 @@ int CountQualifiedNameComponents(StringPtr qualifiedName)
     return numComponents;
 }
 
-std::vector<utf32_string> ParseQualifiedName(StringPtr qualifiedName)
+std::vector<std::u32string> ParseQualifiedName(StringPtr qualifiedName)
 {
-    std::vector<utf32_string> components;
+    std::vector<std::u32string> components;
     int state = 0;
-    utf32_string component;
+    std::u32string component;
     int angleBracketCount = 0;
     const char32_t* p = qualifiedName.Value();
     while (*p)
@@ -734,7 +737,7 @@ Symbol* ContainerScope::Lookup(StringPtr name, ScopeLookup lookup) const
     int numQualifiedNameComponents = CountQualifiedNameComponents(name);
     if (numQualifiedNameComponents > 1)
     {
-        std::vector<utf32_string> components = ParseQualifiedName(name);
+        std::vector<std::u32string> components = ParseQualifiedName(name);
         return LookupQualified(components, lookup);
     }
     else
@@ -795,25 +798,25 @@ uint32_t ContainerScope::NonDefaultId() const
 void FileScope::InstallAlias(ContainerScope* containerScope, AliasNode* aliasNode)
 {
     Assert(containerScope, "container scope is null");
-    utf32_string qualifiedName = ToUtf32(aliasNode->Qid()->Str());
+    std::u32string qualifiedName = aliasNode->Qid()->Str();
     Symbol* symbol = containerScope->Lookup(StringPtr(qualifiedName.c_str()), ScopeLookup::this_and_parent);
     if (symbol)
     {
-        utf32_string aliasName = ToUtf32(aliasNode->Id()->Str());
+        std::u32string aliasName = aliasNode->Id()->Str();
         ConstantPool& constantPool = containerScope->Container()->GetAssembly()->GetConstantPool();
         Constant constant = constantPool.GetConstant(constantPool.Install(StringPtr(aliasName.c_str())));
         aliasSymbolMap[StringPtr(constant.Value().AsStringLiteral())] = symbol;
     }
     else
     {
-        throw Exception("referred symbol '" + aliasNode->Qid()->Str() + "' not found", aliasNode->Qid()->GetSpan());
+        throw Exception("referred symbol '" + ToUtf8(aliasNode->Qid()->Str()) + "' not found", aliasNode->Qid()->GetSpan());
     }
 }
 
 void FileScope::InstallNamespaceImport(ContainerScope* containerScope, NamespaceImportNode* namespaceImportNode)
 {
     Assert(containerScope, "container scope is null");
-    utf32_string importedNamespaceName = ToUtf32(namespaceImportNode->Ns()->Str());
+    std::u32string importedNamespaceName = namespaceImportNode->Ns()->Str();
     Symbol* symbol = containerScope->Lookup(StringPtr(importedNamespaceName.c_str()), ScopeLookup::this_and_parent);
     if (symbol)
     {
@@ -827,12 +830,12 @@ void FileScope::InstallNamespaceImport(ContainerScope* containerScope, Namespace
         }
         else
         {
-            throw Exception("'" + namespaceImportNode->Ns()->Str() + "' does not denote a namespace", namespaceImportNode->Ns()->GetSpan());
+            throw Exception("'" + ToUtf8(namespaceImportNode->Ns()->Str()) + "' does not denote a namespace", namespaceImportNode->Ns()->GetSpan());
         }
     }
     else
     {
-        throw Exception("referred namespace symbol '" + namespaceImportNode->Ns()->Str() + "' not found", namespaceImportNode->Ns()->GetSpan());
+        throw Exception("referred namespace symbol '" + ToUtf8(namespaceImportNode->Ns()->Str()) + "' not found", namespaceImportNode->Ns()->GetSpan());
     }
 }
 
@@ -1100,7 +1103,7 @@ void NamespaceSymbol::Import(NamespaceSymbol* that, SymbolTable& symbolTable)
         }
         else if (ClassTemplateSpecializationSymbol* thatClassTemplateSpecialization = dynamic_cast<ClassTemplateSpecializationSymbol*>(symbol.get()))
         {
-            utf32_string fullName = thatClassTemplateSpecialization->FullName();
+            std::u32string fullName = thatClassTemplateSpecialization->FullName();
             Symbol* thisSymbol = symbolTable.Container()->GetContainerScope()->Lookup(StringPtr(fullName.c_str()));
             if (thisSymbol)
             {
@@ -1248,7 +1251,7 @@ TypeParameterSymbol::TypeParameterSymbol(const Span& span_, Constant name_) : Ty
 {
 }
 
-utf32_string TypeParameterSymbol::FullName() const
+std::u32string TypeParameterSymbol::FullName() const
 {
     return Name().Value();
 }
@@ -1265,7 +1268,7 @@ BoundTypeParameterSymbol::BoundTypeParameterSymbol(const Span& span_, Constant n
 void BoundTypeParameterSymbol::Write(SymbolWriter& writer)
 {
     Symbol::Write(writer);
-    utf32_string typeName = type->FullName();
+    std::u32string typeName = type->FullName();
     ConstantId typeId = GetAssembly()->GetConstantPool().GetIdFor(typeName);
     Assert(typeId != noConstantId, "got no id");
     typeId.Write(writer);
@@ -1298,7 +1301,7 @@ RefTypeSymbol::RefTypeSymbol(const Span& span_, Constant name_) : TypeSymbol(spa
 void RefTypeSymbol::Write(SymbolWriter& writer)
 {
     TypeSymbol::Write(writer);
-    utf32_string baseTypeName = baseType->FullName();
+    std::u32string baseTypeName = baseType->FullName();
     ConstantId baseTypeId = GetAssembly()->GetConstantPool().GetIdFor(baseTypeName);
     Assert(baseTypeId != noConstantId, "got no id");
     baseTypeId.Write(writer);
@@ -1327,7 +1330,7 @@ void RefTypeSymbol::EmplaceType(TypeSymbol* type, int index)
 void RefTypeSymbol::SetBaseType(TypeSymbol* baseType_)
 {   
     baseType = baseType_; 
-    utf32_string baseTypeFullName = baseType->FullName();
+    std::u32string baseTypeFullName = baseType->FullName();
     ConstantPool& constantPool = GetAssembly()->GetConstantPool();
     constantPool.Install(StringPtr(baseTypeFullName.c_str()));
 }
@@ -1378,7 +1381,7 @@ void ClassTypeSymbol::Write(SymbolWriter& writer)
         writer.AsMachineWriter().Put(hasBaseClass);
         if (hasBaseClass)
         {
-            utf32_string baseClassFullName = baseClass->FullName();
+            std::u32string baseClassFullName = baseClass->FullName();
             ConstantId baseClassNameId = GetAssembly()->GetConstantPool().GetIdFor(baseClassFullName);
             Assert(baseClassNameId != noConstantId, "got no id");
             baseClassNameId.Write(writer);
@@ -1388,7 +1391,7 @@ void ClassTypeSymbol::Write(SymbolWriter& writer)
         for (uint32_t i = 0; i < n; ++i)
         {
             InterfaceTypeSymbol* intf = implementedInterfaces[i];
-            utf32_string interfaceFullName = intf->FullName();
+            std::u32string interfaceFullName = intf->FullName();
             ConstantId intfNameId = GetAssembly()->GetConstantPool().GetIdFor(interfaceFullName);
             Assert(intfNameId != noConstantId, "got no id");
             intfNameId.Write(writer);
@@ -1419,7 +1422,7 @@ void ClassTypeSymbol::Read(SymbolReader& reader)
     flags = ClassTypeSymbolFlags(reader.GetByte());
     if (GetSymbolType() == SymbolType::classTemplateSpecializationSymbol)
     {
-        utf32_string fullClassTemplateSpecializationName = reader.MakeFullClassTemplateSpecializationName(Name().Value());
+        std::u32string fullClassTemplateSpecializationName = reader.MakeFullClassTemplateSpecializationName(Name().Value());
         if (reader.FoundInClassTemplateSpecializationNames(fullClassTemplateSpecializationName))
         {
             if (!IsReopened())
@@ -1771,7 +1774,7 @@ void ClassTypeSymbol::InitVmt()
         }
         else
         {
-            utf32_string fullName = f->FullName();
+            std::u32string fullName = f->FullName();
             Constant fullNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
             classData->Vmt().SetMethodName(i, fullNameConstant);
         }
@@ -1848,7 +1851,7 @@ void ClassTypeSymbol::InitImts()
                 if (Implements(classMemFun, intfMemFun))
                 {
                     classMemFun->SetExported();
-                    utf32_string fullName = classMemFun->FullName();
+                    std::u32string fullName = classMemFun->FullName();
                     Constant fullMethodNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullName.c_str())));
                     imt.SetMethodName(intfMemFun->ImtIndex(), fullMethodNameConstant);
                     break;
@@ -1903,7 +1906,7 @@ ArrayTypeSymbol::ArrayTypeSymbol(const Span& span_, Constant name_) : ClassTypeS
 {
 }
 
-utf32_string ArrayTypeSymbol::SimpleName() const
+std::u32string ArrayTypeSymbol::SimpleName() const
 {
     return U"array_of_" + elementType->SimpleName();
 }
@@ -2037,7 +2040,7 @@ void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)
         return;
     }
     uint32_t start = writer.Pos();
-    utf32_string keyFullClassName;
+    std::u32string keyFullClassName;
     if (key.classTypeSymbol)
     {
         keyFullClassName = key.classTypeSymbol->FullName();
@@ -2050,7 +2053,7 @@ void ClassTemplateSpecializationSymbol::Write(SymbolWriter& writer)
     for (uint32_t i = 0; i < n; ++i)
     {
         TypeSymbol* typeArgument = key.typeArguments[i];
-        utf32_string typeArgumentFullName = typeArgument->FullName();
+        std::u32string typeArgumentFullName = typeArgument->FullName();
         ConstantId typeArgumentId = GetAssembly()->GetConstantPool().GetIdFor(typeArgumentFullName);
         Assert(typeArgumentId != noConstantId, "got no id for type argument");
         typeArgumentId.Write(writer);
@@ -2150,21 +2153,21 @@ void ClassTemplateSpecializationSymbol::SetKey(const ClassTemplateSpecialization
     key = key_;
     if (key.classTypeSymbol)
     {
-        utf32_string classTypeFullName = key.classTypeSymbol->FullName();
+        std::u32string classTypeFullName = key.classTypeSymbol->FullName();
         GetAssembly()->GetConstantPool().Install(StringPtr(classTypeFullName.c_str()));
     }
     int32_t n = int32_t(key.typeArguments.size()); 
     for (int32_t i = 0; i < n; ++i)
     {
         TypeSymbol* typeArgument = key.typeArguments[i];
-        utf32_string typeArgumentFullName = typeArgument->FullName();
+        std::u32string typeArgumentFullName = typeArgument->FullName();
         GetAssembly()->GetConstantPool().Install(StringPtr(typeArgumentFullName.c_str()));
     }
 }
 
-utf32_string ClassTemplateSpecializationSymbol::SimpleName() const
+std::u32string ClassTemplateSpecializationSymbol::SimpleName() const
 {
-    utf32_string simpleName = PrimaryClassTemplate()->Name().Value();
+    std::u32string simpleName = PrimaryClassTemplate()->Name().Value();
     int n = NumTypeArguments();
     for (int i = 0; i < n; ++i)
     {

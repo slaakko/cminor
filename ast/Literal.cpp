@@ -411,7 +411,7 @@ StringLiteralNode::StringLiteralNode(const Span& span_) : Node(span_), value()
 {
 }
 
-StringLiteralNode::StringLiteralNode(const Span& span_, const utf32_string& value_) : Node(span_), value(value_)
+StringLiteralNode::StringLiteralNode(const Span& span_, const std::u32string& value_) : Node(span_), value(value_)
 {
 }
 

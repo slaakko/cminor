@@ -7,8 +7,11 @@
 #include <cminor/binder/BoundCompileUnit.hpp>
 #include <cminor/binder/BoundClass.hpp>
 #include <cminor/binder/BoundNodeVisitor.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace binder {
+
+using namespace cminor::unicode;
 
 class ControlFlowAnalyzer : public BoundNodeVisitor
 {
@@ -42,7 +45,7 @@ public:
 private:
     bool collectLabels;
     bool resolveGotos;
-    std::unordered_map<std::string, BoundStatement*> labelStatementMap;
+    std::unordered_map<std::u32string, BoundStatement*> labelStatementMap;
     void CollectLabel(BoundStatement& statement);
     void ResolveGoto(BoundGotoStatement& boundGotoStatement);
 };
@@ -312,14 +315,14 @@ void ControlFlowAnalyzer::CollectLabel(BoundStatement& statement)
         }
         else
         {
-            throw Exception("duplicate label '" + statement.Label() + "'", statement.GetSpan(), it->second->GetSpan());
+            throw Exception("duplicate label '" + ToUtf8(statement.Label()) + "'", statement.GetSpan(), it->second->GetSpan());
         }
     }
 }
 
 void ControlFlowAnalyzer::ResolveGoto(BoundGotoStatement& boundGotoStatement)
 {
-    const std::string& target = boundGotoStatement.Target();
+    const std::u32string& target = boundGotoStatement.Target();
     auto it = labelStatementMap.find(target);
     if (it != labelStatementMap.cend())
     {
@@ -336,12 +339,12 @@ void ControlFlowAnalyzer::ResolveGoto(BoundGotoStatement& boundGotoStatement)
         }
         if (!gotoBlock)
         {
-            throw Exception("goto target '" + target + "' not in enclosing block", boundGotoStatement.GetSpan(), targetStatement->GetSpan());
+            throw Exception("goto target '" + ToUtf8(target) + "' not in enclosing block", boundGotoStatement.GetSpan(), targetStatement->GetSpan());
         }
     }
     else
     {
-        throw Exception("goto target '" + target + "' not found", boundGotoStatement.GetSpan());
+        throw Exception("goto target '" + ToUtf8(target) + "' not found", boundGotoStatement.GetSpan());
     }
 }
 

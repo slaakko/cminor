@@ -1,8 +1,8 @@
-#ifndef Identifier_hpp_7033
-#define Identifier_hpp_7033
+#ifndef Identifier_hpp_30012
+#define Identifier_hpp_30012
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/ast/Identifier.hpp>
 
 namespace cminor { namespace parser {
@@ -13,7 +13,7 @@ class IdentifierGrammar : public cminor::parsing::Grammar
 public:
     static IdentifierGrammar* Create();
     static IdentifierGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    IdentifierNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName);
+    IdentifierNode* Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName);
 private:
     IdentifierGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -24,4 +24,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Identifier_hpp_7033
+#endif // Identifier_hpp_30012

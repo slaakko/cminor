@@ -1,8 +1,8 @@
-#ifndef Delegate_hpp_7033
-#define Delegate_hpp_7033
+#ifndef Delegate_hpp_21399
+#define Delegate_hpp_21399
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/ast/Delegate.hpp>
 #include <cminor/parser/ParsingContext.hpp>
 
@@ -14,7 +14,7 @@ class DelegateGrammar : public cminor::parsing::Grammar
 public:
     static DelegateGrammar* Create();
     static DelegateGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    Node* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
+    Node* Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
 private:
     DelegateGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -25,4 +25,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Delegate_hpp_7033
+#endif // Delegate_hpp_21399

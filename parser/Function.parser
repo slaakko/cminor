@@ -43,18 +43,18 @@ namespace cminor.parser
 
         OperatorFunctionGroupId(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr) : FunctionGroupIdNode*
             ::= keyword("operator")
-            (   ("<<" - ('<' '<' (TypeExpr(ctx){ typeExpr.reset(TypeExpr); } % ',') '>')){ value = new FunctionGroupIdNode(span, "operator<<"); }
-            |   ">>"{ value = new FunctionGroupIdNode(span, "operator>>"); }
-            |   "=="{ value = new FunctionGroupIdNode(span, "operator=="); }
-            |   '<'{ value = new FunctionGroupIdNode(span, "operator<"); }
-            |   '+'{ value = new FunctionGroupIdNode(span, "operator+"); }
-            |   '-'{ value = new FunctionGroupIdNode(span, "operator-"); }
-            |   '*'{ value = new FunctionGroupIdNode(span, "operator*"); }
-            |   '/'{ value = new FunctionGroupIdNode(span, "operator/"); }
-            |   '%'{ value = new FunctionGroupIdNode(span, "operator%"); }
-            |   '^'{ value = new FunctionGroupIdNode(span, "operator^"); }
-            |   '!'{ value = new FunctionGroupIdNode(span, "operator!"); }
-            |   "()"{ value = new FunctionGroupIdNode(span, "operator()"); }
+            (   ("<<" - ('<' '<' (TypeExpr(ctx){ typeExpr.reset(TypeExpr); } % ',') '>')){ value = new FunctionGroupIdNode(span, ToUtf32("operator<<")); }
+            |   ">>"{ value = new FunctionGroupIdNode(span, ToUtf32("operator>>")); }
+            |   "=="{ value = new FunctionGroupIdNode(span, ToUtf32("operator==")); }
+            |   '<'{ value = new FunctionGroupIdNode(span, ToUtf32("operator<")); }
+            |   '+'{ value = new FunctionGroupIdNode(span, ToUtf32("operator+")); }
+            |   '-'{ value = new FunctionGroupIdNode(span, ToUtf32("operator-")); }
+            |   '*'{ value = new FunctionGroupIdNode(span, ToUtf32("operator*")); }
+            |   '/'{ value = new FunctionGroupIdNode(span, ToUtf32("operator/")); }
+            |   '%'{ value = new FunctionGroupIdNode(span, ToUtf32("operator%")); }
+            |   '^'{ value = new FunctionGroupIdNode(span, ToUtf32("operator^")); }
+            |   '!'{ value = new FunctionGroupIdNode(span, ToUtf32("operator!")); }
+            |   "()"{ value = new FunctionGroupIdNode(span, ToUtf32("operator()")); }
             )
             ;
 
@@ -66,15 +66,15 @@ namespace cminor.parser
             ::= (Name '=' Value){ attributeMap->AddAttribute(Name, Value); }
             ;
 
-        Name : std::string
+        Name : std::u32string
             ::= qualified_id{ value = qualified_id; }
             ;
 
-        Value : std::string
+        Value : std::u32string
             ::= qualified_id{ value = qualified_id; }
             |   string{ value = string; }
-            |   long{ value = std::string(matchBegin, matchEnd); }
-            |   bool{ value = std::string(matchBegin, matchEnd); }
+            |   long{ value = std::u32string(matchBegin, matchEnd); }
+            |   bool{ value = std::u32string(matchBegin, matchEnd); }
             ;
     }
 }

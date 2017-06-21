@@ -12,7 +12,7 @@ BoundStatement::BoundStatement(Assembly& assembly_) : BoundNode(assembly_), pare
 {
 }
 
-void BoundStatement::SetLabel(const std::string& label_) 
+void BoundStatement::SetLabel(const std::u32string& label_) 
 {
     label = label_;
 }
@@ -230,7 +230,7 @@ void BoundContinueStatement::Accept(BoundNodeVisitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundGotoStatement::BoundGotoStatement(Assembly& assembly_, const std::string& target_) : BoundStatement(assembly_), target(target_), targetStatement(nullptr), targetBlock(nullptr)
+BoundGotoStatement::BoundGotoStatement(Assembly& assembly_, const std::u32string& target_) : BoundStatement(assembly_), target(target_), targetStatement(nullptr), targetBlock(nullptr)
 {
 }
 

@@ -4,8 +4,11 @@
 // =================================
 
 #include <cminor/binder/Access.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace binder {
+
+using namespace cminor::unicode;
 
 void CheckAccess(FunctionSymbol* fromFunction, Symbol* toSymbol)
 {

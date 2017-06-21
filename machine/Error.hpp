@@ -8,7 +8,7 @@
 #include <cminor/machine/MachineApi.hpp>
 #include <cminor/util/Error.hpp>
 #include <cminor/util/Unicode.hpp>
-#include <cminor/pl/Scanner.hpp>
+#include <cminor/parsing/Scanner.hpp>
 
 namespace cminor { namespace machine {
 

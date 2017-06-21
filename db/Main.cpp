@@ -5,6 +5,7 @@
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/util/TextUtils.hpp>
+#include <cminor/util/InitDone.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/Value.hpp>
 #include <cminor/symbols/Assembly.hpp>
@@ -17,7 +18,7 @@
 #include <cminor/vmlib/Socket.hpp>
 #include <cminor/vmlib/Threading.hpp>
 #include <cminor/db/Shell.hpp>
-#include <cminor/pl/InitDone.hpp>
+#include <cminor/parsing/InitDone.hpp>
 #include <cminor/util/Path.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -28,6 +29,7 @@ using namespace cminor::symbols;
 using namespace cminor::ast;
 using namespace cminor::vmlib;
 using namespace cminor::db;
+using namespace cminor::unicode;
 
 struct InitDone
 {
@@ -48,11 +50,11 @@ struct InitDone
         SocketInit();
         ThreadingInit();
         cminor::parsing::Init();
-        cminor::util::unicode::Init();
+        cminor::util::Init();
     }
     ~InitDone()
     {
-        cminor::util::unicode::Done();
+        cminor::util::Done();
         cminor::parsing::Done();
         ThreadingDone();
         SocketDone();
@@ -206,7 +208,7 @@ int main(int argc, const char** argv)
         }
         Assembly assembly(machine);
         assembly.Load(assemblyFilePath);
-        std::vector<utf32_string> programArguments;
+        std::vector<std::u32string> programArguments;
         for (const std::string& arg : arguments)
         {
             programArguments.push_back(ToUtf32(arg));

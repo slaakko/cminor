@@ -21,8 +21,11 @@
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
 #include <cminor/ast/BasicType.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace binder {
+
+using namespace cminor::unicode;
 
 class ExpressionBinder : public Visitor
 {
@@ -721,7 +724,7 @@ void ExpressionBinder::BindSymbol(Symbol* symbol)
 
 void ExpressionBinder::Visit(IdentifierNode& identifierNode)
 {
-    utf32_string str = ToUtf32(identifierNode.Str());
+    std::u32string str = identifierNode.Str();
     Symbol* symbol = containerScope->Lookup(StringPtr(str.c_str()), ScopeLookup::this_and_base_and_parent);
     if (!symbol)
     {
@@ -740,7 +743,7 @@ void ExpressionBinder::Visit(IdentifierNode& identifierNode)
     }
     else
     {
-        throw Exception("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+        throw Exception("symbol '" + ToUtf8(identifierNode.Str()) + "' not found", identifierNode.GetSpan());
     }
 }
 
@@ -758,7 +761,7 @@ void ExpressionBinder::Visit(DotNode& dotNode)
     if (BoundNamespaceExpression* bns = dynamic_cast<BoundNamespaceExpression*>(expression.get()))
     {
         containerScope = bns->Ns()->GetContainerScope();
-        utf32_string str = ToUtf32(dotNode.MemberStr());
+        std::u32string str = dotNode.MemberStr();
         Symbol* symbol = containerScope->Lookup(StringPtr(str.c_str()), ScopeLookup::this_);
         if (symbol)
         {
@@ -772,7 +775,7 @@ void ExpressionBinder::Visit(DotNode& dotNode)
         }
         else
         {
-            throw Exception("symbol '" + dotNode.MemberStr() + "' not found from namespace '" + ToUtf8(bns->Ns()->FullName()) + "'", dotNode.MemberId()->GetSpan());
+            throw Exception("symbol '" + ToUtf8(dotNode.MemberStr()) + "' not found from namespace '" + ToUtf8(bns->Ns()->FullName()) + "'", dotNode.MemberId()->GetSpan());
         }
     }
     else
@@ -781,7 +784,7 @@ void ExpressionBinder::Visit(DotNode& dotNode)
         if (ClassTypeSymbol* classType = dynamic_cast<ClassTypeSymbol*>(type))
         {
             ContainerScope* scope = classType->GetContainerScope();
-            utf32_string str = ToUtf32(dotNode.MemberStr());
+            std::u32string str = dotNode.MemberStr();
             Symbol* symbol = scope->Lookup(StringPtr(str.c_str()), ScopeLookup::this_and_base);
             if (symbol)
             {
@@ -842,18 +845,18 @@ void ExpressionBinder::Visit(DotNode& dotNode)
                 }
                 else
                 {
-                    throw Exception("symbol '" + dotNode.MemberStr() + "' does not denote a function group, member variable, property or type", dotNode.MemberId()->GetSpan());
+                    throw Exception("symbol '" + ToUtf8(dotNode.MemberStr()) + "' does not denote a function group, member variable, property or type", dotNode.MemberId()->GetSpan());
                 }
             }
             else
             {
-                throw Exception("symbol '" + dotNode.MemberStr() + "' not found from class '" + ToUtf8(classType->FullName()) + "'", dotNode.MemberId()->GetSpan());
+                throw Exception("symbol '" + ToUtf8(dotNode.MemberStr()) + "' not found from class '" + ToUtf8(classType->FullName()) + "'", dotNode.MemberId()->GetSpan());
             }
         }
         else if (InterfaceTypeSymbol* interfaceType = dynamic_cast<InterfaceTypeSymbol*>(type))
         {
             ContainerScope* scope = interfaceType->GetContainerScope();
-            utf32_string str = ToUtf32(dotNode.MemberStr());
+            std::u32string str = dotNode.MemberStr();
             Symbol* symbol = scope->Lookup(StringPtr(str.c_str()), ScopeLookup::this_and_base);
             if (symbol)
             {
@@ -865,18 +868,18 @@ void ExpressionBinder::Visit(DotNode& dotNode)
                 }
                 else
                 {
-                    throw Exception("symbol '" + dotNode.MemberStr() + "' does not denote a function group", dotNode.MemberId()->GetSpan());
+                    throw Exception("symbol '" + ToUtf8(dotNode.MemberStr()) + "' does not denote a function group", dotNode.MemberId()->GetSpan());
                 }
             }
             else
             {
-                throw Exception("symbol '" + dotNode.MemberStr() + "' not found from interface '" + ToUtf8(interfaceType->FullName()) + "'", dotNode.MemberId()->GetSpan());
+                throw Exception("symbol '" + ToUtf8(dotNode.MemberStr()) + "' not found from interface '" + ToUtf8(interfaceType->FullName()) + "'", dotNode.MemberId()->GetSpan());
             }
         }
         else if (EnumTypeSymbol* enumType = dynamic_cast<EnumTypeSymbol*>(type))
         {
             ContainerScope* scope = enumType->GetContainerScope();
-            utf32_string str = ToUtf32(dotNode.MemberStr());
+            std::u32string str = dotNode.MemberStr();
             Symbol* symbol = scope->Lookup(StringPtr(str.c_str()));
             if (symbol)
             {
@@ -884,7 +887,7 @@ void ExpressionBinder::Visit(DotNode& dotNode)
             }
             else
             {
-                throw Exception("symbol '" + dotNode.MemberStr() + "' not found from enumerated type '" + ToUtf8(enumType->FullName()) + "'", dotNode.MemberId()->GetSpan());
+                throw Exception("symbol '" + ToUtf8(dotNode.MemberStr()) + "' not found from enumerated type '" + ToUtf8(enumType->FullName()) + "'", dotNode.MemberId()->GetSpan());
             }
         }
         else
@@ -909,7 +912,7 @@ void ExpressionBinder::Visit(DotNode& dotNode)
             }
             else
             {
-                throw Exception("expression '" + dotNode.Child()->ToString() + "' must denote a namespace, class type, interface type, enumerated type or boxable value type object", 
+                throw Exception("expression '" + ToUtf8(dotNode.Child()->ToString()) + "' must denote a namespace, class type, interface type, enumerated type or boxable value type object", 
                     dotNode.Child()->GetSpan());
              }
         }

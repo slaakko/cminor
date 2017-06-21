@@ -503,7 +503,7 @@ void DotNode::Read(AstReader& reader)
     memberId->SetParent(this);
 }
 
-const std::string& DotNode::MemberStr() const
+const std::u32string& DotNode::MemberStr() const
 {
     if (IdentifierNode* idNode = dynamic_cast<IdentifierNode*>(memberId.get()))
     {

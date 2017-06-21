@@ -6,11 +6,13 @@
 #include <cminor/machine/Error.hpp>
 #include <cminor/machine/FileRegistry.hpp>
 #include <cminor/util/MappedInputFile.hpp>
-#include <cminor/pl/Exception.hpp>
+#include <cminor/util/Unicode.hpp>
+#include <cminor/parsing/Exception.hpp>
 
 namespace cminor {namespace machine {
 
 using namespace cminor::util;
+using namespace cminor::unicode;
 
 MACHINE_API std::string Expand(const std::string& errorMessage, const Span& span)
 {
@@ -45,7 +47,9 @@ MACHINE_API std::string Expand(const std::string& errorMessage, const Span& span
         {
             expandedMessage.append(" (file '" + fileName + "', line " + std::to_string(span.LineNumber()) + ")");
             MappedInputFile file(fileName);
-            expandedMessage.append(":\n").append(cminor::parsing::GetErrorLines(file.Begin(), file.End(), span));
+            std::string s(file.Begin(), file.End());
+            std::u32string t(ToUtf32(s));
+            expandedMessage.append(":\n").append(ToUtf8(cminor::parsing::GetErrorLines(&t[0], &t[0] + t.length(), span)));
         }
         for (const Span& referenceSpan : references)
         {
@@ -54,7 +58,9 @@ MACHINE_API std::string Expand(const std::string& errorMessage, const Span& span
             {
                 expandedMessage.append("\nsee reference to file '" + fileName + "', line " + std::to_string(referenceSpan.LineNumber()));
                 MappedInputFile file(fileName);
-                expandedMessage.append(":\n").append(cminor::parsing::GetErrorLines(file.Begin(), file.End(), referenceSpan));
+                std::string s(file.Begin(), file.End());
+                std::u32string t(ToUtf32(s));
+                expandedMessage.append(":\n").append(ToUtf8(cminor::parsing::GetErrorLines(&t[0], &t[0] + t.length(), referenceSpan)));
             }
         }
     }

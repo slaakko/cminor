@@ -9,6 +9,7 @@
 #include <cminor/util/Util.hpp>
 #include <cminor/util/String.hpp>
 #include <cminor/util/TextUtils.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cminor/machine/Constant.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Class.hpp>
@@ -16,6 +17,8 @@
 #include <cminor/machine/MachineFunctionVisitor.hpp>
 
 namespace cminor { namespace machine {
+
+using namespace cminor::unicode;
 
 Machine* machine = nullptr;
 ManagedMemoryPool* managedMemoryPool = nullptr;
@@ -2565,7 +2568,7 @@ void ThrowInst::Execute(Frame& frame)
         ObjectReference exception(exceptionValue.Value());
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
-        utf32_string stackTraceStr = frame.GetThread().GetStackTrace();
+        std::u32string stackTraceStr = frame.GetThread().GetStackTrace();
         ObjectReference stackTrace = memoryPool.CreateString(frame.GetThread(), stackTraceStr, lock);
         memoryPool.SetField(exception, 2, stackTrace, lock);
         frame.GetThread().HandleException(exception);
@@ -3592,7 +3595,7 @@ void RequestGcInst::Accept(MachineFunctionVisitor& visitor)
     visitor.VisitRequestGcInst(*this);
 }
 
-void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName, int errorCode)
+void ThrowException(const std::string& message, Frame& frame, const std::u32string& exceptionTypeName, int errorCode)
 {
     Type* type = TypeTable::GetType(StringPtr(exceptionTypeName.c_str()));
     ObjectType* objectType = dynamic_cast<ObjectType*>(type);
@@ -3617,7 +3620,7 @@ void ThrowException(const std::string& message, Frame& frame, const utf32_string
     throwInst.Execute(frame);
 }
 
-void ThrowException(const std::string& message, Frame& frame, const utf32_string& exceptionTypeName)
+void ThrowException(const std::string& message, Frame& frame, const std::u32string& exceptionTypeName)
 {
     ThrowException(message, frame, exceptionTypeName, 0);
 }

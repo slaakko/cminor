@@ -10,17 +10,20 @@
 #include <cminor/symbols/ConstantPoolInstallerVisitor.hpp>
 #include <cminor/symbols/SymbolCreatorVisitor.hpp>
 #include <cminor/util/Util.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace binder {
 
-std::unique_ptr<NamespaceNode> CreateNamespaces(const Span& span, const std::string& nsFullName, const NodeList<Node>& usingNodes, NamespaceNode*& currentNs)
+using namespace cminor::unicode;
+
+std::unique_ptr<NamespaceNode> CreateNamespaces(const Span& span, const std::u32string& nsFullName, const NodeList<Node>& usingNodes, NamespaceNode*& currentNs)
 {
-    std::unique_ptr<NamespaceNode> globalNs(new NamespaceNode(span, new IdentifierNode(span, "")));
+    std::unique_ptr<NamespaceNode> globalNs(new NamespaceNode(span, new IdentifierNode(span, U"")));
     currentNs = globalNs.get();
     if (!nsFullName.empty())
     {
-        std::vector<std::string> components = Split(nsFullName, U'.');
-        for (const std::string& component : components)
+        std::vector<std::u32string> components = Split(nsFullName, U'.');
+        for (const std::u32string& component : components)
         {
             NamespaceNode* nsNode = new NamespaceNode(span, new IdentifierNode(span, component));
             currentNs->AddMember(nsNode);
@@ -50,7 +53,7 @@ void ClassTemplateRepository::BindClassTemplateSpecialization(ClassTemplateSpeci
     if (!primaryClassTemplate->Ns()->IsGlobalNamespace())
     {
         std::unique_ptr<NamespaceImportNode> nsImport(new NamespaceImportNode(primaryClassTemplate->GetSpan(),
-            new IdentifierNode(primaryClassTemplate->GetSpan(), ToUtf8(primaryClassTemplate->Ns()->FullName()))));
+            new IdentifierNode(primaryClassTemplate->GetSpan(), primaryClassTemplate->Ns()->FullName())));
         std::unique_ptr<FileScope> fileScope(new FileScope());
         fileScope->InstallNamespaceImport(containerScope, nsImport.get());
         boundCompileUnit.AddNode(std::move(nsImport));
@@ -66,11 +69,11 @@ void ClassTemplateRepository::BindClassTemplateSpecialization(ClassTemplateSpeci
     ClassNode* classNode = dynamic_cast<ClassNode*>(node);
     Assert(classNode, "class node expected");
     NamespaceNode* currentNs = nullptr;
-    std::unique_ptr<NamespaceNode> globalNs = CreateNamespaces(primaryClassTemplate->GetSpan(), ToUtf8(primaryClassTemplate->Ns()->FullName()), primaryClassTemplate->UsingNodes(), currentNs);
+    std::unique_ptr<NamespaceNode> globalNs = CreateNamespaces(primaryClassTemplate->GetSpan(), primaryClassTemplate->Ns()->FullName(), primaryClassTemplate->UsingNodes(), currentNs);
     CloneContext cloneContext;
     cloneContext.SetInstantiateClassNode();
     ClassNode* classInstanceNode = static_cast<ClassNode*>(classNode->Clone(cloneContext));
-    IdentifierNode* classInstanceId = new IdentifierNode(classInstanceNode->GetSpan(), ToUtf8(classTemplateSpecialization->FullName()));
+    IdentifierNode* classInstanceId = new IdentifierNode(classInstanceNode->GetSpan(), classTemplateSpecialization->FullName());
     classInstanceNode->SetId(classInstanceId);
     Assert(currentNs, "current namespace not set");
     currentNs->AddMember(classInstanceNode);

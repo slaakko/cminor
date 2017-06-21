@@ -7,10 +7,12 @@
 #include <cminor/ast/Statement.hpp>
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/machine/Error.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace ast {
 
 using namespace cminor::machine;
+using namespace cminor::unicode;
 
 ClassNode::ClassNode(const Span& span_) : Node(span_)
 {
@@ -107,7 +109,7 @@ StaticConstructorNode::StaticConstructorNode(const Span& span_) : FunctionNode(s
 {
 }
 
-StaticConstructorNode::StaticConstructorNode(const Span& span_, Specifiers specifiers_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(span_, "@static_constructor"))
+StaticConstructorNode::StaticConstructorNode(const Span& span_, Specifiers specifiers_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(span_, U"@static_constructor"))
 {
 }
 
@@ -200,7 +202,7 @@ ConstructorNode::ConstructorNode(const Span& span_) : FunctionNode(span_)
 {
 }
 
-ConstructorNode::ConstructorNode(const Span& span_, Specifiers specifiers_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(span_, "@constructor"))
+ConstructorNode::ConstructorNode(const Span& span_, Specifiers specifiers_) : FunctionNode(span_, specifiers_, nullptr, new FunctionGroupIdNode(span_, U"@constructor"))
 {
 }
 
@@ -417,7 +419,7 @@ void PropertyNode::SetGetter(CompoundStatementNode* getter_)
 {
     if (getter)
     {
-        throw Exception("property '" + id->Str() + "' already has a getter", GetSpan());
+        throw Exception("property '" + ToUtf8(id->Str()) + "' already has a getter", GetSpan());
     }
     getter.reset(getter_);
     getter->SetParent(this);
@@ -427,7 +429,7 @@ void PropertyNode::SetSetter(CompoundStatementNode* setter_)
 {
     if (setter)
     {
-        throw Exception("property '" + id->Str() + "' already has a setter", GetSpan());
+        throw Exception("property '" + ToUtf8(id->Str()) + "' already has a setter", GetSpan());
     }
     setter.reset(setter_);
     setter->SetParent(this);
@@ -513,7 +515,7 @@ void IndexerNode::SetGetter(CompoundStatementNode* getter_)
 {
     if (getter)
     {
-        throw Exception("property '" + id->Str() + "' already has a getter", GetSpan());
+        throw Exception("property '" + ToUtf8(id->Str()) + "' already has a getter", GetSpan());
     }
     getter.reset(getter_);
     getter->SetParent(this);
@@ -523,7 +525,7 @@ void IndexerNode::SetSetter(CompoundStatementNode* setter_)
 {
     if (setter)
     {
-        throw Exception("property '" + id->Str() + "' already has a setter", GetSpan());
+        throw Exception("property '" + ToUtf8(id->Str()) + "' already has a setter", GetSpan());
     }
     setter.reset(setter_);
     setter->SetParent(this);

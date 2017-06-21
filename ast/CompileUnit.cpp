@@ -12,7 +12,7 @@ CompileUnitNode::CompileUnitNode(const Span& span_) : Node(span_)
 {
 }
 
-CompileUnitNode::CompileUnitNode(const Span& span_, const std::string& filePath_) : Node(span_), filePath(filePath_), globalNs(new NamespaceNode(span_, new IdentifierNode(span_, "")))
+CompileUnitNode::CompileUnitNode(const Span& span_, const std::string& filePath_) : Node(span_), filePath(filePath_), globalNs(new NamespaceNode(span_, new IdentifierNode(span_, U"")))
 {
 }
 

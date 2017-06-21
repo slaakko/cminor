@@ -10,8 +10,6 @@
 
 namespace cminor { namespace ast {
 
-using cminor::util::utf32_string;
-
 class BooleanLiteralNode : public Node
 {
 public:
@@ -200,15 +198,15 @@ class StringLiteralNode : public Node
 {
 public:
     StringLiteralNode(const Span& span_);
-    StringLiteralNode(const Span& span_, const utf32_string& value_);
+    StringLiteralNode(const Span& span_, const std::u32string& value_);
     NodeType GetNodeType() const override { return NodeType::stringLiteralNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
-    const utf32_string& Value() const { return value; }
+    const std::u32string& Value() const { return value; }
 private:
-    utf32_string value;
+    std::u32string value;
 };
 
 class NullLiteralNode : public Node

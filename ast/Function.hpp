@@ -21,28 +21,28 @@ class FunctionGroupIdNode : public Node
 {
 public:
     FunctionGroupIdNode(const Span& span_);
-    FunctionGroupIdNode(const Span& span_, const std::string& functionGroupId_);
+    FunctionGroupIdNode(const Span& span_, const std::u32string& functionGroupId_);
     NodeType GetNodeType() const override { return NodeType::functionGroupIdNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
-    const std::string& Str() const { return functionGroupId; }
+    const std::u32string& Str() const { return functionGroupId; }
 private:
-    std::string functionGroupId;
+    std::u32string functionGroupId;
 };
 
 class AttributeMap
 {
 public:
-    void AddAttribute(const std::string& name_, const std::string& value_);
-    std::string GetAttribute(const std::string& name) const;
+    void AddAttribute(const std::u32string& name_, const std::u32string& value_);
+    std::u32string GetAttribute(const std::u32string& name) const;
     void Write(AstWriter& writer);
     void Read(AstReader& reader);
-    const std::unordered_map<std::string, std::string>& NameValuePairs() const { return nameValuePairs; }
+    const std::unordered_map<std::u32string, std::u32string>& NameValuePairs() const { return nameValuePairs; }
     void Accept(Visitor& visitor);
 private:
-    std::unordered_map<std::string, std::string> nameValuePairs;
+    std::unordered_map<std::u32string, std::u32string> nameValuePairs;
 };
 
 class FunctionNode : public Node
@@ -61,8 +61,8 @@ public:
     void Accept(Visitor& visitor) override;
     Specifiers GetSpecifiers() const { return specifiers; }
     Node* ReturnTypeExpr() const { return returnTypeExpr.get(); }
-    std::string Name() const;
-    std::string ToString() const override { return Name(); }
+    std::u32string Name() const;
+    std::u32string ToString() const override { return Name(); }
     FunctionGroupIdNode* GroupId() const { return groupId.get(); }
     const NodeList<ParameterNode>& Parameters() const { return parameters; }
     CompoundStatementNode* Body() const { return body.get(); }

@@ -1,8 +1,8 @@
-#ifndef Class_hpp_7033
-#define Class_hpp_7033
+#ifndef Class_hpp_21399
+#define Class_hpp_21399
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/ast/Class.hpp>
 #include <cminor/parser/ParsingContext.hpp>
 
@@ -14,7 +14,7 @@ class ClassGrammar : public cminor::parsing::Grammar
 public:
     static ClassGrammar* Create();
     static ClassGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    ClassNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
+    ClassNode* Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
 private:
     ClassGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -36,4 +36,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Class_hpp_7033
+#endif // Class_hpp_21399

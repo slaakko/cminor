@@ -15,13 +15,13 @@
 #include <cminor/symbols/Value.hpp>
 #include <cminor/util/Path.hpp>
 #include <cminor/util/System.hpp>
+#include <cminor/util/InitDone.hpp>
 #include <boost/filesystem.hpp>
 #include <stdexcept>
 
 using namespace cminor::machine;
 using namespace cminor::symbols;
 using namespace cminor::ast;
-using namespace cminor::machine;
 using namespace cminor::util;
 
 struct InitDone
@@ -36,9 +36,11 @@ struct InitDone
         InitSymbol();
         ValueInit();
         InitAssembly();
+        cminor::util::Init();
     }
     ~InitDone()
     {
+        cminor::util::Done();
         DoneAssembly();
         ValueDone();
         DoneSymbol();

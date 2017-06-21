@@ -72,8 +72,8 @@ public:
     void Read(SymbolReader& reader);
     void Import(SymbolTable& symbolTable);
     void Clear();
-    TypeSymbol* GetTypeNoThrow(const utf32_string& typeFullName) const;
-    TypeSymbol* GetType(const utf32_string& typeFullName) const;
+    TypeSymbol* GetTypeNoThrow(const std::u32string& typeFullName) const;
+    TypeSymbol* GetType(const std::u32string& typeFullName) const;
     void AddType(TypeSymbol* type);
     Symbol* GetSymbol(Node& node) const;
     Symbol* GetSymbol(uint32_t symbolId) const;

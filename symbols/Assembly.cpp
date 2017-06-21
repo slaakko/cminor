@@ -19,12 +19,14 @@
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/util/Prime.hpp>
 #include <cminor/util/Sha1.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <iostream>
 
 namespace cminor { namespace symbols {
 
 using namespace cminor::ast;
 using namespace cminor::machine;
+using namespace cminor::unicode;
 
 const char* cminorAssemblyTag = "CMNA";
 
@@ -37,7 +39,7 @@ public:
     bool Find(StringPtr assemblyName) const;
 private:
     static std::unique_ptr<CminorSystemAssemblyNameCollection> instance;
-    std::vector<utf32_string> systemAssemblyNames;
+    std::vector<std::u32string> systemAssemblyNames;
     std::unordered_set<StringPtr, StringPtrHash> systemAssemblyNameMap;
     CminorSystemAssemblyNameCollection();
 };
@@ -65,7 +67,7 @@ CminorSystemAssemblyNameCollection::CminorSystemAssemblyNameCollection()
     systemAssemblyNames.push_back(U"System.Net.Sockets");
     systemAssemblyNames.push_back(U"System.Net.Http");
     systemAssemblyNames.push_back(U"System.Xml");
-    for (const utf32_string& systemAssemblyName : systemAssemblyNames)
+    for (const std::u32string& systemAssemblyName : systemAssemblyNames)
     {
         systemAssemblyNameMap.insert(StringPtr(systemAssemblyName.c_str()));
     }
@@ -256,7 +258,7 @@ Assembly::Assembly(Machine& machine_) : machine(machine_), flags(AssemblyFlags::
     }
 }
 
-Assembly::Assembly(Machine& machine_, const utf32_string& name_, const std::string& filePath_) : machine(machine_), flags(AssemblyFlags::none), assemblyFormat(currentAssemblyFormat), 
+Assembly::Assembly(Machine& machine_, const std::u32string& name_, const std::string& filePath_) : machine(machine_), flags(AssemblyFlags::none), assemblyFormat(currentAssemblyFormat), 
     originalFilePath(filePath_), constantPool(), symbolTable(this), name(constantPool.GetConstant(constantPool.Install(StringPtr(name_.c_str())))), id(-1), finishReadPos(0), 
     assemblyDependency(this), transientFlags(TransientAssemblyFlags::none), sharedLibraryHandle(nullptr), mainEntryPointAddress(nullptr)
 {
@@ -293,7 +295,7 @@ void Assembly::Load(const std::string& assemblyFilePath)
     std::vector<ClassTypeSymbol*> classTypes;
     std::string currentAssemblyDir = GetFullPath(boost::filesystem::path(assemblyFilePath).remove_filename().generic_string());
     std::unordered_set<std::string> importSet;
-    std::unordered_set<utf32_string> classTemplateSpecializationNames;
+    std::unordered_set<std::u32string> classTemplateSpecializationNames;
     std::vector<Assembly*> assemblies;
     std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
     std::unordered_map<std::string, Assembly*> readMap;
@@ -332,7 +334,7 @@ void Assembly::PrepareForCompilation(const std::vector<std::string>& projectAsse
     std::vector<TypeInstruction*> typeInstructions;
     std::vector<SetClassDataInst*> setClassDataInstructions;
     std::vector<ClassTypeSymbol*> classTypes;
-    std::unordered_set<utf32_string> classTemplateSpecializationNames;
+    std::unordered_set<std::u32string> classTemplateSpecializationNames;
     std::vector<Assembly*> assemblies;
     std::unordered_map<std::string, AssemblyDependency*> assemblyDependencyMap;
     std::unordered_map<std::string, Assembly*> readMap;
@@ -355,7 +357,7 @@ void Assembly::PrepareForCompilation(const std::vector<std::string>& projectAsse
     symbolTable.MergeClassTemplateSpecializations();
 }
 
-int Assembly::RunIntermediateCode(const std::vector<utf32_string>& programArguments)
+int Assembly::RunIntermediateCode(const std::vector<std::u32string>& programArguments)
 {
     int returnValue = 0;
     FunctionSymbol* mainFun = symbolTable.GetMainFunction();
@@ -412,7 +414,7 @@ int Assembly::RunIntermediateCode(const std::vector<utf32_string>& programArgume
     return returnValue;
 }
 
-int Assembly::RunNative(const std::vector<utf32_string>& programArguments)
+int Assembly::RunNative(const std::vector<std::u32string>& programArguments)
 {
     if (!IsNative())
     {
@@ -799,7 +801,7 @@ void Assembly::Write(SymbolWriter& writer)
 void Assembly::BeginRead(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet,
     std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
     std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
-    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
+    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<std::u32string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies,
     std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap)
 {
     reader.SetMachine(machine);
@@ -869,7 +871,7 @@ void Assembly::BeginRead(SymbolReader& reader, LoadType loadType, const Assembly
 
 void Assembly::FinishReads(std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
     std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
-    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, int prevAssemblyIndex, const std::vector<Assembly*>& finishReadOrder, 
+    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<std::u32string>& classTemplateSpecializationNames, int prevAssemblyIndex, const std::vector<Assembly*>& finishReadOrder, 
     bool readSymbolTable)
 {
     Assembly* prevAssembly = nullptr;
@@ -908,7 +910,7 @@ void Assembly::FinishReads(std::vector<CallInst*>& callInstructions, std::vector
 void Assembly::Read(SymbolReader& reader, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
     std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
     std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
-    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
+    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<std::u32string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
     std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap)
 {
     reader.SetMachine(machine);
@@ -1006,7 +1008,7 @@ void Assembly::SetNativeImportLibraryFileName(const std::string& nativeImportLib
 void Assembly::ImportAssemblies(LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, std::unordered_set<std::string>& importSet, 
     std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
     std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
-    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
+    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<std::u32string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
     std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap)
 {
     ImportAssemblies(referenceFilePaths, loadType, rootAssembly, currentAssemblyDir, importSet, callInstructions, fun2DlgInstructions, memFun2ClassDlgInstructions, 
@@ -1024,7 +1026,7 @@ void Assembly::ImportSymbolTables()
 void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, const std::string& currentAssemblyDir, 
     std::unordered_set<std::string>& importSet, std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
     std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions, 
-    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
+    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<std::u32string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
     std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap)
 {
     std::vector<std::string> allAssemblyReferences;
@@ -1040,7 +1042,7 @@ void Assembly::ImportAssemblies(const std::vector<std::string>& assemblyReferenc
 void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadType loadType, const Assembly* rootAssembly, std::unordered_set<std::string>& importSet, 
     const std::string& currentAssemblyDir, std::vector<CallInst*>& callInstructions, std::vector<Fun2DlgInst*>& fun2DlgInstructions,
     std::vector<MemFun2ClassDlgInst*>& memFun2ClassDlgInstructions, std::vector<TypeInstruction*>& typeInstructions, std::vector<SetClassDataInst*>& setClassDataInstructions,
-    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<utf32_string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
+    std::vector<ClassTypeSymbol*>& classTypeSymbols, std::unordered_set<std::u32string>& classTemplateSpecializationNames, std::vector<Assembly*>& assemblies, 
     std::unordered_map<std::string, AssemblyDependency*>& dependencyMap, std::unordered_map<std::string, Assembly*>& readMap)
 {
     for (const std::string& assemblyReference : assemblyReferences)
@@ -1225,7 +1227,7 @@ void Assembly::Import(const std::vector<std::string>& assemblyReferences, LoadTy
 
 Constant Assembly::RegisterSourceFilePath(const std::string& sourceFilePath)
 {
-    utf32_string sfp = ToUtf32(sourceFilePath);
+    std::u32string sfp = ToUtf32(sourceFilePath);
     return constantPool.GetConstant(constantPool.Install(StringPtr(sfp.c_str())));
 }
 

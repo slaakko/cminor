@@ -37,6 +37,6 @@ inline uint64_t Align(uint64_t n, uint64_t alignment)
     return (n + alignment - 1u) & -alignment;
 }
 
-} } // namespace cminor::machine
+} } // namespace cminor::util
 
-#endif // CMINOR_MACHINE_UTIL_INCLUDED
+#endif // CMINOR_UTIL_UTIL_INCLUDED

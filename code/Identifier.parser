@@ -1,0 +1,22 @@
+﻿// =================================
+// Copyright (c) 2017 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[cpp]#include <cminor/code/Keyword.hpp>
+
+namespace cminor.code
+{
+    grammar IdentifierGrammar
+    {
+        using stdlib.identifier;
+        using KeywordGrammar.Keyword;
+        
+        Identifier: std::u32string ::= (identifier - Keyword){ value = std::u32string(matchBegin, matchEnd); }
+                                ;
+                        
+        QualifiedId: std::u32string 
+                                ::= (token("::"? (Identifier % "::"))){ value = std::u32string(matchBegin, matchEnd); }
+                                ;
+    }
+}

@@ -17,7 +17,7 @@ PropertySymbol::PropertySymbol(const Span& span_, Constant name_) : ContainerSym
 void PropertySymbol::Write(SymbolWriter& writer)
 {
     ContainerSymbol::Write(writer);
-    utf32_string typeFullName = type->FullName();
+    std::u32string typeFullName = type->FullName();
     ConstantId id = GetAssembly()->GetConstantPool().GetIdFor(typeFullName);
     Assert(id != noConstantId, "got no id");
     id.Write(writer);

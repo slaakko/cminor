@@ -53,7 +53,7 @@ public:
     double GetDouble();
     char32_t GetChar();
     std::string GetUtf8String();
-    utf32_string GetUtf32String();
+    std::u32string GetUtf32String();
     Span GetSpan();
     uint32_t GetEncodedUInt();
     std::vector<CallInst*> GetCallInstructions() { return std::move(callInstructions); }

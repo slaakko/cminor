@@ -39,8 +39,8 @@ class MACHINE_API Machine
 public:
     Machine();
     ~Machine();
-    void Start(bool startWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
-    void RunMain(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType);
+    void Start(bool startWithArgs, const std::vector<std::u32string>& programArguments, ObjectType* argsArrayObjectType);
+    void RunMain(bool runWithArgs, const std::vector<std::u32string>& programArguments, ObjectType* argsArrayObjectType);
     int StartThread(Function* fun, RunThreadKind runThreadKind, ObjectReference receiver, ObjectReference arg);
     void JoinThread(int threadId);
     void AddInst(Instruction* inst);

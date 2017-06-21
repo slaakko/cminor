@@ -9,12 +9,15 @@
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/util/Util.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <iostream>
 #ifdef _WIN32
 #include <intrin.h>
 #endif
 
 namespace cminor { namespace machine {
+
+using namespace cminor::unicode;
 
 bool trace = false;
 
@@ -40,9 +43,9 @@ MACHINE_API FunctionStackEntry* RtGetFunctionStack()
     return functionStack;
 }
 
-utf32_string GetStackTrace() 
+std::u32string GetStackTrace() 
 {
-    utf32_string stackTrace;
+    std::u32string stackTrace;
     bool first = true;
     FunctionStackEntry* entry = functionStack;
     while (entry)
@@ -55,7 +58,7 @@ utf32_string GetStackTrace()
         {
             stackTrace.append(1, U'\n');
         }
-        utf32_string fun = U"at ";
+        std::u32string fun = U"at ";
         Function* function = entry->function;
         fun.append(function->FullName().Value().AsStringLiteral());
         if (function->HasSourceFilePath())
@@ -72,7 +75,7 @@ utf32_string GetStackTrace()
     return stackTrace;
 }
 
-void RtThrowCminorException(const std::string& message, const utf32_string& exceptionTypeName, int errorCode)
+void RtThrowCminorException(const std::string& message, const std::u32string& exceptionTypeName, int errorCode)
 {
     Type* type = TypeTable::GetType(StringPtr(exceptionTypeName.c_str()));
     ObjectType* objectType = dynamic_cast<ObjectType*>(type);
@@ -90,7 +93,7 @@ void RtThrowCminorException(const std::string& message, const utf32_string& exce
     SetObjectField(object, classDataValue, 0);
     ObjectReference messageStr = memoryPool.CreateString(thread, ToUtf32(message), lock);
     SetObjectField(object, messageStr, 1);
-    utf32_string stackTrace = GetStackTrace();
+    std::u32string stackTrace = GetStackTrace();
     ObjectReference stackTraceStr = memoryPool.CreateString(thread, stackTrace, lock);
     SetObjectField(object, stackTraceStr, 2);
     if (errorCode != 0)
@@ -100,7 +103,7 @@ void RtThrowCminorException(const std::string& message, const utf32_string& exce
     throw CminorException(objectReference.Value());
 }
 
-void RtThrowCminorException(const std::string& message, const utf32_string& exceptionTypeName)
+void RtThrowCminorException(const std::string& message, const std::u32string& exceptionTypeName)
 {
     RtThrowCminorException(message, exceptionTypeName, 0);
 }

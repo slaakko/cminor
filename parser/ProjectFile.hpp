@@ -1,8 +1,8 @@
-#ifndef ProjectFile_hpp_7033
-#define ProjectFile_hpp_7033
+#ifndef ProjectFile_hpp_21399
+#define ProjectFile_hpp_21399
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/ast/Project.hpp>
 
 namespace cminor { namespace parser {
@@ -13,7 +13,7 @@ class ProjectGrammar : public cminor::parsing::Grammar
 public:
     static ProjectGrammar* Create();
     static ProjectGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    Project* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, std::string config);
+    Project* Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName, std::string config);
 private:
     ProjectGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -29,4 +29,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // ProjectFile_hpp_7033
+#endif // ProjectFile_hpp_21399

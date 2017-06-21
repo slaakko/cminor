@@ -26,6 +26,7 @@
 #include <cminor/util/TextUtils.hpp>
 #include <cminor/util/Unicode.hpp>
 #include <cminor/util/System.hpp>
+#include <cminor/util/InitDone.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <stdexcept>
@@ -57,7 +58,7 @@ struct InitDone
         FileInit();
         SocketInit();
         ThreadingInit();
-        cminor::util::unicode::Init();
+        cminor::util::Init();
 #ifdef GC_LOGGING
         OpenLog();
 #endif
@@ -67,7 +68,7 @@ struct InitDone
 #ifdef GC_LOGGING
         CloseLog();
 #endif
-        cminor::util::unicode::Done();
+        cminor::util::Done();
         ThreadingDone();
         SocketDone();
         FileDone();
@@ -126,6 +127,8 @@ enum class State
 {
     vmOptions, arguments
 };
+
+using namespace cminor::unicode;
 
 int main(int argc, const char** argv)
 {
@@ -250,7 +253,7 @@ int main(int argc, const char** argv)
         Machine machine;
         Assembly assembly(machine);
         assembly.Load(assemblyFilePath);
-        std::vector<utf32_string> programArguments;
+        std::vector<std::u32string> programArguments;
         for (const std::string& arg : arguments)
         {
             programArguments.push_back(ToUtf32(arg));

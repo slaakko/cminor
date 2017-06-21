@@ -74,7 +74,7 @@ public:
     ConstantId Install(Constant constant);
     ConstantId Install(StringPtr s);
     ConstantId GetIdFor(Constant constant);
-    ConstantId GetIdFor(const utf32_string& s);
+    ConstantId GetIdFor(const std::u32string& s);
     Constant GetConstant(ConstantId id) const;
     Constant GetEmptyStringConstant() const;
     ConstantId GetEmptyStringConstantId() const;

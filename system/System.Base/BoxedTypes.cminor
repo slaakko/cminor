@@ -341,11 +341,7 @@ namespace System
         }
         public static bool IsSpace(char c)
         {
-            return System.IsCSpace(c);
-        }
-        public static bool IsSeparator(char c)
-        {
-            return System.Unicode.IsSeparator(c);
+            return System.Unicode.IsWhiteSpace(c);
         }
         public static bool IsLetter(char c)
         {
@@ -353,11 +349,19 @@ namespace System
         }
         public static bool IsLower(char c)
         {
-            return System.Unicode.IsLower(c);
+            return System.Unicode.IsLowerLetter(c);
         }
         public static bool IsUpper(char c)
         {
-            return System.Unicode.IsUpper(c);
+            return System.Unicode.IsUpperLetter(c);
+        }
+        public static bool IsDigit(char c)
+        {
+            return System.Unicode.IsAsciiDigit(c);
+        }
+        public static bool IsHexDigit(char c)
+        {
+            return System.Unicode.IsAsciiHexDigit(c);
         }
         public static bool IsNumber(char c)
         {
@@ -367,6 +371,38 @@ namespace System
         {
             return System.Unicode.IsPunctuation(c);
         }
+        public static bool IsSymbol(char c)
+        {
+            return System.Unicode.IsSymbol(c);
+        }
+        public static bool IsSeparator(char c)
+        {
+            return System.Unicode.IsSeparator(c);
+        }
+        public static bool IsControl(char c)
+        {
+            return System.Unicode.IsControl(c);
+        }
+        public static bool IsFormat(char c)
+        {
+            return System.Unicode.IsFormat(c);
+        }
+        public static bool IsGraphic(char c)
+        {
+            return System.Unicode.IsGraphic(c);
+        }
+        public static bool IsBaseChar(char c)
+        {
+            return System.Unicode.IsBaseChar(c);
+        }
+        public static bool IsMark(char c)
+        {
+            return System.Unicode.IsMark(c);
+        }
+        public static bool IsCombining(char c)
+        {
+            return System.Unicode.IsCombining(c);
+        }
         public static char ToLower(char c)
         {
             return System.Unicode.ToLower(c);
@@ -375,11 +411,15 @@ namespace System
         {
             return System.Unicode.ToUpper(c);
         }
-        public static Unicode.Category GetUnicodeCategory(char c)
+        public static bool GetBinaryProperty(char c, System.Unicode.BinaryPropertyId binaryProperty)
         {
-            return System.Unicode.GetCategory(c);
+            return System.Unicode.GetCharacterInfo(c).GetBinaryProperty(binaryProperty);
         }
-        public static string UnicodeName(char c)
+        public static System.Unicode.GeneralCategoryId GetGeneralCategory(char c)
+        {
+            return System.Unicode.GetGeneralCategory(c);
+        }
+        public static string CharacterName(char c)
         {
             return System.Unicode.GetCharacterName(c);
         }

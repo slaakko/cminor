@@ -47,7 +47,7 @@ void MappingSymbolVisitor::Visit(ClassNode& classNode)
     classTypeSymbol->SetAssembly(&targetAssembly);
     ConstantPool& constantPool = targetAssembly.GetConstantPool();
     constantPool.Install(classTypeSymbol->Name());
-    utf32_string fullName = classTypeSymbol->FullName();
+    std::u32string fullName = classTypeSymbol->FullName();
     constantPool.Install(StringPtr(fullName.c_str()));
     int n = classNode.Members().Count();
     for (int i = 0; i < n; ++i)
@@ -70,7 +70,7 @@ void MappingSymbolVisitor::Visit(FunctionNode& functionNode)
     functionSymbol->SetProject();
     ConstantPool& constantPool = targetAssembly.GetConstantPool();
     constantPool.Install(functionSymbol->Name());
-    utf32_string fullName = functionSymbol->FullName();
+    std::u32string fullName = functionSymbol->FullName();
     constantPool.Install(StringPtr(fullName.c_str()));
     int n = functionNode.Parameters().Count();
     for (int i = 0; i < n; ++i)
@@ -109,7 +109,7 @@ void MappingSymbolVisitor::Visit(StaticConstructorNode& staticConstructorNode)
     staticConstructorSymbol->SetProject();
     ConstantPool& constantPool = targetAssembly.GetConstantPool();
     constantPool.Install(staticConstructorSymbol->Name());
-    utf32_string fullName = staticConstructorSymbol->FullName();
+    std::u32string fullName = staticConstructorSymbol->FullName();
     constantPool.Install(StringPtr(fullName.c_str()));
     constantPool.Install(staticConstructorSymbol->GroupName());
     if (staticConstructorSymbol->IsInstantiationRequested())
@@ -143,7 +143,7 @@ void MappingSymbolVisitor::Visit(ConstructorNode& constructorNode)
         constructorSymbol->SetProject();
         ConstantPool& constantPool = targetAssembly.GetConstantPool();
         constantPool.Install(constructorSymbol->Name());
-        utf32_string fullName = constructorSymbol->FullName();
+        std::u32string fullName = constructorSymbol->FullName();
         constantPool.Install(StringPtr(fullName.c_str()));
         constantPool.Install(constructorSymbol->GroupName());
         constructorNode.SwitchToBody();
@@ -190,7 +190,7 @@ void MappingSymbolVisitor::Visit(MemberFunctionNode& memberFunctionNode)
         memberFunctionSymbol->SetProject();
         ConstantPool& constantPool = targetAssembly.GetConstantPool();
         constantPool.Install(memberFunctionSymbol->Name());
-        utf32_string fullName = memberFunctionSymbol->FullName();
+        std::u32string fullName = memberFunctionSymbol->FullName();
         constantPool.Install(StringPtr(fullName.c_str()));
         constantPool.Install(memberFunctionSymbol->GroupName());
         memberFunctionNode.SwitchToBody();
@@ -225,14 +225,14 @@ void MappingSymbolVisitor::Visit(PropertyNode& propertyNode)
             propertySymbol->SetProject();
             ConstantPool& constantPool = targetAssembly.GetConstantPool();
             constantPool.Install(propertySymbol->Name());
-            utf32_string fullName = propertySymbol->FullName();
+            std::u32string fullName = propertySymbol->FullName();
             constantPool.Install(StringPtr(fullName.c_str()));
 
             targetAssembly.GetSymbolTable().SetFunction(propertySymbol->Getter());
             propertySymbol->Getter()->SetAssembly(&targetAssembly);
             propertySymbol->Getter()->SetProject();
             constantPool.Install(propertySymbol->Getter()->Name());
-            utf32_string getterFullName = propertySymbol->Getter()->FullName();
+            std::u32string getterFullName = propertySymbol->Getter()->FullName();
             constantPool.Install(StringPtr(getterFullName.c_str()));
             constantPool.Install(propertySymbol->Getter()->GroupName());
 
@@ -261,14 +261,14 @@ void MappingSymbolVisitor::Visit(PropertyNode& propertyNode)
             propertySymbol->SetProject();
             ConstantPool& constantPool = targetAssembly.GetConstantPool();
             constantPool.Install(propertySymbol->Name());
-            utf32_string fullName = propertySymbol->FullName();
+            std::u32string fullName = propertySymbol->FullName();
             constantPool.Install(StringPtr(fullName.c_str()));
 
             targetAssembly.GetSymbolTable().SetFunction(propertySymbol->Setter());
             propertySymbol->Setter()->SetAssembly(&targetAssembly);
             propertySymbol->Setter()->SetProject();
             constantPool.Install(propertySymbol->Setter()->Name());
-            utf32_string setterFullName = propertySymbol->Setter()->FullName();
+            std::u32string setterFullName = propertySymbol->Setter()->FullName();
             constantPool.Install(StringPtr(setterFullName.c_str()));
             constantPool.Install(propertySymbol->Setter()->GroupName());
             Assembly* prevSourceAssembly = sourceAssembly;
@@ -306,14 +306,14 @@ void MappingSymbolVisitor::Visit(IndexerNode& indexerNode)
             indexerSymbol->SetProject();
             ConstantPool& constantPool = targetAssembly.GetConstantPool();
             constantPool.Install(indexerSymbol->Name());
-            utf32_string fullName = indexerSymbol->FullName();
+            std::u32string fullName = indexerSymbol->FullName();
             constantPool.Install(StringPtr(fullName.c_str()));
 
             targetAssembly.GetSymbolTable().SetFunction(indexerSymbol->Getter());
             indexerSymbol->Getter()->SetAssembly(&targetAssembly);
             indexerSymbol->Getter()->SetProject();
             constantPool.Install(indexerSymbol->Getter()->Name());
-            utf32_string getterFullName = indexerSymbol->Getter()->FullName();
+            std::u32string getterFullName = indexerSymbol->Getter()->FullName();
             constantPool.Install(StringPtr(getterFullName.c_str()));
             constantPool.Install(indexerSymbol->Getter()->GroupName());
 
@@ -342,14 +342,14 @@ void MappingSymbolVisitor::Visit(IndexerNode& indexerNode)
             indexerSymbol->SetProject();
             ConstantPool& constantPool = targetAssembly.GetConstantPool();
             constantPool.Install(indexerSymbol->Name());
-            utf32_string fullName = indexerSymbol->FullName();
+            std::u32string fullName = indexerSymbol->FullName();
             constantPool.Install(StringPtr(fullName.c_str()));
 
             targetAssembly.GetSymbolTable().SetFunction(indexerSymbol->Setter());
             indexerSymbol->Setter()->SetAssembly(&targetAssembly);
             indexerSymbol->Setter()->SetProject();
             constantPool.Install(indexerSymbol->Setter()->Name());
-            utf32_string setterFullName = indexerSymbol->Setter()->FullName();
+            std::u32string setterFullName = indexerSymbol->Setter()->FullName();
             constantPool.Install(StringPtr(setterFullName.c_str()));
             constantPool.Install(indexerSymbol->Setter()->GroupName());
 

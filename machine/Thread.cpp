@@ -9,9 +9,12 @@
 #include <cminor/machine/OsInterface.hpp>
 #include <cminor/machine/Runtime.hpp>
 #include <cminor/machine/Log.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <chrono>
 
 namespace cminor { namespace machine {
+
+using namespace cminor::unicode;
 
 #ifdef _WIN32
     __declspec(thread) Thread* currentThread = nullptr;
@@ -234,7 +237,7 @@ void Thread::RunToEnd()
     }
 }
 
-void Thread::RunMain(bool runWithArgs, const std::vector<utf32_string>& programArguments, ObjectType* argsArrayObjectType)
+void Thread::RunMain(bool runWithArgs, const std::vector<std::u32string>& programArguments, ObjectType* argsArrayObjectType)
 {
     Frame* frame = stack.CurrentFrame();
     if (runWithArgs)
@@ -530,9 +533,9 @@ bool Thread::DispatchToHandlerOrFinally(Frame* frame)
     return false;
 }
 
-utf32_string Thread::GetStackTrace() const
+std::u32string Thread::GetStackTrace() const
 {
-    utf32_string stackTrace;
+    std::u32string stackTrace;
     int n = int(stack.Frames().size());
     bool first = true;
     for (int i = n - 1; i >= 0; --i)
@@ -546,7 +549,7 @@ utf32_string Thread::GetStackTrace() const
             stackTrace.append(1, U'\n');
         }
         Frame* frame = stack.Frames()[i];
-        utf32_string fun = U"at ";
+        std::u32string fun = U"at ";
         fun.append(frame->Fun().FullName().Value().AsStringLiteral());
         if (frame->Fun().HasSourceFilePath())
         {

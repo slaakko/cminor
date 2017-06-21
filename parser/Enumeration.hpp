@@ -1,8 +1,8 @@
-#ifndef Enumeration_hpp_7033
-#define Enumeration_hpp_7033
+#ifndef Enumeration_hpp_21399
+#define Enumeration_hpp_21399
 
-#include <cminor/pl/Grammar.hpp>
-#include <cminor/pl/Keyword.hpp>
+#include <cminor/parsing/Grammar.hpp>
+#include <cminor/parsing/Keyword.hpp>
 #include <cminor/ast/Enumeration.hpp>
 #include <cminor/parser/ParsingContext.hpp>
 
@@ -14,7 +14,7 @@ class EnumerationGrammar : public cminor::parsing::Grammar
 public:
     static EnumerationGrammar* Create();
     static EnumerationGrammar* Create(cminor::parsing::ParsingDomain* parsingDomain);
-    EnumTypeNode* Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
+    EnumTypeNode* Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName, ParsingContext* ctx);
 private:
     EnumerationGrammar(cminor::parsing::ParsingDomain* parsingDomain_);
     virtual void CreateRules();
@@ -27,4 +27,4 @@ private:
 
 } } // namespace cminor.parser
 
-#endif // Enumeration_hpp_7033
+#endif // Enumeration_hpp_21399

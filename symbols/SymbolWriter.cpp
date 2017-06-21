@@ -6,8 +6,11 @@
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/symbols/Symbol.hpp>
 #include <cminor/symbols/Assembly.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace symbols {
+
+using namespace cminor::unicode;
 
 SymbolWriter::SymbolWriter(const std::string& fileName_) : AstWriter(fileName_), assembly(nullptr), keepProjectBitForSymbols(false)
 {

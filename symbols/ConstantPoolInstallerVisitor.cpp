@@ -16,8 +16,11 @@
 #include <cminor/ast/Expression.hpp>
 #include <cminor/ast/Enumeration.hpp>
 #include <cminor/ast/Delegate.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace symbols {
+
+using namespace cminor::unicode;
 
 ConstantPoolInstallerVisitor::ConstantPoolInstallerVisitor(ConstantPool& constantPool_) : constantPool(constantPool_)
 {
@@ -25,7 +28,7 @@ ConstantPoolInstallerVisitor::ConstantPoolInstallerVisitor(ConstantPool& constan
 
 void ConstantPoolInstallerVisitor::Visit(IdentifierNode& identifierNode)
 {
-    utf32_string s(ToUtf32(identifierNode.Str()));
+    std::u32string s(identifierNode.Str());
     constantPool.Install(StringPtr(s.c_str()));
 }
 
@@ -41,20 +44,18 @@ void ConstantPoolInstallerVisitor::Visit(ParameterNode& parameterNode)
 
 void ConstantPoolInstallerVisitor::Visit(FunctionGroupIdNode& functionGroupIdNode)
 {
-    utf32_string s(ToUtf32(functionGroupIdNode.Str()));
+    std::u32string s(functionGroupIdNode.Str());
     constantPool.Install(StringPtr(s.c_str()));
 }
 
 void ConstantPoolInstallerVisitor::Visit(AttributeMap& attributes)
 {
-    for (const std::pair<std::string, std::string>& p : attributes.NameValuePairs())
+    for (const std::pair<std::u32string, std::u32string>& p : attributes.NameValuePairs())
     {
-        const std::string& name = p.first;
-        const std::string& value = p.second;
-        utf32_string n(ToUtf32(name));
-        constantPool.Install(StringPtr(n.c_str()));
-        utf32_string v(ToUtf32(value));
-        constantPool.Install(StringPtr(v.c_str()));
+        const std::u32string& name = p.first;
+        const std::u32string& value = p.second;
+        constantPool.Install(StringPtr(name.c_str()));
+        constantPool.Install(StringPtr(value.c_str()));
     }
 }
 

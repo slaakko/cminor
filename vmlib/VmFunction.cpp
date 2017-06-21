@@ -13,12 +13,15 @@
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Runtime.hpp>
 #include <cminor/util/Random.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <boost/filesystem.hpp>
 #include <cctype>
 #include <chrono>
 #include <thread>
 
 namespace cminor { namespace vmlib {
+
+using namespace cminor::unicode;
 
 enum class Platform : uint8_t
 {
@@ -1599,7 +1602,7 @@ void VmSystemGetEnvironmentVariable::Execute(Frame& frame)
     if (value)
     {
         std::string s(value);
-        utf32_string us = ToUtf32(s);
+        std::u32string us = ToUtf32(s);
         ObjectReference envVarValue = memoryPool.CreateString(frame.GetThread(), us);
         frame.OpStack().Push(envVarValue);
     }
@@ -1650,7 +1653,7 @@ VmSystemIOInternalGetCurrentWorkingDirectory::VmSystemIOInternalGetCurrentWorkin
 void VmSystemIOInternalGetCurrentWorkingDirectory::Execute(Frame& frame)
 {
     std::string workingDirectory = boost::filesystem::current_path().generic_string();
-    utf32_string s = ToUtf32(workingDirectory);
+    std::u32string s = ToUtf32(workingDirectory);
     ObjectReference reference = GetManagedMemoryPool().CreateString(frame.GetThread(), s);
     frame.OpStack().Push(reference);
 }

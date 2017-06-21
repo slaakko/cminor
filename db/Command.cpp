@@ -5,9 +5,12 @@
 
 #include <cminor/db/Command.hpp>
 #include <cminor/db/Shell.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <iostream>
 
 namespace cminor { namespace db {
+
+using namespace cminor::unicode;
 
 Command::~Command()
 {
@@ -141,13 +144,13 @@ void StackCommand::Execute(Shell& shell)
     shell.Stack();
 }
 
-PrintCommand::PrintCommand(const std::string& name_) : name(name_)
+PrintCommand::PrintCommand(const std::u32string& name_) : name(name_)
 {
 }
 
 void PrintCommand::Execute(Shell& shell)
 {
-    shell.Print(name);
+    shell.Print(ToUtf8(name));
 }
 
 } } // namespace cminor::db

@@ -1,0 +1,43 @@
+// =================================
+// Copyright (c) 2017 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[hpp]#include <cminor/parsing/Grammar.hpp>
+[cpp]#include <cminor/syntax/Element.hpp>
+[cpp]#include <cminor/syntax/Rule.hpp>
+
+namespace cminor.syntax
+{
+    grammar GrammarGrammar
+    {
+        using ElementGrammar.Identifier;
+        using ElementGrammar.QualifiedId;
+        using ElementGrammar.Signature;
+        using ElementGrammar.RuleLink;
+        using RuleGrammar.Rule;
+        using stdlib.char;
+
+        Grammar(cminor::parsing::Scope* enclosingScope): cminor::parsing::Grammar*
+                    ::= keyword("grammar") Identifier:name!{ value = new Grammar(name, enclosingScope); value->SetSpan(span); value->SetNs(enclosingScope->Ns()); } 
+                        '{'! GrammarContent(value) '}'!
+                    ;
+                    
+        GrammarContent(cminor::parsing::Grammar* grammar)
+                    ::= 
+                    (   StartClause(grammar)
+                    |   SkipClause(grammar)
+                    |   RuleLink(grammar)
+                    |   Rule(grammar->GetScope()){ grammar->AddRule(Rule); }
+                    )*
+                    ;
+
+        StartClause(cminor::parsing::Grammar* grammar)
+                    ::= keyword("start") Identifier:strt! ';'{ grammar->SetStartRuleName(strt); }
+                    ;
+
+        SkipClause(cminor::parsing::Grammar* grammar) 
+                    ::= keyword("skip") QualifiedId:skp! ';'{ grammar->SetSkipRuleName(skp); }
+                    ;
+    }
+}

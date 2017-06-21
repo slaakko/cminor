@@ -21,7 +21,7 @@ public:
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override;
+    std::u32string ToString() const override;
     Node* TypeExpr() const { return typeExpr.get(); }
     IdentifierNode* Id() const { return id.get(); }
 private:

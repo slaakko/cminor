@@ -16,7 +16,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::boolNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.Boolean"; }
+    std::u32string ToString() const override { return U"System.Boolean"; }
 };
 
 class SByteNode : public Node
@@ -26,7 +26,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::sbyteNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.Int8"; }
+    std::u32string ToString() const override { return U"System.Int8"; }
 };
 
 class ByteNode : public Node
@@ -36,7 +36,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::byteNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.UInt8"; }
+    std::u32string ToString() const override { return U"System.UInt8"; }
     bool IsUnsignedTypeNode() const override { return true; }
 };
 
@@ -47,7 +47,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::shortNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.Int16"; }
+    std::u32string ToString() const override { return U"System.Int16"; }
 };
 
 class UShortNode : public Node
@@ -57,7 +57,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::ushortNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.UInt16"; }
+    std::u32string ToString() const override { return U"System.UInt16"; }
     bool IsUnsignedTypeNode() const override { return true; }
 };
 
@@ -68,7 +68,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::intNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.Int32"; }
+    std::u32string ToString() const override { return U"System.Int32"; }
 };
 
 class UIntNode : public Node
@@ -78,7 +78,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::uintNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.UInt32"; }
+    std::u32string ToString() const override { return U"System.UInt32"; }
     bool IsUnsignedTypeNode() const override { return true; }
 };
 
@@ -89,7 +89,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::longNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.Int64"; }
+    std::u32string ToString() const override { return U"System.Int64"; }
 };
 
 class ULongNode : public Node
@@ -99,7 +99,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::ulongNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.UInt64"; }
+    std::u32string ToString() const override { return U"System.UInt64"; }
     bool IsUnsignedTypeNode() const override { return true; }
 };
 
@@ -110,7 +110,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::floatNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.Float"; }
+    std::u32string ToString() const override { return U"System.Float"; }
 };
 
 class DoubleNode : public Node
@@ -120,7 +120,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::doubleNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.Double"; }
+    std::u32string ToString() const override { return U"System.Double"; }
 };
 
 class CharNode : public Node
@@ -130,7 +130,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::charNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.Char"; }
+    std::u32string ToString() const override { return U"System.Char"; }
 };
 
 class StringNode : public Node
@@ -140,7 +140,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::stringNode;  }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.String"; }
+    std::u32string ToString() const override { return U"System.String"; }
 };
 
 class VoidNode : public Node
@@ -150,7 +150,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::voidNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.Void"; }
+    std::u32string ToString() const override { return U"System.Void"; }
 };
 
 class ObjectNode : public Node
@@ -160,7 +160,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::objectNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Accept(Visitor& visitor) override;
-    std::string ToString() const override { return "System.Object"; }
+    std::u32string ToString() const override { return U"System.Object"; }
 };
 
 } } // namespace cminor::ast

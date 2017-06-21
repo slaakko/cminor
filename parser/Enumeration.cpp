@@ -1,13 +1,14 @@
 #include "Enumeration.hpp"
-#include <cminor/pl/Action.hpp>
-#include <cminor/pl/Rule.hpp>
-#include <cminor/pl/ParsingDomain.hpp>
-#include <cminor/pl/Primitive.hpp>
-#include <cminor/pl/Composite.hpp>
-#include <cminor/pl/Nonterminal.hpp>
-#include <cminor/pl/Exception.hpp>
-#include <cminor/pl/StdLib.hpp>
-#include <cminor/pl/XmlLog.hpp>
+#include <cminor/parsing/Action.hpp>
+#include <cminor/parsing/Rule.hpp>
+#include <cminor/parsing/ParsingDomain.hpp>
+#include <cminor/parsing/Primitive.hpp>
+#include <cminor/parsing/Composite.hpp>
+#include <cminor/parsing/Nonterminal.hpp>
+#include <cminor/parsing/Exception.hpp>
+#include <cminor/parsing/StdLib.hpp>
+#include <cminor/parsing/XmlLog.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cminor/parser/Specifier.hpp>
 #include <cminor/parser/Identifier.hpp>
 #include <cminor/parser/TypeExpr.hpp>
@@ -16,6 +17,8 @@
 namespace cminor { namespace parser {
 
 using namespace cminor::parsing;
+using namespace cminor::util;
+using namespace cminor::unicode;
 
 EnumerationGrammar* EnumerationGrammar::Create()
 {
@@ -32,12 +35,12 @@ EnumerationGrammar* EnumerationGrammar::Create(cminor::parsing::ParsingDomain* p
     return grammar;
 }
 
-EnumerationGrammar::EnumerationGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("EnumerationGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
+EnumerationGrammar::EnumerationGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar(ToUtf32("EnumerationGrammar"), parsingDomain_->GetNamespaceScope(ToUtf32("cminor.parser")), parsingDomain_)
 {
     SetOwner(0);
 }
 
-EnumTypeNode* EnumerationGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx)
+EnumTypeNode* EnumerationGrammar::Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName, ParsingContext* ctx)
 {
     cminor::parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
     std::unique_ptr<cminor::parsing::XmlLog> xmlLog;
@@ -57,7 +60,7 @@ EnumTypeNode* EnumerationGrammar::Parse(const char* start, const char* end, int 
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
+    if (!match.Hit() || stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -65,7 +68,7 @@ EnumTypeNode* EnumerationGrammar::Parse(const char* start, const char* end, int 
         }
         else
         {
-            throw cminor::parsing::ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+            throw cminor::parsing::ParsingException("grammar '" + ToUtf8(Name()) + "' has no start rule", fileName, scanner.GetSpan(), start, end);
         }
     }
     std::unique_ptr<cminor::parsing::Object> value = std::move(stack.top());
@@ -77,11 +80,11 @@ EnumTypeNode* EnumerationGrammar::Parse(const char* start, const char* end, int 
 class EnumerationGrammar::EnumTypeRule : public cminor::parsing::Rule
 {
 public:
-    EnumTypeRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    EnumTypeRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("EnumTypeNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("EnumTypeNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -102,33 +105,33 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<EnumTypeRule>(this, &EnumTypeRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<EnumTypeRule>(this, &EnumTypeRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<EnumTypeRule>(this, &EnumTypeRule::A2Action));
-        cminor::parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
+        cminor::parsing::NonterminalParser* specifiersNonterminalParser = GetNonterminal(ToUtf32("Specifiers"));
         specifiersNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<EnumTypeRule>(this, &EnumTypeRule::PostSpecifiers));
-        cminor::parsing::NonterminalParser* enumTypeIdNonterminalParser = GetNonterminal("enumTypeId");
+        cminor::parsing::NonterminalParser* enumTypeIdNonterminalParser = GetNonterminal(ToUtf32("enumTypeId"));
         enumTypeIdNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<EnumTypeRule>(this, &EnumTypeRule::PostenumTypeId));
-        cminor::parsing::NonterminalParser* underlyingTypeNonterminalParser = GetNonterminal("UnderlyingType");
+        cminor::parsing::NonterminalParser* underlyingTypeNonterminalParser = GetNonterminal(ToUtf32("UnderlyingType"));
         underlyingTypeNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<EnumTypeRule>(this, &EnumTypeRule::PreUnderlyingType));
         underlyingTypeNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<EnumTypeRule>(this, &EnumTypeRule::PostUnderlyingType));
-        cminor::parsing::NonterminalParser* enumConstantsNonterminalParser = GetNonterminal("EnumConstants");
+        cminor::parsing::NonterminalParser* enumConstantsNonterminalParser = GetNonterminal(ToUtf32("EnumConstants"));
         enumConstantsNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<EnumTypeRule>(this, &EnumTypeRule::PreEnumConstants));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new EnumTypeNode(span, context->fromSpecifiers, context->fromenumTypeId);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->SetUnderlyingType(context->fromUnderlyingType);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->GetSpan().SetEnd(span.End());
@@ -189,11 +192,11 @@ private:
 class EnumerationGrammar::UnderlyingTypeRule : public cminor::parsing::Rule
 {
 public:
-    UnderlyingTypeRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    UnderlyingTypeRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("Node*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("Node*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -214,13 +217,13 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<UnderlyingTypeRule>(this, &UnderlyingTypeRule::A0Action));
-        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal(ToUtf32("TypeExpr"));
         typeExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<UnderlyingTypeRule>(this, &UnderlyingTypeRule::PreTypeExpr));
         typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<UnderlyingTypeRule>(this, &UnderlyingTypeRule::PostTypeExpr));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromTypeExpr;
@@ -253,11 +256,11 @@ private:
 class EnumerationGrammar::EnumConstantsRule : public cminor::parsing::Rule
 {
 public:
-    EnumConstantsRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    EnumConstantsRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        AddInheritedAttribute(AttrOrVariable("EnumTypeNode*", "enumType"));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("EnumTypeNode*"), ToUtf32("enumType")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -276,13 +279,13 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<EnumConstantsRule>(this, &EnumConstantsRule::A0Action));
-        cminor::parsing::NonterminalParser* enumConstantNonterminalParser = GetNonterminal("EnumConstant");
+        cminor::parsing::NonterminalParser* enumConstantNonterminalParser = GetNonterminal(ToUtf32("EnumConstant"));
         enumConstantNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<EnumConstantsRule>(this, &EnumConstantsRule::PreEnumConstant));
         enumConstantNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<EnumConstantsRule>(this, &EnumConstantsRule::PostEnumConstant));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->enumType->AddConstant(context->fromEnumConstant);
@@ -316,13 +319,13 @@ private:
 class EnumerationGrammar::EnumConstantRule : public cminor::parsing::Rule
 {
 public:
-    EnumConstantRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    EnumConstantRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        AddInheritedAttribute(AttrOrVariable("EnumTypeNode*", "enumType"));
-        SetValueTypeName("EnumConstantNode*");
-        AddLocalVariable(AttrOrVariable("Span", "s"));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("EnumTypeNode*"), ToUtf32("enumType")));
+        SetValueTypeName(ToUtf32("EnumConstantNode*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("Span"), ToUtf32("s")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -346,30 +349,30 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<EnumConstantRule>(this, &EnumConstantRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<EnumConstantRule>(this, &EnumConstantRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<EnumConstantRule>(this, &EnumConstantRule::A2Action));
-        cminor::parsing::NonterminalParser* constantIdNonterminalParser = GetNonterminal("constantId");
+        cminor::parsing::NonterminalParser* constantIdNonterminalParser = GetNonterminal(ToUtf32("constantId"));
         constantIdNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<EnumConstantRule>(this, &EnumConstantRule::PostconstantId));
-        cminor::parsing::NonterminalParser* constantValueNonterminalParser = GetNonterminal("constantValue");
+        cminor::parsing::NonterminalParser* constantValueNonterminalParser = GetNonterminal(ToUtf32("constantValue"));
         constantValueNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<EnumConstantRule>(this, &EnumConstantRule::PreconstantValue));
         constantValueNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<EnumConstantRule>(this, &EnumConstantRule::PostconstantValue));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->s = span;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->s.SetEnd(span.End());
         context->value = new EnumConstantNode(context->s, context->fromconstantId, context->fromconstantValue);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->s.SetEnd(span.End());
@@ -416,25 +419,25 @@ private:
 void EnumerationGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar(ToUtf32("cminor.parser.TypeExprGrammar"));
     if (!grammar0)
     {
-        grammar0 = cminor::parser::IdentifierGrammar::Create(pd);
+        grammar0 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.SpecifierGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar(ToUtf32("cminor.parser.SpecifierGrammar"));
     if (!grammar1)
     {
         grammar1 = cminor::parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    cminor::parsing::Grammar* grammar2 = pd->GetGrammar(ToUtf32("cminor.parser.IdentifierGrammar"));
     if (!grammar2)
     {
-        grammar2 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar2 = cminor::parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    cminor::parsing::Grammar* grammar3 = pd->GetGrammar(ToUtf32("cminor.parser.ExpressionGrammar"));
     if (!grammar3)
     {
         grammar3 = cminor::parser::ExpressionGrammar::Create(pd);
@@ -444,53 +447,53 @@ void EnumerationGrammar::GetReferencedGrammars()
 
 void EnumerationGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-    AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
-    AddRule(new EnumTypeRule("EnumType", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("Specifiers"), this, ToUtf32("SpecifierGrammar.Specifiers")));
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("TypeExpr"), this, ToUtf32("TypeExprGrammar.TypeExpr")));
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("Identifier"), this, ToUtf32("IdentifierGrammar.Identifier")));
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("Expression"), this, ToUtf32("ExpressionGrammar.Expression")));
+    AddRule(new EnumTypeRule(ToUtf32("EnumType"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::SequenceParser(
                             new cminor::parsing::SequenceParser(
-                                new cminor::parsing::NonterminalParser("Specifiers", "Specifiers", 0),
-                                new cminor::parsing::KeywordParser("enum")),
-                            new cminor::parsing::ActionParser("A0",
+                                new cminor::parsing::NonterminalParser(ToUtf32("Specifiers"), ToUtf32("Specifiers"), 0),
+                                new cminor::parsing::KeywordParser(ToUtf32("enum"))),
+                            new cminor::parsing::ActionParser(ToUtf32("A0"),
                                 new cminor::parsing::ExpectationParser(
-                                    new cminor::parsing::NonterminalParser("enumTypeId", "Identifier", 0)))),
+                                    new cminor::parsing::NonterminalParser(ToUtf32("enumTypeId"), ToUtf32("Identifier"), 0)))),
                         new cminor::parsing::OptionalParser(
-                            new cminor::parsing::ActionParser("A1",
-                                new cminor::parsing::NonterminalParser("UnderlyingType", "UnderlyingType", 1)))),
+                            new cminor::parsing::ActionParser(ToUtf32("A1"),
+                                new cminor::parsing::NonterminalParser(ToUtf32("UnderlyingType"), ToUtf32("UnderlyingType"), 1)))),
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser('{'))),
-                new cminor::parsing::NonterminalParser("EnumConstants", "EnumConstants", 2)),
-            new cminor::parsing::ActionParser("A2",
+                new cminor::parsing::NonterminalParser(ToUtf32("EnumConstants"), ToUtf32("EnumConstants"), 2)),
+            new cminor::parsing::ActionParser(ToUtf32("A2"),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser('}'))))));
-    AddRule(new UnderlyingTypeRule("UnderlyingType", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new UnderlyingTypeRule(ToUtf32("UnderlyingType"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::CharParser(':'),
-            new cminor::parsing::ActionParser("A0",
-                new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1)))));
-    AddRule(new EnumConstantsRule("EnumConstants", GetScope(), GetParsingDomain()->GetNextRuleId(),
+            new cminor::parsing::ActionParser(ToUtf32("A0"),
+                new cminor::parsing::NonterminalParser(ToUtf32("TypeExpr"), ToUtf32("TypeExpr"), 1)))));
+    AddRule(new EnumConstantsRule(ToUtf32("EnumConstants"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::ListParser(
-            new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::ActionParser(ToUtf32("A0"),
                 new cminor::parsing::ExpectationParser(
-                    new cminor::parsing::NonterminalParser("EnumConstant", "EnumConstant", 2))),
+                    new cminor::parsing::NonterminalParser(ToUtf32("EnumConstant"), ToUtf32("EnumConstant"), 2))),
             new cminor::parsing::CharParser(','))));
-    AddRule(new EnumConstantRule("EnumConstant", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new EnumConstantRule(ToUtf32("EnumConstant"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
-            new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::ActionParser(ToUtf32("A0"),
                 new cminor::parsing::ExpectationParser(
-                    new cminor::parsing::NonterminalParser("constantId", "Identifier", 0))),
+                    new cminor::parsing::NonterminalParser(ToUtf32("constantId"), ToUtf32("Identifier"), 0))),
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::CharParser('='),
-                    new cminor::parsing::ActionParser("A1",
-                        new cminor::parsing::NonterminalParser("constantValue", "Expression", 1))),
-                new cminor::parsing::ActionParser("A2",
+                    new cminor::parsing::ActionParser(ToUtf32("A1"),
+                        new cminor::parsing::NonterminalParser(ToUtf32("constantValue"), ToUtf32("Expression"), 1))),
+                new cminor::parsing::ActionParser(ToUtf32("A2"),
                     new cminor::parsing::EmptyParser())))));
 }
 

@@ -10,8 +10,11 @@
 #include <cminor/symbols/Assembly.hpp>
 #include <cminor/machine/Function.hpp>
 #include <cminor/machine/Machine.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace binder {
+
+using namespace cminor::unicode;
 
 BoundExpression::BoundExpression(Assembly& assembly_, TypeSymbol* type_) : BoundNode(assembly_), type(type_), flags(BoundExpressionFlags::none)
 {
@@ -259,7 +262,7 @@ void BoundMemberVariable::GenLoad(Machine& machine, Function& function)
             Symbol* parent = memberVariableSymbol->Parent();
             ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
             Assert(classTypeSymbol, "class type symbol expected");
-            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            std::u32string classTypeFullName = classTypeSymbol->FullName();
             Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
             if (staticInitNeeded)
             {
@@ -328,7 +331,7 @@ void BoundMemberVariable::GenStore(Machine& machine, Function& function)
             Symbol* parent = memberVariableSymbol->Parent();
             ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
             Assert(classTypeSymbol, "class type symbol expected");
-            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            std::u32string classTypeFullName = classTypeSymbol->FullName();
             Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
             if (staticInitNeeded)
             {
@@ -413,7 +416,7 @@ void BoundProperty::GenLoad(Machine& machine, Function& function)
             Symbol* parent = propertySymbol->Parent();
             ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
             Assert(classTypeSymbol, "class type symbol expected");
-            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            std::u32string classTypeFullName = classTypeSymbol->FullName();
             Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
             std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
             StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
@@ -441,7 +444,7 @@ void BoundProperty::GenStore(Machine& machine, Function& function)
             Symbol* parent = propertySymbol->Parent();
             ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
             Assert(classTypeSymbol, "class type symbol expected");
-            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            std::u32string classTypeFullName = classTypeSymbol->FullName();
             Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
             std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
             StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
@@ -484,7 +487,7 @@ void BoundIndexer::GenLoad(Machine& machine, Function& function)
             Symbol* parent = indexerSymbol->Parent();
             ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
             Assert(classTypeSymbol, "class type symbol expected");
-            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            std::u32string classTypeFullName = classTypeSymbol->FullName();
             Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
             std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
             StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
@@ -513,7 +516,7 @@ void BoundIndexer::GenStore(Machine& machine, Function& function)
             Symbol* parent = indexerSymbol->Parent();
             ClassTypeSymbol* classTypeSymbol = dynamic_cast<ClassTypeSymbol*>(parent);
             Assert(classTypeSymbol, "class type symbol expected");
-            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            std::u32string classTypeFullName = classTypeSymbol->FullName();
             Constant fullClassNameConstant = constantPool.GetConstant(constantPool.GetIdFor(classTypeFullName));
             std::unique_ptr<Instruction> inst = machine.CreateInst("staticinit");
             StaticInitInst* staticInitInst = dynamic_cast<StaticInitInst*>(inst.get());
@@ -989,7 +992,7 @@ void BoundNewExpression::GenLoad(Machine& machine, Function& function)
     ConstantPool& constantPool = GetAssembly().GetConstantPool();
     ClassTypeSymbol* containingClass = functionSymbol->ContainingClass();
     Assert(containingClass, "containing class not found");
-    utf32_string fullClassName = containingClass->FullName();
+    std::u32string fullClassName = containingClass->FullName();
     Constant fullClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(fullClassName.c_str())));
     CreateObjectInst* createObjectInst = dynamic_cast<CreateObjectInst*>(createInst.get());
     Assert(createObjectInst, "CreateObject instruction expected");
@@ -1061,7 +1064,7 @@ BoundIsExpression::BoundIsExpression(Assembly& assembly_, std::unique_ptr<BoundE
     BoundExpression(assembly_, assembly_.GetSymbolTable().GetType(U"System.Boolean")), expr(std::move(expr_)), classType(classType_)
 {
     ConstantPool& constantPool = GetAssembly().GetConstantPool();
-    utf32_string classTypeFullName = classType->FullName();
+    std::u32string classTypeFullName = classType->FullName();
     constantPool.Install(StringPtr(classTypeFullName.c_str()));
 }
 
@@ -1072,7 +1075,7 @@ void BoundIsExpression::GenLoad(Machine& machine, Function& function)
     IsInst* isInst = dynamic_cast<IsInst*>(inst.get());
     Assert(isInst, "is instruction expected");
     ConstantPool& constantPool = GetAssembly().GetConstantPool();
-    utf32_string classTypeFullName = classType->FullName();
+    std::u32string classTypeFullName = classType->FullName();
     ConstantId classTypeId = constantPool.GetIdFor(classTypeFullName);
     Constant classTypeNameConstant = constantPool.GetConstant(classTypeId);
     isInst->SetTypeName(classTypeNameConstant);
@@ -1093,7 +1096,7 @@ BoundAsExpression::BoundAsExpression(Assembly& assembly_, std::unique_ptr<BoundE
     BoundExpression(assembly_, classType_), expr(std::move(expr_)), classType(classType_)
 {
     ConstantPool& constantPool = GetAssembly().GetConstantPool();
-    utf32_string classTypeFullName = classType->FullName();
+    std::u32string classTypeFullName = classType->FullName();
     constantPool.Install(StringPtr(classTypeFullName.c_str()));
 }
 
@@ -1104,7 +1107,7 @@ void BoundAsExpression::GenLoad(Machine& machine, Function& function)
     AsInst* asInst = dynamic_cast<AsInst*>(inst.get());
     Assert(asInst, "as instruction expected");
     ConstantPool& constantPool = GetAssembly().GetConstantPool();
-    utf32_string classTypeFullName = classType->FullName();
+    std::u32string classTypeFullName = classType->FullName();
     ConstantId classTypeId = constantPool.GetIdFor(classTypeFullName);
     Constant classTypeNameConstant = constantPool.GetConstant(classTypeId);
     asInst->SetTypeName(classTypeNameConstant);

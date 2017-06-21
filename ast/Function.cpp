@@ -7,14 +7,17 @@
 #include <cminor/ast/Statement.hpp>
 #include <cminor/ast/Visitor.hpp>
 #include <cminor/machine/Constant.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace ast {
+
+using namespace cminor::unicode;
 
 FunctionGroupIdNode::FunctionGroupIdNode(const Span& span_) : Node(span_)
 {
 }
 
-FunctionGroupIdNode::FunctionGroupIdNode(const Span& span_, const std::string& functionGroupId_) : Node(span_), functionGroupId(functionGroupId_)
+FunctionGroupIdNode::FunctionGroupIdNode(const Span& span_, const std::u32string& functionGroupId_) : Node(span_), functionGroupId(functionGroupId_)
 {
 }
 
@@ -26,7 +29,7 @@ Node* FunctionGroupIdNode::Clone(CloneContext& cloneContext) const
 void FunctionGroupIdNode::Write(AstWriter& writer)
 {
     Node::Write(writer);
-    utf32_string s = ToUtf32(functionGroupId);
+    std::u32string s = functionGroupId;
     ConstantId id = writer.GetConstantPool()->GetIdFor(s);
     Assert(id != noConstantId, "got no id for constant");
     id.Write(writer);
@@ -39,7 +42,7 @@ void FunctionGroupIdNode::Read(AstReader& reader)
     id.Read(reader);
     Constant constant = reader.GetConstantPool()->GetConstant(id);
     Assert(constant.Value().GetType() == ValueType::stringLiteral, "string literal expected");
-    functionGroupId = ToUtf8(constant.Value().AsStringLiteral());
+    functionGroupId = constant.Value().AsStringLiteral();
 }
 
 void FunctionGroupIdNode::Accept(Visitor& visitor)
@@ -47,19 +50,19 @@ void FunctionGroupIdNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-void AttributeMap::AddAttribute(const std::string& name_, const std::string& value_)
+void AttributeMap::AddAttribute(const std::u32string& name_, const std::u32string& value_)
 {
     nameValuePairs[name_] = value_;
 }
 
-std::string AttributeMap::GetAttribute(const std::string& name) const
+std::u32string AttributeMap::GetAttribute(const std::u32string& name) const
 {
     auto it = nameValuePairs.find(name);
     if (it != nameValuePairs.cend())
     {
         return it->second;
     }
-    return std::string();
+    return std::u32string();
 }
 
 void AttributeMap::Write(AstWriter& writer)
@@ -72,14 +75,12 @@ void AttributeMap::Write(AstWriter& writer)
         writer.AsMachineWriter().PutEncodedUInt(n);
         for (const auto& p : nameValuePairs)
         {
-            const std::string& name = p.first;
-            utf32_string nameS = ToUtf32(name);
-            ConstantId nameId = writer.GetConstantPool()->GetIdFor(nameS);
+            const std::u32string& name = p.first;
+            ConstantId nameId = writer.GetConstantPool()->GetIdFor(name);
             Assert(nameId != noConstantId, "got no id for constant");
             nameId.Write(writer);
-            const std::string& value = p.second;
-            utf32_string valueS = ToUtf32(value);
-            ConstantId valueId = writer.GetConstantPool()->GetIdFor(valueS);
+            const std::u32string& value = p.second;
+            ConstantId valueId = writer.GetConstantPool()->GetIdFor(value);
             Assert(valueId != noConstantId, "got no id for constant");
             valueId.Write(writer);
         }
@@ -98,13 +99,11 @@ void AttributeMap::Read(AstReader& reader)
             nameId.Read(reader);
             Constant nameConstant = reader.GetConstantPool()->GetConstant(nameId);
             Assert(nameConstant.Value().GetType() == ValueType::stringLiteral, "string literal expected");
-            std::string name = ToUtf8(nameConstant.Value().AsStringLiteral());
             ConstantId valueId;
             valueId.Read(reader);
             Constant valueConstant = reader.GetConstantPool()->GetConstant(valueId);
             Assert(valueConstant.Value().GetType() == ValueType::stringLiteral, "string literal expected");
-            std::string value = ToUtf8(valueConstant.Value().AsStringLiteral());
-            nameValuePairs[name] = value;
+            nameValuePairs[nameConstant.Value().AsStringLiteral()] = valueConstant.Value().AsStringLiteral();
         }
     }
 }
@@ -235,16 +234,16 @@ void FunctionNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-std::string FunctionNode::Name() const
+std::u32string FunctionNode::Name() const
 {
-    std::string name = groupId->Str();
+    std::u32string name = groupId->Str();
     name.append(1, '(');
     int n = parameters.Count();
     for (int i = 0; i < n; ++i)
     {
         if (i > 0)
         {
-            name.append(", ");
+            name.append(U", ");
         }
         name.append(parameters[i]->ToString());
     }

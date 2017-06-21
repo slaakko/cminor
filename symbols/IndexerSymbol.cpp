@@ -17,11 +17,11 @@ IndexerSymbol::IndexerSymbol(const Span& span_, Constant name_) : ContainerSymbo
 void IndexerSymbol::Write(SymbolWriter& writer)
 {
     ContainerSymbol::Write(writer);
-    utf32_string valueTypeFullName = valueType->FullName();
+    std::u32string valueTypeFullName = valueType->FullName();
     ConstantId valueTypeId = GetAssembly()->GetConstantPool().GetIdFor(valueTypeFullName);
     Assert(valueTypeId != noConstantId, "got no id");
     valueTypeId.Write(writer);
-    utf32_string indexTypeFullName = indexType->FullName();
+    std::u32string indexTypeFullName = indexType->FullName();
     ConstantId indexTypeId = GetAssembly()->GetConstantPool().GetIdFor(indexTypeFullName);
     Assert(indexTypeId != noConstantId, "got no id");
     indexTypeId.Write(writer);

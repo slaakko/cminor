@@ -1,13 +1,14 @@
 #include "Statement.hpp"
-#include <cminor/pl/Action.hpp>
-#include <cminor/pl/Rule.hpp>
-#include <cminor/pl/ParsingDomain.hpp>
-#include <cminor/pl/Primitive.hpp>
-#include <cminor/pl/Composite.hpp>
-#include <cminor/pl/Nonterminal.hpp>
-#include <cminor/pl/Exception.hpp>
-#include <cminor/pl/StdLib.hpp>
-#include <cminor/pl/XmlLog.hpp>
+#include <cminor/parsing/Action.hpp>
+#include <cminor/parsing/Rule.hpp>
+#include <cminor/parsing/ParsingDomain.hpp>
+#include <cminor/parsing/Primitive.hpp>
+#include <cminor/parsing/Composite.hpp>
+#include <cminor/parsing/Nonterminal.hpp>
+#include <cminor/parsing/Exception.hpp>
+#include <cminor/parsing/StdLib.hpp>
+#include <cminor/parsing/XmlLog.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cminor/parser/Keyword.hpp>
 #include <cminor/parser/Expression.hpp>
 #include <cminor/parser/TypeExpr.hpp>
@@ -16,6 +17,8 @@
 namespace cminor { namespace parser {
 
 using namespace cminor::parsing;
+using namespace cminor::util;
+using namespace cminor::unicode;
 
 StatementGrammar* StatementGrammar::Create()
 {
@@ -32,12 +35,12 @@ StatementGrammar* StatementGrammar::Create(cminor::parsing::ParsingDomain* parsi
     return grammar;
 }
 
-StatementGrammar::StatementGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar("StatementGrammar", parsingDomain_->GetNamespaceScope("cminor.parser"), parsingDomain_)
+StatementGrammar::StatementGrammar(cminor::parsing::ParsingDomain* parsingDomain_): cminor::parsing::Grammar(ToUtf32("StatementGrammar"), parsingDomain_->GetNamespaceScope(ToUtf32("cminor.parser")), parsingDomain_)
 {
     SetOwner(0);
 }
 
-StatementNode* StatementGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, ParsingContext* ctx)
+StatementNode* StatementGrammar::Parse(const char32_t* start, const char32_t* end, int fileIndex, const std::string& fileName, ParsingContext* ctx)
 {
     cminor::parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
     std::unique_ptr<cminor::parsing::XmlLog> xmlLog;
@@ -57,7 +60,7 @@ StatementNode* StatementGrammar::Parse(const char* start, const char* end, int f
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
+    if (!match.Hit() || stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -65,7 +68,7 @@ StatementNode* StatementGrammar::Parse(const char* start, const char* end, int f
         }
         else
         {
-            throw cminor::parsing::ParsingException("grammar '" + Name() + "' has no start rule", fileName, scanner.GetSpan(), start, end);
+            throw cminor::parsing::ParsingException("grammar '" + ToUtf8(Name()) + "' has no start rule", fileName, scanner.GetSpan(), start, end);
         }
     }
     std::unique_ptr<cminor::parsing::Object> value = std::move(stack.top());
@@ -77,11 +80,11 @@ StatementNode* StatementGrammar::Parse(const char* start, const char* end, int f
 class StatementGrammar::StatementRule : public cminor::parsing::Rule
 {
 public:
-    StatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    StatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -102,123 +105,123 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A2Action));
-        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        cminor::parsing::ActionParser* a3ActionParser = GetAction(ToUtf32("A3"));
         a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A3Action));
-        cminor::parsing::ActionParser* a4ActionParser = GetAction("A4");
+        cminor::parsing::ActionParser* a4ActionParser = GetAction(ToUtf32("A4"));
         a4ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A4Action));
-        cminor::parsing::ActionParser* a5ActionParser = GetAction("A5");
+        cminor::parsing::ActionParser* a5ActionParser = GetAction(ToUtf32("A5"));
         a5ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A5Action));
-        cminor::parsing::ActionParser* a6ActionParser = GetAction("A6");
+        cminor::parsing::ActionParser* a6ActionParser = GetAction(ToUtf32("A6"));
         a6ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A6Action));
-        cminor::parsing::ActionParser* a7ActionParser = GetAction("A7");
+        cminor::parsing::ActionParser* a7ActionParser = GetAction(ToUtf32("A7"));
         a7ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A7Action));
-        cminor::parsing::ActionParser* a8ActionParser = GetAction("A8");
+        cminor::parsing::ActionParser* a8ActionParser = GetAction(ToUtf32("A8"));
         a8ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A8Action));
-        cminor::parsing::ActionParser* a9ActionParser = GetAction("A9");
+        cminor::parsing::ActionParser* a9ActionParser = GetAction(ToUtf32("A9"));
         a9ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A9Action));
-        cminor::parsing::ActionParser* a10ActionParser = GetAction("A10");
+        cminor::parsing::ActionParser* a10ActionParser = GetAction(ToUtf32("A10"));
         a10ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A10Action));
-        cminor::parsing::ActionParser* a11ActionParser = GetAction("A11");
+        cminor::parsing::ActionParser* a11ActionParser = GetAction(ToUtf32("A11"));
         a11ActionParser->SetAction(new cminor::parsing::MemberParsingAction<StatementRule>(this, &StatementRule::A11Action));
-        cminor::parsing::NonterminalParser* labeledStatementNonterminalParser = GetNonterminal("LabeledStatement");
+        cminor::parsing::NonterminalParser* labeledStatementNonterminalParser = GetNonterminal(ToUtf32("LabeledStatement"));
         labeledStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreLabeledStatement));
         labeledStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostLabeledStatement));
-        cminor::parsing::NonterminalParser* controlStatementNonterminalParser = GetNonterminal("ControlStatement");
+        cminor::parsing::NonterminalParser* controlStatementNonterminalParser = GetNonterminal(ToUtf32("ControlStatement"));
         controlStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreControlStatement));
         controlStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostControlStatement));
-        cminor::parsing::NonterminalParser* incrementStatementNonterminalParser = GetNonterminal("IncrementStatement");
+        cminor::parsing::NonterminalParser* incrementStatementNonterminalParser = GetNonterminal(ToUtf32("IncrementStatement"));
         incrementStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreIncrementStatement));
         incrementStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostIncrementStatement));
-        cminor::parsing::NonterminalParser* decrementStatementNonterminalParser = GetNonterminal("DecrementStatement");
+        cminor::parsing::NonterminalParser* decrementStatementNonterminalParser = GetNonterminal(ToUtf32("DecrementStatement"));
         decrementStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreDecrementStatement));
         decrementStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostDecrementStatement));
-        cminor::parsing::NonterminalParser* expressionStatementNonterminalParser = GetNonterminal("ExpressionStatement");
+        cminor::parsing::NonterminalParser* expressionStatementNonterminalParser = GetNonterminal(ToUtf32("ExpressionStatement"));
         expressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreExpressionStatement));
         expressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostExpressionStatement));
-        cminor::parsing::NonterminalParser* assignmentStatementNonterminalParser = GetNonterminal("AssignmentStatement");
+        cminor::parsing::NonterminalParser* assignmentStatementNonterminalParser = GetNonterminal(ToUtf32("AssignmentStatement"));
         assignmentStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreAssignmentStatement));
         assignmentStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostAssignmentStatement));
-        cminor::parsing::NonterminalParser* constructionStatementNonterminalParser = GetNonterminal("ConstructionStatement");
+        cminor::parsing::NonterminalParser* constructionStatementNonterminalParser = GetNonterminal(ToUtf32("ConstructionStatement"));
         constructionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreConstructionStatement));
         constructionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostConstructionStatement));
-        cminor::parsing::NonterminalParser* emptyStatementNonterminalParser = GetNonterminal("EmptyStatement");
+        cminor::parsing::NonterminalParser* emptyStatementNonterminalParser = GetNonterminal(ToUtf32("EmptyStatement"));
         emptyStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreEmptyStatement));
         emptyStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostEmptyStatement));
-        cminor::parsing::NonterminalParser* throwStatementNonterminalParser = GetNonterminal("ThrowStatement");
+        cminor::parsing::NonterminalParser* throwStatementNonterminalParser = GetNonterminal(ToUtf32("ThrowStatement"));
         throwStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreThrowStatement));
         throwStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostThrowStatement));
-        cminor::parsing::NonterminalParser* tryStatementNonterminalParser = GetNonterminal("TryStatement");
+        cminor::parsing::NonterminalParser* tryStatementNonterminalParser = GetNonterminal(ToUtf32("TryStatement"));
         tryStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreTryStatement));
         tryStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostTryStatement));
-        cminor::parsing::NonterminalParser* usingStatementNonterminalParser = GetNonterminal("UsingStatement");
+        cminor::parsing::NonterminalParser* usingStatementNonterminalParser = GetNonterminal(ToUtf32("UsingStatement"));
         usingStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreUsingStatement));
         usingStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostUsingStatement));
-        cminor::parsing::NonterminalParser* lockStatementNonterminalParser = GetNonterminal("LockStatement");
+        cminor::parsing::NonterminalParser* lockStatementNonterminalParser = GetNonterminal(ToUtf32("LockStatement"));
         lockStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<StatementRule>(this, &StatementRule::PreLockStatement));
         lockStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<StatementRule>(this, &StatementRule::PostLockStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromLabeledStatement;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromControlStatement;
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromIncrementStatement;
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A3Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromDecrementStatement;
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A4Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromExpressionStatement;
     }
-    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A5Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromAssignmentStatement;
     }
-    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A6Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromConstructionStatement;
     }
-    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A7Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromEmptyStatement;
     }
-    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A8Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromThrowStatement;
     }
-    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A9Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromTryStatement;
     }
-    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A10Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromUsingStatement;
     }
-    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A11Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromLockStatement;
@@ -427,10 +430,10 @@ private:
 class StatementGrammar::LabelIdRule : public cminor::parsing::Rule
 {
 public:
-    LabelIdRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    LabelIdRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("std::string");
+        SetValueTypeName(ToUtf32("std::u32string"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -442,18 +445,18 @@ public:
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         if (matched)
         {
-            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::string>(context->value)));
+            stack.push(std::unique_ptr<cminor::parsing::Object>(new cminor::parsing::ValueObject<std::u32string>(context->value)));
         }
         parsingData->PopContext(Id());
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<LabelIdRule>(this, &LabelIdRule::A0Action));
-        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal(ToUtf32("identifier"));
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LabelIdRule>(this, &LabelIdRule::Postidentifier));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromidentifier;
@@ -464,7 +467,7 @@ public:
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromidentifier_value = std::move(stack.top());
-            context->fromidentifier = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromidentifier_value.get());
+            context->fromidentifier = *static_cast<cminor::parsing::ValueObject<std::u32string>*>(fromidentifier_value.get());
             stack.pop();
         }
     }
@@ -472,19 +475,19 @@ private:
     struct Context : cminor::parsing::Context
     {
         Context(): value(), fromidentifier() {}
-        std::string value;
-        std::string fromidentifier;
+        std::u32string value;
+        std::u32string fromidentifier;
     };
 };
 
 class StatementGrammar::LabelRule : public cminor::parsing::Rule
 {
 public:
-    LabelRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    LabelRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        SetValueTypeName("LabelNode*");
-        AddLocalVariable(AttrOrVariable("std::string", "label"));
+        SetValueTypeName(ToUtf32("LabelNode*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("std::u32string"), ToUtf32("label")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -502,19 +505,19 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<LabelRule>(this, &LabelRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<LabelRule>(this, &LabelRule::A1Action));
-        cminor::parsing::NonterminalParser* labelIdNonterminalParser = GetNonterminal("LabelId");
+        cminor::parsing::NonterminalParser* labelIdNonterminalParser = GetNonterminal(ToUtf32("LabelId"));
         labelIdNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LabelRule>(this, &LabelRule::PostLabelId));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new LabelNode(span, context->label);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->label = context->fromLabelId;
@@ -525,7 +528,7 @@ public:
         if (matched)
         {
             std::unique_ptr<cminor::parsing::Object> fromLabelId_value = std::move(stack.top());
-            context->fromLabelId = *static_cast<cminor::parsing::ValueObject<std::string>*>(fromLabelId_value.get());
+            context->fromLabelId = *static_cast<cminor::parsing::ValueObject<std::u32string>*>(fromLabelId_value.get());
             stack.pop();
         }
     }
@@ -534,19 +537,19 @@ private:
     {
         Context(): value(), label(), fromLabelId() {}
         LabelNode* value;
-        std::string label;
-        std::string fromLabelId;
+        std::u32string label;
+        std::u32string fromLabelId;
     };
 };
 
 class StatementGrammar::LabeledStatementRule : public cminor::parsing::Rule
 {
 public:
-    LabeledStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    LabeledStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -567,15 +570,15 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<LabeledStatementRule>(this, &LabeledStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* lblNonterminalParser = GetNonterminal("lbl");
+        cminor::parsing::NonterminalParser* lblNonterminalParser = GetNonterminal(ToUtf32("lbl"));
         lblNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LabeledStatementRule>(this, &LabeledStatementRule::Postlbl));
-        cminor::parsing::NonterminalParser* stmtNonterminalParser = GetNonterminal("stmt");
+        cminor::parsing::NonterminalParser* stmtNonterminalParser = GetNonterminal(ToUtf32("stmt"));
         stmtNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<LabeledStatementRule>(this, &LabeledStatementRule::Prestmt));
         stmtNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LabeledStatementRule>(this, &LabeledStatementRule::Poststmt));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->fromstmt->SetLabelNode(context->fromlbl);
@@ -620,11 +623,11 @@ private:
 class StatementGrammar::ControlStatementRule : public cminor::parsing::Rule
 {
 public:
-    ControlStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    ControlStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -645,133 +648,133 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A2Action));
-        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        cminor::parsing::ActionParser* a3ActionParser = GetAction(ToUtf32("A3"));
         a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A3Action));
-        cminor::parsing::ActionParser* a4ActionParser = GetAction("A4");
+        cminor::parsing::ActionParser* a4ActionParser = GetAction(ToUtf32("A4"));
         a4ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A4Action));
-        cminor::parsing::ActionParser* a5ActionParser = GetAction("A5");
+        cminor::parsing::ActionParser* a5ActionParser = GetAction(ToUtf32("A5"));
         a5ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A5Action));
-        cminor::parsing::ActionParser* a6ActionParser = GetAction("A6");
+        cminor::parsing::ActionParser* a6ActionParser = GetAction(ToUtf32("A6"));
         a6ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A6Action));
-        cminor::parsing::ActionParser* a7ActionParser = GetAction("A7");
+        cminor::parsing::ActionParser* a7ActionParser = GetAction(ToUtf32("A7"));
         a7ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A7Action));
-        cminor::parsing::ActionParser* a8ActionParser = GetAction("A8");
+        cminor::parsing::ActionParser* a8ActionParser = GetAction(ToUtf32("A8"));
         a8ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A8Action));
-        cminor::parsing::ActionParser* a9ActionParser = GetAction("A9");
+        cminor::parsing::ActionParser* a9ActionParser = GetAction(ToUtf32("A9"));
         a9ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A9Action));
-        cminor::parsing::ActionParser* a10ActionParser = GetAction("A10");
+        cminor::parsing::ActionParser* a10ActionParser = GetAction(ToUtf32("A10"));
         a10ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A10Action));
-        cminor::parsing::ActionParser* a11ActionParser = GetAction("A11");
+        cminor::parsing::ActionParser* a11ActionParser = GetAction(ToUtf32("A11"));
         a11ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A11Action));
-        cminor::parsing::ActionParser* a12ActionParser = GetAction("A12");
+        cminor::parsing::ActionParser* a12ActionParser = GetAction(ToUtf32("A12"));
         a12ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ControlStatementRule>(this, &ControlStatementRule::A12Action));
-        cminor::parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal("CompoundStatement");
+        cminor::parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal(ToUtf32("CompoundStatement"));
         compoundStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreCompoundStatement));
         compoundStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostCompoundStatement));
-        cminor::parsing::NonterminalParser* returnStatementNonterminalParser = GetNonterminal("ReturnStatement");
+        cminor::parsing::NonterminalParser* returnStatementNonterminalParser = GetNonterminal(ToUtf32("ReturnStatement"));
         returnStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreReturnStatement));
         returnStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostReturnStatement));
-        cminor::parsing::NonterminalParser* ifStatementNonterminalParser = GetNonterminal("IfStatement");
+        cminor::parsing::NonterminalParser* ifStatementNonterminalParser = GetNonterminal(ToUtf32("IfStatement"));
         ifStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreIfStatement));
         ifStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostIfStatement));
-        cminor::parsing::NonterminalParser* whileStatementNonterminalParser = GetNonterminal("WhileStatement");
+        cminor::parsing::NonterminalParser* whileStatementNonterminalParser = GetNonterminal(ToUtf32("WhileStatement"));
         whileStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreWhileStatement));
         whileStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostWhileStatement));
-        cminor::parsing::NonterminalParser* doStatementNonterminalParser = GetNonterminal("DoStatement");
+        cminor::parsing::NonterminalParser* doStatementNonterminalParser = GetNonterminal(ToUtf32("DoStatement"));
         doStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreDoStatement));
         doStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostDoStatement));
-        cminor::parsing::NonterminalParser* forStatementNonterminalParser = GetNonterminal("ForStatement");
+        cminor::parsing::NonterminalParser* forStatementNonterminalParser = GetNonterminal(ToUtf32("ForStatement"));
         forStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreForStatement));
         forStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostForStatement));
-        cminor::parsing::NonterminalParser* forEachStatementNonterminalParser = GetNonterminal("ForEachStatement");
+        cminor::parsing::NonterminalParser* forEachStatementNonterminalParser = GetNonterminal(ToUtf32("ForEachStatement"));
         forEachStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreForEachStatement));
         forEachStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostForEachStatement));
-        cminor::parsing::NonterminalParser* breakStatementNonterminalParser = GetNonterminal("BreakStatement");
+        cminor::parsing::NonterminalParser* breakStatementNonterminalParser = GetNonterminal(ToUtf32("BreakStatement"));
         breakStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreBreakStatement));
         breakStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostBreakStatement));
-        cminor::parsing::NonterminalParser* continueStatementNonterminalParser = GetNonterminal("ContinueStatement");
+        cminor::parsing::NonterminalParser* continueStatementNonterminalParser = GetNonterminal(ToUtf32("ContinueStatement"));
         continueStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreContinueStatement));
         continueStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostContinueStatement));
-        cminor::parsing::NonterminalParser* gotoStatementNonterminalParser = GetNonterminal("GotoStatement");
+        cminor::parsing::NonterminalParser* gotoStatementNonterminalParser = GetNonterminal(ToUtf32("GotoStatement"));
         gotoStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreGotoStatement));
         gotoStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostGotoStatement));
-        cminor::parsing::NonterminalParser* switchStatementNonterminalParser = GetNonterminal("SwitchStatement");
+        cminor::parsing::NonterminalParser* switchStatementNonterminalParser = GetNonterminal(ToUtf32("SwitchStatement"));
         switchStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreSwitchStatement));
         switchStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostSwitchStatement));
-        cminor::parsing::NonterminalParser* gotoCaseStatementNonterminalParser = GetNonterminal("GotoCaseStatement");
+        cminor::parsing::NonterminalParser* gotoCaseStatementNonterminalParser = GetNonterminal(ToUtf32("GotoCaseStatement"));
         gotoCaseStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreGotoCaseStatement));
         gotoCaseStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostGotoCaseStatement));
-        cminor::parsing::NonterminalParser* gotoDefaultStatementNonterminalParser = GetNonterminal("GotoDefaultStatement");
+        cminor::parsing::NonterminalParser* gotoDefaultStatementNonterminalParser = GetNonterminal(ToUtf32("GotoDefaultStatement"));
         gotoDefaultStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ControlStatementRule>(this, &ControlStatementRule::PreGotoDefaultStatement));
         gotoDefaultStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ControlStatementRule>(this, &ControlStatementRule::PostGotoDefaultStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromCompoundStatement;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromReturnStatement;
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromIfStatement;
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A3Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromWhileStatement;
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A4Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromDoStatement;
     }
-    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A5Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromForStatement;
     }
-    void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A6Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromForEachStatement;
     }
-    void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A7Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromBreakStatement;
     }
-    void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A8Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromContinueStatement;
     }
-    void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A9Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromGotoStatement;
     }
-    void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A10Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromSwitchStatement;
     }
-    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A11Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromGotoCaseStatement;
     }
-    void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A12Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromGotoDefaultStatement;
@@ -996,11 +999,11 @@ private:
 class StatementGrammar::CompoundStatementRule : public cminor::parsing::Rule
 {
 public:
-    CompoundStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    CompoundStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("CompoundStatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("CompoundStatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1021,35 +1024,35 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CompoundStatementRule>(this, &CompoundStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CompoundStatementRule>(this, &CompoundStatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CompoundStatementRule>(this, &CompoundStatementRule::A2Action));
-        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        cminor::parsing::ActionParser* a3ActionParser = GetAction(ToUtf32("A3"));
         a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CompoundStatementRule>(this, &CompoundStatementRule::A3Action));
-        cminor::parsing::NonterminalParser* stmtNonterminalParser = GetNonterminal("stmt");
+        cminor::parsing::NonterminalParser* stmtNonterminalParser = GetNonterminal(ToUtf32("stmt"));
         stmtNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<CompoundStatementRule>(this, &CompoundStatementRule::Prestmt));
         stmtNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CompoundStatementRule>(this, &CompoundStatementRule::Poststmt));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->GetSpan().SetEnd(span.End());
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new CompoundStatementNode(span);
         context->value->SetBeginBraceSpan(span);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->AddStatement(context->fromstmt);
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A3Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->SetEndBraceSpan(span);
@@ -1082,11 +1085,11 @@ private:
 class StatementGrammar::ReturnStatementRule : public cminor::parsing::Rule
 {
 public:
-    ReturnStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    ReturnStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1107,13 +1110,13 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ReturnStatementRule>(this, &ReturnStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ReturnStatementRule>(this, &ReturnStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ReturnStatementRule>(this, &ReturnStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ReturnStatementNode(span, context->fromExpression);
@@ -1146,11 +1149,11 @@ private:
 class StatementGrammar::IfStatementRule : public cminor::parsing::Rule
 {
 public:
-    IfStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    IfStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1171,19 +1174,19 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IfStatementRule>(this, &IfStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IfStatementRule>(this, &IfStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IfStatementRule>(this, &IfStatementRule::PostExpression));
-        cminor::parsing::NonterminalParser* thensNonterminalParser = GetNonterminal("thens");
+        cminor::parsing::NonterminalParser* thensNonterminalParser = GetNonterminal(ToUtf32("thens"));
         thensNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IfStatementRule>(this, &IfStatementRule::Prethens));
         thensNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IfStatementRule>(this, &IfStatementRule::Postthens));
-        cminor::parsing::NonterminalParser* elsesNonterminalParser = GetNonterminal("elses");
+        cminor::parsing::NonterminalParser* elsesNonterminalParser = GetNonterminal(ToUtf32("elses"));
         elsesNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IfStatementRule>(this, &IfStatementRule::Preelses));
         elsesNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IfStatementRule>(this, &IfStatementRule::Postelses));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new IfStatementNode(span, context->fromExpression, context->fromthens, context->fromelses);
@@ -1248,11 +1251,11 @@ private:
 class StatementGrammar::WhileStatementRule : public cminor::parsing::Rule
 {
 public:
-    WhileStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    WhileStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1273,16 +1276,16 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<WhileStatementRule>(this, &WhileStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<WhileStatementRule>(this, &WhileStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<WhileStatementRule>(this, &WhileStatementRule::PostExpression));
-        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal(ToUtf32("Statement"));
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<WhileStatementRule>(this, &WhileStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<WhileStatementRule>(this, &WhileStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new WhileStatementNode(span, context->fromExpression, context->fromStatement);
@@ -1331,11 +1334,11 @@ private:
 class StatementGrammar::DoStatementRule : public cminor::parsing::Rule
 {
 public:
-    DoStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    DoStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1356,16 +1359,16 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<DoStatementRule>(this, &DoStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal(ToUtf32("Statement"));
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<DoStatementRule>(this, &DoStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DoStatementRule>(this, &DoStatementRule::PostStatement));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<DoStatementRule>(this, &DoStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DoStatementRule>(this, &DoStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new DoStatementNode(span, context->fromStatement, context->fromExpression);
@@ -1414,11 +1417,11 @@ private:
 class StatementGrammar::ForStatementRule : public cminor::parsing::Rule
 {
 public:
-    ForStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    ForStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1439,22 +1442,22 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ForStatementRule>(this, &ForStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* forInitStatementNonterminalParser = GetNonterminal("ForInitStatement");
+        cminor::parsing::NonterminalParser* forInitStatementNonterminalParser = GetNonterminal(ToUtf32("ForInitStatement"));
         forInitStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForStatementRule>(this, &ForStatementRule::PreForInitStatement));
         forInitStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForStatementRule>(this, &ForStatementRule::PostForInitStatement));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForStatementRule>(this, &ForStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForStatementRule>(this, &ForStatementRule::PostExpression));
-        cminor::parsing::NonterminalParser* forLoopExpressionStatementNonterminalParser = GetNonterminal("ForLoopExpressionStatement");
+        cminor::parsing::NonterminalParser* forLoopExpressionStatementNonterminalParser = GetNonterminal(ToUtf32("ForLoopExpressionStatement"));
         forLoopExpressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForStatementRule>(this, &ForStatementRule::PreForLoopExpressionStatement));
         forLoopExpressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForStatementRule>(this, &ForStatementRule::PostForLoopExpressionStatement));
-        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal(ToUtf32("Statement"));
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForStatementRule>(this, &ForStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForStatementRule>(this, &ForStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ForStatementNode(span, context->fromForInitStatement, context->fromExpression, context->fromForLoopExpressionStatement, context->fromStatement);
@@ -1535,11 +1538,11 @@ private:
 class StatementGrammar::ForInitStatementRule : public cminor::parsing::Rule
 {
 public:
-    ForInitStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    ForInitStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1560,33 +1563,33 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ForInitStatementRule>(this, &ForInitStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ForInitStatementRule>(this, &ForInitStatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ForInitStatementRule>(this, &ForInitStatementRule::A2Action));
-        cminor::parsing::NonterminalParser* assignmentStatementNonterminalParser = GetNonterminal("AssignmentStatement");
+        cminor::parsing::NonterminalParser* assignmentStatementNonterminalParser = GetNonterminal(ToUtf32("AssignmentStatement"));
         assignmentStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForInitStatementRule>(this, &ForInitStatementRule::PreAssignmentStatement));
         assignmentStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForInitStatementRule>(this, &ForInitStatementRule::PostAssignmentStatement));
-        cminor::parsing::NonterminalParser* constructionStatementNonterminalParser = GetNonterminal("ConstructionStatement");
+        cminor::parsing::NonterminalParser* constructionStatementNonterminalParser = GetNonterminal(ToUtf32("ConstructionStatement"));
         constructionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForInitStatementRule>(this, &ForInitStatementRule::PreConstructionStatement));
         constructionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForInitStatementRule>(this, &ForInitStatementRule::PostConstructionStatement));
-        cminor::parsing::NonterminalParser* emptyStatementNonterminalParser = GetNonterminal("EmptyStatement");
+        cminor::parsing::NonterminalParser* emptyStatementNonterminalParser = GetNonterminal(ToUtf32("EmptyStatement"));
         emptyStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForInitStatementRule>(this, &ForInitStatementRule::PreEmptyStatement));
         emptyStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForInitStatementRule>(this, &ForInitStatementRule::PostEmptyStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromAssignmentStatement;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromConstructionStatement;
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromEmptyStatement;
@@ -1651,11 +1654,11 @@ private:
 class StatementGrammar::ForLoopExpressionStatementRule : public cminor::parsing::Rule
 {
 public:
-    ForLoopExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    ForLoopExpressionStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1676,40 +1679,40 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::A2Action));
-        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        cminor::parsing::ActionParser* a3ActionParser = GetAction(ToUtf32("A3"));
         a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::A3Action));
-        cminor::parsing::NonterminalParser* incrementExpressionStatementNonterminalParser = GetNonterminal("IncrementExpressionStatement");
+        cminor::parsing::NonterminalParser* incrementExpressionStatementNonterminalParser = GetNonterminal(ToUtf32("IncrementExpressionStatement"));
         incrementExpressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PreIncrementExpressionStatement));
         incrementExpressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PostIncrementExpressionStatement));
-        cminor::parsing::NonterminalParser* decrementExpressionStatementNonterminalParser = GetNonterminal("DecrementExpressionStatement");
+        cminor::parsing::NonterminalParser* decrementExpressionStatementNonterminalParser = GetNonterminal(ToUtf32("DecrementExpressionStatement"));
         decrementExpressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PreDecrementExpressionStatement));
         decrementExpressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PostDecrementExpressionStatement));
-        cminor::parsing::NonterminalParser* assignmentExpressionStatementNonterminalParser = GetNonterminal("AssignmentExpressionStatement");
+        cminor::parsing::NonterminalParser* assignmentExpressionStatementNonterminalParser = GetNonterminal(ToUtf32("AssignmentExpressionStatement"));
         assignmentExpressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PreAssignmentExpressionStatement));
         assignmentExpressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForLoopExpressionStatementRule>(this, &ForLoopExpressionStatementRule::PostAssignmentExpressionStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromIncrementExpressionStatement;
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromDecrementExpressionStatement;
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromAssignmentExpressionStatement;
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A3Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new EmptyStatementNode(span);
@@ -1774,11 +1777,11 @@ private:
 class StatementGrammar::ForEachStatementRule : public cminor::parsing::Rule
 {
 public:
-    ForEachStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    ForEachStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1799,21 +1802,21 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ForEachStatementRule>(this, &ForEachStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal(ToUtf32("TypeExpr"));
         typeExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForEachStatementRule>(this, &ForEachStatementRule::PreTypeExpr));
         typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForEachStatementRule>(this, &ForEachStatementRule::PostTypeExpr));
-        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal(ToUtf32("Identifier"));
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForEachStatementRule>(this, &ForEachStatementRule::PostIdentifier));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForEachStatementRule>(this, &ForEachStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForEachStatementRule>(this, &ForEachStatementRule::PostExpression));
-        cminor::parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal("CompoundStatement");
+        cminor::parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal(ToUtf32("CompoundStatement"));
         compoundStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ForEachStatementRule>(this, &ForEachStatementRule::PreCompoundStatement));
         compoundStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ForEachStatementRule>(this, &ForEachStatementRule::PostCompoundStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ForEachStatementNode(span, context->fromTypeExpr, context->fromIdentifier, context->fromExpression, context->fromCompoundStatement);
@@ -1889,11 +1892,11 @@ private:
 class StatementGrammar::BreakStatementRule : public cminor::parsing::Rule
 {
 public:
-    BreakStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    BreakStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1914,10 +1917,10 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<BreakStatementRule>(this, &BreakStatementRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new BreakStatementNode(span);
@@ -1934,11 +1937,11 @@ private:
 class StatementGrammar::ContinueStatementRule : public cminor::parsing::Rule
 {
 public:
-    ContinueStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    ContinueStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -1959,10 +1962,10 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ContinueStatementRule>(this, &ContinueStatementRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ContinueStatementNode(span);
@@ -1979,11 +1982,11 @@ private:
 class StatementGrammar::GotoStatementRule : public cminor::parsing::Rule
 {
 public:
-    GotoStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    GotoStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2004,12 +2007,12 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<GotoStatementRule>(this, &GotoStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal(ToUtf32("Identifier"));
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<GotoStatementRule>(this, &GotoStatementRule::PostIdentifier));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new GotoStatementNode(span, context->fromIdentifier->Str());
@@ -2037,11 +2040,11 @@ private:
 class StatementGrammar::SwitchStatementRule : public cminor::parsing::Rule
 {
 public:
-    SwitchStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    SwitchStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("SwitchStatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("SwitchStatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2062,33 +2065,33 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<SwitchStatementRule>(this, &SwitchStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<SwitchStatementRule>(this, &SwitchStatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<SwitchStatementRule>(this, &SwitchStatementRule::A2Action));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<SwitchStatementRule>(this, &SwitchStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<SwitchStatementRule>(this, &SwitchStatementRule::PostExpression));
-        cminor::parsing::NonterminalParser* caseStatementNonterminalParser = GetNonterminal("CaseStatement");
+        cminor::parsing::NonterminalParser* caseStatementNonterminalParser = GetNonterminal(ToUtf32("CaseStatement"));
         caseStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<SwitchStatementRule>(this, &SwitchStatementRule::PreCaseStatement));
         caseStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<SwitchStatementRule>(this, &SwitchStatementRule::PostCaseStatement));
-        cminor::parsing::NonterminalParser* defaultStatementNonterminalParser = GetNonterminal("DefaultStatement");
+        cminor::parsing::NonterminalParser* defaultStatementNonterminalParser = GetNonterminal(ToUtf32("DefaultStatement"));
         defaultStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<SwitchStatementRule>(this, &SwitchStatementRule::PreDefaultStatement));
         defaultStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<SwitchStatementRule>(this, &SwitchStatementRule::PostDefaultStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new SwitchStatementNode(span, context->fromExpression);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->AddCase(context->fromCaseStatement);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->SetDefault(context->fromDefaultStatement);
@@ -2153,12 +2156,12 @@ private:
 class StatementGrammar::CaseStatementRule : public cminor::parsing::Rule
 {
 public:
-    CaseStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    CaseStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("CaseStatementNode*");
-        AddLocalVariable(AttrOrVariable("std::unique_ptr<CaseStatementNode>", "caseS"));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("CaseStatementNode*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("std::unique_ptr<CaseStatementNode>"), ToUtf32("caseS")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2179,44 +2182,44 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CaseStatementRule>(this, &CaseStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CaseStatementRule>(this, &CaseStatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CaseStatementRule>(this, &CaseStatementRule::A2Action));
-        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        cminor::parsing::ActionParser* a3ActionParser = GetAction(ToUtf32("A3"));
         a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CaseStatementRule>(this, &CaseStatementRule::A3Action));
-        cminor::parsing::ActionParser* a4ActionParser = GetAction("A4");
+        cminor::parsing::ActionParser* a4ActionParser = GetAction(ToUtf32("A4"));
         a4ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CaseStatementRule>(this, &CaseStatementRule::A4Action));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<CaseStatementRule>(this, &CaseStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CaseStatementRule>(this, &CaseStatementRule::PostExpression));
-        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal(ToUtf32("Statement"));
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<CaseStatementRule>(this, &CaseStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CaseStatementRule>(this, &CaseStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->caseS.release();
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->caseS->GetSpan().SetEnd(span.End());
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->caseS.reset(new CaseStatementNode(span));
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A3Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->caseS->AddCaseExpr(context->fromExpression);
     }
-    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A4Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->caseS->AddStatement(context->fromStatement);
@@ -2266,11 +2269,11 @@ private:
 class StatementGrammar::DefaultStatementRule : public cminor::parsing::Rule
 {
 public:
-    DefaultStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    DefaultStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("DefaultStatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("DefaultStatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2291,20 +2294,20 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<DefaultStatementRule>(this, &DefaultStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<DefaultStatementRule>(this, &DefaultStatementRule::A1Action));
-        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal(ToUtf32("Statement"));
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<DefaultStatementRule>(this, &DefaultStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DefaultStatementRule>(this, &DefaultStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new DefaultStatementNode(span);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->AddStatement(context->fromStatement);
@@ -2337,11 +2340,11 @@ private:
 class StatementGrammar::GotoCaseStatementRule : public cminor::parsing::Rule
 {
 public:
-    GotoCaseStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    GotoCaseStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2362,13 +2365,13 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<GotoCaseStatementRule>(this, &GotoCaseStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<GotoCaseStatementRule>(this, &GotoCaseStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<GotoCaseStatementRule>(this, &GotoCaseStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new GotoCaseStatementNode(span, context->fromExpression);
@@ -2401,11 +2404,11 @@ private:
 class StatementGrammar::GotoDefaultStatementRule : public cminor::parsing::Rule
 {
 public:
-    GotoDefaultStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    GotoDefaultStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2426,10 +2429,10 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<GotoDefaultStatementRule>(this, &GotoDefaultStatementRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new GotoDefaultStatementNode(span);
@@ -2446,12 +2449,12 @@ private:
 class StatementGrammar::AssignmentExpressionStatementRule : public cminor::parsing::Rule
 {
 public:
-    AssignmentExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    AssignmentExpressionStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
-        AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "targetExpr"));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("std::unique_ptr<Node>"), ToUtf32("targetExpr")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2472,31 +2475,31 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::A2Action));
         a2ActionParser->SetFailureAction(new cminor::parsing::MemberFailureAction<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::A2ActionFail));
-        cminor::parsing::NonterminalParser* targetNonterminalParser = GetNonterminal("target");
+        cminor::parsing::NonterminalParser* targetNonterminalParser = GetNonterminal(ToUtf32("target"));
         targetNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::Pretarget));
         targetNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::Posttarget));
-        cminor::parsing::NonterminalParser* sourceNonterminalParser = GetNonterminal("source");
+        cminor::parsing::NonterminalParser* sourceNonterminalParser = GetNonterminal(ToUtf32("source"));
         sourceNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::Presource));
         sourceNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<AssignmentExpressionStatementRule>(this, &AssignmentExpressionStatementRule::Postsource));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->ctx->PushParsingLvalue(true);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new AssignmentStatementNode(span, context->targetExpr.release(), context->fromsource);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->ctx->PopParsingLvalue();
@@ -2552,11 +2555,11 @@ private:
 class StatementGrammar::AssignmentStatementRule : public cminor::parsing::Rule
 {
 public:
-    AssignmentStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    AssignmentStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2577,13 +2580,13 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<AssignmentStatementRule>(this, &AssignmentStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* assignmentExpressionStatementNonterminalParser = GetNonterminal("AssignmentExpressionStatement");
+        cminor::parsing::NonterminalParser* assignmentExpressionStatementNonterminalParser = GetNonterminal(ToUtf32("AssignmentExpressionStatement"));
         assignmentExpressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<AssignmentStatementRule>(this, &AssignmentStatementRule::PreAssignmentExpressionStatement));
         assignmentExpressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<AssignmentStatementRule>(this, &AssignmentStatementRule::PostAssignmentExpressionStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromAssignmentExpressionStatement;
@@ -2617,11 +2620,11 @@ private:
 class StatementGrammar::ConstructionStatementRule : public cminor::parsing::Rule
 {
 public:
-    ConstructionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    ConstructionStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("ConstructionStatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("ConstructionStatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2642,32 +2645,32 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ConstructionStatementRule>(this, &ConstructionStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ConstructionStatementRule>(this, &ConstructionStatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ConstructionStatementRule>(this, &ConstructionStatementRule::A2Action));
-        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal(ToUtf32("TypeExpr"));
         typeExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PreTypeExpr));
         typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PostTypeExpr));
-        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal(ToUtf32("Identifier"));
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PostIdentifier));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementRule>(this, &ConstructionStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ConstructionStatementNode(span, context->fromTypeExpr, context->fromIdentifier);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->SetInitializer(context->fromExpression);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->GetSpan().SetEnd(span.End());
@@ -2727,11 +2730,11 @@ private:
 class StatementGrammar::ConstructionStatementExpressionRule : public cminor::parsing::Rule
 {
 public:
-    ConstructionStatementExpressionRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    ConstructionStatementExpressionRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("ConstructionStatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("ConstructionStatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2752,32 +2755,32 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::A2Action));
-        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal(ToUtf32("TypeExpr"));
         typeExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PreTypeExpr));
         typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PostTypeExpr));
-        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal(ToUtf32("Identifier"));
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PostIdentifier));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ConstructionStatementExpressionRule>(this, &ConstructionStatementExpressionRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->GetSpan().SetEnd(span.End());
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ConstructionStatementNode(span, context->fromTypeExpr, context->fromIdentifier);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->SetInitializer(context->fromExpression);
@@ -2837,12 +2840,12 @@ private:
 class StatementGrammar::IncrementExpressionStatementRule : public cminor::parsing::Rule
 {
 public:
-    IncrementExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    IncrementExpressionStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
-        AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "expr"));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("std::unique_ptr<Node>"), ToUtf32("expr")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2863,30 +2866,30 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::A2Action));
-        cminor::parsing::NonterminalParser* leftNonterminalParser = GetNonterminal("left");
+        cminor::parsing::NonterminalParser* leftNonterminalParser = GetNonterminal(ToUtf32("left"));
         leftNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::Preleft));
         leftNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::Postleft));
-        cminor::parsing::NonterminalParser* rightNonterminalParser = GetNonterminal("right");
+        cminor::parsing::NonterminalParser* rightNonterminalParser = GetNonterminal(ToUtf32("right"));
         rightNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::Preright));
         rightNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IncrementExpressionStatementRule>(this, &IncrementExpressionStatementRule::Postright));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new IncrementStatementNode(span, context->fromleft);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new IncrementStatementNode(span, context->expr.release());
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->expr.reset(context->fromright);
@@ -2936,11 +2939,11 @@ private:
 class StatementGrammar::IncrementStatementRule : public cminor::parsing::Rule
 {
 public:
-    IncrementStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    IncrementStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -2961,13 +2964,13 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<IncrementStatementRule>(this, &IncrementStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* incrementExpressionStatementNonterminalParser = GetNonterminal("IncrementExpressionStatement");
+        cminor::parsing::NonterminalParser* incrementExpressionStatementNonterminalParser = GetNonterminal(ToUtf32("IncrementExpressionStatement"));
         incrementExpressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<IncrementStatementRule>(this, &IncrementStatementRule::PreIncrementExpressionStatement));
         incrementExpressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<IncrementStatementRule>(this, &IncrementStatementRule::PostIncrementExpressionStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromIncrementExpressionStatement;
@@ -3001,12 +3004,12 @@ private:
 class StatementGrammar::DecrementExpressionStatementRule : public cminor::parsing::Rule
 {
 public:
-    DecrementExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    DecrementExpressionStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
-        AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "expr"));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("std::unique_ptr<Node>"), ToUtf32("expr")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -3027,30 +3030,30 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::A2Action));
-        cminor::parsing::NonterminalParser* leftNonterminalParser = GetNonterminal("left");
+        cminor::parsing::NonterminalParser* leftNonterminalParser = GetNonterminal(ToUtf32("left"));
         leftNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::Preleft));
         leftNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::Postleft));
-        cminor::parsing::NonterminalParser* rightNonterminalParser = GetNonterminal("right");
+        cminor::parsing::NonterminalParser* rightNonterminalParser = GetNonterminal(ToUtf32("right"));
         rightNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::Preright));
         rightNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DecrementExpressionStatementRule>(this, &DecrementExpressionStatementRule::Postright));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new DecrementStatementNode(span, context->fromleft);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new DecrementStatementNode(span, context->expr.release());
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->expr.reset(context->fromright);
@@ -3100,11 +3103,11 @@ private:
 class StatementGrammar::DecrementStatementRule : public cminor::parsing::Rule
 {
 public:
-    DecrementStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    DecrementStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -3125,13 +3128,13 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<DecrementStatementRule>(this, &DecrementStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* decrementExpressionStatementNonterminalParser = GetNonterminal("DecrementExpressionStatement");
+        cminor::parsing::NonterminalParser* decrementExpressionStatementNonterminalParser = GetNonterminal(ToUtf32("DecrementExpressionStatement"));
         decrementExpressionStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<DecrementStatementRule>(this, &DecrementStatementRule::PreDecrementExpressionStatement));
         decrementExpressionStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<DecrementStatementRule>(this, &DecrementStatementRule::PostDecrementExpressionStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromDecrementExpressionStatement;
@@ -3165,12 +3168,12 @@ private:
 class StatementGrammar::ExpressionStatementRule : public cminor::parsing::Rule
 {
 public:
-    ExpressionStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    ExpressionStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
-        AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "expr"));
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
+        AddLocalVariable(AttrOrVariable(ToUtf32("std::unique_ptr<Node>"), ToUtf32("expr")));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -3191,20 +3194,20 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ExpressionStatementRule>(this, &ExpressionStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ExpressionStatementRule>(this, &ExpressionStatementRule::A1Action));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ExpressionStatementRule>(this, &ExpressionStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ExpressionStatementRule>(this, &ExpressionStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ExpressionStatementNode(span, context->expr.release());
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->expr.reset(context->fromExpression);
@@ -3238,11 +3241,11 @@ private:
 class StatementGrammar::EmptyStatementRule : public cminor::parsing::Rule
 {
 public:
-    EmptyStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    EmptyStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -3263,10 +3266,10 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<EmptyStatementRule>(this, &EmptyStatementRule::A0Action));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new EmptyStatementNode(span);
@@ -3283,11 +3286,11 @@ private:
 class StatementGrammar::ThrowStatementRule : public cminor::parsing::Rule
 {
 public:
-    ThrowStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    ThrowStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -3308,13 +3311,13 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<ThrowStatementRule>(this, &ThrowStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<ThrowStatementRule>(this, &ThrowStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<ThrowStatementRule>(this, &ThrowStatementRule::PostExpression));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new ThrowStatementNode(span, context->fromExpression);
@@ -3347,11 +3350,11 @@ private:
 class StatementGrammar::TryStatementRule : public cminor::parsing::Rule
 {
 public:
-    TryStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    TryStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("TryStatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("TryStatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -3372,43 +3375,43 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<TryStatementRule>(this, &TryStatementRule::A0Action));
-        cminor::parsing::ActionParser* a1ActionParser = GetAction("A1");
+        cminor::parsing::ActionParser* a1ActionParser = GetAction(ToUtf32("A1"));
         a1ActionParser->SetAction(new cminor::parsing::MemberParsingAction<TryStatementRule>(this, &TryStatementRule::A1Action));
-        cminor::parsing::ActionParser* a2ActionParser = GetAction("A2");
+        cminor::parsing::ActionParser* a2ActionParser = GetAction(ToUtf32("A2"));
         a2ActionParser->SetAction(new cminor::parsing::MemberParsingAction<TryStatementRule>(this, &TryStatementRule::A2Action));
-        cminor::parsing::ActionParser* a3ActionParser = GetAction("A3");
+        cminor::parsing::ActionParser* a3ActionParser = GetAction(ToUtf32("A3"));
         a3ActionParser->SetAction(new cminor::parsing::MemberParsingAction<TryStatementRule>(this, &TryStatementRule::A3Action));
-        cminor::parsing::NonterminalParser* tryBlockNonterminalParser = GetNonterminal("tryBlock");
+        cminor::parsing::NonterminalParser* tryBlockNonterminalParser = GetNonterminal(ToUtf32("tryBlock"));
         tryBlockNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<TryStatementRule>(this, &TryStatementRule::PretryBlock));
         tryBlockNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<TryStatementRule>(this, &TryStatementRule::PosttryBlock));
-        cminor::parsing::NonterminalParser* catchNonterminalParser = GetNonterminal("Catch");
+        cminor::parsing::NonterminalParser* catchNonterminalParser = GetNonterminal(ToUtf32("Catch"));
         catchNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<TryStatementRule>(this, &TryStatementRule::PreCatch));
         catchNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<TryStatementRule>(this, &TryStatementRule::PostCatch));
-        cminor::parsing::NonterminalParser* finallyNonterminalParser = GetNonterminal("Finally");
+        cminor::parsing::NonterminalParser* finallyNonterminalParser = GetNonterminal(ToUtf32("Finally"));
         finallyNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<TryStatementRule>(this, &TryStatementRule::PreFinally));
         finallyNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<TryStatementRule>(this, &TryStatementRule::PostFinally));
-        cminor::parsing::NonterminalParser* finNonterminalParser = GetNonterminal("fin");
+        cminor::parsing::NonterminalParser* finNonterminalParser = GetNonterminal(ToUtf32("fin"));
         finNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<TryStatementRule>(this, &TryStatementRule::Prefin));
         finNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<TryStatementRule>(this, &TryStatementRule::Postfin));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new TryStatementNode(span, context->fromtryBlock);
     }
-    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A1Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->AddCatch(context->fromCatch);
     }
-    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A2Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->SetFinally(context->fromFinally);
     }
-    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A3Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value->SetFinally(context->fromfin);
@@ -3489,11 +3492,11 @@ private:
 class StatementGrammar::CatchRule : public cminor::parsing::Rule
 {
 public:
-    CatchRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    CatchRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("CatchNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("CatchNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -3514,18 +3517,18 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<CatchRule>(this, &CatchRule::A0Action));
-        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+        cminor::parsing::NonterminalParser* typeExprNonterminalParser = GetNonterminal(ToUtf32("TypeExpr"));
         typeExprNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<CatchRule>(this, &CatchRule::PreTypeExpr));
         typeExprNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CatchRule>(this, &CatchRule::PostTypeExpr));
-        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        cminor::parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal(ToUtf32("Identifier"));
         identifierNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CatchRule>(this, &CatchRule::PostIdentifier));
-        cminor::parsing::NonterminalParser* catchBlock1NonterminalParser = GetNonterminal("catchBlock1");
+        cminor::parsing::NonterminalParser* catchBlock1NonterminalParser = GetNonterminal(ToUtf32("catchBlock1"));
         catchBlock1NonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<CatchRule>(this, &CatchRule::PrecatchBlock1));
         catchBlock1NonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<CatchRule>(this, &CatchRule::PostcatchBlock1));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new CatchNode(span, context->fromTypeExpr, context->fromIdentifier, context->fromcatchBlock1);
@@ -3585,11 +3588,11 @@ private:
 class StatementGrammar::FinallyRule : public cminor::parsing::Rule
 {
 public:
-    FinallyRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    FinallyRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("CompoundStatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("CompoundStatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -3610,13 +3613,13 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<FinallyRule>(this, &FinallyRule::A0Action));
-        cminor::parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal("CompoundStatement");
+        cminor::parsing::NonterminalParser* compoundStatementNonterminalParser = GetNonterminal(ToUtf32("CompoundStatement"));
         compoundStatementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<FinallyRule>(this, &FinallyRule::PreCompoundStatement));
         compoundStatementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<FinallyRule>(this, &FinallyRule::PostCompoundStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = context->fromCompoundStatement;
@@ -3649,11 +3652,11 @@ private:
 class StatementGrammar::UsingStatementRule : public cminor::parsing::Rule
 {
 public:
-    UsingStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    UsingStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -3674,16 +3677,16 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<UsingStatementRule>(this, &UsingStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* constructionStatementExpressionNonterminalParser = GetNonterminal("ConstructionStatementExpression");
+        cminor::parsing::NonterminalParser* constructionStatementExpressionNonterminalParser = GetNonterminal(ToUtf32("ConstructionStatementExpression"));
         constructionStatementExpressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<UsingStatementRule>(this, &UsingStatementRule::PreConstructionStatementExpression));
         constructionStatementExpressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<UsingStatementRule>(this, &UsingStatementRule::PostConstructionStatementExpression));
-        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal(ToUtf32("Statement"));
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<UsingStatementRule>(this, &UsingStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<UsingStatementRule>(this, &UsingStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new UsingStatementNode(span, context->fromConstructionStatementExpression, context->fromStatement);
@@ -3732,11 +3735,11 @@ private:
 class StatementGrammar::LockStatementRule : public cminor::parsing::Rule
 {
 public:
-    LockStatementRule(const std::string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
+    LockStatementRule(const std::u32string& name_, Scope* enclosingScope_, int id_, Parser* definition_):
         cminor::parsing::Rule(name_, enclosingScope_, id_, definition_)
     {
-        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
-        SetValueTypeName("StatementNode*");
+        AddInheritedAttribute(AttrOrVariable(ToUtf32("ParsingContext*"), ToUtf32("ctx")));
+        SetValueTypeName(ToUtf32("StatementNode*"));
     }
     virtual void Enter(cminor::parsing::ObjectStack& stack, cminor::parsing::ParsingData* parsingData)
     {
@@ -3757,16 +3760,16 @@ public:
     }
     virtual void Link()
     {
-        cminor::parsing::ActionParser* a0ActionParser = GetAction("A0");
+        cminor::parsing::ActionParser* a0ActionParser = GetAction(ToUtf32("A0"));
         a0ActionParser->SetAction(new cminor::parsing::MemberParsingAction<LockStatementRule>(this, &LockStatementRule::A0Action));
-        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal("Expression");
+        cminor::parsing::NonterminalParser* expressionNonterminalParser = GetNonterminal(ToUtf32("Expression"));
         expressionNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<LockStatementRule>(this, &LockStatementRule::PreExpression));
         expressionNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LockStatementRule>(this, &LockStatementRule::PostExpression));
-        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal("Statement");
+        cminor::parsing::NonterminalParser* statementNonterminalParser = GetNonterminal(ToUtf32("Statement"));
         statementNonterminalParser->SetPreCall(new cminor::parsing::MemberPreCall<LockStatementRule>(this, &LockStatementRule::PreStatement));
         statementNonterminalParser->SetPostCall(new cminor::parsing::MemberPostCall<LockStatementRule>(this, &LockStatementRule::PostStatement));
     }
-    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
+    void A0Action(const char32_t* matchBegin, const char32_t* matchEnd, const Span& span, const std::string& fileName, ParsingData* parsingData, bool& pass)
     {
         Context* context = static_cast<Context*>(parsingData->GetContext(Id()));
         context->value = new LockStatementNode(span, context->fromExpression, context->fromStatement);
@@ -3815,31 +3818,31 @@ private:
 void StatementGrammar::GetReferencedGrammars()
 {
     cminor::parsing::ParsingDomain* pd = GetParsingDomain();
-    cminor::parsing::Grammar* grammar0 = pd->GetGrammar("cminor.parsing.stdlib");
+    cminor::parsing::Grammar* grammar0 = pd->GetGrammar(ToUtf32("cminor.parsing.stdlib"));
     if (!grammar0)
     {
         grammar0 = cminor::parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    cminor::parsing::Grammar* grammar1 = pd->GetGrammar("cminor.parser.ExpressionGrammar");
+    cminor::parsing::Grammar* grammar1 = pd->GetGrammar(ToUtf32("cminor.parser.TypeExprGrammar"));
     if (!grammar1)
     {
-        grammar1 = cminor::parser::ExpressionGrammar::Create(pd);
+        grammar1 = cminor::parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    cminor::parsing::Grammar* grammar2 = pd->GetGrammar("cminor.parser.TypeExprGrammar");
+    cminor::parsing::Grammar* grammar2 = pd->GetGrammar(ToUtf32("cminor.parser.KeywordGrammar"));
     if (!grammar2)
     {
-        grammar2 = cminor::parser::TypeExprGrammar::Create(pd);
+        grammar2 = cminor::parser::KeywordGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    cminor::parsing::Grammar* grammar3 = pd->GetGrammar("cminor.parser.KeywordGrammar");
+    cminor::parsing::Grammar* grammar3 = pd->GetGrammar(ToUtf32("cminor.parser.ExpressionGrammar"));
     if (!grammar3)
     {
-        grammar3 = cminor::parser::KeywordGrammar::Create(pd);
+        grammar3 = cminor::parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    cminor::parsing::Grammar* grammar4 = pd->GetGrammar("cminor.parser.IdentifierGrammar");
+    cminor::parsing::Grammar* grammar4 = pd->GetGrammar(ToUtf32("cminor.parser.IdentifierGrammar"));
     if (!grammar4)
     {
         grammar4 = cminor::parser::IdentifierGrammar::Create(pd);
@@ -3849,13 +3852,13 @@ void StatementGrammar::GetReferencedGrammars()
 
 void StatementGrammar::CreateRules()
 {
-    AddRuleLink(new cminor::parsing::RuleLink("identifier", this, "cminor.parsing.stdlib.identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new cminor::parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
-    AddRuleLink(new cminor::parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
-    AddRuleLink(new cminor::parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new cminor::parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
-    AddRule(new StatementRule("Statement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("identifier"), this, ToUtf32("cminor.parsing.stdlib.identifier")));
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("Keyword"), this, ToUtf32("KeywordGrammar.Keyword")));
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("Expression"), this, ToUtf32("ExpressionGrammar.Expression")));
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("Identifier"), this, ToUtf32("IdentifierGrammar.Identifier")));
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("TypeExpr"), this, ToUtf32("TypeExprGrammar.TypeExpr")));
+    AddRuleLink(new cminor::parsing::RuleLink(ToUtf32("ArgumentList"), this, ToUtf32("ExpressionGrammar.ArgumentList")));
+    AddRule(new StatementRule(ToUtf32("Statement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
@@ -3867,47 +3870,47 @@ void StatementGrammar::CreateRules()
                                         new cminor::parsing::AlternativeParser(
                                             new cminor::parsing::AlternativeParser(
                                                 new cminor::parsing::AlternativeParser(
-                                                    new cminor::parsing::ActionParser("A0",
-                                                        new cminor::parsing::NonterminalParser("LabeledStatement", "LabeledStatement", 1)),
-                                                    new cminor::parsing::ActionParser("A1",
-                                                        new cminor::parsing::NonterminalParser("ControlStatement", "ControlStatement", 1))),
-                                                new cminor::parsing::ActionParser("A2",
-                                                    new cminor::parsing::NonterminalParser("IncrementStatement", "IncrementStatement", 1))),
-                                            new cminor::parsing::ActionParser("A3",
-                                                new cminor::parsing::NonterminalParser("DecrementStatement", "DecrementStatement", 1))),
-                                        new cminor::parsing::ActionParser("A4",
-                                            new cminor::parsing::NonterminalParser("ExpressionStatement", "ExpressionStatement", 1))),
-                                    new cminor::parsing::ActionParser("A5",
-                                        new cminor::parsing::NonterminalParser("AssignmentStatement", "AssignmentStatement", 1))),
-                                new cminor::parsing::ActionParser("A6",
-                                    new cminor::parsing::NonterminalParser("ConstructionStatement", "ConstructionStatement", 1))),
-                            new cminor::parsing::ActionParser("A7",
-                                new cminor::parsing::NonterminalParser("EmptyStatement", "EmptyStatement", 1))),
-                        new cminor::parsing::ActionParser("A8",
-                            new cminor::parsing::NonterminalParser("ThrowStatement", "ThrowStatement", 1))),
-                    new cminor::parsing::ActionParser("A9",
-                        new cminor::parsing::NonterminalParser("TryStatement", "TryStatement", 1))),
-                new cminor::parsing::ActionParser("A10",
-                    new cminor::parsing::NonterminalParser("UsingStatement", "UsingStatement", 1))),
-            new cminor::parsing::ActionParser("A11",
-                new cminor::parsing::NonterminalParser("LockStatement", "LockStatement", 1)))));
-    AddRule(new LabelIdRule("LabelId", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                                                    new cminor::parsing::ActionParser(ToUtf32("A0"),
+                                                        new cminor::parsing::NonterminalParser(ToUtf32("LabeledStatement"), ToUtf32("LabeledStatement"), 1)),
+                                                    new cminor::parsing::ActionParser(ToUtf32("A1"),
+                                                        new cminor::parsing::NonterminalParser(ToUtf32("ControlStatement"), ToUtf32("ControlStatement"), 1))),
+                                                new cminor::parsing::ActionParser(ToUtf32("A2"),
+                                                    new cminor::parsing::NonterminalParser(ToUtf32("IncrementStatement"), ToUtf32("IncrementStatement"), 1))),
+                                            new cminor::parsing::ActionParser(ToUtf32("A3"),
+                                                new cminor::parsing::NonterminalParser(ToUtf32("DecrementStatement"), ToUtf32("DecrementStatement"), 1))),
+                                        new cminor::parsing::ActionParser(ToUtf32("A4"),
+                                            new cminor::parsing::NonterminalParser(ToUtf32("ExpressionStatement"), ToUtf32("ExpressionStatement"), 1))),
+                                    new cminor::parsing::ActionParser(ToUtf32("A5"),
+                                        new cminor::parsing::NonterminalParser(ToUtf32("AssignmentStatement"), ToUtf32("AssignmentStatement"), 1))),
+                                new cminor::parsing::ActionParser(ToUtf32("A6"),
+                                    new cminor::parsing::NonterminalParser(ToUtf32("ConstructionStatement"), ToUtf32("ConstructionStatement"), 1))),
+                            new cminor::parsing::ActionParser(ToUtf32("A7"),
+                                new cminor::parsing::NonterminalParser(ToUtf32("EmptyStatement"), ToUtf32("EmptyStatement"), 1))),
+                        new cminor::parsing::ActionParser(ToUtf32("A8"),
+                            new cminor::parsing::NonterminalParser(ToUtf32("ThrowStatement"), ToUtf32("ThrowStatement"), 1))),
+                    new cminor::parsing::ActionParser(ToUtf32("A9"),
+                        new cminor::parsing::NonterminalParser(ToUtf32("TryStatement"), ToUtf32("TryStatement"), 1))),
+                new cminor::parsing::ActionParser(ToUtf32("A10"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("UsingStatement"), ToUtf32("UsingStatement"), 1))),
+            new cminor::parsing::ActionParser(ToUtf32("A11"),
+                new cminor::parsing::NonterminalParser(ToUtf32("LockStatement"), ToUtf32("LockStatement"), 1)))));
+    AddRule(new LabelIdRule(ToUtf32("LabelId"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::DifferenceParser(
-                new cminor::parsing::NonterminalParser("identifier", "identifier", 0),
-                new cminor::parsing::NonterminalParser("Keyword", "Keyword", 0)))));
-    AddRule(new LabelRule("Label", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                new cminor::parsing::NonterminalParser(ToUtf32("identifier"), ToUtf32("identifier"), 0),
+                new cminor::parsing::NonterminalParser(ToUtf32("Keyword"), ToUtf32("Keyword"), 0)))));
+    AddRule(new LabelRule(ToUtf32("Label"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::ActionParser("A1",
-                    new cminor::parsing::NonterminalParser("LabelId", "LabelId", 0)),
+                new cminor::parsing::ActionParser(ToUtf32("A1"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("LabelId"), ToUtf32("LabelId"), 0)),
                 new cminor::parsing::CharParser(':')))));
-    AddRule(new LabeledStatementRule("LabeledStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new LabeledStatementRule(ToUtf32("LabeledStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
-            new cminor::parsing::NonterminalParser("lbl", "Label", 0),
-            new cminor::parsing::ActionParser("A0",
-                new cminor::parsing::NonterminalParser("stmt", "Statement", 1)))));
-    AddRule(new ControlStatementRule("ControlStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+            new cminor::parsing::NonterminalParser(ToUtf32("lbl"), ToUtf32("Label"), 0),
+            new cminor::parsing::ActionParser(ToUtf32("A0"),
+                new cminor::parsing::NonterminalParser(ToUtf32("stmt"), ToUtf32("Statement"), 1)))));
+    AddRule(new ControlStatementRule(ToUtf32("ControlStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
@@ -3920,107 +3923,107 @@ void StatementGrammar::CreateRules()
                                             new cminor::parsing::AlternativeParser(
                                                 new cminor::parsing::AlternativeParser(
                                                     new cminor::parsing::AlternativeParser(
-                                                        new cminor::parsing::ActionParser("A0",
-                                                            new cminor::parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)),
-                                                        new cminor::parsing::ActionParser("A1",
-                                                            new cminor::parsing::NonterminalParser("ReturnStatement", "ReturnStatement", 1))),
-                                                    new cminor::parsing::ActionParser("A2",
-                                                        new cminor::parsing::NonterminalParser("IfStatement", "IfStatement", 1))),
-                                                new cminor::parsing::ActionParser("A3",
-                                                    new cminor::parsing::NonterminalParser("WhileStatement", "WhileStatement", 1))),
-                                            new cminor::parsing::ActionParser("A4",
-                                                new cminor::parsing::NonterminalParser("DoStatement", "DoStatement", 1))),
-                                        new cminor::parsing::ActionParser("A5",
-                                            new cminor::parsing::NonterminalParser("ForStatement", "ForStatement", 1))),
-                                    new cminor::parsing::ActionParser("A6",
-                                        new cminor::parsing::NonterminalParser("ForEachStatement", "ForEachStatement", 1))),
-                                new cminor::parsing::ActionParser("A7",
-                                    new cminor::parsing::NonterminalParser("BreakStatement", "BreakStatement", 1))),
-                            new cminor::parsing::ActionParser("A8",
-                                new cminor::parsing::NonterminalParser("ContinueStatement", "ContinueStatement", 1))),
-                        new cminor::parsing::ActionParser("A9",
-                            new cminor::parsing::NonterminalParser("GotoStatement", "GotoStatement", 1))),
-                    new cminor::parsing::ActionParser("A10",
-                        new cminor::parsing::NonterminalParser("SwitchStatement", "SwitchStatement", 1))),
-                new cminor::parsing::ActionParser("A11",
-                    new cminor::parsing::NonterminalParser("GotoCaseStatement", "GotoCaseStatement", 1))),
-            new cminor::parsing::ActionParser("A12",
-                new cminor::parsing::NonterminalParser("GotoDefaultStatement", "GotoDefaultStatement", 1)))));
-    AddRule(new CompoundStatementRule("CompoundStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                                                        new cminor::parsing::ActionParser(ToUtf32("A0"),
+                                                            new cminor::parsing::NonterminalParser(ToUtf32("CompoundStatement"), ToUtf32("CompoundStatement"), 1)),
+                                                        new cminor::parsing::ActionParser(ToUtf32("A1"),
+                                                            new cminor::parsing::NonterminalParser(ToUtf32("ReturnStatement"), ToUtf32("ReturnStatement"), 1))),
+                                                    new cminor::parsing::ActionParser(ToUtf32("A2"),
+                                                        new cminor::parsing::NonterminalParser(ToUtf32("IfStatement"), ToUtf32("IfStatement"), 1))),
+                                                new cminor::parsing::ActionParser(ToUtf32("A3"),
+                                                    new cminor::parsing::NonterminalParser(ToUtf32("WhileStatement"), ToUtf32("WhileStatement"), 1))),
+                                            new cminor::parsing::ActionParser(ToUtf32("A4"),
+                                                new cminor::parsing::NonterminalParser(ToUtf32("DoStatement"), ToUtf32("DoStatement"), 1))),
+                                        new cminor::parsing::ActionParser(ToUtf32("A5"),
+                                            new cminor::parsing::NonterminalParser(ToUtf32("ForStatement"), ToUtf32("ForStatement"), 1))),
+                                    new cminor::parsing::ActionParser(ToUtf32("A6"),
+                                        new cminor::parsing::NonterminalParser(ToUtf32("ForEachStatement"), ToUtf32("ForEachStatement"), 1))),
+                                new cminor::parsing::ActionParser(ToUtf32("A7"),
+                                    new cminor::parsing::NonterminalParser(ToUtf32("BreakStatement"), ToUtf32("BreakStatement"), 1))),
+                            new cminor::parsing::ActionParser(ToUtf32("A8"),
+                                new cminor::parsing::NonterminalParser(ToUtf32("ContinueStatement"), ToUtf32("ContinueStatement"), 1))),
+                        new cminor::parsing::ActionParser(ToUtf32("A9"),
+                            new cminor::parsing::NonterminalParser(ToUtf32("GotoStatement"), ToUtf32("GotoStatement"), 1))),
+                    new cminor::parsing::ActionParser(ToUtf32("A10"),
+                        new cminor::parsing::NonterminalParser(ToUtf32("SwitchStatement"), ToUtf32("SwitchStatement"), 1))),
+                new cminor::parsing::ActionParser(ToUtf32("A11"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("GotoCaseStatement"), ToUtf32("GotoCaseStatement"), 1))),
+            new cminor::parsing::ActionParser(ToUtf32("A12"),
+                new cminor::parsing::NonterminalParser(ToUtf32("GotoDefaultStatement"), ToUtf32("GotoDefaultStatement"), 1)))));
+    AddRule(new CompoundStatementRule(ToUtf32("CompoundStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::ActionParser("A1",
+                    new cminor::parsing::ActionParser(ToUtf32("A1"),
                         new cminor::parsing::CharParser('{')),
                     new cminor::parsing::KleeneStarParser(
-                        new cminor::parsing::ActionParser("A2",
-                            new cminor::parsing::NonterminalParser("stmt", "Statement", 1)))),
-                new cminor::parsing::ActionParser("A3",
+                        new cminor::parsing::ActionParser(ToUtf32("A2"),
+                            new cminor::parsing::NonterminalParser(ToUtf32("stmt"), ToUtf32("Statement"), 1)))),
+                new cminor::parsing::ActionParser(ToUtf32("A3"),
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser('}')))))));
-    AddRule(new ReturnStatementRule("ReturnStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new ReturnStatementRule(ToUtf32("ReturnStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::KeywordParser("return"),
+                    new cminor::parsing::KeywordParser(ToUtf32("return")),
                     new cminor::parsing::OptionalParser(
-                        new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
+                        new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new IfStatementRule("IfStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new IfStatementRule(ToUtf32("IfStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::SequenceParser(
                             new cminor::parsing::SequenceParser(
-                                new cminor::parsing::KeywordParser("if"),
+                                new cminor::parsing::KeywordParser(ToUtf32("if")),
                                 new cminor::parsing::CharParser('(')),
-                            new cminor::parsing::NonterminalParser("Expression", "Expression", 1)),
+                            new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1)),
                         new cminor::parsing::CharParser(')')),
-                    new cminor::parsing::NonterminalParser("thens", "Statement", 1)),
+                    new cminor::parsing::NonterminalParser(ToUtf32("thens"), ToUtf32("Statement"), 1)),
                 new cminor::parsing::OptionalParser(
                     new cminor::parsing::SequenceParser(
-                        new cminor::parsing::KeywordParser("else"),
-                        new cminor::parsing::NonterminalParser("elses", "Statement", 1)))))));
-    AddRule(new WhileStatementRule("WhileStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                        new cminor::parsing::KeywordParser(ToUtf32("else")),
+                        new cminor::parsing::NonterminalParser(ToUtf32("elses"), ToUtf32("Statement"), 1)))))));
+    AddRule(new WhileStatementRule(ToUtf32("WhileStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::SequenceParser(
-                            new cminor::parsing::KeywordParser("while"),
+                            new cminor::parsing::KeywordParser(ToUtf32("while")),
                             new cminor::parsing::ExpectationParser(
                                 new cminor::parsing::CharParser('('))),
                         new cminor::parsing::ExpectationParser(
-                            new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
+                            new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1))),
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser(')'))),
                 new cminor::parsing::ExpectationParser(
-                    new cminor::parsing::NonterminalParser("Statement", "Statement", 1))))));
-    AddRule(new DoStatementRule("DoStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                    new cminor::parsing::NonterminalParser(ToUtf32("Statement"), ToUtf32("Statement"), 1))))));
+    AddRule(new DoStatementRule(ToUtf32("DoStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::SequenceParser(
                             new cminor::parsing::SequenceParser(
                                 new cminor::parsing::SequenceParser(
-                                    new cminor::parsing::KeywordParser("do"),
+                                    new cminor::parsing::KeywordParser(ToUtf32("do")),
                                     new cminor::parsing::ExpectationParser(
-                                        new cminor::parsing::NonterminalParser("Statement", "Statement", 1))),
+                                        new cminor::parsing::NonterminalParser(ToUtf32("Statement"), ToUtf32("Statement"), 1))),
                                 new cminor::parsing::ExpectationParser(
-                                    new cminor::parsing::KeywordParser("while"))),
+                                    new cminor::parsing::KeywordParser(ToUtf32("while")))),
                             new cminor::parsing::ExpectationParser(
                                 new cminor::parsing::CharParser('('))),
                         new cminor::parsing::ExpectationParser(
-                            new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
+                            new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1))),
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser(')'))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new ForStatementRule("ForStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new ForStatementRule(ToUtf32("ForStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
@@ -4028,43 +4031,43 @@ void StatementGrammar::CreateRules()
                             new cminor::parsing::SequenceParser(
                                 new cminor::parsing::SequenceParser(
                                     new cminor::parsing::SequenceParser(
-                                        new cminor::parsing::KeywordParser("for"),
+                                        new cminor::parsing::KeywordParser(ToUtf32("for")),
                                         new cminor::parsing::CharParser('(')),
                                     new cminor::parsing::ExpectationParser(
-                                        new cminor::parsing::NonterminalParser("ForInitStatement", "ForInitStatement", 1))),
+                                        new cminor::parsing::NonterminalParser(ToUtf32("ForInitStatement"), ToUtf32("ForInitStatement"), 1))),
                                 new cminor::parsing::OptionalParser(
-                                    new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
+                                    new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1))),
                             new cminor::parsing::ExpectationParser(
                                 new cminor::parsing::CharParser(';'))),
                         new cminor::parsing::ExpectationParser(
-                            new cminor::parsing::NonterminalParser("ForLoopExpressionStatement", "ForLoopExpressionStatement", 1))),
+                            new cminor::parsing::NonterminalParser(ToUtf32("ForLoopExpressionStatement"), ToUtf32("ForLoopExpressionStatement"), 1))),
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser(')'))),
                 new cminor::parsing::ExpectationParser(
-                    new cminor::parsing::NonterminalParser("Statement", "Statement", 1))))));
-    AddRule(new ForInitStatementRule("ForInitStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+                    new cminor::parsing::NonterminalParser(ToUtf32("Statement"), ToUtf32("Statement"), 1))))));
+    AddRule(new ForInitStatementRule(ToUtf32("ForInitStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
-                new cminor::parsing::ActionParser("A0",
-                    new cminor::parsing::NonterminalParser("AssignmentStatement", "AssignmentStatement", 1)),
-                new cminor::parsing::ActionParser("A1",
-                    new cminor::parsing::NonterminalParser("ConstructionStatement", "ConstructionStatement", 1))),
-            new cminor::parsing::ActionParser("A2",
-                new cminor::parsing::NonterminalParser("EmptyStatement", "EmptyStatement", 1)))));
-    AddRule(new ForLoopExpressionStatementRule("ForLoopExpressionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+                new cminor::parsing::ActionParser(ToUtf32("A0"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("AssignmentStatement"), ToUtf32("AssignmentStatement"), 1)),
+                new cminor::parsing::ActionParser(ToUtf32("A1"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("ConstructionStatement"), ToUtf32("ConstructionStatement"), 1))),
+            new cminor::parsing::ActionParser(ToUtf32("A2"),
+                new cminor::parsing::NonterminalParser(ToUtf32("EmptyStatement"), ToUtf32("EmptyStatement"), 1)))));
+    AddRule(new ForLoopExpressionStatementRule(ToUtf32("ForLoopExpressionStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::AlternativeParser(
-                    new cminor::parsing::ActionParser("A0",
-                        new cminor::parsing::NonterminalParser("IncrementExpressionStatement", "IncrementExpressionStatement", 1)),
-                    new cminor::parsing::ActionParser("A1",
-                        new cminor::parsing::NonterminalParser("DecrementExpressionStatement", "DecrementExpressionStatement", 1))),
-                new cminor::parsing::ActionParser("A2",
-                    new cminor::parsing::NonterminalParser("AssignmentExpressionStatement", "AssignmentExpressionStatement", 1))),
-            new cminor::parsing::ActionParser("A3",
+                    new cminor::parsing::ActionParser(ToUtf32("A0"),
+                        new cminor::parsing::NonterminalParser(ToUtf32("IncrementExpressionStatement"), ToUtf32("IncrementExpressionStatement"), 1)),
+                    new cminor::parsing::ActionParser(ToUtf32("A1"),
+                        new cminor::parsing::NonterminalParser(ToUtf32("DecrementExpressionStatement"), ToUtf32("DecrementExpressionStatement"), 1))),
+                new cminor::parsing::ActionParser(ToUtf32("A2"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("AssignmentExpressionStatement"), ToUtf32("AssignmentExpressionStatement"), 1))),
+            new cminor::parsing::ActionParser(ToUtf32("A3"),
                 new cminor::parsing::EmptyParser()))));
-    AddRule(new ForEachStatementRule("ForEachStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new ForEachStatementRule(ToUtf32("ForEachStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
@@ -4072,281 +4075,281 @@ void StatementGrammar::CreateRules()
                             new cminor::parsing::SequenceParser(
                                 new cminor::parsing::SequenceParser(
                                     new cminor::parsing::SequenceParser(
-                                        new cminor::parsing::KeywordParser("foreach"),
+                                        new cminor::parsing::KeywordParser(ToUtf32("foreach")),
                                         new cminor::parsing::ExpectationParser(
                                             new cminor::parsing::CharParser('('))),
                                     new cminor::parsing::ExpectationParser(
-                                        new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1))),
+                                        new cminor::parsing::NonterminalParser(ToUtf32("TypeExpr"), ToUtf32("TypeExpr"), 1))),
                                 new cminor::parsing::ExpectationParser(
-                                    new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                                    new cminor::parsing::NonterminalParser(ToUtf32("Identifier"), ToUtf32("Identifier"), 0))),
                             new cminor::parsing::ExpectationParser(
-                                new cminor::parsing::KeywordParser("in"))),
+                                new cminor::parsing::KeywordParser(ToUtf32("in")))),
                         new cminor::parsing::ExpectationParser(
-                            new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
+                            new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1))),
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser(')'))),
-                new cminor::parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)))));
-    AddRule(new BreakStatementRule("BreakStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                new cminor::parsing::NonterminalParser(ToUtf32("CompoundStatement"), ToUtf32("CompoundStatement"), 1)))));
+    AddRule(new BreakStatementRule(ToUtf32("BreakStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::KeywordParser("break"),
+                new cminor::parsing::KeywordParser(ToUtf32("break")),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new ContinueStatementRule("ContinueStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new ContinueStatementRule(ToUtf32("ContinueStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::KeywordParser("continue"),
+                new cminor::parsing::KeywordParser(ToUtf32("continue")),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new GotoStatementRule("GotoStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new GotoStatementRule(ToUtf32("GotoStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::KeywordParser("goto"),
-                    new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0)),
+                    new cminor::parsing::KeywordParser(ToUtf32("goto")),
+                    new cminor::parsing::NonterminalParser(ToUtf32("Identifier"), ToUtf32("Identifier"), 0)),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new SwitchStatementRule("SwitchStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new SwitchStatementRule(ToUtf32("SwitchStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::ActionParser("A0",
+                    new cminor::parsing::ActionParser(ToUtf32("A0"),
                         new cminor::parsing::SequenceParser(
                             new cminor::parsing::SequenceParser(
                                 new cminor::parsing::SequenceParser(
-                                    new cminor::parsing::KeywordParser("switch"),
+                                    new cminor::parsing::KeywordParser(ToUtf32("switch")),
                                     new cminor::parsing::ExpectationParser(
                                         new cminor::parsing::CharParser('('))),
                                 new cminor::parsing::ExpectationParser(
-                                    new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
+                                    new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1))),
                             new cminor::parsing::ExpectationParser(
                                 new cminor::parsing::CharParser(')')))),
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser('{'))),
                 new cminor::parsing::KleeneStarParser(
                     new cminor::parsing::AlternativeParser(
-                        new cminor::parsing::ActionParser("A1",
-                            new cminor::parsing::NonterminalParser("CaseStatement", "CaseStatement", 1)),
-                        new cminor::parsing::ActionParser("A2",
-                            new cminor::parsing::NonterminalParser("DefaultStatement", "DefaultStatement", 1))))),
+                        new cminor::parsing::ActionParser(ToUtf32("A1"),
+                            new cminor::parsing::NonterminalParser(ToUtf32("CaseStatement"), ToUtf32("CaseStatement"), 1)),
+                        new cminor::parsing::ActionParser(ToUtf32("A2"),
+                            new cminor::parsing::NonterminalParser(ToUtf32("DefaultStatement"), ToUtf32("DefaultStatement"), 1))))),
             new cminor::parsing::ExpectationParser(
                 new cminor::parsing::CharParser('}')))));
-    AddRule(new CaseStatementRule("CaseStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new CaseStatementRule(ToUtf32("CaseStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::ActionParser("A1",
+                new cminor::parsing::ActionParser(ToUtf32("A1"),
                     new cminor::parsing::SequenceParser(
-                        new cminor::parsing::ActionParser("A2",
+                        new cminor::parsing::ActionParser(ToUtf32("A2"),
                             new cminor::parsing::EmptyParser()),
                         new cminor::parsing::PositiveParser(
                             new cminor::parsing::SequenceParser(
                                 new cminor::parsing::SequenceParser(
-                                    new cminor::parsing::KeywordParser("case"),
-                                    new cminor::parsing::ActionParser("A3",
-                                        new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
+                                    new cminor::parsing::KeywordParser(ToUtf32("case")),
+                                    new cminor::parsing::ActionParser(ToUtf32("A3"),
+                                        new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1))),
                                 new cminor::parsing::ExpectationParser(
                                     new cminor::parsing::CharParser(':')))))),
                 new cminor::parsing::KleeneStarParser(
-                    new cminor::parsing::ActionParser("A4",
-                        new cminor::parsing::NonterminalParser("Statement", "Statement", 1)))))));
-    AddRule(new DefaultStatementRule("DefaultStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+                    new cminor::parsing::ActionParser(ToUtf32("A4"),
+                        new cminor::parsing::NonterminalParser(ToUtf32("Statement"), ToUtf32("Statement"), 1)))))));
+    AddRule(new DefaultStatementRule(ToUtf32("DefaultStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
-            new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::ActionParser(ToUtf32("A0"),
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::KeywordParser("default"),
+                    new cminor::parsing::KeywordParser(ToUtf32("default")),
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser(':')))),
             new cminor::parsing::KleeneStarParser(
-                new cminor::parsing::ActionParser("A1",
-                    new cminor::parsing::NonterminalParser("Statement", "Statement", 1))))));
-    AddRule(new GotoCaseStatementRule("GotoCaseStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                new cminor::parsing::ActionParser(ToUtf32("A1"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("Statement"), ToUtf32("Statement"), 1))))));
+    AddRule(new GotoCaseStatementRule(ToUtf32("GotoCaseStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
-                        new cminor::parsing::KeywordParser("goto"),
-                        new cminor::parsing::KeywordParser("case")),
+                        new cminor::parsing::KeywordParser(ToUtf32("goto")),
+                        new cminor::parsing::KeywordParser(ToUtf32("case"))),
                     new cminor::parsing::ExpectationParser(
-                        new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
+                        new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new GotoDefaultStatementRule("GotoDefaultStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new GotoDefaultStatementRule(ToUtf32("GotoDefaultStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::KeywordParser("goto"),
-                    new cminor::parsing::KeywordParser("default")),
+                    new cminor::parsing::KeywordParser(ToUtf32("goto")),
+                    new cminor::parsing::KeywordParser(ToUtf32("default"))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new AssignmentExpressionStatementRule("AssignmentExpressionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new AssignmentExpressionStatementRule(ToUtf32("AssignmentExpressionStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
-            new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::ActionParser(ToUtf32("A0"),
                 new cminor::parsing::EmptyParser()),
-            new cminor::parsing::ActionParser("A1",
+            new cminor::parsing::ActionParser(ToUtf32("A1"),
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
-                        new cminor::parsing::ActionParser("A2",
-                            new cminor::parsing::NonterminalParser("target", "Expression", 1)),
+                        new cminor::parsing::ActionParser(ToUtf32("A2"),
+                            new cminor::parsing::NonterminalParser(ToUtf32("target"), ToUtf32("Expression"), 1)),
                         new cminor::parsing::CharParser('=')),
-                    new cminor::parsing::NonterminalParser("source", "Expression", 1))))));
-    AddRule(new AssignmentStatementRule("AssignmentStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                    new cminor::parsing::NonterminalParser(ToUtf32("source"), ToUtf32("Expression"), 1))))));
+    AddRule(new AssignmentStatementRule(ToUtf32("AssignmentStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::NonterminalParser("AssignmentExpressionStatement", "AssignmentExpressionStatement", 1),
+                new cminor::parsing::NonterminalParser(ToUtf32("AssignmentExpressionStatement"), ToUtf32("AssignmentExpressionStatement"), 1),
                 new cminor::parsing::CharParser(';')))));
-    AddRule(new ConstructionStatementRule("ConstructionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new ConstructionStatementRule(ToUtf32("ConstructionStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1),
-                    new cminor::parsing::ActionParser("A0",
+                    new cminor::parsing::NonterminalParser(ToUtf32("TypeExpr"), ToUtf32("TypeExpr"), 1),
+                    new cminor::parsing::ActionParser(ToUtf32("A0"),
                         new cminor::parsing::ExpectationParser(
-                            new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0)))),
+                            new cminor::parsing::NonterminalParser(ToUtf32("Identifier"), ToUtf32("Identifier"), 0)))),
                 new cminor::parsing::OptionalParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::CharParser('='),
-                        new cminor::parsing::ActionParser("A1",
+                        new cminor::parsing::ActionParser(ToUtf32("A1"),
                             new cminor::parsing::ExpectationParser(
-                                new cminor::parsing::NonterminalParser("Expression", "Expression", 1)))))),
-            new cminor::parsing::ActionParser("A2",
+                                new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1)))))),
+            new cminor::parsing::ActionParser(ToUtf32("A2"),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new ConstructionStatementExpressionRule("ConstructionStatementExpression", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new ConstructionStatementExpressionRule(ToUtf32("ConstructionStatementExpression"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1),
-                    new cminor::parsing::ActionParser("A1",
+                    new cminor::parsing::NonterminalParser(ToUtf32("TypeExpr"), ToUtf32("TypeExpr"), 1),
+                    new cminor::parsing::ActionParser(ToUtf32("A1"),
                         new cminor::parsing::ExpectationParser(
-                            new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0)))),
+                            new cminor::parsing::NonterminalParser(ToUtf32("Identifier"), ToUtf32("Identifier"), 0)))),
                 new cminor::parsing::OptionalParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::CharParser('='),
-                        new cminor::parsing::ActionParser("A2",
+                        new cminor::parsing::ActionParser(ToUtf32("A2"),
                             new cminor::parsing::ExpectationParser(
-                                new cminor::parsing::NonterminalParser("Expression", "Expression", 1)))))))));
-    AddRule(new IncrementExpressionStatementRule("IncrementExpressionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+                                new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1)))))))));
+    AddRule(new IncrementExpressionStatementRule(ToUtf32("IncrementExpressionStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
-            new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::ActionParser(ToUtf32("A0"),
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::StringParser("++"),
+                    new cminor::parsing::StringParser(ToUtf32("++")),
                     new cminor::parsing::ExpectationParser(
-                        new cminor::parsing::NonterminalParser("left", "Expression", 1)))),
-            new cminor::parsing::ActionParser("A1",
+                        new cminor::parsing::NonterminalParser(ToUtf32("left"), ToUtf32("Expression"), 1)))),
+            new cminor::parsing::ActionParser(ToUtf32("A1"),
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::ActionParser("A2",
-                        new cminor::parsing::NonterminalParser("right", "Expression", 1)),
-                    new cminor::parsing::StringParser("++"))))));
-    AddRule(new IncrementStatementRule("IncrementStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                    new cminor::parsing::ActionParser(ToUtf32("A2"),
+                        new cminor::parsing::NonterminalParser(ToUtf32("right"), ToUtf32("Expression"), 1)),
+                    new cminor::parsing::StringParser(ToUtf32("++")))))));
+    AddRule(new IncrementStatementRule(ToUtf32("IncrementStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::NonterminalParser("IncrementExpressionStatement", "IncrementExpressionStatement", 1),
+                new cminor::parsing::NonterminalParser(ToUtf32("IncrementExpressionStatement"), ToUtf32("IncrementExpressionStatement"), 1),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new DecrementExpressionStatementRule("DecrementExpressionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new DecrementExpressionStatementRule(ToUtf32("DecrementExpressionStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::AlternativeParser(
-            new cminor::parsing::ActionParser("A0",
+            new cminor::parsing::ActionParser(ToUtf32("A0"),
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::StringParser("--"),
+                    new cminor::parsing::StringParser(ToUtf32("--")),
                     new cminor::parsing::ExpectationParser(
-                        new cminor::parsing::NonterminalParser("left", "Expression", 1)))),
-            new cminor::parsing::ActionParser("A1",
+                        new cminor::parsing::NonterminalParser(ToUtf32("left"), ToUtf32("Expression"), 1)))),
+            new cminor::parsing::ActionParser(ToUtf32("A1"),
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::ActionParser("A2",
-                        new cminor::parsing::NonterminalParser("right", "Expression", 1)),
-                    new cminor::parsing::StringParser("--"))))));
-    AddRule(new DecrementStatementRule("DecrementStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                    new cminor::parsing::ActionParser(ToUtf32("A2"),
+                        new cminor::parsing::NonterminalParser(ToUtf32("right"), ToUtf32("Expression"), 1)),
+                    new cminor::parsing::StringParser(ToUtf32("--")))))));
+    AddRule(new DecrementStatementRule(ToUtf32("DecrementStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::NonterminalParser("DecrementExpressionStatement", "DecrementExpressionStatement", 1),
+                new cminor::parsing::NonterminalParser(ToUtf32("DecrementExpressionStatement"), ToUtf32("DecrementExpressionStatement"), 1),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new ExpressionStatementRule("ExpressionStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new ExpressionStatementRule(ToUtf32("ExpressionStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::ActionParser("A1",
-                    new cminor::parsing::NonterminalParser("Expression", "Expression", 1)),
+                new cminor::parsing::ActionParser(ToUtf32("A1"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1)),
                 new cminor::parsing::CharParser(';')))));
-    AddRule(new EmptyStatementRule("EmptyStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new EmptyStatementRule(ToUtf32("EmptyStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::CharParser(';'))));
-    AddRule(new ThrowStatementRule("ThrowStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+    AddRule(new ThrowStatementRule(ToUtf32("ThrowStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
-                    new cminor::parsing::KeywordParser("throw"),
+                    new cminor::parsing::KeywordParser(ToUtf32("throw")),
                     new cminor::parsing::OptionalParser(
-                        new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
+                        new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1))),
                 new cminor::parsing::ExpectationParser(
                     new cminor::parsing::CharParser(';'))))));
-    AddRule(new TryStatementRule("TryStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
+    AddRule(new TryStatementRule(ToUtf32("TryStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
         new cminor::parsing::SequenceParser(
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::KeywordParser("try"),
-                new cminor::parsing::ActionParser("A0",
-                    new cminor::parsing::NonterminalParser("tryBlock", "CompoundStatement", 1))),
+                new cminor::parsing::KeywordParser(ToUtf32("try")),
+                new cminor::parsing::ActionParser(ToUtf32("A0"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("tryBlock"), ToUtf32("CompoundStatement"), 1))),
             new cminor::parsing::AlternativeParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::PositiveParser(
-                        new cminor::parsing::ActionParser("A1",
-                            new cminor::parsing::NonterminalParser("Catch", "Catch", 1))),
+                        new cminor::parsing::ActionParser(ToUtf32("A1"),
+                            new cminor::parsing::NonterminalParser(ToUtf32("Catch"), ToUtf32("Catch"), 1))),
                     new cminor::parsing::OptionalParser(
-                        new cminor::parsing::ActionParser("A2",
-                            new cminor::parsing::NonterminalParser("Finally", "Finally", 1)))),
-                new cminor::parsing::ActionParser("A3",
-                    new cminor::parsing::NonterminalParser("fin", "Finally", 1))))));
-    AddRule(new CatchRule("Catch", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                        new cminor::parsing::ActionParser(ToUtf32("A2"),
+                            new cminor::parsing::NonterminalParser(ToUtf32("Finally"), ToUtf32("Finally"), 1)))),
+                new cminor::parsing::ActionParser(ToUtf32("A3"),
+                    new cminor::parsing::NonterminalParser(ToUtf32("fin"), ToUtf32("Finally"), 1))))));
+    AddRule(new CatchRule(ToUtf32("Catch"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::SequenceParser(
                             new cminor::parsing::SequenceParser(
-                                new cminor::parsing::KeywordParser("catch"),
+                                new cminor::parsing::KeywordParser(ToUtf32("catch")),
                                 new cminor::parsing::ExpectationParser(
                                     new cminor::parsing::CharParser('('))),
                             new cminor::parsing::ExpectationParser(
-                                new cminor::parsing::NonterminalParser("TypeExpr", "TypeExpr", 1))),
+                                new cminor::parsing::NonterminalParser(ToUtf32("TypeExpr"), ToUtf32("TypeExpr"), 1))),
                         new cminor::parsing::ExpectationParser(
-                            new cminor::parsing::NonterminalParser("Identifier", "Identifier", 0))),
+                            new cminor::parsing::NonterminalParser(ToUtf32("Identifier"), ToUtf32("Identifier"), 0))),
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser(')'))),
-                new cminor::parsing::NonterminalParser("catchBlock1", "CompoundStatement", 1)))));
-    AddRule(new FinallyRule("Finally", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                new cminor::parsing::NonterminalParser(ToUtf32("catchBlock1"), ToUtf32("CompoundStatement"), 1)))));
+    AddRule(new FinallyRule(ToUtf32("Finally"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
-                new cminor::parsing::KeywordParser("finally"),
-                new cminor::parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)))));
-    AddRule(new UsingStatementRule("UsingStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
-            new cminor::parsing::SequenceParser(
-                new cminor::parsing::SequenceParser(
-                    new cminor::parsing::SequenceParser(
-                        new cminor::parsing::SequenceParser(
-                            new cminor::parsing::KeywordParser("using"),
-                            new cminor::parsing::ExpectationParser(
-                                new cminor::parsing::CharParser('('))),
-                        new cminor::parsing::ExpectationParser(
-                            new cminor::parsing::NonterminalParser("ConstructionStatementExpression", "ConstructionStatementExpression", 1))),
-                    new cminor::parsing::ExpectationParser(
-                        new cminor::parsing::CharParser(')'))),
-                new cminor::parsing::ExpectationParser(
-                    new cminor::parsing::NonterminalParser("Statement", "Statement", 1))))));
-    AddRule(new LockStatementRule("LockStatement", GetScope(), GetParsingDomain()->GetNextRuleId(),
-        new cminor::parsing::ActionParser("A0",
+                new cminor::parsing::KeywordParser(ToUtf32("finally")),
+                new cminor::parsing::NonterminalParser(ToUtf32("CompoundStatement"), ToUtf32("CompoundStatement"), 1)))));
+    AddRule(new UsingStatementRule(ToUtf32("UsingStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
             new cminor::parsing::SequenceParser(
                 new cminor::parsing::SequenceParser(
                     new cminor::parsing::SequenceParser(
                         new cminor::parsing::SequenceParser(
-                            new cminor::parsing::KeywordParser("lock"),
+                            new cminor::parsing::KeywordParser(ToUtf32("using")),
                             new cminor::parsing::ExpectationParser(
                                 new cminor::parsing::CharParser('('))),
                         new cminor::parsing::ExpectationParser(
-                            new cminor::parsing::NonterminalParser("Expression", "Expression", 1))),
+                            new cminor::parsing::NonterminalParser(ToUtf32("ConstructionStatementExpression"), ToUtf32("ConstructionStatementExpression"), 1))),
                     new cminor::parsing::ExpectationParser(
                         new cminor::parsing::CharParser(')'))),
                 new cminor::parsing::ExpectationParser(
-                    new cminor::parsing::NonterminalParser("Statement", "Statement", 1))))));
+                    new cminor::parsing::NonterminalParser(ToUtf32("Statement"), ToUtf32("Statement"), 1))))));
+    AddRule(new LockStatementRule(ToUtf32("LockStatement"), GetScope(), GetParsingDomain()->GetNextRuleId(),
+        new cminor::parsing::ActionParser(ToUtf32("A0"),
+            new cminor::parsing::SequenceParser(
+                new cminor::parsing::SequenceParser(
+                    new cminor::parsing::SequenceParser(
+                        new cminor::parsing::SequenceParser(
+                            new cminor::parsing::KeywordParser(ToUtf32("lock")),
+                            new cminor::parsing::ExpectationParser(
+                                new cminor::parsing::CharParser('('))),
+                        new cminor::parsing::ExpectationParser(
+                            new cminor::parsing::NonterminalParser(ToUtf32("Expression"), ToUtf32("Expression"), 1))),
+                    new cminor::parsing::ExpectationParser(
+                        new cminor::parsing::CharParser(')'))),
+                new cminor::parsing::ExpectationParser(
+                    new cminor::parsing::NonterminalParser(ToUtf32("Statement"), ToUtf32("Statement"), 1))))));
 }
 
 } } // namespace cminor.parser

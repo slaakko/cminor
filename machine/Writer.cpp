@@ -4,11 +4,13 @@
 // =================================
 
 #include <cminor/machine/Writer.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <cstring>
 
 namespace cminor { namespace machine {
 
 using namespace cminor::util;
+using namespace cminor::unicode;
 
 Writer::Writer(const std::string& fileName_) : fileName(fileName_), file(std::fopen(fileName.c_str(), "wb")), bufp(buffer), bufend(buffer + N), constantPool(nullptr), pos(0)
 {
@@ -136,7 +138,7 @@ void Writer::Put(const std::string& s)
     Put(static_cast<uint8_t>(0));
 }
 
-void Writer::Put(const utf32_string& s)
+void Writer::Put(const std::u32string& s)
 {
     std::string utf8_str = ToUtf8(s);
     Put(utf8_str);

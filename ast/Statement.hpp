@@ -16,14 +16,14 @@ class LabelNode : public Node
 {
 public:
     LabelNode(const Span& span_);
-    LabelNode(const Span& span_, const std::string& label_);
+    LabelNode(const Span& span_, const std::u32string& label_);
     NodeType GetNodeType() const override { return NodeType::labelNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
-    const std::string& Label() const { return label; }
+    const std::u32string& Label() const { return label; }
 private:
-    std::string label;
+    std::u32string label;
 };
 
 class StatementNode : public Node
@@ -187,15 +187,15 @@ class GotoStatementNode : public StatementNode
 {
 public:
     GotoStatementNode(const Span& span_);
-    GotoStatementNode(const Span& span_, const std::string& target_);
+    GotoStatementNode(const Span& span_, const std::u32string& target_);
     NodeType GetNodeType() const override { return NodeType::gotoStatementNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Write(AstWriter& writer) override;
     void Read(AstReader& reader) override;
     void Accept(Visitor& visitor) override;
-    const std::string& Target() const { return target; }
+    const std::u32string& Target() const { return target; }
 private:
-    std::string target;
+    std::u32string target;
 };
 
 class ConstructionStatementNode : public StatementNode

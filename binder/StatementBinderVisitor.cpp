@@ -21,8 +21,11 @@
 #include <cminor/ast/Literal.hpp>
 #include <cminor/ast/Expression.hpp>
 #include <cminor/ast/BasicType.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace binder {
+
+using namespace cminor::unicode;
 
 bool TerminatesFunction(StatementNode* statement, bool inForEverLoop, ContainerScope* containerScope, BoundCompileUnit& boundCompileUnit)
 {
@@ -248,7 +251,7 @@ void StatementBinderVisitor::Visit(ConstructorNode& constructorNode)
         if (classTypeSymbol->NeedsStaticInitialization())
         {
             ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
-            utf32_string classTypeFullName = classTypeSymbol->FullName();
+            std::u32string classTypeFullName = classTypeSymbol->FullName();
             Constant classNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(classTypeFullName.c_str())));
             BoundStaticInitStatement* boundStaticInitStatement = new BoundStaticInitStatement(boundCompileUnit.GetAssembly(), classNameConstant);
             boundStaticInitStatement->SetContainerScope(containerScope);
@@ -287,13 +290,13 @@ void StatementBinderVisitor::Visit(StaticConstructorNode& staticConstructorNode)
         Assert(classTypeSymbol, "class type symbol expected");
         if (classTypeSymbol->BaseClass() && classTypeSymbol->BaseClass()->NeedsStaticInitialization())
         {
-            utf32_string baseClassFullName = classTypeSymbol->BaseClass()->FullName();
+            std::u32string baseClassFullName = classTypeSymbol->BaseClass()->FullName();
             Constant baseClassNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(baseClassFullName.c_str())));
             BoundStaticInitStatement* boundStaticInitStatement = new BoundStaticInitStatement(boundCompileUnit.GetAssembly(), baseClassNameConstant);
             boundStaticInitStatement->SetContainerScope(containerScope);
             compoundStatement->InsertFront(std::unique_ptr<BoundStatement>(boundStaticInitStatement));
         }
-        utf32_string classTypeFullName = classTypeSymbol->FullName();
+        std::u32string classTypeFullName = classTypeSymbol->FullName();
         Constant classNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(classTypeFullName.c_str())));
         BoundStatement* boundDoneStaticInitStatement = new BoundDoneStaticInitStatement(boundCompileUnit.GetAssembly(), classNameConstant);
         boundDoneStaticInitStatement->SetContainerScope(containerScope);
@@ -397,7 +400,7 @@ void StatementBinderVisitor::Visit(MemberFunctionNode& memberFunctionNode)
             if (classTypeSymbol->NeedsStaticInitialization())
             {
                 ConstantPool& constantPool = boundCompileUnit.GetAssembly().GetConstantPool();
-                utf32_string classTypeFullName = classTypeSymbol->FullName();
+                std::u32string classTypeFullName = classTypeSymbol->FullName();
                 Constant classNameConstant = constantPool.GetConstant(constantPool.Install(StringPtr(classTypeFullName.c_str())));
                 BoundStatement* boundStaticInitStatement = new BoundStaticInitStatement(boundCompileUnit.GetAssembly(), classNameConstant);
                 boundStaticInitStatement->SetContainerScope(containerScope);
@@ -980,25 +983,25 @@ void StatementBinderVisitor::Visit(ForEachStatementNode& forEachStatementNode)
     {
         forEachBlock.SetLabelNode(new LabelNode(span, forEachStatementNode.Label()->Label()));
     }
-    ConstructionStatementNode* constructEnumerable = new ConstructionStatementNode(span, new IdentifierNode(span, "System.Enumerable"), new IdentifierNode(span, "@enumerable"));
+    ConstructionStatementNode* constructEnumerable = new ConstructionStatementNode(span, new IdentifierNode(span, U"System.Enumerable"), new IdentifierNode(span, U"@enumerable"));
     CloneContext cloneContext;
     constructEnumerable->SetInitializer(forEachStatementNode.Container()->Clone(cloneContext));
     forEachBlock.AddStatement(constructEnumerable);
-    ConstructionStatementNode* constructEnumerator = new ConstructionStatementNode(span, new IdentifierNode(span, "System.Enumerator"), new IdentifierNode(span, "@enumerator"));
-    constructEnumerator->SetInitializer(new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerable"), new IdentifierNode(span, "GetEnumerator"))));
+    ConstructionStatementNode* constructEnumerator = new ConstructionStatementNode(span, new IdentifierNode(span, U"System.Enumerator"), new IdentifierNode(span, U"@enumerator"));
+    constructEnumerator->SetInitializer(new InvokeNode(span, new DotNode(span, new IdentifierNode(span, U"@enumerable"), new IdentifierNode(span, U"GetEnumerator"))));
     forEachBlock.AddStatement(constructEnumerator);
     CompoundStatementNode* loopBody = new CompoundStatementNode(span);
     ConstructionStatementNode* constructLoopVar = new ConstructionStatementNode(span, 
         forEachStatementNode.TypeExpr()->Clone(cloneContext), 
         static_cast<IdentifierNode*>(forEachStatementNode.Id()->Clone(cloneContext)));
     constructLoopVar->SetInitializer(new CastNode(span, forEachStatementNode.TypeExpr()->Clone(cloneContext),
-        new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "GetCurrent")))));
+        new InvokeNode(span, new DotNode(span, new IdentifierNode(span, U"@enumerator"), new IdentifierNode(span, U"GetCurrent")))));
     loopBody->AddStatement(constructLoopVar);
     loopBody->AddStatement(static_cast<StatementNode*>(forEachStatementNode.Action()->Clone(cloneContext)));
-    ExpressionStatementNode* moveNext = new ExpressionStatementNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "MoveNext"))));
+    ExpressionStatementNode* moveNext = new ExpressionStatementNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, U"@enumerator"), new IdentifierNode(span, U"MoveNext"))));
     ForStatementNode* forStatement = new ForStatementNode(span, 
         new EmptyStatementNode(span), 
-        new NotNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@enumerator"), new IdentifierNode(span, "AtEnd")))),
+        new NotNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, U"@enumerator"), new IdentifierNode(span, U"AtEnd")))),
         moveNext, 
         loopBody);
     forEachBlock.AddStatement(forStatement);
@@ -1347,10 +1350,10 @@ void StatementBinderVisitor::Visit(UsingStatementNode& usingStatementNode)
     CompoundStatementNode* tryBlock = new CompoundStatementNode(span);
     tryBlock->AddStatement(static_cast<StatementNode*>(usingStatementNode.Statement()->Clone(cloneContext)));
     CompoundStatementNode* finallyBlock = new CompoundStatementNode(span);
-    ConstructionStatementNode* constructClosable = new ConstructionStatementNode(span, new IdentifierNode(span, "System.Closable"), new IdentifierNode(span, "@closable"));
+    ConstructionStatementNode* constructClosable = new ConstructionStatementNode(span, new IdentifierNode(span, U"System.Closable"), new IdentifierNode(span, U"@closable"));
     constructClosable->SetInitializer(usingStatementNode.ConstructionStatement()->Id()->Clone(cloneContext));
     finallyBlock->AddStatement(constructClosable);
-    ExpressionStatementNode* closeClosableStatement = new ExpressionStatementNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, "@closable"), new IdentifierNode(span, "Close"))));
+    ExpressionStatementNode* closeClosableStatement = new ExpressionStatementNode(span, new InvokeNode(span, new DotNode(span, new IdentifierNode(span, U"@closable"), new IdentifierNode(span, U"Close"))));
     finallyBlock->AddStatement(closeClosableStatement);
     TryStatementNode* tryStatementNode = new TryStatementNode(span, tryBlock);
     tryStatementNode->SetFinally(finallyBlock);
@@ -1381,10 +1384,10 @@ void StatementBinderVisitor::Visit(LockStatementNode& lockStatementNode)
         new DotNode(span, 
             new DotNode(span, 
                 new DotNode(span, 
-                    new IdentifierNode(span, "System"), 
-                    new IdentifierNode(span, "Threading")), 
-                new IdentifierNode(span, "Monitor")),
-            new IdentifierNode(span, "Enter")));
+                    new IdentifierNode(span, U"System"), 
+                    new IdentifierNode(span, U"Threading")), 
+                new IdentifierNode(span, U"Monitor")),
+            new IdentifierNode(span, U"Enter")));
     invokeEnterNode->AddArgument(lockStatementNode.Expr()->Clone(cloneContext));
     ExpressionStatementNode* monitorEnter = new ExpressionStatementNode(span, invokeEnterNode);
     lockBlock.AddStatement(monitorEnter);
@@ -1395,10 +1398,10 @@ void StatementBinderVisitor::Visit(LockStatementNode& lockStatementNode)
         new DotNode(span,
             new DotNode(span,
                 new DotNode(span,
-                    new IdentifierNode(span, "System"),
-                    new IdentifierNode(span, "Threading")),
-                new IdentifierNode(span, "Monitor")),
-            new IdentifierNode(span, "Exit")));
+                    new IdentifierNode(span, U"System"),
+                    new IdentifierNode(span, U"Threading")),
+                new IdentifierNode(span, U"Monitor")),
+            new IdentifierNode(span, U"Exit")));
     invokeExitNode->AddArgument(lockStatementNode.Expr()->Clone(cloneContext));
     ExpressionStatementNode* monitorExit = new ExpressionStatementNode(span, invokeExitNode);
     finallyBlock->AddStatement(monitorExit);

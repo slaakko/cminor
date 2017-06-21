@@ -28,13 +28,13 @@ private:
 class ProjectDependencyDeclaration : public SolutionDeclaration
 {
 public:
-    ProjectDependencyDeclaration(const std::string& projectName_);
-    void AddDependency(const std::string& dependsOn);
-    const std::string& ProjectName() const { return projectName; }
-    const std::vector<std::string>& DependsOnProjects() const { return dependsOnProjects; }
+    ProjectDependencyDeclaration(const std::u32string& projectName_);
+    void AddDependency(const std::u32string& dependsOn);
+    const std::u32string& ProjectName() const { return projectName; }
+    const std::vector<std::u32string>& DependsOnProjects() const { return dependsOnProjects; }
 private:
-    std::string projectName;
-    std::vector<std::string> dependsOnProjects;
+    std::u32string projectName;
+    std::vector<std::u32string> dependsOnProjects;
 };
 
 class SolutionFormatter
@@ -50,10 +50,10 @@ public:
 class Solution
 {
 public:
-    Solution(const std::string& name_, const std::string& filePath_);
+    Solution(const std::u32string& name_, const std::string& filePath_);
     void AddDeclaration(SolutionDeclaration* declaration);
     void ResolveDeclarations();
-    const std::string& Name() const { return name; }
+    const std::u32string& Name() const { return name; }
     const std::string& FilePath() const { return filePath; }
     const boost::filesystem::path& BasePath() const { return basePath; }
     const std::vector<std::string>& ProjectFilePaths() const { return projectFilePaths; }
@@ -61,14 +61,14 @@ public:
     std::vector<Project*> CreateBuildOrder();
     void Format(SolutionFormatter& formatter);
 private:
-    std::string name;
+    std::u32string name;
     std::string filePath;
     boost::filesystem::path basePath;
     std::vector<std::unique_ptr<SolutionDeclaration>> declarations;
     std::vector<std::unique_ptr<ProjectDependencyDeclaration>> additionalDependencyDeclarations;
     std::vector<std::string> projectFilePaths;
     std::vector<std::unique_ptr<Project>> projects;
-    std::unordered_map<std::string, ProjectDependencyDeclaration*> dependencyMap;
+    std::unordered_map<std::u32string, ProjectDependencyDeclaration*> dependencyMap;
     void AddDependencies();
 };
 

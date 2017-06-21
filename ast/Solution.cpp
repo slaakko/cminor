@@ -5,11 +5,13 @@
 
 #include <cminor/ast/Solution.hpp>
 #include <cminor/util/Path.hpp>
+#include <cminor/util/Unicode.hpp>
 #include <unordered_set>
 
 namespace cminor { namespace ast {
 
 using namespace cminor::util;
+using namespace cminor::unicode;
 
 SolutionDeclaration::~SolutionDeclaration()
 {
@@ -19,11 +21,11 @@ SolutionProjectDeclaration::SolutionProjectDeclaration(const std::string& filePa
 {
 }
 
-ProjectDependencyDeclaration::ProjectDependencyDeclaration(const std::string& projectName_) : projectName(projectName_)
+ProjectDependencyDeclaration::ProjectDependencyDeclaration(const std::u32string& projectName_) : projectName(projectName_)
 {
 }
 
-void ProjectDependencyDeclaration::AddDependency(const std::string& dependsOn)
+void ProjectDependencyDeclaration::AddDependency(const std::u32string& dependsOn)
 {
     dependsOnProjects.push_back(dependsOn);
 }
@@ -32,7 +34,7 @@ SolutionFormatter::~SolutionFormatter()
 {
 }
 
-Solution::Solution(const std::string& name_, const std::string& filePath_) : name(name_), filePath(filePath_), basePath(filePath)
+Solution::Solution(const std::u32string& name_, const std::string& filePath_) : name(name_), filePath(filePath_), basePath(filePath)
 {
     basePath.remove_filename();
 }
@@ -81,7 +83,7 @@ void Solution::ResolveDeclarations()
 void Solution::Format(SolutionFormatter& formatter)
 {
     formatter.BeginFormat();
-    formatter.FormatName(name);
+    formatter.FormatName(ToUtf8(name));
     for (const std::unique_ptr<SolutionDeclaration>& declaration : declarations)
     {
         if (SolutionProjectDeclaration* solutionProjectDeclaration = dynamic_cast<SolutionProjectDeclaration*>(declaration.get()))
@@ -97,8 +99,8 @@ void Solution::AddProject(std::unique_ptr<Project>&& project)
     projects.push_back(std::move(project));
 }
 
-void Visit(std::vector<std::string>& order, const std::string& projectName, std::unordered_set<std::string>& visited, std::unordered_set<std::string>& tempVisit,
-    const std::unordered_map<std::string, ProjectDependencyDeclaration*>& dependencyMap, Solution* solution)
+void Visit(std::vector<std::u32string>& order, const std::u32string& projectName, std::unordered_set<std::u32string>& visited, std::unordered_set<std::u32string>& tempVisit,
+    const std::unordered_map<std::u32string, ProjectDependencyDeclaration*>& dependencyMap, Solution* solution)
 {
     if (tempVisit.find(projectName) == tempVisit.end())
     {
@@ -109,7 +111,7 @@ void Visit(std::vector<std::string>& order, const std::string& projectName, std:
             if (i != dependencyMap.end())
             {
                 ProjectDependencyDeclaration* dependencyDeclaration = i->second;
-                for (const std::string& dependentProject : dependencyDeclaration->DependsOnProjects())
+                for (const std::u32string& dependentProject : dependencyDeclaration->DependsOnProjects())
                 {
                     Visit(order, dependentProject, visited, tempVisit, dependencyMap, solution);
                 }
@@ -119,14 +121,14 @@ void Visit(std::vector<std::string>& order, const std::string& projectName, std:
             }
             else
             {
-                throw std::runtime_error("project '" + projectName + "' not found in dependencies of solution '" + solution->Name() + "' (" +
+                throw std::runtime_error("project '" + ToUtf8(projectName) + "' not found in dependencies of solution '" + ToUtf8(solution->Name()) + "' (" +
                     cminor::util::GetFullPath(solution->FilePath()) + ")");
             }
         }
     }
     else
     {
-        throw std::runtime_error("circular project dependency '" + projectName + "' detected in dependencies of solution '" + solution->Name() + "' (" +
+        throw std::runtime_error("circular project dependency '" + ToUtf8(projectName) + "' detected in dependencies of solution '" + ToUtf8(solution->Name()) + "' (" +
             cminor::util::GetFullPath(solution->FilePath()) + ")");
     }
 }
@@ -168,14 +170,14 @@ std::vector<Project*> Solution::CreateBuildOrder()
 {
     AddDependencies();
     std::vector<Project*> buildOrder;
-    std::unordered_map<std::string, Project*> projectMap;
+    std::unordered_map<std::u32string, Project*> projectMap;
     for (const std::unique_ptr<Project>& project : projects)
     {
         projectMap[project->Name()] = project.get();
     }
-    std::vector<std::string> order;
-    std::unordered_set<std::string> visited;
-    std::unordered_set<std::string> tempVisit;
+    std::vector<std::u32string> order;
+    std::unordered_set<std::u32string> visited;
+    std::unordered_set<std::u32string> tempVisit;
     for (const std::unique_ptr<Project>& project : projects)
     {
         if (visited.find(project->Name()) == visited.end())
@@ -183,7 +185,7 @@ std::vector<Project*> Solution::CreateBuildOrder()
             Visit(order, project->Name(), visited, tempVisit, dependencyMap, this);
         }
     }
-    for (const std::string& projectName : order)
+    for (const std::u32string& projectName : order)
     {
         auto i = projectMap.find(projectName);
         if (i != projectMap.end())
@@ -192,7 +194,7 @@ std::vector<Project*> Solution::CreateBuildOrder()
         }
         else
         {
-            throw std::runtime_error("project name '" + projectName + "' not found in solution '" + Name() + "' (" + cminor::util::GetFullPath(FilePath()) + ")");
+            throw std::runtime_error("project name '" + ToUtf8(projectName) + "' not found in solution '" + ToUtf8(Name()) + "' (" + cminor::util::GetFullPath(FilePath()) + ")");
         }
     }
     return buildOrder;

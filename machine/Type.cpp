@@ -6,8 +6,11 @@
 #include <cminor/machine/Type.hpp>
 #include <cminor/machine/Writer.hpp>
 #include <cminor/machine/Reader.hpp>
+#include <cminor/util/Unicode.hpp>
 
 namespace cminor { namespace machine {
+
+using namespace cminor::unicode;
 
 FunctionType::FunctionType() : returnType(ValueType::none)
 {

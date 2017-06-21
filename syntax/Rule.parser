@@ -1,0 +1,31 @@
+// =================================
+// Copyright (c) 2017 Seppo Laakko
+// Distributed under the MIT license
+// =================================
+
+[cpp]#include <cminor/syntax/Element.hpp>
+[cpp]#include <cminor/syntax/Composite.hpp>
+[hpp]#include <cminor/parsing/Rule.hpp>
+
+namespace cminor.syntax
+{
+    grammar RuleGrammar
+    {
+        using ElementGrammar.Identifier;
+        using ElementGrammar.Signature;
+        using CompositeGrammar.Alternative;
+        using stdlib.string;
+
+        Rule(cminor::parsing::Scope* enclosingScope): cminor::parsing::Rule*
+                    ::= RuleHeader(enclosingScope){ value = RuleHeader; } "::=" RuleBody(value)
+                    ;
+
+        RuleHeader(cminor::parsing::Scope* enclosingScope): cminor::parsing::Rule*
+                    ::= Identifier:name{value = new Rule(name, enclosingScope); value->SetSpan(span); } Signature(value)
+                    ;
+
+        RuleBody(cminor::parsing::Rule* rule)
+                    ::= (Alternative(rule->GetScope()):definition! ';'!){ rule->SetDefinition(definition); }
+                    ;
+    }
+}

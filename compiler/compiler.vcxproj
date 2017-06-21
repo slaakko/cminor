@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -118,7 +118,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Programming\llvm-4.0.0.src\build\Debug\lib;C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>pl.lib;pom.lib;cminormachined.lib;util.lib;ast.lib;symbols.lib;binder.lib;emitter.lib;parser.lib;build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;psapi.lib;
+      <AdditionalDependencies>cminorparsing.lib;cminorcodedom.lib;cminormachined.lib;cminorutil.lib;cminorast.lib;cminorsymbols.lib;cminorbinder.lib;cminoremitter.lib;cminorparser.lib;cminorbuild.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;psapi.lib;
 LLVMMCParser.lib;LLVMObject.lib;LLVMAsmParser.lib;LLVMIRReader.lib;LLVMLinker.lib;LLVMipo.lib;LLVMInstrumentation.lib;LLVMVectorize.lib;LLVMX86Disassembler.lib;LLVMX86AsmParser.lib;LLVMX86CodeGen.lib;LLVMGlobalISel.lib;LLVMSelectionDAG.lib;LLVMAsmPrinter.lib;LLVMDebugInfoCodeView.lib;LLVMDebugInfoMSF.lib;LLVMCodeGen.lib;LLVMTarget.lib;LLVMScalarOpts.lib;LLVMInstCombine.lib;LLVMTransformUtils.lib;LLVMBitWriter.lib;LLVMAnalysis.lib;LLVMProfileData.lib;LLVMX86Desc.lib;LLVMObject.lib;LLVMMCParser.lib;LLVMBitReader.lib;LLVMMCDisassembler.lib;LLVMX86Info.lib;LLVMX86AsmPrinter.lib;LLVMMC.lib;LLVMX86Utils.lib;LLVMCore.lib;LLVMSupport.lib;LLVMDemangle.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>16777216</StackReserveSize>
     </Link>
@@ -162,7 +162,7 @@ LLVMMCParser.lib;LLVMObject.lib;LLVMAsmParser.lib;LLVMIRReader.lib;LLVMLinker.li
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Programming\llvm-4.0.0.src\build\Release\lib;C:\Programming\boost64;$(OutDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>pl.lib;pom.lib;cminormachine.lib;util.lib;ast.lib;symbols.lib;binder.lib;emitter.lib;parser.lib;build.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;psapi.lib;
+      <AdditionalDependencies>cminorparsing.lib;cminorcodedom.lib;cminormachine.lib;cminorutil.lib;cminorast.lib;cminorsymbols.lib;cminorbinder.lib;cminoremitter.lib;cminorparser.lib;cminorbuild.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;psapi.lib;
 LLVMMCParser.lib;LLVMObject.lib;LLVMAsmParser.lib;LLVMIRReader.lib;LLVMLinker.lib;LLVMipo.lib;LLVMInstrumentation.lib;LLVMVectorize.lib;LLVMX86Disassembler.lib;LLVMX86AsmParser.lib;LLVMX86CodeGen.lib;LLVMGlobalISel.lib;LLVMSelectionDAG.lib;LLVMAsmPrinter.lib;LLVMDebugInfoCodeView.lib;LLVMDebugInfoMSF.lib;LLVMCodeGen.lib;LLVMTarget.lib;LLVMScalarOpts.lib;LLVMInstCombine.lib;LLVMTransformUtils.lib;LLVMBitWriter.lib;LLVMAnalysis.lib;LLVMProfileData.lib;LLVMX86Desc.lib;LLVMObject.lib;LLVMMCParser.lib;LLVMBitReader.lib;LLVMMCDisassembler.lib;LLVMX86Info.lib;LLVMX86AsmPrinter.lib;LLVMMC.lib;LLVMX86Utils.lib;LLVMCore.lib;LLVMSupport.lib;LLVMDemangle.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>16777216</StackReserveSize>
     </Link>

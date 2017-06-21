@@ -47,7 +47,7 @@ public:
     ConstantId Install(Constant constant);
     ConstantId Install(StringPtr s);
     ConstantId GetIdFor(Constant constant);
-    ConstantId GetIdFor(const utf32_string& s);
+    ConstantId GetIdFor(const std::u32string& s);
     Constant GetConstant(ConstantId id) const { Assert(id.Value() < constants.size(), "invalid constant id " + std::to_string(id.Value())); return constants[ConstantIndex(id)]; }
     Constant GetEmptyStringConstant() const { return GetConstant(emptyStringConstantId); }
     ConstantId GetEmptyStringConstantId() const { return emptyStringConstantId; }
@@ -58,7 +58,7 @@ private:
     ConstantId emptyStringConstantId;
     std::vector<Constant> constants;
     std::unordered_map<Constant, ConstantId, ConstantHash> constantIdMap;
-    std::list<utf32_string> strings;
+    std::list<std::u32string> strings;
     std::unordered_map<StringPtr, ConstantId, StringPtrHash> stringIdMap;
     ConstantId NextFreeConstantId() { return int32_t(constants.size()); }
     int32_t ConstantIndex(ConstantId id) const { return id.Value(); }
@@ -66,9 +66,9 @@ private:
 
 ConstantPoolImpl::ConstantPoolImpl() : emptyStringConstantId()
 {
-    utf32_string emptyString;
+    std::u32string emptyString;
     strings.push_back(std::move(emptyString));
-    const utf32_string& u = strings.back();
+    const std::u32string& u = strings.back();
     Constant emptyStringConstant(IntegralValue(u.c_str()));
     emptyStringConstantId = NextFreeConstantId();
     constants.push_back(emptyStringConstant);
@@ -103,7 +103,7 @@ ConstantId ConstantPoolImpl::GetIdFor(Constant constant)
     }
 }
 
-ConstantId ConstantPoolImpl::GetIdFor(const utf32_string& s)
+ConstantId ConstantPoolImpl::GetIdFor(const std::u32string& s)
 {
     auto it = stringIdMap.find(StringPtr(s.c_str()));
     if (it != stringIdMap.cend())
@@ -142,9 +142,9 @@ ConstantId ConstantPoolImpl::Install(Constant constant)
         }
         else
         {
-            utf32_string s(constant.Value().AsStringLiteral());
+            std::u32string s(constant.Value().AsStringLiteral());
             strings.push_back(std::move(s));
-            const utf32_string& u = strings.back();
+            const std::u32string& u = strings.back();
             Constant myConstant(IntegralValue(u.c_str()));
             ConstantId id = NextFreeConstantId();
             constants.push_back(myConstant);
@@ -183,9 +183,9 @@ void ConstantPoolImpl::Read(Reader& reader)
         constant.Read(reader);
         if (constant.Value().GetType() == ValueType::stringLiteral) // note: string literal value not read yet, so read it now...
         {
-            utf32_string s = reader.GetUtf32String();
+            std::u32string s = reader.GetUtf32String();
             strings.push_back(std::move(s));
-            const utf32_string& u = strings.back();
+            const std::u32string& u = strings.back();
             stringIdMap[StringPtr(u.c_str())] = id;
             constant.SetValue(IntegralValue(u.c_str()));
             constantIdMap[constant] = id;
@@ -236,7 +236,7 @@ ConstantId ConstantPool::GetIdFor(Constant constant)
     return impl->GetIdFor(constant);
 }
 
-ConstantId ConstantPool::GetIdFor(const utf32_string& s)
+ConstantId ConstantPool::GetIdFor(const std::u32string& s)
 {
     return impl->GetIdFor(s);
 }
